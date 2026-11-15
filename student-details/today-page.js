@@ -437,7 +437,7 @@
     box.append(grid);
     return box;
   }
-  function pulse(tasks, sections) {
+  function pulse(tasks, sections, waitingCount) {
     const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
     // Admin and the Manager see the whole team's work here, not only their own tasks (a list of 9 open tasks said "All caught up").
     const mine = tasks.canAssign ? tasks.tasks : tasks.tasks.filter((x) => x.forMe);
@@ -445,7 +445,7 @@
     const open = mine.filter((x) => !x.done && !later(x)).length;
     const upcoming = mine.filter((x) => !x.done && later(x)).length;
     const done = mine.filter(recent).length;
-    const waiting = sections.reduce((n, x) => n + x.count, 0);
+    const waiting = typeof waitingCount === 'number' ? waitingCount : sections.reduce((n, x) => n + x.count, 0);
     const box = el('section', 'td-pulse');
     const share = open + done ? done / (open + done) : 1;
     const ring = el('div', 'td-ring');
@@ -505,7 +505,7 @@
       drawPop();
       const own = ownTeamCard(tasks);
       const board = teamBoard(tasks, refresh);
-      top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections), ...(board ? [board] : []));
+      top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections, d.waiting), ...(board ? [board] : []));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };
     refresh();

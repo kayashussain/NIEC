@@ -677,3 +677,13 @@ test('a student at Payment Stage is waiting to pay: counted as paid only with a 
   const by = Object.fromEntries(buildDashboard(wb, { today: new Date('2026-10-28T00:00:00') }).milestones.map((m) => [m.key, m.count]));
   assert.strictEqual(by.paid, 3);
 });
+
+test('Changes today counts every change to the data: the sheet, cards, tasks and partners, never logins (the owner, 15 Nov 2026)', () => {
+  const log = createActivityLog(tmpDir());
+  const req = { headers: { 'user-agent': 'Chrome/120 Windows' }, socket: { remoteAddress: '203.0.113.5' } };
+  const asha = { id: 'a', label: 'Asha (Application Team)' };
+  ['Logged in', 'Changed', 'Edited student card', 'Gave a task', 'Task comment', 'Handed a task on', 'Edited partner universities', 'Failed login'].forEach((a) => log.record(req, asha, a, { changes: ['x'] }));
+  const all = log.query({});
+  assert.strictEqual(all.summary.today.changes, 6);
+  assert.strictEqual(log.query({ category: 'changes' }).total, 6, 'the same as the Changes filter');
+});

@@ -433,7 +433,11 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.ok((await app('GET', '/api/templates')).json.templates.length === 6);
   assert.strictEqual((await app('POST', '/api/templates/offer_received', { name: 'x', subject: 'y', body: 'z' })).status, 403);
   assert.strictEqual((await admin('POST', '/api/templates/signature', { name: 'Head of UK Recruitment', phone: '+977 1 5550000' })).status, 200);
-  assert.match((await app('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'offer_received' })).json.text, /Head of UK Recruitment\n/);
+  assert.match((await admin('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'offer_received' })).json.text, /Head of UK Recruitment\n/, 'Admin signs with the office signature');
+  // A team member signs as themselves, also before their own mailbox is set up, never with Admin's signature (the owner, 15 Nov 2026).
+  const teamPreview = (await app('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'offer_received' })).json;
+  assert.doesNotMatch(teamPreview.text, /Head of UK Recruitment/);
+  assert.ok(!/cid:niec-signature|data:image/.test(teamPreview.html || ''), 'and without the office signature picture');
 
   // B2B Partners and Message templates: the Manager looks with the commission; the Application Team sets B2B partners up (the owner,
   // 15 Nov 2026) without the commission (see partner-access.test.js); only Admin changes the templates.
@@ -458,7 +462,9 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   // "Other": a message written from nothing; the signature picture is in the preview; sending to many students.
   const own = (await app('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'custom', subject: 'Hello', body: 'Dear {first_name},\n\nMy own words.' })).json;
   assert.match(own.text, /My own words\./);
-  assert.match(own.html, /<img src="data:image\/png;base64,/, 'the office signature picture ends every email');
+  assert.ok(!/<img src="data:image\/png;base64,/.test(own.html), 'a team member with no signature picture of their own gets none, never the office one');
+  const office = (await admin('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'custom', subject: 'Hello', body: 'Dear {first_name},\n\nMy own words.' })).json;
+  assert.match(office.html, /<img src="data:image\/png;base64,/, 'the office signature picture ends Admin\'s emails');
   const bulk = (await app('GET', '/api/bulk/students?stage=Application%20Stage')).json;
   assert.ok(bulk.students.some((x) => x.id === sitaId) && !bulk.students.some((x) => x.id === hari.json.id), 'the list holds only the students of that stage that the account may change');
   const prev = (await app('POST', '/api/bulk/preview', { ids: [sitaId, hari.json.id], subject: 'Hi', body: 'Dear {first_name},\n\nA message.', whatsapp: 'Hello {first_name}' })).json;

@@ -221,7 +221,7 @@ function createPortalApi({
   }
 
   // ---- messages ----
-  // The office signature (the picture the owner supplied) goes at the end of every email: inline in the email that is sent, and as a
+  // The office signature (the picture the owner supplied) goes at the end of Admin's emails (a team member's end with their own): inline in the email that is sent, and as a
   // data address in the preview (the preview window has no login, so it cannot fetch a picture from the server).
   let signaturePicture = null;
   // A consultancy's own picture in the data folder wins; the file shipped here is only the first installation's starting picture.
@@ -247,11 +247,13 @@ function createPortalApi({
   // with their own name, team and address as text. The office picture carries Admin's name, so it is only for Admin.
   function signatureFor(user, cfg) {
     const sig = messages.signature();
-    if (Teams.isAdmin(user) || !cfg || !cfg.personal) return { sig, picture: officePicture() };
-    const own = userMail.picture(user.id);
+    // Admin sending from the office mailbox signs with the office picture. Everyone else signs as themselves, also before their own
+    // mailbox is set up (the owner, 15 Nov 2026: a team member's preview ended with Admin's signature picture and name).
+    if (Teams.isAdmin(user)) return { sig, picture: officePicture() };
+    const own = userMail ? userMail.picture(user.id) : null;
     const team = teamsOf(user).map((d) => (Teams.DEPARTMENTS[d] ? Teams.DEPARTMENTS[d].label : '')).filter(Boolean).join(', ');
-    const box = userMail.info(user.id);
-    return { sig: { ...sig, name: user.name, title: team, email: cfg.from, ...(box.phone ? { phone: box.phone, whatsapp: box.phone } : {}) }, picture: own };
+    const box = userMail ? userMail.info(user.id) : {};
+    return { sig: { ...sig, name: user.name, title: team, email: cfg ? cfg.from : '', ...(box.phone ? { phone: box.phone, whatsapp: box.phone } : {}) }, picture: own };
   }
   // Who gets a copy: the sender's own mailbox (their sent copy) and, for a team member, the office mailbox, unless Admin switched copies off.
   const copiesFor = (cfg) => { const office = accounts.emailConfig(); return messages.signature().copyToOffice ? [...new Set([cfg.from, ...(cfg.personal && office ? [office.from] : [])])] : []; };
@@ -490,6 +492,8 @@ function createPortalApi({
     return {
       today, name: user.name, totals, kind, title: space.title, tagline: space.tagline,
       tiles: space.tiles.map((k) => ({ key: k, label: TILE_LABEL[k], value: value[k] })),
+      // How many different students wait in these lists: a student in two lists (no passport details and not applied yet) counts once.
+      waiting: new Set(space.sections.flatMap((k) => by[k].rows.map((r) => r.id))).size,
       sections: space.sections.map((k) => by[k]).map((x) => ({ key: x.key, title: x.title, hint: x.hint, stage: x.stage, count: x.rows.length, students: x.rows.sort((a, b) => b.waited - a.waited).slice(0, 6) })),
     };
   }

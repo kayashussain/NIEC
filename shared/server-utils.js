@@ -101,10 +101,13 @@ function describeDevice(userAgent) {
 //
 // Each entry has a category, used by the page's filter: logins (logged in or out), security (failed
 // logins, refused changes, wrong hidden-sheet password, hidden sheets opened), changes (cell and sheet
-// edits) and accounts (people added, access changed, passwords and settings).
+// edits, student cards, tasks, messages, partners, templates, planning) and accounts (people added, access changed, passwords and settings).
 const SECURITY_ACTIONS = new Set(['Failed login', 'Change refused', 'Wrong hidden-sheet password', 'Opened hidden sheets', 'Test email failed', 'Opened Incentive', 'Wrong Incentive password']);
 // What people do on the student cards and the pages around them counts as changes too.
-const CHANGE_ACTIONS = new Set(['Edited student card', 'Sent message', 'Edited templates', 'Edited partners', 'Edited planning']);
+// Tasks, partner universities, students added in bulk and event lists too (the owner, 15 Nov 2026: they were filed under accounts, and
+// "Changes today" on Activity counted only the edits of the sheet).
+const CHANGE_ACTIONS = new Set(['Edited student card', 'Sent message', 'Edited templates', 'Edited partners', 'Edited planning', 'Edited partner universities',
+  'Task', 'Task comment', 'Gave a task', 'Removed a task', 'Handed a task on', 'Filled in a student', 'Added students', 'Uploaded event students', 'Removed an event list', 'Restored data']);
 function activityCategory(action) {
   if (action === 'Logged in' || action === 'Logged out') return 'logins';
   if (SECURITY_ACTIONS.has(action)) return 'security';
@@ -211,7 +214,8 @@ function createActivityLog(dir, { maxBytes = ACTIVITY_ROTATE_BYTES } = {}) {
       const isToday = localDate(new Date(t)) === today;
       const login = e.action === 'Logged in';
       const failed = e.action === 'Failed login';
-      const change = e.action === 'Changed';
+      // Every change to the data (the sheet, the cards, tasks, partners ...), the same as the Changes filter.
+      const change = activityCategory(e.action) === 'changes';
       if (t >= weekAgo) {
         if (login) out.week.logins += 1;
         if (failed) out.week.failedLogins += 1;

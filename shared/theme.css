@@ -1851,6 +1851,8 @@ select option { color: #1d1d1f; }
 .td-team-bar { display: block; height: 5px; border-radius: 999px; background: #e8e8ed; overflow: hidden; }
 .td-team-fill { display: block; height: 100%; border-radius: 999px; background: #0071e3; transition: width .4s; }
 @media (prefers-reduced-motion: reduce) { .td-team, .td-team-fill { transition: none; } .td-team:hover { transform: none; } }
+/* 🔴 CSS CHANGED (2026-11-15): Today's team tiles on a phone | from: one tile per row across the whole width, so three teams filled the screen | to: two smaller tiles per row (less padding, numbers 19px, the badge 28px), a long team name wraps onto a second line instead of ending in "..." */
+@media (max-width: 600px) { .td-board-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .td-team { gap: 10px; padding: 12px; } .td-team-av { width: 28px; height: 28px; font-size: 12px; } .td-team-name { font-size: 14px; white-space: normal; line-height: 1.25; } .td-team-num b { font-size: 19px; } .td-team-num small { font-size: 11.5px; } }
 .td-ring b.td-ring-tick { color: #0071e3; font-size: 28px; }
 @media (prefers-reduced-motion: reduce) { .td-ring { animation: none; } }
 /* 🔴 CSS CHANGED (2026-11-14): Activity, a long change | from: every line of a change listed (a recalculation could list 60 lines) | to: the first six lines, then a blue "Show N more" that opens the rest */

@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-15 · shared/theme.css (today-page.js) · Today's team tiles on a phone · from: one tile per row across the whole width, so three teams filled the screen, and a long name ended in "Application T..." · to: two smaller tiles per row (less padding, numbers 19px, the badge 28px), a long team name wraps onto a second line · why: found while checking the portal on a phone.**
+
 - **2026-11-15 · shared/theme.css (today-page.js) · Today for Admin and the Manager, the team board (new) · from: under the day panel straight into one long flat list of tasks, and the day panel said "All caught up" with 0 done while 9 tasks given to the teams were open · to: the day panel counts the whole team's tasks ("9 tasks open across the teams", done this week); under it a "Your teams" row of off-white rounded tiles, one per team, with the team's initials in a grey circle, open, 3+ days (orange) and done (green), and a thin blue progress bar; pressing a tile (blue ring) shows only that team's tasks · why: the owner found the owner's Today boring and hard to read.**
 
 - **2026-11-15 · shared/theme.css (my-dashboard-page.js) · a team's Dashboard, "To do now" (new) · from: figures and charts only, nothing said what to do · to: a panel under the open-tasks line, one row per kind of work with a large blue number in a soft blue square, the title, a grey line, and the first students as small grey pills that open their card · why: the owner asked for a team's dashboard that shows only what is relevant to that team.**

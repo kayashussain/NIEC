@@ -1177,7 +1177,16 @@
     // A team's own columns can be far to the right: the first time the sheet is drawn, they are brought into view.
     if (isTeam() && !isBranchAccount() && !scrolledToYours) {
       scrolledToYours = true;
-      requestAnimationFrame(() => { const mine = headerRow.querySelector('th.col-yours'); if (mine) mine.scrollIntoView({ inline: 'center', block: 'nearest' }); });
+      // Only when they start out of sight, and then placed just right of the row number, never centred: on a phone centring slid the
+      // Application Status column under the row number and left a thin empty strip (the owner, 15 Nov 2026).
+      requestAnimationFrame(() => {
+        const mine = headerRow.querySelector('th.col-yours');
+        if (!mine) return;
+        const idx = headerRow.querySelector('th.col-idx');
+        const start = mine.offsetLeft - (idx ? idx.offsetWidth : 0);
+        if (mine.offsetLeft < tableWrap.clientWidth) return;
+        tableWrap.scrollLeft = Math.max(0, start);
+      });
     }
   }
 
