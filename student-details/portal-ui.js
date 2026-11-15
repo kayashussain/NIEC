@@ -205,9 +205,9 @@
     if (n === 1) return 'Tomorrow';
     return new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   }
-  // The updates of a task. `inline` (Today and the student card, the owner, 15 Nov 2026): always open on the task, the latest two
-  // updates shown ("Show all N updates" for the rest) and the box to write one right there, no click needed.
-  function taskThread(task, { rowId, me, canWrite, unread = 0, teams = [], inline = false, today = '' }) {
+  // The updates of a task, folded behind one button ("2 updates", "Add an update"); opened, the latest three show ("Show all N updates"
+  // for the rest) with the box to write one. Something new opens it by itself.
+  function taskThread(task, { rowId, me, canWrite, unread = 0, teams = [], today = '' }) {
     const labelOf = (id) => (teams.find((t) => t.id === id) || { label: id === 'head' ? 'Admin' : id }).label;
     const box = el('div', 'tk-thread');
     const list = el('ol', 'tk-list');
@@ -246,10 +246,10 @@
       return li;
     };
     let showAll = false;
-    const LATEST = 2;
+    const LATEST = 3;
     const draw = () => {
       const all = comments();
-      const from = inline && !showAll ? Math.max(0, all.length - Math.max(LATEST, fresh)) : 0;
+      const from = !showAll ? Math.max(0, all.length - Math.max(LATEST, fresh)) : 0;
       const items = all.slice(from).map((c, i) => entry(c, from + i >= all.length - fresh && c.by !== me));
       if (from > 0) {
         const more = h('button', { class: 'tk-earlier', type: 'button' }, `Show all ${all.length} updates`);
@@ -258,8 +258,7 @@
         items[0].append(more);
       }
       list.replaceChildren(...items);
-      if (!all.length && !inline) list.append(el('li', 'tk-empty', canWrite ? 'Progress, a question or what is needed. Everyone on the task sees it on Today.' : 'No updates yet.'));
-      list.hidden = inline && !all.length;
+      if (!all.length) list.append(el('li', 'tk-empty', canWrite ? 'Progress, a question or what is needed. Everyone on the task sees it on Today.' : 'No updates yet.'));
     };
     // Read: the dot goes, here and in the menu (shared/header.js listens for "isr-tasks-read").
     const markRead = () => {
@@ -288,7 +287,7 @@
     if (canWrite) {
       const form = el('div', 'tk-compose');
       input = el('textarea', 'tk-input');
-      input.rows = 1; input.maxLength = 2000; input.placeholder = inline && !comments().length ? 'Write the first update' : 'Write an update';
+      input.rows = 1; input.maxLength = 2000; input.placeholder = comments().length ? 'Write an update' : 'Write the first update';
       input.setAttribute('aria-label', 'Write an update');
       const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; };
       const send = h('button', { class: 'btn btn-primary btn-sm tk-send', type: 'button', disabled: true }, 'Post');
@@ -321,8 +320,6 @@
     }
     label(); draw();
     box.markRead = markRead; // read from a notification (Today)
-    box.badge = badge; // inline: shown at the task's top right when something is new
-    if (inline) { box.classList.add('is-inline', 'is-open'); box.append(body); return box; }
     box.append(toggle, body);
     setOpen(openThreads.has(task.id) || fresh > 0);
     return box;
@@ -431,8 +428,9 @@
     top.append(head);
     const side = el('div', 'td-side');
     top.append(side);
-    // Priority, tag, student and stage on one line.
-    const sub = el('div', 'td-sub');
+    // One quiet line under the task (the owner, 15 Nov 2026: the tasks looked overwhelming): the day it waits for, the priority and
+    // the tag, then who gave it to whom and when. Everything else stays out of sight until it is asked for.
+    const sub = el('div', 'td-sub td-meta');
     const badges = taskBadges(t, { rowId: o.rowId, stage: o.stage, canChange: o.canChange, onChanged: o.onChanged });
     sub.append(...badges.childNodes);
     // Moved to a later day: a small blue pill with the day ("Tomorrow", "Wed 18 Nov").
@@ -448,17 +446,27 @@
     if (t.editedAt) { const ed = el('span', 'td-edited', 'Edited'); ed.title = `Changed by ${t.editedBy || 'someone'}, ${when(t.editedAt)}`; dated.append(ed); }
     if (t.done) dated.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
     route.append(dated);
-    // The updates are always open on the task, with the box to write one (the owner, 15 Nov 2026); a done task keeps them folded.
-    const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite && !t.done, unread: o.unread || 0, teams: o.teams, inline: !t.done, today: o.today });
+    sub.append(route);
+    // The updates fold away behind one button at the task's top right ("2 updates", "Add an update", a red "N new"); what is new opens
+    // by itself. While folded, the latest update shows as one grey line, so the task still says where it stands.
+    const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite && !t.done, unread: o.unread || 0, teams: o.teams, inline: false, today: o.today });
     const toggle = thread.querySelector('.tk-toggle');
     if (toggle) side.append(toggle);
-    else if (o.unread && thread.badge) side.append(thread.badge);
     const menu = taskMenu(o.actions || []);
     if (menu) side.append(menu);
-    mid.append(top, sub, route, thread);
+    mid.append(top, sub);
+    const all = Array.isArray(t.comments) ? t.comments : [];
+    const last = all[all.length - 1];
+    if (last && last.text && toggle) {
+      const peek = h('button', { class: 'td-last', type: 'button', title: 'Open the updates' });
+      peek.append(el('b', '', last.by === o.me ? 'You' : (last.by || 'Someone')), el('span', '', last.text));
+      peek.addEventListener('click', () => toggle.click());
+      mid.append(peek);
+    }
+    mid.append(thread);
     r.append(tick, mid);
     // From a notification: open the updates and mark the task read.
-    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); else thread.markRead(); if (thread.badge) thread.badge.hidden = true; };
+    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); else thread.markRead(); };
     // Read only when the person opens its updates, writes one, or presses its notification: never by touching or scrolling past the
     // task (on a phone that cleared the notifications before anyone had read them).
     return r;
@@ -541,7 +549,7 @@
       if (moved) foot.append(h('button', { class: 'btn', type: 'button', onclick: () => go('') }, 'Back to today'));
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       const g = el('div', 'p-form'); g.append(date.wrap);
-      body.append(el('p', 'p-muted p-small', 'It waits under Later days and comes back to today\u2019s tasks on that day by itself.'), g, msg, foot);
+      body.append(el('p', 'p-muted p-small', 'It waits under Upcoming on Today and comes back to today\u2019s tasks on that day by itself.'), g, msg, foot);
     });
   }
   function changeTask(task, { rowId, tag, priority }) {

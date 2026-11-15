@@ -123,7 +123,7 @@
     line.append(stagePill(s.stage), el('span', 'p-hero-intake', s.intake));
     mid.append(line);
     // Where the student came from, as one quiet line in smaller grey type: "Social Media · Facebook · Advert: Facebook ads ...".
-    // The full story (dates, first inquiry, remarks) is under Where the student came from.
+    // The full story (dates, first inquiry, remarks) is in the Source panel.
     const src = sourceLine(s);
     if (src) { const sl = el('div', 'p-hero-source', src); sl.title = src; mid.append(sl); }
     mid.append(journey(s.stage));
@@ -259,7 +259,7 @@
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
         actions: [
           // Reassign (the team it is with, whoever gave it, Admin and the Manager) and Remove.
-          !t.done && !data.can.readOnly && (mine || t.by === me) && [t.doOn && t.doOn > data.today ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: id, today: data.today })) { say('Moved. It waits under Later days on Today.'); reload(); } }],
+          !t.done && !data.can.readOnly && (mine || t.by === me) && [t.doOn && t.doOn > data.today ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: id, today: data.today })) { say('Moved. It waits under Upcoming on Today.'); reload(); } }],
           (data.can.removeAnyTask || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: id, stage: data.student.stage })) { say('Task updated. The team is told.'); reload(); } }],
           !data.can.readOnly && (mine || t.by === me) && ['Reassign to another team', async () => { if (await window.Portal.handOn(t, { rowId: id, teams: data.taskTeams || [] })) { say('Reassigned'); reload(); } }],
           (data.can.removeAnyTask || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { await save(`tasks/${t.id}/delete`, {}, 'Task removed'); render(); } }, true],
@@ -299,27 +299,37 @@
   function origin() {
     const p = profile();
     const s = data.student;
-    const box = el('section', 'p-card');
+    const box = el('section', 'p-card p-origin');
     const head = el('div', 'p-card-head');
-    head.append(el('h2', '', 'Where the student came from'));
+    const title = el('div');
+    title.append(el('h2', '', 'Source'), el('p', 'p-origin-sub', 'Where they came from'));
+    head.append(title);
     if (can() && !editingOrigin) head.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { editingOrigin = true; render(); } }, 'Edit'));
     box.append(head);
     if (!editingOrigin) {
-      const dl = el('dl', 'p-facts');
-      const fact = (k, v) => { const d = el('div', 'p-fact'); d.append(el('dt', '', k), el('dd', '', v || 'Not recorded')); dl.append(d); };
+      // The source itself large, with a round initial (the owner, 15 Nov 2026: the source did not look well); the details under it
+      // as quiet label and value rows.
       const g = F.sourceGroup(s.source);
+      const main = el('div', `p-origin-main${g ? '' : ' is-empty'}`);
+      const ico = el('span', 'p-origin-ico', g ? g.charAt(0) : '?');
+      ico.setAttribute('aria-hidden', 'true');
+      const mw = el('div');
+      mw.append(el('b', '', g === 'Branch' ? s.source : g || 'Not recorded yet'));
+      if (!g && can()) mw.append(el('small', '', 'Press Edit to add it.'));
+      main.append(ico, mw);
+      box.append(main);
+      const dl = el('dl', 'p-origin-rows');
+      const fact = (k, v) => { const d = el('div', 'p-origin-row'); d.append(el('dt', '', k), el('dd', '', v || 'Not recorded')); dl.append(d); };
       // An event or campaign is shown by its name: the date kept beside it in the records is the day the campaign started, not the
       // student's (the owner, 14 Nov 2026). The student's own first inquiry day and time are shown below it.
       const plain = (v) => String(v || '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '');
-      fact('Student source', g);
-      if (g === 'Branch') fact('Which branch', F.branchName(s.source));
-      else if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
+      if (g === 'Branch') { /* the branch is named in the line above ("Chitwan Branch") */ } else if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
         fact('Platform', p.sourcePlatform);
         fact('How they came', p.sourceWay === 'Advert' ? `Advert: ${plain(p.sourceDetail) || 'campaign not named'}` : 'Organic (by itself)');
       } else if (p.sourceDetail || (F.SOURCE_DETAILS[g] || []).length || g === 'Agent') fact(F.SOURCE_DETAIL_LABEL[g] || (g === 'Agent' ? 'Which agent' : 'Where exactly'), plain(p.sourceDetail));
       if (p.inquiryDate) fact('First inquiry', `${day(p.inquiryDate)}${p.inquiryTime ? ` at ${p.inquiryTime}` : ''}`);
       if (p.sourceRemarks) fact('Remarks', p.sourceRemarks);
-      box.append(dl);
+      if (dl.children.length) box.append(dl);
       return box;
     }
     const picker = window.SourcePicker.create({ lists, initial: { source: s.source, detail: p.sourceDetail, remarks: p.sourceRemarks, platform: p.sourcePlatform, way: p.sourceWay }, disabled: !data.can.source });

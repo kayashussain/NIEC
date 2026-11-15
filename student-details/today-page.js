@@ -1,7 +1,7 @@
 // Today: the first screen, kept quiet on purpose. Two things only:
-//   1. the tasks: what is for this person (their team's, or for Admin the tasks the team gave them), what they gave, and (Admin and
-//      the Manager) what others gave; each says who gave it to whom, has its own comments, and a red dot marks what is new (the
-//      owner, 14 Nov 2026: no dates to do it by);
+//   1. the tasks, one list at a time behind a switch: Today and Upcoming (this person's: their team's, or for Admin the tasks the
+//      team gave them), You gave, and (Admin and the Manager) Given by others, or (a team) Reassigned; each task is one compact card
+//      that says whose student it is, who gave it to whom, and folds its updates away (the owner, 15 Nov 2026);
 //   2. what needs attention: one short list, a line per kind of work with how many students wait, opened with a click.
 // The numbers, charts and buttons live on the Dashboard and on All Students, not here.
 (function () {
@@ -20,7 +20,7 @@
   // in the order of how important each task was marked (Super priority, Priority, Medium; inside that, something new first, then the
   // one waiting longest), and only the first five of a list show until "Show all" is pressed.
   let tagFilter = 'all';
-  let taskView = ''; // 'mine', 'gave', 'others' or 'passed': which tasks are shown
+  let taskView = ''; // 'mine' (Today), 'upcoming', 'gave', 'others' or 'passed': which tasks are shown
   // Search (the owner, 15 Nov 2026): a student's name, or any word of a task or its tag, narrows every list at once.
   let searchQ = '';
   const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -41,7 +41,7 @@
       canChange: t.forMe || t.by === me || canAssignAll,
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [
-        !t.done && (t.forMe || t.by === me || canAssignAll) && [t.doOn && t.doOn > todayIso ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: t.studentId, today: todayIso })) { window.NiecUI.toast('Moved. It waits under Later days.', { type: 'success' }); refresh(true); } }],
+        !t.done && (t.forMe || t.by === me || canAssignAll) && [t.doOn && t.doOn > todayIso ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: t.studentId, today: todayIso })) { window.NiecUI.toast('Moved. It waits under Upcoming.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: t.studentId, stage: t.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
         t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: allTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
@@ -62,7 +62,15 @@
   let allTeams = [];
 
   // One list of tasks under its own heading, the newest word first; the ones done in the last 7 days fold away at the bottom.
-  function group(title, hint, all, refresh, emptyText) {
+  function emptyNote(text) {
+    const empty = el('div', 'td-empty');
+    empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    empty.append(el('div', '', text));
+    return empty;
+  }
+  // `mode`: 'today' shows only what is for today (a link points at Upcoming), 'upcoming' only the later days, one heading per day;
+  // anything else shows today's tasks with the later ones folded under them.
+  function group(title, hint, all, refresh, emptyText, mode) {
     const g = el('div', 'td-group');
     const list = (tagFilter === 'all' ? all : all.filter((x) => tagOf(x, x.stage) === tagFilter)).filter(matches);
     // Today and Upcoming (the owner, 15 Nov 2026): a task moved to a later day waits under Upcoming and is back under Today on its day.
@@ -73,24 +81,25 @@
     const done = list.filter((x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000);
     const head = el('div', 'td-group-head');
     const words = el('div');
-    words.append(el('h3', '', title));
     if (hint) words.append(el('p', '', hint));
     head.append(words);
     const chips = el('div', 'td-sum');
     const fresh = list.reduce((n, x) => n + (x.unread || 0), 0);
     if (fresh) chips.append(el('span', 'td-chip is-new', `${fresh} new`));
-    const urgent = open.filter((x) => priorityOf(x) === 'super').length;
+    const urgent = (mode === 'upcoming' ? upcoming : open).filter((x) => priorityOf(x) === 'super').length;
     if (urgent) chips.append(el('span', 'td-chip is-super', `${urgent} super priority`));
-    chips.append(el('span', 'td-chip', `${open.length} for today`));
-    if (upcoming.length) chips.append(el('span', 'td-chip is-later', `${upcoming.length} on later days`));
     head.append(chips);
     g.append(head);
+    if (mode === 'upcoming') {
+      if (!upcoming.length) g.append(emptyNote(searchQ ? `No later task matches \u201c${searchQ}\u201d.` : 'Nothing planned for later days. A task moved to another day (the "..." on a task) waits here.'));
+      let day = '';
+      upcoming.forEach((x) => { if (x.doOn !== day) { day = x.doOn; g.append(el('div', 'td-day', window.Portal.dayLabel(day, todayIso))); } g.append(taskRow(x, refresh)); });
+      return g;
+    }
     if (!open.length) {
-      const empty = el('div', 'td-empty');
-      empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
       const kind = tagFilter !== 'all' ? ` about ${tagLabel(tagFilter).toLowerCase()}` : '';
-      empty.append(el('div', '', upcoming.length ? `Nothing${kind} for today. ${upcoming.length === 1 ? 'One task was' : `${upcoming.length} tasks were`} moved to a later day: ${upcoming.length === 1 ? 'it is' : 'they are'} below.` : searchQ ? `No task for today matches \u201c${searchQ}\u201d.` : kind ? `Nothing${kind} for today.` : emptyText));
-      g.append(empty);
+      const where = mode === 'today' ? 'under Upcoming' : 'below';
+      g.append(emptyNote(upcoming.length ? `Nothing${kind} for today. ${upcoming.length === 1 ? 'One task was' : `${upcoming.length} tasks were`} moved to a later day: ${upcoming.length === 1 ? 'it is' : 'they are'} ${where}.` : searchQ ? `No task for today matches \u201c${searchQ}\u201d.` : kind ? `Nothing${kind} for today.` : emptyText));
     }
     const many = open.length > FIRST && !expanded.has(title) && !open.slice(FIRST).some((x) => x.id === focusTask);
     (many ? open.slice(0, FIRST) : open).forEach((x) => g.append(taskRow(x, refresh)));
@@ -100,12 +109,17 @@
       g.append(more);
     }
     // Upcoming: folded under Today so the eye stays on today; opened, each day under its own small heading.
-    if (upcoming.length) {
+    if (upcoming.length && mode === 'today') {
+      const go = h('button', { class: 'td-up-toggle is-link', type: 'button' });
+      go.append(el('span', '', `Upcoming (${upcoming.length})`), el('small', '', `next: ${window.Portal.dayLabel(upcoming[0].doOn, todayIso)}`), el('span', 'td-up-chev'));
+      go.addEventListener('click', () => { taskView = 'upcoming'; refresh(); window.scrollTo({ top: document.querySelector('.td-tasks').offsetTop - 12, behavior: 'smooth' }); });
+      g.append(go);
+    } else if (upcoming.length) {
       const key = 'up:' + title;
       // Open by itself when nothing is left for today, so a count above never points at an empty list.
       const shown = expanded.has(key) || upcoming.some((x) => x.id === focusTask) || !open.length;
       const tg = h('button', { class: 'td-up-toggle', type: 'button', 'aria-expanded': String(shown) });
-      tg.append(el('span', 'td-up-chev'), el('span', '', `Later days (${upcoming.length})`), el('small', '', `next: ${window.Portal.dayLabel(upcoming[0].doOn, todayIso)}`));
+      tg.append(el('span', 'td-up-chev'), el('span', '', `Upcoming (${upcoming.length})`), el('small', '', `next: ${window.Portal.dayLabel(upcoming[0].doOn, todayIso)}`));
       tg.addEventListener('click', () => { if (shown) expanded.delete(key); else expanded.add(key); refresh(); });
       g.append(tg);
       if (shown) {
@@ -134,7 +148,7 @@
     const box = el('section', 'td-tasks');
     const head = el('div', 'td-tasks-head');
     const titles = el('div');
-    titles.append(el('h2', '', 'Tasks'), el('p', '', 'What to do, in order of priority. Anything new is under the bell at the top right.'));
+    titles.append(el('h2', '', 'Tasks'));
     head.append(titles);
     box.append(head);
     // The search box: a student's name or any word of a task. The list redraws as it is typed and the box keeps the cursor.
@@ -166,41 +180,48 @@
       }
       box.append(sb);
     }
-    // Which tasks to see (the owner, 15 Nov 2026): one at a time, never mixed in one list. "For you" (your team's, or for Admin the
-    // tasks given to you), "You gave", and for Admin and the Manager "Given by others"; a team also "Reassigned" (handed on by it).
+    // Which tasks to see (the owner, 15 Nov 2026): one list at a time, never mixed. The tasks for this person are split in two, Today
+    // and Upcoming (moved to a later day), then "You gave", and for Admin and the Manager "Given by others"; a team also "Reassigned"
+    // (handed on by it).
+    const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
     const forMe = t.tasks.filter((x) => x.forMe);
     const gave = t.tasks.filter((x) => !x.forMe && (x.given || x.by === me));
     const others = t.canAssign ? t.tasks.filter((x) => !x.forMe && x.by !== me) : [];
     const passed = t.canAssign ? [] : t.tasks.filter((x) => x.had && !x.forMe && !gave.includes(x));
+    const showMine = t.isHead || !t.canAssign || forMe.length;
+    const todayHint = t.isHead ? `Tasks the team gave you, ${t.headLabel || 'Admin'}, in order of priority.` : 'Your team\'s tasks for today, in order of priority. Tick the circle when one is done.';
     const VIEWS = [
-      ['mine', t.isHead || !t.canAssign ? 'For you' : 'For you', forMe, t.isHead ? `Tasks the team gave you, ${t.headLabel || 'Admin'}.` : 'Your team\'s tasks. Tick when done; post an update to ask or report.', t.isHead ? 'Nothing for you. When the team gives you a task, it is here.' : 'Nothing for your team today. You are all caught up.', t.isHead || !t.canAssign || forMe.length],
-      ['gave', 'You gave', gave, 'The tasks you gave the teams, with their updates.', 'Every task you gave is done.', t.canAssign || gave.length],
-      ['others', 'Given by others', others, 'Tasks the Manager or a branch gave a team.', 'Every one of them is done.', others.length],
-      ['passed', 'Reassigned', passed, 'Tasks your team handed on to another team. Follow them and post updates here.', 'Every one of them is done.', passed.length],
+      ['mine', 'Today', forMe, todayHint, t.isHead ? 'Nothing for you today. When the team gives you a task, it is here.' : 'Nothing for your team today. You are all caught up.', showMine, 'today'],
+      ['upcoming', 'Upcoming', forMe, 'Tasks moved to a later day. Each comes back to Today on its day by itself.', '', showMine && forMe.some((x) => !x.done && later(x)), 'upcoming'],
+      ['gave', 'You gave', gave, 'The tasks you gave the teams, with their updates.', 'Every task you gave is done.', t.canAssign || gave.length, ''],
+      ['others', 'Given by others', others, 'Tasks the Manager or a branch gave a team.', 'Every one of them is done.', others.length, ''],
+      ['passed', 'Reassigned', passed, 'Tasks your team handed on to another team. Follow them and post updates here.', 'Every one of them is done.', passed.length, ''],
     ].filter((v) => v[5]);
-    const openN = (list) => list.filter((x) => !x.done && !(x.doOn && todayIso && x.doOn > todayIso)).length;
+    // The number on each switch: what is open in it (for Upcoming, the later ones; elsewhere, today's).
+    const countOf = (v) => v[2].filter((x) => !x.done && (v[6] === 'upcoming' ? later(x) : !later(x))).length;
+    const freshOf = (v) => v[2].filter((x) => v[6] === 'upcoming' ? later(x) : v[6] === 'today' ? !later(x) : true).reduce((m, x) => m + (x.unread || 0), 0);
     if (!VIEWS.some((v) => v[0] === taskView)) taskView = '';
-    if (!taskView) taskView = (VIEWS.find((v) => openN(v[2])) || VIEWS[0] || ['mine'])[0];
+    if (!taskView) taskView = (VIEWS.find((v) => countOf(v)) || VIEWS[0] || ['mine'])[0];
     if (VIEWS.length > 1) {
       const seg = el('div', 'td-views');
       seg.setAttribute('role', 'tablist');
-      VIEWS.forEach(([k, label, list]) => {
+      seg.setAttribute('aria-label', 'Which tasks');
+      VIEWS.forEach((v) => {
+        const [k, label] = v;
         const b = h('button', { class: 'td-view', type: 'button', role: 'tab', 'aria-selected': String(taskView === k) }, label);
-        const n = openN(list);
-        const fresh = list.reduce((m, x) => m + (x.unread || 0), 0);
+        const n = countOf(v);
         if (n) b.append(el('span', 'td-view-n', String(n)));
-        if (fresh) b.append(el('span', 'td-view-dot', ''));
+        if (freshOf(v)) { const dot = el('span', 'td-view-dot', ''); dot.title = 'Something new'; b.append(dot); }
         b.addEventListener('click', () => { taskView = k; tagFilter = 'all'; refresh(); });
         seg.append(b);
       });
-      box.insertBefore(seg, box.children[1] || null);
+      head.append(seg);
     }
-    const view = VIEWS.find((v) => v[0] === taskView) || ['mine', 'For you', forMe, '', 'Nothing here.'];
+    const view = VIEWS.find((v) => v[0] === taskView) || ['mine', 'Today', forMe, '', 'Nothing here.', true, 'today'];
     const inView = view[2];
     // The kinds (Application, Mock interview ...) of the tasks in this view, each with how many are for TODAY. A kind whose tasks are
     // all moved to later days says "2 later" in blue, so a count never promises tasks that are not under Today.
-    const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
-    const openAll = inView.filter((x) => !x.done && matches(x));
+    const openAll = inView.filter((x) => !x.done && matches(x) && (view[6] === 'upcoming' ? later(x) : view[6] === 'today' ? !later(x) : true));
     if (openAll.length) {
       const now = {}; const after = {};
       openAll.forEach((x) => { const k = tagOf(x, x.stage); if (later(x)) after[k] = (after[k] || 0) + 1; else now[k] = (now[k] || 0) + 1; });
@@ -217,10 +238,12 @@
       };
       const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
       pill('all', 'All', sum(now), sum(after));
+      // One kind only: "All 2, Application 2" says nothing twice, so the row is left out.
+      const kinds = new Set([...Object.keys(now), ...Object.keys(after)]);
       ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (now[k] || after[k]) pill(k, label, now[k] || 0, after[k] || 0); });
-      box.append(bar);
+      if (kinds.size > 1 || tagFilter !== 'all') box.append(bar);
     }
-    box.append(group(view[1], view[3], inView, refresh, view[4]));
+    box.append(group(view[0], view[3], inView, refresh, view[4], view[6]));
     return box;
   }
 
@@ -332,7 +355,7 @@
   let closeInbox = () => {};
   function goTo(x, refresh) {
     closeInbox();
-    taskView = x.forMe ? 'mine' : (x.given || x.by === me) ? 'gave' : x.had && !canAssignAll ? 'passed' : 'others';
+    taskView = x.forMe ? (!x.done && x.doOn && todayIso && x.doOn > todayIso ? 'upcoming' : 'mine') : (x.given || x.by === me) ? 'gave' : x.had && !canAssignAll ? 'passed' : 'others';
     tagFilter = 'all';
     searchQ = '';
     focusTask = x.id;
