@@ -33,7 +33,7 @@ const { createSourceOptions } = require('./source-options');
 const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createPortalApi } = require('./portal-api');
-const { tidyPartners } = require('./partner-tidy');
+const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
 const { createUserMail } = require('./user-mail');
 const { createRates } = require('../shared/exchange-rates');
@@ -855,6 +855,11 @@ try {
     record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
   });
   if (out.changes && out.changes.length) console.log('[startup] partners tidied:', out.changes.join('; '));
+  const rep = tidyOfficialRep({
+    getWorkbook: () => current, writeWorkbook, b2b, planning,
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+  });
+  if (rep.changes && rep.changes.length) console.log('[startup] The Official Representative:', rep.changes.join('; '));
 } catch (e) {
   console.error('[startup] partner tidy-up failed:', e.message);
 }

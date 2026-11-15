@@ -6,7 +6,8 @@
 //   ARUC is part of Navitas: a student whose University Partner is ARUC becomes Navitas.
 //   "Awarded" and "Awarded Edu" are one B2B partner, and so are "TOR" and "The Official Rep" (TOR is its short name): the
 //   students are put under the name of the B2B card (or the first spelling, when there is no card yet), and the other spelling
-//   is kept as a known other name of it, so it never shows as a partner of its own again.
+//   is kept as a known other name of it, so it never shows as a partner of its own again. "The Official Representative" is the
+//   same partner as TOR and The Official Rep (a second step, below, for installations where the first one already ran).
 // Names are compared ignoring capitals, spaces and punctuation.
 
 const TIDY_ID = 'partners-2026-11-15';
@@ -15,7 +16,8 @@ const DIRECT = ['Navitas', 'OIEG'];
 const SAME = [
   ['Navitas', ['ARUC']],
   ['Awarded Edu', ['Awarded Edu', 'Awarded', 'AwardedEdu']],
-  ['The Official Rep', ['The Official Rep', 'Official Rep', 'TOR']],
+  // TOR, The Official Rep and The Official Representative are one B2B partner (the owner, 15 Nov 2026); its card's name wins.
+  ['The Official Representative', ['The Official Representative', 'Official Representative', 'The Official Rep', 'Official Rep', 'TOR']],
 ];
 const COLUMN = 'UNIVERSITY PARTNER';
 
@@ -92,4 +94,52 @@ function tidyPartners({ getWorkbook, writeWorkbook, direct, b2b, planning, recor
   return { changes };
 }
 
-module.exports = { tidyPartners, TIDY_ID, squash };
+// The second step (the owner, 15 Nov 2026): on an installation where the first step already ran, TOR and The Official Rep were put
+// together under "The Official Rep", while the B2B card is "The Official Representative". Every spelling now goes under the card's
+// name (the students, the known other names, the hidden list), once. A second card for the short spelling is removed (kept as
+// Ended when it has files).
+const TIDY_ID2 = 'partners-2026-11-15-b';
+const REP = ['The Official Representative', 'Official Representative', 'The Official Rep', 'Official Rep', 'TOR'];
+function tidyOfficialRep({ getWorkbook, writeWorkbook, b2b, planning, record = () => {} }) {
+  const settings = planning.all().settings;
+  if ((settings.tidied || []).includes(TIDY_ID2)) return { skipped: true };
+  const keys = new Set(REP.map(squash));
+  const cards = b2b.all().filter((p) => keys.has(squash(p.name)));
+  const used = new Set([
+    ...(getWorkbook() ? getWorkbook().sheets.flatMap((sh) => sh.rows.map((r) => squash(r && r[COLUMN]))) : []),
+    ...cards.map((p) => squash(p.name)), ...(settings.notPartners || []).map(squash), ...Object.keys(settings.partnerAliases || {}).map(squash),
+  ]);
+  const changes = [];
+  if ([...keys].some((k) => used.has(k))) {
+    // The card with the long name wins; else any card of it; else the long name.
+    const main = cards.find((p) => /representative/i.test(p.name) && p.status !== 'Ended') || cards.find((p) => p.status !== 'Ended') || null;
+    const target = main ? main.name : 'The Official Representative';
+    cards.filter((p) => p !== main && p.status !== 'Ended').forEach((p) => {
+      if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'ISR tidy-up'); changes.push(`${p.name}: B2B card marked Ended (the same partner as ${target})`); }
+      else { b2b.remove(p.id); changes.push(`${p.name}: B2B card removed (the same partner as ${target})`); }
+    });
+    const wb = getWorkbook();
+    if (wb) {
+      let n = 0;
+      const sheets = wb.sheets.map((sh) => ({ ...sh, rows: sh.rows.map((row) => {
+        const v = String((row && row[COLUMN]) || '').trim();
+        if (!v || !keys.has(squash(v)) || v === target) return row;
+        n += 1;
+        return { ...row, [COLUMN]: target };
+      }) }));
+      if (n) { writeWorkbook({ ...wb, sheets, revision: (Number(wb.revision) || 0) + 1 }); changes.push(`University Partner → ${target}: ${n} student${n === 1 ? '' : 's'}`); }
+    }
+    const aliases = { ...(settings.partnerAliases || {}) };
+    Object.keys(aliases).forEach((k) => { if (keys.has(squash(k)) || keys.has(squash(aliases[k]))) delete aliases[k]; });
+    REP.forEach((sp) => { if (squash(sp) !== squash(target)) aliases[sp] = target; });
+    const notPartners = (settings.notPartners || []).filter((x) => !keys.has(squash(x)));
+    if (notPartners.length !== (settings.notPartners || []).length) changes.push(`${target}: no longer hidden`);
+    planning.saveSettings({ partnerAliases: aliases, notPartners, tidied: [...(settings.tidied || []), TIDY_ID2] });
+  } else {
+    planning.saveSettings({ tidied: [...(settings.tidied || []), TIDY_ID2] });
+  }
+  if (changes.length) record(changes);
+  return { changes };
+}
+
+module.exports = { tidyPartners, tidyOfficialRep, TIDY_ID, TIDY_ID2, squash };

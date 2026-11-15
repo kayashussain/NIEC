@@ -55,3 +55,33 @@ test('a fresh installation (another consultancy) gets nothing added', () => {
   assert.deepStrictEqual(t.planning.all().settings.partnerAliases, {});
   assert.strictEqual(t.wb().revision, 3, 'the sheet is not touched');
 });
+
+test('The Official Rep and TOR go under the B2B card "The Official Representative", once (the second step)', () => {
+  const { tidyOfficialRep } = require('../student-details/partner-tidy');
+  // As on the live server after the first step: the students under "The Official Rep", TOR a known other name of it, the card under
+  // the long name, and the short name hidden.
+  const t = setup(['The Official Rep', 'The Official Rep', 'TOR', 'Real Dreams'], [{ name: 'The Official Representative' }], ['The Official Rep', 'Some other']);
+  t.planning.saveSettings({ partnerAliases: { TOR: 'The Official Rep' }, tidied: ['partners-2026-11-15'] });
+  let wb = t.wb();
+  const log = [];
+  const run = () => tidyOfficialRep({ getWorkbook: () => wb, writeWorkbook: (next) => { wb = next; }, b2b: t.b2b, planning: t.planning, record: (c) => log.push(...c) });
+  run();
+  assert.deepStrictEqual(wb.sheets[0].rows.map((r) => r['UNIVERSITY PARTNER']), ['The Official Representative', 'The Official Representative', 'The Official Representative', 'Real Dreams']);
+  const s = t.planning.all().settings;
+  assert.strictEqual(s.partnerAliases.TOR, 'The Official Representative');
+  assert.strictEqual(s.partnerAliases['The Official Rep'], 'The Official Representative');
+  assert.deepStrictEqual(s.notPartners, ['Some other'], 'no longer hidden');
+  assert.deepStrictEqual(t.b2b.all().map((p) => p.name), ['The Official Representative']);
+  assert.ok(log.length);
+  wb.sheets[0].rows[0]['UNIVERSITY PARTNER'] = 'TOR';
+  assert.deepStrictEqual(run(), { skipped: true }, 'once only');
+});
+
+test('the second step leaves an installation without these names alone', () => {
+  const { tidyOfficialRep } = require('../student-details/partner-tidy');
+  const t = setup(['Some Partner']);
+  let wb = t.wb();
+  tidyOfficialRep({ getWorkbook: () => wb, writeWorkbook: (next) => { wb = next; }, b2b: t.b2b, planning: t.planning });
+  assert.deepStrictEqual(t.planning.all().settings.partnerAliases, {});
+  assert.strictEqual(wb.revision, 3);
+});
