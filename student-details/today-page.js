@@ -62,6 +62,13 @@
   let allTeams = [];
 
   // One list of tasks under its own heading, the newest word first; the ones done in the last 7 days fold away at the bottom.
+  // The tasks sit in one calm list, a hairline between each (the owner, 15 Nov 2026: not a separate box per task).
+  function listOf(items, refresh) { const l = el('div', 'td-list'); items.forEach((x) => l.append(taskRow(x, refresh))); return l; }
+  // Tasks grouped by their day, each day under a small heading.
+  function byDay(items, refresh, into) {
+    let day = ''; let l = null;
+    items.forEach((x) => { if (x.doOn !== day) { day = x.doOn; into.append(el('div', 'td-day', window.Portal.dayLabel(day, todayIso))); l = el('div', 'td-list'); into.append(l); } l.append(taskRow(x, refresh)); });
+  }
   function emptyNote(text) {
     const empty = el('div', 'td-empty');
     empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -80,29 +87,26 @@
     const upcoming = openAll.filter(later).sort((a, b) => a.doOn.localeCompare(b.doOn) || taskPriority(b) - taskPriority(a));
     const done = list.filter((x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000);
     const head = el('div', 'td-group-head');
-    const words = el('div');
-    if (hint) words.append(el('p', '', hint));
-    head.append(words);
+    // No sentence above the list (the owner, 15 Nov 2026: only what is needed); just what is new or urgent.
+    head.append(el('div'));
     const chips = el('div', 'td-sum');
-    const fresh = list.reduce((n, x) => n + (x.unread || 0), 0);
-    if (fresh) chips.append(el('span', 'td-chip is-new', `${fresh} new`));
+    // What is new shows as a blue dot on the task and a red dot on the switch, so no extra chip here.
     const urgent = (mode === 'upcoming' ? upcoming : open).filter((x) => priorityOf(x) === 'super').length;
     if (urgent) chips.append(el('span', 'td-chip is-super', `${urgent} super priority`));
     head.append(chips);
     g.append(head);
     if (mode === 'upcoming') {
-      if (!upcoming.length) g.append(emptyNote(searchQ ? `No later task matches \u201c${searchQ}\u201d.` : 'Nothing planned for later days. A task moved to another day (the "..." on a task) waits here.'));
-      let day = '';
-      upcoming.forEach((x) => { if (x.doOn !== day) { day = x.doOn; g.append(el('div', 'td-day', window.Portal.dayLabel(day, todayIso))); } g.append(taskRow(x, refresh)); });
+      if (!upcoming.length) g.append(emptyNote(searchQ ? `No later task matches \u201c${searchQ}\u201d.` : 'Nothing planned for later days.'));
+      byDay(upcoming, refresh, g);
       return g;
     }
     if (!open.length) {
       const kind = tagFilter !== 'all' ? ` about ${tagLabel(tagFilter).toLowerCase()}` : '';
       const where = mode === 'today' ? 'under Upcoming' : 'below';
-      g.append(emptyNote(upcoming.length ? `Nothing${kind} for today. ${upcoming.length === 1 ? 'One task was' : `${upcoming.length} tasks were`} moved to a later day: ${upcoming.length === 1 ? 'it is' : 'they are'} ${where}.` : searchQ ? `No task for today matches \u201c${searchQ}\u201d.` : kind ? `Nothing${kind} for today.` : emptyText));
+      g.append(emptyNote(upcoming.length ? `Nothing${kind} for today. ${upcoming.length} on later days, ${where}.` : searchQ ? `No task for today matches \u201c${searchQ}\u201d.` : kind ? `Nothing${kind} for today.` : emptyText));
     }
     const many = open.length > FIRST && !expanded.has(title) && !open.slice(FIRST).some((x) => x.id === focusTask);
-    (many ? open.slice(0, FIRST) : open).forEach((x) => g.append(taskRow(x, refresh)));
+    if (open.length) g.append(listOf(many ? open.slice(0, FIRST) : open, refresh));
     if (open.length > FIRST) {
       const more = h('button', { class: 'td-more', type: 'button' }, many ? `Show all ${open.length} open tasks` : 'Show only the first five');
       more.addEventListener('click', () => { if (many) expanded.add(title); else expanded.delete(title); refresh(); });
@@ -124,8 +128,7 @@
       g.append(tg);
       if (shown) {
         const box = el('div', 'td-upcoming');
-        let day = '';
-        upcoming.forEach((x) => { if (x.doOn !== day) { day = x.doOn; box.append(el('div', 'td-day', window.Portal.dayLabel(day, todayIso))); } box.append(taskRow(x, refresh)); });
+        byDay(upcoming, refresh, box);
         g.append(box);
       }
     }
@@ -135,7 +138,7 @@
       const toggle = h('button', { class: 'td-done-toggle', type: 'button', 'aria-expanded': String(shown) }, shown ? 'Hide the tasks done this week' : `Done this week (${done.length})`);
       toggle.addEventListener('click', () => { showDone = shown ? false : key; refresh(); });
       g.append(toggle);
-      if (shown) { const d = el('div', 'is-done'); done.forEach((x) => d.append(taskRow(x, refresh))); g.append(d); }
+      if (shown) { const d = el('div', 'is-done'); d.append(listOf(done, refresh)); g.append(d); }
     }
     return g;
   }
@@ -189,13 +192,13 @@
     const others = t.canAssign ? t.tasks.filter((x) => !x.forMe && x.by !== me) : [];
     const passed = t.canAssign ? [] : t.tasks.filter((x) => x.had && !x.forMe && !gave.includes(x));
     const showMine = t.isHead || !t.canAssign || forMe.length;
-    const todayHint = t.isHead ? `Tasks the team gave you, ${t.headLabel || 'Admin'}, in order of priority.` : 'Your team\'s tasks for today, in order of priority. Tick the circle when one is done.';
+    const todayHint = '';
     const VIEWS = [
-      ['mine', 'Today', forMe, todayHint, t.isHead ? 'Nothing for you today. When the team gives you a task, it is here.' : 'Nothing for your team today. You are all caught up.', showMine, 'today'],
-      ['upcoming', 'Upcoming', forMe, 'Tasks moved to a later day. Each comes back to Today on its day by itself.', '', showMine && forMe.some((x) => !x.done && later(x)), 'upcoming'],
-      ['gave', 'You gave', gave, 'The tasks you gave the teams, with their updates.', 'Every task you gave is done.', t.canAssign || gave.length, ''],
-      ['others', 'Given by others', others, 'Tasks the Manager or a branch gave a team.', 'Every one of them is done.', others.length, ''],
-      ['passed', 'Reassigned', passed, 'Tasks your team handed on to another team. Follow them and post updates here.', 'Every one of them is done.', passed.length, ''],
+      ['mine', 'Today', forMe, todayHint, 'All caught up for today.', showMine, 'today'],
+      ['upcoming', 'Upcoming', forMe, '', '', showMine && forMe.some((x) => !x.done && later(x)), 'upcoming'],
+      ['gave', 'You gave', gave, '', 'Every task you gave is done.', t.canAssign || gave.length, ''],
+      ['others', 'Given by others', others, '', 'All done.', others.length, ''],
+      ['passed', 'Reassigned', passed, '', 'All done.', passed.length, ''],
     ].filter((v) => v[5]);
     // The number on each switch: what is open in it (for Upcoming, the later ones; elsewhere, today's).
     const countOf = (v) => v[2].filter((x) => !x.done && (v[6] === 'upcoming' ? later(x) : !later(x))).length;
@@ -377,7 +380,8 @@
     const box = el('section', 'td-attn');
     const waiting = sections.filter((x) => x.count > 0);
     const head = el('div', 'td-attn-head');
-    head.append(el('h2', '', 'Needs attention'), el('p', '', waiting.length ? 'Students waiting for a next step. Open a line to see who.' : 'Nothing is waiting.'));
+    head.append(el('h2', '', 'Needs attention'));
+    if (!waiting.length) head.append(el('p', '', 'Nothing is waiting.'));
     box.append(head);
     waiting.forEach((x) => {
       const d = el('details', 'td-attn-row');
@@ -419,12 +423,8 @@
     if (open + done) ring.append(el('b', '', `${Math.round(share * 100)}%`), el('small', '', 'this week')); else ring.append(el('b', 'td-ring-tick', '\u2713'));
     const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('span', '', label)); return x; };
     const words = el('div', 'td-pulse-words');
-    words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} for today` : 'All caught up for today'), el('p', '', `${open ? 'Tick each one when it is done.' : 'Nothing left for today. Well done.'}${upcoming ? ` ${upcoming} more on later days.` : ''}`));
-    // Whose tasks come here: "Tasks of the Application Team". A person in two or more teams with no own team chosen is told so.
-    const from = tasks.mineFrom;
-    if (from && from.teams && from.teams.length && !tasks.canAssign) {
-      if (!(from.allTeams > 1 && !from.ownChosen)) words.append(el('p', 'td-from', `Tasks of the ${from.teams.join(', ')}`));
-    }
+    words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} for today` : 'All caught up'));
+    if (upcoming) words.append(el('p', '', `${upcoming} more on later days`));
     box.append(ring, words, stat(done, 'done this week', 'good'), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
     return box;
   }

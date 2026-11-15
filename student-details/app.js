@@ -1762,8 +1762,10 @@
     }
     const sheet = getActiveSheet();
     const hidden = sheet ? sheet.columns.filter((c) => !columns.includes(c)) : [];
-    if (hidden.length) text += ` · ${hidden.map(columnLabel).join(' and ')} ${hidden.length === 1 ? 'is' : 'are'} on each student's card`;
+    // Only the count is written (the owner, 15 Nov 2026: the list of columns kept on the card grew to two lines on a sheet with many
+    // and pushed the bar about); which columns are on the card is in the hover text.
     rowCountEl.textContent = text;
+    rowCountEl.title = hidden.length ? `On each student's card: ${hidden.map(columnLabel).join(', ')}` : '';
   }
 
   function hasMultiSelection() {

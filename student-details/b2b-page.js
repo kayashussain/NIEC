@@ -57,15 +57,12 @@
     const shownSheet = sheet.filter((x) => hit(x.name));
     const total = all.length + sheet.length;
     $('count').textContent = total ? (q ? `${shown.length + shownSheet.length} of ${total}` : `${total} in the list`) : '';
+    // Names marked "Not a partner" stay out of the list (the owner, 15 Nov 2026); a small "N hidden" beside the count brings one back.
     const hidden = (data.notPartners || []);
-    const hiddenLine = () => {
-      if (!hidden.length) return [];
-      const d = el('div', 'bp-hidden');
-      d.append(el('span', '', KIND === 'agents' ? 'Not agents: ' : 'Not B2B partners: '));
-      hidden.forEach((n, k) => { if (k) d.append(', '); d.append(el('b', '', n), ' ', btn('bp-undo', 'show again', async () => { await api(`${API}/not-partner`, { name: n, undo: true }); load(); })); });
-      return [d];
-    };
-    if (!total) { $('list').replaceChildren(el('div', 'bp-empty', `No ${WORD.one}s yet. Add the first with "+ New ${WORD.one}".`), ...hiddenLine()); return; }
+    const hiddenBtn = $('hiddenBtn') || (() => { const b = btn('bp-hidden-btn', '', showHidden); b.id = 'hiddenBtn'; $('count').after(b); return b; })();
+    hiddenBtn.textContent = `${hidden.length} hidden`;
+    hiddenBtn.hidden = !hidden.length || viewer();
+    if (!total) { $('list').replaceChildren(el('div', 'bp-empty', `No ${WORD.one}s yet.`)); return; }
     if (!shown.length && !shownSheet.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
     // Every name on the sheet not set up yet, set up at once (Admin, and the Application Team on B2B Partners): each gets its own card
     // now and its details are filled in later.
@@ -73,15 +70,28 @@
     if (sheet.length > 1 && !viewer() && (KIND === 'b2b' || !settingUp())) {
       const bar = el('div', 'bp-setup-all');
       const words = el('div');
-      words.append(el('b', '', `${number(sheet.length)} ${KIND === 'agents' ? 'agents' : 'partners'} named on the sheet are not set up yet`), el('span', '', 'Set them all up now and fill in their details later. Any that is not a partner can still be hidden.'));
+      words.append(el('b', '', `${number(sheet.length)} not set up yet`));
       const go = btn('btn btn-primary', `Set up all ${number(sheet.length)}`, async () => {
         go.disabled = true;
-        try { const r = await api(`${API}/setup-all`, {}); say(`${number(r.made)} set up. Open each one to add its details.`); await load(); } catch (e) { say(e.message, true); go.disabled = false; }
+        try { const r = await api(`${API}/setup-all`, {}); say(`${number(r.made)} set up.`); await load(); } catch (e) { say(e.message, true); go.disabled = false; }
       });
       bar.append(words, go);
       lead.push(bar);
     }
-    $('list').replaceChildren(...lead, ...shown.map(card), ...shownSheet.map(sheetCard), ...hiddenLine());
+    $('list').replaceChildren(...lead, ...shown.map(card), ...shownSheet.map(sheetCard));
+  }
+  // The names marked "Not a partner", each with Show again.
+  function showHidden() {
+    window.Portal.dialog(`Hidden ${KIND === 'agents' ? 'agents' : 'partners'}`, (body, close) => {
+      const list = el('div', 'bp-hidden-list');
+      (data.notPartners || []).forEach((n) => {
+        const row = el('div', 'bp-hidden-row');
+        row.append(el('span', '', n), btn('btn btn-sm', 'Show again', async () => { await api(`${API}/not-partner`, { name: n, undo: true }); close(); load(); }));
+        list.append(row);
+      });
+      const foot = el('div', 'p-dialog-foot'); foot.append(btn('btn', 'Close', () => close()));
+      body.append(list, foot);
+    });
   }
 
   // A partner named in the University Partner column but not set up yet: set it up (to add how to submit and the commission list),
@@ -93,15 +103,13 @@
     const who = el('div');
     who.append(el('div', 'bp-name', x.name), el('div', 'bp-sub', `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(x.students)} student${x.students === 1 ? '' : 's'} on the sheet`));
     head.append(who, el('span', 'bp-status amber', 'Not set up'));
-    const note = el('div', 'bp-submit');
-    note.append(el('div', 'bp-submit-title', 'Named on the sheet'), el('div', 'bp-none', KIND === 'agents' ? 'Named in the Receiving Partner column. Set it up to add the contact, when the agreement started and the commission list.' : settingUp() ? 'Set it up to add how to submit applications and the contact.' : 'Set it up to add how to submit applications, the contact and the commission list.'));
     const foot = el('div', 'bp-foot');
     const notWord = KIND === 'agents' ? 'Not an agent' : 'Not a partner';
     foot.append(btn('btn', notWord, async () => {
       if (!(await window.NiecUI.confirm(`${x.name} is not ${KIND === 'agents' ? 'an agent' : 'a B2B partner'}? It is hidden here and in the ${KIND === 'agents' ? 'Receiving' : 'University'} Partner dropdown (the students keep the name). You can show it again.`, { confirmText: notWord }))) return;
       await api(`${API}/not-partner`, { name: x.name }); say(`${x.name} hidden`); load();
     }), btn('btn btn-primary', 'Set up →', async () => { try { const made = await api(API, { name: x.name }); await load(); edit(made.id); } catch (e) { say(e.message, true); } }));
-    c.append(head, note, foot);
+    c.append(head, foot);
     return c;
   }
 
@@ -156,7 +164,7 @@
     } else if (p.applyEmail) {
       const w = el('a', 'bp-portal', 'Write email ↗'); w.href = 'mailto:' + p.applyEmail;
       box.append(line('Email', el('code', '', p.applyEmail), copy(p.applyEmail, 'Email'), w));
-    } else box.append(el('div', 'bp-none', viewer() ? 'Not entered yet. Ask Admin to add the portal or the email.' : 'Not entered yet. Open the partner to add the portal or the email.'));
+    } else box.append(el('div', 'bp-none', 'Not entered yet'));
     return box;
   }
 
@@ -273,13 +281,13 @@
     // that cannot be read is named under the calendar and kept until a day is chosen.
     const start = field('Agreement started', { kind: 'date', value: isoDay(p.agreementStart) });
     if (p.agreementStart && !isoDay(p.agreementStart)) start.wrap.append(el('small', 'bp-was', `Written before as \u201c${p.agreementStart}\u201d. Choose the day on the calendar.`));
-    const s1 = step(++n, `The ${WORD.one}`, 'Its name, where it is, and when the agreement started.');
+    const s1 = step(++n, `The ${WORD.one}`, '');
     s1.append(grid('bp-four', name.wrap, status.wrap, city.wrap, start.wrap));
     const steps = [s1];
 
     let apply = null; let applyUser = null; let applyPassword = null;
     if (KIND === 'b2b') {
-      const s2 = step(++n, 'Application submission', 'Paste the portal link or the email applications go to. For a portal, add the login details your team uses. The team sees them on the list and on the card of every student whose University Partner is this partner.');
+      const s2 = step(++n, 'Application submission', 'The portal link or email. The team sees it on each student card.');
       apply = field('Portal link or email', { value: p.applyPortal || p.applyEmail, max: 600, wide: true, placeholder: 'e.g. https://portal.partner.com  or  applications@partner.com' });
       const kind = el('span', 'bp-kind');
       apply.wrap.append(kind);
@@ -295,12 +303,12 @@
       steps.push(s2);
     }
 
-    const s3 = step(++n, 'Contacts', 'The people you deal with. The first one shows on the list.');
+    const s3 = step(++n, 'Contacts', '');
     const contacts = repeater([['name', 'Name', 'e.g. Partner manager'], ['phone', 'Phone', 'e.g. 98XXXXXXXX'], ['email', 'Email', 'name@partner.com']], p.contacts, 'Add a contact');
     s3.append(contacts.node); steps.push(s3);
 
     const full = !settingUp();
-    const s4 = step(++n, 'Commission list by intake', 'The partner\'s own commission list for each intake (it covers its universities, each with its own rate). Choose the intake, then paste the link or upload the PDF.');
+    const s4 = step(++n, 'Commission list by intake', 'A link or the PDF for each intake.');
     const commissions = commissionEditor(id, p);
     s4.append(commissions.node); if (full) steps.push(s4); else n -= 1;
 
@@ -361,13 +369,13 @@
   async function load() {
     data = await api(API);
     if (!viewer()) { const c = document.querySelector('#pageTitle .p-chip'); if (c) c.hidden = true; } // others look at it too now
-    if (settingUp()) $('intro').textContent = 'Where applications go and who to contact. Set up a partner named on the sheet, or add a new one; the commission is kept by Admin.';
+    if (settingUp()) $('intro').textContent = 'How to apply and who to contact.';
     if (viewer()) {
       $('add').hidden = true;
       const chip = document.querySelector('#pageTitle .p-chip'); if (chip) chip.textContent = 'View only';
       $('intro').textContent = data.access === 'commission'
-        ? `Where applications go, who to contact, and the commission. View only; Admin edits.`
-        : `${KIND === 'b2b' ? 'Where applications go and who to contact' : 'Who to contact and when each agreement started'}. View only; Admin edits.`;
+        ? 'How to apply, contacts and commission. View only.'
+        : `${KIND === 'b2b' ? 'How to apply and who to contact' : 'Contacts'}. View only.`;
     }
     draw();
     if (justSaved) {

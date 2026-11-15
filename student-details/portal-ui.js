@@ -219,13 +219,16 @@
     const toggle = h('button', { class: 'tk-toggle', type: 'button', 'aria-expanded': 'false' });
     const body = el('div', 'tk-body');
     // The line is changed in place (never rebuilt), so a press on it is never lost while it is being clicked.
-    const ico = el('span', 'tk-ico'); ico.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14M5 11.5h14M5 16.5h9"/></svg>';
+    const ico = el('span', 'tk-ico'); ico.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 5.5h15a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-4.5 3.5v-3.5h-1a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/></svg>';
     const words = el('span');
     const badge = el('span', 'tk-new');
     toggle.append(ico, words, badge);
     const label = () => {
       const n = comments().length;
-      words.textContent = n ? `${n} update${n === 1 ? '' : 's'}` : (canWrite ? 'Add an update' : 'No updates');
+      words.textContent = n ? String(n) : (canWrite ? 'Update' : '0');
+      words.hidden = fresh > 0; // "2 new" says it all, not "3" beside it
+      toggle.title = n ? `${n} update${n === 1 ? '' : 's'}${fresh ? `, ${fresh} new` : ''}` : 'Write an update';
+      toggle.setAttribute('aria-label', toggle.title);
       badge.textContent = `${fresh} new`;
       badge.hidden = !(fresh > 0);
       toggle.classList.toggle('has-new', fresh > 0);
@@ -313,9 +316,9 @@
       send.addEventListener('click', post);
       // Enter adds a line; Ctrl+Enter (or Cmd+Enter) posts, as in Apple's own apps.
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); post(); } });
-      const bar = el('div', 'tk-compose-bar');
-      bar.append(el('small', '', 'Ctrl+Enter to post'), send);
-      form.append(input, bar);
+      // One rectangular box, the words at the left and Post at the right (the owner, 15 Nov 2026).
+      input.title = 'Ctrl+Enter to post';
+      form.append(input, send);
       inner.append(form);
     }
     label(); draw();
@@ -419,6 +422,7 @@
     if (o.student) {
       const who = el('div', 'td-who');
       const name = h('a', { class: 'td-who-name', href: o.student.href, title: 'Open the student card' }, niceName(o.student.name));
+      if (o.unread) { const dot = el('span', 'td-new-dot'); dot.title = 'Something new'; who.append(dot); }
       who.append(name);
       if (o.stage) who.append(el('span', 'td-who-stage', o.stage));
       head.append(who);

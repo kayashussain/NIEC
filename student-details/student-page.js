@@ -248,12 +248,14 @@
     const unread = data.taskUnread || {};
     const fresh = Object.values(unread).reduce((n, x) => n + x, 0);
     if (fresh) head.insertBefore(el('span', 'td-chip is-new', `${fresh} new`), head.lastChild);
+    const list = el('div', 'td-list');
+    c.append(list);
     tasks.forEach((t) => {
       const forMe = (data.can.myTeams || []).includes(t.team) || (t.team === 'head' && (data.me || {}).role === 'admin');
       const mine = data.can.removeAnyTask || forMe;
       const had = (t.route || []).some((x) => (data.can.myTeams || []).includes(x) || (x === 'head' && (data.me || {}).role === 'admin'));
       const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
-      c.append(window.Portal.taskCard(t, {
+      list.append(window.Portal.taskCard(t, {
         rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0, today: data.today,
         canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
@@ -302,7 +304,7 @@
     const box = el('section', 'p-card p-origin');
     const head = el('div', 'p-card-head');
     const title = el('div');
-    title.append(el('h2', '', 'Source'), el('p', 'p-origin-sub', 'Where they came from'));
+    title.append(el('h2', '', 'Source'));
     head.append(title);
     if (can() && !editingOrigin) head.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { editingOrigin = true; render(); } }, 'Edit'));
     box.append(head);
@@ -359,7 +361,7 @@
   function notes() {
     const wrap = el('section', 'p-card');
     wrap.append(el('h2', '', 'Notes'));
-    wrap.append(el('p', '', 'Calls, agreements, results, payments and documents. Newest first.'));
+    // No sentence under the title (the owner, 15 Nov 2026: only what is needed).
     if (can()) {
       const box = el('div', 'p-note-box');
       const text = el('textarea', 'p-input');
