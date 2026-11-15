@@ -142,6 +142,14 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.deepStrictEqual(note.map((n) => [n.kind, n.by, n.text]), [['update', 'Owner', 'The offer is in the portal'], ['task', 'Owner', '']]);
   assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { seen: true })).status, 200);
   assert.deepStrictEqual((await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id).news, [], 'read: nothing new');
+  // The task is edited by whoever gave it (here Admin), never by the team; the team is told it changed.
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { text: 'Changed by the team' })).status, 403, 'the team does not edit the task');
+  const edited = await admin('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { text: 'Check the offer letter and the conditions', priority: 'super' });
+  assert.strictEqual(edited.status, 200);
+  const after = edited.json.card.tasks.find((x) => x.id === appTask.id);
+  assert.deepStrictEqual([after.text, after.priority, after.editedBy, Boolean(after.editedAt)], ['Check the offer letter and the conditions', 'super', 'Owner', true]);
+  assert.strictEqual((await admin('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { text: '   ' })).status, 400, 'a task cannot be emptied');
+  assert.deepStrictEqual((await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id).news.map((n) => [n.kind, n.by]), [['edited', 'Owner']], 'the team is told');
   // A choice that is not one of their teams (or for a person in one team only) is not kept.
   assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application'], taskTeam: 'mock' })).status, 200);
   assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').taskTeam, '');

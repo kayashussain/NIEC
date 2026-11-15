@@ -133,6 +133,8 @@ function createPortalApi({
     const out = comments.filter((c) => c.by !== user.name && String(c.at) > since)
       .map((c) => ({ kind: c.handoff ? 'reassigned' : 'update', by: c.by || 'Someone', at: c.at, text: String(c.text || '').slice(0, 160) }));
     if (!t.done && forMe(user, t) && t.by !== user.name && !seen[t.id] && Date.now() - Date.parse(t.at) < 3 * 86400000) out.push({ kind: 'task', by: t.by || 'Someone', at: t.at, text: '' });
+    // The task was changed by whoever gave it since this person last read it (and they had already read it once).
+    else if (t.editedAt && t.editedBy !== user.name && forMe(user, t) && seen[t.id] && String(t.editedAt) > since) out.push({ kind: 'edited', by: t.editedBy || 'Someone', at: t.editedAt, text: '' });
     return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
   }
   const unreadOf = (user, t, seen) => newsOf(user, t, seen).length;
@@ -702,6 +704,18 @@ function createPortalApi({
           const from = task.team;
           out = cards.handTask(rowId, sub, { team: text(body.handTo), reason: body.reason }, by(req));
           if (!out.error) { cards.markSeen(req.user.username, [task.id]); note(req, [`${who2}: handed the task from ${teamLabel(from)} to ${teamLabel(out.task.team)}: ${String(body.reason).slice(0, 120)}`], 'Handed a task on'); }
+        } else if (body.text !== undefined) {
+          // The words of the task: whoever gave it, Admin or the Manager. The priority and the tag can come with it.
+          if (!canAssign(req.user) && !gaveIt(req.user, task)) { sendJSON(res, 403, { error: 'Only whoever gave the task, Admin or the Manager can change it.' }); return true; }
+          const before = task.text;
+          out = cards.editTask(rowId, sub, { text: body.text }, by(req));
+          if (!out.error && (body.tag !== undefined || body.priority !== undefined)) {
+            const change = {};
+            if (body.tag !== undefined) change.tag = text(body.tag);
+            if (body.priority !== undefined) change.priority = text(body.priority);
+            out = cards.tagTask(rowId, sub, change, by(req));
+          }
+          if (!out.error) note(req, [`${who2}: changed the task for ${teamLabel(task.team)}${before !== out.task.text ? ` from "${before.slice(0, 80)}" to "${out.task.text.slice(0, 80)}"` : ''}`], 'Task');
         } else if (body.tag !== undefined || body.priority !== undefined) {
           // What the task is about and how important it is: whoever gave it, the team it is with, Admin or the Manager.
           if (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
@@ -1437,7 +1451,23 @@ function createPortalApi({
     }));
     return [...found.values()].sort((x, y) => y.students - x.students || x.name.localeCompare(y.name));
   }
+  // Set up every name on the sheet that is not set up yet, in one go (the owner, 15 Nov 2026: "set up all of them, I will fill the
+  // details later"). Each becomes a card of its own with only its name; names marked as not a partner stay hidden.
+  function setUpAll(req, res, store, names, label) {
+    const made = [];
+    for (const name of names) {
+      const r = store.create(name, req.user.label);
+      if (!r.error) made.push(r.university.name);
+    }
+    if (made.length) activity.record(req, req.user, 'Edited partners', { app: label, changes: [`Set up ${made.length} at once: ${made.join(', ').slice(0, 400)}`] });
+    sendJSON(res, 200, { made: made.length });
+    return true;
+  }
   async function handleB2b(req, res, urlPath) {
+    if (urlPath === '/api/b2b/setup-all' && req.method === 'POST') {
+      if (partnerAccess(req.user).b2b !== 'setup' && !adminOnly(req, res, 'B2B Partners')) return true;
+      return setUpAll(req, res, b2b, sheetPartners().map((x) => x.name), 'B2B Partners');
+    }
     if (urlPath === '/api/b2b/not-partner' && req.method === 'POST') {
       // Admin, and the Application Team, who sets B2B partners up too (the owner, 15 Nov 2026).
       if (partnerAccess(req.user).b2b !== 'setup' && !adminOnly(req, res, 'B2B Partners')) return true;
@@ -1452,6 +1482,10 @@ function createPortalApi({
       return true;
     } return handlePartnerStore(req, res, urlPath, { store: b2b, prefix: 'b2b', label: 'B2B Partners', kind: 'b2b' }); }
   async function handleAgents(req, res, urlPath) {
+    if (urlPath === '/api/agents/setup-all' && req.method === 'POST') {
+      if (!adminOnly(req, res, 'Agents')) return true;
+      return setUpAll(req, res, agents, sheetAgents().map((x) => x.name), 'Agents');
+    }
     if (urlPath === '/api/agents/not-partner' && req.method === 'POST') {
       if (!adminOnly(req, res, 'Agents')) return true;
       const body = await bodyOf(req, res, 4096);

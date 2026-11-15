@@ -35,6 +35,7 @@
       canChange: t.forMe || t.by === me || canAssignAll,
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [
+        (canAssignAll || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: t.studentId, stage: t.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
         t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: allTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
       ],
@@ -179,7 +180,7 @@
       const words = el('div', 'td-note-words');
       const line = el('div', 'td-note-line');
       const who = n.by === me ? 'You' : n.by;
-      line.append(el('b', '', who), n.kind === 'task' ? ` gave ${x.forMe && x.team !== 'head' ? 'your team' : 'you'} a new task` : n.kind === 'reassigned' ? ' reassigned a task' : ' posted an update');
+      line.append(el('b', '', who), n.kind === 'task' ? ` gave ${x.forMe && x.team !== 'head' ? 'your team' : 'you'} a new task` : n.kind === 'reassigned' ? ' reassigned a task' : n.kind === 'edited' ? ' changed a task' : ' posted an update');
       words.append(line, el('div', 'td-note-task', x.text));
       if (n.text) words.append(el('div', 'td-note-text', `\u201c${n.text}\u201d`));
       const side = el('div', 'td-note-side');

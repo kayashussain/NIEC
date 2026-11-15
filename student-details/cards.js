@@ -243,6 +243,21 @@ function createCards(dir, { now = () => new Date() } = {}) {
       });
       return out.error ? out : { ...out, task };
     },
+    // The words of a task, changed after it was given (the owner, 15 Nov 2026), so a task never has to be removed and given again. The
+    // team sees it marked "Edited" and gets a notification.
+    editTask(rowId, taskId, input, by) {
+      const text = str(input && input.text, LIMITS.text);
+      if (!text) return { error: 'Write what the team should do.' };
+      let task;
+      const out = update(rowId, by, (card, stamp) => {
+        task = card.tasks.find((t) => t.id === taskId);
+        if (!task) return { error: 'No such task.' };
+        if (task.text === text) return null;
+        Object.assign(task, { text, editedAt: stamp, editedBy: by || '' });
+        return null;
+      });
+      return out.error ? out : { ...out, task };
+    },
     // What a task is about and how important it is, changed after it was given. `change`: { tag, priority }, either or both.
     tagTask(rowId, taskId, change, by) {
       const c = typeof change === 'string' ? { tag: change } : (change || {});

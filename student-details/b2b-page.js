@@ -52,7 +52,21 @@
     };
     if (!total) { $('list').replaceChildren(el('div', 'bp-empty', `No ${WORD.one}s yet. Add the first with "+ New ${WORD.one}".`), ...hiddenLine()); return; }
     if (!shown.length && !shownSheet.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
-    $('list').replaceChildren(...shown.map(card), ...shownSheet.map(sheetCard), ...hiddenLine());
+    // Every name on the sheet not set up yet, set up at once (Admin, and the Application Team on B2B Partners): each gets its own card
+    // now and its details are filled in later.
+    const lead = [];
+    if (sheet.length > 1 && !viewer() && (KIND === 'b2b' || !settingUp())) {
+      const bar = el('div', 'bp-setup-all');
+      const words = el('div');
+      words.append(el('b', '', `${number(sheet.length)} ${KIND === 'agents' ? 'agents' : 'partners'} named on the sheet are not set up yet`), el('span', '', 'Set them all up now and fill in their details later. Any that is not a partner can still be hidden.'));
+      const go = btn('btn btn-primary', `Set up all ${number(sheet.length)}`, async () => {
+        go.disabled = true;
+        try { const r = await api(`${API}/setup-all`, {}); say(`${number(r.made)} set up. Open each one to add its details.`); await load(); } catch (e) { say(e.message, true); go.disabled = false; }
+      });
+      bar.append(words, go);
+      lead.push(bar);
+    }
+    $('list').replaceChildren(...lead, ...shown.map(card), ...shownSheet.map(sheetCard), ...hiddenLine());
   }
 
   // A partner named in the University Partner column but not set up yet: set it up (to add how to submit and the commission list),

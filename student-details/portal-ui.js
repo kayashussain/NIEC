@@ -372,6 +372,8 @@
     const tick = h('button', { class: 'td-check', type: 'button', 'aria-pressed': String(t.done), title: o.mayTick ? (t.done ? 'Mark as not done' : 'Mark as done') : (o.tickTitle || ''), 'aria-label': t.done ? 'Mark as not done' : 'Mark as done', disabled: !o.mayTick });
     tick.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     tick.addEventListener('click', async () => {
+      // Done is asked once more (the owner, 15 Nov 2026), so a task is never ticked by a slip of the mouse.
+      if (!t.done && root.NiecUI && !(await root.NiecUI.confirm(`\u201c${t.text.length > 120 ? t.text.slice(0, 117) + '...' : t.text}\u201d\n\nIs this task finished? It moves to Done and ${o.fromName === 'You' ? 'you see' : (o.fromName || 'whoever gave it') + ' sees'} that it is done.`, { title: 'Mark as done?', confirmText: 'Yes, it is done', cancelText: 'Not yet' }))) return;
       tick.disabled = true;
       // The circle turns blue with a tick and the row folds away, and only then is the list redrawn (the next task never jumps).
       const quick = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -395,6 +397,10 @@
     }
     const route = taskRoute(t, { fromName: o.fromName, toName: o.toName, teams: o.teams });
     route.append(el('span', 'td-when', t.at ? new Date(t.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''));
+    // How long an open task has waited, from the third day on, so nothing is quietly forgotten.
+    const waited = Math.floor((Date.now() - Date.parse(t.at || 0)) / 86400000);
+    if (!t.done && waited >= 2 && waited < 400) route.append(el('span', `td-waiting${waited >= 7 ? ' is-long' : ''}`, `Open ${waited} days`));
+    if (t.editedAt) { const ed = el('span', 'td-edited', 'Edited'); ed.title = `Changed by ${t.editedBy || 'someone'}, ${when(t.editedAt)}`; route.append(ed); }
     if (t.done) route.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
     const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite, unread: o.unread || 0, teams: o.teams });
     // The updates button sits at the right of the task; the updates themselves open under it.
@@ -436,6 +442,29 @@
     if (pr !== 'high') line.append(pill(`td-prio prio-${pr}`, priorityLabel(pr)));
     line.append(pill(`td-tag tag-${tag}`, tagLabel(tag)));
     return line;
+  }
+  // Edit a task after it was given (the owner, 15 Nov 2026): its words, how important it is and what it is about. The team to do it is
+  // changed with Reassign. Resolves true once saved.
+  function editTask(task, { rowId, stage }) {
+    return dialog('Edit the task', (body, close) => {
+      const words = field('What should they do?', { kind: 'area', max: 2000, wide: true, value: task.text });
+      words.input.rows = 3;
+      const pr = priorityPicker(priorityOf(task));
+      const tg = tagPicker(tagOf(task, stage));
+      const field2 = (label, node) => { const w = el('div', 'p-field p-wide'); w.append(el('span', 'p-label', label), node); return w; };
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save changes');
+      ok.addEventListener('click', async () => {
+        if (!words.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
+        ok.disabled = true;
+        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { text: words.input.value, priority: pr.value(), tag: tg.value() }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; ok.disabled = false; }
+      });
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+      const g = el('div', 'p-form'); g.append(words.wrap, field2('How important is it?', pr.node), field2('What is it about?', tg.node));
+      body.append(g, el('p', 'p-muted p-small', 'The team sees the task marked Edited, with a notification. To give it to another team, use Reassign.'), msg, foot);
+      setTimeout(() => { words.input.focus(); words.input.setSelectionRange(words.input.value.length, words.input.value.length); }, 0);
+    });
   }
   function changeTask(task, { rowId, tag, priority }) {
     return dialog('Change the task', (body, close) => {
@@ -494,5 +523,5 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  root.Portal = { taskThread, taskRoute, handOn, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { taskThread, taskRoute, handOn, editTask, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

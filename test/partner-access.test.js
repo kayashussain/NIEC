@@ -86,6 +86,12 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   assert.strictEqual((await asha('POST', `/api/b2b/${made.json.id}/delete`, {})).status, 403, 'only Admin removes a partner');
   assert.strictEqual((await bikram('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 403);
   assert.strictEqual((await asha('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 200, 'the Application Team marks Not a partner');
+  // Set up all: every name on the sheet not set up yet becomes a card at once (the owner, 15 Nov 2026).
+  assert.strictEqual((await bikram('POST', '/api/b2b/setup-all', {})).status, 403, 'the Mock Team only looks');
+  const all = await asha('POST', '/api/b2b/setup-all', {});
+  assert.strictEqual(all.status, 200);
+  assert.deepStrictEqual((await asha('GET', '/api/b2b')).json.onSheet, [], 'nothing on the sheet is left not set up');
+  assert.strictEqual((await asha('POST', '/api/agents/setup-all', {})).status, 403, 'Agents are set up by Admin');
   assert.strictEqual((await chitwan('GET', '/api/b2b')).status, 403, 'a branch has no B2B Partners');
   assert.strictEqual((await chitwan('GET', '/api/agents')).status, 403, 'a branch has no Agents');
   assert.strictEqual((await chitwan('GET', '/b2b-partners')).status, 302);

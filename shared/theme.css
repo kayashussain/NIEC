@@ -1952,3 +1952,18 @@ select option { color: #1d1d1f; }
   .td-note-side { grid-column: 2; flex-direction: row; gap: 10px; align-items: center; }
 }
 @media (prefers-reduced-motion: reduce) { .td-menu, .td-inbox, .td-task.is-flash { animation: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-15): B2B Partners and Agents, "Set up all" (new) | from: each name from the sheet had to be set up one by one with its own "Set up" button | to: above the cards, a soft blue rounded panel across the full width: "N partners named on the sheet are not set up yet" in semibold, a grey line under it, and a blue "Set up all N" pill at the right (under the words on a phone) */
+.bp-setup-all { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 16px 20px; border-radius: 16px; background: #eef4fd; }
+.bp-setup-all > div { flex: 1 1 320px; min-width: 0; }
+.bp-setup-all b { display: block; color: #1d1d1f; font-size: 15.5px; font-weight: 600; }
+.bp-setup-all span { display: block; margin-top: 2px; color: #515154; font-size: 14px; }
+.bp-setup-all .btn { flex: none; }
+
+/* 🔴 CSS CHANGED (2026-11-15): an edited task | from: a changed task looked like it was always so | to: a small grey "Edited" after the date, with who changed it and when on hover */
+.td-route .td-edited { color: #86868b; font-style: normal; }
+.td-route .td-edited::before { content: "\00b7"; margin-right: 8px; color: #86868b; }
+/* 🔴 CSS CHANGED (2026-11-15): how long an open task has waited (new) | from: only the day it was given | to: from the third day, "Open 5 days" after the date in grey; from a week on in soft orange */
+.td-route .td-waiting::before { content: "\00b7"; margin-right: 8px; color: #86868b; }
+.td-route .td-waiting { color: #86868b; }
+.td-route .td-waiting.is-long { color: #b25000; }
