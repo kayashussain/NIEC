@@ -49,23 +49,39 @@
           <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Has their own dashboard, sees every student in every intake and can export to Excel. View only, unless a team is ticked as well. No Incentive page.</small></span></label>
         </div>
         <label class="task-team" hidden>
-          <span><b>Gets the tasks of</b><small>For a person in more than one team: which team's tasks come to them on Today. They still see and work on the students of every team ticked above.</small></span>
+          <span><b>Their own team</b><small>The team this person belongs to. Their tasks, their Today and their dashboard come from this team only. The other teams ticked above are extra access: they can still open and work on those students when needed.</small></span>
           <select name="${name}-task-team"></select>
         </label>
       </fieldset>`;
   }
 
-  // "Gets the tasks of" (the owner, 15 Nov 2026): offered once two or more teams are ticked, with the ticked teams and "All their teams".
+  // "Their own team" (the owner, 15 Nov 2026): asked once two or more teams are ticked. A person ticked in the Application and the Mock
+  // Team who belongs to the Application Team gets only the Application Team's tasks, Today and dashboard; the Mock Team is extra
+  // access. It must be chosen before saving (an older person without one gets every team's tasks until it is chosen).
   function drawTaskTeam(container, name, keep) {
     const ticked = [...container.querySelectorAll(`input[name="${name}-dept"]:checked`)].map((c) => c.value);
     const wrap = container.querySelector('.task-team');
     const select = container.querySelector(`select[name="${name}-task-team"]`);
-    const was = keep !== undefined ? keep : select.value;
-    select.innerHTML = [['', 'All their teams'], ...ticked.map((d) => [d, (DEPARTMENTS[d] || { label: d }).label])]
+    let was = keep !== undefined ? keep : select.value;
+    // Ticking a second team keeps the first one as their own team, ready to change.
+    if (!ticked.includes(was) && container.dataset.single && ticked.includes(container.dataset.single)) was = container.dataset.single;
+    select.innerHTML = [['', 'Choose their team...'], ...ticked.map((d) => [d, (DEPARTMENTS[d] || { label: d }).label])]
       .map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
     select.value = ticked.includes(was) ? was : '';
     wrap.hidden = ticked.length < 2;
+    container.dataset.single = ticked.length === 1 ? ticked[0] : (select.value || '');
+    wrap.classList.toggle('is-missing', ticked.length >= 2 && !select.value);
+    select.onchange = () => wrap.classList.toggle('is-missing', !select.value);
   }
+  // Refused before saving: a person in two or more teams with no team of their own.
+  const missingOwnTeam = (container, name) => {
+    const ticked = container.querySelectorAll(`input[name="${name}-dept"]:checked`).length;
+    const select = container.querySelector(`select[name="${name}-task-team"]`);
+    if (ticked < 2 || select.value) return false;
+    container.querySelector('.task-team').classList.add('is-missing');
+    select.focus();
+    return true;
+  };
 
   function wireAccess(container, name) {
     container.innerHTML = accessFields(name);
@@ -129,11 +145,18 @@
     return '<span class="pill pill-ok">Active</span>';
   }
 
+  // Their own team first (a solid chip), then the other teams as extra access ("+ Mock Team"); a person in two or more teams with no
+  // own team chosen yet shows an orange "Own team not chosen", so it is noticed and set.
   function accessChips(u) {
     if (u.role === 'admin') return '<span class="chip chip-admin">Admin</span>';
-    const teams = (u.departments || []).map((d) => `<span class="chip chip-${d}">${esc((DEPARTMENTS[d] || { label: d }).label)}</span>`).join('');
-    const tasks = u.taskTeam ? ` <span class="muted task-team-note">Tasks: ${esc((DEPARTMENTS[u.taskTeam] || { label: u.taskTeam }).label)}</span>` : '';
-    return ((u.role === 'manager' ? '<span class="chip chip-manager">Manager</span>' : '') + teams || '<span class="muted">No team</span>') + tasks;
+    const depts = u.departments || [];
+    const label = (d) => esc((DEPARTMENTS[d] || { label: d }).label);
+    const own = u.taskTeam && depts.includes(u.taskTeam) ? u.taskTeam : (depts.length === 1 ? depts[0] : '');
+    const teams = own
+      ? `<span class="chip chip-${own}">${label(own)}</span>` + depts.filter((d) => d !== own).map((d) => `<span class="chip chip-extra" title="Extra access: sees and works on these students, gets no tasks">+ ${label(d)}</span>`).join('')
+      : depts.map((d) => `<span class="chip chip-${d}">${label(d)}</span>`).join('');
+    const warn = depts.length > 1 && !own ? ' <span class="chip chip-warn" title="Edit them and choose their own team, so they get only that team\'s tasks">Own team not chosen</span>' : '';
+    return ((u.role === 'manager' ? '<span class="chip chip-manager">Manager</span>' : '') + teams || '<span class="muted">No team</span>') + warn;
   }
 
   async function loadUsers() {
@@ -225,12 +248,13 @@
     e.preventDefault();
     message('addMsg', '');
     $('tempBox').hidden = true;
+    if (missingOwnTeam($('addAccess'), 'add')) { message('addMsg', 'Choose their own team: the team whose tasks they get.', true); return; }
     const access = readAccess($('addAccess'), 'add');
     try {
       const result = await api('/api/users', {
         name: $('addName').value, username: $('addUsername').value, email: $('addEmail').value, ...access,
       });
-      message('addMsg', `${result.user.name} was added as ${result.user.accessLabel}.`);
+      message('addMsg', `${result.user.name} was added: ${result.user.accessLabel}${result.user.taskTeam ? `, their own team is the ${result.user.roleLabel}` : ''}.`);
       showSetupResult(result.user.name, result);
       $('addForm').reset();
       wireAccess($('addAccess'), 'add');
@@ -255,6 +279,7 @@
   $('editForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!editing) return;
+    if (editing.role !== 'admin' && missingOwnTeam($('editAccess'), 'edit')) { $('editNote').textContent = 'Choose their own team: the team whose tasks they get.'; return; }
     try {
       await api(`/api/users/${editing.id}`, {
         // The Admin's access never changes, so only their name and email are sent (the server refuses any access change).

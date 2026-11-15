@@ -165,7 +165,8 @@ function publicUser(u) {
     role: u.role,
     departments: u.departments || [],
     taskTeam: cleanTaskTeam(u.taskTeam, u.departments || []),
-    roleLabel: accessLabel(u),
+    // On the account menu: their own team when they have one ("Application Team"), else every team they are in.
+    roleLabel: cleanTaskTeam(u.taskTeam, u.departments || []) && u.role !== 'manager' ? DEPARTMENTS[u.taskTeam] : accessLabel(u),
     label: `${u.name} (${accessLabel(u)})`,
   };
 }

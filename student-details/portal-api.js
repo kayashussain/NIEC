@@ -114,7 +114,7 @@ function createPortalApi({
   };
   // A task is for this person (their team's, or Admin's own); they gave it; and what is new on it for them (the red dots): the comments
   // the others wrote since they last read it (or since their own last comment), and a task given to them in the last 3 days not read yet.
-  // The teams whose tasks this person gets: their one chosen team (Users, "Gets the tasks of"), else every team they are in. A person in
+  // The teams whose tasks this person gets: their own team (Users, "Their own team"), else every team they are in. A person in
   // the Application Team who also follows the Mock Team's students is not given the Mock Team's tasks (the owner, 15 Nov 2026).
   const taskTeamsOf = (user) => (user && user.taskTeam && teamsOf(user).includes(user.taskTeam) ? [user.taskTeam] : teamsOf(user));
   const forMe = (user, t) => taskTeamsOf(user).includes(t.team) || (t.team === HEAD && Teams.isAdmin(user));
@@ -400,12 +400,15 @@ function createPortalApi({
     active: 'Students in progress', applied: 'Applications submitted', visas: 'Visas issued (all intakes)', toSubmit: 'Applications to submit', waitingOffer: 'Waiting for an offer',
     atMock: 'Students at Mock Stage', toSchedule: 'Interviews to schedule', feedbackMissing: 'Feedback to write', inquiries: 'Open inquiries', toFollow: 'To follow up now', deferred: 'Deferred students',
   };
+  // The workspace of a person (Today's title and lists, their dashboard): their own team when one is chosen (Users, "Their own
+  // team"), so a person in the Application Team with Mock Team access has the Application Team's Today and dashboard.
+  const homeKind = (user) => (user && user.taskTeam && teamsOf(user).includes(user.taskTeam) && !Teams.isManager(user) ? Teams.kindOf({ ...user, departments: [user.taskTeam] }) : Teams.kindOf(user));
   function todayFor(user) {
     const all = cards.all();
     const today = cards.today();
     const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
     const now = dayNo(today);
-    const kind = Teams.kindOf(user);
+    const kind = homeKind(user);
     const space = WORKSPACES[kind] || WORKSPACES.team;
     const sections = [
       { key: 'inquiries', title: 'Inquiries to follow up', hint: 'No contact in the last 3 days', stage: 'Inquiry', rows: [] },
@@ -521,7 +524,7 @@ function createPortalApi({
     active: ['Students in progress', 'Not left, no visa yet'], visas: ['Visas issued', 'In this intake'],
   };
   function myDashboard(user) {
-    const kind = Teams.kindOf(user);
+    const kind = homeKind(user);
     const plan = MY_DASH[kind] || MY_DASH.team;
     const today = cards.today();
     const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);

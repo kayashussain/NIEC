@@ -134,14 +134,16 @@ td[data-label="Last login"], td[data-label="Logged in"], td[data-label="Last act
 .radio small, .check small { color: var(--dim); font-size: 12px; }
 .check-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 8px; margin: 0 0 6px; }
 .check-group.off { opacity: .45; }
-/* 🔴 CSS CHANGED (2026-11-15): Users, "Gets the tasks of" (new) | from: nothing | to: under the team boxes, for a person in two or more teams, a soft grey rounded panel with "Gets the tasks of" in bold, a grey line saying what it means and a dropdown (All their teams, or one team); in the list of people a grey "Tasks: Application Team" after their team chips */
-.task-team { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin: 12px 0 4px; padding: 14px 16px; border-radius: 14px; background: #f0f0f3; }
+/* 🔴 CSS CHANGED (2026-11-15): Users, "Their own team" (new; it replaces "Gets the tasks of") | from: nothing, then a grey "Gets the tasks of" panel with "All their teams" chosen at first | to: for a person ticked in two or more teams, a soft grey rounded panel "Their own team" with a line saying what it means and a dropdown that starts on "Choose their team..."; while it is not chosen the panel has a soft orange ring and the person cannot be saved; in the list of people their own team is a solid chip and every other team a light outlined "+ Mock Team" chip (extra access), and a person with two or more teams and no own team shows an orange "Own team not chosen" chip */
+.task-team { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin: 12px 0 4px; padding: 14px 16px; border-radius: 14px; background: #f0f0f3; box-shadow: inset 0 0 0 1px transparent; transition: box-shadow .2s, background-color .2s; }
 .task-team[hidden] { display: none; }
+.task-team.is-missing { background: #fff6ec; box-shadow: inset 0 0 0 1.5px #ff9f0a; }
 .task-team > span { flex: 1 1 280px; min-width: 0; }
 .task-team b { display: block; color: #1d1d1f; font-size: 14.5px; font-weight: 600; }
 .task-team small { display: block; margin-top: 2px; color: #6e6e73; font-size: 13.5px; line-height: 1.4; }
 .task-team select { flex: 0 0 auto; min-width: 200px; }
-.task-team-note { margin-left: 6px; font-size: 13px; }
+.chip.chip-extra { border: 1px solid #d2d2d7; background: transparent; color: #6e6e73; font-weight: 500; }
+.chip.chip-warn { background: #fff1e0; color: #a35200; font-weight: 600; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
 .chip-admin { background: var(--orange-tint); color: #c2410c; border-color: transparent; }

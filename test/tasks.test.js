@@ -133,6 +133,8 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   const mayaId = (await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').id;
   assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application', 'mock'], taskTeam: 'application' })).status, 200);
   assert.deepStrictEqual(await seenBy(), ['Check the offer letter'], 'only the Application Team\'s tasks once chosen');
+  assert.strictEqual((await both('GET', '/api/my-dashboard')).json.kind, 'application', 'their dashboard and Today are their own team\'s');
+  assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').roleLabel, 'Application Team', 'the account menu names their own team');
   assert.strictEqual((await both('GET', `/api/cards/${mockStudent}`)).status, 200, 'the Mock Stage student is still open to them');
   assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${mockTask.id}`, { done: true })).status, 403, 'and the Mock Team\'s task is not theirs to tick');
 
