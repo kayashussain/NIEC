@@ -167,9 +167,11 @@
     const order = ['head', ...allTeams.map((x) => x.id).filter((id) => id !== 'head')];
     const cols = new Map();
     list.forEach((x) => { const k = x.forMe && x.team === 'head' ? 'head' : x.team; if (!cols.has(k)) cols.set(k, []); cols.get(k).push(x); });
+    // Admin always has a "For you" column first, also when nothing is given to them yet, so they always know where their own tasks are.
+    if (t.isHead && !cols.has('head') && !searchQ && tagFilter === 'all') cols.set('head', []);
     const keys = [...cols.keys()].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
     const wrap = el('div', 'tb-board');
-    if (!keys.length) { wrap.append(emptyNote(searchQ || tagFilter !== 'all' ? 'No task matches.' : 'Every team is up to date.')); return wrap; }
+    if (!keys.length || (keys.length === 1 && !cols.get(keys[0]).length)) { wrap.replaceChildren(); wrap.append(emptyNote(searchQ || tagFilter !== 'all' ? 'No task matches.' : 'Every team is up to date.')); return wrap; }
     keys.forEach((k) => {
       const items = cols.get(k);
       // Something new first, then the one waiting longest.
@@ -187,6 +189,7 @@
       head.append(sub);
       col.append(head);
       const body = el('div', 'tb-col-body');
+      if (!open.length) body.append(el('div', 'tb-col-empty', 'Nothing for you right now.'));
       open.forEach((x) => body.append(tile(x, refresh)));
       col.append(body);
       wrap.append(col);

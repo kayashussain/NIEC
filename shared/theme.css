@@ -2412,8 +2412,11 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-applied { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 999px; background: #e3f5e8; color: #1f7a35; font-size: 12.5px; font-weight: 600; vertical-align: middle; }
 
 
-/* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the Board only, and wider | from: a Board | List switch beside Tasks, a focus row (Everything, New updates ...), "Show N done this week" and a thin progress line in each column, a red edge and a "Super priority" pill on some tiles, the team tiles above the List, and the page 1040px wide | to: the Board alone (the styles of the removed parts are deleted), the page up to 1600px wide so more columns and tiles show at once, and the columns a little wider (at least 300px); the top panel has no ring any more (it only repeated the number in the headline): the headline, then "waiting 3+ days" and "students waiting"; the "All" pill on the Board has no number (it repeated the same total) */
+/* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the Board only, and wider | from: a Board | List switch beside Tasks, a focus row (Everything, New updates ...), "Show N done this week" and a thin progress line in each column, a red edge and a "Super priority" pill on some tiles, the team tiles above the List, and the page 1040px wide | to: the Board alone (the styles of the removed parts are deleted), the page up to 1600px wide so more columns and tiles show at once, and the columns at least 250px wide, so four fit on a laptop screen; the top panel has no ring any more (it only repeated the number in the headline): the headline, then "waiting 3+ days" and "students waiting"; the "All" pill on the Board has no number (it repeated the same total) */
 .td-pulse { grid-template-columns: 1fr auto auto; }
 @media (max-width: 760px) { .td-pulse { grid-template-columns: 1fr 1fr; } .td-pulse > .td-pulse-words { grid-column: 1 / -1; } }
 .td-page.is-board { max-width: 1600px; }
-.td-page.is-board .tb-board { grid-auto-columns: minmax(300px, 1fr); }
+.td-page.is-board .tb-board { grid-auto-columns: minmax(250px, 1fr); }
+
+/* 🔴 CSS CHANGED (2026-11-15): Admin's "For you" column when it is empty (new) | from: the column did not show when nothing was given to Admin | to: it always shows first, with "Nothing for you right now." in small grey type, centred */
+.tb-col-empty { padding: 18px 8px; color: #6e6e73; font-size: 14px; text-align: center; }
