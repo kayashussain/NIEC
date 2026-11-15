@@ -236,7 +236,7 @@
           // Reassign (the team it is with, whoever gave it, Admin and the Manager) and Remove.
           !t.done && !data.can.readOnly && (mine || t.by === me) && [t.doOn && t.doOn > data.today ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: id, today: data.today })) { say('Moved. It waits under Upcoming on Today.'); reload(); } }],
           (data.can.removeAnyTask || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: id, stage: data.student.stage })) { say('Task updated. The team is told.'); reload(); } }],
-          !data.can.readOnly && (mine || t.by === me) && ['Reassign to another team', async () => { if (await window.Portal.handOn(t, { rowId: id, teams: data.taskTeams || [] })) { say('Reassigned'); reload(); } }],
+          !data.can.readOnly && (mine || t.by === me) && ['Reassign to another team', async () => { if (await window.Portal.handOn(t, { rowId: id, teams: data.handTeams || [] })) { say('Reassigned'); reload(); } }],
           (data.can.removeAnyTask || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { await save(`tasks/${t.id}/delete`, {}, 'Task removed'); render(); } }, true],
         ],
         onTick: async (done, folded) => { await save(`tasks/${t.id}`, { done }, done ? window.Portal.cheer() : 'Marked as not done'); await folded; render(); },

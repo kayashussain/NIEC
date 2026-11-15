@@ -49,7 +49,7 @@
       actions: [
         !t.done && (t.forMe || t.by === me || canAssignAll) && [t.doOn && t.doOn > todayIso ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: t.studentId, today: todayIso })) { window.NiecUI.toast('Moved. It waits under Upcoming.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: t.studentId, stage: t.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
-        t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: allTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
+        t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: handTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
       ],
       onTick: async (done, folded) => {
@@ -66,6 +66,7 @@
   let canAssignAll = false;
   let todayIso = '';
   let allTeams = [];
+  let handTeams = []; // where this person may reassign a task (never their own team)
   // The people a team's tasks go to ("Parvati", "Parvati, Sovat", "Parvati, Sovat +2"); "You" when it is this person alone.
   function peopleOf(team, fallback) {
     const names = ((allTeams.find((x) => x.id === team) || {}).members || []).map((n) => (n === me ? 'You' : n));
@@ -234,6 +235,7 @@
     canAssignAll = Boolean(t.canAssign);
     todayIso = t.today || todayIso;
     allTeams = t.teams || [];
+    handTeams = t.handTeams || [];
     if (t.me) me = t.me;
     const box = el('section', 'td-tasks');
     const head = el('div', 'td-tasks-head');

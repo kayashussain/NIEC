@@ -80,7 +80,10 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   const sita = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Gita', 'LAST NAME': 'Rai', 'CONTACT NUMBER': '9800000011' } })).json.id;
   const appCard = (await app('GET', `/api/cards/${sita}`)).json;
   // Every team gives every other team and Admin a task (the owner, 15 Nov 2026: the Application Team could not give the Mock Team one).
-  assert.deepStrictEqual(appCard.assignTeams.map((x) => x.id), ['application', 'mock', 'followup', 'head'], 'a team gives tasks to the teams and Admin');
+  // Never to its own team (the owner, 15 Nov 2026): the Application Team gives the Mock Team, the Follow-up Team, the branches and Admin.
+  assert.deepStrictEqual(appCard.assignTeams.map((x) => x.id), ['mock', 'followup', 'chitwan', 'pokhara', 'palpa', 'butwal', 'head'], 'a team gives tasks to the other teams, the branches and Admin');
+  assert.deepStrictEqual(appCard.handTeams.map((x) => x.id), appCard.assignTeams.map((x) => x.id), 'and reassigns to the same');
+  assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks`, { team: 'application', text: 'x' })).status, 400, 'not to its own team');
   assert.match(appCard.assignTeams.find((x) => x.id === 'head').label, /^Owner \(Head of Recruitment\)$/);
   assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks`, { team: 'nobody', text: 'x' })).status, 400, 'not to a team that does not exist');
   const toHead = await app('POST', `/api/cards/${sita}/tasks`, { team: 'head', text: 'Approve the scholarship letter' });
@@ -119,7 +122,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.deepStrictEqual([forMock.forMe, forMock.had, forMock.mayHand], [false, true, false], 'the team it was with still sees it');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { comment: 'Feedback is on the card' })).status, 200, 'and comments');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { done: true })).status, 403, 'only the team it is with ticks it');
-  assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 400, 'not to the team it is already with');
+  assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 403, 'not to the team it is already with (its own team)');
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'head', reason: 'Needs your approval' })).status, 200, 'on to Admin');
   assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id).route, ['mock', 'application']);
 
@@ -198,6 +201,10 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual(toMock.status, 200, 'the Application Team gives the Mock Team a task');
   const mockGot = (await mock('GET', '/api/tasks')).json.tasks.find((x) => x.text === 'Run the first mock');
   assert.ok(mockGot && mockGot.forMe && mockGot.tag === 'mock', 'and the Mock Team has it, tagged as chosen');
+  assert.ok(!(await mock('GET', `/api/cards/${sita}`)).json.assignTeams.some((x) => x.id === 'mock'), 'the Mock Team does not give itself a task');
+  assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'mock', reason: 'x' })).status, 403, 'a task is not reassigned to the team it is with');
+  assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'application', reason: 'Back to us' })).status, 403, 'nor by a team to itself');
+  assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'chitwan', reason: 'The branch meets the student' })).status, 200, 'a branch can be given it');
   // A team that nobody has as their own team still has someone to do its tasks: everyone in it.
   const ravi = await login('ravi', ['application', 'followup']);
   const raviId = (await admin('GET', '/api/users')).json.find((u) => u.username === 'ravi').id;

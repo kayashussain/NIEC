@@ -97,11 +97,16 @@ function createPortalApi({
     if (Teams.isAdmin(user)) return TASK_TEAMS().filter((t) => t.id !== HEAD);
     if (Teams.isManager(user)) return TASK_TEAMS();
     if (Teams.isReadOnly(user)) return [];
-    // Every team gives tasks to every other team and to Admin (the owner, 15 Nov 2026: the Application Team could not give the Mock
-    // Team a task). A branch gives the Application Team and the Mock Team tasks about its students, as before.
+    // A branch gives the Application Team and the Mock Team tasks about its students, and Admin.
     if (isBranchUser(user)) return TASK_TEAMS().filter((t) => t.id === HEAD || BRANCH_TASK_TEAMS.includes(t.id));
-    return TASK_TEAMS().filter((t) => t.id === HEAD || !(Teams.DEPARTMENTS[t.id] && Teams.DEPARTMENTS[t.id].source));
+    // A team gives tasks to every other team, every branch and Admin, never to its own team (the owner, 15 Nov 2026: the Mock Team
+    // gives the Application Team, the Follow-up Team, Admin and the branches tasks, not the Mock Team). "Its own team" is the team
+    // whose tasks come to the person (taskTeamsOf).
+    const own = taskTeamsOf(user);
+    return TASK_TEAMS().filter((t) => !own.includes(t.id));
   };
+  // Where a person may reassign a task to: Admin and the Manager anywhere; everyone else where they may give a task (the same rule).
+  const handTeamsFor = (user) => (Teams.isAdmin(user) || Teams.isManager(user) ? TASK_TEAMS() : assignTeamsFor(user));
   // A task is for this person (their team's, or Admin's own); they gave it; and what is new on it for them (the red dots): the comments
   // the others wrote since they last read it (or since their own last comment), and a task given to them in the last 3 days not read yet.
   // The teams whose tasks this person gets: their own team (Users, "Their own team"), else every team they are in. A person in
@@ -691,6 +696,7 @@ function createPortalApi({
           card,
           can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
           taskTeams: TASK_TEAMS(),
+          handTeams: handTeamsFor(req.user),
           assignTeams: assignTeamsFor(req.user),
           taskUnread: Object.fromEntries((card.tasks || []).map((t) => [t.id, unreadOf(req.user, t, cards.seenBy(req.user.username))]).filter(([, n]) => n > 0)),
           me: { name: req.user.name, role: req.user.role },
@@ -747,6 +753,7 @@ function createPortalApi({
         } else if (body.handTo !== undefined) {
           if (!mayHand(req.user, task)) { sendJSON(res, 403, { error: 'Only the team the task is with, whoever gave it, Admin or the Manager can reassign it.' }); return true; }
           if (!TASK_TEAMS().some((t) => t.id === text(body.handTo))) { sendJSON(res, 400, { error: 'Choose the team.' }); return true; }
+          if (!handTeamsFor(req.user).some((t) => t.id === text(body.handTo))) { sendJSON(res, 403, { error: 'Your account cannot give a task to that team.' }); return true; }
           const from = task.team;
           out = cards.handTask(rowId, sub, { team: text(body.handTo), reason: body.reason }, by(req));
           if (!out.error) { cards.markSeen(req.user.username, [task.id]); note(req, [`${who2}: handed the task from ${teamLabel(from)} to ${teamLabel(out.task.team)}: ${String(body.reason).slice(0, 120)}`], 'Handed a task on'); }
@@ -1979,7 +1986,7 @@ function createPortalApi({
       const mineFrom = { teams: taskTeamsOf(req.user).map(teamLabel), allTeams: teamsOf(req.user).length, ownChosen: Boolean(req.user.taskTeam && teamsOf(req.user).includes(req.user.taskTeam)), choices: teamsOf(req.user).map((id) => ({ id, label: teamLabel(id) })) };
       // For Admin and the Manager: who is in two or more teams with no own team yet (they get every team's tasks and work list).
       const noOwnTeam = everyone && accounts && accounts.people ? accounts.people().filter((p) => p.role !== 'admin' && (p.departments || []).length > 1 && !p.taskTeam).map((p) => p.name) : [];
-      sendJSON(res, 200, { tasks: out.slice(0, 500), today: cards.today(), mineFrom, noOwnTeam, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS() });
+      sendJSON(res, 200, { tasks: out.slice(0, 500), today: cards.today(), mineFrom, noOwnTeam, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS(), handTeams: handTeamsFor(req.user) });
       return true;
     }
     // How much is new on the tasks for this person (the red dot on Today in the menu): new comments, and tasks just given to them.
