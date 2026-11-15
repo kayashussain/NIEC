@@ -23,7 +23,9 @@
   // Search (the owner, 15 Nov 2026): a student's name, or any word of a task or its tag, narrows every list at once.
   let searchQ = '';
   const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const matches = (x) => !searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ));
+  // Admin and the Manager narrow every list to one team by pressing it on the team board (the owner, 15 Nov 2026).
+  let teamFilter = '';
+  const matches = (x) => (!teamFilter || x.team === teamFilter) && (!searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ)));
   const expanded = new Set();
   // The task a notification was pressed for (its later day opens if it waits there).
   let focusTask = null;
@@ -390,9 +392,55 @@
 
   // The day at a glance, at the top (the owner, 14 Nov 2026: engaging, like a game): a ring that fills as the person's own tasks are
   // done this week, then what is open for them and how many students wait for a next step. "All caught up" when nothing is open.
+  // The team board, for Admin and the Manager (the owner, 15 Nov 2026: the owner's Today was a long flat list): one tile per team with
+  // its open tasks, how many have waited 3 days or more, what it finished this week and a bar of the week's progress. A press shows
+  // only that team's tasks; a second press shows everyone again.
+  function teamBoard(tasks, refresh) {
+    if (!tasks.canAssign) return null;
+    const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
+    const byTeam = new Map();
+    tasks.tasks.forEach((x) => {
+      if (!byTeam.has(x.team)) byTeam.set(x.team, { id: x.team, label: x.teamLabel || x.team, open: 0, slow: 0, done: 0, people: new Set() });
+      const t = byTeam.get(x.team);
+      if (!x.done) { t.open += 1; if (Date.now() - Date.parse(x.at || 0) >= 3 * 86400000) t.slow += 1; }
+      else if (recent(x)) t.done += 1;
+      if (!x.done) t.people.add(x.studentId);
+    });
+    const teams = [...byTeam.values()].filter((t) => t.open || t.done).sort((a, b) => b.open - a.open || a.label.localeCompare(b.label));
+    if (!teams.length) return null;
+    if (teamFilter && !byTeam.has(teamFilter)) teamFilter = '';
+    const box = el('section', 'td-board');
+    const head = el('div', 'td-board-head');
+    head.append(el('h2', '', 'Your teams'), el('span', 'td-board-sub', teamFilter ? 'Showing one team. Press it again to see everyone.' : 'Open tasks, tasks waiting 3 days or more, and done in the last 7 days. Press a team to see only its tasks.'));
+    box.append(head);
+    const grid = el('div', 'td-board-grid');
+    teams.forEach((t) => {
+      const share = t.open + t.done ? Math.round((t.done / (t.open + t.done)) * 100) : 100;
+      const b = h('button', { class: `td-team${teamFilter === t.id ? ' is-on' : ''}${t.slow ? ' has-slow' : ''}`, type: 'button', 'aria-pressed': String(teamFilter === t.id) });
+      const top = el('div', 'td-team-top');
+      top.append(el('span', 'td-team-av', initials(t.label.replace(/\(.*\)/, ''))), el('b', 'td-team-name', t.label.replace(/\s*\(.*\)$/, '')));
+      const nums = el('div', 'td-team-nums');
+      const num = (n, label, tone) => { const x = el('span', `td-team-num${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('small', '', label)); return x; };
+      nums.append(num(t.open, 'open'), num(t.slow, '3+ days', t.slow ? 'warn' : ''), num(t.done, 'done', t.done ? 'good' : ''));
+      const bar = el('span', 'td-team-bar'); const fill = el('span', 'td-team-fill'); fill.style.width = share + '%'; bar.append(fill);
+      b.append(top, nums, bar);
+      b.title = `${t.label}: ${t.open} open on ${t.people.size} student${t.people.size === 1 ? '' : 's'}`;
+      b.addEventListener('click', () => {
+        teamFilter = teamFilter === t.id ? '' : t.id;
+        // The team's tasks are under You gave or Given by others: show the list that has them.
+        if (teamFilter) { const mineHas = tasks.tasks.some((x) => x.team === t.id && x.forMe && !x.done); if (!mineHas) taskView = tasks.tasks.some((x) => x.team === t.id && !x.forMe && x.by === me && !x.done) ? 'gave' : 'others'; }
+        tagFilter = 'all';
+        refresh();
+      });
+      grid.append(b);
+    });
+    box.append(grid);
+    return box;
+  }
   function pulse(tasks, sections) {
     const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
-    const mine = tasks.tasks.filter((x) => x.forMe);
+    // Admin and the Manager see the whole team's work here, not only their own tasks (a list of 9 open tasks said "All caught up").
+    const mine = tasks.canAssign ? tasks.tasks : tasks.tasks.filter((x) => x.forMe);
     const later = (x) => x.doOn && tasks.today && x.doOn > tasks.today;
     const open = mine.filter((x) => !x.done && !later(x)).length;
     const upcoming = mine.filter((x) => !x.done && later(x)).length;
@@ -405,7 +453,7 @@
     if (open + done) ring.append(el('b', '', `${Math.round(share * 100)}%`), el('small', '', 'this week')); else ring.append(el('b', 'td-ring-tick', '\u2713'));
     const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('span', '', label)); return x; };
     const words = el('div', 'td-pulse-words');
-    words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} for today` : 'All caught up'));
+    words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} ${tasks.canAssign ? 'open across the teams' : 'for today'}` : 'All caught up'));
     if (upcoming) words.append(el('p', '', `${upcoming} more on later days`));
     box.append(ring, words, stat(done, 'done this week', 'good'), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
     return box;
@@ -456,7 +504,8 @@
       bell.classList.toggle('has-new', fresh > 0);
       drawPop();
       const own = ownTeamCard(tasks);
-      top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections));
+      const board = teamBoard(tasks, refresh);
+      top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections), ...(board ? [board] : []));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };
     refresh();

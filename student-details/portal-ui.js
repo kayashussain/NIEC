@@ -515,12 +515,8 @@
       const words = field('What should they do?', { kind: 'area', max: 2000, wide: true, value: task.text });
       words.input.rows = 3;
       const pr = priorityPicker(priorityOf(task));
-      // The tag follows the words by itself (unless one was pressed on the task), shown in the priority section.
-      const auto = el('div', 'p-auto-tag');
-      const chosen = root.CardFields && root.CardFields.TASK_TAG_IDS.includes(task.tag);
-      const showTag = () => { const k = chosen ? task.tag : (root.CardFields ? root.CardFields.guessTaskTag(words.input.value, task.team, stage) : tagOf(task, stage)); auto.replaceChildren(el('span', 'p-auto-label', chosen ? 'Tag:' : 'Tag, set automatically:'), el('span', `td-tag tag-${k}`, tagLabel(k))); };
-      words.input.addEventListener('input', showTag);
-      showTag();
+      // The tag is chosen by hand here too (the owner, 15 Nov 2026); an older task with none shows the one it was shown with.
+      const tg = tagPicker(tagOf(task, stage));
       const field2 = (label, ...nodes) => { const w = el('div', 'p-field p-wide'); w.append(el('span', 'p-label', label), ...nodes); return w; };
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
@@ -528,10 +524,10 @@
       ok.addEventListener('click', async () => {
         if (!words.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { text: words.input.value, priority: pr.value() }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; ok.disabled = false; }
+        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { text: words.input.value, priority: pr.value(), tag: tg.value() }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(words.wrap, field2('How important is it?', pr.node, auto));
+      const g = el('div', 'p-form'); g.append(words.wrap, field2('What is it about?', tg.node), field2('How important is it?', pr.node));
       body.append(g, el('p', 'p-muted p-small', 'The team sees the task marked Edited, with a notification. To give it to another team, use Reassign.'), msg, foot);
       setTimeout(() => { words.input.focus(); words.input.setSelectionRange(words.input.value.length, words.input.value.length); }, 0);
     });
@@ -592,7 +588,7 @@
     function set(k) { value = k; buttons.forEach(([kk, b]) => b.setAttribute('aria-checked', String(kk === k))); }
     return { node, value: () => value, set: (k) => { if (!touched) set(k); }, touched: () => touched };
   }
-  const tagPicker = (initial) => picker(TAGS(), initial || 'other', (k) => `td-tag tag-${k}`, 'What the task is about');
+  const tagPicker = (initial) => picker(TAGS(), initial === undefined ? 'other' : initial, (k) => `td-tag tag-${k}`, 'What the task is about');
   const priorityPicker = (initial) => picker(PRIORITIES(), initial || 'high', (k) => `td-prio prio-${k}`, 'How important the task is');
   // A few words of thanks when a task is ticked, not the same line every time.
   const CHEERS = ['Done. Nice work.', 'Ticked off. Well done.', 'One less to think about.', 'Great job, that is done.', 'Done. The student is a step closer.', 'Nicely done.'];

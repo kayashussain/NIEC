@@ -1398,6 +1398,20 @@ body:has(.p-embed-bar) .p-hero .p-fact dt { font-size: 13px; letter-spacing: .04
 .td-tasks::before { content: none; }
 .md-taskline { border-left: 0; }
 .md-kpi:first-child { box-shadow: var(--sh-2); }
+/* 🔴 CSS CHANGED (2026-11-15): a team's Dashboard, "To do now" (new) | from: the team's Dashboard had figures and charts only, nothing said what to do | to: a panel under the open-tasks line, one row per kind of work: a large blue number in a soft blue rounded square, the title in semibold with a grey line under it, and the first students as small grey pills that open their card ("+12 more" after them) */
+.md-todo { margin: 0 0 18px; }
+.md-todo-list { display: grid; gap: 4px; }
+.md-todo-row { display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: start; padding: 12px 0; border-top: 1px solid #e8e8ed; }
+.md-todo-row:first-child { border-top: 0; }
+.md-todo-n { display: grid; place-items: center; height: 48px; border-radius: 14px; background: #e8f1fc; color: #0071e3; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.md-todo-words { display: grid; gap: 2px; min-width: 0; }
+.md-todo-words b { color: #1d1d1f; font-size: 16px; font-weight: 600; }
+.md-todo-words small { color: #6e6e73; font-size: 13.5px; }
+.md-todo-names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.md-todo-name { padding: 3px 12px; border-radius: 999px; background: #f0f0f3; color: #1d1d1f; font-size: 13.5px; text-decoration: none; transition: background .2s; }
+.md-todo-name:hover { background: #e3e3e8; }
+.md-todo-name:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+.md-todo-more { padding: 3px 4px; color: #6e6e73; font-size: 13.5px; }
 .td-kicker, .td-group h3 { font-size: 13px; }
 .td-done-toggle { color: #0066cc; text-decoration: none; }
 .td-done-toggle:hover { text-decoration: underline; }
@@ -1795,6 +1809,10 @@ select option { color: #1d1d1f; }
 /* 🔴 CSS CHANGED (2026-11-14): University options, Find a course | from: two boxes and a remarks box with no Search button (results changed as you typed) | to: one row: Study level, Course name and a blue Search button lined up at the bottom; the remarks box below is two lines high; the count of courses found sits above the results */
 .p-find { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 2fr) auto; gap: 12px; align-items: end; }
 .p-find > .btn { min-height: 44px; padding: 0 26px; }
+/* 🔴 CSS CHANGED (2026-11-15): University options, Find a course, in the owner's order | from: Study level, Course name and the blue Search button on one row, the Remarks box under the Search button | to: Study level and Course name on the first row, Remarks across the whole width under them, then the blue Search button last, at the left */
+.p-find { grid-template-columns: minmax(180px, 1fr) minmax(220px, 2fr); }
+.p-find > .p-field.p-wide { grid-column: 1 / -1; }
+.p-find > .btn { grid-column: 1 / -1; justify-self: start; }
 .p-option-results { display: grid; gap: 12px; margin-top: 14px; }
 .p-found { margin-bottom: -2px; }
 @media (max-width: 700px) { .p-find { grid-template-columns: 1fr; } .p-find > .btn { width: 100%; } }
@@ -1811,6 +1829,28 @@ select option { color: #1d1d1f; }
 .td-stat.good b { color: #248a3d; }
 .td-stat.warn b { color: #c45c00; }
 @media (max-width: 760px) { .td-pulse { grid-template-columns: auto 1fr; gap: 14px; padding: 16px; } .td-ring { width: 70px; height: 70px; } .td-pulse-words h2 { font-size: 19px; } .td-pulse-words p { font-size: 13.5px; } .td-stat { min-width: 0; padding: 8px 10px; } .td-stat b { font-size: 22px; } }
+/* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the team board (new) | from: under the day panel straight into one long list of tasks | to: a "Your teams" row of off-white rounded tiles, one per team: a round grey badge with the team's initials and its name, three numbers (open in near-black, 3+ days in orange, done this week in green) and a thin blue progress bar; a pressed tile has a blue ring and shows only that team's tasks; tiles lift slightly on hover */
+.td-board { margin: 0 0 22px; }
+.td-board-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 10px; }
+.td-board-head h2 { margin: 0; color: #1d1d1f; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.td-board-sub { color: #6e6e73; font-size: 13.5px; }
+.td-board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.td-team { display: grid; gap: 12px; padding: 16px 18px; border: 0; border-radius: 18px; background: #fbfbfd; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 28px -20px rgba(0, 0, 0, .2); transition: transform .2s, box-shadow .2s; }
+.td-team:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 14px 32px -20px rgba(0, 0, 0, .28); }
+.td-team:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+.td-team.is-on { box-shadow: 0 0 0 2px #0071e3, 0 8px 28px -20px rgba(0, 0, 0, .2); }
+.td-team-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.td-team-av { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font-size: 13px; font-weight: 700; }
+.td-team-name { overflow: hidden; font-size: 15.5px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.td-team-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.td-team-num { display: grid; }
+.td-team-num b { font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.td-team-num small { color: #6e6e73; font-size: 12px; }
+.td-team-num.warn b { color: #c45c00; }
+.td-team-num.good b { color: #248a3d; }
+.td-team-bar { display: block; height: 5px; border-radius: 999px; background: #e8e8ed; overflow: hidden; }
+.td-team-fill { display: block; height: 100%; border-radius: 999px; background: #0071e3; transition: width .4s; }
+@media (prefers-reduced-motion: reduce) { .td-team, .td-team-fill { transition: none; } .td-team:hover { transform: none; } }
 .td-ring b.td-ring-tick { color: #0071e3; font-size: 28px; }
 @media (prefers-reduced-motion: reduce) { .td-ring { animation: none; } }
 /* 🔴 CSS CHANGED (2026-11-14): Activity, a long change | from: every line of a change listed (a recalculation could list 60 lines) | to: the first six lines, then a blue "Show N more" that opens the rest */

@@ -132,21 +132,12 @@
     // The order the owner asked for (14 Nov 2026): who the student is (email and the passport details), then how to reach them, then
     // the application.
     const pp = profile();
-    // The age the student was when they applied (else when they first asked): it stays the same years later.
-    const applied = String(s.row['APPLICATION SUBMISSION DATE'] || '').slice(0, 10);
-    const on = /^\d{4}-\d{2}-\d{2}$/.test(applied) ? applied : /^\d{4}-\d{2}-\d{2}$/.test(pp.inquiryDate || '') ? pp.inquiryDate : '';
-    const age = (() => {
-      if (!pp.dob) return '';
-      const [y, m, d] = pp.dob.split('-').map(Number);
-      const t = on ? on.split('-').map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()];
-      let a = t[0] - y; if (t[1] < m || (t[1] === m && t[2] < d)) a -= 1;
-      return a > 0 && a < 100 ? ` (${a}${on && on === applied ? ' when applied' : on ? ' at first inquiry' : ''})` : '';
-    })();
     // The passport details are always shown: an empty one says "Missing" in orange (needed from Application Stage on; Today lists them).
     const missing = (k) => { const d = el('div', 'p-fact'); const dd = el('dd'); dd.append(el('span', 'p-missing', 'Missing')); d.append(el('dt', '', k), dd); facts.append(d); };
     const must = (k, v) => (v ? fact(k, v) : missing(k));
     fact('Email', s.email, s.email ? 'mailto:' + s.email : '');
-    must('Date of birth', pp.dob ? day(pp.dob) + age : '');
+    // The date only, no age beside it (the owner, 15 Nov 2026): the Dashboard groups the students by age.
+    must('Date of birth', pp.dob ? day(pp.dob) : '');
     must('Passport number', pp.passportNo);
     must('Address (passport)', pp.address);
     fact('WhatsApp', s.phone, F.whatsappNumber(s.phone) ? 'https://wa.me/' + F.whatsappNumber(s.phone) : '');
@@ -155,24 +146,6 @@
     fact('Application submitted', s.row['APPLICATION SUBMISSION DATE'] ? day(s.row['APPLICATION SUBMISSION DATE']) : '');
     fact('Offer received', s.row['OFFER RECEIVED DATE'] ? day(s.row['OFFER RECEIVED DATE']) : '');
     if (pp.nationality && pp.nationality !== 'Nepali') fact('Nationality', pp.nationality);
-    // Where to send the application, from Partner Universities (the portal opens in a new tab).
-    if (data.apply && (data.apply.portal || data.apply.email)) {
-      const d = el('div', 'p-fact p-fact-apply'); const dd = el('dd');
-      if (data.apply.portal) { const a = el('a', 'p-apply-portal', 'Open portal'); a.href = data.apply.portal; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = data.apply.portal; dd.append(a); }
-      if (data.apply.email) { const a = el('a', 'p-apply-email', data.apply.email); a.href = 'mailto:' + data.apply.email; dd.append(a); }
-      // The portal's login, to copy into the portal: the password stays hidden until Show is pressed.
-      const copyBtn = (value, what) => h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(value); say(`${what} copied`); } catch (e) { say(`Could not copy the ${what.toLowerCase()}`, true); } } }, 'Copy');
-      if (data.apply.user) {
-        const line = el('span', 'p-apply-login'); line.append(el('small', '', 'Username'), el('code', '', data.apply.user), copyBtn(data.apply.user, 'Username')); dd.append(line);
-      }
-      if (data.apply.password) {
-        const shown = el('code', '', '\u2022'.repeat(10));
-        let open = false;
-        const peek = h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { open = !open; shown.textContent = open ? data.apply.password : '\u2022'.repeat(10); peek.textContent = open ? 'Hide' : 'Show'; } }, 'Show');
-        const line = el('span', 'p-apply-login'); line.append(el('small', '', 'Password'), shown, peek, copyBtn(data.apply.password, 'Password')); dd.append(line);
-      }
-      d.append(el('dt', '', data.apply.via ? `Application link (through ${data.apply.via})` : 'Application link'), dd); facts.append(d);
-    }
     mid.append(facts);
     if (can()) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('message', null, true) }, 'Send a message'));
     if (can()) act.append(h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }, 'Edit details'));
@@ -205,28 +178,26 @@
       team.input.addEventListener('change', showGoes);
       showGoes();
       const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submit the application to Coventry University.' });
-      // How important it is, and what it is about, in one section (the owner, 15 Nov 2026): the tag is set by the system from the
-      // words, the team and the stage, shown here as it is typed; nobody has to pick it (press the tag on the task to correct it).
-      const guess = () => F.guessTaskTag(text.input.value, team.input.value, data.student.stage);
+      // How important it is, and what it is about: the tag is chosen by hand by whoever gives the task (NOC, Medical, Application,
+      // Documents and the rest), never set by the system (the owner, 15 Nov 2026).
       const prio = window.Portal.priorityPicker('high');
-      const auto = el('div', 'p-auto-tag');
-      const showTag = () => { const k = guess(); auto.replaceChildren(el('span', 'p-auto-label', 'Tag, set automatically:'), el('span', `td-tag tag-${k}`, window.Portal.tagLabel(k))); };
+      const tag = window.Portal.tagPicker('');
       const prioWrap = el('div', 'p-field p-wide');
-      prioWrap.append(el('span', 'p-label', 'How important is it?'), prio.node, auto);
-      text.input.addEventListener('input', showTag);
-      team.input.addEventListener('change', showTag);
-      showTag();
+      prioWrap.append(el('span', 'p-label', 'How important is it?'), prio.node);
+      const tagWrap = el('div', 'p-field p-wide');
+      tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Assign');
       ok.addEventListener('click', async () => {
         if (!team.input.value) { msg.textContent = 'Choose who should do it.'; msg.className = 'p-msg error'; return; }
         if (!text.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
+        if (!tag.value()) { msg.textContent = 'Choose what the task is about.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await save('tasks', { team: team.input.value, text: text.input.value, priority: prio.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        try { await save('tasks', { team: team.input.value, text: text.input.value, priority: prio.value(), tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, prioWrap);
+      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, tagWrap, prioWrap);
       body.append(g, msg, foot);
       setTimeout(() => text.input.focus(), 0);
     }).then((done) => { if (done) render(); });
@@ -476,11 +447,12 @@
     const q = field('Course name', { placeholder: 'e.g. Cyber Security, Nursing, Business', value: p.subject || '', max: 160 });
     q.input.type = 'search';
     const go = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Search');
-    form.append(lv.wrap, q.wrap, go);
+    // In the owner's order (15 Nov 2026): Study level, Course name, Remarks, then Search.
     const remarks = field('Remarks', { kind: 'area', wide: true, value: p.optionRemarks || '', max: 1500, disabled: lock, placeholder: 'e.g. Prefers Manchester or London, 5 options, 2 year study gap' });
     remarks.input.rows = 2;
+    form.append(lv.wrap, q.wrap, remarks.wrap, go);
     const out = el('div', 'p-option-results');
-    box.append(form, remarks.wrap, out);
+    box.append(form, out);
     wrap.append(box);
     let saved = JSON.stringify([p.studyLevel || '', p.subject || '', p.optionRemarks || '']);
     // What was searched and the remarks are kept on the card, only when something changed.

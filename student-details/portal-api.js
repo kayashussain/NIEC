@@ -35,30 +35,8 @@ function createPortalApi({
   insights = null, calculated = [], userMail = null, officeMailSettings = () => ({}), safetyCopy = () => null,
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
-  // The student's university is matched to a partner by name, ignoring case, spaces and punctuation; a partner name with a
-  // delivery partner in brackets ("Ulster University (QA)") also matches the plain name. Only these two fields leave
-  // Partner Universities (never the commission or the agreement), and a partner marked Ended is left out. The portal's
-  // login (username and password) goes only to Admin and the Application Team (partner-access.js), when they may work on the student.
+  // Names compared ignoring case, spaces, punctuation and a part in brackets ("Ulster University (QA)" is "Ulster University").
   const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, '');
-  // A student whose University Partner is one of the B2B partners is applied for through that partner: its portal or email wins.
-  function partnerRouteFor(partner, withLogin) {
-    const want = squash(partner);
-    if (!want || !b2b || !b2b.all) return null;
-    const hit = b2b.all().find((p) => p.status !== 'Ended' && (p.applyPortal || p.applyEmail) && squash(p.name) === want);
-    if (!hit) return null;
-    const route = { university: '', via: hit.name, portal: hit.applyPortal || '', email: hit.applyEmail || '' };
-    if (withLogin && hit.applyPortal) Object.assign(route, { user: hit.applyUser || '', password: hit.applyPassword || '' });
-    return route;
-  }
-  function applyRouteFor(university, withLogin) {
-    const want = squash(university);
-    if (!want || !direct || !direct.all) return null;
-    const hit = direct.all().find((u) => u.status !== 'Ended' && (u.applyPortal || u.applyEmail) && squash(u.name) === want);
-    if (!hit) return null;
-    const route = { university: hit.name, via: '', portal: hit.applyPortal || '', email: hit.applyEmail || '' };
-    if (withLogin && hit.applyPortal) Object.assign(route, { user: hit.applyUser || '', password: hit.applyPassword || '' });
-    return route;
-  }
 
   // ---- finding a student, and who may see or change them ----
   let indexed = { wb: null, map: new Map() };
@@ -104,7 +82,9 @@ function createPortalApi({
   const membersOf = (id) => {
     const list = accounts && accounts.people ? accounts.people() : [];
     if (id === HEAD) return list.filter((p) => p.access === 'Admin').map((p) => p.name);
-    return list.filter((p) => p.role !== 'admin' && (p.departments || []).includes(id) && (!p.taskTeam || p.taskTeam === id)).map((p) => p.name);
+    const inTeam = list.filter((p) => p.role !== 'admin' && (p.departments || []).includes(id));
+    const own = inTeam.filter((p) => !p.taskTeam || !(p.departments || []).includes(p.taskTeam) || p.taskTeam === id);
+    return (own.length ? own : inTeam).map((p) => p.name);
   };
   const TASK_TEAMS = () => [...Object.entries(Teams.DEPARTMENTS).map(([id, d]) => ({ id, label: d.label, members: membersOf(id) })), { id: HEAD, label: headLabel(), members: membersOf(HEAD) }];
   const teamLabel = (id) => (id === HEAD ? headLabel() : Teams.DEPARTMENTS[id] ? Teams.DEPARTMENTS[id].label : id);
@@ -117,13 +97,32 @@ function createPortalApi({
     if (Teams.isAdmin(user)) return TASK_TEAMS().filter((t) => t.id !== HEAD);
     if (Teams.isManager(user)) return TASK_TEAMS();
     if (Teams.isReadOnly(user)) return [];
-    return TASK_TEAMS().filter((t) => t.id === HEAD || (isBranchUser(user) && BRANCH_TASK_TEAMS.includes(t.id)));
+    // Every team gives tasks to every other team and to Admin (the owner, 15 Nov 2026: the Application Team could not give the Mock
+    // Team a task). A branch gives the Application Team and the Mock Team tasks about its students, as before.
+    if (isBranchUser(user)) return TASK_TEAMS().filter((t) => t.id === HEAD || BRANCH_TASK_TEAMS.includes(t.id));
+    return TASK_TEAMS().filter((t) => t.id === HEAD || !(Teams.DEPARTMENTS[t.id] && Teams.DEPARTMENTS[t.id].source));
   };
   // A task is for this person (their team's, or Admin's own); they gave it; and what is new on it for them (the red dots): the comments
   // the others wrote since they last read it (or since their own last comment), and a task given to them in the last 3 days not read yet.
   // The teams whose tasks this person gets: their own team (Users, "Their own team"), else every team they are in. A person in
   // the Application Team who also follows the Mock Team's students is not given the Mock Team's tasks (the owner, 15 Nov 2026).
-  const taskTeamsOf = (user) => (user && user.taskTeam && teamsOf(user).includes(user.taskTeam) ? [user.taskTeam] : teamsOf(user));
+  // A team that nobody has as their own team is not left without anyone: everyone in it gets its tasks (the owner, 15 Nov 2026: a task
+  // given to the Mock Team reached nobody when its only member had the Application Team as their own team).
+  const ownedTeams = () => {
+    const owned = new Set();
+    (accounts && accounts.people ? accounts.people() : []).forEach((p) => {
+      if (p.role === 'admin') return;
+      const ds = p.departments || [];
+      if (p.taskTeam && ds.includes(p.taskTeam)) owned.add(p.taskTeam); else ds.forEach((d) => owned.add(d));
+    });
+    return owned;
+  };
+  const taskTeamsOf = (user) => {
+    const all = teamsOf(user);
+    if (!(user && user.taskTeam && all.includes(user.taskTeam))) return all;
+    const owned = ownedTeams();
+    return [user.taskTeam, ...all.filter((d) => d !== user.taskTeam && !owned.has(d))];
+  };
   const forMe = (user, t) => taskTeamsOf(user).includes(t.team) || (t.team === HEAD && Teams.isAdmin(user));
   const gaveIt = (user, t) => Boolean(user && t.by && t.by === user.name);
   // A team the task was with before it was handed on: it still sees the task and can comment (the owner, 14 Nov 2026).
@@ -422,7 +421,11 @@ function createPortalApi({
     const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
     const now = dayNo(today);
     const kind = homeKind(user);
-    const space = WORKSPACES[kind] || WORKSPACES.team;
+    // A person in several teams: the lists of those teams only (the owner, 15 Nov 2026), not a mix that fits none of them.
+    const own = kind === 'team' ? teamsOf(user).map((d) => WORKSPACES[d]).filter(Boolean) : [];
+    const space = own.length > 1
+      ? { ...WORKSPACES.team, title: own.map((w) => w.title).join(' and '), sections: [...new Set(own.flatMap((w) => w.sections))], tiles: [...new Set(own.flatMap((w) => w.tiles.slice(0, 2)))].slice(0, 3) }
+      : (WORKSPACES[kind] || WORKSPACES.team);
     const sections = [
       { key: 'inquiries', title: 'Inquiries to follow up', hint: 'No contact in the last 3 days', stage: 'Inquiry', rows: [] },
       { key: 'defer', title: 'Deferred students to check', hint: 'Deferred and not contacted for 14 days', stage: 'Defer', rows: [] },
@@ -536,9 +539,23 @@ function createPortalApi({
     contactedWeek: ['Contacted this week', 'A note or a message in 7 days'], deferred: ['Deferred students', 'To bring back'],
     active: ['Students in progress', 'Not left, no visa yet'], visas: ['Visas issued', 'In this intake'],
   };
+  // A person in several teams (and no own team chosen) sees only what their teams do, put together: each team's own figures, the
+  // week and the stages of those teams, never every stage of the consultancy (the owner, 15 Nov 2026).
+  const teamsPlan = (user) => {
+    const plans = teamsOf(user).map((d) => MY_DASH[d]).filter(Boolean);
+    if (plans.length < 2) return MY_DASH.team;
+    const uniq = (list, key = (x) => x) => list.filter((x, i) => list.findIndex((y) => key(y) === key(x)) === i);
+    const each = Math.max(2, Math.floor(4 / plans.length));
+    return {
+      title: plans.map((p) => p.title).join(' and '), lead: 'The work of your teams, together.',
+      kpis: uniq(plans.flatMap((p) => p.kpis.slice(0, each))).slice(0, 6),
+      week: uniq(plans.flatMap((p) => p.week), (w) => w[0]).slice(0, 4),
+      stages: Teams.ALL_STATUSES.filter((st) => plans.some((p) => p.stages.includes(st))),
+    };
+  };
   function myDashboard(user) {
     const kind = homeKind(user);
-    const plan = MY_DASH[kind] || MY_DASH.team;
+    const plan = kind === 'team' ? teamsPlan(user) : (MY_DASH[kind] || MY_DASH.team);
     const today = cards.today();
     const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
     const now = dayNo(today);
@@ -559,7 +576,7 @@ function createPortalApi({
     const wins = []; const upcoming = [];
     const seen = new Set(students.map((x) => x.row._id));
     const intakeSheet = currentIntake();
-    const scope = ['application', 'mock', 'followup'].includes(kind) && intakeSheet
+    const scope = ['application', 'mock', 'followup', 'team'].includes(kind) && intakeSheet
       ? intakeSheet.rows.filter((r) => r && r._id && isStudent(r)).map((row) => ({ sheet: intakeSheet, row })) : students;
     for (const { sheet, row } of scope) {
       const mineToName = seen.has(row._id);
@@ -610,6 +627,9 @@ function createPortalApi({
       stages: [...stageCount.entries()].map(([stage, count]) => ({ stage, count })),
       stagesNote: scope === students ? 'Your students, by stage.' : 'Everyone in this intake, by stage (the numbers only).',
       tasks: { open, doneWeek },
+      // What waits for the team now, the same lists as Needs attention on Today (the owner, 15 Nov 2026: the dashboard of a team
+      // should show only what is theirs to do).
+      todo: t.sections.filter((x) => x.count).map((x) => ({ key: x.key, title: x.title, hint: x.hint, count: x.count, students: x.students.slice(0, 3).map((r) => ({ id: r.id, name: r.name, detail: r.detail })) })),
       upcoming: upcoming.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8),
       wins: wins.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8),
     };
@@ -672,7 +692,6 @@ function createPortalApi({
           me: { name: req.user.name, role: req.user.role },
           event: (() => { const e = eventOf(card.profile.sourceDetail); return e ? { name: e.name, kind: e.kind || 'Event', type: e.type, place: e.place, date: e.date, endDate: e.endDate } : null; })(),
           mail: mailInfo(req.user),
-          apply: partnerRouteFor(found.row['UNIVERSITY PARTNER'], editable && seesLogins(req.user)) || applyRouteFor(found.row['UNIVERSITY NAME'], editable && seesLogins(req.user)),
           today: cards.today(),
         });
         return true;

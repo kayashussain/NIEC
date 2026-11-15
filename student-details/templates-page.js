@@ -108,24 +108,18 @@
     if (!data.canEdit) { ed.querySelectorAll('input, textarea, select, button').forEach((x) => { x.disabled = true; }); }
   }
 
-  // The company (the owner, 14 Nov 2026): no typed email signature here any more (each person's email ends with the signature picture
-  // they upload on Your email and signature). Only the consultancy's name, used across ISR and in the messages, and the office copy.
-  function signature() {
-    const s = data.signature;
-    const fields = {};
-    const make = (k, label, ph) => { fields[k] = field(label, { value: s[k], max: 200, placeholder: ph || '' }); return fields[k].wrap; };
-    const co = panel('The company', 'Its name is used across ISR and in the messages ({company_name} and {company_short}).');
-    const g2 = el('div', 'p-form p-form-2'); g2.append(make('company', 'Company name'), make('short', 'Short name')); co.append(g2);
-    const copyBox = el('label', 'p-check');
-    const c = el('input'); c.type = 'checkbox'; c.checked = s.copyToOffice !== false;
-    copyBox.append(c, el('span', '', 'Send the office mailbox a copy of every email, so it is found there with the student\'s replies'));
-    co.append(copyBox);
-    const bar = el('div', 'tp-savebar');
-    const save = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
-    save.addEventListener('click', async () => { try { await api('/api/templates/signature', { ...Object.fromEntries(Object.entries(fields).map(([k, x]) => [k, x.input.value])), copyToOffice: c.checked }); say('Saved'); } catch (e) { say(e.message, true); } });
-    bar.append(save);
-    $('sig').replaceChildren(co, ...(data.canEdit ? [bar] : []));
-    if (!data.canEdit) $('sig').querySelectorAll('input').forEach((x) => { x.disabled = true; });
+  // No Company tab (the owner, 15 Nov 2026): every email ends with the sender's own signature picture (Your email and signature),
+  // so the company name and short name are not asked here; the stored name still fills {company_name} and {company_short}. Only
+  // the office copy is kept, as one line for Admin.
+  function officeCopy() {
+    const s = data.signature || {};
+    const box = el('label', 'p-check');
+    const c = el('input'); c.type = 'checkbox'; c.checked = s.copyToOffice !== false; c.disabled = !data.canEdit;
+    box.append(c, el('span', '', 'Send the office mailbox a copy of every email, so it is found there with the student\'s replies'));
+    c.addEventListener('change', async () => {
+      try { await api('/api/templates/signature', { copyToOffice: c.checked }); s.copyToOffice = c.checked; say('Saved'); } catch (e) { c.checked = !c.checked; say(e.message, true); }
+    });
+    $('officeCopy').replaceChildren(box);
   }
 
   async function load(key) {
@@ -137,7 +131,7 @@
       : data.mail.own ? 'Set up your email first (Your email and signature, top right). WhatsApp opens in your own app.'
         : 'Email is not set up on this server: a preview is kept on the card. WhatsApp opens in your own app.';
     list();
-    signature();
+    officeCopy();
     const old = $('bringBack'); if (old) old.remove();
     if (data.hiddenCount && data.canEdit) {
       const back = h('button', { class: 'btn', type: 'button', id: 'bringBack' }, `Bring back ${data.hiddenCount} deleted`);
@@ -149,12 +143,6 @@
     if (t) { openKey = t.key; list(); edit(t); } else $('editor').replaceChildren(el('p', 'p-muted', 'No template yet.'));
   }
 
-  // The two tabs: Templates and Company.
-  document.querySelectorAll('.tp-page [role="tab"]').forEach((b) => b.addEventListener('click', () => {
-    document.querySelectorAll('.tp-page [role="tab"]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
-    $('viewTemplates').hidden = b.dataset.view !== 'templates';
-    $('viewSignature').hidden = b.dataset.view !== 'signature';
-  }));
   $('tpSearch').addEventListener('input', () => data && list());
   $('addTemplate').addEventListener('click', () => dialog('New template', (body, close) => {
     const name = field('Name', { max: 80, placeholder: 'e.g. Scholarship deadline reminder' });

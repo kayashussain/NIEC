@@ -86,6 +86,24 @@
       el('span', 'md-taskline-go', 'Open on Today'));
     page.append(tk);
 
+    // What waits for the team now: one row per kind of work, the count and the first students, each opening their card.
+    if (d.todo && d.todo.length) {
+      const c = card('To do now', 'What is waiting for your team, the longest waiting first.', 'md-todo');
+      const list = el('div', 'md-todo-list');
+      d.todo.forEach((x) => {
+        const row = el('div', 'md-todo-row');
+        const words = el('div', 'md-todo-words');
+        words.append(el('b', '', x.title), el('small', '', x.hint));
+        const names = el('div', 'md-todo-names');
+        x.students.forEach((r) => { const a = h('a', { class: 'md-todo-name', href: '/student?id=' + encodeURIComponent(r.id), title: r.detail || 'Open the student card' }, r.name); names.append(a); });
+        if (x.count > x.students.length) names.append(el('span', 'md-todo-more', `+${num(x.count - x.students.length)} more`));
+        words.append(names);
+        row.append(el('span', 'md-todo-n', num(x.count)), words);
+        list.append(row);
+      });
+      c.append(list);
+      page.append(c);
+    }
     const grid = el('div', 'md-grid');
     grid.append(weekCard(d.week), stagesCard(d.stages, d.stagesNote),
       peopleCard('Coming up', 'The next 7 days.', d.upcoming, 'Nothing booked for the next 7 days.', (r) => el('span', 'md-date', shortDay(r.date))),

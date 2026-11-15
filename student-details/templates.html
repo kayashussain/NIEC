@@ -25,10 +25,7 @@
       <div class="p-actions" id="actions"><a class="btn" href="/my-email">Your email and signature</a><button class="btn btn-primary" type="button" id="addTemplate">+ New template</button></div>
     </div>
     <div class="tp-note" id="mailNote" hidden></div>
-    <div class="p-tabs" role="tablist" aria-label="Message templates">
-      <button type="button" role="tab" data-view="templates" aria-selected="true">Templates</button>
-      <button type="button" role="tab" data-view="signature" aria-selected="false">Company</button>
-    </div>
+    <div id="officeCopy"></div>
     <div class="tp-layout" id="viewTemplates">
       <aside class="tp-side">
         <input class="tp-search" id="tpSearch" type="search" placeholder="Search templates" aria-label="Search templates" />
@@ -36,7 +33,6 @@
       </aside>
       <section id="editor"><p class="p-muted">Choose a template to edit it.</p></section>
     </div>
-    <section class="tp-panel" id="viewSignature" hidden><div id="sig"></div></section>
   </main>
 <script src="session.js"></script>
 <script src="ui.js"></script>
