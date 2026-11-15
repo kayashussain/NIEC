@@ -129,3 +129,22 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 403);
   assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200, 'the branch removes the task it gave');
 });
+
+// The Mock Team never sees a portal login (the owner, 15 Nov 2026: a Mock Team person also given the Application Team's students saw
+// every password). The page is told only that a login exists, so it can say "you do not have access".
+test('portal logins: a Mock Team person never sees them, even with the Application Team ticked too, unless that is their own team', () => {
+  const { seesLogins, partnerAccess, shapeDirect, shapePartner } = require('../student-details/partner-access');
+  const person = (departments, taskTeam = '') => ({ role: 'staff', departments, taskTeam });
+  assert.strictEqual(seesLogins(person(['application'])), true, 'the Application Team');
+  assert.strictEqual(seesLogins(person(['mock'])), false, 'the Mock Team');
+  assert.strictEqual(seesLogins(person(['application', 'mock'])), false, 'in both, no own team chosen');
+  assert.strictEqual(seesLogins(person(['application', 'mock'], 'mock')), false, 'in both, the Mock Team their own');
+  assert.strictEqual(seesLogins(person(['application', 'mock'], 'application')), true, 'in both, the Application Team their own');
+  assert.strictEqual(partnerAccess(person(['application', 'mock'], 'mock')).b2b, 'team', 'and does not set B2B partners up');
+  const uni = { name: 'Example University', applyPortal: 'https://apply.example.org', applyUser: 'u1', applyPassword: 'p1', slabs: ['UG 15%'], paymentTerms: 'March' };
+  const seen = shapeDirect(uni, 'team', false);
+  assert.deepStrictEqual([seen.applyUser, seen.applyPassword, seen.slabs, seen.paymentTerms, seen.loginHidden, seen.applyPortal], [undefined, undefined, undefined, undefined, true, 'https://apply.example.org']);
+  const partner = shapePartner({ name: 'Example Partner', applyPortal: 'https://p.example.org', applyPassword: 'p2', commissions: [{ intake: 'x' }] }, 'team', false);
+  assert.deepStrictEqual([partner.applyPassword, partner.commissions, partner.loginHidden], [undefined, undefined, true]);
+  assert.strictEqual(shapeDirect({ name: 'No login', applyPortal: 'https://x.example.org' }, 'team', false).loginHidden, undefined, 'nothing to hide, nothing said');
+});

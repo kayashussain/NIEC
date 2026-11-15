@@ -401,6 +401,32 @@
   // when, in small grey type. The updates open under the task.
   //   o: { rowId, me, teams, mayTick, tickTitle, canWrite, canChange, unread, stage, student: { name, href } | null, fromName,
   //        toName, actions: [[label, onClick, danger]], onTick: async (done) => {}, onChanged }
+  // The "Mark as done?" window: the task, one optional line on what was done, and the sheet shortcut when it applies. Resolves
+  // { text, submitted } or null when Not yet is pressed.
+  function doneDialog(t, o) {
+    let answer = null;
+    return dialog('Mark as done?', (body, close) => {
+      const who = o.fromName === 'You' ? 'you see' : (o.fromName || 'whoever gave it') + ' sees';
+      body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}\u201c${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}\u201d`));
+      const words = field('What was done? (optional)', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submitted to Coventry University, MSc Data Science. Application ID 12345.' });
+      words.input.rows = 2;
+      body.append(words.wrap);
+      let sub = null;
+      if (o.offerSubmitted) {
+        const box = el('label', 'p-check td-done-sheet');
+        sub = el('input'); sub.type = 'checkbox';
+        box.append(sub, el('span', '', 'Also write today as Application submitted on All Students'));
+        body.append(box);
+      }
+      body.append(el('p', 'p-muted p-small', `It moves to Done, ${who} that it is done, and it stays in the student's History.`));
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Yes, it is done');
+      ok.addEventListener('click', () => { answer = { text: words.input.value.trim(), submitted: Boolean(sub && sub.checked) }; close(true); });
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Not yet'), ok);
+      body.append(foot);
+      setTimeout(() => words.input.focus(), 0);
+    }).then(() => answer);
+  }
   function taskCard(t, o) {
     const r = el('div', `td-task${t.done ? ' is-done' : ''}${o.unread ? ' has-unread' : ''}`);
     r.dataset.taskId = t.id;
@@ -408,8 +434,21 @@
     const tick = h('button', { class: 'td-check', type: 'button', 'aria-pressed': String(t.done), title: o.mayTick ? (t.done ? 'Mark as not done' : 'Mark as done') : (o.tickTitle || ''), 'aria-label': t.done ? 'Mark as not done' : 'Mark as done', disabled: !o.mayTick });
     tick.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     tick.addEventListener('click', async () => {
-      // Done is asked once more (the owner, 15 Nov 2026), so a task is never ticked by a slip of the mouse.
-      if (!t.done && root.NiecUI && !(await root.NiecUI.confirm(`${o.student ? niceName(o.student.name) + ': ' : ''}\u201c${t.text.length > 120 ? t.text.slice(0, 117) + '...' : t.text}\u201d\n\nIs this task finished? It moves to Done and ${o.fromName === 'You' ? 'you see' : (o.fromName || 'whoever gave it') + ' sees'} that it is done.`, { title: 'Mark as done?', confirmText: 'Yes, it is done', cancelText: 'Not yet' }))) return;
+      // Done is asked once more (the owner, 15 Nov 2026), so a task is never ticked by a slip of the mouse. The same window takes, if
+      // wanted, one line on what was done (it becomes the task's last update, so it is in the student's History) and, for an
+      // application task on a student not marked submitted yet, today's date in Application submitted on All Students, so the team
+      // writes it once instead of in the notes, the task and the sheet (the owner, 15 Nov 2026).
+      if (!t.done && root.NiecUI) {
+        const said = await doneDialog(t, o);
+        if (!said) return;
+        try {
+          if (said.text) await api(`/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`, { comment: said.text });
+          if (said.submitted) {
+            const out = await api(`/api/cards/${encodeURIComponent(o.rowId)}/sheet`, { fields: { 'APPLICATION SUBMISSION DATE': o.today || new Date().toISOString().slice(0, 10) } }).catch((e) => ({ error: e.message }));
+            if (out && out.error) root.NiecUI.toast(`The task is done, but Application submitted could not be written: ${out.error}`, { type: 'error' });
+          }
+        } catch (e) { root.NiecUI.toast(e.message, { type: 'error' }); return; }
+      }
       tick.disabled = true;
       // The circle turns blue with a tick and the row folds away, and only then is the list redrawn (the next task never jumps).
       const quick = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;

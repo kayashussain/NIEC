@@ -42,6 +42,8 @@
     return window.Portal.taskCard(t, {
       rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true, today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
+      // Ticking an application task on a student not marked submitted offers today's date for Application submitted.
+      offerSubmitted: tagOf(t, t.stage) === 'application' && !t.appSubmitted && !t.done,
       canChange: t.forMe || t.by === me || canAssignAll,
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [

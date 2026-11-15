@@ -10,7 +10,8 @@
   let data = null; // { student, card, can, me, mail, today }
     let templates = [];
   let lists = { sourceOptions: {}, partners: [] };
-    let showAllNotes = false;
+  let showAllNotes = false;
+  let historyFilter = 'all'; // the student's History: everything, the notes only, or the tasks only
   const TABS = [['details', 'Notes'], ['options', 'University options'], ['message', 'Send a message']];
   let tab = (location.hash || '#details').slice(1);
   const view = document.getElementById('view');
@@ -228,6 +229,7 @@
       const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
       list.append(window.Portal.taskCard(t, {
         rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0, today: data.today,
+        offerSubmitted: window.Portal.tagOf(t, data.student.stage) === 'application' && !String(data.student.row['APPLICATION SUBMISSION DATE'] || '').trim() && !t.done,
         canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
         actions: [
@@ -331,7 +333,7 @@
   // a team about a piece of work is in the comments of its task.
   function notes() {
     const wrap = el('section', 'p-card');
-    wrap.append(el('h2', '', 'Notes'));
+    wrap.append(el('h2', '', 'Notes and history'));
     // No sentence under the title (the owner, 15 Nov 2026: only what is needed).
     if (can()) {
       const box = el('div', 'p-note-box');
@@ -351,22 +353,57 @@
       box.append(text, bar);
       wrap.append(box);
     }
+    // The student's History (the owner, 15 Nov 2026): the notes and, without anyone typing them again, every task about the student:
+    // who gave it to which team, each update, a reassignment or a move to another day, and who marked it done. Newest first.
+    const short = (t) => (t.length > 70 ? t.slice(0, 67) + '...' : t);
+    const teamName = (id) => (((data.taskTeams || []).find((x) => x.id === id) || {}).label || id).replace(/\s*\(.*\)$/, '');
+    const events = data.card.notes.map((n) => ({ kind: 'note', at: n.at, by: n.by, text: n.text, note: n }));
+    (data.card.tasks || []).forEach((t) => {
+      const tag = window.Portal.tagOf(t, data.student.stage);
+      events.push({ kind: 'task', at: t.at, by: t.by, title: `Gave ${teamName(t.team)} a task`, text: t.text, tag });
+      (t.comments || []).forEach((c) => {
+        if (c.handoff) events.push({ kind: 'task', at: c.at, by: c.by, title: `Reassigned “${short(t.text)}”: ${teamName(c.handoff.from)} → ${teamName(c.handoff.to)}`, text: c.text || '' });
+        else if (c.schedule) events.push({ kind: 'task', at: c.at, by: c.by, title: c.schedule.to ? `Moved “${short(t.text)}” to ${window.Portal.dayLabel(c.schedule.to, data.today)}` : `Moved “${short(t.text)}” back to today`, text: c.text || '' });
+        else if (c.text) events.push({ kind: 'update', at: c.at, by: c.by, title: `Update on “${short(t.text)}”`, text: c.text });
+      });
+      if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, title: `Done: “${short(t.text)}”`, text: '' });
+    });
+    events.sort((x, y) => String(y.at).localeCompare(String(x.at)));
+    const nTasks = events.filter((e) => e.kind !== 'note').length;
+    if (nTasks && events.length > nTasks) {
+      const seg = el('div', 'p-history-filter');
+      seg.setAttribute('role', 'tablist');
+      [['all', 'Everything'], ['note', 'Notes'], ['task', 'Tasks']].forEach(([k, label]) => {
+        const b = h('button', { class: 'td-filter-pill', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label);
+        b.addEventListener('click', () => { historyFilter = k; render(); });
+        seg.append(b);
+      });
+      wrap.append(seg);
+    }
+    const all = events.filter((e) => historyFilter === 'all' || (historyFilter === 'note' ? e.kind === 'note' : e.kind !== 'note'));
     const list = el('ol', 'p-timeline');
-    const all = [...data.card.notes].reverse();
-    const items = showAllNotes ? all : all.slice(0, 4);
+    const items = showAllNotes ? all : all.slice(0, 6);
     const remark = data.student.remarks;
-    if (!all.length && !remark) list.append(el('li', '', 'No notes yet.'));
-    items.forEach((n) => {
-      const li = el('li');
+    if (!all.length && !remark) list.append(el('li', '', 'Nothing yet.'));
+    items.forEach((e) => {
+      const li = el('li', e.kind === 'note' ? '' : `p-history-${e.kind}`);
       const head = el('div', 'p-when');
-      head.append(el('b', '', n.by || 'Someone'), el('span', '', when(n.at)));
-      if (can() && (n.by === data.me.name || data.can.removeAnyNote)) head.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'));
-      li.append(head, el('p', '', n.text));
+      head.append(el('b', '', e.by || 'Someone'), el('span', '', when(e.at)));
+      if (e.kind === 'note') {
+        const n = e.note;
+        if (can() && (n.by === data.me.name || data.can.removeAnyNote)) head.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'));
+        li.append(head, el('p', '', e.text));
+      } else {
+        head.append(el('span', `p-history-chip is-${e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : 'Task'));
+        li.append(head, el('p', 'p-history-title', e.title));
+        if (e.text) li.append(el('p', '', e.text));
+        if (e.tag) li.lastChild.prepend(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' ');
+      }
       list.append(li);
     });
-    if (remark) { const li = el('li'); li.append(el('div', 'p-when'), el('p', '', remark)); li.firstChild.append(el('b', '', 'Earlier remark from the sheet')); list.append(li); }
+    if (remark && historyFilter !== 'task') { const li = el('li'); li.append(el('div', 'p-when'), el('p', '', remark)); li.firstChild.append(el('b', '', 'Earlier remark from the sheet')); list.append(li); }
     wrap.append(list);
-    if (all.length > 4) wrap.append(h('button', { class: 'p-link', type: 'button', style: 'margin-top:8px', onclick: () => { showAllNotes = !showAllNotes; render(); } }, showAllNotes ? 'Show fewer' : `Show all ${all.length} notes`));
+    if (all.length > 6) wrap.append(h('button', { class: 'p-link', type: 'button', style: 'margin-top:8px', onclick: () => { showAllNotes = !showAllNotes; render(); } }, showAllNotes ? 'Show fewer' : `Show all ${all.length}`));
     return wrap;
   }
 

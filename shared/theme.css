@@ -2408,3 +2408,17 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-dialog-body .td-card, .tb-dialog-body > article { box-shadow: none; }
 @media (max-width: 700px) { .tb-board { grid-auto-columns: 84%; } .tb-layout { margin-left: 0; } }
 @media (prefers-reduced-motion: reduce) { .tb-tile { animation: none; transition: none; } .tb-tile:hover { transform: none; } .tb-col-bar i { transition: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-15): the student's Notes become "Notes and history", the Mark as done window, a held-back password | from: Notes listed only the notes typed by hand; ticking a task asked a plain yes or no; a team without access saw no password line at all | to: the notes and every task event in one timeline, newest first; a task event has a small coloured word after the name and time ("Task" in blue, "Update" in grey, "Done" in green), the event in semibold ("Gave Mock Team a task", "Update on ...", "Done: ...") and the task's tag pill; three pills above (Everything, Notes, Tasks) when there are both; the Mark as done window shows the task in a soft grey box, a two-line "What was done? (optional)" box and, for an application, a tick box to write today as Application submitted; on the partner pages a "Password" line with grey dots and a dimmed eye for those who may not see it */
+.p-history-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.p-history-chip { padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
+.p-history-chip.is-task { background: #e6f0fc; color: #0058b0; }
+.p-history-chip.is-update { background: #ececf0; color: #515154; }
+.p-history-chip.is-done { background: #e3f5e8; color: #1f7a35; }
+.p-history-title { margin: 2px 0 0; color: #1d1d1f; font-weight: 600; }
+.p-timeline li.p-history-update > p:last-child, .p-timeline li.p-history-task > p:last-child:not(.p-history-title) { color: #3a3a3c; }
+.p-timeline .td-tag { font-size: 12px; }
+.td-done-task { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: #f0f0f3; color: #1d1d1f; font-size: 15px; line-height: 1.45; }
+.td-done-sheet { margin: 4px 0 6px; }
+.bp-value.bp-locked { color: #8e8e93; letter-spacing: .05em; }
+.bp-icon.is-locked { opacity: .5; }

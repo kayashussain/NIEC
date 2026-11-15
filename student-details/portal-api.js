@@ -735,6 +735,13 @@ function createPortalApi({
         }
         if (del) {
           if (!canAssign(req.user) && !gaveIt(req.user, task)) { sendJSON(res, 403, { error: 'Only Admin, the Manager or whoever gave the task removes it.' }); return true; }
+          // A removed task that had work on it stays in the student's History as one note (the owner, 15 Nov 2026: what was given,
+          // by whom and what was done is always kept on the student).
+          const said = (task.comments || []).filter((c) => text(c.text)).map((c) => `${c.by || 'Someone'}: ${text(c.text)}`);
+          if (said.length || task.done) {
+            const words = `Task removed (given by ${task.by || 'someone'} to ${teamLabel(task.team)}${task.done ? ', it was done' : ''}): ${task.text}${said.length ? `\nUpdates: ${said.join(' | ')}` : ''}`;
+            cards.addNote(rowId, { kind: 'note', text: words.slice(0, 3900) }, by(req));
+          }
           out = cards.removeTask(rowId, sub, by(req));
           if (!out.error) note(req, [`${who2}: removed the task for ${teamLabel(task.team)}`], 'Removed a task');
         } else if (body.handTo !== undefined) {
@@ -1962,7 +1969,7 @@ function createPortalApi({
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
           if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
-          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
+          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, appSubmitted: Boolean(text(row['APPLICATION SUBMISSION DATE'])) });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

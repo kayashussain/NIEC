@@ -142,6 +142,11 @@
         const shown = el('code', 'bp-value', dots);
         const peek = iconBtn('eye', 'Show the password', () => { const showing = shown.textContent !== dots; shown.textContent = showing ? dots : u.applyPassword; peek.classList.toggle('is-on', !showing); peek.title = showing ? 'Show the password' : 'Hide the password'; peek.setAttribute('aria-label', peek.title); });
         box.append(line('Password', shown, peek, copy(u.applyPassword, 'Password')));
+      } else if (u.loginHidden) {
+        // The login is held back from this account (the Mock Team, a branch ...): the eye says so instead of showing it.
+        const locked = iconBtn('eye', 'Show the password', () => window.NiecUI.toast('You do not have access to see the portal login. Only Admin and the Application Team do.', { type: 'error' }));
+        locked.classList.add('is-locked');
+        box.append(line('Password', el('code', 'bp-value bp-locked', '\u2022'.repeat(10)), locked));
       }
     } else if (u.applyEmail) {
       const top = el('div', 'bp-submit-top');
@@ -252,7 +257,7 @@
     s1.append(g1, campusHead, campuses.node);
 
     // 2. Application submission: one box, a link or an email; the login only for a link.
-    const s2 = step(2, 'Application submission', 'Paste the portal link or the email address applications go to. For a portal, add the login details your team uses. The team sees them on the list and on every student\'s card for this university.');
+    const s2 = step(2, 'Application submission', 'Paste the portal link or the email address applications go to. For a portal, add the login details your team uses. Only Admin and the Application Team see the login.');
     f.apply = text(uni.applyPortal || uni.applyEmail, 600, 'e.g. https://apply.university.ac.uk  or  admissions@university.ac.uk');
     f.apply.inputMode = 'url';
     const kind = el('span', 'pu-kind');

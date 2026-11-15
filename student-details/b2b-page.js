@@ -175,6 +175,11 @@
         const shown = el('code', 'bp-value', dots);
         const peek = iconBtn('eye', 'Show the password', () => { const showing = shown.textContent !== dots; shown.textContent = showing ? dots : p.applyPassword; peek.classList.toggle('is-on', !showing); peek.title = showing ? 'Show the password' : 'Hide the password'; peek.setAttribute('aria-label', peek.title); });
         box.append(line('Password', shown, peek, copy(p.applyPassword, 'Password')));
+      } else if (p.loginHidden) {
+        // The login is held back from this account (the Mock Team, a branch ...): the eye says so instead of showing it.
+        const locked = iconBtn('eye', 'Show the password', () => window.NiecUI.toast('You do not have access to see the portal login. Only Admin and the Application Team do.', { type: 'error' }));
+        locked.classList.add('is-locked');
+        box.append(line('Password', el('code', 'bp-value bp-locked', '\u2022'.repeat(10)), locked));
       }
     } else if (p.applyEmail) {
       const top = el('div', 'bp-submit-top');
@@ -360,7 +365,7 @@
 
     let apply = null; let applyUser = null; let applyPassword = null;
     if (KIND === 'b2b') {
-      const s2 = step(++n, 'Application submission', 'The portal link or email. The team sees it on each student card.');
+      const s2 = step(++n, 'Application submission', 'The portal link or email. Only Admin and the Application Team see the login.');
       apply = field('Portal link or email', { value: p.applyPortal || p.applyEmail, max: 600, wide: true, placeholder: 'e.g. https://portal.partner.com  or  applications@partner.com' });
       const kind = el('span', 'bp-kind');
       apply.wrap.append(kind);
