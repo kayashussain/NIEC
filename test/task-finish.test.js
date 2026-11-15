@@ -54,6 +54,9 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   assert.strictEqual((await finish(a2, { submitted: true, date: today, university: 'Backup University' })).status, 200);
   assert.strictEqual((await row())['APPLICATION SUBMISSION DATE'], add(-1), 'the first date stays');
   assert.match((await notes()).join('\n'), /to Backup University\. \(Another application: the first was submitted on/);
+  // Both applications are in the student's University options with their own dates.
+  const opts = (await admin('GET', `/api/cards/${id}`)).json.card.options.map((o) => [o.university, o.applied]);
+  assert.deepStrictEqual(opts.sort(), [['Backup University', today], ['Example University', add(-1)]]);
 
   // NOC: Pending, then Submitted with its number.
   const n1 = await give('Make the NOC account', 'noc');
@@ -96,6 +99,27 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   assert.strictEqual((await finish(v2, { step: 'casRequested', date: today })).status, 200);
   assert.strictEqual((await row())['APPLICATION STATUS'], 'CAS Issued', 'the stage never moves back');
   assert.match((await notes()).join('\n'), /CAS received on .*\. Stage moved to CAS Issued\./);
+
+  // Guards: a NOC already Submitted never goes back to Pending; the sheet's Remarks shows the latest progress line, but a remark a
+  // person typed is never overwritten.
+  const n3 = await give('Check the NOC', 'noc');
+  assert.strictEqual((await finish(n3, { noc: 'Pending' })).status, 200);
+  assert.strictEqual((await row()).NOC, 'Submitted', 'never back to Pending');
+  assert.match((await row()).REMARKS, /NOC submitted/, 'Remarks shows the latest progress');
+  const wb = (await admin('GET', '/api/data')).json;
+  wb.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) r.REMARKS = 'Typed by the counsellor'; }));
+  assert.strictEqual((await admin('POST', '/api/data', { baseRevision: wb.revision, sheets: wb.sheets, activeSheetId: wb.activeSheetId })).status, 200);
+  const o2 = await give('Send the checklist', 'documents');
+  assert.strictEqual((await finish(o2, { note: 'Checklist sent on WhatsApp' })).status, 200);
+  assert.strictEqual((await row()).REMARKS, 'Typed by the counsellor', 'a typed remark stays');
+  assert.match((await notes()).join('\n'), /Checklist sent on WhatsApp/);
+  // An application cannot be submitted after the offer on the sheet.
+  const id2 = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Hari', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000072' } })).json.id;
+  const wb2 = (await admin('GET', '/api/data')).json;
+  wb2.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id2) r['OFFER RECEIVED DATE'] = add(-5); }));
+  await admin('POST', '/api/data', { baseRevision: wb2.revision, sheets: wb2.sheets, activeSheetId: wb2.activeSheetId });
+  const late = (await admin('POST', `/api/cards/${id2}/tasks`, { team: 'application', text: 'Submit late', tag: 'application' })).json.card.tasks[0].id;
+  assert.strictEqual((await app('POST', `/api/cards/${id2}/tasks/${late}`, { done: true, finish: { submitted: true, date: today } })).status, 400, 'not after the offer');
 
   // A task with no answers is simply done, as before; the Application Team may now fill in the Medical Report on the sheet.
   const o1 = await give('Call the student', 'other');

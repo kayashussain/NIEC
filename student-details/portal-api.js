@@ -400,6 +400,7 @@ function createPortalApi({
   //                the stage moves on with it (CAS Issued, Visa Lodge, Visa Issued), never back.
   // Every answer is also one note on the student, in plain words. Only these columns are written, by whoever may tick the task,
   // whatever the student's stage.
+  const row0 = (rowId) => ((rowIndex().get(rowId) || {}).row || {});
   const SYSTEM_REQ = { headers: {}, socket: {}, user: { id: 'system', name: 'ISR (automatic)', label: 'ISR (automatic)', role: 'admin' } };
   function writeColumnsFor(req, rowId, changes) {
     const wb = getWorkbook();
@@ -428,15 +429,21 @@ function createPortalApi({
       // Any value already there stays (also one typed in another form): a second application is kept in the notes only.
       const hadRaw = text(row['APPLICATION SUBMISSION DATE']);
       const had = realDay(hadRaw) || hadRaw;
+      const offer = realDay(row['OFFER RECEIVED DATE']);
+      if (!hadRaw && offer && offer < d) return { error: `The offer came on ${niceDay(offer)}: the application was submitted before that.` };
       if (!hadRaw) plan.columns['APPLICATION SUBMISSION DATE'] = d;
+      plan.applied = uni ? { university: uni, date: d } : null;
       plan.note = `Application submitted on ${niceDay(d)}${uni ? ` to ${uni}` : ''}.${hadRaw ? ` (Another application: the first was submitted on ${/^\d{4}-\d{2}-\d{2}$/.test(had) ? niceDay(had) : had}, which stays in Application submitted.)` : ''} ${sentence(note)}`.trim();
     } else if (kind === 'noc' && f.noc) {
       const status = f.noc === 'Submitted' ? 'Submitted' : f.noc === 'Pending' ? 'Pending' : '';
       if (!status) return { error: 'Choose Pending or Submitted for the NOC.' };
       const number = text(f.nocNumber).slice(0, 60);
-      plan.columns.NOC = status;
+      // A NOC already Submitted never goes back to Pending; a new number replaces the old one, which the note keeps.
+      const was = text(row.NOC);
+      if (!(status === 'Pending' && was === 'Submitted')) plan.columns.NOC = status;
+      const oldNo = text(row['NOC NUMBER']);
       if (number) plan.columns['NOC NUMBER'] = number;
-      plan.note = `NOC ${status === 'Submitted' ? 'submitted' : 'pending (not submitted yet)'}${number ? `, NOC number ${number}` : ''}. ${sentence(note)}`.trim();
+      plan.note = `NOC ${status === 'Submitted' || was === 'Submitted' ? 'submitted' : 'pending (not submitted yet)'}${number ? `, NOC number ${number}` : ''}${number && oldNo && oldNo !== number ? ` (was ${oldNo})` : ''}. ${sentence(note)}`.trim();
     } else if (kind === 'mock' && f.scheduled) {
       const d = day(f.date);
       if (!d) return { error: 'Choose the day of the mock interview.' };
@@ -504,8 +511,12 @@ function createPortalApi({
       if (!m || m.done || m.date > today) return;
       const found = rowIndex().get(rowId);
       if (found && text(found.row['MEDICAL REPORT']) !== 'Received') {
-        writeColumnsFor(SYSTEM_REQ, rowId, { 'MEDICAL REPORT': 'Received' });
-        cards.addNote(rowId, { kind: 'note', text: `Medical report marked Received by itself: the test was booked for ${niceDay(m.date)}${m.place ? ` at ${m.place}` : ''}.` }, 'ISR (automatic)');
+        const words = `Medical report received: the test was on ${niceDay(m.date)}${m.place ? ` at ${m.place}` : ''}.`;
+        const cols = { 'MEDICAL REPORT': 'Received' };
+        const now = text(found.row.REMARKS);
+        if (!now || now === text(card.autoRemark)) { cols.REMARKS = `${niceDay(today)}: ${words}`; cards.setAutoRemark(rowId, cols.REMARKS, 'ISR (automatic)'); }
+        writeColumnsFor(SYSTEM_REQ, rowId, cols);
+        cards.addNote(rowId, { kind: 'note', text: words }, 'ISR (automatic)');
         n += 1;
       }
       cards.setMedical(rowId, { ...m, done: true }, 'ISR (automatic)');
@@ -923,9 +934,23 @@ function createPortalApi({
           if (body.done && !task.done && body.finish && typeof body.finish === 'object') {
             const plan = finishPlan(found, task, body.finish);
             if (plan.error) { sendJSON(res, 400, { error: plan.error }); return true; }
+            // The sheet's Remarks shows the latest progress (the owner, 15 Nov 2026), only when it is empty or still holds ISR's own
+            // last line: a remark a person typed is never overwritten.
+            if (plan.note) {
+              const remark = `${niceDay(cards.today())}: ${plan.note}`.slice(0, 300);
+              const now = text(found.row.REMARKS);
+              if (!now || now === text(card.autoRemark)) { plan.columns.REMARKS = remark; cards.setAutoRemark(rowId, remark); }
+            }
             writeColumnsFor(req, rowId, plan.columns);
             if (plan.note) cards.addNote(rowId, { kind: 'note', text: plan.note }, by(req));
             if (plan.medical !== undefined) cards.setMedical(rowId, plan.medical, by(req));
+            // Every application is also kept in the student's University options with its own date (a backup option too).
+            if (plan.applied) {
+              const opts = cards.get(rowId).options || [];
+              const same = opts.find((o) => squash(o.university) === squash(plan.applied.university));
+              if (same) cards.updateOption(rowId, same.id, { applied: plan.applied.date }, by(req));
+              else cards.addOption(rowId, { university: plan.applied.university, course: squash(row0(rowId)['UNIVERSITY NAME']) === squash(plan.applied.university) ? text(row0(rowId)['COURSE NAME']) : '', applied: plan.applied.date }, by(req));
+            }
             if (plan.remind) {
               const team = task.team === HEAD ? 'mock' : task.team;
               const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: 'mock', priority: 'high' }, by(req));

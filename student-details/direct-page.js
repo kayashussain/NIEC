@@ -56,6 +56,16 @@
   const copy = (value, what) => iconBtn('copy', `Copy the ${what.toLowerCase()}`, async () => { try { await navigator.clipboard.writeText(value); toast(`${what} copied`); } catch (e) { toast(`Could not copy the ${what.toLowerCase()}`, true); } });
   const initialsOf = (name) => String(name || '?').replace(/\(.*?\)/g, '').split(/\s+/).filter((w) => /^[A-Za-z]/.test(w) && !/^(of|the|and|for)$/i.test(w)).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
   const openLink = (text, href, cls) => { const a = el('a', cls, text); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; };
+  // A day as the calendar needs it (2026-01-01): older days were typed by hand ("1 Sep 2025", "9/1/2025").
+  function isoDay(v) {
+    const t = String(v || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
+    if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+    if (!/\d{4}/.test(t)) return '';
+    const d = new Date(t + ' 12:00');
+    return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
   const dayOf = (v) => (window.Portal && /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? window.Portal.day(v) : String(v || ''));
   const PILL = { Active: 'green', Ended: 'red' };
   const openOne = (id) => (viewer() ? openView(id) : openEditor(id));
@@ -201,7 +211,7 @@
     api(API + '/' + id).then((u) => {
       const ed = $('editor');
       const page = el('div', 'pu-view');
-      page.append(btn('pu-back', '← All partner universities', closeEditor));
+      page.append(btn('pu-back', '← Partner Universities', closeEditor));
       const head = el('div', 'pu-ed-head'); head.append(el('h2', '', u.name)); page.append(head);
       const box = (title, ...nodes) => { const s = el('section', 'pu-step'); const hd = el('div', 'pu-step-head'); const w = el('div'); w.append(el('h3', '', title)); hd.append(w); s.append(hd, ...nodes); page.append(s); };
       const lines = (items) => { const d = el('div', 'pu-lines'); items.forEach((x) => d.append(x instanceof Node ? x : el('span', '', x))); return d; };
@@ -240,16 +250,21 @@
     const f = {};
     const form = el('form');
     form.autocomplete = 'off';
-    form.append(btn('pu-back', '← All partner universities', closeEditor));
+    form.append(btn('pu-back', '← Partner Universities', closeEditor));
     const head = el('div', 'pu-ed-head');
     head.append(el('h2', '', uni.name));
-    form.append(head, el('p', 'pu-saved', uni.updatedAt ? `Last saved ${new Date(uni.updatedAt).toLocaleString()}${uni.updatedBy ? ' by ' + uni.updatedBy : ''}.` : 'Not saved yet.'));
+    // As on B2B Partners: the students and visas under the name, and when it was last saved, in the office's date style.
+    const st = statOf(uni);
+    const saved = uni.updatedAt ? `Saved ${new Date(uni.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}${uni.updatedBy ? ' by ' + uni.updatedBy : ''}` : '';
+    form.append(head, el('p', 'pu-saved', [st.students ? `${plural(st.visas, 'visa')} from ${plural(st.students, 'student')}` : '', saved].filter(Boolean).join(' · ')));
 
     // 1. The university: its name, its campuses and when the agreement started. (Status, how it is held, when it ends
     // and notes are no longer asked: a partner is always active. Anything stored in them is kept as it is.)
     const s1 = step(1, 'The university', '');
     f.name = text(uni.name, 120);
-    f.agreementStart = text(uni.agreementStart, 40, 'e.g. 1 Sep 2025');
+    // The day the agreement started, on a calendar (as on B2B Partners); a day typed by hand earlier opens on the calendar when it can be read.
+    f.agreementStart = text(isoDay(uni.agreementStart) || '', 40);
+    f.agreementStart.type = 'date';
     const g1 = el('div', 'pu-fields two');
     g1.append(field('University name', f.name), field('Agreement started', f.agreementStart));
     const campusHead = el('h4', 'pu-sub-head', 'Campuses');
@@ -339,7 +354,7 @@
 
     const bar = el('div', 'pu-savebar');
     const save = el('button', 'btn btn-primary', 'Save'); save.type = 'submit';
-    const close = btn('btn', 'Back to the list', closeEditor);
+    const close = btn('btn', 'Cancel', closeEditor);
     const msg = el('div', 'msg grow'); msg.id = 'editMsg'; msg.setAttribute('role', 'status');
     const del = btn('btn btn-danger', 'Remove from list', async () => {
       if (!(await window.NiecUI.confirm(`Remove ${uni.name} from Partner Universities?`, { danger: true }))) return;
@@ -352,6 +367,8 @@
       e.preventDefault();
       const body = Object.fromEntries(Object.entries(f).map(([k, i]) => [k, i.value]));
       Object.assign(body, { campuses: campuses.values(), slabs: slabs.values(), contacts: contacts.values() });
+      // An older day typed by hand that the calendar cannot read is kept until a day is chosen.
+      if (!body.agreementStart && uni.agreementStart && !isoDay(uni.agreementStart)) body.agreementStart = uni.agreementStart;
       // What the page no longer asks is sent back as it was, so nothing stored is lost; a partner is always Active.
       Object.assign(body, { status: 'Active', type: uni.type || 'Direct', via: uni.via || '', agreementEnd: uni.agreementEnd || '', notes: uni.notes || '' });
       say('editMsg', 'Saving...');

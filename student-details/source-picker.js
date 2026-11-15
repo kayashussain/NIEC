@@ -134,8 +134,8 @@
         if (disabled || !g) return '';
         if (g === 'Events' && !detail) return 'Choose the event or campaign.';
         if (g === 'Social Media' && social) {
-          if (!social.platform.value) return 'Please choose the platform the student came from.';
-          if (!social.way()) return 'Please say whether the student came by itself (organic) or from an advert.';
+          if (!social.platform.value) return 'Choose the platform.';
+          if (!social.way()) return 'Choose Organic or Advert.';
           const c = social.campaign();
           if (social.way() === 'Advert' && (!c || !c.value || (c.value === '__other' && !social.other().value.trim()))) return 'Please choose the campaign, or type its name under Other.';
         }

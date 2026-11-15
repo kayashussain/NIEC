@@ -172,7 +172,7 @@
         goes.replaceChildren();
         if (!t) return;
         const names = t.members || [];
-        goes.append(names.length ? `Goes to ${names.join(', ')}` : 'Nobody has this as their own team yet: set it in Users.');
+        goes.append(names.length ? `Goes to ${names.join(', ')}` : 'Nobody has this team yet: set it in Users.');
         goes.classList.toggle('is-warn', !names.length);
       };
       team.wrap.append(goes);
@@ -311,7 +311,7 @@
     const form = el('div', 'p-form');
     picker.nodes.forEach((n) => form.append(n));
     box.append(form);
-    if (!data.can.source && s.source) box.append(el('p', 'p-muted p-small', 'The source of this student can only be changed by Admin.'));
+    if (!data.can.source && s.source) box.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
     const bar = el('div', 'p-bar');
     bar.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: async () => {
       try {
@@ -383,7 +383,8 @@
     const all = events.filter((e) => historyFilter === 'all' || (historyFilter === 'note' ? e.kind === 'note' : e.kind !== 'note'));
     const list = el('ol', 'p-timeline');
     const items = showAllNotes ? all : all.slice(0, 6);
-    const remark = data.student.remarks;
+    // The sheet's Remarks, unless it is only the latest progress line ISR wrote there (that is already a note above).
+    const remark = data.student.remarks && data.student.remarks !== data.card.autoRemark ? data.student.remarks : '';
     if (!all.length && !remark) list.append(el('li', '', 'Nothing yet.'));
     items.forEach((e) => {
       const li = el('li', e.kind === 'note' ? '' : `p-history-${e.kind}`);
@@ -419,7 +420,8 @@
     data.card.options.forEach((o) => {
       const item = el('div', 'p-chosen-item');
       const header = el('header');
-      header.append(el('h4', '', `${o.university}: ${o.course}${o.intake ? ' (' + o.intake + ')' : ''}`));
+      header.append(el('h4', '', `${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
+      if (o.applied) header.firstChild.append(' ', el('span', 'p-applied', `Applied ${day(o.applied)}`));
       if (can()) header.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { await save('options/' + o.id + '/delete', {}); render(); } }, 'Remove'));
       const form = el('div', 'p-form');
       const fee = field('Tuition fee', { value: o.fee, disabled: !can(), max: 400 });
@@ -506,7 +508,7 @@
       out.replaceChildren(el('div', 'p-muted p-small', 'Searching…'));
       try {
         const r = await api('/api/courses?' + new URLSearchParams({ q: q.input.value, level: lv.input.value }));
-        out.replaceChildren(el('div', 'p-muted p-small p-found', r.total ? `${r.total} course${r.total === 1 ? '' : 's'}${r.total > r.options.length ? `, the first ${r.options.length} shown` : ''}` : 'No course found. Try fewer words or another level.'));
+        out.replaceChildren(el('div', 'p-muted p-small p-found', r.total ? `${r.total} course${r.total === 1 ? '' : 's'}${r.total > r.options.length ? `, the first ${r.options.length} shown` : ''}` : 'No course found. Try fewer words.'));
         r.options.forEach((o) => out.append(optionCard(o)));
       } catch (e) { out.replaceChildren(el('div', 'p-notice bad', e.message)); }
       go.disabled = false;
@@ -539,7 +541,7 @@
     const own = el('button', 'p-template');
     own.type = 'button';
     own.disabled = !can();
-    own.append(el('b', '', 'Other: write my own message'), el('small', '', 'Write the words yourself and send them'));
+    own.append(el('b', '', 'Other: write my own message'), el('small', '', 'Your own words'));
     own.addEventListener('click', () => openCompose('custom'));
     list.append(own);
     left.append(list);
@@ -582,7 +584,7 @@
     document.title = `${data.student.name} · Student · ISR`;
     const frag = document.createDocumentFragment();
     frag.append(hero());
-    if (!can()) frag.append(el('div', 'p-notice', 'You can read this student but not change them.'));
+    if (!can()) frag.append(el('div', 'p-notice', 'View only.'));
     const tabs = el('div', 'p-tabs');
     tabs.style.marginTop = '16px';
     tabs.setAttribute('role', 'tablist');

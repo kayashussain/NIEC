@@ -3,13 +3,13 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const DEPARTMENTS = {
-    application: { label: 'Application Team', help: 'Sees Application Stage students. Fills in details up to NOC Number, and the Medical Report.' },
-    mock: { label: 'Mock Team', help: 'Sees Mock Stage students. Fills in the mock interviews and Pre-CAS result.' },
-    followup: { label: 'Follow-up Team', help: 'Sees Inquiry and Defer students. Adds remarks and moves them on.' },
+    application: { label: 'Application Team', help: 'Application Stage students, up to NOC Number and the Medical Report.' },
+    mock: { label: 'Mock Team', help: 'Mock Stage students: mock interviews and Pre-CAS.' },
+    followup: { label: 'Follow-up Team', help: 'Inquiry and Defer students: remarks and moving them on.' },
   };
   // A branch team for each branch in the one list (card-fields.js).
   window.CardFields.BRANCHES.forEach((name) => {
-    DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, help: `Sees the students whose Student Source is ${name} Branch, and changes every column. Adds students.` };
+    DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, help: `Its own students, every column. Adds students.` };
   });
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -43,7 +43,7 @@
       <label class="check"><input type="checkbox" name="${name}-dept" value="${id}"><span><b>${d.label}</b><small>${d.help}</small></span></label>`).join('');
     return `
       <fieldset class="access">
-        <legend>What can this person do? Tick everything that applies.</legend>
+        <legend>Access (tick all that apply)</legend>
         <div class="check-group">
           ${boxes}
           <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Sees every student and the Dashboard, exports to Excel. View only unless a team is ticked.</small></span></label>

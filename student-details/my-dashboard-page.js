@@ -88,7 +88,7 @@
 
     // What waits for the team now: one row per kind of work, the count and the first students, each opening their card.
     if (d.todo && d.todo.length) {
-      const c = card('To do now', 'What is waiting for your team, the longest waiting first.', 'md-todo');
+      const c = card('To do now', 'Longest waiting first.', 'md-todo');
       const list = el('div', 'md-todo-list');
       d.todo.forEach((x) => {
         const row = el('div', 'md-todo-row');
@@ -107,7 +107,7 @@
     const grid = el('div', 'md-grid');
     grid.append(weekCard(d.week), stagesCard(d.stages, d.stagesNote),
       peopleCard('Coming up', 'The next 7 days.', d.upcoming, 'Nothing booked for the next 7 days.', (r) => el('span', 'md-date', shortDay(r.date))),
-      peopleCard('Good news', 'Offers, deposits, CAS and visas of the last 30 days.', d.wins, 'No news in the last 30 days yet.', (r) => el('span', 'md-date', shortDay(r.date))));
+      peopleCard('Good news', 'The last 30 days.', d.wins, 'No news in the last 30 days yet.', (r) => el('span', 'md-date', shortDay(r.date))));
     page.append(grid);
     view.replaceChildren(page);
   }).catch((e) => view.replaceChildren(el('div', 'p-card', e.message)));

@@ -68,6 +68,8 @@ function cleanOption(input, old = {}) {
     // Only a real web address is kept as the link (never "javascript:" or anything else a page could run).
     link: /^https?:\/\/[^\s<>"']+$/i.test(link) ? link : '',
     note: pick('note', 400),
+    // The day an application to it was submitted (set when an Application task is finished with this university).
+    applied: (() => { const v = pick('applied', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     addedAt: old.addedAt, addedBy: old.addedBy,
   };
 }
@@ -89,6 +91,8 @@ function normalize(raw) {
     // The medical test booked from a Medical task (the owner, 15 Nov 2026): { date, place, by, at }. On that day the sheet's Medical
     // Report becomes Received by itself, unless it was booked again for another day meanwhile. null when nothing is booked.
     medical: c.medical && /^\d{4}-\d{2}-\d{2}$/.test(String(c.medical.date)) ? { date: c.medical.date, place: str(c.medical.place, 200), by: str(c.medical.by, 80), at: str(c.medical.at, 40), done: Boolean(c.medical.done) } : null,
+    // The last line ISR itself wrote in the sheet's Remarks (finishing a task), so a later one replaces it but never a person's remark.
+    autoRemark: str(c.autoRemark, 300),
     createdAt: str(c.createdAt, 40), createdBy: str(c.createdBy, 80), updatedAt: str(c.updatedAt, 40), updatedBy: str(c.updatedBy, 80),
   };
 }
@@ -223,6 +227,7 @@ function createCards(dir, { now = () => new Date() } = {}) {
     // Every card, keyed by row id (for the Dashboard and the backup). Not a copy: do not change it.
     all() { return load().cards; },
 
+    setAutoRemark(rowId, remark, by) { return update(rowId, by, (card) => { card.autoRemark = str(remark, 300); }); },
     // The medical test booked (a date and where), or none (null): see `medical` on the card.
     setMedical(rowId, input, by) {
       return update(rowId, by, (card, stamp) => {

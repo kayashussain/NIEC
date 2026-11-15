@@ -182,7 +182,7 @@
       const j = await api(url);
       if (j.status === 'done') return j.result;
       if (j.status === 'failed') throw new Error(j.error || 'The question could not be answered.');
-      if (Date.now() - start > limit) throw new Error('The answer is taking too long. Please try again.');
+      if (Date.now() - start > limit) throw new Error('Taking too long. Try again.');
     }
   }
 
