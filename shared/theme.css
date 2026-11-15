@@ -1967,3 +1967,14 @@ select option { color: #1d1d1f; }
 .td-route .td-waiting::before { content: "\00b7"; margin-right: 8px; color: #86868b; }
 .td-route .td-waiting { color: #86868b; }
 .td-route .td-waiting.is-long { color: #b25000; }
+
+/* 🔴 CSS CHANGED (2026-11-15): Notifications keep their history (a bug fix) | from: a notification vanished once read (and touching or scrolling past a task on a phone counted as reading it), and the whole panel disappeared when nothing was new | to: the panel is always on Today; new ones first under a small grey "New" heading, each with a soft blue background and a blue dot before the name; read ones of the last 30 days stay under "Earlier" in plain rows; "Show all N notifications (last 30 days)"; a done task shows "Asha marked a task as done" with a green initial; with nothing at all, a calm grey line says what will show here */
+.td-inbox-sec { margin: 10px 10px 2px; color: #86868b; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.td-inbox-sec:first-child { margin-top: 0; }
+.td-inbox-sec + .td-note { border-top: 0; }
+.td-note.is-new { border-radius: 12px; background: #f2f7fe; }
+.td-note.is-new + .td-note { border-top-color: transparent; }
+.td-note.is-new .td-note-line b::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 7px 1px 0; border-radius: 50%; background: #0071e3; vertical-align: middle; }
+.td-note:not(.is-new) .td-note-task { font-weight: 400; color: #3a3a3c; }
+.td-note.kind-done .td-note-av { background: #e3f5e8; color: #1f7a3a; }
+.td-inbox-empty { margin: 4px 0 4px; color: #6e6e73; font-size: 14.5px; line-height: 1.5; }

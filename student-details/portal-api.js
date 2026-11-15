@@ -123,20 +123,26 @@ function createPortalApi({
   const hadIt = (user, t) => (Array.isArray(t.route) ? t.route : []).some((x) => taskTeamsOf(user).includes(x) || (x === HEAD && Teams.isAdmin(user)));
   // Who may hand a task on: the team it is with, whoever gave it, and Admin and the Manager.
   const mayHand = (user, t) => !Teams.isReadOnly(user) && (canAssign(user) || forMe(user, t) || gaveIt(user, t));
-  // Exactly what is new on a task for this person, for the notifications on Today (the owner, 15 Nov 2026): the task itself when it was
-  // just given to them, and each update the others wrote since they last read it. Newest first. The red dots count these.
-  function newsOf(user, t, seen) {
+  // Everything that happened on a task for this person, for the Notifications on Today (the owner, 15 Nov 2026): the task given to them,
+  // each update and reassignment by the others, a change by whoever gave it, and the task done (for whoever gave it). Kept for 30
+  // days whether read or not, so a notification never disappears once read; `isNew` marks what came since they last read the task.
+  // The red dots count the new ones. Newest first.
+  const HISTORY_DAYS = 30;
+  function historyOf(user, t, seen) {
     if (!forMe(user, t) && !gaveIt(user, t) && !hadIt(user, t)) return [];
     const comments = Array.isArray(t.comments) ? t.comments : [];
     const ownLast = comments.filter((c) => c.by === user.name).map((c) => c.at).sort().pop() || '';
     const since = [seen[t.id] || '', ownLast].sort().pop();
-    const out = comments.filter((c) => c.by !== user.name && String(c.at) > since)
-      .map((c) => ({ kind: c.handoff ? 'reassigned' : 'update', by: c.by || 'Someone', at: c.at, text: String(c.text || '').slice(0, 160) }));
-    if (!t.done && forMe(user, t) && t.by !== user.name && !seen[t.id] && Date.now() - Date.parse(t.at) < 3 * 86400000) out.push({ kind: 'task', by: t.by || 'Someone', at: t.at, text: '' });
-    // The task was changed by whoever gave it since this person last read it (and they had already read it once).
-    else if (t.editedAt && t.editedBy !== user.name && forMe(user, t) && seen[t.id] && String(t.editedAt) > since) out.push({ kind: 'edited', by: t.editedBy || 'Someone', at: t.editedAt, text: '' });
-    return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const out = comments.filter((c) => c.by !== user.name)
+      .map((c) => ({ kind: c.handoff ? 'reassigned' : 'update', by: c.by || 'Someone', at: c.at, text: String(c.text || '').slice(0, 160), isNew: String(c.at) > since }));
+    if (forMe(user, t) && t.by !== user.name) out.push({ kind: 'task', by: t.by || 'Someone', at: t.at, text: '', isNew: !t.done && !seen[t.id] && Date.now() - Date.parse(t.at) < 3 * 86400000 });
+    if (t.editedAt && t.editedBy !== user.name && forMe(user, t)) out.push({ kind: 'edited', by: t.editedBy || 'Someone', at: t.editedAt, text: '', isNew: Boolean(seen[t.id]) && String(t.editedAt) > since });
+    // (New only in its first week, so tasks done long ago do not all arrive as new at once.)
+    if (t.done && t.doneAt && t.doneBy && t.doneBy !== user.name && gaveIt(user, t)) out.push({ kind: 'done', by: t.doneBy, at: t.doneAt, text: '', isNew: String(t.doneAt) > since && Date.now() - Date.parse(t.doneAt) < 7 * 86400000 });
+    const from = Date.now() - HISTORY_DAYS * 86400000;
+    return out.filter((n) => n.isNew || Date.parse(n.at) >= from).sort((x, y) => String(y.at).localeCompare(String(x.at)));
   }
+  const newsOf = (user, t, seen) => historyOf(user, t, seen).filter((n) => n.isNew).map(({ isNew, ...n }) => n);
   const unreadOf = (user, t, seen) => newsOf(user, t, seen).length;
   const hasTaskFor = (user, rowId) => { const mine = teamsOf(user); if (!mine.length) return false; const c = cards.has(rowId) ? cards.get(rowId) : null; const recent = Date.now() - 7 * 86400000; return Boolean(c && (c.tasks || []).some((t) => (mine.includes(t.team) || (Array.isArray(t.route) && t.route.some((x) => mine.includes(x)))) && (!t.done || Date.parse(t.doneAt) > recent))); };
   function canSee(user, found) {
@@ -1875,7 +1881,7 @@ function createPortalApi({
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
           if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
-          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
+          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

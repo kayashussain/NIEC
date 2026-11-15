@@ -289,7 +289,7 @@
       inner.append(form);
     }
     label(); draw();
-    box.markRead = markRead; // a click anywhere on the task reads it too (Today and the student card)
+    box.markRead = markRead; // read from a notification (Today)
     box.append(toggle, body);
     setOpen(openThreads.has(task.id) || fresh > 0);
     return box;
@@ -410,8 +410,10 @@
     if (menu) side.append(menu);
     mid.append(top, sub, route, thread);
     r.append(tick, mid);
-    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); };
-    if (o.unread) r.addEventListener('pointerdown', () => thread.markRead());
+    // From a notification: open the updates and mark the task read (it may already be open, as new updates open by themselves).
+    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); else thread.markRead(); };
+    // Read only when the person opens its updates, writes one, or presses its notification: never by touching or scrolling past the
+    // task (on a phone that cleared the notifications before anyone had read them).
     return r;
   }
 

@@ -152,6 +152,14 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.deepStrictEqual([after.text, after.priority, after.editedBy, Boolean(after.editedAt)], ['Check the offer letter and the conditions', 'super', 'Owner', true]);
   assert.strictEqual((await admin('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { text: '   ' })).status, 400, 'a task cannot be emptied');
   assert.deepStrictEqual((await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id).news.map((n) => [n.kind, n.by]), [['edited', 'Owner']], 'the team is told');
+  // Notifications keep their history once read (the owner, 15 Nov 2026: they vanished once read), and whoever gave a task hears when it
+  // is done.
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { seen: true })).status, 200);
+  const kept = (await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
+  assert.deepStrictEqual([kept.news.length, kept.history.map((n) => [n.kind, n.isNew])], [0, [['edited', false], ['update', false], ['task', false]]], 'read, and still listed');
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { done: true })).status, 200);
+  const toGiver = (await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
+  assert.deepStrictEqual([toGiver.news[0].kind, toGiver.news[0].by], ['done', 'maya'], 'Admin is told the task is done');
   // A choice that is not one of their teams (or for a person in one team only) is not kept.
   assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application'], taskTeam: 'mock' })).status, 200);
   assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').taskTeam, '');

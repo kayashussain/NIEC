@@ -151,36 +151,49 @@
     return shortDay(iso);
   };
   let inboxAll = false;
+  const NOTE_VERB = { task: (x) => ` gave ${x.forMe && x.team !== 'head' ? 'your team' : 'you'} a new task`, reassigned: () => ' reassigned a task', edited: () => ' changed a task', done: () => ' marked a task as done', update: () => ' posted an update' };
+  // Notifications (the owner, 15 Nov 2026): every task given, update, change, reassignment and completion of the last 30 days, kept
+  // after they are read. The new ones come first under "New" with a blue dot; the rest under "Earlier". Always on Today.
   function inbox(t, refresh) {
-    const items = t.tasks.flatMap((x) => (x.news || []).map((n) => ({ ...n, task: x }))).sort((a, b) => String(b.at).localeCompare(String(a.at)));
-    if (!items.length) return null;
+    const items = t.tasks.flatMap((x) => (x.history || []).map((n) => ({ ...n, task: x }))).sort((a, b) => (b.isNew - a.isNew) || String(b.at).localeCompare(String(a.at)));
+    const fresh = items.filter((n) => n.isNew);
     const box = el('section', 'td-inbox');
     box.setAttribute('aria-label', 'Notifications');
     const head = el('div', 'td-inbox-head');
     const title = el('h2', '', 'Notifications');
-    title.append(el('span', 'td-inbox-count', String(items.length)));
-    const clear = h('button', { class: 'td-inbox-clear', type: 'button' }, 'Mark all as read');
-    clear.addEventListener('click', async () => {
-      clear.disabled = true;
-      const ids = [...new Set(items.map((n) => n.task))];
-      await Promise.all(ids.map((x) => api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {})));
-      ids.forEach((x) => { x.news = []; x.unread = 0; });
-      window.dispatchEvent(new Event('isr-tasks-read'));
-      refresh();
-    });
-    head.append(title, clear);
+    if (fresh.length) title.append(el('span', 'td-inbox-count', String(fresh.length)));
+    head.append(title);
+    if (fresh.length) {
+      const clear = h('button', { class: 'td-inbox-clear', type: 'button' }, 'Mark all as read');
+      clear.addEventListener('click', async () => {
+        clear.disabled = true;
+        const ids = [...new Set(fresh.map((n) => n.task))];
+        await Promise.all(ids.map((x) => api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {})));
+        ids.forEach((x) => { x.news = []; x.unread = 0; (x.history || []).forEach((n) => { n.isNew = false; }); });
+        window.dispatchEvent(new Event('isr-tasks-read'));
+        refresh();
+      });
+      head.append(clear);
+    }
     box.append(head);
+    if (!items.length) {
+      box.append(el('p', 'td-inbox-empty', 'Nothing yet. When a task is given to you, someone posts an update, or a task you gave is done, it shows here.'));
+      return box;
+    }
+    const SHOW = 5;
+    const shown = inboxAll ? items : items.slice(0, Math.max(SHOW, fresh.length));
     const list = el('div', 'td-inbox-list');
-    const SHOW = 4;
-    (inboxAll ? items : items.slice(0, SHOW)).forEach((n) => {
+    let earlier = false;
+    if (fresh.length) list.append(el('div', 'td-inbox-sec', 'New'));
+    shown.forEach((n) => {
+      if (!n.isNew && !earlier) { earlier = true; list.append(el('div', 'td-inbox-sec', 'Earlier')); }
       const x = n.task;
-      const b = h('button', { class: `td-note kind-${n.kind}`, type: 'button' });
+      const b = h('button', { class: `td-note kind-${n.kind}${n.isNew ? ' is-new' : ''}`, type: 'button' });
       const av = el('span', 'td-note-av', initials(n.by));
       av.setAttribute('aria-hidden', 'true');
       const words = el('div', 'td-note-words');
       const line = el('div', 'td-note-line');
-      const who = n.by === me ? 'You' : n.by;
-      line.append(el('b', '', who), n.kind === 'task' ? ` gave ${x.forMe && x.team !== 'head' ? 'your team' : 'you'} a new task` : n.kind === 'reassigned' ? ' reassigned a task' : n.kind === 'edited' ? ' changed a task' : ' posted an update');
+      line.append(el('b', '', n.by === me ? 'You' : n.by), (NOTE_VERB[n.kind] || NOTE_VERB.update)(x));
       words.append(line, el('div', 'td-note-task', x.text));
       if (n.text) words.append(el('div', 'td-note-text', `\u201c${n.text}\u201d`));
       const side = el('div', 'td-note-side');
@@ -190,8 +203,8 @@
       list.append(b);
     });
     box.append(list);
-    if (items.length > SHOW) {
-      const more = h('button', { class: 'td-more', type: 'button' }, inboxAll ? 'Show fewer' : `Show all ${items.length} notifications`);
+    if (items.length > shown.length || inboxAll) {
+      const more = h('button', { class: 'td-more', type: 'button' }, inboxAll ? 'Show fewer' : `Show all ${items.length} notifications (last 30 days)`);
       more.addEventListener('click', () => { inboxAll = !inboxAll; refresh(); });
       box.append(more);
     }
@@ -210,7 +223,7 @@
       row.classList.add('is-flash');
       setTimeout(() => row.classList.remove('is-flash'), 1800);
       if (row.openThread) row.openThread();
-      x.news = []; x.unread = 0;
+      x.news = []; x.unread = 0; (x.history || []).forEach((n) => { n.isNew = false; });
       // Redraw once it is read: the notification, the counts and the dot go (its updates stay open, see portal-ui.js openThreads).
       setTimeout(() => { refresh(); const again = document.querySelector(`.td-task[data-task-id="${x.id}"]`); if (again) again.scrollIntoView({ block: 'center' }); }, 700);
     });
@@ -279,8 +292,7 @@
     const top = el('div');
     const refresh = async (reload) => {
       if (reload) { try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ } }
-      const news = inbox(tasks, refresh);
-      top.replaceChildren(...(news ? [news] : []), pulse(tasks, d.sections));
+      top.replaceChildren(inbox(tasks, refresh), pulse(tasks, d.sections));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };
     refresh();
