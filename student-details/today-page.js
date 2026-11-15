@@ -28,7 +28,8 @@
   // whom and when.
   function taskRow(t, refresh) {
     const fromName = t.by === me ? 'You' : t.by || 'Someone';
-    const toName = t.forMe ? (t.team === 'head' ? 'you' : `your team (${t.teamLabel})`) : t.teamLabel;
+    // "your team" (Today already says which team it is), else the team's name.
+    const toName = t.forMe ? (t.team === 'head' ? 'you' : 'your team') : t.teamLabel;
     return window.Portal.taskCard(t, {
       rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true, today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
@@ -217,10 +218,13 @@
       const words = el('div', 'td-note-words');
       const line = el('div', 'td-note-line');
       line.append(el('b', '', n.by === me ? 'You' : n.by), (NOTE_VERB[n.kind] || NOTE_VERB.update)(x, n));
-      words.append(line, el('div', 'td-note-task', x.text));
+      // The student first, then the task (the owner, 15 Nov 2026).
+      const task = el('div', 'td-note-task');
+      task.append(el('b', 'td-note-student', window.Portal.niceName(x.student)), el('span', '', x.text));
+      words.append(line, task);
       if (n.text) words.append(el('div', 'td-note-text', `\u201c${n.text}\u201d`));
       const side = el('div', 'td-note-side');
-      side.append(el('span', 'td-note-when', ago(n.at)), el('span', 'td-note-student', x.student));
+      side.append(el('span', 'td-note-when', ago(n.at)));
       b.append(av, words, side);
       b.addEventListener('click', () => goTo(x, refresh));
       list.append(b);

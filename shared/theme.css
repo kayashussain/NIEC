@@ -2006,3 +2006,19 @@ select option { color: #1d1d1f; }
 .p-auto-tag { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .p-auto-label { color: #6e6e73; font-size: 13.5px; }
 .p-auto-tag .td-tag { cursor: default; }
+
+/* 🔴 CSS CHANGED (2026-11-15): the student first on a task (Today) and on a notification | from: the task in bold on top and the student's name small in the grey line under it, so the team had to stop and look for whose task it was | to: on Today each task starts with the student's name in bold near-black (17px, as people say it: "Sanjip Kumar Mahto", a click opens the card) with the stage as a small soft grey pill beside it; the task follows under it in regular weight (15.5px, dark grey); then the tags and who gave it; on the student card itself the task stays on top (the student is the card); in a notification the student's name in semibold leads the task line ("Rajan Rai · Get the NOC ..."), and the student's name no longer sits at the right */
+.td-head-main { flex: 1; min-width: 0; }
+.td-who { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.td-who-name { color: #1d1d1f; font-size: 17px; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; text-decoration: none; overflow-wrap: anywhere; }
+.td-who-name:hover { color: #0066cc; }
+.td-who-stage { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #f0f0f3; color: #515154; font-size: 12px; font-weight: 500; line-height: 22px; }
+.td-task.has-student .td-task-text { margin-top: 4px; color: #3a3a3c; font-size: 15.5px; font-weight: 400; line-height: 1.45; }
+.td-task.has-student.is-done .td-who-name { color: #86868b; }
+.td-note-task .td-note-student { color: #1d1d1f; font-weight: 600; }
+.td-note-task .td-note-student::after { content: "\00b7"; margin: 0 7px; color: #aeaeb2; font-weight: 400; }
+/* 🔴 CSS CHANGED (2026-11-15): the update box on a phone | from: "Ctrl+Enter to post" under every update box, which means nothing on a phone | to: hidden on a phone (the Post button stays) */
+@media (max-width: 600px), (hover: none) { .tk-compose-bar small { visibility: hidden; } }
+/* 🔴 CSS CHANGED (2026-11-15): who gave a task and when, on a phone | from: the date wrapped onto a new line that started with a stray "·" | to: the day and what followed stay together ("15 Nov · Edited · Open 3 days"); on a phone they start their own line, without the dot */
+.td-route .td-route-meta { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+@media (max-width: 600px) { .td-task .td-route .td-route-meta { flex-basis: 100%; } .td-task .td-route .td-route-meta > .td-when::before { content: none; } }

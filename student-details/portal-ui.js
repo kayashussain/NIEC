@@ -191,6 +191,8 @@
   // calm record (who, when, what), not a chat. What is new for the reader is marked with a red dot; opening the comments marks them
   // read. `me` is the reader's name; `rowId` the student's card; `unread` how much is new for the reader.
   const openThreads = new Set();
+  // A name typed all in capitals (or all small) reads "Sanjip Kumar Mahto" on tasks and notifications; the sheet keeps it as typed.
+  const niceName = (name) => String(name || '').split(/\s+/).map((w) => (w.length > 1 && (w === w.toUpperCase() || w === w.toLowerCase()) ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w)).join(' ');
   const initialsOf = (name) => String(name || '?').split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
   // A day as people say it: "Today", "Tomorrow", else "Wed 18 Nov". `today`: YYYY-MM-DD.
   function dayLabel(iso, today) {
@@ -286,7 +288,7 @@
     if (canWrite) {
       const form = el('div', 'tk-compose');
       input = el('textarea', 'tk-input');
-      input.rows = 1; input.maxLength = 2000; input.placeholder = inline ? (comments().length ? 'Write an update' : 'Write the first update: progress, a question, or what is needed') : 'Write an update';
+      input.rows = 1; input.maxLength = 2000; input.placeholder = inline && !comments().length ? 'Write the first update' : 'Write an update';
       input.setAttribute('aria-label', 'Write an update');
       const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; };
       const send = h('button', { class: 'btn btn-primary btn-sm tk-send', type: 'button', disabled: true }, 'Post');
@@ -404,7 +406,7 @@
     tick.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     tick.addEventListener('click', async () => {
       // Done is asked once more (the owner, 15 Nov 2026), so a task is never ticked by a slip of the mouse.
-      if (!t.done && root.NiecUI && !(await root.NiecUI.confirm(`\u201c${t.text.length > 120 ? t.text.slice(0, 117) + '...' : t.text}\u201d\n\nIs this task finished? It moves to Done and ${o.fromName === 'You' ? 'you see' : (o.fromName || 'whoever gave it') + ' sees'} that it is done.`, { title: 'Mark as done?', confirmText: 'Yes, it is done', cancelText: 'Not yet' }))) return;
+      if (!t.done && root.NiecUI && !(await root.NiecUI.confirm(`${o.student ? niceName(o.student.name) + ': ' : ''}\u201c${t.text.length > 120 ? t.text.slice(0, 117) + '...' : t.text}\u201d\n\nIs this task finished? It moves to Done and ${o.fromName === 'You' ? 'you see' : (o.fromName || 'whoever gave it') + ' sees'} that it is done.`, { title: 'Mark as done?', confirmText: 'Yes, it is done', cancelText: 'Not yet' }))) return;
       tick.disabled = true;
       // The circle turns blue with a tick and the row folds away, and only then is the list redrawn (the next task never jumps).
       const quick = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -414,7 +416,19 @@
     });
     const mid = el('div', 'td-task-mid');
     const top = el('div', 'td-task-top');
-    top.append(el('div', 'td-task-text', t.text));
+    // The student first, then what to do (the owner, 15 Nov 2026): the team sees at once whose task it is, with the student's
+    // name in bold and the stage on top, and the task under it in a calmer weight. On the student's own card the task stands alone.
+    const head = el('div', 'td-head-main');
+    if (o.student) {
+      const who = el('div', 'td-who');
+      const name = h('a', { class: 'td-who-name', href: o.student.href, title: 'Open the student card' }, niceName(o.student.name));
+      who.append(name);
+      if (o.stage) who.append(el('span', 'td-who-stage', o.stage));
+      head.append(who);
+      r.classList.add('has-student');
+    }
+    head.append(el('div', 'td-task-text', t.text));
+    top.append(head);
     const side = el('div', 'td-side');
     top.append(side);
     // Priority, tag, student and stage on one line.
@@ -423,18 +437,17 @@
     sub.append(...badges.childNodes);
     // Moved to a later day: a small blue pill with the day ("Tomorrow", "Wed 18 Nov").
     if (!t.done && t.doOn && o.today && t.doOn > o.today) sub.prepend(el('span', 'td-when-pill', dayLabel(t.doOn, o.today)));
-    if (o.student) {
-      const a = h('a', { class: 'td-student', href: o.student.href, title: 'Open the student card' }, o.student.name);
-      sub.append(a);
-      if (o.stage) sub.append(el('span', 'td-stage', o.stage));
-    }
+
     const route = taskRoute(t, { fromName: o.fromName, toName: o.toName, teams: o.teams });
-    route.append(el('span', 'td-when', t.at ? new Date(t.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''));
+    // The day it was given and what followed ("15 Nov · Edited · Open 3 days"), kept together so they wrap as one on a phone.
+    const dated = el('span', 'td-route-meta');
+    dated.append(el('span', 'td-when', t.at ? new Date(t.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''));
     // How long an open task has waited, from the third day on, so nothing is quietly forgotten.
     const waited = Math.floor((Date.now() - Date.parse(t.at || 0)) / 86400000);
-    if (!t.done && waited >= 2 && waited < 400) route.append(el('span', `td-waiting${waited >= 7 ? ' is-long' : ''}`, `Open ${waited} days`));
-    if (t.editedAt) { const ed = el('span', 'td-edited', 'Edited'); ed.title = `Changed by ${t.editedBy || 'someone'}, ${when(t.editedAt)}`; route.append(ed); }
-    if (t.done) route.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
+    if (!t.done && waited >= 2 && waited < 400) dated.append(el('span', `td-waiting${waited >= 7 ? ' is-long' : ''}`, `Open ${waited} days`));
+    if (t.editedAt) { const ed = el('span', 'td-edited', 'Edited'); ed.title = `Changed by ${t.editedBy || 'someone'}, ${when(t.editedAt)}`; dated.append(ed); }
+    if (t.done) dated.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
+    route.append(dated);
     // The updates are always open on the task, with the box to write one (the owner, 15 Nov 2026); a done task keeps them folded.
     const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite && !t.done, unread: o.unread || 0, teams: o.teams, inline: !t.done, today: o.today });
     const toggle = thread.querySelector('.tk-toggle');
@@ -588,5 +601,5 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  root.Portal = { taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { niceName, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);
