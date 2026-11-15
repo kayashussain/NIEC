@@ -541,7 +541,7 @@
       if (moved) foot.append(h('button', { class: 'btn', type: 'button', onclick: () => go('') }, 'Back to today'));
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       const g = el('div', 'p-form'); g.append(date.wrap);
-      body.append(el('p', 'p-muted p-small', 'It waits under Upcoming and comes back under Today on that day by itself.'), g, msg, foot);
+      body.append(el('p', 'p-muted p-small', 'It waits under Later days and comes back to today\u2019s tasks on that day by itself.'), g, msg, foot);
     });
   }
   function changeTask(task, { rowId, tag, priority }) {

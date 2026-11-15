@@ -1880,6 +1880,14 @@ function createPortalApi({
       return true;
     }
     // Tasks: a team member gets the tasks of their teams (and a branch the tasks it gave); Admin and the Manager get every task.
+    // A person in two or more teams chooses their own team on Today (see accounts.js setOwnTeam).
+    if (urlPath === '/api/my-team' && req.method === 'POST') {
+      const body = await bodyOf(req, res, 1024);
+      if (!body) return true;
+      const out = accounts && accounts.setOwnTeam ? accounts.setOwnTeam(req, text(body.team)) : { error: 'Not available.' };
+      if (out.error) sendJSON(res, 400, { error: out.error }); else sendJSON(res, 200, out);
+      return true;
+    }
     if (urlPath === '/api/tasks' && req.method === 'GET') {
       const all = cards.all();
       const everyone = canAssign(req.user);
@@ -1901,8 +1909,10 @@ function createPortalApi({
       const lastWord = (t) => { const c = Array.isArray(t.comments) && t.comments.length ? t.comments[t.comments.length - 1].at : ''; return String(c > t.at ? c : t.at); };
       out.sort((a, b) => (a.done - b.done) || lastWord(b).localeCompare(lastWord(a)));
       // Whose tasks come to this person, said on Today, so a person in two teams with no own team chosen sees why both teams' tasks come.
-      const mineFrom = { teams: taskTeamsOf(req.user).map(teamLabel), allTeams: teamsOf(req.user).length, ownChosen: Boolean(req.user.taskTeam && teamsOf(req.user).includes(req.user.taskTeam)) };
-      sendJSON(res, 200, { tasks: out.slice(0, 500), today: cards.today(), mineFrom, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS() });
+      const mineFrom = { teams: taskTeamsOf(req.user).map(teamLabel), allTeams: teamsOf(req.user).length, ownChosen: Boolean(req.user.taskTeam && teamsOf(req.user).includes(req.user.taskTeam)), choices: teamsOf(req.user).map((id) => ({ id, label: teamLabel(id) })) };
+      // For Admin and the Manager: who is in two or more teams with no own team yet (they get every team's tasks and work list).
+      const noOwnTeam = everyone && accounts && accounts.people ? accounts.people().filter((p) => p.role !== 'admin' && (p.departments || []).length > 1 && !p.taskTeam).map((p) => p.name) : [];
+      sendJSON(res, 200, { tasks: out.slice(0, 500), today: cards.today(), mineFrom, noOwnTeam, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS() });
       return true;
     }
     // How much is new on the tasks for this person (the red dot on Today in the menu): new comments, and tasks just given to them.

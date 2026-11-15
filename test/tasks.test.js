@@ -178,7 +178,17 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   const appTeam = (await admin('GET', `/api/cards/${mockStudent}`)).json.taskTeams.find((x) => x.id === 'application');
   assert.ok(appTeam.members.includes('maya') && appTeam.members.includes('asha'), 'Goes to: the Application Team');
   assert.ok(!(await admin('GET', `/api/cards/${mockStudent}`)).json.taskTeams.find((x) => x.id === 'mock').members.includes('maya'), 'not the Mock Team, which is only extra access for maya');
-  assert.deepStrictEqual((await both('GET', '/api/tasks')).json.mineFrom, { teams: ['Application Team'], allTeams: 2, ownChosen: true });
+  const from = (await both('GET', '/api/tasks')).json.mineFrom;
+  assert.deepStrictEqual([from.teams, from.allTeams, from.ownChosen], [['Application Team'], 2, true]);
+  // A person in two teams with no own team chooses it themselves on Today; Admin is told who has not chosen yet.
+  const self = await login('sovat', ['application', 'mock']);
+  assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.noOwnTeam, ['sovat'], 'Admin sees who has no own team');
+  assert.deepStrictEqual((await self('GET', '/api/tasks')).json.mineFrom.choices.map((c) => c.id), ['application', 'mock']);
+  assert.strictEqual((await self('POST', '/api/my-team', { team: 'followup' })).status, 400, 'only one of their own teams');
+  assert.strictEqual((await self('POST', '/api/my-team', { team: 'mock' })).status, 200);
+  assert.deepStrictEqual([(await self('GET', '/api/tasks')).json.mineFrom.ownChosen, (await self('GET', '/api/my-dashboard')).json.kind], [true, 'mock']);
+  assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.noOwnTeam, [], 'and the warning goes');
+  assert.strictEqual((await admin('POST', '/api/my-team', { team: 'mock' })).status, 400, 'not for Admin');
   // A choice that is not one of their teams (or for a person in one team only) is not kept.
   assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application'], taskTeam: 'mock' })).status, 200);
   assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').taskTeam, '');

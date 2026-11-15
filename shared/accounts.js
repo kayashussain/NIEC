@@ -712,7 +712,18 @@ function createAccounts({
   // The people with a login that works, by name (for the Counselor box on a student card). Nothing private is in it.
   // Also their teams and their own team, so a task given to a team can say exactly who gets it (no email, no password).
   const people = () => users().filter((u) => !u.disabled).map((u) => ({ name: u.name, access: accessLabel(u), role: u.role, departments: u.departments || [], taskTeam: cleanTaskTeam(u.taskTeam, u.departments || []) }));
-  return { requireAuth, handleApi, emailConfig, userForSessionKey, people };
+  // A person in two or more teams chooses their own team themselves on Today when Admin has not (the owner, 15 Nov 2026): it only
+  // decides whose tasks and work list come to them, never what they may see or change. Admin can change it later in Users.
+  function setOwnTeam(req, team) {
+    const me = users().find((u) => u.id === (req.user && req.user.id));
+    if (!me || me.role === 'admin') return { error: 'Not for this account.' };
+    const t = cleanTaskTeam(team, me.departments || []);
+    if (!t) return { error: 'Choose one of your teams.' };
+    updateUser(me.id, { taskTeam: t });
+    record(req, req.user, 'Updated person', { changes: [`${me.name} chose their own team: ${DEPARTMENTS[t] || t}`] });
+    return { taskTeam: t };
+  }
+  return { requireAuth, handleApi, emailConfig, userForSessionKey, people, setOwnTeam };
 }
 
 module.exports = {

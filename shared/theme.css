@@ -2049,3 +2049,18 @@ html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-s
 .td-bell-pop .td-inbox { margin: 0; border: 1px solid rgba(0, 0, 0, .06); background: #fdfdfe; box-shadow: none; animation: none; }
 @media (max-width: 600px) { .td-bell-pop { width: min(560px, calc(100vw - 48px)); max-height: 65vh; } }
 @media (prefers-reduced-motion: reduce) { .td-bell.has-new svg, .td-bell-pop { animation: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-15): Today, one list of tasks at a time, clearer later days, and choosing one's own team | from: "For your team", "Tasks you have given" and "Given by others" one under the other in one long panel; a kind pill counted tasks moved to later days, so "Others 2" opened onto "Nothing for today" and the tasks were hidden under a closed Upcoming line; a person in two teams with no own team got both teams' tasks and work with only a small note | to: a segmented switch under the Tasks title (For you, You gave, Given by others, Reassigned), each with its number for today and a small red dot when something is new, showing one list at a time; kind pills count only today's tasks, and a kind whose tasks are all on later days says "2 later" in soft blue; "Later days (2) next: Wed 18 Nov" opens by itself when nothing is left for today, under the line "Nothing for today. 2 tasks were moved to a later day: they are below."; a person in two teams with no own team sees a soft blue panel at the top, "Which team do you belong to?", with one blue button per team; Admin and the Manager see a soft orange panel naming who has no own team yet, with "Open Users" */
+.td-views { display: inline-flex; flex-wrap: wrap; gap: 2px; margin: 4px 0 14px; padding: 3px; border-radius: 12px; background: #e8e8ed; }
+.td-view { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: #3a3a3c; font: 500 14.5px var(--font); cursor: pointer; transition: background-color .2s, color .2s, box-shadow .2s; }
+.td-view:hover { color: #1d1d1f; }
+.td-view[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
+.td-view-n { min-width: 22px; padding: 0 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); font-size: 12.5px; font-weight: 600; line-height: 20px; text-align: center; }
+.td-view-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: #ff3b30; }
+.td-filter-n.is-later { background: #e6f0fc; color: #0058b0; font-weight: 500; }
+.td-filter-pill[aria-selected="true"] .td-filter-n.is-later { background: rgba(255, 255, 255, .22); color: #fff; }
+.td-own { margin: 0 0 18px; padding: 22px 24px; border-radius: 20px; background: #eef4fd; }
+.td-own.is-admin { background: #fff6ec; }
+.td-own h2 { margin: 0; color: #1d1d1f; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+.td-own p { margin: 6px 0 14px; max-width: 720px; color: #3a3a3c; font-size: 15px; line-height: 1.5; }
+.td-own-choices { display: flex; flex-wrap: wrap; gap: 10px; }
