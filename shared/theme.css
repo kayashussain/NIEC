@@ -2022,3 +2022,30 @@ select option { color: #1d1d1f; }
 /* 🔴 CSS CHANGED (2026-11-15): who gave a task and when, on a phone | from: the date wrapped onto a new line that started with a stray "·" | to: the day and what followed stay together ("15 Nov · Edited · Open 3 days"); on a phone they start their own line, without the dot */
 .td-route .td-route-meta { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 @media (max-width: 600px) { .td-task .td-route .td-route-meta { flex-basis: 100%; } .td-task .td-route .td-route-meta > .td-when::before { content: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-15): search the tasks on Today (new) | from: no way to find one student's tasks but to scroll | to: above the kind pills, a round white search box ("Search tasks by student name or word") with a small grey magnifying glass at its left, 44px high, a blue ring while typing; after typing, "3 open tasks found" in grey beside it; the lists, the kind pills and their counts show only what matches */
+.td-search { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0 12px; }
+.td-search-field { position: relative; display: block; flex: 1 1 320px; max-width: 520px; }
+.td-search-ico { position: absolute; left: 16px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); pointer-events: none; }
+.td-search-ico svg { width: 16px; height: 16px; fill: none; stroke: #86868b; stroke-width: 2; stroke-linecap: round; }
+.td-search-field .td-search-input { width: 100%; height: 44px; padding: 0 16px 0 42px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; color: #1d1d1f; font: 400 15px var(--font); }
+html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); outline: none; }
+.td-search-n { color: #6e6e73; font-size: 14px; }
+
+/* 🔴 CSS CHANGED (2026-11-15): Notifications behind a bell, and Today in a new order | from: the Notifications panel took the top of Today; Admin and the Manager saw Needs attention before the tasks | to: a round 44px bell at the top right of Today (soft grey, near-black outline icon, a red count when something is new); a press opens the notifications as a solid off-white panel under the bell (up to 560px wide, scrolls inside when long), closed by another press, Escape or a click outside; the page reads, for everyone: the greeting, the day at a glance, the tasks, then Needs attention */
+.td-hello { position: relative; z-index: 50; }
+.td-bell-wrap { position: absolute; top: 0; right: 0; z-index: 40; }
+.td-bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; cursor: pointer; transition: background-color .15s, transform .15s; }
+.td-bell:hover { background: #dcdce2; }
+.td-bell:active { transform: scale(.94); }
+.td-bell[aria-expanded="true"] { background: #1d1d1f; color: #fff; }
+.td-bell svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.td-bell.has-new svg { animation: isr-bell 1.2s ease 1; transform-origin: 50% 10%; }
+@keyframes isr-bell { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } }
+.td-bell-count { position: absolute; top: -3px; right: -3px; min-width: 20px; height: 20px; padding: 0 6px; border: 2px solid var(--bg, #f5f5f7); border-radius: 999px; background: #ff3b30; color: #fff; font-size: 11.5px; font-weight: 700; line-height: 16px; text-align: center; }
+.td-bell-count[hidden] { display: none; }
+.td-bell-pop { position: absolute; top: calc(100% + 10px); right: 0; width: min(560px, calc(100vw - 32px)); max-height: min(70vh, 640px); overflow: auto; border-radius: 20px; box-shadow: 0 24px 60px -18px rgba(0, 0, 0, .28), 0 2px 8px rgba(0, 0, 0, .06); animation: isr-menu-in .2s cubic-bezier(.2, .8, .3, 1) both; overscroll-behavior: contain; }
+.td-bell-pop[hidden] { display: none; }
+.td-bell-pop .td-inbox { margin: 0; border: 1px solid rgba(0, 0, 0, .06); background: #fdfdfe; box-shadow: none; animation: none; }
+@media (max-width: 600px) { .td-bell-pop { width: min(560px, calc(100vw - 48px)); max-height: 65vh; } }
+@media (prefers-reduced-motion: reduce) { .td-bell.has-new svg, .td-bell-pop { animation: none; } }

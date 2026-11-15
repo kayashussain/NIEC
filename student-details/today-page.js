@@ -20,6 +20,10 @@
   // in the order of how important each task was marked (Super priority, Priority, Medium; inside that, something new first, then the
   // one waiting longest), and only the first five of a list show until "Show all" is pressed.
   let tagFilter = 'all';
+  // Search (the owner, 15 Nov 2026): a student's name, or any word of a task or its tag, narrows every list at once.
+  let searchQ = '';
+  const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const matches = (x) => !searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ));
   const expanded = new Set();
   const FIRST = 5;
   // The task a notification was pressed for: shown even when it is past the first five or among the done ones.
@@ -59,7 +63,7 @@
   // One list of tasks under its own heading, the newest word first; the ones done in the last 7 days fold away at the bottom.
   function group(title, hint, all, refresh, emptyText) {
     const g = el('div', 'td-group');
-    const list = tagFilter === 'all' ? all : all.filter((x) => tagOf(x, x.stage) === tagFilter);
+    const list = (tagFilter === 'all' ? all : all.filter((x) => tagOf(x, x.stage) === tagFilter)).filter(matches);
     // Today and Upcoming (the owner, 15 Nov 2026): a task moved to a later day waits under Upcoming and is back under Today on its day.
     const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
     const openAll = list.filter((x) => !x.done);
@@ -83,7 +87,7 @@
     if (!open.length) {
       const empty = el('div', 'td-empty');
       empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-      empty.append(el('div', '', tagFilter !== 'all' ? `Nothing for today about ${tagLabel(tagFilter).toLowerCase()} here.` : upcoming.length ? 'Nothing for today. The rest is under Upcoming.' : emptyText));
+      empty.append(el('div', '', searchQ ? `No task for today matches \u201c${searchQ}\u201d here.` : tagFilter !== 'all' ? `Nothing for today about ${tagLabel(tagFilter).toLowerCase()} here.` : upcoming.length ? 'Nothing for today. The rest is under Upcoming.' : emptyText));
       g.append(empty);
     }
     const many = open.length > FIRST && !expanded.has(title) && !open.slice(FIRST).some((x) => x.id === focusTask);
@@ -127,11 +131,40 @@
     const box = el('section', 'td-tasks');
     const head = el('div', 'td-tasks-head');
     const titles = el('div');
-    titles.append(el('h2', '', 'Tasks'), el('p', '', 'What to do, in order of priority. Anything new is in Notifications above.'));
+    titles.append(el('h2', '', 'Tasks'), el('p', '', 'What to do, in order of priority. Anything new is under the bell at the top right.'));
     head.append(titles);
     box.append(head);
-    // One row of pills to see one kind of task at a time, each with how many are open.
-    const openAll = t.tasks.filter((x) => !x.done);
+    // The search box: a student's name or any word of a task. The list redraws as it is typed and the box keeps the cursor.
+    if (t.tasks.length) {
+      const sb = el('div', 'td-search');
+      const q = el('input', 'td-search-input');
+      q.type = 'search'; q.placeholder = 'Search tasks by student name or word'; q.value = searchQ;
+      q.setAttribute('aria-label', 'Search tasks by student name or word');
+      let timer = null;
+      q.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          const at = q.selectionStart;
+          searchQ = q.value.trim();
+          refresh();
+          const again = document.querySelector('.td-search-input');
+          if (again) { again.focus(); try { again.setSelectionRange(at, at); } catch (e) { /* not a text box */ } }
+        }, 180);
+      });
+      q.addEventListener('keydown', (e) => { if (e.key === 'Escape' && q.value) { e.preventDefault(); q.value = ''; q.dispatchEvent(new Event('input')); } });
+      const field2 = el('label', 'td-search-field');
+      const ico = el('span', 'td-search-ico');
+      ico.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+      field2.append(ico, q);
+      sb.append(field2);
+      if (searchQ) {
+        const n = t.tasks.filter((x) => matches(x) && !x.done).length;
+        sb.append(el('span', 'td-search-n', n ? `${n} open task${n === 1 ? '' : 's'} found` : 'No open task found'));
+      }
+      box.append(sb);
+    }
+    // One row of pills to see one kind of task at a time, each with how many are open (of what the search finds).
+    const openAll = t.tasks.filter((x) => !x.done && matches(x));
     if (openAll.length) {
       const counts = {};
       openAll.forEach((x) => { const k = tagOf(x, x.stage); counts[k] = (counts[k] || 0) + 1; });
@@ -239,8 +272,11 @@
   }
   // Go to one task: every kind shown, the task drawn even if it is past the first five, then glide to it, open its updates and mark
   // it read.
+  let closeInbox = () => {};
   function goTo(x, refresh) {
+    closeInbox();
     tagFilter = 'all';
+    searchQ = '';
     focusTask = x.id;
     refresh();
     requestAnimationFrame(() => {
@@ -325,15 +361,44 @@
       el('p', '', new Date(d.today + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })));
     const slot = el('div');
     const top = el('div');
+    // Notifications behind a bell at the top right (the owner, 15 Nov 2026): the red count shows what is new; a press opens them over
+    // the page, another press, Escape or a click outside closes them, so the page itself starts with the day and the tasks.
+    const bellWrap = el('div', 'td-bell-wrap');
+    const bell = h('button', { class: 'td-bell', type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', 'aria-label': 'Notifications', title: 'Notifications' });
+    bell.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.5 2H4.5z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
+    const bellCount = el('span', 'td-bell-count');
+    bell.append(bellCount);
+    const pop = el('div', 'td-bell-pop');
+    pop.hidden = true;
+    bellWrap.append(bell, pop);
+    head.append(bellWrap);
+    let popOpen = false;
+    const outside = (e) => { if (!bellWrap.contains(e.target)) setPop(false); };
+    const onKey = (e) => { if (e.key === 'Escape') { setPop(false); bell.focus(); } };
+    const drawPop = () => { if (popOpen) pop.replaceChildren(inbox(tasks, refresh)); };
+    function setPop(open) {
+      popOpen = open;
+      pop.hidden = !open;
+      bell.setAttribute('aria-expanded', String(open));
+      if (open) { drawPop(); document.addEventListener('pointerdown', outside, true); document.addEventListener('keydown', onKey, true); }
+      else { document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', onKey, true); }
+    }
+    bell.addEventListener('click', () => setPop(!popOpen));
+    closeInbox = () => setPop(false);
     const refresh = async (reload) => {
       if (reload) { try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ } }
       todayIso = tasks.today || d.today || todayIso;
-      top.replaceChildren(inbox(tasks, refresh), pulse(tasks, d.sections));
+      const fresh = tasks.tasks.reduce((n, x) => n + (x.history || []).filter((m) => m.isNew).length, 0);
+      bellCount.textContent = fresh > 99 ? '99+' : String(fresh);
+      bellCount.hidden = !fresh;
+      bell.classList.toggle('has-new', fresh > 0);
+      drawPop();
+      top.replaceChildren(pulse(tasks, d.sections));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };
     refresh();
-    // Admin and the Manager see the students waiting first (the whole consultancy), a team its own tasks first.
-    page.append(head, top, ...(tasks.canAssign ? [attention(d.sections), slot] : [slot, attention(d.sections)]));
+    // The day at a glance, then the tasks, then Needs attention, for everyone (the owner, 15 Nov 2026).
+    page.append(head, top, slot, attention(d.sections));
     view.replaceChildren(page);
   }).catch((e) => view.replaceChildren(el('div', 'p-card', e.message)));
 })();
