@@ -2422,3 +2422,10 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-done-sheet { margin: 4px 0 6px; }
 .bp-value.bp-locked { color: #8e8e93; letter-spacing: .05em; }
 .bp-icon.is-locked { opacity: .5; }
+
+/* 🔴 CSS CHANGED (2026-11-15): the Mark as done window asks by the task's tag | from: a grey box with the task, one "What was done?" box and, for an application, one tick box | to: under the task, the question of its tag answered with grey pills that turn blue with a blue ring when chosen ("Yes, submitted" / "No"; "Pending (account made)" / "Submitted"; "Booked" / "Report received" / "Not booked yet"), then a calendar and the boxes that answer needs (university, NOC number, hospital or clinic, a tick box for the feedback reminder), a small grey line saying where it goes on All Students, and a two-line note box; everything in one column with even spacing */
+.td-done-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.td-done-form .p-field { margin: 0; }
+.td-tag-pick .td-answer { border: 0; border-radius: 999px; background: #ececf0; color: #1d1d1f; cursor: pointer; }
+.td-tag-pick .td-answer[aria-checked="true"] { background: #e6f0fc; color: #0058b0; }
+.td-done-form > .p-muted { margin: -4px 0 0; }

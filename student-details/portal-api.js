@@ -385,6 +385,106 @@ function createPortalApi({
     'APPLICATION SUBMISSION DATE': (v) => realDay(v),
     'OFFER RECEIVED DATE': (v) => realDay(v),
   };
+  // ---- finishing a task fills in the student by itself (the owner, 15 Nov 2026) ----
+  // When a task is marked done, the window asks what the task was about (by its tag) and the answer goes where it belongs, so the team
+  // never writes the same thing in the notes, the task and the sheet:
+  //   Application  submitted on (a calendar, today first), to which university, a note: the date goes into Application submitted when
+  //                that is still empty; a second application (a backup option) is kept in the notes with its own date.
+  //   NOC          Pending (the account is made, not submitted) or Submitted, the NOC number: both into the sheet's NOC and NOC Number.
+  //   Mock         the day the mock interview is set for: into the next empty Mock Schedule, and the team gets "Write the feedback"
+  //                on that day as a task of its own.
+  //   Medical      booked (the day and where; the Medical Report says Booked and becomes Received by itself on that day), the report
+  //                received, or not booked yet (to book again; a booking that fell through is cleared).
+  // Every answer is also one note on the student, in plain words. Only these columns are written, by whoever may tick the task,
+  // whatever the student's stage.
+  const SYSTEM_REQ = { headers: {}, socket: {}, user: { id: 'system', name: 'ISR (automatic)', label: 'ISR (automatic)', role: 'admin' } };
+  function writeColumnsFor(req, rowId, changes) {
+    const wb = getWorkbook();
+    const keys = Object.keys(changes);
+    if (!wb || !keys.length) return;
+    const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((sh) => (sh.rows.some((r) => r._id === rowId) ? { ...sh, rows: sh.rows.map((r) => (r._id === rowId ? { ...r, ...changes } : r)) } : sh)) };
+    writeWorkbook(next);
+    recordChanges(req, wb, next);
+  }
+  const niceDay = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+  const sentence = (t) => { const x = text(t).trim(); return x ? (/[.!?]$/.test(x) ? x : x + '.') : ''; };
+  // Works out what finishing `task` with the answers `f` changes. Returns { error } or { columns, note, medical, remind }.
+  function finishPlan(found, task, f) {
+    const row = found.row;
+    const kind = Fields.taskTag(task, text(row[STATUS]));
+    const today = cards.today();
+    const note = text(f && f.note).slice(0, 2000);
+    const day = (v) => { const d = realDay(v); return d === null ? null : d; };
+    const plan = { kind, columns: {}, note: '', medical: undefined, remind: null };
+    if (!f || typeof f !== 'object') return plan;
+    if (kind === 'application' && f.submitted) {
+      const d = day(f.date);
+      if (!d) return { error: 'Choose the day the application was submitted.' };
+      if (d > today) return { error: 'The application cannot be submitted on a day still to come.' };
+      const uni = text(f.university).slice(0, 160);
+      // Any value already there stays (also one typed in another form): a second application is kept in the notes only.
+      const hadRaw = text(row['APPLICATION SUBMISSION DATE']);
+      const had = realDay(hadRaw) || hadRaw;
+      if (!hadRaw) plan.columns['APPLICATION SUBMISSION DATE'] = d;
+      plan.note = `Application submitted on ${niceDay(d)}${uni ? ` to ${uni}` : ''}.${hadRaw ? ` (Another application: the first was submitted on ${/^\d{4}-\d{2}-\d{2}$/.test(had) ? niceDay(had) : had}, which stays in Application submitted.)` : ''} ${sentence(note)}`.trim();
+    } else if (kind === 'noc' && f.noc) {
+      const status = f.noc === 'Submitted' ? 'Submitted' : f.noc === 'Pending' ? 'Pending' : '';
+      if (!status) return { error: 'Choose Pending or Submitted for the NOC.' };
+      const number = text(f.nocNumber).slice(0, 60);
+      plan.columns.NOC = status;
+      if (number) plan.columns['NOC NUMBER'] = number;
+      plan.note = `NOC ${status === 'Submitted' ? 'submitted' : 'pending (not submitted yet)'}${number ? `, NOC number ${number}` : ''}. ${sentence(note)}`.trim();
+    } else if (kind === 'mock' && f.scheduled) {
+      const d = day(f.date);
+      if (!d) return { error: 'Choose the day of the mock interview.' };
+      const slots = [1, 2, 3, 4];
+      const same = slots.find((n) => realDay(row[`MOCK SCHEDULE ${n}`]) === d);
+      const free = slots.find((n) => !text(row[`MOCK SCHEDULE ${n}`]));
+      const n = same || free;
+      if (n && !same) plan.columns[`MOCK SCHEDULE ${n}`] = d;
+      plan.note = `Mock interview${n ? ` ${n}` : ''} set for ${niceDay(d)}.${n ? '' : ' (All four mock dates on the sheet are already used.)'} ${sentence(note)}`.trim();
+      if (f.remind !== false && n) plan.remind = { day: d, text: `Write the feedback of mock interview ${n} (${niceDay(d)})`, slot: n };
+    } else if (kind === 'medical' && f.medical) {
+      const place = text(f.place).slice(0, 200);
+      if (f.medical === 'booked') {
+        const d = day(f.date);
+        if (!d) return { error: 'Choose the day the medical test is booked for.' };
+        plan.columns['MEDICAL REPORT'] = d <= today ? 'Received' : 'Booked';
+        plan.medical = { date: d, place, done: d <= today };
+        plan.note = `Medical test booked for ${niceDay(d)}${place ? ` at ${place}` : ''}. ${sentence(note)}`.trim();
+      } else if (f.medical === 'received') {
+        plan.columns['MEDICAL REPORT'] = 'Received';
+        plan.medical = null;
+        plan.note = `Medical report received${place ? ` (${place})` : ''}. ${sentence(note)}`.trim();
+      } else {
+        if (text(row['MEDICAL REPORT']) === 'Booked') plan.columns['MEDICAL REPORT'] = '';
+        plan.medical = null;
+        plan.note = `Medical test not booked yet: to be booked again. ${sentence(note)}`.trim();
+      }
+    }
+    if (!plan.note && note) plan.note = note;
+    // Nothing changes on the sheet when it already says the same.
+    Object.keys(plan.columns).forEach((c) => { if (text(row[c]) === plan.columns[c]) delete plan.columns[c]; });
+    return plan;
+  }
+  // The day a booked medical test comes, its Medical Report becomes Received by itself (unless it was booked again for a later day).
+  function medicalSweep() {
+    const today = cards.today();
+    const all = cards.all();
+    let n = 0;
+    Object.entries(all).forEach(([rowId, card]) => {
+      const m = card && card.medical;
+      if (!m || m.done || m.date > today) return;
+      const found = rowIndex().get(rowId);
+      if (found && text(found.row['MEDICAL REPORT']) !== 'Received') {
+        writeColumnsFor(SYSTEM_REQ, rowId, { 'MEDICAL REPORT': 'Received' });
+        cards.addNote(rowId, { kind: 'note', text: `Medical report marked Received by itself: the test was booked for ${niceDay(m.date)}${m.place ? ` at ${m.place}` : ''}.` }, 'ISR (automatic)');
+        n += 1;
+      }
+      cards.setMedical(rowId, { ...m, done: true }, 'ISR (automatic)');
+    });
+    return n;
+  }
   // Changes columns of one student with the rules of the sheet: Admin any time; a team only the columns it may edit on a student it sees.
   function setColumns(req, found, changes) {
     const wb = getWorkbook();
@@ -792,6 +892,20 @@ function createPortalApi({
           if (!out.error) note(req, [`${who2}: commented on the task for ${teamLabel(task.team)}: ${String(body.comment).slice(0, 120)}`], 'Task comment');
         } else {
           if (!canAssign(req.user) && !forMe(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
+          // Finishing with answers (see finishPlan): the sheet, the note, the medical booking and the feedback reminder, then done.
+          if (body.done && !task.done && body.finish && typeof body.finish === 'object') {
+            const plan = finishPlan(found, task, body.finish);
+            if (plan.error) { sendJSON(res, 400, { error: plan.error }); return true; }
+            writeColumnsFor(req, rowId, plan.columns);
+            if (plan.note) cards.addNote(rowId, { kind: 'note', text: plan.note }, by(req));
+            if (plan.medical !== undefined) cards.setMedical(rowId, plan.medical, by(req));
+            if (plan.remind) {
+              const team = task.team === HEAD ? 'mock' : task.team;
+              const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: 'mock', priority: 'high' }, by(req));
+              if (!made.error && plan.remind.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: plan.remind.day, reason: 'On the day of the mock interview' }, by(req), cards.today());
+            }
+            if (plan.note || Object.keys(plan.columns).length) note(req, [`${who2}: finished the task "${task.text.slice(0, 80)}"${Object.keys(plan.columns).length ? `; ${Object.entries(plan.columns).map(([c, v]) => `${c}: ${v || '(blank)'}`).join(', ')}` : ''}`], 'Task');
+          }
           out = cards.setTask(rowId, sub, Boolean(body.done), by(req));
           if (!out.error) note(req, [`${who2}: marked the task for ${teamLabel(task.team)} as ${body.done ? 'complete' : 'not complete'}`], 'Task');
         }
@@ -1976,7 +2090,7 @@ function createPortalApi({
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
           if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
-          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, appSubmitted: Boolean(text(row['APPLICATION SUBMISSION DATE'])) });
+          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, appSubmitted: text(row['APPLICATION SUBMISSION DATE']), university: text(row['UNIVERSITY NAME']), nocNumber: text(row['NOC NUMBER']) });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.
@@ -2199,7 +2313,7 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, canSee, canChange, visibleStudents, courseIndex, brief };
+  return { handle, rowIndex, canSee, canChange, visibleStudents, courseIndex, brief, medicalSweep };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };

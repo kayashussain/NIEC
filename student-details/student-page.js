@@ -229,7 +229,7 @@
       const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
       list.append(window.Portal.taskCard(t, {
         rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0, today: data.today,
-        offerSubmitted: window.Portal.tagOf(t, data.student.stage) === 'application' && !String(data.student.row['APPLICATION SUBMISSION DATE'] || '').trim() && !t.done,
+        finishInfo: { university: data.student.row['UNIVERSITY NAME'] || '', appSubmitted: String(data.student.row['APPLICATION SUBMISSION DATE'] || '').trim(), nocNumber: data.student.row['NOC NUMBER'] || '' },
         canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
         actions: [
@@ -239,7 +239,7 @@
           !data.can.readOnly && (mine || t.by === me) && ['Reassign to another team', async () => { if (await window.Portal.handOn(t, { rowId: id, teams: data.handTeams || [] })) { say('Reassigned'); reload(); } }],
           (data.can.removeAnyTask || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { await save(`tasks/${t.id}/delete`, {}, 'Task removed'); render(); } }, true],
         ],
-        onTick: async (done, folded) => { await save(`tasks/${t.id}`, { done }, done ? window.Portal.cheer() : 'Marked as not done'); await folded; render(); },
+        onTick: async (done, folded, finish) => { await save(`tasks/${t.id}`, { done, ...(finish ? { finish } : {}) }, done ? window.Portal.cheer() : 'Marked as not done'); await folded; data = await api('/api/cards/' + encodeURIComponent(id)); render(); },
         onChanged: reload,
       }));
     });

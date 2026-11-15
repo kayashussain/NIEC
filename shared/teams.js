@@ -25,12 +25,13 @@
   const COLOR = '_color';
   const ROW_COLORS = ['green', 'yellow', 'orange', 'red', 'blue', 'purple', 'grey'];
 
-  // Everything up to NOC Number (the Application Team's part of the sheet).
+  // Everything up to NOC Number (the Application Team's part of the sheet), and the Medical Report, which the Application Team books
+  // and records too (the owner, 15 Nov 2026).
   const APPLICATION_COLUMNS = [
     'REMARKS', 'STUDENT SOURCE', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE',
     'FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER',
     'UNIVERSITY NAME', 'COURSE NAME', 'RECEIVING PARTNER', 'UNIVERSITY PARTNER',
-    'LANGUAGE TEST DATE', 'STUDENT ID', 'NOC', 'NOC NUMBER',
+    'LANGUAGE TEST DATE', 'STUDENT ID', 'NOC', 'NOC NUMBER', 'MEDICAL REPORT',
   ];
   // The mock interviews up to Pre-CAS Interview (the Mock Team's part).
   const MOCK_COLUMNS = [

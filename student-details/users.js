@@ -3,7 +3,7 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const DEPARTMENTS = {
-    application: { label: 'Application Team', help: 'Sees Application Stage students. Fills in details up to NOC Number.' },
+    application: { label: 'Application Team', help: 'Sees Application Stage students. Fills in details up to NOC Number, and the Medical Report.' },
     mock: { label: 'Mock Team', help: 'Sees Mock Stage students. Fills in the mock interviews and Pre-CAS result.' },
     followup: { label: 'Follow-up Team', help: 'Sees Inquiry and Defer students. Adds remarks.' },
   };

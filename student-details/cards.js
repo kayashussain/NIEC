@@ -86,6 +86,9 @@ function normalize(raw) {
     // (older tasks may also have `due`, the date they were once given with, no longer shown). A task handed on has `route`: the teams
     // it was with before, oldest first, and a comment with `handoff: { from, to }` for each hand-on.
     tasks: (Array.isArray(c.tasks) ? c.tasks : []).filter((t) => t && t.id && t.team && t.text).slice(-LIMITS.tasks),
+    // The medical test booked from a Medical task (the owner, 15 Nov 2026): { date, place, by, at }. On that day the sheet's Medical
+    // Report becomes Received by itself, unless it was booked again for another day meanwhile. null when nothing is booked.
+    medical: c.medical && /^\d{4}-\d{2}-\d{2}$/.test(String(c.medical.date)) ? { date: c.medical.date, place: str(c.medical.place, 200), by: str(c.medical.by, 80), at: str(c.medical.at, 40), done: Boolean(c.medical.done) } : null,
     createdAt: str(c.createdAt, 40), createdBy: str(c.createdBy, 80), updatedAt: str(c.updatedAt, 40), updatedBy: str(c.updatedBy, 80),
   };
 }
@@ -220,6 +223,12 @@ function createCards(dir, { now = () => new Date() } = {}) {
     // Every card, keyed by row id (for the Dashboard and the backup). Not a copy: do not change it.
     all() { return load().cards; },
 
+    // The medical test booked (a date and where), or none (null): see `medical` on the card.
+    setMedical(rowId, input, by) {
+      return update(rowId, by, (card, stamp) => {
+        card.medical = input && /^\d{4}-\d{2}-\d{2}$/.test(String(input.date)) ? { date: input.date, place: str(input.place, 200), by: by || '', at: stamp, done: Boolean(input.done) } : null;
+      });
+    },
     setProfile(rowId, input, by) {
       return update(rowId, by, (card) => { card.profile = cleanProfile(input, card.profile); });
     },

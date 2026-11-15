@@ -32,8 +32,9 @@
       'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected', 'Defer', 'Hold', 'Withdrawn',
     ],
     'PRE CAS INTERVIEW': ['Passed', 'Fail'],
-    'NOC': ['Submitted'],
-    'MEDICAL REPORT': ['Received'],
+    // Pending: the NOC account is made, the application not submitted yet; Booked: the medical test has a day (the owner, 15 Nov 2026).
+    'NOC': ['Pending', 'Submitted'],
+    'MEDICAL REPORT': ['Booked', 'Received'],
     'STUDENT SOURCE': SOURCE_OPTIONS,
     // Filled from Partner Universities and B2B Partners when the page opens (loadPartnerChoices); a new partner is added there first.
     'UNIVERSITY PARTNER': [],
@@ -441,7 +442,7 @@
     if (!v) return 'badge-gray';
     if (/(reject|fail)/.test(v)) return 'badge-red'; // a refused visa or a failed interview stands out
     if (/(issued|passed|received|done|submitted)/.test(v)) return 'badge-green';
-    if (/(lodge|requested|pending|waiting|inquiry|stage)/.test(v)) return 'badge-blue';
+    if (/(lodge|requested|pending|waiting|inquiry|stage|booked)/.test(v)) return 'badge-blue';
     if (/(not|no|fail|reject|hold|defer|withdrawn)/.test(v)) return 'badge-amber';
     return 'badge-gray';
   }

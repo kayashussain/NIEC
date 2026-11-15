@@ -401,30 +401,86 @@
   // when, in small grey type. The updates open under the task.
   //   o: { rowId, me, teams, mayTick, tickTitle, canWrite, canChange, unread, stage, student: { name, href } | null, fromName,
   //        toName, actions: [[label, onClick, danger]], onTick: async (done) => {}, onChanged }
-  // The "Mark as done?" window: the task, one optional line on what was done, and the sheet shortcut when it applies. Resolves
-  // { text, submitted } or null when Not yet is pressed.
+  // The "Mark as done?" window (the owner, 15 Nov 2026): it asks what the task's tag needs, and the server puts each answer where it
+  // belongs (the sheet, a note on the student, a reminder): Application (submitted on, to which university), NOC (Pending or
+  // Submitted, the NOC number), Mock interview (the day it is set for, a reminder to write the feedback), Medical (booked for a day and
+  // where, report received, or not booked yet); anything else, one line on what was done. Resolves the answers ({ note, ... }) or
+  // null when Not yet is pressed.
   function doneDialog(t, o) {
     let answer = null;
+    const info = o.finishInfo || {};
+    const tag = tagOf(t, o.stage);
+    const today = o.today || new Date().toISOString().slice(0, 10);
     return dialog('Mark as done?', (body, close) => {
       const who = o.fromName === 'You' ? 'you see' : (o.fromName || 'whoever gave it') + ' sees';
-      body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}\u201c${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}\u201d`));
-      const words = field('What was done? (optional)', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submitted to Coventry University, MSc Data Science. Application ID 12345.' });
-      words.input.rows = 2;
-      body.append(words.wrap);
-      let sub = null;
-      if (o.offerSubmitted) {
-        const box = el('label', 'p-check td-done-sheet');
-        sub = el('input'); sub.type = 'checkbox';
-        box.append(sub, el('span', '', 'Also write today as Application submitted on All Students'));
-        body.append(box);
+      body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
+      const form = el('div', 'p-form td-done-form');
+      body.append(form);
+      const msg = el('div', 'p-msg');
+      // A short question answered with pills (Yes / No, Pending / Submitted ...).
+      const ask = (label, choices, initial, onChange) => {
+        const w = el('div', 'p-field p-wide');
+        w.append(el('span', 'p-label', label));
+        const p = picker(choices, initial, (k) => `td-prio td-answer ans-${k}`, label);
+        p.node.addEventListener('click', () => setTimeout(() => onChange && onChange(p.value()), 0));
+        w.append(p.node);
+        form.append(w);
+        return p;
+      };
+      const parts = {}; // the boxes shown for the current answer
+      const show = (node, on) => { node.hidden = !on; };
+      const dateField = (label, value, max) => { const f = field(label, { kind: 'date', value }); if (max) f.input.max = max; form.append(f.wrap); return f; };
+      let read = () => ({});
+      let check = () => '';
+      if (tag === 'application') {
+        const q = ask('Was an application submitted?', [['yes', 'Yes, submitted'], ['no', 'No']], 'yes', (v) => { show(parts.date.wrap, v === 'yes'); show(parts.uni.wrap, v === 'yes'); show(parts.had, v === 'yes'); });
+        parts.date = dateField('Submitted on', today, today);
+        parts.uni = field('To which university', { value: info.university || '', max: 160, placeholder: 'e.g. Coventry University' });
+        form.append(parts.uni.wrap);
+        parts.had = el('p', 'p-muted p-small p-wide', info.appSubmitted ? `Application submitted on the sheet already says ${/^\d{4}-\d{2}-\d{2}/.test(info.appSubmitted) ? day(info.appSubmitted.slice(0, 10)) : info.appSubmitted}: it stays, and this application is kept in the notes with its own date.` : 'The date goes into Application submitted on All Students.');
+        form.append(parts.had);
+        read = () => (q.value() === 'yes' ? { submitted: true, date: parts.date.input.value, university: parts.uni.input.value.trim() } : {});
+        check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day it was submitted.' : '');
+      } else if (tag === 'noc') {
+        const q = ask('The NOC', [['Pending', 'Pending (account made)'], ['Submitted', 'Submitted']], '', null);
+        parts.num = field('NOC number', { value: info.nocNumber || '', max: 60, placeholder: 'If there is one' });
+        form.append(parts.num.wrap, el('p', 'p-muted p-small p-wide', 'Both go into NOC and NOC Number on All Students.'));
+        read = () => ({ noc: q.value(), nocNumber: parts.num.input.value.trim() });
+        check = () => (!q.value() ? 'Choose Pending or Submitted.' : '');
+      } else if (tag === 'mock') {
+        const q = ask('Was a mock interview set?', [['yes', 'Yes'], ['no', 'No']], 'yes', (v) => { show(parts.date.wrap, v === 'yes'); show(parts.rem, v === 'yes'); });
+        parts.date = dateField('Mock interview on', today);
+        parts.rem = el('label', 'p-check p-wide');
+        const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
+        parts.rem.append(remind, el('span', '', 'Remind the team to write the feedback on that day'));
+        form.append(parts.rem, el('p', 'p-muted p-small p-wide', 'The day goes into the next empty Mock Schedule on All Students.'));
+        read = () => (q.value() === 'yes' ? { scheduled: true, date: parts.date.input.value, remind: remind.checked } : {});
+        check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day of the mock interview.' : '');
+      } else if (tag === 'medical') {
+        const q = ask('The medical test', [['booked', 'Booked'], ['received', 'Report received'], ['none', 'Not booked yet']], '', (v) => { show(parts.date.wrap, v === 'booked'); show(parts.place.wrap, v !== 'none'); show(parts.hint, v === 'booked'); });
+        parts.date = dateField('Booked for', '');
+        parts.place = field('Hospital or clinic', { max: 200, placeholder: 'e.g. IOM Kathmandu' });
+        form.append(parts.place.wrap);
+        parts.hint = el('p', 'p-muted p-small p-wide', 'Medical Report on All Students says Booked, and Received by itself on that day. Booked again for another day, the new day counts.');
+        form.append(parts.hint);
+        [parts.date.wrap, parts.place.wrap, parts.hint].forEach((n) => { n.hidden = true; });
+        read = () => ({ medical: q.value(), date: parts.date.input.value, place: parts.place.input.value.trim() });
+        check = () => (!q.value() ? 'Choose Booked, Report received or Not booked yet.' : q.value() === 'booked' && !parts.date.input.value ? 'Choose the day it is booked for.' : '');
       }
-      body.append(el('p', 'p-muted p-small', `It moves to Done, ${who} that it is done, and it stays in the student's History.`));
+      const words = field(tag === 'other' || !['application', 'noc', 'mock', 'medical'].includes(tag) ? 'What was done? (optional)' : 'A note (optional)', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. MSc Data Science, Application ID 12345.' : tag === 'noc' ? 'e.g. NOC account created, documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
+      words.input.rows = 2;
+      form.append(words.wrap);
+      body.append(msg, el('p', 'p-muted p-small', `It goes into the student's notes, it moves to Done, and ${who} that it is done.`));
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Yes, it is done');
-      ok.addEventListener('click', () => { answer = { text: words.input.value.trim(), submitted: Boolean(sub && sub.checked) }; close(true); });
+      ok.addEventListener('click', () => {
+        const problem = check();
+        if (problem) { msg.textContent = problem; msg.className = 'p-msg error'; return; }
+        answer = { ...read(), note: words.input.value.trim() };
+        close(true);
+      });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Not yet'), ok);
       body.append(foot);
-      setTimeout(() => words.input.focus(), 0);
     }).then(() => answer);
   }
   function taskCard(t, o) {
@@ -434,27 +490,19 @@
     const tick = h('button', { class: 'td-check', type: 'button', 'aria-pressed': String(t.done), title: o.mayTick ? (t.done ? 'Mark as not done' : 'Mark as done') : (o.tickTitle || ''), 'aria-label': t.done ? 'Mark as not done' : 'Mark as done', disabled: !o.mayTick });
     tick.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     tick.addEventListener('click', async () => {
-      // Done is asked once more (the owner, 15 Nov 2026), so a task is never ticked by a slip of the mouse. The same window takes, if
-      // wanted, one line on what was done (it becomes the task's last update, so it is in the student's History) and, for an
-      // application task on a student not marked submitted yet, today's date in Application submitted on All Students, so the team
-      // writes it once instead of in the notes, the task and the sheet (the owner, 15 Nov 2026).
+      // Done is asked once more (the owner, 15 Nov 2026), so a task is never ticked by a slip of the mouse; the same window asks what
+      // the task's tag needs (doneDialog) and the answers go with the tick, so the team writes them once.
+      let finish = null;
       if (!t.done && root.NiecUI) {
-        const said = await doneDialog(t, o);
-        if (!said) return;
-        try {
-          if (said.text) await api(`/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`, { comment: said.text });
-          if (said.submitted) {
-            const out = await api(`/api/cards/${encodeURIComponent(o.rowId)}/sheet`, { fields: { 'APPLICATION SUBMISSION DATE': o.today || new Date().toISOString().slice(0, 10) } }).catch((e) => ({ error: e.message }));
-            if (out && out.error) root.NiecUI.toast(`The task is done, but Application submitted could not be written: ${out.error}`, { type: 'error' });
-          }
-        } catch (e) { root.NiecUI.toast(e.message, { type: 'error' }); return; }
+        finish = await doneDialog(t, o);
+        if (!finish) return;
       }
       tick.disabled = true;
       // The circle turns blue with a tick and the row folds away, and only then is the list redrawn (the next task never jumps).
       const quick = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!t.done) { r.classList.add('is-ticking'); celebrate(tick); }
       const folded = new Promise((ok) => setTimeout(ok, t.done || quick ? 0 : 520));
-      try { await o.onTick(!t.done, folded); } catch (e) { r.classList.remove('is-ticking'); tick.disabled = false; }
+      try { await o.onTick(!t.done, folded, finish); } catch (e) { r.classList.remove('is-ticking'); tick.disabled = false; }
     });
     const mid = el('div', 'td-task-mid');
     const top = el('div', 'td-task-top');

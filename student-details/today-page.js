@@ -42,8 +42,8 @@
     return window.Portal.taskCard(t, {
       rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true, today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
-      // Ticking an application task on a student not marked submitted offers today's date for Application submitted.
-      offerSubmitted: tagOf(t, t.stage) === 'application' && !t.appSubmitted && !t.done,
+      // What the Mark as done window needs to know about the student (see doneDialog in portal-ui.js).
+      finishInfo: { university: t.university || '', appSubmitted: t.appSubmitted || '', nocNumber: t.nocNumber || '' },
       canChange: t.forMe || t.by === me || canAssignAll,
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [
@@ -52,9 +52,9 @@
         t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: handTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
       ],
-      onTick: async (done, folded) => {
+      onTick: async (done, folded, finish) => {
         try {
-          await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}`, { done });
+          await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}`, { done, ...(finish ? { finish } : {}) });
           window.NiecUI.toast(done ? window.Portal.cheer() : 'Marked as not done', { type: 'success' });
           await folded;
           refresh(true);
