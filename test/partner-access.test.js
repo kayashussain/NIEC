@@ -71,18 +71,21 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
     assert.strictEqual((await p('GET', '/api/agents')).status, 200);
     if (who === 'bikram') assert.strictEqual((await p('POST', '/api/b2b', { name: 'X' })).status, 403, 'the Mock Team only looks');
   }
-  // The Application Team sets B2B partners up (the owner, 15 Nov 2026): it sees the names on the sheet, adds one and changes its
-  // details, but the commission lists and notes stay as Admin left them, the files stay closed, and only Admin removes a partner.
+  // The Application Team sets B2B partners up (the owner, 15 Nov 2026): it sees the names on the sheet and adds one, but on a partner
+  // it changes only the portal link (or email), its username and its password; the name, status, contacts, commission lists and notes
+  // stay as Admin left them, the files stay closed, and only Admin removes a partner.
   assert.ok(Array.isArray((await asha('GET', '/api/b2b')).json.onSheet), 'the Application Team sees the names not set up yet');
   const made = await asha('POST', '/api/b2b', { name: 'Set Up By Team' });
   assert.strictEqual(made.status, 200);
-  const changed = await asha('POST', `/api/b2b/${partner.id}`, { name: partner.name, status: 'Active', contacts: [{ name: 'New contact' }], commissions: [], notes: 'changed by the team' });
+  const before = (await admin('GET', `/api/b2b/${partner.id}`)).json;
+  const changed = await asha('POST', `/api/b2b/${partner.id}`, { name: 'Renamed by the team', status: 'Ended', city: 'Elsewhere', contacts: [{ name: 'New contact' }], commissions: [], notes: 'changed by the team', apply: 'https://portal.example.org/new', applyUser: 'team-user', applyPassword: 'team-pass' });
   assert.strictEqual(changed.status, 200);
   assert.ok(!NO_LOGIN_SECRET.test(JSON.stringify(changed.json)), 'the answer carries no commission either');
-  const after = (await chief('GET', `/api/b2b/${partner.id}`)).json;
-  assert.strictEqual(after.contacts[0].name, 'New contact');
+  const after = (await admin('GET', `/api/b2b/${partner.id}`)).json;
+  assert.deepStrictEqual([after.applyPortal, after.applyUser, after.applyPassword], ['https://portal.example.org/new', 'team-user', 'team-pass'], 'the portal and its login change');
+  assert.deepStrictEqual([after.name, after.status, after.city, after.contacts], [before.name, before.status, before.city, before.contacts], 'the details stay as Admin left them');
   assert.strictEqual(after.commissions[0].intake, 'Jan Intake 2027', 'the commission list is kept');
-  assert.notStrictEqual(after.notes, 'changed by the team', 'the notes are kept');
+  assert.strictEqual(after.notes, before.notes, 'the notes are kept');
   assert.strictEqual((await asha('POST', `/api/b2b/${made.json.id}/delete`, {})).status, 403, 'only Admin removes a partner');
   assert.strictEqual((await bikram('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 403);
   assert.strictEqual((await asha('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 200, 'the Application Team marks Not a partner');

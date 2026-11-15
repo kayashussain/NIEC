@@ -169,7 +169,9 @@
   function guessTaskTag(text, team, stage) {
     const t = String(text || '').toLowerCase();
     if (/\bnoc\b|no objection/.test(t)) return 'noc';
-    if (/\b(medical|health check|tb test|tuberculosis|x-?ray)\b/.test(t)) return 'medical';
+    // "medicals", "medical test", "IOM", "TB test", "chest x-ray", "health check" (the owner, 15 Nov 2026: medical tasks were tagged
+    // Other or Payment). The health surcharge (IHS) is a payment, not a medical.
+    if (/\b(medicals?|health ?check|iom|tb|tuberculosis|x-?ray|clinic|hospital|doctor)\b/.test(t)) return 'medical';
     if (/\b(pay|payment|deposit|fee|fees|invoice|receipt|tuition|refund)\b/.test(t)) return 'payment';
     if (/\b(visa|cas|vfs|biometric|e-?visa|brp|lodge)\b/.test(t)) return 'visa';
     if (/\b(mock|interview|pre-?cas)\b/.test(t)) return 'mock';

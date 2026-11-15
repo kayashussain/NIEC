@@ -19,13 +19,23 @@
   // 'setup': the Application Team sets B2B partners up (details, how to submit, contacts) but not the commission, files or notes.
   const settingUp = () => data && data.access === 'setup';
   const viewer = () => data && data.access && data.access !== 'full' && data.access !== 'setup';
-  const open = (id) => (viewer() ? view(id) : edit(id));
+  // Admin edits everything; the Application Team opens the partner and changes only how to submit; everyone else looks.
+  const open = (id, o) => (viewer() || settingUp() ? view(id, o) : edit(id));
 
   const stats = (name) => data.performance[String(name).toLowerCase()] || { students: 0, visas: 0, intakes: {} };
   const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
   const openLink = (text, href, cls = 'bp-link') => { const a = el('a', cls, text); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; };
   const btn = (cls, label, onClick) => { const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; };
-  const copy = (value, what) => btn('bp-mini', 'Copy', async () => { try { await navigator.clipboard.writeText(value); say(`${what} copied`); } catch (e) { say(`Could not copy the ${what.toLowerCase()}`, true); } });
+  // Small round icon buttons (copy, show the password), each named for screen readers and on hover.
+  const ICON = {
+    copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  };
+  const iconBtn = (icon, label, onClick) => { const b = btn('bp-icon', '', onClick); b.innerHTML = ICON[icon]; b.title = label; b.setAttribute('aria-label', label); return b; };
+  const copy = (value, what) => iconBtn('copy', `Copy the ${what.toLowerCase()}`, async () => { try { await navigator.clipboard.writeText(value); say(`${what} copied`); } catch (e) { say(`Could not copy the ${what.toLowerCase()}`, true); } });
+  const initialsOf = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  const avatar = (name, big) => el('span', `bp-avatar${big ? ' is-big' : ''}`, initialsOf(name));
+  const visasLine = (st) => `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} · ${number(st.students)} student${st.students === 1 ? '' : 's'}`;
   const PILL = { Active: 'green', Ended: 'red' };
   // The agreement start as the calendar needs it (2026-01-01). Older records were typed by hand ("1 Jan 2026", "1/31/2026"): they
   // are read when they can be, so they open on the right day; anything else is kept as it was until a day is chosen.
@@ -108,7 +118,7 @@
     foot.append(btn('btn', notWord, async () => {
       if (!(await window.NiecUI.confirm(`${x.name} is not ${KIND === 'agents' ? 'an agent' : 'a B2B partner'}? It is hidden here and in the ${KIND === 'agents' ? 'Receiving' : 'University'} Partner dropdown (the students keep the name). You can show it again.`, { confirmText: notWord }))) return;
       await api(`${API}/not-partner`, { name: x.name }); say(`${x.name} hidden`); load();
-    }), btn('btn btn-primary', 'Set up →', async () => { try { const made = await api(API, { name: x.name }); await load(); edit(made.id); } catch (e) { say(e.message, true); } }));
+    }), btn('btn btn-primary', 'Set up →', async () => { try { const made = await api(API, { name: x.name }); await load(); open(made.id, { editSubmit: true }); } catch (e) { say(e.message, true); } }));
     c.append(head, foot);
     return c;
   }
@@ -118,8 +128,10 @@
     const c = el('article', `bp-card${p.id === justSaved ? ' is-saved' : ''}`);
     c.dataset.id = p.id;
     const head = el('div', 'bp-card-head');
-    const who = el('div');
-    who.append(btn('bp-name', p.name, () => open(p.id)), el('div', 'bp-sub', [p.city, `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(st.students)} student${st.students === 1 ? '' : 's'}`].filter(Boolean).join(' · ')));
+    const who = el('div', 'bp-who');
+    const words = el('div');
+    words.append(btn('bp-name', p.name, () => open(p.id)), el('div', 'bp-sub', [p.city, visasLine(st)].filter(Boolean).join(' · ')));
+    who.append(avatar(p.name), words);
     head.append(who, el('span', `bp-status ${PILL[p.status] || 'amber'}`, p.status));
     c.append(head);
     if (KIND === 'b2b') c.append(submitBox(p));
@@ -128,43 +140,48 @@
     // The commission of the intake that is running: open it, or a calm note that it is missing.
     const cur = data.currentIntake;
     const found = (p.commissions || []).find((x) => same(x.intake, cur) && (x.fileId || x.link));
-    if (data.access === 'team' || settingUp()) { /* a team does not see the commission */ } else if (found) row(`Commission list, ${cur}`, found.fileId ? openLink('Open the PDF ↗', `${API}/${p.id}/files/${found.fileId}?open=1`) : openLink('Open the link ↗', found.link));
+    const withIntake = (node) => { const d = el('div', 'bp-lines'); d.append(node, el('small', 'bp-muted', cur || 'This intake')); return d; };
+    if (data.access === 'team' || settingUp()) { /* a team does not see the commission */ } else if (found) row('Commission', withIntake(found.fileId ? openLink('Open the PDF \u2197', `${API}/${p.id}/files/${found.fileId}?open=1`) : openLink('Open the link \u2197', found.link)));
     else if (p.status === 'Ended') row('Commission', 'Ended');
-    else if (viewer()) row(`Commission list, ${cur || 'this intake'}`, el('span', 'bp-none', 'Not uploaded yet'));
-    else { const m = btn('bp-missing', 'Not uploaded yet', () => edit(p.id)); row(`Commission list, ${cur || 'this intake'}`, m); }
+    else if (viewer()) row('Commission', withIntake(el('span', 'bp-none', 'Not uploaded yet')));
+    else row('Commission', withIntake(btn('bp-missing', 'Not uploaded yet', () => edit(p.id))));
     const k = p.contact || {};
     if (k.name || k.phone || k.email) {
       const d = el('div', 'bp-lines');
-      if (k.name) d.append(el('span', '', k.name + (p.contactCount > 1 ? `  (+${p.contactCount - 1} more)` : '')));
-      if (k.phone) d.append(el('span', '', k.phone));
+      if (k.name) d.append(el('span', 'bp-strong', k.name + (p.contactCount > 1 ? `  +${p.contactCount - 1}` : '')));
+      if (k.phone) { const a = el('a', 'bp-link', k.phone); a.href = 'tel:' + k.phone.replace(/[^\d+]/g, ''); d.append(a); }
       if (k.email) { const a = el('a', 'bp-link', k.email); a.href = 'mailto:' + k.email; d.append(a); }
       row('Contact', d);
     } else row('Contact', null);
     row('Agreement', started(p));
     c.append(facts);
-    const foot = el('div', 'bp-foot'); foot.append(btn('btn', 'Open details →', () => open(p.id)));
+    const foot = el('div', 'bp-foot'); foot.append(btn('btn', settingUp() ? 'Open' : viewer() ? 'Open' : 'Edit', () => open(p.id)));
     c.append(foot);
     return c;
   }
 
-  // How to submit an application through the partner, ready to use from the list.
+  // How to submit an application through the partner, ready to use from the list: one "Open portal" button, then the username and
+  // the password each on its own line with a copy button (and an eye to show the password).
   function submitBox(p) {
     const box = el('div', 'bp-submit');
-    box.append(el('div', 'bp-submit-title', 'Application submission'));
-    const line = (label, value, ...buttons) => { const d = el('div', 'bp-submit-line'); d.append(el('span', 'bp-submit-label', label), value, ...buttons); return d; };
+    const line = (label, value, ...buttons) => { const d = el('div', 'bp-submit-line'); const b = el('span', 'bp-submit-btns'); b.append(...buttons); d.append(el('span', 'bp-submit-label', label), value, b); return d; };
     if (p.applyPortal) {
-      box.append(line('Portal', openLink('Open portal ↗', p.applyPortal, 'bp-portal'), copy(p.applyPortal, 'Link')));
-      if (p.applyUser) box.append(line('Username', el('code', '', p.applyUser), copy(p.applyUser, 'Username')));
+      const top = el('div', 'bp-submit-top');
+      top.append(openLink('Open portal \u2197', p.applyPortal, 'bp-portal'), copy(p.applyPortal, 'Link'));
+      box.append(top);
+      if (p.applyUser) box.append(line('Username', el('code', 'bp-value', p.applyUser), copy(p.applyUser, 'Username')));
       if (p.applyPassword) {
-        const dots = '•'.repeat(10);
-        const shown = el('code', '', dots);
-        const peek = btn('bp-mini', 'Show', () => { const open = shown.textContent === dots; shown.textContent = open ? p.applyPassword : dots; peek.textContent = open ? 'Hide' : 'Show'; });
+        const dots = '\u2022'.repeat(10);
+        const shown = el('code', 'bp-value', dots);
+        const peek = iconBtn('eye', 'Show the password', () => { const showing = shown.textContent !== dots; shown.textContent = showing ? dots : p.applyPassword; peek.classList.toggle('is-on', !showing); peek.title = showing ? 'Show the password' : 'Hide the password'; peek.setAttribute('aria-label', peek.title); });
         box.append(line('Password', shown, peek, copy(p.applyPassword, 'Password')));
       }
     } else if (p.applyEmail) {
-      const w = el('a', 'bp-portal', 'Write email ↗'); w.href = 'mailto:' + p.applyEmail;
-      box.append(line('Email', el('code', '', p.applyEmail), copy(p.applyEmail, 'Email'), w));
-    } else box.append(el('div', 'bp-none', 'Not entered yet'));
+      const top = el('div', 'bp-submit-top');
+      const w = el('a', 'bp-portal', 'Write email \u2197'); w.href = 'mailto:' + p.applyEmail;
+      top.append(w);
+      box.append(top, line('Email', el('code', 'bp-value', p.applyEmail), copy(p.applyEmail, 'Email')));
+    } else box.append(el('div', 'bp-none', 'How to apply is not entered yet'));
     return box;
   }
 
@@ -234,30 +251,86 @@
   // A partner as the page uses it: every list present, whatever an older or partial record holds.
   const whole = (p) => ({ ...p, name: p.name || '', contacts: Array.isArray(p.contacts) ? p.contacts : [], commissions: Array.isArray(p.commissions) ? p.commissions : [], agreements: Array.isArray(p.agreements) ? p.agreements : [] });
 
-  // ---- one partner, read only (everyone but Admin) ----
-  async function view(id) {
+  // ---- one partner, to look at (everyone but Admin), and for the Application Team to change how to submit ----
+  async function view(id, o = {}) {
     const p = whole(await api(`${API}/${id}`));
     const st = stats(p.name);
-    const page = el('div');
+    const page = el('div', 'bp-detail');
     page.append(btn('bp-back', `← ${WORD.title}`, closeEditor));
-    const head = el('div', 'bp-ed-head'); head.append(el('h2', '', p.name), el('span', `bp-status ${PILL[p.status] || 'amber'}`, p.status));
-    page.append(head, el('p', 'bp-saved', [p.city, `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(st.students)} student${st.students === 1 ? '' : 's'}`].filter(Boolean).join(' · ')));
-    const box = (title, ...nodes) => { const s = el('section', 'bp-step'); const hd = el('div', 'bp-step-head'); const w = el('div'); w.append(el('h3', '', title)); hd.append(w); s.append(hd, ...nodes); page.append(s); };
-    const none = (t = 'Not entered yet') => el('span', 'bp-none', t);
-    const lines = (items) => { const d = el('div', 'bp-lines'); items.forEach((x) => d.append(x instanceof Node ? x : el('span', '', x))); return d; };
-    if (KIND === 'b2b') box('Application submission', submitBox(p));
-    box('Contacts', (p.contacts || []).length ? lines(p.contacts.map((c) => { const d = el('div', 'bp-lines'); if (c.name) d.append(el('b', '', c.name)); if (c.phone) d.append(el('span', '', c.phone)); if (c.email) { const a = el('a', 'bp-link', c.email); a.href = 'mailto:' + c.email; d.append(a); } return d; })) : none());
-    box('Agreement', lines([started(p) || 'Start not entered']));
+    // The partner at a glance: its initials, name, status, where it is and what it has brought.
+    const hero = el('header', 'bp-hero');
+    const words = el('div');
+    const title = el('div', 'bp-hero-title');
+    title.append(el('h2', '', p.name), el('span', `bp-status ${PILL[p.status] || 'amber'}`, p.status));
+    words.append(title, el('p', 'bp-hero-sub', [p.city, started(p)].filter(Boolean).join(' · ')));
+    const nums = el('div', 'bp-hero-nums');
+    [[st.visas, st.visas === 1 ? 'visa' : 'visas'], [st.students, st.students === 1 ? 'student' : 'students']].forEach(([n, label]) => { const d = el('div'); d.append(el('b', '', number(n)), el('span', '', label)); nums.append(d); });
+    hero.append(avatar(p.name, true), words, nums);
+    page.append(hero);
+    const section = (title, ...nodes) => { const s = el('section', 'bp-panel'); const hd = el('div', 'bp-panel-head'); hd.append(el('h3', '', title)); s.append(hd, ...nodes); page.append(s); return { s, hd }; };
+    const none = (t = 'Not entered yet') => el('p', 'bp-none', t);
+    if (KIND === 'b2b') {
+      const sec = section('Application submission', submitBox(p));
+      // The Application Team changes the portal link (or email), its username and its password here, and nothing else.
+      if (settingUp()) {
+        const form = () => {
+          const apply = field('Portal link or email', { value: p.applyPortal || p.applyEmail, max: 600, wide: true, placeholder: 'https://portal.partner.com  or  applications@partner.com' });
+          const user = field('Username', { value: p.applyUser, max: 200 });
+          const pass = field('Password', { value: p.applyPassword, max: 200 });
+          pass.input.type = 'password'; pass.input.autocomplete = 'new-password';
+          const peek = iconBtn('eye', 'Show the password', () => { const hid = pass.input.type === 'password'; pass.input.type = hid ? 'text' : 'password'; peek.classList.toggle('is-on', hid); });
+          const passRow = el('div', 'bp-pass'); pass.input.replaceWith(passRow); passRow.append(pass.input, peek);
+          const login = grid('bp-two', user.wrap, pass.wrap);
+          const showLogin = () => { const v = apply.input.value.trim(); login.hidden = !v || EMAIL.test(v); };
+          apply.input.addEventListener('input', showLogin); showLogin();
+          const bar = el('div', 'bp-form-bar');
+          const save = btn('btn btn-primary', 'Save', async () => {
+            save.disabled = true;
+            try {
+              const saved = await api(`${API}/${id}`, { apply: apply.input.value, applyUser: user.input.value, applyPassword: pass.input.value });
+              if (apply.input.value.trim() && !saved.applyPortal && !saved.applyEmail) { say('That is not a web address or an email address.', true); save.disabled = false; return; }
+              say(`${p.name} is saved.`);
+              justSaved = id; closeEditor(); await load();
+            } catch (e) { say(e.message, true); save.disabled = false; }
+          });
+          bar.append(save, btn('btn', 'Cancel', () => view(id)));
+          const f = el('div', 'bp-submit-form');
+          f.append(grid('bp-one', apply.wrap), login, bar);
+          sec.s.replaceChildren(sec.hd, f);
+          editBtn.hidden = true;
+          setTimeout(() => apply.input.focus(), 0);
+        };
+        const editBtn = btn('btn btn-sm', 'Edit', form);
+        sec.hd.append(editBtn);
+        if (o.editSubmit) form();
+      }
+    }
+    const contacts = (p.contacts || []).filter((c) => c.name || c.phone || c.email);
+    const cl = el('div', 'bp-people');
+    contacts.forEach((c) => {
+      const row = el('div', 'bp-person');
+      const w = el('div', 'bp-lines');
+      if (c.name) w.append(el('span', 'bp-strong', c.name));
+      if (c.phone) { const a = el('a', 'bp-link', c.phone); a.href = 'tel:' + c.phone.replace(/[^\d+]/g, ''); w.append(a); }
+      if (c.email) { const a = el('a', 'bp-link', c.email); a.href = 'mailto:' + c.email; w.append(a); }
+      row.append(avatar(c.name || c.email || '?'), w);
+      cl.append(row);
+    });
+    section('Contacts', contacts.length ? cl : none());
     // The Manager also sees the commission list of each intake and the notes; a team never receives them.
     if (data.access === 'commission') {
-      box('Commission by intake', (p.commissions || []).length ? lines(p.commissions.map((c) => {
-        const d = el('div', 'bp-lines'); d.append(el('b', '', c.intake || 'Intake'));
-        const f = (p.agreements || []).find((a) => a.id === c.fileId);
-        if (f) d.append(openLink('Open the PDF ↗', `${API}/${p.id}/files/${f.id}?open=1`));
-        if (c.link) d.append(openLink('Open the link ↗', c.link));
-        return d;
-      })) : none());
-      if (p.notes) box('Notes', el('p', '', p.notes));
+      section('Commission by intake', (p.commissions || []).length ? (() => {
+        const list = el('div', 'bp-people');
+        p.commissions.forEach((c) => {
+          const d = el('div', 'bp-person'); const w = el('div', 'bp-lines'); w.append(el('span', 'bp-strong', c.intake || 'Intake'));
+          const f = (p.agreements || []).find((a) => a.id === c.fileId);
+          if (f) w.append(openLink('Open the PDF ↗', `${API}/${p.id}/files/${f.id}?open=1`));
+          if (c.link) w.append(openLink('Open the link ↗', c.link));
+          d.append(w); list.append(d);
+        });
+        return list;
+      })() : none());
+      if (p.notes) section('Notes', el('p', 'bp-notes', p.notes));
     }
     $('editor').replaceChildren(page);
     $('listView').hidden = true; $('editor').hidden = false;

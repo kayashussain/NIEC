@@ -19,6 +19,11 @@ test('the system guesses what a task is about from its words, the team and the s
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'head', 'Inquiry'), 'other');
   assert.strictEqual(Fields.guessTaskTag('Get the NOC from the ministry', 'application', ''), 'noc', 'NOC is a tag of its own');
   assert.strictEqual(Fields.guessTaskTag('Book the medical check at IOM', 'application', ''), 'medical', 'Medical is a tag of its own');
+  // The owner, 15 Nov 2026: medical tasks came out as Other or Payment.
+  assert.strictEqual(Fields.guessTaskTag('Medicals booking for the student', 'application', 'Payment Stage'), 'medical', 'medicals, plural');
+  assert.strictEqual(Fields.guessTaskTag('Send for the TB test', 'application', 'Inquiry'), 'medical');
+  assert.strictEqual(Fields.guessTaskTag('Chest x-ray report pending', 'head', ''), 'medical');
+  assert.strictEqual(Fields.guessTaskTag('Pay the health surcharge', 'application', ''), 'payment', 'the IHS is a payment');
   assert.strictEqual(Fields.taskTag({ tag: 'visa', text: 'Pay the fee' }), 'visa', 'a chosen tag wins over the guess');
   assert.strictEqual(Fields.taskTag({ tag: 'nonsense', text: 'Pay the fee' }), 'payment', 'an unknown tag is guessed again');
 });

@@ -205,9 +205,9 @@
     if (n === 1) return 'Tomorrow';
     return new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   }
-  // The updates of a task, folded behind one button ("2 updates", "Add an update"); opened, the latest three show ("Show all N updates"
-  // for the rest) with the box to write one. Something new opens it by itself.
-  function taskThread(task, { rowId, me, canWrite, unread = 0, teams = [], today = '' }) {
+  // The updates of a task. `always` (an open task anyone may write on, the owner, 15 Nov 2026): the latest two updates and the box to
+  // write one sit right on the task. Otherwise they fold behind one button ("2", "Update"), and something new opens them by itself.
+  function taskThread(task, { rowId, me, canWrite, unread = 0, teams = [], today = '', always = false }) {
     const labelOf = (id) => (teams.find((t) => t.id === id) || { label: id === 'head' ? 'Admin' : id }).label;
     const box = el('div', 'tk-thread');
     const list = el('ol', 'tk-list');
@@ -249,7 +249,7 @@
       return li;
     };
     let showAll = false;
-    const LATEST = 3;
+    const LATEST = always ? 2 : 3;
     const draw = () => {
       const all = comments();
       const from = !showAll ? Math.max(0, all.length - Math.max(LATEST, fresh)) : 0;
@@ -261,7 +261,7 @@
         items[0].append(more);
       }
       list.replaceChildren(...items);
-      if (!all.length) list.append(el('li', 'tk-empty', canWrite ? 'Progress, a question or what is needed. Everyone on the task sees it on Today.' : 'No updates yet.'));
+      if (!all.length) list.append(el('li', 'tk-empty', 'No updates yet.'));
     };
     // Read: the dot goes, here and in the menu (shared/header.js listens for "isr-tasks-read").
     const markRead = () => {
@@ -323,6 +323,8 @@
     }
     label(); draw();
     box.markRead = markRead; // read from a notification (Today)
+    box.badge = badge; // shown at the task's top right when something is new
+    if (always) { list.hidden = !comments().length; box.classList.add('is-open', 'is-always'); box.append(body); return box; }
     box.append(toggle, body);
     setOpen(openThreads.has(task.id) || fresh > 0);
     return box;
@@ -453,9 +455,11 @@
     sub.append(route);
     // The updates fold away behind one button at the task's top right ("2 updates", "Add an update", a red "N new"); what is new opens
     // by itself. While folded, the latest update shows as one grey line, so the task still says where it stands.
-    const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite && !t.done, unread: o.unread || 0, teams: o.teams, inline: false, today: o.today });
-    const toggle = thread.querySelector('.tk-toggle');
+    const always = !t.done && Boolean(o.canWrite);
+    const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite && !t.done, unread: o.unread || 0, teams: o.teams, today: o.today, always });
+    const toggle = always ? null : thread.querySelector('.tk-toggle');
     if (toggle) side.append(toggle);
+    else if (o.unread && thread.badge) side.append(thread.badge);
     const menu = taskMenu(o.actions || []);
     if (menu) side.append(menu);
     mid.append(top, sub);
@@ -470,7 +474,7 @@
     mid.append(thread);
     r.append(tick, mid);
     // From a notification: open the updates and mark the task read.
-    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); else thread.markRead(); };
+    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); else thread.markRead(); if (thread.badge && always) thread.badge.hidden = true; };
     // Read only when the person opens its updates, writes one, or presses its notification: never by touching or scrolling past the
     // task (on a phone that cleared the notifications before anyone had read them).
     return r;

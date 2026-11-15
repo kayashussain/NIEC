@@ -15,10 +15,9 @@
   const shortDay = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   let me = '';
 
-  let showDone = false;
-  // Calm by design (the owner, 15 Nov 2026): the tasks can be narrowed to one kind (Payment, Application, NOC ...), each list is
+  // Calm by design (the owner, 15 Nov 2026): the tasks can be narrowed to one kind (Payment, Application, NOC ...), and each list is
   // in the order of how important each task was marked (Super priority, Priority, Medium; inside that, something new first, then the
-  // one waiting longest), and only the first five of a list show until "Show all" is pressed.
+  // one waiting longest).
   let tagFilter = 'all';
   let taskView = ''; // 'mine' (Today), 'upcoming', 'gave', 'others' or 'passed': which tasks are shown
   // Search (the owner, 15 Nov 2026): a student's name, or any word of a task or its tag, narrows every list at once.
@@ -26,15 +25,14 @@
   const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const matches = (x) => !searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ));
   const expanded = new Set();
-  const FIRST = 5;
-  // The task a notification was pressed for: shown even when it is past the first five or among the done ones.
+  // The task a notification was pressed for (its later day opens if it waits there).
   let focusTask = null;
   // One task (portal-ui.js taskCard): the tick (only for whoever the task is for), what to do, its updates, the student, who gave it to
   // whom and when.
   function taskRow(t, refresh) {
     const fromName = t.by === me ? 'You' : t.by || 'Someone';
-    // "your team" (Today already says which team it is), else the team's name.
-    const toName = t.forMe ? (t.team === 'head' ? 'you' : 'your team') : t.teamLabel;
+    // Who has it, by name (the owner, 15 Nov 2026: "Parvati", not "your team"); the team's name when nobody has it as their own team.
+    const toName = peopleOf(t.team, t.teamLabel);
     return window.Portal.taskCard(t, {
       rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true, today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
@@ -60,6 +58,12 @@
   let canAssignAll = false;
   let todayIso = '';
   let allTeams = [];
+  // The people a team's tasks go to ("Parvati", "Parvati, Sovat", "Parvati, Sovat +2"); "You" when it is this person alone.
+  function peopleOf(team, fallback) {
+    const names = ((allTeams.find((x) => x.id === team) || {}).members || []).map((n) => (n === me ? 'You' : n));
+    if (!names.length) return fallback || team;
+    return names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ');
+  }
 
   // One list of tasks under its own heading, the newest word first; the ones done in the last 7 days fold away at the bottom.
   // The tasks sit in one calm list, a hairline between each (the owner, 15 Nov 2026: not a separate box per task).
@@ -85,7 +89,6 @@
     const openAll = list.filter((x) => !x.done);
     const open = openAll.filter((x) => !later(x)).sort((a, b) => taskPriority(b) - taskPriority(a));
     const upcoming = openAll.filter(later).sort((a, b) => a.doOn.localeCompare(b.doOn) || taskPriority(b) - taskPriority(a));
-    const done = list.filter((x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000);
     const head = el('div', 'td-group-head');
     // No sentence above the list (the owner, 15 Nov 2026: only what is needed); just what is new or urgent.
     head.append(el('div'));
@@ -105,40 +108,17 @@
       const where = mode === 'today' ? 'under Upcoming' : 'below';
       g.append(emptyNote(upcoming.length ? `Nothing${kind} for today. ${upcoming.length} on later days, ${where}.` : searchQ ? `No task for today matches \u201c${searchQ}\u201d.` : kind ? `Nothing${kind} for today.` : emptyText));
     }
-    const many = open.length > FIRST && !expanded.has(title) && !open.slice(FIRST).some((x) => x.id === focusTask);
-    if (open.length) g.append(listOf(many ? open.slice(0, FIRST) : open, refresh));
-    if (open.length > FIRST) {
-      const more = h('button', { class: 'td-more', type: 'button' }, many ? `Show all ${open.length} open tasks` : 'Show only the first five');
-      more.addEventListener('click', () => { if (many) expanded.add(title); else expanded.delete(title); refresh(); });
-      g.append(more);
-    }
-    // Upcoming: folded under Today so the eye stays on today; opened, each day under its own small heading.
-    if (upcoming.length && mode === 'today') {
-      const go = h('button', { class: 'td-up-toggle is-link', type: 'button' });
-      go.append(el('span', '', `Upcoming (${upcoming.length})`), el('small', '', `next: ${window.Portal.dayLabel(upcoming[0].doOn, todayIso)}`), el('span', 'td-up-chev'));
-      go.addEventListener('click', () => { taskView = 'upcoming'; refresh(); window.scrollTo({ top: document.querySelector('.td-tasks').offsetTop - 12, behavior: 'smooth' }); });
-      g.append(go);
-    } else if (upcoming.length) {
+    // Every open task shows, however many (the owner, 15 Nov 2026: no "Show all"); a task done leaves Today (it stays on the student's
+    // card); the later ones are under the Upcoming switch, or folded under the list in You gave and the others.
+    if (open.length) g.append(listOf(open, refresh));
+    if (upcoming.length && mode !== 'today') {
       const key = 'up:' + title;
-      // Open by itself when nothing is left for today, so a count above never points at an empty list.
       const shown = expanded.has(key) || upcoming.some((x) => x.id === focusTask) || !open.length;
       const tg = h('button', { class: 'td-up-toggle', type: 'button', 'aria-expanded': String(shown) });
-      tg.append(el('span', 'td-up-chev'), el('span', '', `Upcoming (${upcoming.length})`), el('small', '', `next: ${window.Portal.dayLabel(upcoming[0].doOn, todayIso)}`));
+      tg.append(el('span', 'td-up-chev'), el('span', '', `Later days (${upcoming.length})`), el('small', '', `next: ${window.Portal.dayLabel(upcoming[0].doOn, todayIso)}`));
       tg.addEventListener('click', () => { if (shown) expanded.delete(key); else expanded.add(key); refresh(); });
       g.append(tg);
-      if (shown) {
-        const box = el('div', 'td-upcoming');
-        byDay(upcoming, refresh, box);
-        g.append(box);
-      }
-    }
-    if (done.length) {
-      const key = title;
-      const shown = showDone === key || done.some((x) => x.id === focusTask);
-      const toggle = h('button', { class: 'td-done-toggle', type: 'button', 'aria-expanded': String(shown) }, shown ? 'Hide the tasks done this week' : `Done this week (${done.length})`);
-      toggle.addEventListener('click', () => { showDone = shown ? false : key; refresh(); });
-      g.append(toggle);
-      if (shown) { const d = el('div', 'is-done'); d.append(listOf(done, refresh)); g.append(d); }
+      if (shown) { const box = el('div', 'td-upcoming'); byDay(upcoming, refresh, box); g.append(box); }
     }
     return g;
   }
@@ -324,7 +304,7 @@
     }
     return box;
   }
-  // Go to one task: every kind shown, the task drawn even if it is past the first five, then glide to it, open its updates and mark
+  // Go to one task: every kind shown, then glide to it, open its updates and mark
   // it read.
   // A person in two or more teams with no own team chooses it here, once (the owner, 15 Nov 2026: the Application Team kept seeing
   // the Mock Team's tasks and work). Admin and the Manager are told who has not chosen yet.
@@ -358,6 +338,8 @@
   let closeInbox = () => {};
   function goTo(x, refresh) {
     closeInbox();
+    // A done task is no longer on Today: it is on the student's card.
+    if (x.done) { api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {}).then(() => { location.href = '/student?id=' + encodeURIComponent(x.studentId); }); return; }
     taskView = x.forMe ? (!x.done && x.doOn && todayIso && x.doOn > todayIso ? 'upcoming' : 'mine') : (x.given || x.by === me) ? 'gave' : x.had && !canAssignAll ? 'passed' : 'others';
     tagFilter = 'all';
     searchQ = '';

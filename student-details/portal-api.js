@@ -1591,9 +1591,15 @@ function createPortalApi({
       sendJSON(res, 200, { ok: true });
       return true;
     }
-    // Setting up keeps what only Admin changes (the commission lists and the notes) exactly as they were.
-    if (level === 'setup') { const old = b2b.get(id); if (!old) { sendJSON(res, 404, { error: 'No such partner.' }); return true; } body.commissions = old.commissions || []; body.notes = old.notes || ''; }
-    const saved = b2b.update(id, body, req.user.label);
+    // The Application Team changes only how applications are submitted: the portal link (or email), its username and its password
+    // (the owner, 15 Nov 2026). Everything else (name, status, city, agreement, contacts, commission, notes) stays as Admin left it.
+    let input = body;
+    if (level === 'setup') {
+      const old = b2b.get(id);
+      if (!old) { sendJSON(res, 404, { error: 'No such partner.' }); return true; }
+      input = { ...old, apply: typeof body.apply === 'string' ? body.apply : (old.applyPortal || old.applyEmail || ''), applyUser: body.applyUser !== undefined ? body.applyUser : old.applyUser, applyPassword: body.applyPassword !== undefined ? body.applyPassword : old.applyPassword };
+    }
+    const saved = b2b.update(id, input, req.user.label);
     if (saved.error) { sendJSON(res, 400, { error: saved.error }); return true; }
     record(`Updated ${saved.university.name} in ${label}`);
     sendJSON(res, 200, shapePartner(saved.university, level, seesLogins(req.user)));
