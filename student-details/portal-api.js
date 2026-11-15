@@ -388,19 +388,19 @@ function createPortalApi({
   // ---- finishing a task fills in the student by itself (the owner, 15 Nov 2026) ----
   // When a task is marked done, the window asks what the task was about (by its tag) and the answer goes where it belongs, so the team
   // never writes the same thing in the notes, the task and the sheet:
-  //   Application  submitted on (a calendar, today first), to which university, a note: the date goes into Application submitted when
-  //                that is still empty; a second application (a backup option) is kept in the notes with its own date.
+  //   Application  submitted, an offer or a refusal, its day, and one or more universities each with its course: all kept in the
+  //                student's University options with that day; the sheet takes the first application's date (and university and
+  //                course when empty) and the offer of the sheet's own university.
   //   NOC          Pending (the account is made, not submitted) or Submitted, the NOC number: both into the sheet's NOC and NOC Number.
-  //   Mock         the day the mock interview is set for: into the next empty Mock Schedule, and the team gets "Write the feedback"
-  //                on that day as a task of its own.
+  //   Mock         a mock set for a day (the next empty Mock Schedule, and "Write the feedback" waiting for that day), the feedback
+  //                of a mock held (its Feedback column), or the Pre-CAS result (Pre-CAS Interview).
   //   Medical      booked (the day and where; the Medical Report says Booked and becomes Received by itself on that day), the report
   //                received, or not booked yet (to book again; a booking that fell through is cleared).
   //   Payment      paid on (a day) and how much: Payment Date when empty, the amount in the next empty Tuition Fee Deposit.
-  //   Visa and CAS the step (CAS requested, CAS received, visa lodged, VFS attended, visa received) and its day: into its column, and
-  //                the stage moves on with it (CAS Issued, Visa Lodge, Visa Issued), never back.
+  //   Visa and CAS the step (CAS requested, CAS received, visa lodged, VFS attended, visa received, visa refused) and its day: into
+  //                its column, the stage moving on with it (CAS Issued, Visa Lodge, Visa Issued; Visa Rejected), never back.
   // Every answer is also one note on the student, in plain words. Only these columns are written, by whoever may tick the task,
   // whatever the student's stage.
-  const row0 = (rowId) => ((rowIndex().get(rowId) || {}).row || {});
   const SYSTEM_REQ = { headers: {}, socket: {}, user: { id: 'system', name: 'ISR (automatic)', label: 'ISR (automatic)', role: 'admin' } };
   function writeColumnsFor(req, rowId, changes) {
     const wb = getWorkbook();
@@ -421,19 +421,61 @@ function createPortalApi({
     const day = (v) => { const d = realDay(v); return d === null ? null : d; };
     const plan = { kind, columns: {}, note: '', medical: undefined, remind: null };
     if (!f || typeof f !== 'object') return plan;
-    if (kind === 'application' && f.submitted) {
+    // Application (the owner, 15 Nov 2026): what happened (submitted, an offer, a refusal) on a day, to one university or several,
+    // each with its course. Every university is kept in the student's University options with that day. The sheet takes the first
+    // application's date, university and course only where they are still empty; an offer goes to Offer Received when it is the
+    // sheet's own university (or none is named yet), and never before the application date.
+    const appWhat = kind === 'application' ? (f.app || (f.submitted ? 'submitted' : '')) : '';
+    if (appWhat) {
+      if (!['submitted', 'offer', 'refused'].includes(appWhat)) return { error: 'Choose what happened.' };
       const d = day(f.date);
-      if (!d) return { error: 'Choose the day the application was submitted.' };
-      if (d > today) return { error: 'The application cannot be submitted on a day still to come.' };
-      const uni = text(f.university).slice(0, 160);
-      // Any value already there stays (also one typed in another form): a second application is kept in the notes only.
+      if (!d) return { error: 'Choose the day.' };
+      if (d > today) return { error: 'Choose a day that has come.' };
+      const list = (Array.isArray(f.unis) ? f.unis : [{ university: f.university, course: f.course }])
+        .map((u) => ({ university: text(u && u.university).replace(/\s+/g, ' ').slice(0, 160), course: text(u && u.course).replace(/\s+/g, ' ').slice(0, 240) }))
+        .filter((u) => u.university).slice(0, 10);
+      if (appWhat !== 'submitted' && !list.length) return { error: 'Name the university.' };
+      const sheetUni = text(row['UNIVERSITY NAME']);
+      const sameUni = (u) => !sheetUni || squash(u.university) === squash(sheetUni);
       const hadRaw = text(row['APPLICATION SUBMISSION DATE']);
       const had = realDay(hadRaw) || hadRaw;
-      const offer = realDay(row['OFFER RECEIVED DATE']);
-      if (!hadRaw && offer && offer < d) return { error: `The offer came on ${niceDay(offer)}: the application was submitted before that.` };
-      if (!hadRaw) plan.columns['APPLICATION SUBMISSION DATE'] = d;
-      plan.applied = uni ? { university: uni, date: d } : null;
-      plan.note = `Application submitted on ${niceDay(d)}${uni ? ` to ${uni}` : ''}.${hadRaw ? ` (Another application: the first was submitted on ${/^\d{4}-\d{2}-\d{2}$/.test(had) ? niceDay(had) : had}, which stays in Application submitted.)` : ''} ${sentence(note)}`.trim();
+      const nice = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? niceDay(v) : v);
+      // "A, B and C (BSc Adult Nursing)" when every course is the same; else each with its own.
+      const names = (xs) => {
+        const oneCourse = xs.length > 1 && xs[0].course && xs.every((u) => squash(u.course) === squash(xs[0].course));
+        const n = xs.map((u) => u.university + (!oneCourse && u.course ? ` (${u.course})` : ''));
+        const joined = n.length > 1 ? `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}` : n[0] || '';
+        return oneCourse ? `${joined} (${xs[0].course})` : joined;
+      };
+      if (appWhat === 'submitted') {
+        const offer = realDay(row['OFFER RECEIVED DATE']);
+        if (!hadRaw && offer && offer < d) return { error: `The offer came on ${niceDay(offer)}: the application was submitted before that.` };
+        if (!hadRaw) {
+          plan.columns['APPLICATION SUBMISSION DATE'] = d;
+          if (list[0] && !sheetUni) { plan.columns['UNIVERSITY NAME'] = list[0].university; if (list[0].course && !text(row['COURSE NAME'])) plan.columns['COURSE NAME'] = list[0].course; }
+        }
+        plan.options = list.map((u) => ({ ...u, applied: d }));
+        // The first application on the sheet joins the list too (with its own days), so University options shows every application.
+        const firstDay = realDay(hadRaw);
+        if (firstDay && sheetUni && !list.some((u) => squash(u.university) === squash(sheetUni))) {
+          const offerDay = realDay(row['OFFER RECEIVED DATE']);
+          plan.options.unshift({ university: sheetUni, course: text(row['COURSE NAME']), applied: firstDay, ...(offerDay ? { offer: offerDay } : {}) });
+        }
+        plan.note = `Application submitted on ${niceDay(d)}${list.length ? ` to ${names(list)}` : ''}.${hadRaw ? ` (The first application, on ${nice(had)}, stays in Application submitted.)` : ''} ${sentence(note)}`.trim();
+      } else if (appWhat === 'offer') {
+        const main = list.find(sameUni);
+        const sub = realDay(row['APPLICATION SUBMISSION DATE']);
+        if (main && !text(row['OFFER RECEIVED DATE'])) {
+          if (sub && d < sub) return { error: `The application was submitted on ${niceDay(sub)}: the offer came after that.` };
+          plan.columns['OFFER RECEIVED DATE'] = d;
+          if (!sheetUni) { plan.columns['UNIVERSITY NAME'] = main.university; if (main.course && !text(row['COURSE NAME'])) plan.columns['COURSE NAME'] = main.course; }
+        }
+        plan.options = list.map((u) => ({ ...u, offer: d }));
+        plan.note = `Offer received on ${niceDay(d)} from ${names(list)}. ${sentence(note)}`.trim();
+      } else {
+        plan.options = list.map((u) => ({ ...u, refused: d }));
+        plan.note = `${names(list)} refused the application on ${niceDay(d)}. ${sentence(note)}`.trim();
+      }
     } else if (kind === 'noc' && f.noc) {
       const status = f.noc === 'Submitted' ? 'Submitted' : f.noc === 'Pending' ? 'Pending' : '';
       if (!status) return { error: 'Choose Pending or Submitted for the NOC.' };
@@ -444,16 +486,35 @@ function createPortalApi({
       const oldNo = text(row['NOC NUMBER']);
       if (number) plan.columns['NOC NUMBER'] = number;
       plan.note = `NOC ${status === 'Submitted' || was === 'Submitted' ? 'submitted' : 'pending (not submitted yet)'}${number ? `, NOC number ${number}` : ''}${number && oldNo && oldNo !== number ? ` (was ${oldNo})` : ''}. ${sentence(note)}`.trim();
-    } else if (kind === 'mock' && f.scheduled) {
-      const d = day(f.date);
-      if (!d) return { error: 'Choose the day of the mock interview.' };
+    } else if (kind === 'mock' && (f.mock || f.scheduled)) {
+      // Mock interview (the owner, 15 Nov 2026): a mock set for a day, the feedback of a mock held, or the Pre-CAS result.
+      const what = f.mock || 'set';
       const slots = [1, 2, 3, 4];
-      const same = slots.find((n) => realDay(row[`MOCK SCHEDULE ${n}`]) === d);
-      const free = slots.find((n) => !text(row[`MOCK SCHEDULE ${n}`]));
-      const n = same || free;
-      if (n && !same) plan.columns[`MOCK SCHEDULE ${n}`] = d;
-      plan.note = `Mock interview${n ? ` ${n}` : ''} set for ${niceDay(d)}.${n ? '' : ' (All four mock dates on the sheet are already used.)'} ${sentence(note)}`.trim();
-      if (f.remind !== false && n) plan.remind = { day: d, text: `Write the feedback of mock interview ${n} (${niceDay(d)})`, slot: n };
+      if (what === 'set') {
+        const d = day(f.date);
+        if (!d) return { error: 'Choose the day of the mock interview.' };
+        const same = slots.find((n) => realDay(row[`MOCK SCHEDULE ${n}`]) === d);
+        const free = slots.find((n) => !text(row[`MOCK SCHEDULE ${n}`]));
+        const n = same || free;
+        if (n && !same) plan.columns[`MOCK SCHEDULE ${n}`] = d;
+        plan.note = `Mock interview${n ? ` ${n}` : ''} set for ${niceDay(d)}.${n ? '' : ' (All four mock dates on the sheet are already used.)'} ${sentence(note)}`.trim();
+        if (f.remind !== false && n) plan.remind = { day: d, text: `Write the feedback of mock interview ${n} (${niceDay(d)})`, slot: n };
+      } else if (what === 'feedback') {
+        const words = text(f.feedback).slice(0, 1500);
+        if (!words) return { error: 'Write the feedback.' };
+        const n = Number(f.slot) || slots.find((k) => text(row[`MOCK SCHEDULE ${k}`]) && !text(row[`FEEDBACK ${k}`])) || slots.find((k) => !text(row[`FEEDBACK ${k}`]));
+        if (!slots.includes(n)) return { error: 'All four feedback columns are already used.' };
+        const before = text(row[`FEEDBACK ${n}`]);
+        // A feedback already there is kept, the new words after it.
+        plan.columns[`FEEDBACK ${n}`] = before ? `${before} | ${words}`.slice(0, 2000) : words;
+        if (!text(row[`MOCK SCHEDULE ${n}`])) plan.columns[`MOCK SCHEDULE ${n}`] = today;
+        plan.note = `Feedback of mock interview ${n}: ${sentence(words)} ${sentence(note)}`.trim();
+      } else if (what === 'precas') {
+        const result = f.result === 'Passed' ? 'Passed' : f.result === 'Fail' ? 'Fail' : '';
+        if (!result) return { error: 'Choose Passed or Fail.' };
+        plan.columns['PRE CAS INTERVIEW'] = result;
+        plan.note = `Pre-CAS interview: ${result}. ${sentence(note)}`.trim();
+      } else return { error: 'Choose what happened.' };
     } else if (kind === 'medical' && f.medical) {
       const place = text(f.place).slice(0, 200);
       if (f.medical === 'booked') {
@@ -483,16 +544,17 @@ function createPortalApi({
       plan.note = `Payment made on ${niceDay(d)}${amount ? `: ${Number(amount).toLocaleString('en-GB')}` : ''}${amount && !slot ? ' (all three deposit columns are already used)' : ''}. ${sentence(note)}`.trim();
     } else if (kind === 'visa' && f.step) {
       // Visa and CAS: the step reached, its day, and the stage moved on with it (never back).
-      const STEPS = { casRequested: ['CAS REQUESTED DATE', 'CAS requested', ''], casReceived: ['CAS RECEIVED DATE', 'CAS received', 'CAS Issued'], lodged: ['VISA LODGE DATE', 'Visa lodged', 'Visa Lodge'], vfs: ['VFS ATTENDED DATE', 'VFS attended', ''], visa: ['VISA RECEIVED DATE', 'Visa received', 'Visa Issued'] };
+      const STEPS = { casRequested: ['CAS REQUESTED DATE', 'CAS requested', ''], casReceived: ['CAS RECEIVED DATE', 'CAS received', 'CAS Issued'], lodged: ['VISA LODGE DATE', 'Visa lodged', 'Visa Lodge'], vfs: ['VFS ATTENDED DATE', 'VFS attended', ''], visa: ['VISA RECEIVED DATE', 'Visa received', 'Visa Issued'], refused: ['', 'Visa refused', 'Visa Rejected'] };
       const st = STEPS[f.step];
       if (!st) return { error: 'Choose the step.' };
       const d = day(f.date);
       if (!d) return { error: 'Choose the day.' };
       if (d > today) return { error: 'Choose a day that has come.' };
-      plan.columns[st[0]] = d;
+      if (st[0]) plan.columns[st[0]] = d;
       const ORDER = ['Inquiry', 'Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
       const now = text(row[STATUS]);
-      const moved = st[2] && ORDER.includes(now) && ORDER.indexOf(st[2]) > ORDER.indexOf(now) ? st[2] : '';
+      // A refusal moves any stage before Visa Issued to Visa Rejected; the other steps only move forward.
+      const moved = f.step === 'refused' ? (ORDER.includes(now) && now !== 'Visa Issued' ? 'Visa Rejected' : '') : st[2] && ORDER.includes(now) && ORDER.indexOf(st[2]) > ORDER.indexOf(now) ? st[2] : '';
       if (moved) plan.columns[STATUS] = moved;
       plan.note = `${st[1]} on ${niceDay(d)}.${moved ? ` Stage moved to ${moved}.` : ''} ${sentence(note)}`.trim();
     }
@@ -944,13 +1006,14 @@ function createPortalApi({
             writeColumnsFor(req, rowId, plan.columns);
             if (plan.note) cards.addNote(rowId, { kind: 'note', text: plan.note }, by(req));
             if (plan.medical !== undefined) cards.setMedical(rowId, plan.medical, by(req));
-            // Every application is also kept in the student's University options with its own date (a backup option too).
-            if (plan.applied) {
+            // Every university is kept in the student's University options with the day it was applied to, gave an offer or refused.
+            (plan.options || []).forEach((o) => {
               const opts = cards.get(rowId).options || [];
-              const same = opts.find((o) => squash(o.university) === squash(plan.applied.university));
-              if (same) cards.updateOption(rowId, same.id, { applied: plan.applied.date }, by(req));
-              else cards.addOption(rowId, { university: plan.applied.university, course: squash(row0(rowId)['UNIVERSITY NAME']) === squash(plan.applied.university) ? text(row0(rowId)['COURSE NAME']) : '', applied: plan.applied.date }, by(req));
-            }
+              const same = opts.find((x) => squash(x.university) === squash(o.university) && (!o.course || !x.course || squash(x.course) === squash(o.course)));
+              const dates = Object.fromEntries(['applied', 'offer', 'refused'].filter((k) => o[k]).map((k) => [k, o[k]]));
+              if (same) cards.updateOption(rowId, same.id, { ...dates, ...(o.course && !same.course ? { course: o.course } : {}) }, by(req));
+              else cards.addOption(rowId, { university: o.university, course: o.course, ...dates }, by(req));
+            });
             if (plan.remind) {
               const team = task.team === HEAD ? 'mock' : task.team;
               const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: 'mock', priority: 'high' }, by(req));
@@ -2142,7 +2205,7 @@ function createPortalApi({
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
           if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
-          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, appSubmitted: text(row['APPLICATION SUBMISSION DATE']), university: text(row['UNIVERSITY NAME']), nocNumber: text(row['NOC NUMBER']) });
+          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, appSubmitted: text(row['APPLICATION SUBMISSION DATE']), university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']), nocNumber: text(row['NOC NUMBER']), nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0 });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

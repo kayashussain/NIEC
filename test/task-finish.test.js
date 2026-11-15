@@ -53,7 +53,7 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   const a2 = await give('Submit a backup option', 'application');
   assert.strictEqual((await finish(a2, { submitted: true, date: today, university: 'Backup University' })).status, 200);
   assert.strictEqual((await row())['APPLICATION SUBMISSION DATE'], add(-1), 'the first date stays');
-  assert.match((await notes()).join('\n'), /to Backup University\. \(Another application: the first was submitted on/);
+  assert.match((await notes()).join('\n'), /to Backup University\. \(The first application, on .*, stays in Application submitted\.\)/);
   // Both applications are in the student's University options with their own dates.
   const opts = (await admin('GET', `/api/cards/${id}`)).json.card.options.map((o) => [o.university, o.applied]);
   assert.deepStrictEqual(opts.sort(), [['Backup University', today], ['Example University', add(-1)]]);
@@ -120,6 +120,48 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   await admin('POST', '/api/data', { baseRevision: wb2.revision, sheets: wb2.sheets, activeSheetId: wb2.activeSheetId });
   const late = (await admin('POST', `/api/cards/${id2}/tasks`, { team: 'application', text: 'Submit late', tag: 'application' })).json.card.tasks[0].id;
   assert.strictEqual((await app('POST', `/api/cards/${id2}/tasks/${late}`, { done: true, finish: { submitted: true, date: today } })).status, 400, 'not after the offer');
+
+  // The owner's case (15 Nov 2026): a student applied to one university, with an offer, now applies to three more at once.
+  const tId = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Tara', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000073' } })).json.id;
+  const wbT = (await admin('GET', '/api/data')).json;
+  wbT.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === tId) Object.assign(r, { 'UNIVERSITY NAME': 'First University', 'COURSE NAME': 'BSc Adult Nursing', 'APPLICATION SUBMISSION DATE': add(-30), 'OFFER RECEIVED DATE': add(-5) }); }));
+  await admin('POST', '/api/data', { baseRevision: wbT.revision, sheets: wbT.sheets, activeSheetId: wbT.activeSheetId });
+  const giveT = async (text, tag) => (await admin('POST', `/api/cards/${tId}/tasks`, { team: 'application', text, tag })).json.card.tasks.find((x) => x.text === text).id;
+  const finishT = (tid, f) => app('POST', `/api/cards/${tId}/tasks/${tid}`, { done: true, finish: f });
+  const rowT = async () => (await admin('GET', `/api/cards/${tId}`)).json.student.row;
+  const cardT = async () => (await admin('GET', `/api/cards/${tId}`)).json.card;
+  const t1 = await giveT('Apply to three more', 'application');
+  assert.strictEqual((await finishT(t1, { app: 'submitted', date: today, unis: [{ university: 'Second University', course: 'BSc Adult Nursing' }, { university: 'Third University', course: 'BSc Adult Nursing' }, { university: 'Fourth University', course: 'BSc Adult Nursing' }], note: 'Backup options' })).status, 200);
+  const r = await rowT();
+  assert.deepStrictEqual([r['UNIVERSITY NAME'], r['APPLICATION SUBMISSION DATE'], r['OFFER RECEIVED DATE']], ['First University', add(-30), add(-5)], 'the sheet keeps the first application');
+  const optsT = (await cardT()).options.map((o) => [o.university, o.course, o.applied]).sort();
+  assert.deepStrictEqual(optsT, [['First University', 'BSc Adult Nursing', add(-30)], ['Fourth University', 'BSc Adult Nursing', today], ['Second University', 'BSc Adult Nursing', today], ['Third University', 'BSc Adult Nursing', today]], 'each university its own line, the first one too');
+  assert.strictEqual((await cardT()).options.find((o) => o.university === 'First University').offer, add(-5));
+  assert.match((await cardT()).notes.map((n) => n.text).join('\n'), /to Second University, Third University and Fourth University \(BSc Adult Nursing\)\. \(The first application, on .*, stays in Application submitted\.\) Backup options\./);
+  // An offer from a backup university: in its option and the notes, the sheet's offer stays.
+  const t2 = await giveT('Chase the offers', 'application');
+  assert.strictEqual((await finishT(t2, { app: 'offer', date: today, unis: [{ university: 'Third University' }] })).status, 200);
+  assert.strictEqual((await rowT())['OFFER RECEIVED DATE'], add(-5));
+  assert.strictEqual((await cardT()).options.find((o) => o.university === 'Third University').offer, today);
+  const t3 = await giveT('Check the last one', 'application');
+  assert.strictEqual((await finishT(t3, { app: 'refused', date: today, unis: [{ university: 'Fourth University' }] })).status, 200);
+  assert.strictEqual((await cardT()).options.find((o) => o.university === 'Fourth University').refused, today);
+  assert.strictEqual((await finishT(await giveT('No name', 'application'), { app: 'offer', date: today, unis: [] })).status, 400, 'an offer names the university');
+  // Mock: the feedback of a mock held goes to its Feedback column; the Pre-CAS result to Pre-CAS Interview.
+  const mT1 = await giveT('Set the mock', 'mock');
+  assert.strictEqual((await finishT(mT1, { mock: 'set', date: today, remind: true })).status, 200);
+  const fbTask = (await cardT()).tasks.find((x) => /Write the feedback of mock interview 1/.test(x.text));
+  assert.ok(fbTask, 'the reminder');
+  assert.strictEqual((await finishT(fbTask.id, { mock: 'feedback', slot: 1, feedback: 'Confident answers' })).status, 200);
+  assert.strictEqual((await rowT())['FEEDBACK 1'], 'Confident answers');
+  const mT2 = await giveT('Pre-CAS interview', 'mock');
+  assert.strictEqual((await finishT(mT2, { mock: 'precas', result: 'Maybe' })).status, 400);
+  assert.strictEqual((await finishT(mT2, { mock: 'precas', result: 'Passed' })).status, 200);
+  assert.strictEqual((await rowT())['PRE CAS INTERVIEW'], 'Passed');
+  // Visa refused: the stage goes to Visa Rejected.
+  const v3 = await giveT('Visa decision', 'visa');
+  assert.strictEqual((await finishT(v3, { step: 'refused', date: today })).status, 200);
+  assert.strictEqual((await rowT())['APPLICATION STATUS'], 'Visa Rejected');
 
   // A task with no answers is simply done, as before; the Application Team may now fill in the Medical Report on the sheet.
   const o1 = await give('Call the student', 'other');

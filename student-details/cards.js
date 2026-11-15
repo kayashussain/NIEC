@@ -70,6 +70,9 @@ function cleanOption(input, old = {}) {
     note: pick('note', 400),
     // The day an application to it was submitted (set when an Application task is finished with this university).
     applied: (() => { const v = pick('applied', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    // The day it gave an offer, or refused (set from an Application task).
+    offer: (() => { const v = pick('offer', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    refused: (() => { const v = pick('refused', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     addedAt: old.addedAt, addedBy: old.addedBy,
   };
 }

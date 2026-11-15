@@ -1818,9 +1818,6 @@ select option { color: #1d1d1f; }
 @media (max-width: 700px) { .p-find { grid-template-columns: 1fr; } .p-find > .btn { width: 100%; } }
 /* 🔴 CSS CHANGED (2026-11-14): Today, the day at a glance (new) | from: Today started straight with the task list | to: a soft off-white panel at the top: a ring that fills in blue as this week's tasks are done (its % in the middle), "3 tasks open for you" or "All caught up" in large type, then "done this week" in green and "students waiting" in orange as big numbers; on a phone the numbers go under the ring */
 .td-pulse { display: grid; grid-template-columns: auto 1fr auto auto; gap: 22px; align-items: center; margin: 0 0 18px; padding: 20px 24px; border-radius: 20px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 28px -18px rgba(0, 0, 0, .18); }
-.td-ring { --p: 0; display: grid; place-content: center; width: 84px; height: 84px; border-radius: 50%; background: radial-gradient(closest-side, #fbfbfd 78%, transparent 79%), conic-gradient(#0071e3 calc(var(--p) * 1%), #e8e8ed 0); text-align: center; animation: isr-pop .6s cubic-bezier(.34, 1.56, .64, 1) both; }
-.td-ring b { color: #1d1d1f; font-size: 19px; font-weight: 700; line-height: 1; }
-.td-ring small { margin-top: 3px; color: #6e6e73; font-size: 11px; }
 .td-pulse-words h2 { margin: 0; color: #1d1d1f; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
 .td-pulse-words p { margin: 4px 0 0; color: #6e6e73; font-size: 14.5px; }
 .td-stat { display: grid; min-width: 104px; padding: 10px 16px; border-radius: 14px; background: #f5f5f7; text-align: center; }
@@ -1828,11 +1825,9 @@ select option { color: #1d1d1f; }
 .td-stat span { color: #6e6e73; font-size: 12.5px; }
 .td-stat.good b { color: #248a3d; }
 .td-stat.warn b { color: #c45c00; }
-@media (max-width: 760px) { .td-pulse { grid-template-columns: auto 1fr; gap: 14px; padding: 16px; } .td-ring { width: 70px; height: 70px; } .td-pulse-words h2 { font-size: 19px; } .td-pulse-words p { font-size: 13.5px; } .td-stat { min-width: 0; padding: 8px 10px; } .td-stat b { font-size: 22px; } }
+@media (max-width: 760px) { .td-pulse { grid-template-columns: auto 1fr; gap: 14px; padding: 16px; } .td-pulse-words h2 { font-size: 19px; } .td-pulse-words p { font-size: 13.5px; } .td-stat { min-width: 0; padding: 8px 10px; } .td-stat b { font-size: 22px; } }
 /* 🔴 CSS CHANGED (2026-11-15): REMOVED later the same day (the owner: no List view, so no team tiles); kept as history: Today for Admin and the Manager, the team board (new) | from: under the day panel straight into one long list of tasks | to: a "Your teams" row of off-white rounded tiles, one per team: a round grey badge with the team's initials and its name, three numbers (open in near-black, 3+ days in orange, done this week in green) and a thin blue progress bar; a pressed tile has a blue ring and shows only that team's tasks; tiles lift slightly on hover */
 /* 🔴 CSS CHANGED (2026-11-15): Today's team tiles on a phone | from: one tile per row across the whole width, so three teams filled the screen | to: two smaller tiles per row (less padding, numbers 19px, the badge 28px), a long team name wraps onto a second line instead of ending in "..." */
-.td-ring b.td-ring-tick { color: #0071e3; font-size: 28px; }
-@media (prefers-reduced-motion: reduce) { .td-ring { animation: none; } }
 /* 🔴 CSS CHANGED (2026-11-14): Activity, a long change | from: every line of a change listed (a recalculation could list 60 lines) | to: the first six lines, then a blue "Show N more" that opens the rest */
 .activity-more { margin: 2px 0 0; }
 .activity-more > summary { display: inline-block; padding: 2px 0; color: #0066cc; font-size: 14px; font-weight: 600; cursor: pointer; list-style: none; }
@@ -1853,10 +1848,6 @@ select option { color: #1d1d1f; }
 .td-tag.tag-medical { background: #fce8ef; color: #b0305c; }
 .td-tag.tag-visa { background: #f1e9fb; color: #6b3fa0; }
 .td-tag.tag-other { background: #ececf0; color: #515154; }
-.td-prio.prio-super { background: #fdecea; color: #c4271c; font-weight: 600; }
-.td-prio.prio-high { background: #e6f0fc; color: #0058b0; }
-.td-prio.prio-medium { background: #ececf0; color: #6e6e73; }
-.td-chip.is-super { background: #fdecea; color: #c4271c; }
 .td-task.is-super:not(.has-unread) { box-shadow: inset 3px 0 0 #ff3b30; }
 .td-tag-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .td-tag-pick :is(.td-tag, .td-prio) { min-height: 34px; padding: 0 14px; font-size: 14px; line-height: 34px; opacity: .55; }
@@ -2420,3 +2411,17 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 
 /* 🔴 CSS CHANGED (2026-11-15): Admin's "For you" column when it is empty (new) | from: the column did not show when nothing was given to Admin | to: it always shows first, with "Nothing for you right now." in small grey type, centred */
 .tb-col-empty { padding: 18px 8px; color: #6e6e73; font-size: 14px; text-align: center; }
+
+/* 🔴 CSS CHANGED (2026-11-15): the Mark as done window for an application, several universities; Offer and Refused in University options | from: one "To which university" box | to: a row per university, its University and Course side by side (one under the other on a phone), a small round grey "×" to remove a row after the first, and a grey "+ Another university" pill under them; in University options, beside the green "Applied" pill, a blue "Offer 20 Nov 2026" pill and a soft red "Refused 22 Nov 2026" pill */
+.td-unis { display: grid; gap: 8px; }
+.td-uni-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px; gap: 10px; align-items: end; }
+.td-uni-row .p-field { margin: 0; }
+.td-uni-x { width: 32px; height: 32px; margin-bottom: 7px; border: 0; border-radius: 50%; background: #ececf0; color: #515154; font-size: 18px; line-height: 1; cursor: pointer; }
+.td-uni-x:hover { background: #ffe5e3; color: #c41e14; }
+.td-uni-more { justify-self: start; }
+.p-applied.is-offer { background: #e6f0fc; color: #0058b0; }
+.p-applied.is-refused { background: #ffe9e7; color: #b42318; }
+@media (max-width: 600px) { .td-uni-row { grid-template-columns: minmax(0, 1fr) 32px; } .td-uni-row .p-field:nth-child(2) { grid-column: 1; } }
+
+
+/* 🔴 CSS CHANGED (2026-11-15): clean-up, nothing on screen changes | from: styles kept for things removed earlier today (the ring in Today's top panel, the priority pills, the old Partner Universities cards) | to: those styles are deleted, so the stylesheet holds only what the pages use */

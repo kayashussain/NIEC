@@ -628,6 +628,8 @@
     // _deferredInto marks where the move landed, so the student isn't moved on again from there (still
     // showing "Defer") the moment a later sheet is added. See autoMoveDeferredRows.
     const movedRow = { _id: row._id || makeRowId(), _deferredInto: target.id };
+    // The row's own marks go with it (its colour, which team added it), so nothing about the student is lost in the move.
+    Object.keys(row).forEach((k) => { if (k.startsWith('_') && !(k in movedRow)) movedRow[k] = row[k]; });
     target.columns.forEach((c) => { movedRow[c] = row[c] !== undefined ? row[c] : ''; });
     target.rows.push(movedRow);
     return true;

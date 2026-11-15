@@ -226,7 +226,7 @@
       const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
       list.append(window.Portal.taskCard(t, {
         rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0, today: data.today,
-        finishInfo: { university: data.student.row['UNIVERSITY NAME'] || '', appSubmitted: String(data.student.row['APPLICATION SUBMISSION DATE'] || '').trim(), nocNumber: data.student.row['NOC NUMBER'] || '' },
+        finishInfo: { university: data.student.row['UNIVERSITY NAME'] || '', course: data.student.row['COURSE NAME'] || '', appSubmitted: String(data.student.row['APPLICATION SUBMISSION DATE'] || '').trim(), nocNumber: data.student.row['NOC NUMBER'] || '', nextFeedback: [1, 2, 3, 4].find((n) => String(data.student.row[`MOCK SCHEDULE ${n}`] || '').trim() && !String(data.student.row[`FEEDBACK ${n}`] || '').trim()) || 0 },
         canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
         actions: [
@@ -419,6 +419,8 @@
       const header = el('header');
       header.append(el('h4', '', `${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
       if (o.applied) header.firstChild.append(' ', el('span', 'p-applied', `Applied ${day(o.applied)}`));
+      if (o.offer) header.firstChild.append(' ', el('span', 'p-applied is-offer', `Offer ${day(o.offer)}`));
+      if (o.refused) header.firstChild.append(' ', el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
       if (can()) header.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { await save('options/' + o.id + '/delete', {}); render(); } }, 'Remove'));
       const form = el('div', 'p-form');
       const fee = field('Tuition fee', { value: o.fee, disabled: !can(), max: 400 });

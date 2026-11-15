@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="admin.css" />
 <link rel="stylesheet" href="portal.css" />
 <style>
+  /* 🔴 CSS CHANGED (2026-11-15): clean-up, nothing on screen changes | from: the styles of the old Partner Universities cards (now in the B2B look from theme.css) | to: deleted; the editor's styles stay */
   /* 🔴 CSS CHANGED (2026-11-13): Partner Universities, rebuilt calm and roomy | from: a ten-column table squeezed into a 1200px box (names, phones and emails broken over several lines), and one long editor form under the list with every field at once and no guidance | to: a wider page (up to 1480px) with a search box and a short "Add a partner university" line; each university as a calm card (name in navy, status tag, how you hold it, campuses as soft tags, commission, agreement end, the first contact, and the application link with "Open portal"); the editor opens as its own page with a "Back" button, in seven numbered steps (The university, Application, Contacts, Campuses, Commission and payment, Agreement files, Notes), each in its own soft panel with one line of help, roomy boxes in tidy columns, the B2B partner box only when it applies, a username and password only when the application is a link, and a Save bar that stays at the bottom of the screen */
   .pu-page { max-width: 1480px; }
   .pu-intro { max-width: 70ch; }
@@ -20,26 +21,11 @@
   .pu-add { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   /* 🔴 CSS CHANGED (2026-11-14): the box to add a partner university | from: 46px high beside a 40px button, its hint cut off | to: 44px, as high as the button row, and wide enough for its hint */
   .pu-add input { width: 360px; max-width: 100%; height: 44px; padding: 0 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); font: inherit; font-size: 15px; color: var(--text); }
-  .pu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 18px; }
-  @media (max-width: 560px) { .pu-grid { grid-template-columns: minmax(0, 1fr); } }
-  .pu-card { display: flex; flex-direction: column; gap: 16px; padding: 22px 24px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 16px 34px -30px rgba(29, 47, 82, .5); transition: border-color .15s ease, box-shadow .15s ease; }
-  .pu-card:hover { border-color: color-mix(in srgb, var(--brand-navy, #1d2f52) 35%, var(--border)); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 20px 40px -28px rgba(29, 47, 82, .55); }
-  .pu-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  .pu-name { margin: 0; padding: 0; border: 0; background: none; font: inherit; font-size: 19px; font-weight: 700; line-height: 1.3; color: var(--brand-navy, #1d2f52); text-align: left; cursor: pointer; }
-  .pu-name:hover { text-decoration: underline; text-decoration-color: var(--brand-bronze, #9a7b4f); text-underline-offset: 4px; }
   .pu-sub { margin-top: 4px; color: var(--text-dim); font-size: 14px; }
-  .pu-facts { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 10px 16px; margin: 0; padding-top: 14px; border-top: 1px solid var(--border); font-size: 15px; }
-  .pu-facts dt { color: var(--text-dim); font-size: 14px; }
-  .pu-facts dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
   /* 🔴 CSS CHANGED (2026-11-14): hint text no longer slanted | from: italic grey | to: plain grey (Apple never slants text) */
   .pu-none { color: var(--text-dim); }
-  .pu-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .pu-tag { display: inline-block; padding: 3px 11px; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 45%, var(--panel)); font-size: 14px; color: var(--text); }
-  .pu-tag.bronze { border-color: color-mix(in srgb, var(--brand-bronze, #9a7b4f) 50%, transparent); background: transparent; color: #6f5631; font-weight: 600; }
   .pu-lines { display: grid; gap: 2px; }
   .pu-link { color: var(--brand-navy, #1d2f52); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-bronze, #9a7b4f) 55%, transparent); text-underline-offset: 4px; }
-  .pu-card-foot { display: flex; justify-content: flex-end; margin-top: auto; }
-  .pu-empty { padding: 40px; border: 1px dashed var(--border); border-radius: 18px; text-align: center; color: var(--text-dim); }
   /* the editor */
   .pu-back { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600; color: var(--brand-navy, #1d2f52); cursor: pointer; }
   .pu-back:hover { text-decoration: underline; }
@@ -76,16 +62,9 @@
   .pu-savebar .grow { flex: 1 1 auto; }
   #adminOnly { display: inline-block; margin-left: 8px; }
   /* 🔴 CSS CHANGED (2026-11-13): Partner Universities, application submission on every card | from: the list cards showed only "Open portal" and a "Login saved" tag, so the team had to open each university to see the login; the cards also showed a status tag, "Direct agreement" and Agreement ends | to: the campuses as soft tags straight under the name; a soft navy-tinted "Application submission" box on every card with "Open portal", the username and the password (dots until Show), each with Copy, or the email with Copy and "Write email"; then Commission, Contact and Agreement ("Since ..." and the files); no status tag; in the editor, small "Campuses" and "Login details" headings inside the steps */
-  .pu-campus-tags { margin-top: 10px; }
   .pu-submit { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--brand-navy, #1d2f52) 16%, var(--border)); border-radius: 14px; background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 55%, var(--panel)); }
-  .pu-submit-title { color: var(--brand-navy, #1d2f52); font-size: 14px; font-weight: 700; letter-spacing: .01em; }
-  .pu-submit-line { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
-  .pu-submit-label { flex: 0 0 84px; color: var(--text-dim); font-size: 14px; }
-  .pu-submit-line code { font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--brand-navy, #1d2f52); overflow-wrap: anywhere; }
   .pu-portal { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border: 1px solid var(--brand-navy, #1d2f52); border-radius: 10px; background: var(--panel); color: var(--brand-navy, #1d2f52); font-size: 14px; font-weight: 650; text-decoration: none; }
   .pu-portal:hover { background: var(--gold-soft, #e2e7f0); }
-  .pu-mini { min-height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font: inherit; font-size: 14px; font-weight: 600; color: var(--brand-navy, #1d2f52); cursor: pointer; }
-  .pu-mini:hover { border-color: var(--brand-navy, #1d2f52); }
   #editor .pu-sub-head { margin: 22px 0 12px; padding: 0; border: 0; color: var(--brand-navy, #1d2f52); font-size: 15px; font-weight: 700; }
 </style>
 <link rel="stylesheet" href="theme.css" />

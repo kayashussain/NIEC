@@ -433,14 +433,32 @@
       let read = () => ({});
       let check = () => '';
       if (tag === 'application') {
-        const q = ask('Was an application submitted?', [['yes', 'Yes, submitted'], ['no', 'No']], 'yes', (v) => { show(parts.date.wrap, v === 'yes'); show(parts.uni.wrap, v === 'yes'); show(parts.had, v === 'yes'); });
-        parts.date = dateField('Submitted on', today, today);
-        parts.uni = field('To which university', { value: info.university || '', max: 160, placeholder: 'e.g. Coventry University' });
-        form.append(parts.uni.wrap);
-        parts.had = el('p', 'p-muted p-small p-wide', info.appSubmitted ? `Application submitted on the sheet already says ${/^\d{4}-\d{2}-\d{2}/.test(info.appSubmitted) ? day(info.appSubmitted.slice(0, 10)) : info.appSubmitted}: this one goes in the notes.` : 'Goes into Application submitted.');
+        // What happened, its day, and one row per university with its course (+ Another university). The first row is filled in
+        // with the sheet's university only for a first application, so a backup application starts empty (the owner, 15 Nov 2026).
+        const q = ask('What happened?', [['submitted', 'Submitted'], ['offer', 'Offer received'], ['refused', 'Refused'], ['none', 'Nothing yet']], 'submitted', (v) => { [parts.date.wrap, parts.unis, parts.had].forEach((n) => show(n, v !== 'none')); parts.had.textContent = hint(v); });
+        parts.date = dateField('On', today, today);
+        parts.unis = el('div', 'p-wide td-unis');
+        const rows = [];
+        const addRow = (u = '', c = '') => {
+          const r = el('div', 'td-uni-row');
+          const uf = field(rows.length ? '' : 'University', { value: u, max: 160, placeholder: 'e.g. University of Roehampton' });
+          const cf = field(rows.length ? '' : 'Course', { value: c, max: 240, placeholder: 'e.g. BSc Adult Nursing' });
+          r.append(uf.wrap, cf.wrap);
+          if (rows.length) r.append(h('button', { class: 'td-uni-x', type: 'button', 'aria-label': 'Remove this university', onclick: () => { r.remove(); rows.splice(rows.findIndex((x) => x.r === r), 1); } }, '×'));
+          rows.push({ r, uf, cf });
+          more.before(r);
+        };
+        const more = h('button', { class: 'btn btn-sm td-uni-more', type: 'button', onclick: () => addRow() }, '+ Another university');
+        parts.unis.append(more);
+        const first = !info.appSubmitted;
+        addRow(first ? info.university || '' : '', first ? info.course || '' : '');
+        form.append(parts.unis);
+        const hint = (v) => (v === 'submitted' ? (info.appSubmitted ? 'Application submitted on All Students stays as it is.' : 'Goes into Application submitted.') : v === 'offer' ? 'Goes into Offer received for the sheet’s university.' : v === 'refused' ? 'Kept in the notes and University options.' : '');
+        parts.had = el('p', 'p-muted p-small p-wide', hint('submitted'));
         form.append(parts.had);
-        read = () => (q.value() === 'yes' ? { submitted: true, date: parts.date.input.value, university: parts.uni.input.value.trim() } : {});
-        check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day it was submitted.' : '');
+        const unis = () => rows.map((x) => ({ university: x.uf.input.value.trim(), course: x.cf.input.value.trim() })).filter((x) => x.university);
+        read = () => (q.value() === 'none' ? {} : { app: q.value(), date: parts.date.input.value, unis: unis() });
+        check = () => (q.value() === 'none' ? '' : !parts.date.input.value ? 'Choose the day.' : q.value() !== 'submitted' && !unis().length ? 'Name the university.' : '');
       } else if (tag === 'noc') {
         const q = ask('The NOC', [['Pending', 'Pending (account made)'], ['Submitted', 'Submitted']], '', null);
         parts.num = field('NOC number', { value: info.nocNumber || '', max: 60, placeholder: 'If there is one' });
@@ -448,14 +466,30 @@
         read = () => ({ noc: q.value(), nocNumber: parts.num.input.value.trim() });
         check = () => (!q.value() ? 'Choose Pending or Submitted.' : '');
       } else if (tag === 'mock') {
-        const q = ask('Was a mock interview set?', [['yes', 'Yes'], ['no', 'No']], 'yes', (v) => { show(parts.date.wrap, v === 'yes'); show(parts.rem, v === 'yes'); });
+        // A mock set for a day, the feedback of a mock held, or the Pre-CAS result: chosen first from the task's own words.
+        const words = String(t.text || '');
+        const start = /feedback/i.test(words) ? 'feedback' : /pre-?cas/i.test(words) ? 'precas' : 'set';
+        const q = ask('What happened?', [['set', 'Mock set'], ['feedback', 'Feedback'], ['precas', 'Pre-CAS result'], ['none', 'Nothing yet']], start, (v) => {
+          [parts.date.wrap, parts.rem].forEach((n) => show(n, v === 'set')); [parts.slot.wrap, parts.fb.wrap].forEach((n) => show(n, v === 'feedback')); show(parts.res, v === 'precas');
+        });
         parts.date = dateField('Mock interview on', today);
         parts.rem = el('label', 'p-check p-wide');
         const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
         parts.rem.append(remind, el('span', '', 'Remind the team to write the feedback'));
-        form.append(parts.rem, el('p', 'p-muted p-small p-wide', 'Goes into the next Mock Schedule.'));
-        read = () => (q.value() === 'yes' ? { scheduled: true, date: parts.date.input.value, remind: remind.checked } : {});
-        check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day of the mock interview.' : '');
+        form.append(parts.rem);
+        const said = /mock interview (\d)/i.exec(words);
+        parts.slot = field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: said ? said[1] : String(info.nextFeedback || 1) });
+        parts.fb = field('Feedback', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Confident; work on the finance answers.' });
+        parts.fb.input.rows = 3;
+        form.append(parts.slot.wrap, parts.fb.wrap);
+        const resWrap = el('div', 'p-field p-wide');
+        const res = picker([['Passed', 'Passed'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS result');
+        resWrap.append(el('span', 'p-label', 'Pre-CAS result'), res.node);
+        parts.res = resWrap;
+        form.append(resWrap);
+        [parts.date.wrap, parts.rem].forEach((n) => show(n, start === 'set')); [parts.slot.wrap, parts.fb.wrap].forEach((n) => show(n, start === 'feedback')); show(parts.res, start === 'precas');
+        read = () => (q.value() === 'set' ? { mock: 'set', date: parts.date.input.value, remind: remind.checked } : q.value() === 'feedback' ? { mock: 'feedback', slot: Number(parts.slot.input.value), feedback: parts.fb.input.value.trim() } : q.value() === 'precas' ? { mock: 'precas', result: res.value() } : {});
+        check = () => (q.value() === 'set' && !parts.date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !parts.fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !res.value() ? 'Choose Passed or Fail.' : '');
       } else if (tag === 'medical') {
         const q = ask('The medical test', [['booked', 'Booked'], ['received', 'Report received'], ['none', 'Not booked yet']], '', (v) => { show(parts.date.wrap, v === 'booked'); show(parts.place.wrap, v !== 'none'); show(parts.hint, v === 'booked'); });
         parts.date = dateField('Booked for', '');
@@ -476,7 +510,7 @@
         read = () => (q.value() === 'yes' ? { paid: true, date: parts.date.input.value, amount: parts.amount.input.value.trim() } : {});
         check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day it was paid.' : '');
       } else if (tag === 'visa') {
-        const q = ask('Which step is done?', [['casRequested', 'CAS requested'], ['casReceived', 'CAS received'], ['lodged', 'Visa lodged'], ['vfs', 'VFS attended'], ['visa', 'Visa received']], '', null);
+        const q = ask('Which step is done?', [['casRequested', 'CAS requested'], ['casReceived', 'CAS received'], ['lodged', 'Visa lodged'], ['vfs', 'VFS attended'], ['visa', 'Visa received'], ['refused', 'Visa refused']], '', null);
         parts.date = dateField('On', today, today);
         form.append(el('p', 'p-muted p-small p-wide', 'The stage moves on by itself.'));
         read = () => ({ step: q.value(), date: parts.date.input.value });
