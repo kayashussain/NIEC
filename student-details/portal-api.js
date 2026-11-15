@@ -1437,12 +1437,19 @@ function createPortalApi({
   // What each partner has brought, by intake: visas first (that is what pays), and the students. B2B partners are the businesses you send
   // applications to (the sheet's University Partner column); Agents are the ones that send students (Student Source "Agent", and the agent named
   // on the student card). Matched by name, ignoring capitals.
+  // The partner a name in the University Partner column means: another spelling counts for the partner itself.
+  const partnerNamed = (name) => {
+    const aliases = planning.all().settings.partnerAliases || {};
+    const hit = Object.keys(aliases).find((k) => squash(k) === squash(name));
+    return hit ? aliases[hit] : name;
+  };
   function partnerPerformance(kind) {
     const out = {};
     const wb = getWorkbook();
     if (!wb) return out;
     const all = cards.all();
-    const bump = (name, row, sheetName) => {
+    const bump = (raw, row, sheetName) => {
+      const name = kind === 'agents' ? raw : partnerNamed(raw);
       const key = text(name).toLowerCase();
       if (!key) return;
       const e = out[key] || (out[key] = { students: 0, visas: 0, intakes: {} });
@@ -1484,7 +1491,8 @@ function createPortalApi({
     const wb = getWorkbook();
     const known = new Set((b2b ? b2b.list() : []).map((p) => squash(p.name)));
     const unis = new Set([...facts.all().map((u) => squash(u.name)), ...direct.all().map((u) => squash(u.name))].filter(Boolean));
-    const hidden = new Set((planning.all().settings.notPartners || []).map(squash));
+    // Another name of a known partner ("TOR" for "The Official Rep") is not a partner of its own.
+    const hidden = new Set([...(planning.all().settings.notPartners || []), ...Object.keys(planning.all().settings.partnerAliases || {})].map(squash));
     const found = new Map();
     (wb ? wb.sheets : []).forEach((sh) => sh.rows.forEach((row) => {
       if (!isStudent(row)) return;
@@ -1901,6 +1909,29 @@ function createPortalApi({
     }
     // The choices of the University Partner column: the Partner Universities and the B2B Partners (names only, no terms), for every
     // account that sees the sheet. A new partner is added on B2B Partners first, then it can be picked.
+    // Partner Universities: how many students and visas each university has, in every intake (numbers only, no names), for the cards.
+    // A student counts for a university by its University Name, or by its University Partner (Navitas, OIEG ...).
+    if (urlPath === '/api/direct-stats' && req.method === 'GET') {
+      if (!partnerAccess(req.user).direct) { sendJSON(res, 403, { error: 'Partner Universities are not open to your account.' }); return true; }
+      const unis = direct.all().map((u) => ({ key: squash(u.name), id: u.id }));
+      const out = Object.fromEntries(unis.map((u) => [u.id, { students: 0, visas: 0, applied: 0, offers: 0, thisIntake: 0 }]));
+      const wb = getWorkbook();
+      const cur = currentIntake();
+      (wb ? wb.sheets : []).forEach((sh) => sh.rows.forEach((row) => {
+        if (!isStudent(row)) return;
+        const keys = new Set([squash(row['UNIVERSITY NAME']), squash(partnerNamed(row['UNIVERSITY PARTNER']))].filter(Boolean));
+        const hit = unis.find((u) => keys.has(u.key));
+        if (!hit) return;
+        const e = out[hit.id];
+        e.students += 1;
+        if (cur && sh.id === cur.id) e.thisIntake += 1;
+        if (text(row['APPLICATION SUBMISSION DATE'])) e.applied += 1;
+        if (text(row['OFFER RECEIVED DATE'])) e.offers += 1;
+        if (text(row[STATUS]) === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) e.visas += 1;
+      }));
+      sendJSON(res, 200, { stats: out, currentIntake: cur ? cur.name : '' });
+      return true;
+    }
     if (urlPath === '/api/partner-choices' && req.method === 'GET') {
       const names = (store) => (store && store.list ? store.list().filter((x) => x.status !== 'Ended').map((x) => x.name).sort((x, y) => x.localeCompare(y)) : []);
       const partners = [...new Set([...names(b2b), ...sheetPartners().map((p) => p.name)])].sort((x, y) => x.localeCompare(y));

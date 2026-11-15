@@ -25,6 +25,10 @@
   const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // Admin and the Manager narrow every list to one team by pressing it on the team board (the owner, 15 Nov 2026).
   let teamFilter = '';
+  // Admin and the Manager see the tasks as a Board (a column per team) or as the List (the owner, 15 Nov 2026: the admin view of the
+  // tasks could be much better). The choice is remembered on this device.
+  let layout = (() => { try { return localStorage.getItem('isr-task-layout') === 'list' ? 'list' : 'board'; } catch (e) { return 'board'; } })();
+  const setLayout = (v) => { layout = v; try { localStorage.setItem('isr-task-layout', v); } catch (e) { /* private window */ } };
   const matches = (x) => (!teamFilter || x.team === teamFilter) && (!searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ)));
   const expanded = new Set();
   // The task a notification was pressed for (its later day opens if it waits there).
@@ -125,6 +129,105 @@
     return g;
   }
 
+  // ---- the Board (Admin and the Manager) ----
+  // A column per team, the team's open tasks as small tiles (the student, the task, its tag, how long it has waited, its updates), the
+  // most important and the longest waiting first. A press opens the whole task (tick, updates, Edit, Reassign) in a window.
+  const daysOpen = (x) => Math.max(0, Math.floor((Date.now() - Date.parse(x.at || 0)) / 86400000));
+  function tile(x, refresh) {
+    const later = x.doOn && todayIso && x.doOn > todayIso;
+    const n = (x.comments || []).filter((c) => c.text).length;
+    const d = daysOpen(x);
+    const pr = priorityOf(x);
+    const b = h('button', { class: `tb-tile${x.done ? ' is-done' : ''}${x.unread ? ' is-new' : ''}${pr === 'super' ? ' is-super' : ''}`, type: 'button', title: 'Open the task' });
+    const top = el('div', 'tb-tile-top');
+    top.append(el('b', 'tb-student', window.Portal.niceName ? window.Portal.niceName(x.student) : x.student), el('span', 'tb-stage', x.stage || ''));
+    const what = el('div', 'tb-text', x.text);
+    const meta = el('div', 'tb-meta');
+    const tg = tagOf(x, x.stage);
+    meta.append(el('span', `tb-tag tag-${tg}`, tagLabel(tg)));
+    if (pr === 'super') meta.append(el('span', 'tb-prio', 'Super priority'));
+    if (x.done) meta.append(el('span', 'tb-age', 'Done'));
+    else if (later) meta.append(el('span', 'tb-age is-later', window.Portal.dayLabel(x.doOn, todayIso)));
+    else meta.append(el('span', `tb-age${d >= 3 ? ' is-slow' : ''}`, d === 0 ? 'Today' : `${d} day${d === 1 ? '' : 's'}`));
+    if (n) { const u = el('span', 'tb-updates'); u.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/></svg>'; u.append(String(n)); meta.append(u); }
+    b.append(top, what, meta);
+    b.addEventListener('click', () => {
+      let changed = false;
+      window.Portal.dialog(window.Portal.niceName ? window.Portal.niceName(x.student) : x.student, (body, close) => {
+        body.classList.add('tb-dialog-body');
+        body.append(taskRow(x, () => { changed = true; close(); }));
+        const foot = el('div', 'p-dialog-foot');
+        const open = h('a', { class: 'btn', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'Open the student card');
+        foot.append(open, h('button', { class: 'btn btn-primary', type: 'button', onclick: () => close() }, 'Close'));
+        body.append(foot);
+      }).then(() => refresh(true));
+    });
+    return b;
+  }
+  function boardOf(t, refresh) {
+    const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
+    const list = t.tasks.filter((x) => (!x.done || recent(x)) && matches(x) && (tagFilter === 'all' || tagOf(x, x.stage) === tagFilter));
+    // The columns: tasks for this person first ("For you"), then every team in the order of the teams list, then any other.
+    const order = ['head', ...allTeams.map((x) => x.id).filter((id) => id !== 'head')];
+    const cols = new Map();
+    list.forEach((x) => { const k = x.forMe && x.team === 'head' ? 'head' : x.team; if (!cols.has(k)) cols.set(k, []); cols.get(k).push(x); });
+    const keys = [...cols.keys()].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
+    const wrap = el('div', 'tb-board');
+    if (!keys.length) { wrap.append(emptyNote(searchQ || tagFilter !== 'all' || teamFilter ? 'No task matches.' : 'No open task. Every team is up to date.')); return wrap; }
+    keys.forEach((k) => {
+      const items = cols.get(k);
+      const open = items.filter((x) => !x.done).sort((a, b) => taskPriority(b) - taskPriority(a) || daysOpen(b) - daysOpen(a));
+      const done = items.filter((x) => x.done).sort((a, b) => String(b.doneAt).localeCompare(String(a.doneAt)));
+      const slow = open.filter((x) => daysOpen(x) >= 3).length;
+      const label = k === 'head' ? 'For you' : ((allTeams.find((x) => x.id === k) || {}).label || (items[0] && items[0].teamLabel) || k).replace(/\s*\(.*\)$/, '');
+      const col = el('section', 'tb-col');
+      const head = el('header', 'tb-col-head');
+      const name = el('div', 'tb-col-name');
+      name.append(el('span', 'tb-col-dot'), el('b', '', label), el('span', 'tb-col-n', String(open.length)));
+      head.append(name);
+      const sub = el('div', 'tb-col-sub');
+      sub.append(el('span', '', k === 'head' ? 'Given to you' : peopleOf(k, label)));
+      if (slow) sub.append(el('span', 'tb-col-slow', `${slow} waiting 3+ days`));
+      head.append(sub);
+      const share = open.length + done.length ? Math.round((done.length / (open.length + done.length)) * 100) : 0;
+      const bar = el('span', 'tb-col-bar'); const fill = el('i'); fill.style.width = share + '%'; bar.append(fill); head.append(bar);
+      col.append(head);
+      const body = el('div', 'tb-col-body');
+      if (!open.length) body.append(el('div', 'tb-col-empty', 'All done'));
+      open.forEach((x) => body.append(tile(x, refresh)));
+      if (done.length) {
+        const key = 'done:' + k;
+        const shown = expanded.has(key);
+        const tg = h('button', { class: 'tb-done-toggle', type: 'button', 'aria-expanded': String(shown) }, `${shown ? 'Hide' : 'Show'} ${done.length} done this week`);
+        tg.addEventListener('click', () => { if (shown) expanded.delete(key); else expanded.add(key); refresh(); });
+        body.append(tg);
+        if (shown) done.forEach((x) => body.append(tile(x, refresh)));
+      }
+      col.append(body);
+      wrap.append(col);
+    });
+    return wrap;
+  }
+  // The kinds of task in one row of pills (All, Application, NOC ...), with how many open in each.
+  function kindPills(items, refresh) {
+    const count = {};
+    items.forEach((x) => { const k = tagOf(x, x.stage); count[k] = (count[k] || 0) + 1; });
+    const kinds = Object.keys(count);
+    if (kinds.length < 2 && tagFilter === 'all') return null;
+    const bar = el('div', 'td-filter');
+    bar.setAttribute('role', 'tablist');
+    bar.setAttribute('aria-label', 'Show the tasks about');
+    const pill = (k, label, n) => {
+      const b = h('button', { class: `td-filter-pill${k === 'all' ? '' : ' tag-' + k}`, type: 'button', role: 'tab', 'aria-selected': String(tagFilter === k) }, label);
+      if (n) b.append(el('span', 'td-filter-n', String(n)));
+      b.addEventListener('click', () => { tagFilter = k; refresh(); });
+      bar.append(b);
+    };
+    pill('all', 'All', items.length);
+    ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k] || tagFilter === k) pill(k, label, count[k] || 0); });
+    return bar;
+  }
+
   function tasksPanel(t, refresh) {
     canAssignAll = Boolean(t.canAssign);
     todayIso = t.today || todayIso;
@@ -164,6 +267,24 @@
         sb.append(el('span', 'td-search-n', n ? `${n} open task${n === 1 ? '' : 's'} found` : 'No open task found'));
       }
       box.append(sb);
+    }
+    // Board or List, for Admin and the Manager.
+    if (canAssignAll && t.tasks.length) {
+      const sw = el('div', 'td-views tb-layout');
+      sw.setAttribute('role', 'tablist');
+      sw.setAttribute('aria-label', 'Show the tasks as');
+      [['board', 'Board'], ['list', 'List']].forEach(([k, label]) => {
+        const b = h('button', { class: 'td-view', type: 'button', role: 'tab', 'aria-selected': String(layout === k) }, label);
+        b.addEventListener('click', () => { setLayout(k); teamFilter = ''; refresh(); });
+        sw.append(b);
+      });
+      titles.append(sw);
+      if (layout === 'board') {
+        const pills = kindPills(t.tasks.filter((x) => !x.done && matches(x)), refresh);
+        if (pills) box.append(pills);
+        box.append(boardOf(t, refresh));
+        return box;
+      }
     }
     // Which tasks to see (the owner, 15 Nov 2026): one list at a time, never mixed. The tasks for this person are split in two, Today
     // and Upcoming (moved to a later day), then "You gave", and for Admin and the Manager "Given by others"; a team also "Reassigned"
@@ -504,7 +625,7 @@
       bell.classList.toggle('has-new', fresh > 0);
       drawPop();
       const own = ownTeamCard(tasks);
-      const board = teamBoard(tasks, refresh);
+      const board = tasks.canAssign && layout === 'board' ? null : teamBoard(tasks, refresh);
       top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections, d.waiting), ...(board ? [board] : []));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };

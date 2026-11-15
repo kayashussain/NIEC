@@ -33,6 +33,7 @@ const { createSourceOptions } = require('./source-options');
 const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createPortalApi } = require('./portal-api');
+const { tidyPartners } = require('./partner-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
 const { createUserMail } = require('./user-mail');
 const { createRates } = require('../shared/exchange-rates');
@@ -842,6 +843,16 @@ try {
   history.remember(current);
 } catch (e) {
   console.error('[startup] could not read', DATA_FILE, '-', e.message);
+}
+// The owner's one-time tidy-up of the partners (15 Nov 2026, see partner-tidy.js); it runs once and is written in Activity.
+try {
+  const out = tidyPartners({
+    getWorkbook: () => current, writeWorkbook, direct, b2b, planning,
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+  });
+  if (out.changes && out.changes.length) console.log('[startup] partners tidied:', out.changes.join('; '));
+} catch (e) {
+  console.error('[startup] partner tidy-up failed:', e.message);
 }
 
 // Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Fact File and

@@ -31,66 +31,125 @@
   }
   const btn = (cls, label, onClick) => { const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; };
 
-  // ---- the list ----
+  // ---- the list, in the same look as B2B Partners (the owner, 15 Nov 2026) ----
+  let stats = {};
+  let currentIntake = '';
+  let justSaved = '';
   async function loadList() {
     try {
-      all = await api(API);
+      const [list, st] = await Promise.all([api(API), BACKUP ? Promise.resolve({ stats: {} }) : api('/api/direct-stats').catch(() => ({ stats: {} }))]);
+      all = list;
+      stats = st.stats || {};
+      currentIntake = st.currentIntake || '';
       drawList();
     } catch (e) { say('listMsg', e.message, true); }
   }
+  const num = (n) => Number(n || 0).toLocaleString('en-GB');
+  const statOf = (u) => stats[u.id] || { students: 0, visas: 0, applied: 0, offers: 0, thisIntake: 0 };
+  const plural = (n, one, many) => `${num(n)} ${n === 1 ? one : (many || one + 's')}`;
+  const ICON = {
+    copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  };
+  const toast = (t, e) => window.NiecUI.toast(t, { type: e ? 'error' : 'success' });
+  const iconBtn = (icon, label, onClick) => { const b = btn('bp-icon', '', onClick); b.innerHTML = ICON[icon]; b.title = label; b.setAttribute('aria-label', label); return b; };
+  const copy = (value, what) => iconBtn('copy', `Copy the ${what.toLowerCase()}`, async () => { try { await navigator.clipboard.writeText(value); toast(`${what} copied`); } catch (e) { toast(`Could not copy the ${what.toLowerCase()}`, true); } });
+  const initialsOf = (name) => String(name || '?').replace(/\(.*?\)/g, '').split(/\s+/).filter((w) => /^[A-Za-z]/.test(w) && !/^(of|the|and|for)$/i.test(w)).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
+  const openLink = (text, href, cls) => { const a = el('a', cls, text); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; };
+  const dayOf = (v) => (window.Portal && /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? window.Portal.day(v) : String(v || ''));
+  const PILL = { Active: 'green', Ended: 'red' };
+  const openOne = (id) => (viewer() ? openView(id) : openEditor(id));
+
   function drawList() {
     const q = $('search').value.trim().toLowerCase();
-    const shown = q ? all.filter((u) => [u.name, ...(u.campuses || [])].join(' ').toLowerCase().includes(q)) : all;
-    $('count').textContent = all.length ? (q ? `${shown.length} of ${all.length} partner universities` : `${all.length} partner universit${all.length === 1 ? 'y' : 'ies'}`) : '';
-    if (!all.length) { $('list').replaceChildren(el('div', 'pu-empty', 'No partner universities yet. Add the first one above.')); return; }
-    if (!shown.length) { $('list').replaceChildren(el('div', 'pu-empty', 'No partner university matches that search.')); return; }
-    $('list').replaceChildren(...shown.map(card));
+    const shown = q ? all.filter((u) => [u.name, u.via, ...(u.campuses || [])].join(' ').toLowerCase().includes(q)) : all;
+    // The band across the top, as on B2B Partners: the universities, the students and visas through them, and how many are ready to apply to.
+    const active = all.filter((u) => u.status !== 'Ended');
+    const tot = all.reduce((t, u) => { const x = statOf(u); t.students += x.students; t.visas += x.visas; t.now += x.thisIntake; return t; }, { students: 0, visas: 0, now: 0 });
+    const ready = active.filter((u) => u.applyPortal || u.applyEmail).length;
+    const band = [
+      ['Partner universities', num(active.length), all.length > active.length ? `${num(all.length - active.length)} ended` : 'Active'],
+      ['Students', num(tot.students), currentIntake ? `${num(tot.now)} in ${currentIntake}` : 'Every intake on the sheet'],
+      ['Visas', num(tot.visas), 'Every intake on the sheet'],
+      ['Ready to apply', `${num(ready)} of ${num(active.length)}`, 'With a portal or an email'],
+    ];
+    $('kpis').replaceChildren(...band.map(([label, v, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', v), el('small', '', sub)); return d; }));
+    $('count').textContent = all.length ? (q ? `${shown.length} of ${all.length}` : `${all.length} in the list`) : '';
+    if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', viewer() ? 'No partner universities yet.' : 'No partner universities yet. Add the first one with + Add university.')); return; }
+    if (!shown.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
+    // The busiest first: the most students, then by name.
+    const ordered = shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
+    $('list').replaceChildren(...ordered.map(card));
+    if (justSaved) { const hit = $('list').querySelector(`[data-id="${justSaved}"]`); if (hit) hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    justSaved = '';
   }
+
   function card(u) {
-    const c = el('article', 'pu-card');
-    const head = el('div', 'pu-card-head');
-    const who = el('div');
-    who.append(btn('pu-name', u.name, () => (viewer() ? openView(u.id) : openEditor(u.id))));
-    // The campuses straight under the name.
-    if ((u.campuses || []).length) { const t = el('div', 'pu-tags pu-campus-tags'); u.campuses.forEach((x) => t.append(el('span', 'pu-tag', x))); who.append(t); }
-    head.append(who);
-    // Application submission, ready to use without opening the university: the portal and its login, or the email.
-    const sub = el('div', 'pu-submit');
-    sub.append(el('div', 'pu-submit-title', 'Application submission'));
-    const copy = (value, what) => btn('pu-mini', 'Copy', async () => { try { await navigator.clipboard.writeText(value); window.NiecUI.toast(`${what} copied`, { type: 'success' }); } catch (e) { window.NiecUI.toast(`Could not copy the ${what.toLowerCase()}`, { type: 'error' }); } });
-    const line = (label, valueNode, ...buttons) => { const d = el('div', 'pu-submit-line'); d.append(el('span', 'pu-submit-label', label), valueNode, ...buttons); return d; };
-    if (u.applyPortal) {
-      const a = el('a', 'pu-portal', 'Open portal ↗'); a.href = u.applyPortal; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = u.applyPortal;
-      sub.append(line('Portal', a, copy(u.applyPortal, 'Link')));
-      if (u.applyUser) sub.append(line('Username', el('code', '', u.applyUser), copy(u.applyUser, 'Username')));
-      if (u.applyPassword) {
-        const dots = '•'.repeat(10);
-        const shown = el('code', '', dots);
-        const peek = btn('pu-mini', 'Show', () => { const open = shown.textContent === dots; shown.textContent = open ? u.applyPassword : dots; peek.textContent = open ? 'Hide' : 'Show'; });
-        sub.append(line('Password', shown, peek, copy(u.applyPassword, 'Password')));
-      }
-    } else if (u.applyEmail) {
-      const a = el('a', 'pu-portal', 'Write email ↗'); a.href = 'mailto:' + u.applyEmail;
-      sub.append(line('Email', el('code', '', u.applyEmail), copy(u.applyEmail, 'Email'), a));
-    } else {
-      sub.append(el('div', 'pu-none', viewer() ? 'Not entered yet. Ask Admin to add the portal link or email.' : 'Not entered yet. Open the university to add the portal link or email.'));
+    const st = statOf(u);
+    const c = el('article', `bp-card${u.id === justSaved ? ' is-saved' : ''}`);
+    c.dataset.id = u.id;
+    const head = el('div', 'bp-card-head');
+    const who = el('div', 'bp-who');
+    const words = el('div');
+    const sub = [u.type === 'Through a B2B partner' && u.via ? `Through ${u.via}` : '', st.students ? `${plural(st.visas, 'visa')} · ${plural(st.students, 'student')}` : 'No students yet'].filter(Boolean).join(' · ');
+    words.append(btn('bp-name', u.name, () => openOne(u.id)), el('div', 'bp-sub', sub));
+    who.append(el('span', 'bp-avatar', initialsOf(u.name)), words);
+    head.append(who, el('span', `bp-status ${PILL[u.status] || 'amber'}`, u.status || 'Active'));
+    c.append(head);
+    // The campuses as soft tags under the name.
+    if ((u.campuses || []).length) { const t = el('div', 'bp-tags'); u.campuses.forEach((x) => t.append(el('span', 'bp-tag', x))); c.append(t); }
+    c.append(submitBox(u));
+    // A small funnel of this university's students: applied, offers, visas.
+    if (st.students) {
+      const f = el('div', 'bp-funnel');
+      [['Students', st.students], ['Applied', st.applied], ['Offers', st.offers], ['Visas', st.visas]].forEach(([k, n], i) => {
+        const d = el('div', 'bp-funnel-step'); const bar = el('i'); bar.style.setProperty('--w', `${Math.max(6, Math.round((n / st.students) * 100))}%`);
+        if (i === 3) d.classList.add('is-visa');
+        d.append(el('b', '', num(n)), el('small', '', k), bar); f.append(d);
+      });
+      c.append(f);
     }
-    const facts = el('dl', 'pu-facts');
-    const row = (label, value) => { const dd = el('dd'); if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'pu-none', 'Not entered yet')); facts.append(el('dt', '', label), dd); };
-    if (level !== 'team') row('Commission', u.slabs && u.slabs.length ? (() => { const d = el('div', 'pu-lines'); u.slabs.forEach((x) => d.append(el('span', '', x))); return d; })() : null);
+    const facts = el('dl', 'bp-facts');
+    const row = (label, value) => { const dd = el('dd'); if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'bp-none', 'Not entered yet')); facts.append(el('dt', '', label), dd); };
+    if (level !== 'team') row('Commission', u.slabs && u.slabs.length ? (() => { const d = el('div', 'bp-lines'); u.slabs.forEach((x) => d.append(el('span', '', x))); return d; })() : null);
     const p = u.contact || {};
     if (p.name || p.phone || p.email) {
-      const d = el('div', 'pu-lines');
-      if (p.name) d.append(el('span', '', p.name + (u.contactCount > 1 ? `  (+${u.contactCount - 1} more)` : '')));
-      if (p.phone) d.append(el('span', '', p.phone));
-      if (p.email) { const a = el('a', 'pu-link', p.email); a.href = 'mailto:' + p.email; d.append(a); }
+      const d = el('div', 'bp-lines');
+      if (p.name) d.append(el('span', 'bp-strong', p.name + (u.contactCount > 1 ? `  +${u.contactCount - 1}` : '')));
+      if (p.phone) { const a = el('a', 'bp-link', p.phone); a.href = 'tel:' + p.phone.replace(/[^\d+]/g, ''); d.append(a); }
+      if (p.email) { const a = el('a', 'bp-link', p.email); a.href = 'mailto:' + p.email; d.append(a); }
       row('Contact', d);
     } else row('Contact', null);
-    row('Agreement', [u.agreementStart ? 'Since ' + window.Portal.day(u.agreementStart) : '', u.agreementCount ? `${u.agreementCount} file${u.agreementCount === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · '));
-    const foot = el('div', 'pu-card-foot');
-    foot.append(btn('btn', 'Open details →', () => (viewer() ? openView(u.id) : openEditor(u.id))));
-    c.append(head, sub, facts, foot);
+    row('Agreement', [u.agreementStart ? 'Started ' + dayOf(u.agreementStart) : '', u.agreementEnd ? 'ends ' + dayOf(u.agreementEnd) : '', u.agreementCount ? plural(u.agreementCount, 'file') : ''].filter(Boolean).join(' · '));
+    c.append(facts);
+    const foot = el('div', 'bp-foot'); foot.append(btn('btn', viewer() ? 'Open' : 'Edit', () => openOne(u.id)));
+    c.append(foot);
     return c;
+  }
+
+  // How to apply, ready to use from the list (as on B2B Partners): Open portal, then the username and the password each with a copy
+  // button (an eye shows the password), or the email.
+  function submitBox(u) {
+    const box = el('div', 'bp-submit');
+    const line = (label, value, ...buttons) => { const d = el('div', 'bp-submit-line'); const b = el('span', 'bp-submit-btns'); b.append(...buttons); d.append(el('span', 'bp-submit-label', label), value, b); return d; };
+    if (u.applyPortal) {
+      const top = el('div', 'bp-submit-top');
+      top.append(openLink('Open portal ↗', u.applyPortal, 'bp-portal'), copy(u.applyPortal, 'Link'));
+      box.append(top);
+      if (u.applyUser) box.append(line('Username', el('code', 'bp-value', u.applyUser), copy(u.applyUser, 'Username')));
+      if (u.applyPassword) {
+        const dots = '•'.repeat(10);
+        const shown = el('code', 'bp-value', dots);
+        const peek = iconBtn('eye', 'Show the password', () => { const showing = shown.textContent !== dots; shown.textContent = showing ? dots : u.applyPassword; peek.classList.toggle('is-on', !showing); peek.title = showing ? 'Show the password' : 'Hide the password'; peek.setAttribute('aria-label', peek.title); });
+        box.append(line('Password', shown, peek, copy(u.applyPassword, 'Password')));
+      }
+    } else if (u.applyEmail) {
+      const top = el('div', 'bp-submit-top');
+      const w = el('a', 'bp-portal', 'Write email ↗'); w.href = 'mailto:' + u.applyEmail;
+      top.append(w);
+      box.append(top, line('Email', el('code', 'bp-value', u.applyEmail), copy(u.applyEmail, 'Email')));
+    } else box.append(el('div', 'bp-none', viewer() ? 'How to apply is not entered yet' : 'How to apply is not entered yet. Press Edit to add the portal or email.'));
+    return box;
   }
 
   // ---- the editor ----
@@ -296,8 +355,10 @@
         // A link or email that is not a real address is not kept: say so instead of losing it quietly.
         if (body.apply.trim() && !uni.applyPortal && !uni.applyEmail) window.NiecUI.toast('Saved, but the application link could not be kept: it must be a web address (e.g. https://apply.university.ac.uk) or an email address. Please check it and save again.', { type: 'error' });
         else window.NiecUI.toast('Saved', { type: 'success' });
-        buildEditor();
-        loadList();
+        // Straight back to the list, where the saved card glows once (as on B2B Partners).
+        justSaved = uni.id;
+        closeEditor();
+        await loadList();
       } catch (err) { say('editMsg', err.message, true); }
     });
 
@@ -331,7 +392,7 @@
     try {
       const made = await api('/api/direct', { name: $('addName').value });
       $('addName').value = '';
-      say('addMsg', `${made.name} added. Fill in its details below.`);
+      say('addMsg', '');
       await loadList();
       openEditor(made.id);
     } catch (err) { say('addMsg', err.message, true); }

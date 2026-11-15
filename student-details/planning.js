@@ -106,6 +106,12 @@ function cleanSettings(x, old = {}) {
     notPartners: pick('notPartners', (v) => (Array.isArray(v) ? [...new Set(v.map((n) => String(n || '').replace(/\s+/g, ' ').trim().slice(0, 120)).filter(Boolean))].slice(0, 200) : [])) || [],
     // Names in the Receiving Partner column that Admin marked as not an agent (not shown on Agents).
     notAgents: pick('notAgents', (v) => (Array.isArray(v) ? [...new Set(v.map((n) => String(n || '').replace(/\s+/g, ' ').trim().slice(0, 120)).filter(Boolean))].slice(0, 200) : [])) || [],
+    // Other spellings of a partner in the University Partner column, and the partner they mean ("TOR" is "The Official Rep"): they
+    // count for that partner and are never offered as a partner of their own (the owner, 15 Nov 2026).
+    partnerAliases: pick('partnerAliases', (v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).slice(0, 200)
+      .map(([k, t]) => [String(k || '').replace(/\s+/g, ' ').trim().slice(0, 120), String(t || '').replace(/\s+/g, ' ').trim().slice(0, 120)]).filter(([k, t]) => k && t)) : {})) || {},
+    // The one-time tidy-ups already done on this installation's data, so none runs twice.
+    tidied: pick('tidied', (v) => (Array.isArray(v) ? [...new Set(v.map((n) => String(n || '').slice(0, 60)).filter(Boolean))].slice(0, 100) : [])) || [],
   };
 }
 

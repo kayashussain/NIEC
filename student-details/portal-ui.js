@@ -304,6 +304,7 @@
           const now = out && out.card && (out.card.tasks || []).find((t) => t.id === task.id);
           task.comments = now ? now.comments || [] : [...comments(), { by: me, at: new Date().toISOString(), text }];
           input.value = ''; grow();
+          input.placeholder = 'Write an update';
           fresh = 0;
           const empty = list.querySelector('.tk-empty'); if (empty) empty.remove();
           list.hidden = false;

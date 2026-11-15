@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="header.css" />
 <link rel="stylesheet" href="ui.css" />
 <link rel="stylesheet" href="admin.css" />
+<link rel="stylesheet" href="portal.css" />
 <style>
   /* 🔴 CSS CHANGED (2026-11-13): Partner Universities, rebuilt calm and roomy | from: a ten-column table squeezed into a 1200px box (names, phones and emails broken over several lines), and one long editor form under the list with every field at once and no guidance | to: a wider page (up to 1480px) with a search box and a short "Add a partner university" line; each university as a calm card (name in navy, status tag, how you hold it, campuses as soft tags, commission, agreement end, the first contact, and the application link with "Open portal"); the editor opens as its own page with a "Back" button, in seven numbered steps (The university, Application, Contacts, Campuses, Commission and payment, Agreement files, Notes), each in its own soft panel with one line of help, roomy boxes in tidy columns, the B2B partner box only when it applies, a username and password only when the application is a link, and a Save bar that stays at the bottom of the screen */
   .pu-page { max-width: 1480px; }
@@ -91,27 +92,25 @@
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />
 </head>
-<body>
+<body class="p-body">
   <header class="niec-header" data-page="direct"></header>
-  <main class="page pu-page">
+  <main class="p-page bp-page pu-page">
     <div id="listView">
-      <div class="page-head">
+      <div class="p-head">
         <div>
-          <h1>Partner Universities <span class="pill pill-wait" id="adminOnly">View only</span></h1>
-          <p class="pu-intro">Universities you work with and where to apply.</p>
+          <h1>Partner Universities <span class="p-chip" id="adminOnly">View only</span></h1>
+          <p class="pu-intro">Your direct universities: how to apply, commission, students and visas.</p>
         </div>
-      </div>
-      <div class="pu-tools">
-        <input id="search" class="pu-search" type="search" placeholder="Search by university or city" aria-label="Search partner universities" />
-        <form id="addForm" class="pu-add" autocomplete="off">
-          <input id="addName" list="factNames" maxlength="120" required placeholder="Add a partner university, e.g. Bangor University" aria-label="New partner university name" />
+        <form id="addForm" class="p-actions pu-add" autocomplete="off">
+          <input id="addName" list="factNames" maxlength="120" required placeholder="e.g. Bangor University" aria-label="New partner university name" />
           <datalist id="factNames"></datalist>
-          <button class="btn btn-primary" type="submit">Add</button>
+          <button class="btn btn-primary" type="submit">+ Add university</button>
         </form>
       </div>
       <div class="msg" id="addMsg" role="status"></div>
-      <p class="pu-hint" id="count"></p>
-      <div class="pu-grid" id="list"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>
+      <div class="bp-band" id="kpis"></div>
+      <div class="bp-tools"><input id="search" class="bp-search" type="search" placeholder="Search by university, city or partner" aria-label="Search partner universities" /><span class="p-muted" id="count"></span></div>
+      <div class="bp-grid" id="list"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>
       <div class="msg" id="listMsg" role="status"></div>
     </div>
     <section id="editor" hidden></section>
@@ -120,6 +119,7 @@
 <script src="ui.js"></script>
 <script src="header.js"></script>
 <script src="backup-bar.js"></script>
+<script src="portal-ui.js"></script>
 <script src="direct-page.js"></script>
 <span id="isr-ready" hidden></span>
 </body>

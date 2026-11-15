@@ -448,3 +448,43 @@
   }
   window.addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(check); } }, { passive: true });
 })();
+
+// The big figures count up from nought when a page first opens (the owner, 15 Nov 2026: a portal that feels alive), in under a
+// second, once per page load: a figure drawn again later (after a save) just shows its value. Only plain numbers count ("349",
+// "1,250"); anything else ("0 of 6", "Rs 3,85,000") is left as it is. Never for people who ask their device for less motion.
+(function () {
+  if (typeof window === 'undefined' || typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const SEL = '.md-kpi b, .bp-band b, .td-stat b, .td-team-num b, .bp-funnel-step b, .ev-band b, .tile-value';
+  const started = Date.now();
+  const WINDOW_MS = 6000; // only while the page is first coming in
+  const seen = new WeakSet();
+  const plain = /^\d{1,3}(,\d{3})+$|^\d+$/;
+  const ease = (k) => 1 - Math.pow(1 - k, 3);
+  function run(node) {
+    if (seen.has(node)) return;
+    seen.add(node);
+    const text = node.textContent.trim();
+    if (node.children.length || !plain.test(text)) return;
+    const target = Number(text.replace(/,/g, ''));
+    if (!(target > 1)) return;
+    const dur = Math.min(900, 380 + target * 6);
+    const t0 = performance.now();
+    let last = '0';
+    // If the page writes a new value into the figure meanwhile, the count stops and the new value stays.
+    const step = (now) => {
+      if (node.textContent !== last) return;
+      const k = Math.min(1, (now - t0) / dur);
+      last = k < 1 ? Math.round(target * ease(k)).toLocaleString('en-GB') : text;
+      node.textContent = last;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    node.textContent = '0';
+    requestAnimationFrame(step);
+  }
+  const scan = () => { if (Date.now() - started <= WINDOW_MS) document.querySelectorAll(SEL).forEach(run); };
+  let queued = false;
+  const obs = new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; scan(); }); } });
+  const go = () => { scan(); obs.observe(document.body, { childList: true, subtree: true }); setTimeout(() => obs.disconnect(), WINDOW_MS); };
+  if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
+})();
