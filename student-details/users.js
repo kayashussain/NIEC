@@ -48,21 +48,41 @@
           ${boxes}
           <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Has their own dashboard, sees every student in every intake and can export to Excel. View only, unless a team is ticked as well. No Incentive page.</small></span></label>
         </div>
+        <label class="task-team" hidden>
+          <span><b>Gets the tasks of</b><small>For a person in more than one team: which team's tasks come to them on Today. They still see and work on the students of every team ticked above.</small></span>
+          <select name="${name}-task-team"></select>
+        </label>
       </fieldset>`;
+  }
+
+  // "Gets the tasks of" (the owner, 15 Nov 2026): offered once two or more teams are ticked, with the ticked teams and "All their teams".
+  function drawTaskTeam(container, name, keep) {
+    const ticked = [...container.querySelectorAll(`input[name="${name}-dept"]:checked`)].map((c) => c.value);
+    const wrap = container.querySelector('.task-team');
+    const select = container.querySelector(`select[name="${name}-task-team"]`);
+    const was = keep !== undefined ? keep : select.value;
+    select.innerHTML = [['', 'All their teams'], ...ticked.map((d) => [d, (DEPARTMENTS[d] || { label: d }).label])]
+      .map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
+    select.value = ticked.includes(was) ? was : '';
+    wrap.hidden = ticked.length < 2;
   }
 
   function wireAccess(container, name) {
     container.innerHTML = accessFields(name);
+    container.querySelectorAll(`input[name="${name}-dept"]`).forEach((c) => c.addEventListener('change', () => drawTaskTeam(container, name)));
+    drawTaskTeam(container, name, '');
   }
 
   const readAccess = (container, name) => ({
     manager: container.querySelector(`input[name="${name}-manager"]`).checked,
     departments: [...container.querySelectorAll(`input[name="${name}-dept"]:checked`)].map((c) => c.value),
+    taskTeam: container.querySelector(`select[name="${name}-task-team"]`).value,
   });
 
   function setAccess(container, name, person) {
     container.querySelector(`input[name="${name}-manager"]`).checked = person.role === 'manager';
     container.querySelectorAll(`input[name="${name}-dept"]`).forEach((c) => { c.checked = (person.departments || []).includes(c.value); });
+    drawTaskTeam(container, name, person.taskTeam || '');
   }
 
   wireAccess($('addAccess'), 'add');
@@ -112,7 +132,8 @@
   function accessChips(u) {
     if (u.role === 'admin') return '<span class="chip chip-admin">Admin</span>';
     const teams = (u.departments || []).map((d) => `<span class="chip chip-${d}">${esc((DEPARTMENTS[d] || { label: d }).label)}</span>`).join('');
-    return (u.role === 'manager' ? '<span class="chip chip-manager">Manager</span>' : '') + teams || '<span class="muted">No team</span>';
+    const tasks = u.taskTeam ? ` <span class="muted task-team-note">Tasks: ${esc((DEPARTMENTS[u.taskTeam] || { label: u.taskTeam }).label)}</span>` : '';
+    return ((u.role === 'manager' ? '<span class="chip chip-manager">Manager</span>' : '') + teams || '<span class="muted">No team</span>') + tasks;
   }
 
   async function loadUsers() {

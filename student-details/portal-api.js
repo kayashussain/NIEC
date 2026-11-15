@@ -114,21 +114,28 @@ function createPortalApi({
   };
   // A task is for this person (their team's, or Admin's own); they gave it; and what is new on it for them (the red dots): the comments
   // the others wrote since they last read it (or since their own last comment), and a task given to them in the last 3 days not read yet.
-  const forMe = (user, t) => teamsOf(user).includes(t.team) || (t.team === HEAD && Teams.isAdmin(user));
+  // The teams whose tasks this person gets: their one chosen team (Users, "Gets the tasks of"), else every team they are in. A person in
+  // the Application Team who also follows the Mock Team's students is not given the Mock Team's tasks (the owner, 15 Nov 2026).
+  const taskTeamsOf = (user) => (user && user.taskTeam && teamsOf(user).includes(user.taskTeam) ? [user.taskTeam] : teamsOf(user));
+  const forMe = (user, t) => taskTeamsOf(user).includes(t.team) || (t.team === HEAD && Teams.isAdmin(user));
   const gaveIt = (user, t) => Boolean(user && t.by && t.by === user.name);
   // A team the task was with before it was handed on: it still sees the task and can comment (the owner, 14 Nov 2026).
-  const hadIt = (user, t) => (Array.isArray(t.route) ? t.route : []).some((x) => teamsOf(user).includes(x) || (x === HEAD && Teams.isAdmin(user)));
+  const hadIt = (user, t) => (Array.isArray(t.route) ? t.route : []).some((x) => taskTeamsOf(user).includes(x) || (x === HEAD && Teams.isAdmin(user)));
   // Who may hand a task on: the team it is with, whoever gave it, and Admin and the Manager.
   const mayHand = (user, t) => !Teams.isReadOnly(user) && (canAssign(user) || forMe(user, t) || gaveIt(user, t));
-  function unreadOf(user, t, seen) {
-    if (!forMe(user, t) && !gaveIt(user, t) && !hadIt(user, t)) return 0;
+  // Exactly what is new on a task for this person, for the notifications on Today (the owner, 15 Nov 2026): the task itself when it was
+  // just given to them, and each update the others wrote since they last read it. Newest first. The red dots count these.
+  function newsOf(user, t, seen) {
+    if (!forMe(user, t) && !gaveIt(user, t) && !hadIt(user, t)) return [];
     const comments = Array.isArray(t.comments) ? t.comments : [];
     const ownLast = comments.filter((c) => c.by === user.name).map((c) => c.at).sort().pop() || '';
     const since = [seen[t.id] || '', ownLast].sort().pop();
-    const fresh = comments.filter((c) => c.by !== user.name && String(c.at) > since).length;
-    const newTask = !t.done && forMe(user, t) && t.by !== user.name && !seen[t.id] && Date.now() - Date.parse(t.at) < 3 * 86400000 ? 1 : 0;
-    return fresh + newTask;
+    const out = comments.filter((c) => c.by !== user.name && String(c.at) > since)
+      .map((c) => ({ kind: c.handoff ? 'reassigned' : 'update', by: c.by || 'Someone', at: c.at, text: String(c.text || '').slice(0, 160) }));
+    if (!t.done && forMe(user, t) && t.by !== user.name && !seen[t.id] && Date.now() - Date.parse(t.at) < 3 * 86400000) out.push({ kind: 'task', by: t.by || 'Someone', at: t.at, text: '' });
+    return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
   }
+  const unreadOf = (user, t, seen) => newsOf(user, t, seen).length;
   const hasTaskFor = (user, rowId) => { const mine = teamsOf(user); if (!mine.length) return false; const c = cards.has(rowId) ? cards.get(rowId) : null; const recent = Date.now() - 7 * 86400000; return Boolean(c && (c.tasks || []).some((t) => (mine.includes(t.team) || (Array.isArray(t.route) && t.route.some((x) => mine.includes(x)))) && (!t.done || Date.parse(t.doneAt) > recent))); };
   function canSee(user, found) {
     if (!found) return false;
@@ -568,7 +575,7 @@ function createPortalApi({
       });
     }
     // The tasks of this person's teams.
-    const mine = teamsOf(user);
+    const mine = taskTeamsOf(user);
     let open = 0; let doneWeek = 0;
     for (const { row } of rowIndex().values()) {
       const c = all[row._id];
@@ -640,7 +647,7 @@ function createPortalApi({
         sendJSON(res, 200, {
           student: { ...brief(found.sheet, found.row), color: found.row._color || '', remarks: text(found.row.REMARKS), columns: found.sheet.columns, row: Object.fromEntries(found.sheet.columns.map((c) => [c, found.row[c] ?? ''])) },
           card,
-          can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: teamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
+          can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
           taskTeams: TASK_TEAMS(),
           assignTeams: assignTeamsFor(req.user),
           taskUnread: Object.fromEntries((card.tasks || []).map((t) => [t.id, unreadOf(req.user, t, cards.seenBy(req.user.username))]).filter(([, n]) => n > 0)),
@@ -1831,7 +1838,7 @@ function createPortalApi({
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
           if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
-          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
+          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

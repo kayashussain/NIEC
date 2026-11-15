@@ -147,6 +147,14 @@ function accessLabel(u) {
   return teams.join(' + ') || 'No team';
 }
 
+// Whose tasks a person in several teams gets (the owner, 15 Nov 2026): someone in the Application Team who can also follow the Mock
+// Team's students gets only the Application Team's tasks when this is 'application'. Empty: the tasks of every team they are in. It
+// only decides the tasks; which students they see and change still follows all their teams.
+const cleanTaskTeam = (value, departments) => {
+  const v = String(value || '');
+  return Array.isArray(departments) && departments.length > 1 && departments.includes(v) ? v : '';
+};
+
 // Who a user is, for pages and the activity record. Never includes the password or secret.
 function publicUser(u) {
   return {
@@ -156,6 +164,7 @@ function publicUser(u) {
     email: u.email || '',
     role: u.role,
     departments: u.departments || [],
+    taskTeam: cleanTaskTeam(u.taskTeam, u.departments || []),
     roleLabel: accessLabel(u),
     label: `${u.name} (${accessLabel(u)})`,
   };
@@ -570,6 +579,7 @@ function createAccounts({
       const temp = temporaryPassword();
       const user = {
         id: crypto.randomBytes(8).toString('hex'), username, name, email, role: access.role, departments: access.departments,
+        taskTeam: cleanTaskTeam(body.taskTeam, access.departments),
         passwordHash: hashPassword(temp), mustChangePassword: true,
         disabled: false, createdAt: new Date(now()).toISOString(),
       };
@@ -639,6 +649,15 @@ function createAccounts({
           if (access.error) { bad(res, 400, access.error); return true; }
           const next = { ...target, ...access };
           if (accessLabel(next) !== accessLabel(target)) { Object.assign(change, access); notes.push(`access from ${accessLabel(target)} to ${accessLabel(next)}`); }
+        }
+        if (body.taskTeam !== undefined || change.departments) {
+          // Whose tasks they get: kept only while it is one of their teams and they are in more than one.
+          const depts = change.departments || target.departments || [];
+          const taskTeam = cleanTaskTeam(body.taskTeam !== undefined ? body.taskTeam : target.taskTeam, depts);
+          if (taskTeam !== cleanTaskTeam(target.taskTeam, target.departments || [])) {
+            change.taskTeam = taskTeam;
+            notes.push(taskTeam ? `gets the tasks of ${DEPARTMENTS[taskTeam] || taskTeam} only` : 'gets the tasks of all their teams');
+          }
         }
         if (notes.length) {
           updateUser(target.id, change);

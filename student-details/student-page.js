@@ -236,41 +236,22 @@
     const fresh = Object.values(unread).reduce((n, x) => n + x, 0);
     if (fresh) head.insertBefore(el('span', 'td-chip is-new', `${fresh} new`), head.lastChild);
     tasks.forEach((t) => {
-      const r = el('div', `td-task${t.done ? ' is-done' : ''}${unread[t.id] ? ' has-unread' : ''}`);
       const forMe = (data.can.myTeams || []).includes(t.team) || (t.team === 'head' && (data.me || {}).role === 'admin');
       const mine = data.can.removeAnyTask || forMe;
-      const box = h('button', { class: 'td-check', type: 'button', 'aria-pressed': String(t.done), title: t.done ? 'Mark as not done' : 'Mark as done', 'aria-label': t.done ? 'Mark as not done' : 'Mark as done', disabled: !mine });
-      box.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-      box.addEventListener('click', async () => {
-        box.disabled = true;
-        if (!t.done) { r.classList.add('is-ticking'); window.Portal.celebrate(box); }
-        try { await save(`tasks/${t.id}`, { done: !t.done }, t.done ? 'Marked as not done' : window.Portal.cheer()); setTimeout(render, t.done ? 0 : 450); } catch (e) { r.classList.remove('is-ticking'); box.disabled = false; }
-      });
-      const mid = el('div', 'td-task-mid');
-      const top = el('div', 'td-task-top');
-      top.append(el('div', 'td-task-text', t.text));
-      if (unread[t.id]) top.append(el('span', 'td-dot', String(unread[t.id])));
-      const tagLine = window.Portal.taskBadges(t, { rowId: id, stage: data.student.stage, canChange: !data.can.readOnly && (mine || t.by === me), onChanged: async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); } });
-      if (!t.done && window.Portal.priorityOf(t) === 'super') r.classList.add('is-super');
-      // From whom, to whom, and when.
-      const route = window.Portal.taskRoute(t, { fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team), teams: data.taskTeams || [] });
-      route.append(el('span', 'td-when', t.at ? when(t.at) : ''));
-      if (t.done) route.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
-      // Reassign (the team it is with, whoever gave it, Admin and the Manager) and Remove, together at the task's top right.
-      const acts = window.Portal.taskActions([
-        !data.can.readOnly && (mine || t.by === me) && ['Reassign', async () => { if (await window.Portal.handOn(t, { rowId: id, teams: data.taskTeams || [] })) { say('Reassigned'); data = await api('/api/cards/' + encodeURIComponent(id)); render(); } }],
-        (data.can.removeAnyTask || t.by === me) && ['Remove', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { await save(`tasks/${t.id}/delete`, {}, 'Task removed'); render(); } }, true],
-      ]);
-      if (acts) top.append(acts);
       const had = (t.route || []).some((x) => (data.can.myTeams || []).includes(x) || (x === 'head' && (data.me || {}).role === 'admin'));
-      const canWrite = !data.can.readOnly && (mine || t.by === me || had);
-      const thread = window.Portal.taskThread(t, { rowId: id, me, canWrite, unread: unread[t.id] || 0, teams: data.taskTeams || [] });
-      const meta = el('div', 'td-meta');
-      meta.append(tagLine, route);
-      mid.append(top, meta, thread);
-      r.append(box, mid);
-      if (unread[t.id]) r.addEventListener('pointerdown', () => thread.markRead());
-      c.append(r);
+      const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
+      c.append(window.Portal.taskCard(t, {
+        rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0,
+        canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
+        student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
+        actions: [
+          // Reassign (the team it is with, whoever gave it, Admin and the Manager) and Remove.
+          !data.can.readOnly && (mine || t.by === me) && ['Reassign to another team', async () => { if (await window.Portal.handOn(t, { rowId: id, teams: data.taskTeams || [] })) { say('Reassigned'); reload(); } }],
+          (data.can.removeAnyTask || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { await save(`tasks/${t.id}/delete`, {}, 'Task removed'); render(); } }, true],
+        ],
+        onTick: async (done, folded) => { await save(`tasks/${t.id}`, { done }, done ? window.Portal.cheer() : 'Marked as not done'); await folded; render(); },
+        onChanged: reload,
+      }));
     });
     return c;
   }

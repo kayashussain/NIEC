@@ -5,7 +5,7 @@
 //   2. what needs attention: one short list, a line per kind of work with how many students wait, opened with a click.
 // The numbers, charts and buttons live on the Dashboard and on All Students, not here.
 (function () {
-  const { el, h, api, initials, stagePill, taskThread, taskRoute, handOn, taskActions, taskBadges, taskPriority, priorityOf, tagOf, tagLabel, celebrate } = window.Portal;
+  const { el, h, api, initials, stagePill, handOn, taskPriority, priorityOf, tagOf, tagLabel } = window.Portal;
   const view = document.getElementById('view');
   if (new URLSearchParams(location.search).get('notice') === 'admin') {
     history.replaceState(null, '', location.pathname);
@@ -22,55 +22,32 @@
   let tagFilter = 'all';
   const expanded = new Set();
   const FIRST = 5;
-  // One task: the tick (only for whoever the task is for), what to do, the student, who gave it to whom and when, and its comments.
+  // The task a notification was pressed for: shown even when it is past the first five or among the done ones.
+  let focusTask = null;
+  // One task (portal-ui.js taskCard): the tick (only for whoever the task is for), what to do, its updates, the student, who gave it to
+  // whom and when.
   function taskRow(t, refresh) {
-    const r = el('div', `td-task${t.done ? ' is-done' : ''}${t.unread ? ' has-unread' : ''}`);
-    const mayTick = t.forMe || (canAssignAll && !t.given);
-    const tick = h('button', { class: 'td-check', type: 'button', 'aria-pressed': String(t.done), title: mayTick ? (t.done ? 'Mark as not done' : 'Mark as done') : `${t.teamLabel} ticks it when it is done`, 'aria-label': t.done ? 'Mark as not done' : 'Mark as done', disabled: !mayTick });
-    tick.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-    tick.addEventListener('click', async () => {
-      tick.disabled = true;
-      // The circle turns blue with a tick and the row folds away (about half a second), and only then is the list redrawn, so the
-      // next task never jumps under the mouse.
-      const quick = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (!t.done) { r.classList.add('is-ticking'); celebrate(tick); }
-      const folded = new Promise((ok) => setTimeout(ok, t.done || quick ? 0 : 520));
-      try {
-        await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}`, { done: !t.done });
-        window.NiecUI.toast(t.done ? 'Marked as not done' : window.Portal.cheer(), { type: 'success' });
-        await folded;
-        refresh(true);
-      } catch (e) { r.classList.remove('is-ticking'); tick.disabled = false; window.NiecUI.toast(e.message, { type: 'error' }); }
-    });
-    const mid = el('div', 'td-task-mid');
-    const top = el('div', 'td-task-top');
-    top.append(el('div', 'td-task-text', t.text));
-    if (t.unread) top.append(el('span', 'td-dot', String(t.unread)));
-    mid.append(top);
-    const badges = taskBadges(t, { rowId: t.studentId, stage: t.stage, canChange: t.forMe || t.by === me || canAssignAll, onChanged: () => refresh(true) });
-    if (priorityOf(t) === 'super' && !t.done) r.classList.add('is-super');
-    // From whom, to whom, and when: "From SK Kayas Hussain to the Application Team · 14 Nov".
     const fromName = t.by === me ? 'You' : t.by || 'Someone';
     const toName = t.forMe ? (t.team === 'head' ? 'you' : `your team (${t.teamLabel})`) : t.teamLabel;
-    // The way it went, when it was handed on: "From SK → Mock Team → Application Team".
-    const route = taskRoute(t, { fromName, toName, teams: allTeams });
-    route.append(el('span', 'td-when', t.at ? shortDay(t.at) : ''));
-    const acts = taskActions([
-      t.mayHand && ['Reassign', async () => { if (await handOn(t, { rowId: t.studentId, teams: allTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
-      (canAssignAll || t.by === me) && ['Remove', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
-    ]);
-    if (acts) top.append(acts);
-    if (t.done) route.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
-    const who = el('div', 'td-task-who');
-    who.append(h('a', { class: 'td-student', href: '/student?id=' + encodeURIComponent(t.studentId), title: 'Open the student card' }, t.student), stagePill(t.stage));
-    const thread = taskThread(t, { rowId: t.studentId, me, canWrite: true, unread: t.unread || 0, teams: allTeams });
-    // The tag and who gave it to whom share one line, so a task stays short.
-    const meta = el('div', 'td-meta');
-    meta.append(badges, route);
-    mid.append(meta, who, thread);
-    r.append(tick, mid);
-    if (t.unread) r.addEventListener('pointerdown', () => thread.markRead());
-    return r;
+    return window.Portal.taskCard(t, {
+      rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true,
+      mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
+      canChange: t.forMe || t.by === me || canAssignAll,
+      student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
+      actions: [
+        t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: allTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
+        (canAssignAll || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
+      ],
+      onTick: async (done, folded) => {
+        try {
+          await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}`, { done });
+          window.NiecUI.toast(done ? window.Portal.cheer() : 'Marked as not done', { type: 'success' });
+          await folded;
+          refresh(true);
+        } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); throw e; }
+      },
+      onChanged: () => refresh(true),
+    });
   }
   let canAssignAll = false;
   let allTeams = [];
@@ -100,7 +77,7 @@
       empty.append(el('div', '', tagFilter === 'all' ? emptyText : `Nothing open about ${tagLabel(tagFilter).toLowerCase()} here.`));
       g.append(empty);
     }
-    const many = open.length > FIRST && !expanded.has(title);
+    const many = open.length > FIRST && !expanded.has(title) && !open.slice(FIRST).some((x) => x.id === focusTask);
     (many ? open.slice(0, FIRST) : open).forEach((x) => g.append(taskRow(x, refresh)));
     if (open.length > FIRST) {
       const more = h('button', { class: 'td-more', type: 'button' }, many ? `Show all ${open.length} open tasks` : 'Show only the first five');
@@ -109,7 +86,7 @@
     }
     if (done.length) {
       const key = title;
-      const shown = showDone === key;
+      const shown = showDone === key || done.some((x) => x.id === focusTask);
       const toggle = h('button', { class: 'td-done-toggle', type: 'button', 'aria-expanded': String(shown) }, shown ? 'Hide the tasks done this week' : `Done this week (${done.length})`);
       toggle.addEventListener('click', () => { showDone = shown ? false : key; refresh(); });
       g.append(toggle);
@@ -125,7 +102,7 @@
     const box = el('section', 'td-tasks');
     const head = el('div', 'td-tasks-head');
     const titles = el('div');
-    titles.append(el('h2', '', 'Tasks'), el('p', '', 'Assigned tasks and their updates. A red dot marks anything new.'));
+    titles.append(el('h2', '', 'Tasks'), el('p', '', 'What to do, in order of priority. Anything new is in Notifications above.'));
     head.append(titles);
     box.append(head);
     // One row of pills to see one kind of task at a time, each with how many are open.
@@ -161,6 +138,82 @@
     return box;
   }
 
+  // ---- Notifications (the owner, 15 Nov 2026): exactly what is new and on which task, newest first. A press goes straight to the task,
+  // opens its updates and marks it read, so nobody has to scroll through every task to find the new message. ----
+  const ago = (iso) => {
+    const m = Math.round((Date.now() - Date.parse(iso)) / 60000);
+    if (!(m >= 0)) return '';
+    if (m < 1) return 'Just now';
+    if (m < 60) return `${m} min ago`;
+    if (m < 24 * 60) return `${Math.round(m / 60)} h ago`;
+    if (m < 48 * 60) return 'Yesterday';
+    return shortDay(iso);
+  };
+  let inboxAll = false;
+  function inbox(t, refresh) {
+    const items = t.tasks.flatMap((x) => (x.news || []).map((n) => ({ ...n, task: x }))).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    if (!items.length) return null;
+    const box = el('section', 'td-inbox');
+    box.setAttribute('aria-label', 'Notifications');
+    const head = el('div', 'td-inbox-head');
+    const title = el('h2', '', 'Notifications');
+    title.append(el('span', 'td-inbox-count', String(items.length)));
+    const clear = h('button', { class: 'td-inbox-clear', type: 'button' }, 'Mark all as read');
+    clear.addEventListener('click', async () => {
+      clear.disabled = true;
+      const ids = [...new Set(items.map((n) => n.task))];
+      await Promise.all(ids.map((x) => api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {})));
+      ids.forEach((x) => { x.news = []; x.unread = 0; });
+      window.dispatchEvent(new Event('isr-tasks-read'));
+      refresh();
+    });
+    head.append(title, clear);
+    box.append(head);
+    const list = el('div', 'td-inbox-list');
+    const SHOW = 4;
+    (inboxAll ? items : items.slice(0, SHOW)).forEach((n) => {
+      const x = n.task;
+      const b = h('button', { class: `td-note kind-${n.kind}`, type: 'button' });
+      const av = el('span', 'td-note-av', initials(n.by));
+      av.setAttribute('aria-hidden', 'true');
+      const words = el('div', 'td-note-words');
+      const line = el('div', 'td-note-line');
+      const who = n.by === me ? 'You' : n.by;
+      line.append(el('b', '', who), n.kind === 'task' ? ` gave ${x.forMe && x.team !== 'head' ? 'your team' : 'you'} a new task` : n.kind === 'reassigned' ? ' reassigned a task' : ' posted an update');
+      words.append(line, el('div', 'td-note-task', x.text));
+      if (n.text) words.append(el('div', 'td-note-text', `\u201c${n.text}\u201d`));
+      const side = el('div', 'td-note-side');
+      side.append(el('span', 'td-note-when', ago(n.at)), el('span', 'td-note-student', x.student));
+      b.append(av, words, side);
+      b.addEventListener('click', () => goTo(x, refresh));
+      list.append(b);
+    });
+    box.append(list);
+    if (items.length > SHOW) {
+      const more = h('button', { class: 'td-more', type: 'button' }, inboxAll ? 'Show fewer' : `Show all ${items.length} notifications`);
+      more.addEventListener('click', () => { inboxAll = !inboxAll; refresh(); });
+      box.append(more);
+    }
+    return box;
+  }
+  // Go to one task: every kind shown, the task drawn even if it is past the first five, then glide to it, open its updates and mark
+  // it read.
+  function goTo(x, refresh) {
+    tagFilter = 'all';
+    focusTask = x.id;
+    refresh();
+    requestAnimationFrame(() => {
+      const row = document.querySelector(`.td-task[data-task-id="${x.id}"]`);
+      if (!row) return;
+      row.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      row.classList.add('is-flash');
+      setTimeout(() => row.classList.remove('is-flash'), 1800);
+      if (row.openThread) row.openThread();
+      x.news = []; x.unread = 0;
+      // Redraw once it is read: the notification, the counts and the dot go (its updates stay open, see portal-ui.js openThreads).
+      setTimeout(() => { refresh(); const again = document.querySelector(`.td-task[data-task-id="${x.id}"]`); if (again) again.scrollIntoView({ block: 'center' }); }, 700);
+    });
+  }
   // What needs attention: one line per kind of work that has students waiting; a click opens the first few names.
   function attention(sections) {
     const box = el('section', 'td-attn');
@@ -225,7 +278,8 @@
     const top = el('div');
     const refresh = async (reload) => {
       if (reload) { try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ } }
-      top.replaceChildren(pulse(tasks, d.sections));
+      const news = inbox(tasks, refresh);
+      top.replaceChildren(...(news ? [news] : []), pulse(tasks, d.sections));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };
     refresh();

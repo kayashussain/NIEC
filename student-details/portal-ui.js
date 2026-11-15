@@ -331,6 +331,84 @@
     list.filter(Boolean).forEach(([label, onClick, danger]) => box.append(h('button', { class: `td-act${danger ? ' danger' : ''}`, type: 'button', onclick: onClick }, label)));
     return box.childNodes.length ? box : null;
   }
+  // A task's actions behind one quiet "..." button (Reassign, Remove), so the row stays calm (the owner, 15 Nov 2026).
+  function taskMenu(list) {
+    const items = list.filter(Boolean);
+    if (!items.length) return null;
+    const wrap = el('div', 'td-menu-wrap');
+    const btn = h('button', { class: 'td-more-btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-label': 'More for this task', title: 'More' });
+    btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>';
+    const menu = el('div', 'td-menu');
+    menu.setAttribute('role', 'menu');
+    menu.hidden = true;
+    const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', esc, true); };
+    const outside = (e) => { if (!wrap.contains(e.target)) close(); };
+    const esc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); btn.focus(); } };
+    items.forEach(([label, onClick, danger]) => {
+      const it = h('button', { class: `td-menu-item${danger ? ' danger' : ''}`, type: 'button', role: 'menuitem' }, label);
+      it.addEventListener('click', (e) => { e.stopPropagation(); close(); onClick(); });
+      menu.append(it);
+    });
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!menu.hidden) { close(); return; }
+      menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+      document.addEventListener('pointerdown', outside, true); document.addEventListener('keydown', esc, true);
+      const first = menu.querySelector('button'); if (first) first.focus();
+    });
+    wrap.append(btn, menu);
+    return wrap;
+  }
+  // One task, the same on Today and on the student card (the owner, 15 Nov 2026: "as Apple would make it"): a round tick; the task
+  // in semibold; beside it, on the right, its updates (a speech bubble with how many, a red count when something is new) and "...";
+  // under it one grey line with the priority (when not the usual), the tag, the student and the stage; then who gave it to whom and
+  // when, in small grey type. The updates open under the task.
+  //   o: { rowId, me, teams, mayTick, tickTitle, canWrite, canChange, unread, stage, student: { name, href } | null, fromName,
+  //        toName, actions: [[label, onClick, danger]], onTick: async (done) => {}, onChanged }
+  function taskCard(t, o) {
+    const r = el('div', `td-task${t.done ? ' is-done' : ''}${o.unread ? ' has-unread' : ''}`);
+    r.dataset.taskId = t.id;
+    if (!t.done && priorityOf(t) === 'super') r.classList.add('is-super');
+    const tick = h('button', { class: 'td-check', type: 'button', 'aria-pressed': String(t.done), title: o.mayTick ? (t.done ? 'Mark as not done' : 'Mark as done') : (o.tickTitle || ''), 'aria-label': t.done ? 'Mark as not done' : 'Mark as done', disabled: !o.mayTick });
+    tick.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    tick.addEventListener('click', async () => {
+      tick.disabled = true;
+      // The circle turns blue with a tick and the row folds away, and only then is the list redrawn (the next task never jumps).
+      const quick = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!t.done) { r.classList.add('is-ticking'); celebrate(tick); }
+      const folded = new Promise((ok) => setTimeout(ok, t.done || quick ? 0 : 520));
+      try { await o.onTick(!t.done, folded); } catch (e) { r.classList.remove('is-ticking'); tick.disabled = false; }
+    });
+    const mid = el('div', 'td-task-mid');
+    const top = el('div', 'td-task-top');
+    top.append(el('div', 'td-task-text', t.text));
+    const side = el('div', 'td-side');
+    top.append(side);
+    // Priority, tag, student and stage on one line.
+    const sub = el('div', 'td-sub');
+    const badges = taskBadges(t, { rowId: o.rowId, stage: o.stage, canChange: o.canChange, onChanged: o.onChanged });
+    sub.append(...badges.childNodes);
+    if (o.student) {
+      const a = h('a', { class: 'td-student', href: o.student.href, title: 'Open the student card' }, o.student.name);
+      sub.append(a);
+      if (o.stage) sub.append(el('span', 'td-stage', o.stage));
+    }
+    const route = taskRoute(t, { fromName: o.fromName, toName: o.toName, teams: o.teams });
+    route.append(el('span', 'td-when', t.at ? new Date(t.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''));
+    if (t.done) route.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
+    const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite, unread: o.unread || 0, teams: o.teams });
+    // The updates button sits at the right of the task; the updates themselves open under it.
+    const toggle = thread.querySelector('.tk-toggle');
+    if (toggle) side.append(toggle);
+    const menu = taskMenu(o.actions || []);
+    if (menu) side.append(menu);
+    mid.append(top, sub, route, thread);
+    r.append(tick, mid);
+    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); };
+    if (o.unread) r.addEventListener('pointerdown', () => thread.markRead());
+    return r;
+  }
+
   // ---- what a task is about, how important it is (the owner, 15 Nov 2026), and the order the tasks are listed in ----
   const F = () => root.CardFields || {};
   const TAGS = () => (F().TASK_TAGS || [['other', 'Other']]);
@@ -416,5 +494,5 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  root.Portal = { taskThread, taskRoute, handOn, taskActions, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { taskThread, taskRoute, handOn, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

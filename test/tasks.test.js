@@ -121,4 +121,28 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 400, 'not to the team it is already with');
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'head', reason: 'Needs your approval' })).status, 200, 'on to Admin');
   assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id).route, ['mock', 'application']);
+
+  // A person in both the Application and the Mock Team (to follow every student) gets only the tasks of the team chosen under "Gets
+  // the tasks of" (the owner, 15 Nov 2026); they still see and work on the students of both teams.
+  const both = await login('maya', ['application', 'mock']);
+  const mockStudent = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Hari', 'LAST NAME': 'KC', 'CONTACT NUMBER': '9800000031' } })).json.id;
+  const appTask = (await admin('POST', `/api/cards/${mockStudent}/tasks`, { team: 'application', text: 'Check the offer letter' })).json.card.tasks[0];
+  const mockTask = (await admin('POST', `/api/cards/${mockStudent}/tasks`, { team: 'mock', text: 'Run the second mock' })).json.card.tasks.find((x) => x.text === 'Run the second mock');
+  const seenBy = async () => (await both('GET', '/api/tasks')).json.tasks.filter((x) => x.forMe && x.studentId === mockStudent).map((x) => x.text).sort();
+  assert.deepStrictEqual(await seenBy(), ['Check the offer letter', 'Run the second mock'], 'with nothing chosen, the tasks of both teams');
+  const mayaId = (await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').id;
+  assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application', 'mock'], taskTeam: 'application' })).status, 200);
+  assert.deepStrictEqual(await seenBy(), ['Check the offer letter'], 'only the Application Team\'s tasks once chosen');
+  assert.strictEqual((await both('GET', `/api/cards/${mockStudent}`)).status, 200, 'the Mock Stage student is still open to them');
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${mockTask.id}`, { done: true })).status, 403, 'and the Mock Team\'s task is not theirs to tick');
+
+  // Notifications: what exactly is new on each task, for whoever it is for.
+  await admin('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { comment: 'The offer is in the portal' });
+  const note = (await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id).news;
+  assert.deepStrictEqual(note.map((n) => [n.kind, n.by, n.text]), [['update', 'Owner', 'The offer is in the portal'], ['task', 'Owner', '']]);
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { seen: true })).status, 200);
+  assert.deepStrictEqual((await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id).news, [], 'read: nothing new');
+  // A choice that is not one of their teams (or for a person in one team only) is not kept.
+  assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application'], taskTeam: 'mock' })).status, 200);
+  assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').taskTeam, '');
 });
