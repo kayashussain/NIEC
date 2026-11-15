@@ -344,7 +344,7 @@
   function handOn(task, { rowId, teams = [] }) {
     return dialog('Reassign task', (body, close) => {
       const choices = teams.filter((t) => t.id !== task.team).map((t) => [t.id, t.label]);
-      body.append(el('p', 'p-muted p-small', 'The task and its updates move to the new team. Earlier teams keep access.'));
+      body.append(el('p', 'p-muted p-small', 'The task and its updates move to the new team.'));
       const team = field('Reassign to', { kind: 'select', choices });
       const why = field('Reason and next step', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Mock passed. Please request the CAS.' });
       const msg = el('div', 'p-msg');
@@ -437,14 +437,14 @@
         parts.date = dateField('Submitted on', today, today);
         parts.uni = field('To which university', { value: info.university || '', max: 160, placeholder: 'e.g. Coventry University' });
         form.append(parts.uni.wrap);
-        parts.had = el('p', 'p-muted p-small p-wide', info.appSubmitted ? `Application submitted on the sheet already says ${/^\d{4}-\d{2}-\d{2}/.test(info.appSubmitted) ? day(info.appSubmitted.slice(0, 10)) : info.appSubmitted}: it stays, and this application is kept in the notes with its own date.` : 'The date goes into Application submitted on All Students.');
+        parts.had = el('p', 'p-muted p-small p-wide', info.appSubmitted ? `Application submitted on the sheet already says ${/^\d{4}-\d{2}-\d{2}/.test(info.appSubmitted) ? day(info.appSubmitted.slice(0, 10)) : info.appSubmitted}: this one goes in the notes.` : 'Goes into Application submitted.');
         form.append(parts.had);
         read = () => (q.value() === 'yes' ? { submitted: true, date: parts.date.input.value, university: parts.uni.input.value.trim() } : {});
         check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day it was submitted.' : '');
       } else if (tag === 'noc') {
         const q = ask('The NOC', [['Pending', 'Pending (account made)'], ['Submitted', 'Submitted']], '', null);
         parts.num = field('NOC number', { value: info.nocNumber || '', max: 60, placeholder: 'If there is one' });
-        form.append(parts.num.wrap, el('p', 'p-muted p-small p-wide', 'Both go into NOC and NOC Number on All Students.'));
+        form.append(parts.num.wrap, el('p', 'p-muted p-small p-wide', 'Goes into NOC and NOC Number.'));
         read = () => ({ noc: q.value(), nocNumber: parts.num.input.value.trim() });
         check = () => (!q.value() ? 'Choose Pending or Submitted.' : '');
       } else if (tag === 'mock') {
@@ -452,8 +452,8 @@
         parts.date = dateField('Mock interview on', today);
         parts.rem = el('label', 'p-check p-wide');
         const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
-        parts.rem.append(remind, el('span', '', 'Remind the team to write the feedback on that day'));
-        form.append(parts.rem, el('p', 'p-muted p-small p-wide', 'The day goes into the next empty Mock Schedule on All Students.'));
+        parts.rem.append(remind, el('span', '', 'Remind the team to write the feedback'));
+        form.append(parts.rem, el('p', 'p-muted p-small p-wide', 'Goes into the next Mock Schedule.'));
         read = () => (q.value() === 'yes' ? { scheduled: true, date: parts.date.input.value, remind: remind.checked } : {});
         check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day of the mock interview.' : '');
       } else if (tag === 'medical') {
@@ -461,16 +461,31 @@
         parts.date = dateField('Booked for', '');
         parts.place = field('Hospital or clinic', { max: 200, placeholder: 'e.g. IOM Kathmandu' });
         form.append(parts.place.wrap);
-        parts.hint = el('p', 'p-muted p-small p-wide', 'Medical Report on All Students says Booked, and Received by itself on that day. Booked again for another day, the new day counts.');
+        parts.hint = el('p', 'p-muted p-small p-wide', 'Medical Report says Booked, then Received on that day.');
         form.append(parts.hint);
         [parts.date.wrap, parts.place.wrap, parts.hint].forEach((n) => { n.hidden = true; });
         read = () => ({ medical: q.value(), date: parts.date.input.value, place: parts.place.input.value.trim() });
         check = () => (!q.value() ? 'Choose Booked, Report received or Not booked yet.' : q.value() === 'booked' && !parts.date.input.value ? 'Choose the day it is booked for.' : '');
       }
-      const words = field(tag === 'other' || !['application', 'noc', 'mock', 'medical'].includes(tag) ? 'What was done? (optional)' : 'A note (optional)', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. MSc Data Science, Application ID 12345.' : tag === 'noc' ? 'e.g. NOC account created, documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
+      else if (tag === 'payment') {
+        const q = ask('Was a payment made?', [['yes', 'Yes, paid'], ['no', 'No']], 'yes', (v) => { show(parts.date.wrap, v === 'yes'); show(parts.amount.wrap, v === 'yes'); });
+        parts.date = dateField('Paid on', today, today);
+        parts.amount = field('Amount', { max: 20, placeholder: 'e.g. 5000' });
+        parts.amount.input.inputMode = 'decimal';
+        form.append(parts.amount.wrap, el('p', 'p-muted p-small p-wide', 'Goes into Payment Date and the next deposit.'));
+        read = () => (q.value() === 'yes' ? { paid: true, date: parts.date.input.value, amount: parts.amount.input.value.trim() } : {});
+        check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day it was paid.' : '');
+      } else if (tag === 'visa') {
+        const q = ask('Which step is done?', [['casRequested', 'CAS requested'], ['casReceived', 'CAS received'], ['lodged', 'Visa lodged'], ['vfs', 'VFS attended'], ['visa', 'Visa received']], '', null);
+        parts.date = dateField('On', today, today);
+        form.append(el('p', 'p-muted p-small p-wide', 'The stage moves on by itself.'));
+        read = () => ({ step: q.value(), date: parts.date.input.value });
+        check = () => (!q.value() ? 'Choose the step.' : !parts.date.input.value ? 'Choose the day.' : '');
+      }
+      const words = field(tag === 'other' || !['application', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag) ? 'What was done? (optional)' : 'A note (optional)', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. MSc Data Science, Application ID 12345.' : tag === 'noc' ? 'e.g. NOC account created, documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
       words.input.rows = 2;
       form.append(words.wrap);
-      body.append(msg, el('p', 'p-muted p-small', `It goes into the student's notes, it moves to Done, and ${who} that it is done.`));
+      body.append(msg, el('p', 'p-muted p-small', `Saved in the student's notes.`));
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Yes, it is done');
       ok.addEventListener('click', () => {
@@ -591,7 +606,7 @@
     const pr = priorityOf(task);
     const tag = tagOf(task, stage);
     const open = (e) => { e.stopPropagation(); changeTask(task, { rowId, tag, priority: pr }).then((done) => { if (done && onChanged) onChanged(); }); };
-    const pill = (cls, text) => { const b = h('button', { class: cls, type: 'button', disabled: !canChange, title: canChange ? 'Press to change what it is about or how important it is' : '' }, text); if (canChange) b.addEventListener('click', open); return b; };
+    const pill = (cls, text) => { const b = h('button', { class: cls, type: 'button', disabled: !canChange, title: canChange ? 'Change the tag or the priority' : '' }, text); if (canChange) b.addEventListener('click', open); return b; };
     if (pr !== 'high') line.append(pill(`td-prio prio-${pr}`, priorityLabel(pr)));
     line.append(pill(`td-tag tag-${tag}`, tagLabel(tag)));
     return line;
@@ -616,7 +631,7 @@
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       const g = el('div', 'p-form'); g.append(words.wrap, field2('What is it about?', tg.node), field2('How important is it?', pr.node));
-      body.append(g, el('p', 'p-muted p-small', 'The team sees the task marked Edited, with a notification. To give it to another team, use Reassign.'), msg, foot);
+      body.append(g, el('p', 'p-muted p-small', 'The team is told it was edited.'), msg, foot);
       setTimeout(() => { words.input.focus(); words.input.setSelectionRange(words.input.value.length, words.input.value.length); }, 0);
     });
   }
@@ -641,7 +656,7 @@
       if (moved) foot.append(h('button', { class: 'btn', type: 'button', onclick: () => go('') }, 'Back to today'));
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       const g = el('div', 'p-form'); g.append(date.wrap);
-      body.append(el('p', 'p-muted p-small', 'It waits under Upcoming on Today and comes back to today\u2019s tasks on that day by itself.'), g, msg, foot);
+      body.append(el('p', 'p-muted p-small', 'It comes back to Today on that day.'), g, msg, foot);
     });
   }
   function changeTask(task, { rowId, tag, priority }) {

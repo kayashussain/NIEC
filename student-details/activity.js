@@ -104,7 +104,7 @@
 
   // Starts the record again from zero (Admin only). The server notes who cleared it as the first entry.
   $('clear').addEventListener('click', async () => {
-    const yes = await NiecUI.confirm('Every login and change on record is deleted and the record starts again from zero. This cannot be undone.',
+    const yes = await NiecUI.confirm('Every record is deleted. This cannot be undone.',
       { title: 'Clear all saved activity?', confirmText: 'Clear activity', danger: true });
     if (!yes) return;
     try {
@@ -152,14 +152,14 @@
     go.addEventListener('click', async () => {
       const chosen = boxes.filter((c) => c.checked).map((c) => c.value);
       if (!chosen.length) { restoreSay('Tick at least one thing to restore.', true); return; }
-      const yes = await NiecUI.confirm(`The ${chosen.map((k) => ({ students: 'students', facts: 'Fact File', partners: 'Partner Universities' }[k])).join(', ')} will be replaced with the copy saved as ${b.id}. Anything changed since then is lost, except that today's data is saved first as a "before restore" backup.`,
+      const yes = await NiecUI.confirm(`The ${chosen.map((k) => ({ students: 'students', facts: 'Fact File', partners: 'Partner Universities' }[k])).join(', ')} will be replaced with the copy saved as ${b.id}. Today’s data is saved first, so it can be undone.`,
         { title: 'Restore this backup?', confirmText: 'Restore', danger: true });
       if (!yes) return;
       go.disabled = true; restoreSay('Restoring...');
       try {
         const r = await post('/api/restore', { id: b.id, parts: chosen });
         tr.remove();
-        restoreSay(`Restored ${r.restored.join(', ')}. The data as it was before is saved as ${r.safety}. Ask everyone to refresh their page.`);
+        restoreSay(`Restored ${r.restored.join(', ')}. Saved before: ${r.safety}. Ask everyone to refresh.`);
         NiecUI.toast('Backup restored', { type: 'success' });
         loadBackups();
       } catch (err) { restoreSay(err.message, true); go.disabled = false; }
@@ -193,7 +193,7 @@
       const n = json.now;
       $('restoreNow').textContent = `Right now: ${n.students == null ? '?' : n.students} students, ${n.facts} universities in the Fact File, ${n.partners} Partner Universities.`;
       const body = $('backupRows');
-      if (!json.backups.length) { body.replaceChildren(Object.assign(el('tr'), {})); const td = el('td', 'muted', 'No backups yet. The first one is saved after 6 p.m., or press Back up now.'); td.colSpan = 6; body.firstChild.append(td); return; }
+      if (!json.backups.length) { body.replaceChildren(Object.assign(el('tr'), {})); const td = el('td', 'muted', 'No backups yet.'); td.colSpan = 6; body.firstChild.append(td); return; }
       body.replaceChildren(...json.backups.map((b) => {
         const tr = el('tr');
         const name = el('td'); name.append(el('b', '', b.id.replace(/^[a-z-]+?-(\d{4})/, '$1')), el('div', 'muted', KIND[b.kind] || b.kind));
@@ -202,7 +202,7 @@
         const act = el('td'); act.style.whiteSpace = 'nowrap';
         if (c) {
           const view = el('a', 'btn btn-sm', 'View'); view.href = `/students?backup=${encodeURIComponent(b.id)}`; view.target = '_blank'; view.rel = 'noopener';
-          view.title = 'Opens this backup in a new tab: the real All Students, Fact File and Partner Universities pages as they were, read only';
+          view.title = 'Open this backup, read only, in a new tab';
           const btn = el('button', 'btn btn-sm', 'Restore'); btn.type = 'button'; btn.style.marginLeft = '6px'; btn.addEventListener('click', () => restorePanel(b, tr));
           act.append(view, btn);
         }

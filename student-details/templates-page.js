@@ -46,7 +46,7 @@
     head.append(el('h2', '', t.name), el('span', 'tp-ed-kind', t.builtIn ? (t.edited ? 'Ready-made, edited' : 'Ready-made') : 'Your own'));
 
     // 1. Name and the stages it suits: pills to tick.
-    const p1 = panel('Name and stages', 'The student card shows the templates that suit the student\'s stage first.');
+    const p1 = panel('Name and stages', 'Shown first for these stages.');
     const g1 = el('div', 'p-form'); g1.append(name.wrap); p1.append(g1);
     const pills = el('div', 'tp-stages');
     const chosen = new Set(t.stages);
@@ -58,7 +58,7 @@
     p1.append(el('span', 'tp-label', 'Suits these stages'), pills);
 
     // 2. The email, with the words that can be filled in.
-    const p2 = panel('Email', 'A blank line starts a new paragraph. A line that starts with "- " is a bullet, and "## " a small heading.');
+    const p2 = panel('Email', 'Blank line: new paragraph. "- ": bullet. "## ": heading.');
     const g2 = el('div', 'p-form'); g2.append(subject.wrap, body.wrap); p2.append(g2);
     const chips = el('div', 'tp-chips');
     data.fields.forEach(([k, d]) => {
@@ -72,10 +72,10 @@
       });
       chips.append(c);
     });
-    p2.append(el('span', 'tp-label', 'Words filled in from the student (click to add where you are typing)'), chips);
+    p2.append(el('span', 'tp-label', 'Words filled in (click to add)'), chips);
 
     // 3. WhatsApp
-    const p3 = panel('WhatsApp', 'Keep it short: it opens on the counselor\'s phone or WhatsApp Web, ready to send.');
+    const p3 = panel('WhatsApp', 'Keep it short.');
     const g3 = el('div', 'p-form'); g3.append(wa.wrap); p3.append(g3);
 
     const bar = el('div', 'tp-savebar');
@@ -99,7 +99,7 @@
     if (t.builtIn) {
       const del = h('button', { class: 'btn btn-danger', type: 'button' }, 'Delete');
       del.addEventListener('click', async () => {
-        if (!(await window.NiecUI.confirm(`Delete "${t.name}"? It disappears from the list and from the student card. You can bring the ready-made templates back later.`, { danger: true, confirmText: 'Delete' }))) return;
+        if (!(await window.NiecUI.confirm(`Delete "${t.name}"? Ready-made templates can be brought back.`, { danger: true, confirmText: 'Delete' }))) return;
         try { await api(`/api/templates/${t.key}/hide`, {}); say('Deleted'); openKey = ''; await load(''); } catch (e) { say(e.message, true); }
       });
       bar.append(del);
@@ -115,7 +115,7 @@
     const s = data.signature || {};
     const box = el('label', 'p-check');
     const c = el('input'); c.type = 'checkbox'; c.checked = s.copyToOffice !== false; c.disabled = !data.canEdit;
-    box.append(c, el('span', '', 'Send the office mailbox a copy of every email, so it is found there with the student\'s replies'));
+    box.append(c, el('span', '', 'Copy every email to the office mailbox'));
     c.addEventListener('change', async () => {
       try { await api('/api/templates/signature', { copyToOffice: c.checked }); s.copyToOffice = c.checked; say('Saved'); } catch (e) { c.checked = !c.checked; say(e.message, true); }
     });
@@ -127,9 +127,9 @@
     const note = $('mailNote');
     note.hidden = false;
     note.className = 'tp-note ' + (data.mail.ready ? 'ok' : 'warn');
-    note.textContent = data.mail.ready ? `Your emails are sent from ${data.mail.from}. WhatsApp messages open in your own WhatsApp.`
-      : data.mail.own ? 'Set up your email first (Your email and signature, top right). WhatsApp opens in your own app.'
-        : 'Email is not set up on this server: a preview is kept on the card. WhatsApp opens in your own app.';
+    note.textContent = data.mail.ready ? `Emails go from ${data.mail.from}.`
+      : data.mail.own ? 'Set up your email first (Your email and signature).'
+        : 'Email is not set up on this server.';
     list();
     officeCopy();
     const old = $('bringBack'); if (old) old.remove();

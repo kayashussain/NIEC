@@ -76,12 +76,31 @@
   const MOVES = [
     // Moving on with any of these blank asks "are you sure?" first.
     { dept: 'application', from: 'Application Stage', to: 'Mock Stage', warnIfBlank: APPLICATION_COLUMNS.filter((c) => c !== 'REMARKS') },
-    // Moving on is refused until all of these are filled.
-    { dept: 'mock', from: 'Mock Stage', to: 'Payment Stage', mustFill: MOCK_COLUMNS },
+    // Moving on is refused until the mocks held are written up (see mockReady): one mock is enough when the Pre-CAS is done (the owner,
+    // 15 Nov 2026: a student who passed after one mock waited for four dates and four feedbacks).
+    { dept: 'mock', from: 'Mock Stage', to: 'Payment Stage', ready: (row) => mockReady(row) },
     // Back to Application: a student who failed with one university and applies to another.
     { dept: 'application', from: 'Mock Stage', to: 'Application Stage' },
     { dept: 'mock', from: 'Mock Stage', to: 'Application Stage' },
+    // The Follow-up Team moves its own students on: an inquiry who decides goes to the Application Team; a student who waits goes to
+    // Defer and comes back; one who stops goes to Withdrawn (the owner, 15 Nov 2026: every move waited for Admin).
+    { dept: 'followup', from: 'Inquiry', to: 'Application Stage' },
+    { dept: 'followup', from: 'Inquiry', to: 'Defer' },
+    { dept: 'followup', from: 'Inquiry', to: 'Withdrawn' },
+    { dept: 'followup', from: 'Defer', to: 'Inquiry' },
+    { dept: 'followup', from: 'Defer', to: 'Application Stage' },
+    { dept: 'followup', from: 'Defer', to: 'Withdrawn' },
   ];
+  // What is still missing before a Mock Stage student goes to Payment: at least one mock with its feedback, a feedback for every
+  // mock held, and the Pre-CAS interview passed.
+  function mockReady(row) {
+    const missing = [];
+    const held = [1, 2, 3, 4].filter((n) => !isBlank(row[`MOCK SCHEDULE ${n}`]));
+    if (!held.length) missing.push('MOCK SCHEDULE 1', 'FEEDBACK 1');
+    held.forEach((n) => { if (isBlank(row[`FEEDBACK ${n}`])) missing.push(`FEEDBACK ${n}`); });
+    if (isBlank(row['PRE CAS INTERVIEW'])) missing.push('PRE CAS INTERVIEW');
+    return { missing, failed: String(row['PRE CAS INTERVIEW'] || '').trim().toLowerCase() === 'fail' };
+  }
 
   // Every stage a student can be at (the same list as the Application Status dropdown on the page).
   const ALL_STATUSES = ['Inquiry', 'Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected', 'Defer', 'Hold', 'Withdrawn'];
@@ -227,7 +246,9 @@
     if (!move) {
       return { ok: false, message: `Your team can't move a student from ${from || 'no status'} to ${to || 'no status'}.` };
     }
-    const missing = (move.mustFill || []).filter((c) => isBlank(row[c]));
+    const ready = move.ready ? move.ready(row) : { missing: [], failed: false };
+    if (ready.failed) return { ok: false, message: `This student can't go to ${to}: the Pre-CAS Interview is Fail.` };
+    const missing = [...(move.mustFill || []).filter((c) => isBlank(row[c])), ...ready.missing];
     if (missing.length) {
       return {
         ok: false,

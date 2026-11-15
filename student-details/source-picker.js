@@ -11,7 +11,7 @@
   const { el, h, api, field, dialog } = root.Portal;
   const F = root.CardFields;
   const WITH_REMARKS = { 'Social Media': 'What they saw (optional)' };
-  const REMARK_HELP = { 'Social Media': 'For example: the post or video they saw.', Reference: 'For example: the name of the student or person who referred.' };
+  const REMARK_HELP = { 'Social Media': 'For example: the post or video they saw.', Reference: 'Who referred them' };
 
   function create({ lists, initial = {}, onChange = () => {}, disabled = false }) {
     const groups = Object.keys(F.SOURCE_DETAILS);
@@ -56,7 +56,7 @@
         campaign.addEventListener('change', () => { showOther(); onChange(); });
         showOther();
         adBox.append(...c.wrap.childNodes, o.wrap);
-        if (!campaigns.length) adBox.append(el('span', 'p-hint', 'No campaign on Events and marketing yet: type its name under Other, and add it there to count its cost.'));
+        if (!campaigns.length) adBox.append(el('span', 'p-hint', 'No campaign yet: type its name under Other.'));
       };
       drawAd();
       social = { platform: platform.input, way: () => way, campaign: () => campaign, other: () => other };
@@ -132,7 +132,7 @@
         const g = source.input.value;
         const detail = detailInput ? detailInput.value : '';
         if (disabled || !g) return '';
-        if (g === 'Events' && !detail) return 'Please choose which event or marketing the student came from, so it is counted in its cost.';
+        if (g === 'Events' && !detail) return 'Choose the event or campaign.';
         if (g === 'Social Media' && social) {
           if (!social.platform.value) return 'Please choose the platform the student came from.';
           if (!social.way()) return 'Please say whether the student came by itself (organic) or from an advert.';

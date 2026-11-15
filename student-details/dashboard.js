@@ -127,7 +127,7 @@
 
   // ---- the funnel ----
   function funnelCard() {
-    const c = card('ov-funnel', 'The student journey', 'How many reached each step, and what share of the step before went on');
+    const c = card('ov-funnel', 'The student journey', 'How many reached each step');
     const max = Math.max(1, ...ins.funnel.map((f) => f.count));
     const list = el('div', 'ov-funnel-list');
     ins.funnel.forEach((f, i) => {
@@ -222,7 +222,7 @@
       b.addEventListener('click', () => onPick(g));
       box.append(b);
     });
-    box.append(el('p', 'dd-key', 'The light bar is students, the dark part is visas. Click a row to see more.'));
+    box.append(el('p', 'dd-key', 'Light: students. Dark: visas.'));
     return box;
   }
   function people(list) {
@@ -279,7 +279,7 @@
   // Partners: each partner university and B2B partner; a click shows its universities, then the students.
   function partnersCard() {
     const list = ((apps && apps.partners) || []).map((g) => ({ ...g, tag: g.kind === 'university' ? 'Partner university' : 'B2B partner' }));
-    return drillCard('ov-partners', 'Partners', 'Where applications were sent. Click a partner to see its universities, then the students', { label: 'All partners', draw: (go) => (list.length ? bars(list, (g) => go({ label: g.label, draw: (go2) => (g.unis.length ? bars(g.unis, (u) => go2({ label: u.label, draw: () => people(u.people) })) : people(g.people)) })) : el('p', 'ov-empty', 'No student has a University Partner yet.')) });
+    return drillCard('ov-partners', 'Partners', 'Where applications went. Click to see more', { label: 'All partners', draw: (go) => (list.length ? bars(list, (g) => go({ label: g.label, draw: (go2) => (g.unis.length ? bars(g.unis, (u) => go2({ label: u.label, draw: () => people(u.people) })) : people(g.people)) })) : el('p', 'ov-empty', 'No student has a University Partner yet.')) });
   }
 
   // ---- the page: only what the head of the consultancy needs ----
@@ -300,7 +300,7 @@
     // Universities: only those recorded on the students (a blank University Name is not a row).
     const unis = (ins.universities.list || []).filter((g) => g.label && !/not recorded/i.test(g.label));
     row('ov-row', leaderboard('Universities', 'Where the students are placed', unis, null, 'university'));
-    if (ins.summary.low) page.append(el('p', 'ov-foot', 'This intake has fewer than 10 students, so a rate from it is a hint, not evidence.'));
+    if (ins.summary.low) page.append(el('p', 'ov-foot', 'Fewer than 10 students: rates are only a hint.'));
     root.replaceChildren(page);
   }
 
@@ -316,7 +316,7 @@
       try { isAdmin = (await api('/api/me')).role === 'admin'; } catch (e) { isAdmin = false; }
       picker.replaceChildren(...i.intakes.map((x) => { const o = el('option', '', x.name); o.value = x.id; return o; }));
       picker.value = selected;
-      updated.textContent = `Figures as of ${window.Portal.day(ins.today)}. They refresh on their own.`;
+      updated.textContent = `As of ${window.Portal.day(ins.today)}.`;
       document.getElementById('page').classList.remove('first-load');
       draw();
     } catch (e) {

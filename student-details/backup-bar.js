@@ -118,7 +118,7 @@
     panel.hidden = false;
     const compare = await loadCompare(id);
     const keys = ['students', 'facts', 'partners'];
-    const intro = el('div', '', 'Choose what to put back. Anything you leave unticked stays as it is now. The data as it is right now is saved first as a "before restore" backup, so a restore can be undone.');
+    const intro = el('div', '', 'Choose what to put back. Today’s data is saved first, so it can be undone.');
     const list = el('div');
     const boxes = keys.map((key) => {
       const d = describe(key, compare ? compare[key] : null);
@@ -144,7 +144,7 @@
     go.addEventListener('click', async () => {
       const chosen = boxes.filter((b) => b.checked).map((b) => b.value);
       if (!chosen.length) { out.textContent = 'Tick at least one thing to restore.'; return; }
-      const yes = await window.NiecUI.confirm(`The ${chosen.map((k) => NAMES[k]).join(', ')} will be replaced with the backup from ${when.textContent}. Anything changed since then is lost, except that today's data is saved first as a "before restore" backup.`,
+      const yes = await window.NiecUI.confirm(`The ${chosen.map((k) => NAMES[k]).join(', ')} will be replaced with the backup from ${when.textContent}. Today’s data is saved first, so it can be undone.`,
         { title: 'Restore this backup?', confirmText: 'Restore', danger: true });
       if (!yes) return;
       go.disabled = true; out.textContent = 'Restoring...';
@@ -153,7 +153,7 @@
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
         list.hidden = true; actions.hidden = true; intro.hidden = true;
-        out.textContent = `Restored ${json.restored.join(', ')}. The data as it was before is saved as ${json.safety}. Ask everyone to refresh their page. `;
+        out.textContent = `Restored ${json.restored.join(', ')}. Saved before: ${json.safety}. Ask everyone to refresh. `;
         const live = el('a', 'tab', 'Open the live data'); live.href = '/students'; 
         out.append(live);
       } catch (err) { out.textContent = err.message; go.disabled = false; }

@@ -23,7 +23,7 @@
     const wrap = el('div');
     const head = el('div', 'p-head');
     const title = el('div');
-    title.append(el('h1', '', 'Follow-up'), el('p', '', 'Message many students at once. Each message is personalised.'));
+    title.append(el('h1', '', 'Follow-up'), el('p', '', 'One personal message to many students.'));
     head.append(title, h('a', { class: 'btn', href: '/students' }, 'Back to All Students'));
     wrap.append(head);
 
@@ -86,9 +86,9 @@
     how.append(choice);
     const tmpl = field('Start from', { kind: 'select', choices: [['custom', 'Other: my own words'], ...templates.map((t) => [t.key, t.name])], value: 'custom' });
     const subject = field('Subject', { wide: true, max: 200 });
-    const body = field('Email text (the words in curly brackets are filled in for each student)', { kind: 'area', max: 8000, wide: true, value: 'Dear {first_name},\n\n' });
+    const body = field('Email text', { kind: 'area', max: 8000, wide: true, value: 'Dear {first_name},\n\n' });
     body.input.style.minHeight = '200px';
-    const wa = field('WhatsApp text (the words in curly brackets are filled in for each student)', { kind: 'area', max: 2000, wide: true, value: 'Hello {first_name}, ' });
+    const wa = field('WhatsApp text', { kind: 'area', max: 2000, wide: true, value: 'Hello {first_name}, ' });
     const form = el('div', 'p-form');
     form.append(tmpl.wrap, subject.wrap, body.wrap, wa.wrap);
     how.append(form);
@@ -122,10 +122,10 @@
       sendAll.hidden = c !== 'email';
       out.replaceChildren();
       note.replaceChildren(c === 'email'
-        ? (mail.ready ? el('p', 'p-muted p-small', `Each student gets their own email from ${mail.from || 'your mailbox'}, signed by you. Press Check first to see who is ready.`)
+        ? (mail.ready ? el('p', 'p-muted p-small', `Each student gets their own email from ${mail.from || 'your mailbox'}. Press Check first.`)
           : mail.own ? (() => { const n = el('div', 'p-notice warn', 'To send emails, set up your own email first: '); const a = el('a', '', 'My email and WhatsApp'); a.href = '/my-email'; n.append(a, '. Nothing is sent until then.'); return n; })()
-            : el('div', 'p-notice warn', 'Email is not set up on this computer (normal for a test copy). Nothing is sent from here.'))
-        : el('p', 'p-muted p-small', 'Press Check, then WhatsApp beside each student: the chat opens with the message ready to send.'));
+            : el('div', 'p-notice warn', 'Email is not set up here.'))
+        : el('p', 'p-muted p-small', 'Press Check, then WhatsApp beside each student.'));
       check.textContent = c === 'email' ? 'Check the emails' : 'Prepare the WhatsApp chats';
     };
     eBtn.addEventListener('click', () => setChannel('email'));
@@ -140,7 +140,7 @@
         const r = await api('/api/bulk/preview', payload());
         items = r.items;
         const ready = items.filter((i) => !i.error && (channel === 'email' ? !i.problem : i.whatsapp && i.whatsapp.number)).length;
-        out.replaceChildren(el('p', '', `${ready} of ${items.length} students are ready for ${channel === 'email' ? 'email' : 'WhatsApp'}. The others are shown with the reason.`));
+        out.replaceChildren(el('p', '', `${ready} of ${items.length} students are ready for ${channel === 'email' ? 'email' : 'WhatsApp'}.`));
         items.forEach((i) => {
           const row = el('div', 'p-sent');
           if (i.error) { row.append(el('b', '', i.id), el('span', 'p-muted', i.error)); out.append(row); return; }

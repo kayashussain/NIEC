@@ -146,7 +146,7 @@
   let saveQueued = false;
   let loginEnded = false; // a save was refused because the login ran out (see NiecSession.holdWhile)
   let loginNoticeShown = false; // the pop-up once per login ending, not at every retry
-  const LOGIN_ENDED_TEXT = 'Your login ended. Log in again in another tab: your changes then save by themselves.';
+  const LOGIN_ENDED_TEXT = 'Your login ended. Log in again in another tab: your changes are kept.';
   let changeCount = 0;
   let conflicted = false;
   let columnFilters = {}; // col -> Set of allowed values (absent = no filter); per-sheet, reset on switch
@@ -427,7 +427,7 @@
     const student = rows[rowIdx];
     confirmDateInput(input, original, (value) => {
       const target = liveRow(student);
-      if (!target) { NiecUI.toast('That student is no longer on this sheet, so the date was not saved.'); return; }
+      if (!target) { NiecUI.toast('That student is no longer on this sheet.'); return; }
       pushUndo();
       target[col] = value;
       markDirty();
@@ -518,8 +518,8 @@
     flag.textContent = status === 'expired' ? '⚠ Expired' : '⚠ Expiring';
     td.appendChild(flag);
     td.title = status === 'expired'
-      ? 'Language test result has expired (valid for 2 years). A new test is needed'
-      : 'Language test result expires within 3 months (valid for 2 years). Consider retaking soon';
+      ? 'Language test expired'
+      : 'Language test expires within 3 months';
   }
 
   // Which choice a language test value means: older text like "IELTS WAIVER" counts as Waiver, any date as
@@ -599,7 +599,7 @@
     if (!input.value) face.classList.add('empty');
     confirmDateInput(input, toISODate(val), (value) => {
       const target = liveRow(student);
-      if (!target) { NiecUI.toast('That student is no longer on this sheet, so the date was not saved.'); return; }
+      if (!target) { NiecUI.toast('That student is no longer on this sheet.'); return; }
       pushUndo();
       target[col] = value || 'Test Date';
       markDirty();
@@ -900,7 +900,7 @@
         document.execCommand('copy');
         flashStatus(`Copied "${sheet.name}" to clipboard`);
       } catch (e2) {
-        NiecUI.toast('Could not copy to the clipboard. Your browser may be blocking clipboard access.', { type: 'error' });
+        NiecUI.toast('Could not copy.', { type: 'error' });
       }
       document.body.removeChild(ta);
     }
@@ -936,7 +936,7 @@
     if (shownSheets().length <= 1) { NiecUI.toast('A workbook needs at least one sheet.', { type: 'error' }); return; }
     const sheet = sheets.find((s) => s.id === id);
     if (!sheet) return;
-    const yes = await NiecUI.confirm(`This removes the sheet "${sheet.name}" and its ${sheet.rows.length} row${sheet.rows.length === 1 ? '' : 's'}. You can undo it with Ctrl+Z right after.`,
+    const yes = await NiecUI.confirm(`Remove "${sheet.name}" and its ${sheet.rows.length} row${sheet.rows.length === 1 ? '' : 's'}? Ctrl+Z undoes it.`,
       { title: 'Delete this sheet?', confirmText: 'Delete sheet', danger: true });
     if (!yes || !sheets.includes(sheet)) return;
     pushUndo();
@@ -1569,7 +1569,7 @@
         td.className = 'num calculated';
         td.title = col === 'REMAINING TUITION FEE'
           ? 'Auto-calculated: Fee After Scholarship − Early Bird Discount − Additional Discount − 1st Installment − 2nd Installment − 3rd Installment'
-          : 'Auto-calculated: Gross Fee − Scholarship (a % scholarship is taken of the Gross Fee)';
+          : 'Gross Fee minus Scholarship';
       } else if (col === LANGUAGE_TEST_COL) {
         renderLanguageTestCell(td, rowIdx);
       } else if (SELECT_COLS[col]) {
@@ -1651,7 +1651,7 @@
           warn.className = 'defer-warning-flag';
           warn.textContent = '⚠';
           warn.setAttribute('aria-label', 'No next sheet to move this deferred student to');
-          warn.title = 'There\'s no sheet after this one to move this deferred student to. Add another sheet (it will become the target) to enable auto-move.';
+          warn.title = 'No next intake to move this deferred student to yet.';
           td.appendChild(warn);
         }
       } else if (BADGE_COLS.has(col) && val) {
@@ -1680,7 +1680,7 @@
         if (val) td.title = val;
         if (col === WHATSAPP_COL && dupPhones.has(normalizePhone(val))) {
           td.classList.add('duplicate-phone');
-          td.title = 'Duplicate WhatsApp number: another student on this sheet has the same number.';
+          td.title = 'Another student has this number.';
         }
       }
       // Added last: the calculated-cell branch above replaces className wholesale.
@@ -2447,7 +2447,7 @@
     }
     // Teams delete one student at a time (an Admin can delete several).
     if (isTeam() && selectedRows.size > 1) {
-      NiecUI.toast('You can delete one student at a time. Click just one row number (S.N).');
+      NiecUI.toast('Select one row number (S.N) to delete.');
       return;
     }
     const indicesToDelete = Array.from(selectedRows).sort((a, b) => b - a); // descending, so splice indices stay valid
@@ -2460,8 +2460,8 @@
       ? describeRow(rows[indicesToDelete[0]])
       : `${indicesToDelete.length} students`;
     const yes = await NiecUI.confirm(isTeam()
-      ? `${label} will be removed from this sheet. Use this for a duplicate entry. It can't be undone from here.`
-      : `${label} will be removed from this sheet. You can undo it with Ctrl+Z right after.`,
+      ? `Remove ${label}? For duplicates only. This cannot be undone.`
+      : `Remove ${label}? Ctrl+Z undoes it.`,
       { title: indicesToDelete.length === 1 ? 'Delete this student?' : `Delete ${indicesToDelete.length} students?`, confirmText: 'Delete', danger: true });
     if (!yes) return;
     // The sheet may have changed while the question was open (someone else's save, a redraw): delete the
@@ -2539,7 +2539,7 @@
     try {
       ExcelJS = await NiecSession.loadExcel();
     } catch (e) {
-      NiecUI.toast('The Excel export tool could not load. Check your internet connection and try again.', { type: 'error' });
+      NiecUI.toast('Excel export could not load. Check the internet and try again.', { type: 'error' });
       return;
     }
     const sheetName = (getActiveSheet() || {}).name || 'Export';
@@ -2953,7 +2953,7 @@
     statusEl.className = 'save-status error';
     if (loginNoticeShown) return;
     loginNoticeShown = true;
-    NiecUI.toast('Your login has ended. Open the site in another tab and log in again: your changes are kept and will save by themselves.', { type: 'error', duration: 12000 });
+    NiecUI.toast('Your login ended. Log in again in another tab: your changes are kept.', { type: 'error', duration: 12000 });
   });
 
   $('#reloadBtn').addEventListener('click', () => {

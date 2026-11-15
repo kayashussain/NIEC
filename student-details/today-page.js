@@ -395,7 +395,7 @@
     }
     box.append(head);
     if (!items.length) {
-      box.append(el('p', 'td-inbox-empty', 'Nothing yet. When a task is given to you, someone posts an update, or a task you gave is done, it shows here.'));
+      box.append(el('p', 'td-inbox-empty', 'Nothing yet.'));
       return box;
     }
     const SHOW = 5;
@@ -439,7 +439,7 @@
     const from = t.mineFrom || {};
     if (!t.canAssign && from.allTeams > 1 && !from.ownChosen && (from.choices || []).length > 1) {
       const c = el('section', 'td-own');
-      c.append(el('h2', '', 'Which team do you belong to?'), el('p', '', 'You can work with the students of all your teams. Choose your own team, so only its tasks and its work list come to your Today. Admin can change it later.'));
+      c.append(el('h2', '', 'Which team do you belong to?'), el('p', '', 'Choose your own team: only its tasks come to you.'));
       const row = el('div', 'td-own-choices');
       from.choices.forEach((ch) => {
         const b = h('button', { class: 'btn btn-primary', type: 'button' }, ch.label);
@@ -455,7 +455,7 @@
     if (t.canAssign && (t.noOwnTeam || []).length) {
       const c = el('section', 'td-own is-admin');
       const names = t.noOwnTeam;
-      c.append(el('h2', '', `${names.join(', ')} ${names.length === 1 ? 'has' : 'have'} no own team yet`), el('p', '', `${names.length === 1 ? 'They are' : 'Each is'} in more than one team, so every team's tasks and work list come to ${names.length === 1 ? 'them' : 'each of them'}. Choose their own team in Users (Edit, Their own team), or they choose it themselves on their Today.`));
+      c.append(el('h2', '', `${names.join(', ')} ${names.length === 1 ? 'has' : 'have'} no own team yet`), el('p', '', `In more than one team with no own team chosen. Set it in Users.`));
       const go = h('a', { class: 'btn', href: '/users' }, 'Open Users');
       c.append(go);
       return c;
@@ -536,7 +536,7 @@
     if (teamFilter && !byTeam.has(teamFilter)) teamFilter = '';
     const box = el('section', 'td-board');
     const head = el('div', 'td-board-head');
-    head.append(el('h2', '', 'Your teams'), el('span', 'td-board-sub', teamFilter ? 'Showing one team. Press it again to see everyone.' : 'Open tasks, tasks waiting 3 days or more, and done in the last 7 days. Press a team to see only its tasks.'));
+    head.append(el('h2', '', 'Your teams'), el('span', 'td-board-sub', teamFilter ? 'Showing one team. Press it again to see everyone.' : 'Press a team to see only its tasks.'));
     box.append(head);
     const grid = el('div', 'td-board-grid');
     teams.forEach((t) => {

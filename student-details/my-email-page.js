@@ -11,11 +11,11 @@
     c.append(el('h2', '', 'Your email'));
     if (d.set) {
       c.append(el('p', '', `Emails you send to students go from ${d.from}, signed with your name.`),
-        el('p', 'p-muted', `Checked on ${new Date(d.checkedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. To change the address or the password, fill in the form again.`));
+        el('p', 'p-muted', `Checked on ${new Date(d.checkedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. Fill in the form again to change it.`));
     } else if (d.admin) {
-      c.append(el('p', '', d.officeReady ? 'Your emails go from the office mailbox. Set up your own here only if you want to send from another address.' : 'The office mailbox is not set up yet. Set up your own here to email students.'));
+      c.append(el('p', '', d.officeReady ? 'Your emails go from the office mailbox.' : 'The office mailbox is not set up yet. Set up your own here to email students.'));
     } else {
-      c.append(el('div', 'p-notice warn', 'Set up your own email to send emails to students. Until then, Send email keeps a preview on the card and nothing is sent.'));
+      c.append(el('div', 'p-notice warn', 'Set up your email to send to students.'));
     }
     const from = field('Your email address', { value: d.from || '', placeholder: 'e.g. asha@niecedu.com.np', max: 254 });
     from.input.type = 'email'; from.input.autocomplete = 'email';
@@ -42,11 +42,11 @@
     const bar = el('div', 'p-bar'); bar.append(save);
     if (d.set) {
       bar.append(h('button', { class: 'btn', type: 'button', onclick: async () => {
-        if (!(await window.NiecUI.confirm('Remove your mailbox from ISR? You can set it up again at any time.', { danger: true, confirmText: 'Remove' }))) return;
+        if (!(await window.NiecUI.confirm('Remove your mailbox from ISR?', { danger: true, confirmText: 'Remove' }))) return;
         await api('/api/my-mail/delete', {}); say('Removed'); reload();
       } }, 'Remove my mailbox'));
     }
-    c.append(g, more, el('p', 'p-muted', 'A test email is sent first. Your password is stored encrypted and never shown again.'), bar, msg);
+    c.append(g, more, el('p', 'p-muted', 'A test email is sent first. Your password is stored encrypted.'), bar, msg);
     return c;
   }
 
@@ -55,8 +55,8 @@
     const c = el('section', 'p-card');
     c.append(el('h2', '', 'Your email signature'));
     c.append(el('p', 'p-muted', d.admin
-      ? 'Your emails end with the office signature picture. Upload your own here only if you want a different one.'
-      : 'Upload your signature as a picture (PNG or JPG, max 1 MB). It ends every email you send.'));
+      ? 'Your emails end with the office signature.'
+      : 'A PNG or JPG, up to 1 MB. It ends every email you send.'));
     const show = el('div', 'p-sig');
     if (d.signature) {
       const img = h('img', { src: '/api/my-mail/signature?t=' + Date.now(), alt: 'Your email signature' });
@@ -85,11 +85,11 @@
   function whatsappCard() {
     const c = el('section', 'p-card');
     c.append(el('h2', '', 'Your WhatsApp'));
-    c.append(el('p', '', 'WhatsApp messages open in your own WhatsApp, ready to send. Nothing to set up.'));
+    c.append(el('p', '', 'WhatsApp opens your own chats. Nothing to set up.'));
     const steps = el('ol');
     ['On this computer, open WhatsApp Web (the button below) or the WhatsApp Desktop app.',
-      'On your phone, open WhatsApp, then Settings (or the three dots), Linked devices, Link a device, and scan the code on the screen.',
-      'That is all. From now on the WhatsApp button opens your own chats on this computer. On your phone, it opens the WhatsApp app.'].forEach((t) => steps.append(el('li', '', t)));
+      'On your phone: WhatsApp, Settings, Linked devices, Link a device, then scan the code.',
+      'Done: the WhatsApp button now opens your own chats.'].forEach((t) => steps.append(el('li', '', t)));
     const go = h('a', { class: 'btn', href: 'https://web.whatsapp.com/', target: '_blank', rel: 'noopener noreferrer' }, 'Open WhatsApp Web');
     const bar = el('div', 'p-bar'); bar.append(go);
     c.append(steps, bar);
@@ -101,7 +101,7 @@
     const page = el('div', 'td-page');
     const head = el('header', 'td-hello');
     head.append(el('span', 'td-kicker', 'Your account'), el('h1', '', 'My email, signature and WhatsApp'),
-      el('p', '', 'Messages to students go from your own email and your own WhatsApp, signed with your name.'));
+      el('p', '', 'Your own email, signature and WhatsApp.'));
     page.append(head, emailCard(d, load), signatureCard(d, load), whatsappCard());
     view.replaceChildren(page);
   }

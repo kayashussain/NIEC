@@ -82,6 +82,21 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   assert.strictEqual((await row())['MEDICAL REPORT'], 'Received', 'a test on a day already come counts as received');
   assert.match((await notes()).join('\n'), /Medical test booked for .* at IOM Kathmandu\./);
 
+  // Payment: Payment Date and the first empty deposit; Visa and CAS: the step's date, and the stage moves on (never back).
+  const p1 = await give('Collect the deposit', 'payment');
+  assert.strictEqual((await finish(p1, { paid: true, date: today, amount: '5,000' })).status, 200);
+  assert.deepStrictEqual([(await row())['PAYMENT DATE'], (await row())['TUITION FEE DEPOSIT(1st Installment)']], [today, '5000']);
+  const p2 = await give('Collect the second payment', 'payment');
+  assert.strictEqual((await finish(p2, { paid: true, date: today, amount: '3000' })).status, 200);
+  assert.strictEqual((await row())['TUITION FEE DEPOSIT(2nd Installment)'], '3000', 'the next installment');
+  const v1 = await give('Get the CAS', 'visa');
+  assert.strictEqual((await finish(v1, { step: 'casReceived', date: today })).status, 200);
+  assert.deepStrictEqual([(await row())['CAS RECEIVED DATE'], (await row())['APPLICATION STATUS']], [today, 'CAS Issued']);
+  const v2 = await give('Ask for the CAS again', 'visa');
+  assert.strictEqual((await finish(v2, { step: 'casRequested', date: today })).status, 200);
+  assert.strictEqual((await row())['APPLICATION STATUS'], 'CAS Issued', 'the stage never moves back');
+  assert.match((await notes()).join('\n'), /CAS received on .*\. Stage moved to CAS Issued\./);
+
   // A task with no answers is simply done, as before; the Application Team may now fill in the Medical Report on the sheet.
   const o1 = await give('Call the student', 'other');
   assert.strictEqual((await app('POST', `/api/cards/${id}/tasks/${o1}`, { done: true })).status, 200);

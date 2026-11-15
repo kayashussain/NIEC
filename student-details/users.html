@@ -21,7 +21,7 @@
     <div class="page-head">
       <div>
         <h1>Users</h1>
-        <p>Who can log in, what each person can do, and where they are logged in.</p>
+        <p>Who can log in and what they can do.</p>
       </div>
     </div>
 
@@ -33,7 +33,7 @@
     <section id="panel-people" role="tabpanel" aria-labelledby="tab-people">
       <div class="card">
         <h2>Add a person</h2>
-        <p>They get an email with a link and a temporary password. At their first login they choose their own password.</p>
+        <p>They get an email with a temporary password and choose their own at first login.</p>
         <form id="addForm" autocomplete="off">
           <div class="form">
             <label>Full name <input id="addName" required maxlength="60" placeholder="e.g. Sita Sharma" /></label>
@@ -43,7 +43,7 @@
           <div id="addAccess"></div>
           <div class="form-actions">
             <button class="btn btn-primary" type="submit">Add person</button>
-            <span class="hint">Usernames are not case sensitive. Admin is the owner account and cannot be given to anyone.</span>
+            <span class="hint">Admin is the owner account only.</span>
           </div>
         </form>
         <div class="msg" id="addMsg" role="status"></div>
@@ -67,7 +67,7 @@
           <h2>Logged-in devices</h2>
           <button class="btn btn-danger" type="button" id="endOthers">Log everyone else out</button>
         </div>
-        <p>Every device logged in right now. Logins end by themselves after 12 hours.</p>
+        <p>Devices logged in now. Logins end after 12 hours.</p>
         <table>
           <thead><tr><th>Person</th><th>Device</th><th>IP address</th><th>Logged in</th><th>Last active</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody id="sessions"><tr><td colspan="6"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>

@@ -5,11 +5,11 @@
   const DEPARTMENTS = {
     application: { label: 'Application Team', help: 'Sees Application Stage students. Fills in details up to NOC Number, and the Medical Report.' },
     mock: { label: 'Mock Team', help: 'Sees Mock Stage students. Fills in the mock interviews and Pre-CAS result.' },
-    followup: { label: 'Follow-up Team', help: 'Sees Inquiry and Defer students. Adds remarks.' },
+    followup: { label: 'Follow-up Team', help: 'Sees Inquiry and Defer students. Adds remarks and moves them on.' },
   };
   // A branch team for each branch in the one list (card-fields.js).
   window.CardFields.BRANCHES.forEach((name) => {
-    DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, help: `Sees the students whose Student Source is ${name} Branch, and changes every column. Can add students.` };
+    DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, help: `Sees the students whose Student Source is ${name} Branch, and changes every column. Adds students.` };
   });
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -46,10 +46,10 @@
         <legend>What can this person do? Tick everything that applies.</legend>
         <div class="check-group">
           ${boxes}
-          <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Has their own dashboard, sees every student in every intake and can export to Excel. View only, unless a team is ticked as well. No Incentive page.</small></span></label>
+          <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Sees every student and the Dashboard, exports to Excel. View only unless a team is ticked.</small></span></label>
         </div>
         <label class="task-team" hidden>
-          <span><b>Their own team</b><small>The team this person belongs to. Their tasks, their Today and their dashboard come from this team only. The other teams ticked above are extra access: they can still open and work on those students when needed.</small></span>
+          <span><b>Their own team</b><small>Their tasks, Today and Dashboard come from this team. Other ticked teams are extra access.</small></span>
           <select name="${name}-task-team"></select>
         </label>
       </fieldset>`;
@@ -123,7 +123,7 @@
     const mail = result.email || {};
     let html;
     if (mail.status === 'sent') {
-      html = `The setup email was sent to <b>${esc(mail.to)}</b>. It has their username, a link and a temporary password.`;
+      html = `Login details sent to <b>${esc(mail.to)}</b>.`;
     } else {
       const why = {
         'no-address': 'No email address was entered for this person.',
@@ -131,7 +131,7 @@
         failed: `The email could not be sent: ${esc(mail.error)}`,
       }[mail.status] || 'The email was not sent.';
       html = `${why}<br>Temporary password for <b>${esc(person)}</b>: <code>${esc(result.temporaryPassword)}</code><br>`
-        + 'Give it to them in person, not by chat. It works once: at their first login they choose their own password. It is not shown again.';
+        + 'Give it in person. It works once and is not shown again.';
     }
     box.innerHTML = html;
     box.hidden = false;
@@ -199,11 +199,11 @@
   }
 
   const CONFIRM = {
-    remove: (n) => `Remove ${n} from the team? Their login is deleted and they are logged out everywhere. Their username and password will not work again. This cannot be undone.`,
-    disable: (n) => `Disable ${n}? They are logged out of every device now and cannot log in again until enabled.`,
+    remove: (n) => `Remove ${n}? Their login is deleted and they are logged out everywhere. This cannot be undone.`,
+    disable: (n) => `Disable ${n}? They are logged out until enabled again.`,
     'reset-password': (n, p) => (p.email
-      ? `Email ${n} a new temporary password? Their current password stops working and they are logged out.`
-      : `${n} has no email address, so the new temporary password will be shown here for you to give them. Their current password stops working and they are logged out. Continue?`),
+      ? `Email ${n} a new temporary password? Their current one stops working.`
+      : `${n} has no email: the new temporary password is shown here for you to give them. Continue?`),
     'logout-everywhere': (n) => `Log ${n} out of every device?`,
   };
 
@@ -272,7 +272,7 @@
     $('editEmail').value = person.email || '';
     setAccess($('editAccess'), 'edit', person);
     $('editAccess').hidden = person.role === 'admin'; // the Admin's access never changes
-    $('editNote').textContent = 'Changing access logs the person out. They log in again to get their new access.';
+    $('editNote').textContent = 'Changing access logs the person out.';
     $('editDialog').showModal();
   }
   $('editCancel').addEventListener('click', () => $('editDialog').close());

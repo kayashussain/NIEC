@@ -30,7 +30,7 @@
     const wrap = el('div');
     const head = el('div', 'p-head');
     const title = el('div');
-    title.append(el('h1', '', tmpl ? tmpl.name : 'Message'), el('p', '', `To ${student.name}${student.email ? ' (' + student.email + ')' : ''}. Nothing is sent until you press a send button.`));
+    title.append(el('h1', '', tmpl ? tmpl.name : 'Message'), el('p', '', `To ${student.name}${student.email ? ' (' + student.email + ')' : ''}.`));
     head.append(title, h('a', { class: 'btn', href: `/student?id=${encodeURIComponent(id)}#message` }, 'Back to the student'));
     wrap.append(head);
 
@@ -50,7 +50,7 @@
     right.append(el('h2', '', 'Send'));
     const to = field('To', { value: first.to, max: 254, placeholder: 'student@example.com', wide: true });
     const subject = field('Subject', { value: first.source.subject, max: 200, wide: true });
-    const bodyText = field('Message (the words in curly brackets are filled in from the student)', { kind: 'area', value: first.source.body, max: 8000, wide: true });
+    const bodyText = field('Message', { kind: 'area', value: first.source.body, max: 8000, wide: true });
     bodyText.input.style.minHeight = '260px';
     const form = el('div', 'p-form');
     form.append(to.wrap, subject.wrap, bodyText.wrap);
@@ -75,7 +75,7 @@
       if (total > MAX_TOTAL) list.append(el('div', 'p-notice bad', `The files are ${size(total)} together; the limit is ${size(MAX_TOTAL)}.`));
     };
     drawFiles();
-    attach.append(list, pick, el('p', 'p-muted p-small', 'Files go with this email only and are not stored on the server.'));
+    attach.append(list, pick, el('p', 'p-muted p-small', 'Sent with this email only, not stored.'));
     right.append(attach);
 
     const notes = el('div');
@@ -95,9 +95,9 @@
         sendEmail.disabled = !mail.ready;
         sendEmail.title = mail.ready ? '' : 'Set up your email first (My email and WhatsApp)';
         notes.replaceChildren();
-        if (gaps) notes.append(el('div', 'p-notice warn', 'Check before sending: this student has no ' + preview.missing.join(' and no ') + ' yet, so the message below has gaps. Add them on the student card, change the words here, or send it as it is.'));
-        if (!mail.ready && mail.own) { const n = el('div', 'p-notice warn', 'To send emails, set up your own email first (it takes a minute): '); const a = el('a', '', 'My email and WhatsApp'); a.href = '/my-email'; n.append(a, '. You can copy the text meanwhile.'); notes.append(n); }
-        else if (!mail.ready) notes.append(el('div', 'p-notice', 'Email is not set up on this computer (normal for a test copy). Copy the text instead.'));
+        if (gaps) notes.append(el('div', 'p-notice warn', 'Check before sending: this student has no ' + preview.missing.join(' and no ') + ' yet, so the message has gaps.'));
+        if (!mail.ready && mail.own) { const n = el('div', 'p-notice warn', 'Set up your email first: '); const a = el('a', '', 'My email and WhatsApp'); a.href = '/my-email'; n.append(a, '. You can copy the text meanwhile.'); notes.append(n); }
+        else if (!mail.ready) notes.append(el('div', 'p-notice', 'Email is not set up here. Copy the text instead.'));
       } catch (e) { notes.replaceChildren(el('div', 'p-notice bad', e.message)); }
     };
     [subject, bodyText, to].forEach((x) => x.input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refresh, 350); }));
@@ -151,7 +151,7 @@
       // Opened without a student: say how a message is started, with the way there.
       const c = el('div', 'p-card');
       const go = el('a', 'btn btn-primary', 'Go to All Students'); go.href = '/students';
-      c.append(el('h2', '', 'Choose a student first'), el('p', 'p-muted', 'Open a student\u2019s card and press Send a message. The message is written here, with the student\u2019s details filled in.'), go);
+      c.append(el('h2', '', 'Choose a student first'), el('p', 'p-muted', 'Open a student\u2019s card and press Send a message.'), go);
       view.replaceChildren(c);
       return;
     }

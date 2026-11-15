@@ -83,18 +83,27 @@ test('teams edit only their own columns and make only their own moves', () => {
   assert.ok(canEdit('followup', 'REMARKS') && !canEdit('followup', 'FIRST NAME'));
   assert.ok(canEdit('admin', 'ANYTHING'));
   assert.deepStrictEqual(statusChoices('application', 'Application Stage', []), ['Application Stage', 'Mock Stage']);
-  assert.deepStrictEqual(statusChoices('followup', 'Inquiry', []), ['Inquiry']);
+  assert.deepStrictEqual(statusChoices('followup', 'Inquiry', []), ['Inquiry', 'Application Stage', 'Defer', 'Withdrawn']);
 });
 
 test('Application → Mock warns about blank details; Mock → Payment is refused until the mocks are filled', () => {
   const warn = checkMove('application', { [S]: 'Application Stage', 'STUDENT ID': '' }, 'Mock Stage');
   assert.ok(warn.ok && /Student ID/.test(warn.confirm));
   const blocked = checkMove('mock', { [S]: 'Mock Stage', 'MOCK SCHEDULE 1': '2026-01-01' }, 'Payment Stage');
-  assert.ok(!blocked.ok && /Mock Schedule 4/.test(blocked.message) && /Pre-CAS Interview/.test(blocked.message));
+  assert.ok(!blocked.ok && /Feedback 1/.test(blocked.message) && /Pre-CAS Interview/.test(blocked.message) && !/Mock Schedule 4/.test(blocked.message));
+  assert.ok(!checkMove('mock', { [S]: 'Mock Stage', 'PRE CAS INTERVIEW': 'Passed' }, 'Payment Stage').ok, 'at least one mock');
+  // One mock with its feedback and the Pre-CAS passed is enough (the owner, 15 Nov 2026).
+  const one = { [S]: 'Mock Stage', 'MOCK SCHEDULE 1': 'x', 'FEEDBACK 1': 'y', 'PRE CAS INTERVIEW': 'Passed' };
+  assert.ok(checkMove('mock', one, 'Payment Stage').ok);
+  assert.ok(!checkMove('mock', { ...one, 'MOCK SCHEDULE 2': 'z' }, 'Payment Stage').ok, 'a mock held needs its feedback');
+  assert.ok(!checkMove('mock', { ...one, 'PRE CAS INTERVIEW': 'Fail' }, 'Payment Stage').ok, 'not after a failed Pre-CAS');
   const full = { [S]: 'Mock Stage', 'PRE CAS INTERVIEW': 'Passed' };
   [1, 2, 3, 4].forEach((n) => { full[`MOCK SCHEDULE ${n}`] = 'x'; full[`FEEDBACK ${n}`] = 'y'; });
   assert.ok(checkMove('mock', full, 'Payment Stage').ok);
-  assert.ok(!checkMove('followup', { [S]: 'Inquiry' }, 'Application Stage').ok);
+  // The Follow-up Team moves its own students on (the owner, 15 Nov 2026).
+  assert.ok(checkMove('followup', { [S]: 'Inquiry' }, 'Application Stage').ok);
+  assert.ok(checkMove('followup', { [S]: 'Defer' }, 'Inquiry').ok);
+  assert.ok(!checkMove('followup', { [S]: 'Inquiry' }, 'Visa Issued').ok);
 });
 
 test('a team save is checked cell by cell', () => {

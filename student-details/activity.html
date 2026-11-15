@@ -21,7 +21,7 @@
     <div class="page-head">
       <div>
         <h1>Activity</h1>
-        <p>Every login, failed login, logout and change, with who did it, on which device, and when.</p>
+        <p>Every login and change: who, when and on which device.</p>
       </div>
     </div>
 
@@ -74,13 +74,13 @@
     <section id="panel-restore" role="tabpanel" aria-labelledby="tab-restore" hidden>
       <div class="card">
         <h2>Daily backups</h2>
-        <p id="restoreIntro">Every day after 6 p.m. the server saves a backup of the students, the Fact File and the Partner Universities, and keeps the last 30 days. Older ones are deleted automatically. People's accounts and passwords are not part of a backup.</p>
+        <p id="restoreIntro">A backup is saved every day after 6 p.m. and kept for 30 days.</p>
         <div class="form-actions">
           <button class="btn btn-primary" type="button" id="backupNow">Back up now</button>
           <span class="hint" id="restoreNow"></span>
         </div>
         <h3 style="margin:16px 0 4px;font-size:14px">A copy for your own computer</h3>
-        <p>The backups above are kept on the server. Now and then, download a copy to keep somewhere safe of your own (before a big change, or in case the hosting account is ever lost). It holds personal details, so keep it private. Every download is written to the Activity record.</p>
+        <p>Download a copy now and then and keep it private: it holds personal details.</p>
         <div class="form-actions">
           <a class="btn" id="dlStudents" href="/api/backup/students.json" download>Download all students</a>
           <a class="btn" id="dlFacts" href="/api/backup/fact-file.json" download>Download the Fact File</a>
@@ -89,7 +89,7 @@
       </div>
       <div class="card">
         <h2>Restore from a backup</h2>
-        <p>Pick a day and press <b>Restore</b>. Before anything is changed, the data as it is right now is saved as a "before restore" backup, so a restore can be undone too. After a restore, ask everyone to refresh their page.</p>
+        <p>Pick a day and press <b>Restore</b>. Today’s data is saved first, so a restore can be undone.</p>
         <table>
           <thead><tr><th>Backup</th><th>Date</th><th>Time</th><th>Holds</th><th>Size</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody id="backupRows"><tr><td colspan="6"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>

@@ -75,7 +75,7 @@
     ];
     $('kpis').replaceChildren(...band.map(([label, v, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', v), el('small', '', sub)); return d; }));
     $('count').textContent = all.length ? (q ? `${shown.length} of ${all.length}` : `${all.length} in the list`) : '';
-    if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', viewer() ? 'No partner universities yet.' : 'No partner universities yet. Add the first one with + Add university.')); return; }
+    if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', viewer() ? 'No partner universities yet.' : 'No partner universities yet.')); return; }
     if (!shown.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
     // The busiest first: the most students, then by name.
     const ordered = shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
@@ -144,7 +144,7 @@
         box.append(line('Password', shown, peek, copy(u.applyPassword, 'Password')));
       } else if (u.loginHidden) {
         // The login is held back from this account (the Mock Team, a branch ...): the eye says so instead of showing it.
-        const locked = iconBtn('eye', 'Show the password', () => window.NiecUI.toast('You do not have access to see the portal login. Only Admin and the Application Team do.', { type: 'error' }));
+        const locked = iconBtn('eye', 'Show the password', () => window.NiecUI.toast('You do not have access to the portal login.', { type: 'error' }));
         locked.classList.add('is-locked');
         box.append(line('Password', el('code', 'bp-value bp-locked', '\u2022'.repeat(10)), locked));
       }
@@ -153,7 +153,7 @@
       const w = el('a', 'bp-portal', 'Write email ↗'); w.href = 'mailto:' + u.applyEmail;
       top.append(w);
       box.append(top, line('Email', el('code', 'bp-value', u.applyEmail), copy(u.applyEmail, 'Email')));
-    } else box.append(el('div', 'bp-none', viewer() ? 'How to apply is not entered yet' : 'How to apply is not entered yet. Press Edit to add the portal or email.'));
+    } else box.append(el('div', 'bp-none', viewer() ? 'How to apply is not entered yet' : 'How to apply is not entered yet'));
     return box;
   }
 
@@ -247,7 +247,7 @@
 
     // 1. The university: its name, its campuses and when the agreement started. (Status, how it is held, when it ends
     // and notes are no longer asked: a partner is always active. Anything stored in them is kept as it is.)
-    const s1 = step(1, 'The university', 'Its name, its campuses and the day the agreement started.');
+    const s1 = step(1, 'The university', '');
     f.name = text(uni.name, 120);
     f.agreementStart = text(uni.agreementStart, 40, 'e.g. 1 Sep 2025');
     const g1 = el('div', 'pu-fields two');
@@ -257,7 +257,7 @@
     s1.append(g1, campusHead, campuses.node);
 
     // 2. Application submission: one box, a link or an email; the login only for a link.
-    const s2 = step(2, 'Application submission', 'Paste the portal link or the email address applications go to. For a portal, add the login details your team uses. Only Admin and the Application Team see the login.');
+    const s2 = step(2, 'Application submission', 'The portal link or email, and the portal login. Only Admin and the Application Team see the login.');
     f.apply = text(uni.applyPortal || uni.applyEmail, 600, 'e.g. https://apply.university.ac.uk  or  admissions@university.ac.uk');
     f.apply.inputMode = 'url';
     const kind = el('span', 'pu-kind');
@@ -286,12 +286,12 @@
     s2.append(g2, login);
 
     // 3. Contacts
-    const s3 = step(3, 'Contacts', 'The people at the university you deal with. The first one shows on the list.');
+    const s3 = step(3, 'Contacts', 'The first one shows on the list.');
     const contacts = repeater([['name', 'Name', 'e.g. Braj Jha (Regional Manager)'], ['phone', 'Phone', 'e.g. +44 7833 769210'], ['email', 'Email', 'name@university.ac.uk']], uni.contacts, 'Add a contact');
     s3.append(contacts.node);
 
     // 4. Commission and payment
-    const s5 = step(4, 'Commission and payment', 'One row for each band, for example level UG, students "1 to 10", commission "15%". Then when and how it is paid.');
+    const s5 = step(4, 'Commission and payment', 'One row per band, e.g. UG, "1 to 10", "15%".');
     const slabs = repeater([['level', 'Level', 'UG, PG or All'], ['students', 'Students enrolled', 'e.g. 1 to 10'], ['commission', 'Commission', 'e.g. 15% or £1,500']], uni.slabs, 'Add a commission band');
     f.paymentTerms = area(uni.paymentTerms, 'When and how commission is paid.');
     const pay = el('div', 'pu-fields'); pay.style.marginTop = '16px';
@@ -299,7 +299,7 @@
     s5.append(slabs.node, pay);
 
     // 6. Agreement files: uploaded and removed at once (they are not part of Save).
-    const s6 = step(5, 'Agreement files', 'The signed agreement. PDF, Word or an image, up to 10 MB. Files are saved as soon as they are uploaded.');
+    const s6 = step(5, 'Agreement files', 'PDF, Word or image, up to 10 MB.');
     const fileList = el('div', 'pu-files');
     const size = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
     function drawFiles() {
@@ -358,7 +358,7 @@
       try {
         uni = await api('/api/direct/' + uni.id, body);
         // A link or email that is not a real address is not kept: say so instead of losing it quietly.
-        if (body.apply.trim() && !uni.applyPortal && !uni.applyEmail) window.NiecUI.toast('Saved, but the application link could not be kept: it must be a web address (e.g. https://apply.university.ac.uk) or an email address. Please check it and save again.', { type: 'error' });
+        if (body.apply.trim() && !uni.applyPortal && !uni.applyEmail) window.NiecUI.toast('Saved, but the link was not kept: use a web address or an email address.', { type: 'error' });
         else window.NiecUI.toast('Saved', { type: 'success' });
         // Straight back to the list, where the saved card glows once (as on B2B Partners).
         justSaved = uni.id;
@@ -375,7 +375,7 @@
     ed.replaceChildren(form);
     $('listView').hidden = true;
     ed.hidden = false;
-    if (BACKUP) say('editMsg', 'This is the data as it was in the backup. The agreement files themselves are not kept in backups.');
+    if (BACKUP) say('editMsg', 'As in the backup (agreement files are not kept in backups).');
     window.scrollTo({ top: 0 });
   }
 

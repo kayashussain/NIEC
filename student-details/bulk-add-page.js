@@ -15,7 +15,7 @@
     const wrap = el('div');
     const head = el('div', 'p-head');
     const title = el('div');
-    title.append(el('h1', '', 'Add many students'), el('p', '', 'Add many students from an Excel or CSV file, with one stage and source.'));
+    title.append(el('h1', '', 'Add many students'), el('p', '', 'From an Excel or CSV file, with one stage and source.'));
     head.append(title, h('a', { class: 'btn', href: '/students' }, 'Back to All Students'));
     wrap.append(head);
 
@@ -34,7 +34,7 @@
     if (picker) picker.nodes.forEach((n) => form.append(n));
     set.append(form);
     if (isTeamUser) set.append(el('p', 'p-muted p-small', 'New students start at the first stage of your team: ' + lists.departments.map((d) => d.start).filter(Boolean).join(' or ') + '.'));
-    set.append(el('p', 'p-muted p-small', 'The event or marketing list comes from the Events and marketing page. Teams add students at the stage and intake their own rules allow.'));
+    set.append(el('p', 'p-muted p-small', 'Events and campaigns come from Events and marketing.'));
     wrap.append(set);
 
     const paste = el('section', 'p-card');
@@ -48,7 +48,7 @@
     const fileRow = el('div', 'p-bar');
     const sample = h('a', { class: 'p-link', href: 'data:text/csv;charset=utf-8,' + encodeURIComponent('First name,Last name,Email,Phone\nSita,Sharma,sita@example.com,9800000001\nRam,Thapa,ram@example.com,9800000002\n'), download: 'students-example.csv' }, 'Download an example file');
     fileRow.append(pick, sample);
-    paste.append(el('p', 'p-muted', 'First row: First name, Last name, Email, Phone (or one Name column). Problem rows and existing students are skipped, with the reason.'), fileRow, out, bar);
+    paste.append(el('p', 'p-muted', 'Columns: First name, Last name, Email, Phone. Existing students are skipped.'), fileRow, out, bar);
     wrap.append(paste);
 
     // Students who are already on the sheet (same email or phone) are marked so the list says they will be skipped.

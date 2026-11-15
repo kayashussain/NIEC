@@ -67,7 +67,7 @@
       let ok = false;
       try { ok = document.execCommand('copy'); } catch (err) { /* below */ }
       box.remove();
-      if (!ok) { NiecUI.toast('Could not copy. Your browser may be blocking clipboard access.', { type: 'error' }); return; }
+      if (!ok) { NiecUI.toast('Could not copy.', { type: 'error' }); return; }
     }
     NiecUI.toast('Summary copied. Paste it into WhatsApp or an email.', { type: 'success' });
   }
@@ -91,7 +91,7 @@
     const s = el('section');
     s.append(el('h2', '', 'Entry requirements, fees and scholarships'));
     if (!programs.length) { s.append(el('p', 'placeholder', 'Not added yet.')); doc.append(s); return; }
-    s.append(el('p', 'scroll-hint', 'This table is wide: swipe or scroll sideways to see every column.'));
+    s.append(el('p', 'scroll-hint', 'Scroll sideways to see every column.'));
     const wrap = el('div', 'table-wrap');
     wrap.tabIndex = 0; // the table scrolls sideways on a small screen: reachable (and scrollable) from the keyboard
     wrap.setAttribute('role', 'region');
@@ -252,13 +252,13 @@
     bar.replaceChildren();
     const copy = el('button', 'btn', 'Copy summary');
     copy.type = 'button';
-    copy.title = 'Copies a short summary to paste into WhatsApp or an email';
+    copy.title = 'Copy a short summary';
     copy.addEventListener('click', copySummary);
     bar.append(copy);
     if (!BACKUP && window.SendToStudent) {
       const send = el('button', 'btn btn-primary', 'Send to a student');
       send.type = 'button';
-      send.title = 'Choose courses of this university and a student: the options are added to the student card and go in one email';
+      send.title = 'Choose courses and a student: they are added to the student card';
       send.addEventListener('click', () => window.SendToStudent.sendUniversity(uni.id, uni.name));
       bar.append(send);
     }
@@ -280,7 +280,7 @@
 
   // Delete this university (Admin only; the server refuses anyone else). `before` runs once it is deleted.
   async function deleteUniversity(before) {
-    const yes = await NiecUI.confirm(`The whole page for ${uni.name} is removed from the Fact File. This cannot be undone.`,
+    const yes = await NiecUI.confirm(`Remove ${uni.name} from the Fact File? This cannot be undone.`,
       { title: 'Delete this university?', confirmText: 'Delete university', danger: true });
     if (!yes) return;
     const res = await fetch(`/api/facts/${uni.id}/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
@@ -326,10 +326,10 @@
     const two = el('div', 'two');
     two.append(field('Name', name), field('City', city));
     form.append(two, field('Website', website), field('Where it is (campus, address, how to get there)', location));
-    form.append(field('Overview and key facts (living expenses requirement, placement partners, anything at a glance)', overview));
+    form.append(field('Overview and key facts', overview));
 
     form.append(el('h2', '', 'Fees and scholarships by course level'));
-    form.append(el('p', 'hint', 'One block for each level, for example UG, PG or PG Placement Year. Start a line with "- " for a bullet.'));
+    form.append(el('p', 'hint', 'One block per level (UG, PG ...). "- " for a bullet.'));
     const programsBox = el('div');
     form.append(programsBox);
     const programRows = [];
@@ -357,12 +357,12 @@
     form.append(addProgramBtn);
 
     form.append(el('h2', '', 'Requirements'));
-    form.append(el('p', 'hint', 'Start a line with "- " to make a bullet list, or "## " to make a sub-heading. Blank lines make a new paragraph.'));
+    form.append(el('p', 'hint', '"- ": bullet. "## ": heading. Blank line: new paragraph.'));
     form.append(field('Entry requirements (grades, subjects, gap, backlogs)', entry), field('Language test (IELTS, PTE, Duolingo, waivers)', lang));
     form.append(field('Courses available (one per line)', courses));
 
     form.append(el('h2', '', 'Application process'));
-    form.append(el('p', 'hint', 'The steps in order, from application to visa. Add what the student must do at each step.'));
+    form.append(el('p', 'hint', 'The steps from application to visa.'));
     const steps = el('div');
     form.append(steps);
     const stepRows = [];
@@ -391,10 +391,10 @@
     addStepBtn.style.marginTop = '10px';
     addStepBtn.addEventListener('click', () => addStep({}));
     form.append(addStepBtn);
-    form.append(field('Interview requirements (what the university or Pre-CAS interview asks, documents to bring)', interview));
+    form.append(field('Interview requirements', interview));
 
     form.append(el('h2', '', 'Intakes'));
-    form.append(el('p', 'hint', 'Add each intake the university offers. Requirements and courses often differ between, for example, September and January.'));
+    form.append(el('p', 'hint', 'One per intake (requirements often differ).'));
     const intakes = el('div');
     form.append(intakes);
     const intakeRows = [];
@@ -499,7 +499,7 @@
       const h2 = document.createElement('h2');
       h2.textContent = `Course page warnings (${r.warnings.length})`;
       const intro = document.createElement('p');
-      intro.textContent = 'The weekly check of the university website found these. Tell Claude in the chat what you decide, or press Confirm when you have looked at it and it is fine.';
+      intro.textContent = 'Found by the weekly website check. Press Confirm once checked.';
       box.append(h2, intro);
       r.warnings.forEach((w) => {
         const row = document.createElement('div');

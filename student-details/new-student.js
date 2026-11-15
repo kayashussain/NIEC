@@ -42,7 +42,7 @@
         return d ? d.start : defaultStage;
       };
       const needsPassport = () => stageNow() && stageNow() !== 'Inquiry';
-      const sayPassport = () => { passportNote.textContent = needsPassport() ? 'Date of birth, passport number and address are needed from Application Stage on.' : 'At Inquiry the passport details are optional: add them when the student applies.'; };
+      const sayPassport = () => { passportNote.textContent = needsPassport() ? 'Needed from Application Stage on.' : 'Optional at Inquiry.'; };
       [inputs.stage, inputs.dept].filter(Boolean).forEach((i) => i.addEventListener('change', sayPassport));
       sayPassport();
 
@@ -66,7 +66,7 @@
       ok.addEventListener('click', async () => {
         const v = (k) => (inputs[k] ? inputs[k].value : '');
         if (!v('FIRST NAME').trim() && !v('LAST NAME').trim()) { msg.textContent = "Please enter the student's name."; msg.className = 'p-msg error'; inputs['FIRST NAME'].focus(); return; }
-        if (needsPassport() && (!v('dob') || !v('passportNo').trim() || !v('address').trim())) { msg.textContent = 'Please fill in the date of birth, passport number and address (as in the passport): they are needed from Application Stage on.'; msg.className = 'p-msg error'; return; }
+        if (needsPassport() && (!v('dob') || !v('passportNo').trim() || !v('address').trim())) { msg.textContent = 'Fill in the date of birth, passport number and address.'; msg.className = 'p-msg error'; return; }
         // Where the student came from must be complete (the event, or the campaign answer), so the student counts in its cost.
         const missing = picker ? picker.check() : '';
         if (missing) { msg.textContent = missing; msg.className = 'p-msg error'; return; }

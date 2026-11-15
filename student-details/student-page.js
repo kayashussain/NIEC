@@ -39,7 +39,7 @@
   function heroEdit() {
     const c = el('section', 'p-card');
     c.append(el('h2', '', 'Change the details'));
-    c.append(el('p', 'p-muted p-small', 'Name, contact, university, course and dates update the All Students sheet. Passport details stay on this card.'));
+    c.append(el('p', 'p-muted p-small', 'Changes here also update All Students.'));
     const form = el('div', 'p-form');
     const inputs = {};
     HERO_FIELDS.forEach(([col, label, kind]) => {
@@ -414,7 +414,7 @@
     head.append(el('h2', '', `Options for this student (${data.card.options.length})`));
     if (data.card.options.length) head.append(h('button', { class: 'btn btn-primary btn-sm', type: 'button', onclick: () => openCompose('options') }, 'Email these options'));
     box.append(head);
-    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No options yet. Search below and press Add. All options go into one email with the document checklist.')); return box; }
+    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No options yet. Search below and press Add.')); return box; }
     const list = el('div', 'p-chosen');
     data.card.options.forEach((o) => {
       const item = el('div', 'p-chosen-item');
@@ -524,7 +524,7 @@
     const wrap = el('div');
     const left = el('section', 'p-card');
     left.append(el('h2', '', 'Choose a message'));
-    left.append(el('p', '', `The message opens on a full page where you can read it large, change the words and attach files. ${data.mail.ready ? `Emails go from ${data.mail.from}, with your signature, and replies come back there.` : data.mail.own ? 'To email, set up your own email first (Message templates, Your email and signature).' : 'Emails carry the signature.'}`));
+    left.append(el('p', '', `${data.mail.ready ? `Emails go from ${data.mail.from}.` : data.mail.own ? 'Set up your email first (Message templates, Your email and signature).' : ''}`));
     const stage = data.student.stage;
     const ordered = [...templates].sort((a, b) => (b.stages.includes(stage) - a.stages.includes(stage)) || a.name.localeCompare(b.name));
     const list = el('div', 'p-templates');

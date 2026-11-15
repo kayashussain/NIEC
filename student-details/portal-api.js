@@ -395,6 +395,9 @@ function createPortalApi({
   //                on that day as a task of its own.
   //   Medical      booked (the day and where; the Medical Report says Booked and becomes Received by itself on that day), the report
   //                received, or not booked yet (to book again; a booking that fell through is cleared).
+  //   Payment      paid on (a day) and how much: Payment Date when empty, the amount in the next empty Tuition Fee Deposit.
+  //   Visa and CAS the step (CAS requested, CAS received, visa lodged, VFS attended, visa received) and its day: into its column, and
+  //                the stage moves on with it (CAS Issued, Visa Lodge, Visa Issued), never back.
   // Every answer is also one note on the student, in plain words. Only these columns are written, by whoever may tick the task,
   // whatever the student's stage.
   const SYSTEM_REQ = { headers: {}, socket: {}, user: { id: 'system', name: 'ISR (automatic)', label: 'ISR (automatic)', role: 'admin' } };
@@ -461,6 +464,30 @@ function createPortalApi({
         plan.medical = null;
         plan.note = `Medical test not booked yet: to be booked again. ${sentence(note)}`.trim();
       }
+    }
+    else if (kind === 'payment' && f.paid) {
+      const d = day(f.date);
+      if (!d) return { error: 'Choose the day it was paid.' };
+      if (d > today) return { error: 'A payment cannot be made on a day still to come.' };
+      const amount = text(f.amount).replace(/[^\d.]/g, '').slice(0, 14);
+      if (!text(row['PAYMENT DATE'])) plan.columns['PAYMENT DATE'] = d;
+      const slot = ['1st', '2nd', '3rd'].map((k) => `TUITION FEE DEPOSIT(${k} Installment)`).find((c) => !text(row[c]));
+      if (amount && slot) plan.columns[slot] = amount;
+      plan.note = `Payment made on ${niceDay(d)}${amount ? `: ${Number(amount).toLocaleString('en-GB')}` : ''}${amount && !slot ? ' (all three deposit columns are already used)' : ''}. ${sentence(note)}`.trim();
+    } else if (kind === 'visa' && f.step) {
+      // Visa and CAS: the step reached, its day, and the stage moved on with it (never back).
+      const STEPS = { casRequested: ['CAS REQUESTED DATE', 'CAS requested', ''], casReceived: ['CAS RECEIVED DATE', 'CAS received', 'CAS Issued'], lodged: ['VISA LODGE DATE', 'Visa lodged', 'Visa Lodge'], vfs: ['VFS ATTENDED DATE', 'VFS attended', ''], visa: ['VISA RECEIVED DATE', 'Visa received', 'Visa Issued'] };
+      const st = STEPS[f.step];
+      if (!st) return { error: 'Choose the step.' };
+      const d = day(f.date);
+      if (!d) return { error: 'Choose the day.' };
+      if (d > today) return { error: 'Choose a day that has come.' };
+      plan.columns[st[0]] = d;
+      const ORDER = ['Inquiry', 'Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
+      const now = text(row[STATUS]);
+      const moved = st[2] && ORDER.includes(now) && ORDER.indexOf(st[2]) > ORDER.indexOf(now) ? st[2] : '';
+      if (moved) plan.columns[STATUS] = moved;
+      plan.note = `${st[1]} on ${niceDay(d)}.${moved ? ` Stage moved to ${moved}.` : ''} ${sentence(note)}`.trim();
     }
     if (!plan.note && note) plan.note = note;
     // Nothing changes on the sheet when it already says the same.

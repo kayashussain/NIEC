@@ -166,7 +166,7 @@
     let source = '';
     const on = new Set(['inq', 'app', 'off']);
     const modeSw = segmented([['day', 'Days'], ['week', 'Weeks'], ['month', 'Months']], mode, (k) => { mode = k; draw(); });
-    card.append(head('Ups and downs over time', `${data.intake ? data.intake.name : ''}, by date. Tap a name to show or hide its line; dashed lines mark events and campaigns.`, modeSw));
+    card.append(head('Ups and downs over time', `${data.intake ? data.intake.name : ''}. Tap a name to show or hide it.`, modeSw));
     const words = el('div', 'tr-story');
     story(data).forEach((l, i) => words.append(el('p', i ? '' : 'tr-lead', l)));
     const keys = el('div', 'tr-legend tr-lines');
@@ -201,7 +201,7 @@
     keys.append(src, which);
     const box = el('div', 'tr-chart');
     const note = el('p', 'ov-foot');
-    if (data.undated) note.textContent = `${data.undated} student${data.undated === 1 ? ' has' : 's have'} no inquiry date and ${data.undated === 1 ? 'is' : 'are'} not on the Inquiries line.`;
+    if (data.undated) note.textContent = `${data.undated} without an inquiry date (not shown).`;
     function draw() {
       const ps = periods(mode, data.today);
       const at = (iso) => { const n = dayNo(iso); return ps.findIndex((p) => n >= p.from && n <= p.to); };
@@ -334,7 +334,7 @@
       side.append(ol);
     }
     const foot = el('p', 'ov-foot');
-    if (data.places.none) foot.textContent = `${data.places.none} student${data.places.none === 1 ? ' has' : 's have'} no passport address yet.`;
+    if (data.places.none) foot.textContent = `${data.places.none} without a passport address.`;
     card.append(body, foot);
     return card;
   }

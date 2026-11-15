@@ -116,7 +116,7 @@
     const foot = el('div', 'bp-foot');
     const notWord = KIND === 'agents' ? 'Not an agent' : 'Not a partner';
     foot.append(btn('btn', notWord, async () => {
-      if (!(await window.NiecUI.confirm(`${x.name} is not ${KIND === 'agents' ? 'an agent' : 'a B2B partner'}? It is hidden here and in the ${KIND === 'agents' ? 'Receiving' : 'University'} Partner dropdown (the students keep the name). You can show it again.`, { confirmText: notWord }))) return;
+      if (!(await window.NiecUI.confirm(`${x.name} is not ${KIND === 'agents' ? 'an agent' : 'a B2B partner'}? It is hidden from the list. You can show it again.`, { confirmText: notWord }))) return;
       await api(`${API}/not-partner`, { name: x.name }); say(`${x.name} hidden`); load();
     }), btn('btn btn-primary', 'Set up →', async () => { try { const made = await api(API, { name: x.name }); await load(); open(made.id, { editSubmit: true }); } catch (e) { say(e.message, true); } }));
     c.append(head, foot);
@@ -177,7 +177,7 @@
         box.append(line('Password', shown, peek, copy(p.applyPassword, 'Password')));
       } else if (p.loginHidden) {
         // The login is held back from this account (the Mock Team, a branch ...): the eye says so instead of showing it.
-        const locked = iconBtn('eye', 'Show the password', () => window.NiecUI.toast('You do not have access to see the portal login. Only Admin and the Application Team do.', { type: 'error' }));
+        const locked = iconBtn('eye', 'Show the password', () => window.NiecUI.toast('You do not have access to the portal login.', { type: 'error' }));
         locked.classList.add('is-locked');
         box.append(line('Password', el('code', 'bp-value bp-locked', '\u2022'.repeat(10)), locked));
       }
@@ -358,7 +358,7 @@
     // When the agreement started, on a calendar (the owner, 15 Nov 2026: no end date asked). A day typed by hand in an older record
     // that cannot be read is named under the calendar and kept until a day is chosen.
     const start = field('Agreement started', { kind: 'date', value: isoDay(p.agreementStart) });
-    if (p.agreementStart && !isoDay(p.agreementStart)) start.wrap.append(el('small', 'bp-was', `Written before as \u201c${p.agreementStart}\u201d. Choose the day on the calendar.`));
+    if (p.agreementStart && !isoDay(p.agreementStart)) start.wrap.append(el('small', 'bp-was', `Was \u201c${p.agreementStart}\u201d. Choose the day.`));
     const s1 = step(++n, `The ${WORD.one}`, '');
     s1.append(grid('bp-four', name.wrap, status.wrap, city.wrap, start.wrap));
     const steps = [s1];
@@ -415,7 +415,7 @@
         if (apply) Object.assign(body, { apply: apply.input.value, applyUser: applyUser.input.value, applyPassword: applyPassword.input.value });
         const saved = await api(`${API}/${id}`, body);
         // Saved: straight back to the list, where the card glows once (the owner, 15 Nov 2026: no "Back to the list" to press).
-        if (apply && apply.input.value.trim() && !saved.applyPortal && !saved.applyEmail) say('Saved, but the application link could not be kept: it must be a web address or an email address.', true);
+        if (apply && apply.input.value.trim() && !saved.applyPortal && !saved.applyEmail) say('Saved, but the link was not kept: use a web address or an email address.', true);
         else say(`${saved.name || name.input.value || 'The ' + WORD.one} is saved.`);
         justSaved = id;
         closeEditor(); await load();
@@ -453,7 +453,7 @@
       const chip = document.querySelector('#pageTitle .p-chip'); if (chip) chip.textContent = 'View only';
       $('intro').textContent = data.access === 'commission'
         ? 'How to apply, contacts and commission. View only.'
-        : `${KIND === 'b2b' ? 'How to apply and who to contact' : 'Contacts'}. View only.`;
+        : `View only.`;
     }
     draw();
     if (justSaved) {

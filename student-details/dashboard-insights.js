@@ -59,7 +59,7 @@
     sel.value = data.selected;
     sel.addEventListener('change', () => { intake = sel.value; load(); });
     l.append(el('span', 'p-label', 'Intake'), sel);
-    wrap.append(l, el('span', 'p-muted p-small', `Figures as of ${window.Portal.day(data.today)}. They refresh on their own.`));
+    wrap.append(l, el('span', 'p-muted p-small', `As of ${window.Portal.day(data.today)}.`));
     return wrap;
   }
 
@@ -89,17 +89,17 @@
       if (s.low && !s.spendOnly) rows[rows.length - 1][5] = percent(s.leadToVisa) + ' *';
       s.details.forEach((d) => rows.push({ sub: true, cells: [d.label, number(d.students), number(d.applied), number(d.paid), number(d.visas), percent(d.leadToVisa) + (d.low ? ' *' : ''), d.spend ? rupees(d.spend) : '', d.costPerStudent ? rupees(d.costPerStudent) : '', d.costPerApplication ? rupees(d.costPerApplication) : '', d.costPerVisa ? rupees(d.costPerVisa) : ''] }));
     });
-    const ch = card('Where students come from, and what each source costs', 'Each source with what is inside it (the platform, the event, the partner). The cost columns are marketing cost only (what was paid for adverts and events, divided by the students, applications or visas that came from it). They are not the cost of running the office. A blank cost means no spend was recorded for it.',
+    const ch = card('Where students come from, and what each source costs', 'Each source and what is inside it. Costs are marketing spend only; blank means none recorded.',
       table(['Source and where exactly', 'Students', 'Applied', 'Paid', 'Visas', 'Student to visa', 'Marketing spent', 'Cost per student', 'Cost per application', 'Cost per visa'], rows, { numCols: [1, 2, 3, 4, 5, 6, 7, 8, 9] }), lowNote());
-    const out = [chooser(), card('Where the marketing money figures come from', 'The system cannot see what you pay for adverts, boosts, events or agents. The cost figures below are only what you type under Marketing spend and Events (one line each time you pay: month, source, where exactly, amount). Until a line is added for a platform its cost stays empty, and a cost per visa is never guessed. Add a line each time you pay, and choose the same source and platform as on the student cards.'), ch];
+    const out = [chooser(), card('Where the marketing money figures come from', 'Costs come only from what you enter under Marketing spend and Events. Add a line each time you pay.'), ch];
     // spend
-    const spendSec = card('Marketing spend', 'What was paid, by month and source. Type the source and the detail the same way as on the student cards.');
+    const spendSec = card('Marketing spend', 'What was paid, by month and source.');
     const lines = plan.spend.filter((l) => !l.intake || l.intake === data.selected).sort((a, b) => b.month.localeCompare(a.month));
     if (admin()) spendSec.append(h('button', { class: 'btn btn-sm btn-primary no-print', type: 'button', onclick: () => spendForm() }, '+ Add a spend line'));
     spendSec.append(lines.length ? table(['Month', 'Source', 'Detail', 'Amount', 'Leads reported', 'Cost per lead', ''], lines.map((l) => [l.month, l.source, l.detail, rupees(l.amount), l.leads ? number(l.leads) : '', l.leads ? rupees(Math.round(l.amount / l.leads)) : '', admin() ? h('button', { class: 'p-link no-print', type: 'button', onclick: () => spendForm(l) }, 'Edit') : '']), { numCols: [4, 5, 6] }) : el('div', 'p-empty', 'No spend recorded for this intake yet.'));
     out.push(spendSec);
     // events
-    const ev = card('Events and marketing', 'What each one cost, how long it ran and how many students and visas it brought. Add and change them on the Events and marketing page.');
+    const ev = card('Events and marketing', 'Cost, length, students and visas of each.');
     ev.append(h('a', { class: 'btn btn-sm no-print', href: '/events' }, 'Open Events and marketing'));
     const ranText = (e) => (e.endDate && e.endDate !== e.date ? `${e.date} to ${e.endDate}` : e.date);
     ev.append(data.events.length ? table(['Name', 'Ran', 'Days', 'Investment', 'Inquiries', 'Visas', 'Cost per inquiry', 'Cost per visa'], data.events.map((e) => [el('b', '', e.label), ranText(e), number(e.days), rupees(e.cost), number(e.students), number(e.visas), e.costPerStudent ? rupees(e.costPerStudent) : '', e.costPerVisa ? rupees(e.costPerVisa) : '']), { numCols: [2, 3, 4, 5, 6, 7] }) : el('div', 'p-empty', 'No event or marketing recorded yet.'));
@@ -129,7 +129,7 @@
   function renderDecisions() {
     const out = [chooser()];
     const list = data.findings;
-    const box = card('What needs a decision', list.length ? `${list.length} thing${list.length === 1 ? '' : 's'} the figures say you should act on, most urgent first. Press Why for the figures behind each.` : 'Nothing stands out right now: the figures are inside the limits this page watches.');
+    const box = card('What needs a decision', list.length ? `${list.length} to act on, most urgent first.` : 'Nothing stands out right now.');
     (allFindings ? list : list.slice(0, 5)).forEach((f, i) => {
       const a = el('article', `dc dc-${f.priority.toLowerCase()}`);
       const head = el('div', 'dc-head');
@@ -175,7 +175,7 @@
   function renderUniversities() {
     const out = [chooser()];
     const u = data.universities; const a = u.concentration.applications;
-    const uc = card('Universities', a.total ? `${a.top} holds ${a.topShare}% of the applications${a.count > 1 ? `, the top three ${a.top3Share}%` : ''}. ${a.topShare >= 50 ? 'That is a risk: if its rules or its agents change, half of this intake is affected.' : 'The applications are spread well.'}` : 'Where the students of this intake are placed.');
+    const uc = card('Universities', a.total ? `${a.top} holds ${a.topShare}% of the applications${a.count > 1 ? `, the top three ${a.top3Share}%` : ''}. ${a.topShare >= 50 ? 'A risk if its rules change.' : 'The applications are spread well.'}` : 'Where the students of this intake are placed.');
     uc.append(board(u.list, 'university'));
     out.push(uc);
     const pa = data.partners.concentration.applications;
@@ -193,7 +193,7 @@
   function renderPlan() {
     const p = data.plan; const t = data.target;
     const out = [chooser()];
-    const tc = card(`Visa target for ${data.scope}`, 'Set the target here. Everything below, and the printed proposal, is worked out from it and from your own earlier intakes.');
+    const tc = card(`Visa target for ${data.scope}`, 'Set the target: everything below follows from it.');
     const st = sayStatus(t);
     const line = el('p', 'plan-line'); line.append(el('span', `p-pill p-pill-${st[1]}`, st[0]), ' ', targetSentence(t));
     tc.append(line);
@@ -202,7 +202,7 @@
       const v = field('Visas you want from this intake', { value: t.visas ? String(t.visas) : '', max: 6 });
       const by = field('Visas needed by (day)', { kind: 'date', value: t.byDate });
       const stt = field('Teaching starts (day)', { kind: 'date', value: t.startGuessed ? '' : t.startDate, hint: t.startGuessed && t.startDate ? `Not set: the plan assumes ${t.startDate}` : '' });
-      const worth = field('What one visa earns the consultancy (Rs, average)', { value: plan.settings.valuePerVisa ? String(plan.settings.valuePerVisa) : '', max: 10, hint: 'Optional. Shows earnings and the return on marketing in the proposal.' });
+      const worth = field('What one visa earns the consultancy (Rs, average)', { value: plan.settings.valuePerVisa ? String(plan.settings.valuePerVisa) : '', max: 10, hint: 'Optional.' });
       f.append(v.wrap, by.wrap, stt.wrap, worth.wrap);
       const save = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save the target');
       save.addEventListener('click', async () => { try { await api('/api/planning/targets/' + data.selected, { visas: v.input.value, byDate: by.input.value, startDate: stt.input.value, note: t.note || '' }); await api('/api/planning/settings', { valuePerVisa: worth.input.value }); say('Saved'); load(); } catch (e) { say(e.message, true); } });
@@ -210,7 +210,7 @@
     }
     out.push(tc);
     if (p.needs.length) {
-      const nc = card('What it takes to reach the target', p.weeklyPace.applicationsPerWeek ? `To finish before applications close on ${p.weeklyPace.closes} (${p.weeklyPace.weeksLeft} weeks), you need about ${number(p.weeklyPace.applicationsPerWeek)} new applications every week.` : 'Working back from the target with the rates of your own earlier intakes.');
+      const nc = card('What it takes to reach the target', p.weeklyPace.applicationsPerWeek ? `To finish before applications close on ${p.weeklyPace.closes} (${p.weeklyPace.weeksLeft} weeks), you need about ${number(p.weeklyPace.applicationsPerWeek)} new applications every week.` : 'From the target and your earlier intakes.');
       const box = el('div', 'nd');
       p.needs.forEach((x) => {
         const row = el('div', 'nd-row');
@@ -224,7 +224,7 @@
     }
     const act = el('div', 'p-card plan-go no-print');
     act.append(el('div', '', ''), h('button', { class: 'btn btn-primary btn-lg', type: 'button', onclick: () => proposal() }, 'Make the intake proposal (2 pages, to print)'));
-    act.firstChild.append(el('b', '', 'The intake proposal'), el('p', 'p-muted', 'A two-page summary for your CEO: the target, where you stand, what it takes, where students come from and the decisions to take. It uses the target above.'));
+    act.firstChild.append(el('b', '', 'The intake proposal'), el('p', 'p-muted', 'A two-page summary of the target, progress and decisions.'));
     out.push(act);
     return out;
   }
@@ -262,7 +262,7 @@
     [['Students', s.students], ['Applied', s.applied], ['Paid', s.paid], ['Visas issued', s.visas]].forEach(([l, v]) => { const b = el('div', 'prop-stat'); b.append(el('b', '', number(v)), el('span', '', l)); stats.append(b); });
     p1.append(stats);
     p1.append(el('h2', '', 'The student journey'), chartBars(d.funnel.map((f, i) => ({ label: f.label, value: f.count, text: `${number(f.count)}${f.fromPrevious !== null ? '   (' + f.fromPrevious + '%)' : ''}`, color: i === d.funnel.length - 1 ? '#1f8a52' : '#1d2f52' }))));
-    p1.append(el('p', 'prop-note', 'The percentage is the share of the step before that went on.'));
+    p1.append(el('p', 'prop-note', '% of the step before.'));
     if (t && t.visas) {
       const likely = t.expectedTotal === null || t.expectedTotal === undefined ? null : Math.round(t.expectedTotal);
       p1.append(el('h2', '', 'Visas: now, expected and target'), chartBars([{ label: 'Issued so far', value: t.visasNow, color: '#1f8a52' }, ...(likely === null ? [] : [{ label: 'Expected at the end', value: likely, color: '#6b4fd8' }]), { label: 'Target', value: t.visas, color: '#b86a00' }]));
@@ -287,7 +287,7 @@
     const weakest = d.funnel.slice(1).filter((x, i) => d.funnel[i].count >= 10).sort((a, b) => a.fromPrevious - b.fromPrevious)[0];
     if (weakest) risks.push(`The weakest step is ${weakest.label.toLowerCase()}: only ${weakest.fromPrevious}% of the step before went on.`);
     if (risks.length) { p2.append(el('h2', '', 'Watch out for')); const ul = el('ul', 'prop-list'); risks.forEach((r) => ul.append(el('li', '', r))); p2.append(ul); }
-    p2.append(el('p', 'prop-foot', 'Every figure comes from the student sheet, the student cards and the management records. A rate from fewer than ten students is a hint, not evidence.'));
+    p2.append(el('p', 'prop-foot', 'From the sheet, the student cards and the records. Under ten students, a rate is only a hint.'));
     view.append(p2);
     const bar = el('div', 'p-actions no-print'); bar.style.margin = '0 0 12px';
     bar.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => window.print() }, 'Print or save as PDF'), h('button', { class: 'btn', type: 'button', onclick: () => { draw(); } }, 'Back to the plan'));

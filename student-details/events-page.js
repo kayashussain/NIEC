@@ -44,7 +44,7 @@
       ['Cost per visa', per(t.cost, t.visas), '', true],
     ]), { id: 'band' }));
     $('note').replaceChildren();
-    if (data.unlinkedSocial > 0) $('note').append(el('div', 'ev-note', `${number(data.unlinkedSocial)} social media ${data.unlinkedSocial === 1 ? 'inquiry is' : 'inquiries are'} not linked to a campaign. Upload the campaign's list to link them.`));
+    if (data.unlinkedSocial > 0) $('note').append(el('div', 'ev-note', `${number(data.unlinkedSocial)} social media ${data.unlinkedSocial === 1 ? 'inquiry is' : 'inquiries are'} not linked to a campaign.`));
     $('add').hidden = !data.canEdit;
     const shown = show === 'all' ? acts : acts.filter((a) => (show === 'Marketing' ? a.kind === 'Marketing' : a.kind !== 'Marketing'));
     $('count').textContent = acts.length ? `${shown.length} shown` : '';
@@ -94,7 +94,7 @@
     figs.style.marginTop = '20px';
     const upload = data.canEdit ? uploadPanel(a) : null;
     const people = el('section', 'ev-panel');
-    people.append(el('h3', '', 'Inquiries'), el('p', '', 'Everyone from this event, in every intake. Open a name to call, add a note or move the stage.'));
+    people.append(el('h3', '', 'Inquiries'), el('p', '', 'Everyone from this event, in every intake.'));
     const listBox = el('div'); listBox.innerHTML = '<div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     people.append(listBox);
     v.replaceChildren(back, head, figs, ...(upload ? [upload] : []), people);
@@ -130,7 +130,7 @@
 
   function uploadPanel(a) {
     const p = el('section', 'ev-panel');
-    p.append(el('h3', '', 'Upload the inquiry list'), el('p', '', 'Excel or CSV, one student per row. You review every row before it is saved.'));
+    p.append(el('h3', '', 'Upload the inquiry list'), el('p', '', 'Excel or CSV, one student per row. Checked before saving.'));
     const intake = h('select', {});
     (data.intakes || []).forEach((s) => intake.append(h('option', { value: s.id }, s.name)));
     const file = h('input', { type: 'file', accept: '.xlsx,.csv' });
@@ -148,7 +148,7 @@
       takeBack.disabled = false;
     });
     const more = el('div', 'ev-actions'); more.style.marginTop = '10px';
-    more.append(takeBack, el('span', 'p-muted', 'To fix a list: remove its inquiries, then upload the corrected file.'));
+    more.append(takeBack);
     p.append(row, more, out);
     file.addEventListener('change', async () => {
       const f = file.files && file.files[0];
@@ -185,7 +185,7 @@
     if (pre.missing && pre.missing.length) {
       gone = el('div', 'p-notice warn ev-missing');
       const words = el('div');
-      words.append(el('b', '', `${pre.missing.length} ${pre.missing.length === 1 ? 'student was' : 'students were'} on an earlier list but ${pre.missing.length === 1 ? 'is' : 'are'} not in this one.`), el('div', '', 'Nothing is changed for them: they stay tagged with this event. Check them on their cards.'));
+      words.append(el('b', '', `${pre.missing.length} ${pre.missing.length === 1 ? 'student was' : 'students were'} on an earlier list but ${pre.missing.length === 1 ? 'is' : 'are'} not in this one.`), el('div', '', 'They stay tagged with this event.'));
       const names = el('div', 'ev-missing-names');
       pre.missing.slice(0, 60).forEach((m) => { const b = h('button', { type: 'button', class: 'ev-missing-name', onclick: () => window.CardDrawer.open(m.id) }, m.name); b.title = `${m.intake} \u00b7 ${m.stage || 'no stage'}`; names.append(b); });
       if (pre.missing.length > 60) names.append(el('span', 'p-muted', `and ${pre.missing.length - 60} more`));
@@ -221,7 +221,7 @@
     pre.before.forEach((x) => line(x, 'Stays', 'already', x.why));
     const ok = h('button', { class: 'btn btn-danger', type: 'button', disabled: !pre.remove.length }, pre.remove.length ? `Remove ${pre.remove.length} inquir${pre.remove.length === 1 ? 'y' : 'ies'}` : 'Nothing to remove');
     ok.addEventListener('click', async () => {
-      if (!(await window.NiecUI.confirm(`Remove the ${pre.remove.length} inquir${pre.remove.length === 1 ? 'y' : 'ies'} this list added, with their cards? A copy of everything is saved first (Admin, Restore), and you can upload the corrected list straight after.`, { danger: true, confirmText: 'Remove' }))) return;
+      if (!(await window.NiecUI.confirm(`Remove the ${pre.remove.length} inquir${pre.remove.length === 1 ? 'y' : 'ies'} this list added? A copy is saved first.`, { danger: true, confirmText: 'Remove' }))) return;
       ok.disabled = true;
       try {
         const done = await api(`/api/activities/${a.id}/students/remove`, {});
@@ -269,7 +269,7 @@
       });
       cur.append(...curs);
       const conv = el('small', 'ev-conv');
-      const hint = () => { conv.textContent = currency === 'NPR' ? 'In Nepalese rupees.' : `In ${currency === 'USD' ? 'US dollars' : 'pounds'}: turned into rupees at today\u2019s rate when you save, and every total is in rupees.`; };
+      const hint = () => { conv.textContent = currency === 'NPR' ? 'In Nepalese rupees.' : `In ${currency === 'USD' ? 'US dollars' : 'pounds'}: turned into rupees at today\u2019s rate.`; };
       hint();
       f.cost.input.inputMode = 'decimal';
       const line = el('div', 'ev-money-row');
