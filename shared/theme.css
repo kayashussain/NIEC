@@ -1829,30 +1829,8 @@ select option { color: #1d1d1f; }
 .td-stat.good b { color: #248a3d; }
 .td-stat.warn b { color: #c45c00; }
 @media (max-width: 760px) { .td-pulse { grid-template-columns: auto 1fr; gap: 14px; padding: 16px; } .td-ring { width: 70px; height: 70px; } .td-pulse-words h2 { font-size: 19px; } .td-pulse-words p { font-size: 13.5px; } .td-stat { min-width: 0; padding: 8px 10px; } .td-stat b { font-size: 22px; } }
-/* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the team board (new) | from: under the day panel straight into one long list of tasks | to: a "Your teams" row of off-white rounded tiles, one per team: a round grey badge with the team's initials and its name, three numbers (open in near-black, 3+ days in orange, done this week in green) and a thin blue progress bar; a pressed tile has a blue ring and shows only that team's tasks; tiles lift slightly on hover */
-.td-board { margin: 0 0 22px; }
-.td-board-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 10px; }
-.td-board-head h2 { margin: 0; color: #1d1d1f; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
-.td-board-sub { color: #6e6e73; font-size: 13.5px; }
-.td-board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.td-team { display: grid; gap: 12px; padding: 16px 18px; border: 0; border-radius: 18px; background: #fbfbfd; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 28px -20px rgba(0, 0, 0, .2); transition: transform .2s, box-shadow .2s; }
-.td-team:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 14px 32px -20px rgba(0, 0, 0, .28); }
-.td-team:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
-.td-team.is-on { box-shadow: 0 0 0 2px #0071e3, 0 8px 28px -20px rgba(0, 0, 0, .2); }
-.td-team-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.td-team-av { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font-size: 13px; font-weight: 700; }
-.td-team-name { overflow: hidden; font-size: 15.5px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
-.td-team-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.td-team-num { display: grid; }
-.td-team-num b { font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.td-team-num small { color: #6e6e73; font-size: 12px; }
-.td-team-num.warn b { color: #c45c00; }
-.td-team-num.good b { color: #248a3d; }
-.td-team-bar { display: block; height: 5px; border-radius: 999px; background: #e8e8ed; overflow: hidden; }
-.td-team-fill { display: block; height: 100%; border-radius: 999px; background: #0071e3; transition: width .4s; }
-@media (prefers-reduced-motion: reduce) { .td-team, .td-team-fill { transition: none; } .td-team:hover { transform: none; } }
+/* 🔴 CSS CHANGED (2026-11-15): REMOVED later the same day (the owner: no List view, so no team tiles); kept as history: Today for Admin and the Manager, the team board (new) | from: under the day panel straight into one long list of tasks | to: a "Your teams" row of off-white rounded tiles, one per team: a round grey badge with the team's initials and its name, three numbers (open in near-black, 3+ days in orange, done this week in green) and a thin blue progress bar; a pressed tile has a blue ring and shows only that team's tasks; tiles lift slightly on hover */
 /* 🔴 CSS CHANGED (2026-11-15): Today's team tiles on a phone | from: one tile per row across the whole width, so three teams filled the screen | to: two smaller tiles per row (less padding, numbers 19px, the badge 28px), a long team name wraps onto a second line instead of ending in "..." */
-@media (max-width: 600px) { .td-board-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .td-team { gap: 10px; padding: 12px; } .td-team-av { width: 28px; height: 28px; font-size: 12px; } .td-team-name { font-size: 14px; white-space: normal; line-height: 1.25; } .td-team-num b { font-size: 19px; } .td-team-num small { font-size: 11.5px; } }
 .td-ring b.td-ring-tick { color: #0071e3; font-size: 28px; }
 @media (prefers-reduced-motion: reduce) { .td-ring { animation: none; } }
 /* 🔴 CSS CHANGED (2026-11-14): Activity, a long change | from: every line of a change listed (a recalculation could list 60 lines) | to: the first six lines, then a blue "Show N more" that opens the rest */
@@ -2357,7 +2335,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 @media (prefers-reduced-motion: reduce) { .bp-card { transition: none; } .bp-card:hover { transform: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the task Board (new) | from: every task as a tall card with its own update box, one under the other, behind You gave / Given by others, with the team tiles above | to: a "Board | List" switch beside the Tasks title (the Board first); the Board is a row of soft grey columns, one per team ("For you" first), each headed by a coloured dot, the team's name, a round count, who has its tasks, an orange "N waiting 3+ days" and a thin blue progress line; inside, each task is a small off-white tile with the student in bold and the stage in grey, the task in two lines, then the tag as a coloured pill, how long it has waited ("Today", "4 days" in orange from 3 days), and a speech bubble with the number of updates; a new update gives the tile a blue edge on its left, a Super priority task a red one; tiles lift on hover; "Show 3 done this week" at the foot of each column shows the done ones faded; the columns scroll sideways on a narrow screen; pressing a tile opens the whole task in a window; the team tiles show only in List */
-.tb-layout { margin-left: 14px; vertical-align: middle; }
 .td-tasks-head > div:first-child { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .tb-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(290px, 1fr); gap: 14px; overflow-x: auto; padding: 4px 2px 14px; scroll-snap-type: x proximity; }
 .tb-col { display: flex; flex-direction: column; min-width: 0; border-radius: 20px; background: #ebebef; scroll-snap-align: start; }
@@ -2372,17 +2349,11 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-col-n { min-width: 24px; height: 22px; padding: 0 7px; border-radius: 999px; background: #fbfbfd; color: #1d1d1f; font-size: 13px; font-weight: 700; line-height: 22px; text-align: center; font-variant-numeric: tabular-nums; }
 .tb-col-sub { display: flex; flex-wrap: wrap; gap: 4px 10px; color: #6e6e73; font-size: 13px; }
 .tb-col-slow { color: #c45c00; font-weight: 600; }
-.tb-col-bar { display: block; height: 4px; margin-top: 6px; border-radius: 999px; background: #d9d9de; overflow: hidden; }
-.tb-col-bar i { display: block; height: 100%; border-radius: 999px; background: #0071e3; transition: width .5s cubic-bezier(.32, .72, 0, 1); }
 .tb-col-body { display: grid; align-content: start; gap: 10px; padding: 0 10px 12px; }
-.tb-col-empty { padding: 18px 8px; color: #6e6e73; font-size: 14px; text-align: center; }
 .tb-tile { display: grid; gap: 6px; width: 100%; padding: 12px 14px; border: 0; border-left: 3px solid transparent; border-radius: 14px; background: #fbfbfd; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 18px -14px rgba(0, 0, 0, .25); transition: transform .2s cubic-bezier(.32, .72, 0, 1), box-shadow .2s ease; animation: isr-rise-in .45s cubic-bezier(.32, .72, 0, 1) backwards; }
 .tb-tile:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 14px 28px -16px rgba(0, 0, 0, .3); }
 .tb-tile:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
 .tb-tile.is-new { border-left-color: #0071e3; }
-.tb-tile.is-super { border-left-color: #ff3b30; }
-.tb-tile.is-done { opacity: .6; }
-.tb-tile.is-done .tb-text { text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .3); }
 .tb-tile-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .tb-student { overflow: hidden; font-size: 15px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
 .tb-stage { flex: none; color: #8e8e93; font-size: 12.5px; }
@@ -2397,14 +2368,11 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-tag.tag-medical { background: #fce8ef; color: #b0305c; }
 .tb-tag.tag-visa { background: #f1e9fb; color: #6b3fa0; }
 .tb-tag.tag-other { background: #ececf0; color: #515154; }
-.tb-prio { padding: 1px 9px; border-radius: 999px; background: #ffe5e3; color: #c41e14; font-size: 12.5px; font-weight: 600; }
 .tb-age { margin-left: auto; color: #6e6e73; font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .tb-age.is-slow { color: #c45c00; font-weight: 600; }
 .tb-age.is-later { color: #0071e3; }
 .tb-updates { display: inline-flex; align-items: center; gap: 3px; color: #6e6e73; font-size: 12.5px; }
 .tb-updates svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
-.tb-done-toggle { justify-self: center; padding: 4px 12px; border: 0; border-radius: 999px; background: transparent; color: #6e6e73; font: 500 13px var(--font); cursor: pointer; }
-.tb-done-toggle:hover { background: #dedee3; color: #1d1d1f; }
 .tb-dialog-body .td-card, .tb-dialog-body > article { box-shadow: none; }
 @media (max-width: 700px) { .tb-board { grid-auto-columns: 84%; } .tb-layout { margin-left: 0; } }
 @media (prefers-reduced-motion: reduce) { .tb-tile { animation: none; transition: none; } .tb-tile:hover { transform: none; } .tb-col-bar i { transition: none; } }
@@ -2430,23 +2398,9 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-tag-pick .td-answer[aria-checked="true"] { background: #e6f0fc; color: #0058b0; }
 .td-done-form > .p-muted { margin: -4px 0 0; }
 
-/* 🔴 CSS CHANGED (2026-11-15): the Admin task Board, calmer and clearer | from: the Board started straight with the tag pills; a tile showed the student, the task, its tag and age only; a column with nothing open was as tall as the others | to: a focus row above the Board, four quiet off-white buttons each with a large number over a small word (Everything, Waiting 3+ days with an orange number, New updates with a blue number, Super priority with a red number), the chosen one with a blue ring; each tile also shows the latest update in one grey line ("Asha: submitted on the portal"); a column with nothing open is shorter and lighter; the column background a softer grey */
-.tb-focus { display: flex; flex-wrap: wrap; gap: 10px; margin: 2px 0 14px; }
-.tb-focus-btn { display: grid; gap: 1px; min-width: 120px; padding: 10px 16px; border: 0; border-radius: 14px; background: #fbfbfd; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); transition: box-shadow .2s, transform .2s; }
-.tb-focus-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 10px 22px -16px rgba(0, 0, 0, .3); }
-.tb-focus-btn b { font-size: 22px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.tb-focus-btn span { color: #6e6e73; font-size: 13px; }
-.tb-focus-btn.is-slow b { color: #c45c00; }
-.tb-focus-btn.is-new b { color: #0071e3; }
-.tb-focus-btn.is-super b { color: #d70015; }
-.tb-focus-btn[aria-selected="true"] { box-shadow: 0 0 0 2px #0071e3; }
-.tb-focus-btn:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+/* 🔴 CSS CHANGED (2026-11-15): the Admin task Board, calmer and clearer (the focus row and the lighter empty column were removed later the same day) | from: the Board started straight with the tag pills; a tile showed the student, the task, its tag and age only; a column with nothing open was as tall as the others | to: a focus row above the Board, four quiet off-white buttons each with a large number over a small word (Everything, Waiting 3+ days with an orange number, New updates with a blue number, Super priority with a red number), the chosen one with a blue ring; each tile also shows the latest update in one grey line ("Asha: submitted on the portal"); a column with nothing open is shorter and lighter; the column background a softer grey */
 .tb-last { overflow: hidden; color: #6e6e73; font-size: 13px; white-space: nowrap; text-overflow: ellipsis; }
 .tb-col { background: #efeff3; }
-.tb-col.is-quiet { align-self: start; background: #f3f3f6; }
-.tb-col.is-quiet .tb-col-name b { color: #6e6e73; }
-@media (max-width: 600px) { .tb-focus-btn { min-width: 0; flex: 1 1 40%; } }
-@media (prefers-reduced-motion: reduce) { .tb-focus-btn { transition: none; } .tb-focus-btn:hover { transform: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-15): the student card's tabs on a phone (a bug fix) | from: Notes, University options and Send a message ran off the right edge ("Send a messa...") and had to be scrolled | to: on a phone the three share the full width, each a little smaller (13px, less padding), so all three always show */
 @media (max-width: 600px) {
@@ -2456,3 +2410,10 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 
 /* 🔴 CSS CHANGED (2026-11-15): University options, an applied university (new) | from: no sign on an option that an application was sent | to: after the university's name a small soft green pill "Applied 15 Nov 2026" */
 .p-applied { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 999px; background: #e3f5e8; color: #1f7a35; font-size: 12.5px; font-weight: 600; vertical-align: middle; }
+
+
+/* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the Board only, and wider | from: a Board | List switch beside Tasks, a focus row (Everything, New updates ...), "Show N done this week" and a thin progress line in each column, a red edge and a "Super priority" pill on some tiles, the team tiles above the List, and the page 1040px wide | to: the Board alone (the styles of the removed parts are deleted), the page up to 1600px wide so more columns and tiles show at once, and the columns a little wider (at least 300px); the top panel has no ring any more (it only repeated the number in the headline): the headline, then "waiting 3+ days" and "students waiting"; the "All" pill on the Board has no number (it repeated the same total) */
+.td-pulse { grid-template-columns: 1fr auto auto; }
+@media (max-width: 760px) { .td-pulse { grid-template-columns: 1fr 1fr; } .td-pulse > .td-pulse-words { grid-column: 1 / -1; } }
+.td-page.is-board { max-width: 1600px; }
+.td-page.is-board .tb-board { grid-auto-columns: minmax(300px, 1fr); }

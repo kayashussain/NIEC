@@ -181,10 +181,7 @@
       const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submit the application to Coventry University.' });
       // How important it is, and what it is about: the tag is chosen by hand by whoever gives the task (NOC, Medical, Application,
       // Documents and the rest), never set by the system (the owner, 15 Nov 2026).
-      const prio = window.Portal.priorityPicker('high');
       const tag = window.Portal.tagPicker('');
-      const prioWrap = el('div', 'p-field p-wide');
-      prioWrap.append(el('span', 'p-label', 'How important is it?'), prio.node);
       const tagWrap = el('div', 'p-field p-wide');
       tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
       const msg = el('div', 'p-msg');
@@ -195,10 +192,10 @@
         if (!text.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         if (!tag.value()) { msg.textContent = 'Choose what the task is about.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await save('tasks', { team: team.input.value, text: text.input.value, priority: prio.value(), tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        try { await save('tasks', { team: team.input.value, text: text.input.value, tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, tagWrap, prioWrap);
+      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, tagWrap);
       body.append(g, msg, foot);
       setTimeout(() => text.input.focus(), 0);
     }).then((done) => { if (done) render(); });
@@ -207,8 +204,8 @@
   // task" button is at the top).
   function tasksCard() {
     const lastAt = (t) => { const c = t.comments || []; return String(c.length ? c[c.length - 1].at : t.at); };
-    // Open ones first, in order of how important each was marked; the done ones after, the newest word first.
-    const tasks = (data.card.tasks || []).slice().sort((a, b) => (a.done - b.done) || (a.done ? 0 : window.Portal.taskPriority(b) - window.Portal.taskPriority(a)) || lastAt(b).localeCompare(lastAt(a)));
+    // Only the open tasks: a done one is in Notes and history (the owner, 15 Nov 2026). Something new first, then the longest waiting.
+    const tasks = (data.card.tasks || []).filter((t) => !t.done).sort((a, b) => window.Portal.taskPriority(b) - window.Portal.taskPriority(a) || lastAt(b).localeCompare(lastAt(a)));
     if (!tasks.length) return null;
     const c = el('section', 'p-card p-tasks');
     const head = el('div', 'p-card-head');

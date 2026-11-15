@@ -37,7 +37,7 @@
     const acts = data.activities;
     const t = acts.reduce((s, a) => ({ cost: s.cost + (a.cost || 0), leads: s.leads + a.leads, visas: s.visas + a.visas }), { cost: 0, leads: 0, visas: 0 });
     $('band').replaceWith(Object.assign(band([
-      ['Total investment', rupees(t.cost) || 'Rs 0', `Across ${acts.length} event${acts.length === 1 ? '' : 's'} and campaigns, in rupees${acts.some((a) => a.costCurrency && a.costCurrency !== 'NPR') ? ' (dollars and pounds at the day\u2019s rate)' : ''}`],
+      ['Total cost', rupees(t.cost) || 'Rs 0', `${acts.length} event${acts.length === 1 ? '' : 's'} and campaigns, in rupees`],
       ['Inquiries', number(t.leads)],
       ['Visas', number(t.visas)],
       ['Cost per inquiry', per(t.cost, t.leads), '', true],
@@ -52,7 +52,7 @@
     if (!acts.length) { list.replaceChildren(el('div', 'ev-empty', 'No events or campaigns yet.')); return; }
     if (!shown.length) { list.replaceChildren(el('div', 'ev-empty', 'Nothing here yet.')); return; }
     const head = el('div', 'ev-lrow head');
-    ['Event or campaign', 'Investment', 'Inquiries', 'Visas', 'Per inquiry', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
+    ['Event or campaign', 'Cost', 'Inquiries', 'Visas', 'Per inquiry', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
     list.replaceChildren(head, ...shown.map((a) => {
       const r = el('div', 'ev-lrow item');
       r.style.setProperty('--i', String(Math.min(shown.indexOf(a), 12)));
@@ -61,7 +61,7 @@
       const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', `${ran(a)} · ${a.days} day${a.days === 1 ? '' : 's'}`));
       who.append(el('div', 'ev-lname', a.name), meta);
       const num = (label, v, gold) => { const d = el('div', 'num' + (gold ? ' gold' : ''), v); d.dataset.label = label; return d; };
-      r.append(who, num('Investment', a.cost ? rupees(a.cost) : '-'), num('Inquiries', number(a.leads)), num('Visas', number(a.visas)), num('Per inquiry', per(a.cost, a.leads), a.cost > 0 && a.leads > 0), num('Per visa', per(a.cost, a.visas), a.cost > 0 && a.visas > 0), el('div', 'ev-go', '→'));
+      r.append(who, num('Cost', a.cost ? rupees(a.cost) : '-'), num('Inquiries', number(a.leads)), num('Visas', number(a.visas)), num('Per inquiry', per(a.cost, a.leads), a.cost > 0 && a.leads > 0), num('Per visa', per(a.cost, a.visas), a.cost > 0 && a.visas > 0), el('div', 'ev-go', '→'));
       const go = () => window.NiecUI.swap(() => { openEvent(a.id); window.scrollTo({ top: 0 }); });
       r.addEventListener('click', go);
       r.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
@@ -85,7 +85,7 @@
     head.append(left);
     if (data.canEdit) head.append(h('button', { class: 'btn', type: 'button', onclick: () => form(a) }, 'Edit'));
     const figs = band([
-      ['Investment', a.cost ? rupees(a.cost) : 'Not entered', paidIn(a) || (data.canEdit && !a.cost ? 'Add it with Edit' : '')],
+      ['Cost', a.cost ? rupees(a.cost) : 'Not entered', paidIn(a) || (data.canEdit && !a.cost ? 'Add it with Edit' : '')],
       ['Inquiries', number(a.leads), `${number(a.applied)} applied`],
       ['Visas', number(a.visas)],
       ['Cost per inquiry', per(a.cost, a.leads), '', true],
@@ -105,7 +105,7 @@
   async function loadPeople(a, box) {
     let list;
     try { list = (await api(`/api/activities/${a.id}/students`)).students; } catch (e) { box.replaceChildren(el('div', 'p-notice bad', e.message)); return; }
-    if (!list.length) { box.replaceChildren(el('div', 'ev-empty', data.canEdit ? 'No inquiries yet. Upload the list above.' : 'No inquiries yet.')); return; }
+    if (!list.length) { box.replaceChildren(el('div', 'ev-empty', data.canEdit ? 'No inquiries yet.' : 'No inquiries yet.')); return; }
     const search = h('input', { class: 'ev-search', type: 'search', placeholder: 'Search a name or phone', 'aria-label': 'Search the inquiries' });
     const rows = el('div', 'ev-people');
     const drawPeople = () => {
@@ -216,7 +216,7 @@
       .forEach(([k, t]) => counts.append(el('span', `ev-count ${k}`, t)));
     const list = el('div', 'ev-review');
     const line = (x, what, look, why) => { const r = el('div', 'ev-rline'); r.append(el('span', `what ${look}`, what), el('b', '', x.name), el('span', '', `${x.intake}, ${x.stage || 'no stage'}`), el('span', 'why', why)); list.append(r); };
-    pre.remove.forEach((x) => line(x, 'Remove', 'other', 'Added by this list, not worked on yet'));
+    pre.remove.forEach((x) => line(x, 'Remove', 'other', 'Added by this list'));
     pre.worked.forEach((x) => line(x, 'Stays', 'already', x.why));
     pre.before.forEach((x) => line(x, 'Stays', 'already', x.why));
     const ok = h('button', { class: 'btn btn-danger', type: 'button', disabled: !pre.remove.length }, pre.remove.length ? `Remove ${pre.remove.length} inquir${pre.remove.length === 1 ? 'y' : 'ies'}` : 'Nothing to remove');
@@ -241,7 +241,7 @@
       const f = {
         name: field('Name', { value: a && a.name, max: 120, wide: true, placeholder: 'e.g. UK Education Fair, Kathmandu' }),
         place: field('Venue or page (optional)', { value: a && a.place, max: 120, placeholder: 'e.g. Hotel Annapurna' }),
-        cost: field('Investment', { value: a && (a.costAmount || a.cost) ? String(a.costAmount || a.cost) : '', max: 14, placeholder: 'e.g. 25000' }),
+        cost: field('Cost', { value: a && (a.costAmount || a.cost) ? String(a.costAmount || a.cost) : '', max: 14, placeholder: 'e.g. 25000' }),
         date: field('Starts', { kind: 'date', value: a && a.date }),
         endDate: field('Ends (optional)', { kind: 'date', value: a && a.endDate }),
         note: field('Note (optional)', { kind: 'area', value: a && a.note, max: 600, wide: true }),
@@ -269,7 +269,7 @@
       });
       cur.append(...curs);
       const conv = el('small', 'ev-conv');
-      const hint = () => { conv.textContent = currency === 'NPR' ? 'In Nepalese rupees.' : `In ${currency === 'USD' ? 'US dollars' : 'pounds'}: turned into rupees at today\u2019s rate.`; };
+      const hint = () => { conv.textContent = currency === 'NPR' ? 'In rupees.' : `Turned into rupees at today\u2019s rate.`; };
       hint();
       f.cost.input.inputMode = 'decimal';
       const line = el('div', 'ev-money-row');
@@ -282,11 +282,11 @@
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'));
-      if (a) foot.append(h('button', { class: 'btn btn-danger', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this event? Its inquiries stay in All Students.', { danger: true, confirmText: 'Remove' })) { await api(`/api/planning/events/${a.id}/delete`, {}); close('removed'); } } }, 'Remove'));
+      if (a) foot.append(h('button', { class: 'btn btn-danger', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this event? Its students stay.', { danger: true, confirmText: 'Remove' })) { await api(`/api/planning/events/${a.id}/delete`, {}); close('removed'); } } }, 'Remove'));
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
       ok.addEventListener('click', async () => {
         if (ok.disabled) return;
-        if (!channel) { msg.textContent = 'Please choose where it ran.'; msg.className = 'p-msg error'; return; }
+        if (!channel) { msg.textContent = 'Choose where it ran.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
         try {
           // The older "type" of an entry is sent back as it was, so nothing stored is lost.

@@ -69,10 +69,10 @@
     const a = apps || { applicants: 0 };
     const cards = [
       { label: 'Students', value: num(s.students), color: 'var(--s1)', series: null, hint: `${num(s.active)} still active` },
-      { label: 'Applicants', value: num(a.applicants), color: COLORS.applied, series: trend.map((t) => t.applied), hint: `${pct(s.toApplication)} of students` },
+      { label: 'Applied', value: num(a.applicants), color: COLORS.applied, series: trend.map((t) => t.applied), hint: `${pct(s.toApplication)} of students` },
       { label: 'Offers', value: num(s.offers), color: COLORS.offer, series: trend.map((t) => t.offer), hint: `${pct(s.toOffer)} of applicants` },
-      { label: 'Payments', value: num(s.paid), color: COLORS.paid, series: trend.map((t) => t.paid), hint: `${pct(s.toPayment)} of offers` },
-      { label: 'Visas issued', value: num(s.visas), color: COLORS.visa, series: trend.map((t) => t.visa), hint: ins.target && ins.target.visas ? `target ${ins.target.visas}` : `${pct(s.visaSuccess)} of decisions` },
+      { label: 'Paid', value: num(s.paid), color: COLORS.paid, series: trend.map((t) => t.paid), hint: `${pct(s.toPayment)} of offers` },
+      { label: 'Visas', value: num(s.visas), color: COLORS.visa, series: trend.map((t) => t.visa), hint: ins.target && ins.target.visas ? `target ${ins.target.visas}` : `${pct(s.visaSuccess)} of decisions` },
     ];
     const row = el('div', 'ov-kpis');
     cards.forEach((c) => {

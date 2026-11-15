@@ -58,8 +58,8 @@
     const sheet = data.onSheet || []; // named in the University Partner column, not set up yet
     const active = all.filter((p) => p.status === 'Active');
     const visas = all.reduce((n, p) => n + stats(p.name).visas, 0) + sheet.reduce((n, x) => n + stats(x.name).visas, 0);
-    const band = [[`Active ${WORD.one}s`, number(active.length + sheet.length), sheet.length ? `${number(sheet.length)} named on the sheet, not set up yet` : ''], ['Visas through them', number(visas), 'Every intake on the sheet']];
-    if (KIND === 'b2b') band.splice(2, 0, ['Ready to submit', `${number(active.filter((p) => p.applyPortal || p.applyEmail).length)} of ${number(active.length + sheet.length)}`, 'With a portal or an email']);
+    const band = [[`Active ${WORD.one}s`, number(active.length + sheet.length), sheet.length ? `${number(sheet.length)} named on the sheet, not set up yet` : ''], ['Visas', number(visas), 'Every intake on the sheet']];
+    if (KIND === 'b2b') band.splice(2, 0, ['Ready to apply', `${number(active.filter((p) => p.applyPortal || p.applyEmail).length)} of ${number(active.length + sheet.length)}`, 'With a portal or an email']);
     $('kpis').replaceChildren(...band.map(([label, v, sub, warn]) => { const d = el('div', warn ? 'warn' : ''); d.append(el('span', '', label), el('b', '', v), el('small', '', sub || '')); return d; }));
     const q = $('search').value.trim().toLowerCase();
     const hit = (name, city) => !q || `${name} ${city || ''}`.toLowerCase().includes(q);

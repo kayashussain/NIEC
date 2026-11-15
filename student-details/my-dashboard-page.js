@@ -82,13 +82,12 @@
     const tk = el('a', 'md-taskline');
     tk.href = '/today';
     tk.append(el('b', '', d.tasks.open ? `${num(d.tasks.open)} open task${d.tasks.open === 1 ? '' : 's'}` : 'No open task'),
-      el('span', '', `${num(d.tasks.doneWeek)} done this week`),
       el('span', 'md-taskline-go', 'Open on Today'));
     page.append(tk);
 
     // What waits for the team now: one row per kind of work, the count and the first students, each opening their card.
     if (d.todo && d.todo.length) {
-      const c = card('To do now', 'Longest waiting first.', 'md-todo');
+      const c = card('Needs attention', 'Longest waiting first.', 'md-todo');
       const list = el('div', 'md-todo-list');
       d.todo.forEach((x) => {
         const row = el('div', 'md-todo-row');

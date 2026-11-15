@@ -90,7 +90,7 @@
       s.details.forEach((d) => rows.push({ sub: true, cells: [d.label, number(d.students), number(d.applied), number(d.paid), number(d.visas), percent(d.leadToVisa) + (d.low ? ' *' : ''), d.spend ? rupees(d.spend) : '', d.costPerStudent ? rupees(d.costPerStudent) : '', d.costPerApplication ? rupees(d.costPerApplication) : '', d.costPerVisa ? rupees(d.costPerVisa) : ''] }));
     });
     const ch = card('Where students come from, and what each source costs', 'Each source and what is inside it. Costs are marketing spend only; blank means none recorded.',
-      table(['Source and where exactly', 'Students', 'Applied', 'Paid', 'Visas', 'Student to visa', 'Marketing spent', 'Cost per student', 'Cost per application', 'Cost per visa'], rows, { numCols: [1, 2, 3, 4, 5, 6, 7, 8, 9] }), lowNote());
+      table(['Source and where exactly', 'Students', 'Applied', 'Paid', 'Visas', 'Student to visa', 'Cost', 'Cost per student', 'Cost per application', 'Cost per visa'], rows, { numCols: [1, 2, 3, 4, 5, 6, 7, 8, 9] }), lowNote());
     const out = [chooser(), card('Where the marketing money figures come from', 'Costs come only from what you enter under Marketing spend and Events. Add a line each time you pay.'), ch];
     // spend
     const spendSec = card('Marketing spend', 'What was paid, by month and source.');
@@ -102,7 +102,7 @@
     const ev = card('Events and marketing', 'Cost, length, students and visas of each.');
     ev.append(h('a', { class: 'btn btn-sm no-print', href: '/events' }, 'Open Events and marketing'));
     const ranText = (e) => (e.endDate && e.endDate !== e.date ? `${e.date} to ${e.endDate}` : e.date);
-    ev.append(data.events.length ? table(['Name', 'Ran', 'Days', 'Investment', 'Inquiries', 'Visas', 'Cost per inquiry', 'Cost per visa'], data.events.map((e) => [el('b', '', e.label), ranText(e), number(e.days), rupees(e.cost), number(e.students), number(e.visas), e.costPerStudent ? rupees(e.costPerStudent) : '', e.costPerVisa ? rupees(e.costPerVisa) : '']), { numCols: [2, 3, 4, 5, 6, 7] }) : el('div', 'p-empty', 'No event or marketing recorded yet.'));
+    ev.append(data.events.length ? table(['Name', 'Ran', 'Days', 'Cost', 'Inquiries', 'Visas', 'Cost per inquiry', 'Cost per visa'], data.events.map((e) => [el('b', '', e.label), ranText(e), number(e.days), rupees(e.cost), number(e.students), number(e.visas), e.costPerStudent ? rupees(e.costPerStudent) : '', e.costPerVisa ? rupees(e.costPerVisa) : '']), { numCols: [2, 3, 4, 5, 6, 7] }) : el('div', 'p-empty', 'No event or marketing recorded yet.'));
     out.push(ev);
     return out;
   }

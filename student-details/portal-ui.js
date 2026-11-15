@@ -397,7 +397,7 @@
   }
   // One task, the same on Today and on the student card (the owner, 15 Nov 2026: "as Apple would make it"): a round tick; the task
   // in semibold; beside it, on the right, its updates (a speech bubble with how many, a red count when something is new) and "...";
-  // under it one grey line with the priority (when not the usual), the tag, the student and the stage; then who gave it to whom and
+  // under it one grey line with the tag, the student and the stage; then who gave it to whom and
   // when, in small grey type. The updates open under the task.
   //   o: { rowId, me, teams, mayTick, tickTitle, canWrite, canChange, unread, stage, student: { name, href } | null, fromName,
   //        toName, actions: [[label, onClick, danger]], onTick: async (done) => {}, onChanged }
@@ -501,7 +501,6 @@
   function taskCard(t, o) {
     const r = el('div', `td-task${t.done ? ' is-done' : ''}${o.unread ? ' has-unread' : ''}`);
     r.dataset.taskId = t.id;
-    if (!t.done && priorityOf(t) === 'super') r.classList.add('is-super');
     const tick = h('button', { class: 'td-check', type: 'button', 'aria-pressed': String(t.done), title: o.mayTick ? (t.done ? 'Mark as not done' : 'Mark as done') : (o.tickTitle || ''), 'aria-label': t.done ? 'Mark as not done' : 'Mark as done', disabled: !o.mayTick });
     tick.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     tick.addEventListener('click', async () => {
@@ -537,8 +536,8 @@
     top.append(head);
     const side = el('div', 'td-side');
     top.append(side);
-    // One quiet line under the task (the owner, 15 Nov 2026: the tasks looked overwhelming): the day it waits for, the priority and
-    // the tag, then who gave it to whom and when. Everything else stays out of sight until it is asked for.
+    // One quiet line under the task (the owner, 15 Nov 2026: the tasks looked overwhelming): the day it waits for and the tag, then
+    // who gave it to whom and when. Everything else stays out of sight until it is asked for.
     const sub = el('div', 'td-sub td-meta');
     const badges = taskBadges(t, { rowId: o.rowId, stage: o.stage, canChange: o.canChange, onChanged: o.onChanged });
     sub.append(...badges.childNodes);
@@ -583,31 +582,22 @@
     return r;
   }
 
-  // ---- what a task is about, how important it is (the owner, 15 Nov 2026), and the order the tasks are listed in ----
+  // ---- what a task is about, and the order the tasks are listed in ----
   const F = () => root.CardFields || {};
   const TAGS = () => (F().TASK_TAGS || [['other', 'Other']]);
-  const PRIORITIES = () => (F().TASK_PRIORITIES || [['super', 'Super priority'], ['high', 'Priority'], ['medium', 'Medium']]);
   const tagOf = (task, stage) => (F().taskTag ? F().taskTag(task, stage) : (task.tag || 'other'));
-  const priorityOf = (task) => (F().taskPriorityOf ? F().taskPriorityOf(task) : (task.priority || 'high'));
   const tagLabel = (id) => (TAGS().find(([k]) => k === id) || [id, 'Other'])[1];
-  const priorityLabel = (id) => (PRIORITIES().find(([k]) => k === id) || [id, 'Priority'])[1];
-  // The order of a list: Super priority, then Priority, then Medium (as chosen by whoever gave the task); inside each, a task with
-  // something new on it first, then the one waiting longest. No date or "do first" is worked out by the system any more (the owner,
-  // 15 Nov 2026: a task given today was marked "Do first" and everything looked urgent).
-  const RANK = { super: 3, high: 2, medium: 1 };
+  // The order of a list: a task with something new on it first, then the one waiting longest (no priorities, the owner, 15 Nov 2026).
   function taskPriority(t) {
-    if (t.done) return -1;
-    return (RANK[priorityOf(t)] || 2) * 1e13 + (t.unread ? 1e12 : 0) + (1e12 - 1 - Math.min(1e12 - 1, Date.parse(t.at || 0) / 1000 || 0));
+    return (t.unread ? 1e12 : 0) + (1e12 - 1 - Math.min(1e12 - 1, Date.parse(t.at || 0) / 1000 || 0));
   }
-  // The priority (only when it is not the usual Priority, so the eye goes to what matters) and the tag, as two small pills. Whoever may
-  // change them presses either to choose again.
+
+  // The tag as a small pill; whoever may change it presses it to choose again.
   function taskBadges(task, { rowId, stage, canChange, onChanged }) {
     const line = el('div', 'td-tag-line');
-    const pr = priorityOf(task);
     const tag = tagOf(task, stage);
-    const open = (e) => { e.stopPropagation(); changeTask(task, { rowId, tag, priority: pr }).then((done) => { if (done && onChanged) onChanged(); }); };
-    const pill = (cls, text) => { const b = h('button', { class: cls, type: 'button', disabled: !canChange, title: canChange ? 'Change the tag or the priority' : '' }, text); if (canChange) b.addEventListener('click', open); return b; };
-    if (pr !== 'high') line.append(pill(`td-prio prio-${pr}`, priorityLabel(pr)));
+    const open = (e) => { e.stopPropagation(); changeTask(task, { rowId, tag }).then((done) => { if (done && onChanged) onChanged(); }); };
+    const pill = (cls, text) => { const b = h('button', { class: cls, type: 'button', disabled: !canChange, title: canChange ? 'Change the tag' : '' }, text); if (canChange) b.addEventListener('click', open); return b; };
     line.append(pill(`td-tag tag-${tag}`, tagLabel(tag)));
     return line;
   }
@@ -617,7 +607,6 @@
     return dialog('Edit the task', (body, close) => {
       const words = field('What should they do?', { kind: 'area', max: 2000, wide: true, value: task.text });
       words.input.rows = 3;
-      const pr = priorityPicker(priorityOf(task));
       // The tag is chosen by hand here too (the owner, 15 Nov 2026); an older task with none shows the one it was shown with.
       const tg = tagPicker(tagOf(task, stage));
       const field2 = (label, ...nodes) => { const w = el('div', 'p-field p-wide'); w.append(el('span', 'p-label', label), ...nodes); return w; };
@@ -627,10 +616,10 @@
       ok.addEventListener('click', async () => {
         if (!words.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { text: words.input.value, priority: pr.value(), tag: tg.value() }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; ok.disabled = false; }
+        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { text: words.input.value, tag: tg.value() }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(words.wrap, field2('What is it about?', tg.node), field2('How important is it?', pr.node));
+      const g = el('div', 'p-form'); g.append(words.wrap, field2('What is it about?', tg.node));
       body.append(g, el('p', 'p-muted p-small', 'The team is told it was edited.'), msg, foot);
       setTimeout(() => { words.input.focus(); words.input.setSelectionRange(words.input.value.length, words.input.value.length); }, 0);
     });
@@ -659,20 +648,17 @@
       body.append(el('p', 'p-muted p-small', 'It comes back to Today on that day.'), g, msg, foot);
     });
   }
-  function changeTask(task, { rowId, tag, priority }) {
-    return dialog('Change the task', (body, close) => {
-      const pr = priorityPicker(priority);
+  function changeTask(task, { rowId, tag }) {
+    return dialog('Change the tag', (body, close) => {
       const tg = tagPicker(tag);
-      const field2 = (label, node) => { const w = el('div', 'p-field p-wide'); w.append(el('span', 'p-label', label), node); return w; };
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
       ok.addEventListener('click', async () => {
         ok.disabled = true;
-        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { tag: tg.value(), priority: pr.value() }); close(true); } catch (err) { ok.disabled = false; if (root.NiecUI) root.NiecUI.toast(err.message, { type: 'error' }); }
+        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { tag: tg.value() }); close(true); } catch (err) { ok.disabled = false; if (root.NiecUI) root.NiecUI.toast(err.message, { type: 'error' }); }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(field2('How important is it?', pr.node), field2('What is it about?', tg.node));
-      body.append(g, foot);
+      body.append(tg.node, foot);
     });
   }
   // A row of pills to choose one of `choices`; `cls(k)` gives each its look.
@@ -692,7 +678,6 @@
     return { node, value: () => value, set: (k) => { if (!touched) set(k); }, touched: () => touched };
   }
   const tagPicker = (initial) => picker(TAGS(), initial === undefined ? 'other' : initial, (k) => `td-tag tag-${k}`, 'What the task is about');
-  const priorityPicker = (initial) => picker(PRIORITIES(), initial || 'high', (k) => `td-prio prio-${k}`, 'How important the task is');
   // A few words of thanks when a task is ticked, not the same line every time.
   const CHEERS = ['Done. Nice work.', 'Ticked off. Well done.', 'One less to think about.', 'Great job, that is done.', 'Done. The student is a step closer.', 'Nicely done.'];
   const cheer = () => CHEERS[Math.floor(Math.random() * CHEERS.length)];
@@ -716,5 +701,5 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  root.Portal = { niceName, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { niceName, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

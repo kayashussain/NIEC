@@ -548,14 +548,14 @@ function createPortalApi({
     admin: { title: 'Everything at a glance', tagline: 'Here is what needs attention across the whole consultancy today.', sections: ['inquiries', 'apply', 'passport', 'noSource', 'mock', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
     manager: { title: 'The consultancy at a glance', tagline: 'The numbers and the students waiting, to look at. Open the Dashboard for the full picture.', sections: ['inquiries', 'apply', 'passport', 'noSource', 'mock', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
     application: { title: 'Application Team', tagline: 'Applications to submit, to chase and to complete.', sections: ['apply', 'passport', 'noUni', 'noOffer', 'offers'], tiles: ['toSubmit', 'waitingOffer', 'applied'] },
-    mock: { title: 'Mock Team', tagline: 'Mock interviews to schedule and feedback still to write.', sections: ['mock', 'mockFeedback', 'preCas'], tiles: ['atMock', 'toSchedule', 'feedbackMissing'] },
+    mock: { title: 'Mock Team', tagline: 'Mocks to schedule and feedback to write.', sections: ['mock', 'mockFeedback', 'preCas'], tiles: ['atMock', 'toSchedule', 'feedbackMissing'] },
     followup: { title: 'Follow-up Team', tagline: 'Inquiries that have gone quiet and students who deferred.', sections: ['inquiries', 'noSource', 'defer'], tiles: ['inquiries', 'toFollow', 'deferred'] },
     branch: { title: 'Your branch', tagline: 'Your branch students: who to call, what to submit and who is close to a visa.', sections: ['inquiries', 'apply', 'mock', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
     team: { title: 'Your teams', tagline: 'The work of all your teams in one place.', sections: ['inquiries', 'apply', 'mock', 'mockFeedback', 'defer'], tiles: ['active', 'applied', 'visas'] },
   };
   const TILE_LABEL = {
-    active: 'Students in progress', applied: 'Applications submitted', visas: 'Visas issued (all intakes)', toSubmit: 'Applications to submit', waitingOffer: 'Waiting for an offer',
-    atMock: 'Students at Mock Stage', toSchedule: 'Interviews to schedule', feedbackMissing: 'Feedback to write', inquiries: 'Open inquiries', toFollow: 'To follow up now', deferred: 'Deferred students',
+    active: 'Students in progress', applied: 'Applied', visas: 'Visas (every intake)', toSubmit: 'Applications to submit', waitingOffer: 'Waiting for an offer',
+    atMock: 'Students at Mock Stage', toSchedule: 'Mocks to schedule', feedbackMissing: 'Feedback to write', inquiries: 'Open inquiries', toFollow: 'To follow up', deferred: 'Deferred students',
   };
   // The workspace of a person (Today's title and lists, their dashboard): their own team when one is chosen (Users, "Their own
   // team"), so a person in the Application Team with Mock Team access has the Application Team's Today and dashboard.
@@ -579,8 +579,8 @@ function createPortalApi({
       { key: 'passport', title: 'Passport details missing', hint: 'Date of birth, passport number or address not added', stage: '', rows: [] },
       { key: 'noUni', title: 'Applications without a university or course', hint: 'At Application Stage: choose where to apply first', stage: 'Application Stage', rows: [] },
       { key: 'noOffer', title: 'Applications waiting for an offer', hint: 'Submitted over 10 days ago, no offer yet: chase the university', stage: '', rows: [] },
-      { key: 'mock', title: 'Mock interviews to schedule', hint: 'At Mock Stage with no mock date', stage: 'Mock Stage', rows: [] },
-      { key: 'mockFeedback', title: 'Mock feedback to write', hint: 'The interview date has passed and no feedback is recorded', stage: '', rows: [] },
+      { key: 'mock', title: 'Mocks to schedule', hint: 'At Mock Stage, no mock date yet', stage: 'Mock Stage', rows: [] },
+      { key: 'mockFeedback', title: 'Feedback to write', hint: 'The interview date has passed and no feedback is recorded', stage: '', rows: [] },
       { key: 'preCas', title: 'Pre-CAS interview to record', hint: 'All mock feedback is in, the Pre-CAS result is not', stage: '', rows: [] },
       { key: 'offers', title: 'Offers waiting for the deposit', hint: 'Offer received, payment not made', stage: '', rows: [] },
       { key: 'cas', title: 'CAS received, visa not lodged', hint: 'The next step is the visa application', stage: '', rows: [] },
@@ -679,12 +679,12 @@ function createPortalApi({
     },
   };
   const MY_KPI = {
-    toSubmit: ['Applications to submit', 'At Application Stage, not submitted yet'], submitted: ['Applications submitted', 'In this intake'],
-    waitingOffer: ['Waiting for an offer', 'Submitted over 10 days ago'], offers: ['Offers received', 'In this intake'],
+    toSubmit: ['Applications to submit', 'At Application Stage, not submitted yet'], submitted: ['Applied', 'In this intake'],
+    waitingOffer: ['Waiting for an offer', 'Submitted over 10 days ago'], offers: ['Offers', 'In this intake'],
     atMock: ['At Mock Stage', 'Students with you now'], toSchedule: ['Mocks to schedule', 'No mock date yet'], feedbackMissing: ['Feedback to write', 'The mock date has passed'],
     mocksWeek: ['Mocks this week', 'Held in the last 7 days'], inquiries: ['Open inquiries', 'At Inquiry now'], toFollow: ['To follow up', 'No contact for 3 days'],
     contactedWeek: ['Contacted this week', 'A note or a message in 7 days'], deferred: ['Deferred students', 'To bring back'],
-    active: ['Students in progress', 'Not left, no visa yet'], visas: ['Visas issued', 'In this intake'],
+    active: ['Students in progress', 'Not left, no visa yet'], visas: ['Visas', 'In this intake'],
   };
   // A person in several teams (and no own team chosen) sees only what their teams do, put together: each team's own figures, the
   // week and the stages of those teams, never every stage of the consultancy (the owner, 15 Nov 2026).

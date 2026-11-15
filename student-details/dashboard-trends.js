@@ -98,7 +98,7 @@
     // The table: each figure, and its change on the intake before.
     const table = el('table', 'tr-table');
     const thead = el('tr');
-    ['Intake', 'Students', 'Applications', 'Offers', 'Payments', 'Visas', 'Visa rate'].forEach((x) => thead.append(el('th', '', x)));
+    ['Intake', 'Students', 'Applied', 'Offers', 'Paid', 'Visas', 'Visa rate'].forEach((x) => thead.append(el('th', '', x)));
     table.append(thead);
     list.forEach((v, i) => {
       const prev = list[i - 1];
@@ -125,7 +125,7 @@
 
   // ---- 2. ups and downs over time ----
   // Each line, and the place of its day in a student's record from /api/trends: [source, inquiry, application, offer, payment, CAS, visa].
-  const LINES = [['inq', 'Inquiries', '#0071e3', 1], ['app', 'Applications', '#5856d6', 2], ['off', 'Offers', '#af52de', 3], ['pay', 'Payments', '#ff9500', 4], ['cas', 'CAS', '#30b0c7', 5], ['visa', 'Visas', '#34c759', 6]];
+  const LINES = [['inq', 'Inquiries', '#0071e3', 1], ['app', 'Applied', '#5856d6', 2], ['off', 'Offers', '#af52de', 3], ['pay', 'Paid', '#ff9500', 4], ['cas', 'CAS', '#30b0c7', 5], ['visa', 'Visas', '#34c759', 6]];
   const SOURCES = [['', 'Every source'], ['events', 'Events and marketing (events, campaigns, paid adverts)'], ['social', 'Social media (not paid)'], ['organic', 'Came by itself (visitors, references, classes)'], ['branch', 'Branches'], ['agent', 'Agents and B2B partners'], ['unknown', 'Source not recorded']];
   // The days of one line, for the students of a source (and of one event, campaign, platform, branch or agent in it, when chosen).
   const daysOf = (data, source, at, detail = '') => (data.students || []).filter((r) => r[at] && (!source || r[0] === source) && (!detail || r[7] === detail)).map((r) => r[at]);

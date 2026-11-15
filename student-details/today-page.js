@@ -5,7 +5,7 @@
 //   2. what needs attention: one short list, a line per kind of work with how many students wait, opened with a click.
 // The numbers, charts and buttons live on the Dashboard and on All Students, not here.
 (function () {
-  const { el, h, api, initials, stagePill, handOn, taskPriority, priorityOf, tagOf, tagLabel } = window.Portal;
+  const { el, h, api, initials, stagePill, handOn, taskPriority, tagOf, tagLabel } = window.Portal;
   const view = document.getElementById('view');
   if (new URLSearchParams(location.search).get('notice') === 'admin') {
     history.replaceState(null, '', location.pathname);
@@ -15,23 +15,16 @@
   const shortDay = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   let me = '';
 
-  // Calm by design (the owner, 15 Nov 2026): the tasks can be narrowed to one kind (Payment, Application, NOC ...), and each list is
-  // in the order of how important each task was marked (Super priority, Priority, Medium; inside that, something new first, then the
-  // one waiting longest).
+  // Calm by design (the owner, 15 Nov 2026): the tasks can be narrowed to one kind (Payment, Application, NOC ...); each list shows
+  // something new first, then the one waiting longest. There are no priorities (the owner, 15 Nov 2026: they added a choice and
+  // showed nowhere).
   let tagFilter = 'all';
   let taskView = ''; // 'mine' (Today), 'upcoming', 'gave', 'others' or 'passed': which tasks are shown
   // Search (the owner, 15 Nov 2026): a student's name, or any word of a task or its tag, narrows every list at once.
   let searchQ = '';
   const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  // Admin and the Manager narrow every list to one team by pressing it on the team board (the owner, 15 Nov 2026).
-  let teamFilter = '';
-  // The Board's focus (the owner, 15 Nov 2026): everything, only what waits 3 days or more, only what has something new, or only Super priority.
-  let focus = '';
-  // Admin and the Manager see the tasks as a Board (a column per team) or as the List (the owner, 15 Nov 2026: the admin view of the
-  // tasks could be much better). The choice is remembered on this device.
-  let layout = (() => { try { return localStorage.getItem('isr-task-layout') === 'list' ? 'list' : 'board'; } catch (e) { return 'board'; } })();
-  const setLayout = (v) => { layout = v; try { localStorage.setItem('isr-task-layout', v); } catch (e) { /* private window */ } };
-  const matches = (x) => (!teamFilter || x.team === teamFilter) && (!searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ)));
+  // Admin and the Manager see the tasks as a Board only, a column per team (the owner, 15 Nov 2026: no List, no "done this week").
+  const matches = (x) => (!searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ)));
   const expanded = new Set();
   // The task a notification was pressed for (its later day opens if it waits there).
   let focusTask = null;
@@ -105,8 +98,6 @@
     head.append(el('div'));
     const chips = el('div', 'td-sum');
     // What is new shows as a blue dot on the task and a red dot on the switch, so no extra chip here.
-    const urgent = (mode === 'upcoming' ? upcoming : open).filter((x) => priorityOf(x) === 'super').length;
-    if (urgent) chips.append(el('span', 'td-chip is-super', `${urgent} super priority`));
     head.append(chips);
     g.append(head);
     if (mode === 'upcoming') {
@@ -142,17 +133,14 @@
     const later = x.doOn && todayIso && x.doOn > todayIso;
     const n = (x.comments || []).filter((c) => c.text).length;
     const d = daysOpen(x);
-    const pr = priorityOf(x);
-    const b = h('button', { class: `tb-tile${x.done ? ' is-done' : ''}${x.unread ? ' is-new' : ''}${pr === 'super' ? ' is-super' : ''}`, type: 'button', title: 'Open the task' });
+    const b = h('button', { class: `tb-tile${x.unread ? ' is-new' : ''}`, type: 'button', title: 'Open the task' });
     const top = el('div', 'tb-tile-top');
     top.append(el('b', 'tb-student', window.Portal.niceName ? window.Portal.niceName(x.student) : x.student), el('span', 'tb-stage', x.stage || ''));
     const what = el('div', 'tb-text', x.text);
     const meta = el('div', 'tb-meta');
     const tg = tagOf(x, x.stage);
     meta.append(el('span', `tb-tag tag-${tg}`, tagLabel(tg)));
-    if (pr === 'super') meta.append(el('span', 'tb-prio', 'Super priority'));
-    if (x.done) meta.append(el('span', 'tb-age', 'Done'));
-    else if (later) meta.append(el('span', 'tb-age is-later', window.Portal.dayLabel(x.doOn, todayIso)));
+    if (later) meta.append(el('span', 'tb-age is-later', window.Portal.dayLabel(x.doOn, todayIso)));
     else meta.append(el('span', `tb-age${d >= 3 ? ' is-slow' : ''}`, d === 0 ? 'Today' : `${d} day${d === 1 ? '' : 's'}`));
     if (n) { const u = el('span', 'tb-updates'); u.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/></svg>'; u.append(String(n)); meta.append(u); }
     // The latest word on it, in one grey line ("Asha: submitted on the portal"), so the progress shows without opening it.
@@ -173,40 +161,22 @@
     });
     return b;
   }
-  const focusOk = (x) => !focus || (!x.done && (focus === 'slow' ? daysOpen(x) >= 3 : focus === 'new' ? x.unread > 0 : priorityOf(x) === 'super'));
-  // The focus row above the Board: each choice with how many open tasks it holds; a choice with none is left out.
-  function focusRow(t, refresh) {
-    const open = t.tasks.filter((x) => !x.done && matches(x));
-    const n = { slow: open.filter((x) => daysOpen(x) >= 3).length, new: open.filter((x) => x.unread > 0).length, super: open.filter((x) => priorityOf(x) === 'super').length };
-    const row = el('div', 'tb-focus');
-    row.setAttribute('role', 'tablist');
-    row.setAttribute('aria-label', 'Focus');
-    [['', 'Everything', open.length], ['slow', 'Waiting 3+ days', n.slow], ['new', 'New updates', n.new], ['super', 'Super priority', n.super]].forEach(([k, label, c]) => {
-      if (k && !c && focus !== k) return;
-      const b = h('button', { class: `tb-focus-btn${k ? ' is-' + k : ''}`, type: 'button', role: 'tab', 'aria-selected': String(focus === k) });
-      b.append(el('b', '', String(c)), el('span', '', label));
-      b.addEventListener('click', () => { focus = k; refresh(); });
-      row.append(b);
-    });
-    return row;
-  }
   function boardOf(t, refresh) {
-    const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
-    const list = t.tasks.filter((x) => (!x.done || recent(x)) && matches(x) && (tagFilter === 'all' || tagOf(x, x.stage) === tagFilter) && focusOk(x));
+    const list = t.tasks.filter((x) => !x.done && matches(x) && (tagFilter === 'all' || tagOf(x, x.stage) === tagFilter));
     // The columns: tasks for this person first ("For you"), then every team in the order of the teams list, then any other.
     const order = ['head', ...allTeams.map((x) => x.id).filter((id) => id !== 'head')];
     const cols = new Map();
     list.forEach((x) => { const k = x.forMe && x.team === 'head' ? 'head' : x.team; if (!cols.has(k)) cols.set(k, []); cols.get(k).push(x); });
     const keys = [...cols.keys()].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
     const wrap = el('div', 'tb-board');
-    if (!keys.length) { wrap.append(emptyNote(searchQ || tagFilter !== 'all' || teamFilter ? 'No task matches.' : 'Every team is up to date.')); return wrap; }
+    if (!keys.length) { wrap.append(emptyNote(searchQ || tagFilter !== 'all' ? 'No task matches.' : 'Every team is up to date.')); return wrap; }
     keys.forEach((k) => {
       const items = cols.get(k);
-      const open = items.filter((x) => !x.done).sort((a, b) => taskPriority(b) - taskPriority(a) || daysOpen(b) - daysOpen(a));
-      const done = items.filter((x) => x.done).sort((a, b) => String(b.doneAt).localeCompare(String(a.doneAt)));
+      // Something new first, then the one waiting longest.
+      const open = items.slice().sort((a, b) => (b.unread > 0) - (a.unread > 0) || daysOpen(b) - daysOpen(a));
       const slow = open.filter((x) => daysOpen(x) >= 3).length;
       const label = k === 'head' ? 'For you' : ((allTeams.find((x) => x.id === k) || {}).label || (items[0] && items[0].teamLabel) || k).replace(/\s*\(.*\)$/, '');
-      const col = el('section', `tb-col${open.length ? '' : ' is-quiet'}`);
+      const col = el('section', 'tb-col');
       const head = el('header', 'tb-col-head');
       const name = el('div', 'tb-col-name');
       name.append(el('span', 'tb-col-dot'), el('b', '', label), el('span', 'tb-col-n', String(open.length)));
@@ -215,20 +185,9 @@
       sub.append(el('span', '', k === 'head' ? 'Given to you' : peopleOf(k, label)));
       if (slow) sub.append(el('span', 'tb-col-slow', `${slow} waiting 3+ days`));
       head.append(sub);
-      const share = open.length + done.length ? Math.round((done.length / (open.length + done.length)) * 100) : 0;
-      const bar = el('span', 'tb-col-bar'); const fill = el('i'); fill.style.width = share + '%'; bar.append(fill); head.append(bar);
       col.append(head);
       const body = el('div', 'tb-col-body');
-      if (!open.length) body.append(el('div', 'tb-col-empty', 'All done'));
       open.forEach((x) => body.append(tile(x, refresh)));
-      if (done.length) {
-        const key = 'done:' + k;
-        const shown = expanded.has(key);
-        const tg = h('button', { class: 'tb-done-toggle', type: 'button', 'aria-expanded': String(shown) }, `${shown ? 'Hide' : 'Show'} ${done.length} done this week`);
-        tg.addEventListener('click', () => { if (shown) expanded.delete(key); else expanded.add(key); refresh(); });
-        body.append(tg);
-        if (shown) done.forEach((x) => body.append(tile(x, refresh)));
-      }
       col.append(body);
       wrap.append(col);
     });
@@ -249,7 +208,7 @@
       b.addEventListener('click', () => { tagFilter = k; refresh(); });
       bar.append(b);
     };
-    pill('all', 'All', items.length);
+    pill('all', 'All', 0);
     ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k] || tagFilter === k) pill(k, label, count[k] || 0); });
     return bar;
   }
@@ -295,24 +254,12 @@
       }
       box.append(sb);
     }
-    // Board or List, for Admin and the Manager.
+    // The Board, for Admin and the Manager: the kind pills, then a column per team.
     if (canAssignAll && t.tasks.length) {
-      const sw = el('div', 'td-views tb-layout');
-      sw.setAttribute('role', 'tablist');
-      sw.setAttribute('aria-label', 'Show the tasks as');
-      [['board', 'Board'], ['list', 'List']].forEach(([k, label]) => {
-        const b = h('button', { class: 'td-view', type: 'button', role: 'tab', 'aria-selected': String(layout === k) }, label);
-        b.addEventListener('click', () => { setLayout(k); teamFilter = ''; refresh(); });
-        sw.append(b);
-      });
-      titles.append(sw);
-      if (layout === 'board') {
-        box.append(focusRow(t, refresh));
-        const pills = kindPills(t.tasks.filter((x) => !x.done && matches(x) && focusOk(x)), refresh);
-        if (pills) box.append(pills);
-        box.append(boardOf(t, refresh));
-        return box;
-      }
+      const pills = kindPills(t.tasks.filter((x) => !x.done && matches(x)), refresh);
+      if (pills) box.append(pills);
+      box.append(boardOf(t, refresh));
+      return box;
     }
     // Which tasks to see (the owner, 15 Nov 2026): one list at a time, never mixed. The tasks for this person are split in two, Today
     // and Upcoming (moved to a later day), then "You gave", and for Admin and the Manager "Given by others"; a team also "Reassigned"
@@ -325,7 +272,7 @@
     const showMine = t.isHead || !t.canAssign || forMe.length;
     const todayHint = '';
     const VIEWS = [
-      ['mine', 'Today', forMe, todayHint, 'All caught up for today.', showMine, 'today'],
+      ['mine', 'Today', forMe, todayHint, 'No task for today.', showMine, 'today'],
       ['upcoming', 'Upcoming', forMe, '', '', showMine && forMe.some((x) => !x.done && later(x)), 'upcoming'],
       ['gave', 'You gave', gave, '', 'Every task you gave is done.', t.canAssign || gave.length, ''],
       ['others', 'Given by others', others, '', 'All done.', others.length, ''],
@@ -539,72 +486,24 @@
     return box;
   }
 
-  // The day at a glance, at the top (the owner, 14 Nov 2026: engaging, like a game): a ring that fills as the person's own tasks are
-  // done this week, then what is open for them and how many students wait for a next step. "All caught up" when nothing is open.
-  // The team board, for Admin and the Manager (the owner, 15 Nov 2026: the owner's Today was a long flat list): one tile per team with
-  // its open tasks, how many have waited 3 days or more, what it finished this week and a bar of the week's progress. A press shows
-  // only that team's tasks; a second press shows everyone again.
-  function teamBoard(tasks, refresh) {
-    if (!tasks.canAssign) return null;
-    const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
-    const byTeam = new Map();
-    tasks.tasks.forEach((x) => {
-      if (!byTeam.has(x.team)) byTeam.set(x.team, { id: x.team, label: x.teamLabel || x.team, open: 0, slow: 0, done: 0, people: new Set() });
-      const t = byTeam.get(x.team);
-      if (!x.done) { t.open += 1; if (Date.now() - Date.parse(x.at || 0) >= 3 * 86400000) t.slow += 1; }
-      else if (recent(x)) t.done += 1;
-      if (!x.done) t.people.add(x.studentId);
-    });
-    const teams = [...byTeam.values()].filter((t) => t.open || t.done).sort((a, b) => b.open - a.open || a.label.localeCompare(b.label));
-    if (!teams.length) return null;
-    if (teamFilter && !byTeam.has(teamFilter)) teamFilter = '';
-    const box = el('section', 'td-board');
-    const head = el('div', 'td-board-head');
-    head.append(el('h2', '', 'Your teams'), el('span', 'td-board-sub', teamFilter ? 'One team shown. Press it again for all.' : 'Press a team to see only its tasks.'));
-    box.append(head);
-    const grid = el('div', 'td-board-grid');
-    teams.forEach((t) => {
-      const share = t.open + t.done ? Math.round((t.done / (t.open + t.done)) * 100) : 100;
-      const b = h('button', { class: `td-team${teamFilter === t.id ? ' is-on' : ''}${t.slow ? ' has-slow' : ''}`, type: 'button', 'aria-pressed': String(teamFilter === t.id) });
-      const top = el('div', 'td-team-top');
-      top.append(el('span', 'td-team-av', initials(t.label.replace(/\(.*\)/, ''))), el('b', 'td-team-name', t.label.replace(/\s*\(.*\)$/, '')));
-      const nums = el('div', 'td-team-nums');
-      const num = (n, label, tone) => { const x = el('span', `td-team-num${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('small', '', label)); return x; };
-      nums.append(num(t.open, 'open'), num(t.slow, '3+ days', t.slow ? 'warn' : ''), num(t.done, 'done', t.done ? 'good' : ''));
-      const bar = el('span', 'td-team-bar'); const fill = el('span', 'td-team-fill'); fill.style.width = share + '%'; bar.append(fill);
-      b.append(top, nums, bar);
-      b.title = `${t.label}: ${t.open} open on ${t.people.size} student${t.people.size === 1 ? '' : 's'}`;
-      b.addEventListener('click', () => {
-        teamFilter = teamFilter === t.id ? '' : t.id;
-        // The team's tasks are under You gave or Given by others: show the list that has them.
-        if (teamFilter) { const mineHas = tasks.tasks.some((x) => x.team === t.id && x.forMe && !x.done); if (!mineHas) taskView = tasks.tasks.some((x) => x.team === t.id && !x.forMe && x.by === me && !x.done) ? 'gave' : 'others'; }
-        tagFilter = 'all';
-        refresh();
-      });
-      grid.append(b);
-    });
-    box.append(grid);
-    return box;
-  }
+  // The day at a glance, at the top: how many tasks are open, how many have waited 3 days or more and how many students wait for a
+  // next step. "All caught up" when nothing is open.
   function pulse(tasks, sections, waitingCount) {
-    const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
-    // Admin and the Manager see the whole team's work here, not only their own tasks (a list of 9 open tasks said "All caught up").
+    // Admin and the Manager see the whole team's work here, not only their own tasks. What is done is in the students' notes, so
+    // nothing here counts it (the owner, 15 Nov 2026).
     const mine = tasks.canAssign ? tasks.tasks : tasks.tasks.filter((x) => x.forMe);
     const later = (x) => x.doOn && tasks.today && x.doOn > tasks.today;
-    const open = mine.filter((x) => !x.done && !later(x)).length;
+    const openList = mine.filter((x) => !x.done && !later(x));
+    const open = openList.length;
     const upcoming = mine.filter((x) => !x.done && later(x)).length;
-    const done = mine.filter(recent).length;
+    const slow = openList.filter((x) => Date.now() - Date.parse(x.at || 0) >= 3 * 86400000).length;
     const waiting = typeof waitingCount === 'number' ? waitingCount : sections.reduce((n, x) => n + x.count, 0);
     const box = el('section', 'td-pulse');
-    const share = open + done ? done / (open + done) : 1;
-    const ring = el('div', 'td-ring');
-    ring.style.setProperty('--p', String(Math.round(share * 100)));
-    if (open + done) ring.append(el('b', '', `${Math.round(share * 100)}%`), el('small', '', 'this week')); else ring.append(el('b', 'td-ring-tick', '\u2713'));
     const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('span', '', label)); return x; };
     const words = el('div', 'td-pulse-words');
     words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} ${tasks.canAssign ? 'open across the teams' : 'for today'}` : 'All caught up'));
     if (upcoming) words.append(el('p', '', `${upcoming} more on later days`));
-    box.append(ring, words, stat(done, 'done this week', 'good'), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
+    box.append(words, stat(slow, 'waiting 3+ days', slow ? 'warn' : ''), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
     return box;
   }
 
@@ -653,8 +552,8 @@
       bell.classList.toggle('has-new', fresh > 0);
       drawPop();
       const own = ownTeamCard(tasks);
-      const board = tasks.canAssign && layout === 'board' ? null : teamBoard(tasks, refresh);
-      top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections, d.waiting), ...(board ? [board] : []));
+      page.classList.toggle('is-board', Boolean(tasks.canAssign));
+      top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections, d.waiting));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };
     refresh();
