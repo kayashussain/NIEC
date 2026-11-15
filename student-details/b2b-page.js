@@ -5,7 +5,8 @@
 //   B2B Partners: the businesses you send applications to (they hold the direct agreement with a university). Each card shows how to
 //   submit (the portal and its login, or the email) so it can be used without opening the partner.
 //   Agents: the businesses that send you their students.
-// Each has its contacts, agreement dates, the commission structure of each intake (a link or a PDF) and the visas it has brought.
+// Each has its contacts, the day its agreement started (chosen on a calendar), the commission list of each intake (a link or a PDF)
+// and the visas it has brought. No agreement files are uploaded here (the owner, 15 Nov 2026).
 (function () {
   const { el, h, api, field, number } = window.Portal;
   const $ = (id) => document.getElementById(id);
@@ -26,6 +27,20 @@
   const btn = (cls, label, onClick) => { const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; };
   const copy = (value, what) => btn('bp-mini', 'Copy', async () => { try { await navigator.clipboard.writeText(value); say(`${what} copied`); } catch (e) { say(`Could not copy the ${what.toLowerCase()}`, true); } });
   const PILL = { Active: 'green', Ended: 'red' };
+  // The agreement start as the calendar needs it (2026-01-01). Older records were typed by hand ("1 Jan 2026", "1/31/2026"): they
+  // are read when they can be, so they open on the right day; anything else is kept as it was until a day is chosen.
+  function isoDay(v) {
+    const s = String(v || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+    if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+    if (!/\d{4}/.test(s)) return '';
+    const t = new Date(s + ' 12:00');
+    return Number.isNaN(t.getTime()) ? '' : `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+  }
+  const started = (p) => (p.agreementStart ? 'Started ' + window.Portal.day(isoDay(p.agreementStart) || p.agreementStart) : '');
+  // The partner just saved: its card glows once when the list comes back.
+  let justSaved = '';
 
   // ---- the list ----
   function draw() {
@@ -79,7 +94,7 @@
     who.append(el('div', 'bp-name', x.name), el('div', 'bp-sub', `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(x.students)} student${x.students === 1 ? '' : 's'} on the sheet`));
     head.append(who, el('span', 'bp-status amber', 'Not set up'));
     const note = el('div', 'bp-submit');
-    note.append(el('div', 'bp-submit-title', 'Named on the sheet'), el('div', 'bp-none', KIND === 'agents' ? 'Named in the Receiving Partner column. Set it up to add the contact, the agreement and the commission list.' : settingUp() ? 'Set it up to add how to submit applications and the contact.' : 'Set it up to add how to submit applications, the contact and the commission list.'));
+    note.append(el('div', 'bp-submit-title', 'Named on the sheet'), el('div', 'bp-none', KIND === 'agents' ? 'Named in the Receiving Partner column. Set it up to add the contact, when the agreement started and the commission list.' : settingUp() ? 'Set it up to add how to submit applications and the contact.' : 'Set it up to add how to submit applications, the contact and the commission list.'));
     const foot = el('div', 'bp-foot');
     const notWord = KIND === 'agents' ? 'Not an agent' : 'Not a partner';
     foot.append(btn('btn', notWord, async () => {
@@ -92,7 +107,8 @@
 
   function card(p) {
     const st = stats(p.name);
-    const c = el('article', 'bp-card');
+    const c = el('article', `bp-card${p.id === justSaved ? ' is-saved' : ''}`);
+    c.dataset.id = p.id;
     const head = el('div', 'bp-card-head');
     const who = el('div');
     who.append(btn('bp-name', p.name, () => open(p.id)), el('div', 'bp-sub', [p.city, `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(st.students)} student${st.students === 1 ? '' : 's'}`].filter(Boolean).join(' · ')));
@@ -116,7 +132,7 @@
       if (k.email) { const a = el('a', 'bp-link', k.email); a.href = 'mailto:' + k.email; d.append(a); }
       row('Contact', d);
     } else row('Contact', null);
-    row('Agreement', [p.agreementStart ? 'From ' + window.Portal.day(p.agreementStart) : '', p.agreementEnd ? 'to ' + window.Portal.day(p.agreementEnd) : ''].filter(Boolean).join(' '));
+    row('Agreement', started(p));
     c.append(facts);
     const foot = el('div', 'bp-foot'); foot.append(btn('btn', 'Open details →', () => open(p.id)));
     c.append(foot);
@@ -195,8 +211,11 @@
           p.agreements = j.agreements; st.fileId = j.agreements[j.agreements.length - 1].id; showFile(); say('Uploaded. Save to keep it for this intake.');
         } catch (e) { say(e.message, true); }
       });
+      // The browser's own "Choose File, No file chosen" is hidden behind one plain button.
+      const upLabel = el('label', 'btn btn-sm bp-upload');
+      upLabel.append(document.createTextNode('Upload PDF'), pick);
       const rec = { intake, link, st };
-      r.append(intake.wrap, link.wrap, fileLine, pick, btn('bp-remove', 'Remove', () => { r.remove(); rows.splice(rows.indexOf(rec), 1); }));
+      r.append(intake.wrap, link.wrap, fileLine, upLabel, btn('bp-remove', 'Remove', () => { r.remove(); rows.splice(rows.indexOf(rec), 1); }));
       rows.push(rec); box.append(r);
     };
     (p.commissions || []).forEach(add);
@@ -220,8 +239,8 @@
     const lines = (items) => { const d = el('div', 'bp-lines'); items.forEach((x) => d.append(x instanceof Node ? x : el('span', '', x))); return d; };
     if (KIND === 'b2b') box('Application submission', submitBox(p));
     box('Contacts', (p.contacts || []).length ? lines(p.contacts.map((c) => { const d = el('div', 'bp-lines'); if (c.name) d.append(el('b', '', c.name)); if (c.phone) d.append(el('span', '', c.phone)); if (c.email) { const a = el('a', 'bp-link', c.email); a.href = 'mailto:' + c.email; d.append(a); } return d; })) : none());
-    box('Agreement', lines([p.agreementStart ? 'From ' + window.Portal.day(p.agreementStart) : 'Start not entered', p.agreementEnd ? 'To ' + window.Portal.day(p.agreementEnd) : ''].filter(Boolean)));
-    // The Manager also sees the commission list of each intake, the files and the notes; a team never receives them.
+    box('Agreement', lines([started(p) || 'Start not entered']));
+    // The Manager also sees the commission list of each intake and the notes; a team never receives them.
     if (data.access === 'commission') {
       box('Commission by intake', (p.commissions || []).length ? lines(p.commissions.map((c) => {
         const d = el('div', 'bp-lines'); d.append(el('b', '', c.intake || 'Intake'));
@@ -230,7 +249,6 @@
         if (c.link) d.append(openLink('Open the link ↗', c.link));
         return d;
       })) : none());
-      if ((p.agreements || []).length) box('Files', lines(p.agreements.map((a) => openLink(a.name, `${API}/${p.id}/files/${a.id}?open=1`))));
       if (p.notes) box('Notes', el('p', '', p.notes));
     }
     $('editor').replaceChildren(page);
@@ -251,10 +269,12 @@
     const status = field('Status', { kind: 'select', choices: data.statuses, value: p.status });
     const blank = status.input.querySelector('option[value=""]'); if (blank) blank.remove();
     const city = field('City or country', { value: p.city, max: 300 });
-    const start = field('Agreement starts', { value: p.agreementStart, placeholder: 'e.g. 1 Jan 2026', max: 40 });
-    const end = field('Agreement ends (optional)', { value: p.agreementEnd, placeholder: 'e.g. 31 Dec 2027', max: 40 });
-    const s1 = step(++n, `The ${WORD.one}`, 'Its name, where it is, and the agreement.');
-    s1.append(grid('bp-three', name.wrap, status.wrap, city.wrap, start.wrap, end.wrap));
+    // When the agreement started, on a calendar (the owner, 15 Nov 2026: no end date asked). A day typed by hand in an older record
+    // that cannot be read is named under the calendar and kept until a day is chosen.
+    const start = field('Agreement started', { kind: 'date', value: isoDay(p.agreementStart) });
+    if (p.agreementStart && !isoDay(p.agreementStart)) start.wrap.append(el('small', 'bp-was', `Written before as \u201c${p.agreementStart}\u201d. Choose the day on the calendar.`));
+    const s1 = step(++n, `The ${WORD.one}`, 'Its name, where it is, and when the agreement started.');
+    s1.append(grid('bp-four', name.wrap, status.wrap, city.wrap, start.wrap));
     const steps = [s1];
 
     let apply = null; let applyUser = null; let applyPassword = null;
@@ -284,33 +304,6 @@
     const commissions = commissionEditor(id, p);
     s4.append(commissions.node); if (full) steps.push(s4); else n -= 1;
 
-    const s5 = step(++n, 'Agreement and other files', 'PDF, Word or an image, up to 10 MB. Files are saved as soon as they are uploaded.');
-    const fl = el('div', 'bp-files');
-    const drawFiles = (pp) => {
-      fl.replaceChildren(...(pp.agreements.length ? pp.agreements.map((a) => {
-        const r = el('div', 'bp-file');
-        const link = el('a', 'bp-link', a.name); link.href = `${API}/${id}/files/${a.id}`; link.setAttribute('download', a.name);
-        r.append(link, el('span', 'p-muted', `${Math.max(1, Math.round(a.size / 1024))} KB`), btn('bp-remove', 'Remove', async () => { if (await window.NiecUI.confirm(`Remove ${a.name}?`, { danger: true })) drawFiles(await api(`${API}/${id}/files/${a.id}/delete`, {})); }));
-        return r;
-      }) : [el('p', 'p-muted', 'No file uploaded yet.')]));
-    };
-    drawFiles(p);
-    const pick = el('input'); pick.type = 'file'; pick.accept = '.pdf,.doc,.docx,.png,.jpg,.jpeg';
-    const up = btn('btn btn-sm', 'Upload', async () => {
-      const f = pick.files && pick.files[0];
-      if (!f) { say('Choose the file first.', true); return; }
-      up.disabled = true;
-      try {
-        const res = await fetch(`${API}/${id}/files?name=${encodeURIComponent(f.name)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: f });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(j.error || 'Could not upload it.');
-        pick.value = ''; drawFiles(j); say('Uploaded');
-      } catch (e) { say(e.message, true); }
-      up.disabled = false;
-    });
-    const upRow = el('div', 'p-bar'); upRow.append(pick, up);
-    s5.append(fl, upRow); if (full) steps.push(s5); else n -= 1;
-
     const byIntake = Object.entries(st.intakes || {});
     const s6 = step(++n, 'Visas by intake', '');
     if (!byIntake.length) s6.append(el('p', 'p-muted', 'No students yet.'));
@@ -330,19 +323,22 @@
     const bar = el('div', 'bp-savebar');
     const save = btn('btn btn-primary', 'Save', async () => {
       try {
-        const body = { name: name.input.value, status: status.input.value, city: city.input.value, agreementStart: start.input.value, agreementEnd: end.input.value, contacts: contacts.values() };
+        // The end date is no longer asked; one kept in an older record stays as it was.
+        const body = { name: name.input.value, status: status.input.value, city: city.input.value, agreementStart: start.input.value || (isoDay(p.agreementStart) ? '' : p.agreementStart || ''), agreementEnd: p.agreementEnd || '', contacts: contacts.values() };
         if (full) Object.assign(body, { commissions: commissions.values(), notes: notes.input.value });
         if (apply) Object.assign(body, { apply: apply.input.value, applyUser: applyUser.input.value, applyPassword: applyPassword.input.value });
         const saved = await api(`${API}/${id}`, body);
+        // Saved: straight back to the list, where the card glows once (the owner, 15 Nov 2026: no "Back to the list" to press).
         if (apply && apply.input.value.trim() && !saved.applyPortal && !saved.applyEmail) say('Saved, but the application link could not be kept: it must be a web address or an email address.', true);
-        else say('Saved');
-        await load(); edit(id);
+        else say(`${saved.name || name.input.value || 'The ' + WORD.one} is saved.`);
+        justSaved = id;
+        closeEditor(); await load();
       } catch (e) { say(e.message, true); }
     });
     const del = btn('btn btn-danger', 'Remove from list', async () => { if (!(await window.NiecUI.confirm(`Remove ${p.name} from ${WORD.title}?`, { danger: true, confirmText: 'Remove' }))) return; await api(`${API}/${id}/delete`, {}); say('Removed'); closeEditor(); load(); });
-    bar.append(save, btn('btn', 'Back to the list', closeEditor), el('span', 'grow'));
+    bar.append(save, btn('btn', 'Cancel', closeEditor), el('span', 'grow'));
     if (full) bar.append(del);
-    else bar.append(el('span', 'p-muted p-small', 'The commission list, files and notes are kept by Admin.'));
+    else bar.append(el('span', 'p-muted p-small', 'The commission list and notes are kept by Admin.'));
     form.append(bar);
     ed.replaceChildren(form);
     $('listView').hidden = true; ed.hidden = false;
@@ -365,15 +361,20 @@
   async function load() {
     data = await api(API);
     if (!viewer()) { const c = document.querySelector('#pageTitle .p-chip'); if (c) c.hidden = true; } // others look at it too now
-    if (settingUp()) $('intro').textContent = 'Where applications go, contacts and agreements. Set up a partner named on the sheet, or add a new one; the commission is kept by Admin.';
+    if (settingUp()) $('intro').textContent = 'Where applications go and who to contact. Set up a partner named on the sheet, or add a new one; the commission is kept by Admin.';
     if (viewer()) {
       $('add').hidden = true;
       const chip = document.querySelector('#pageTitle .p-chip'); if (chip) chip.textContent = 'View only';
       $('intro').textContent = data.access === 'commission'
-        ? `Where applications go, contacts, agreements and commission. View only; Admin edits.`
-        : `${KIND === 'b2b' ? 'Where applications go, contacts and agreements' : 'Contacts and agreements'}. View only; Admin edits.`;
+        ? `Where applications go, who to contact, and the commission. View only; Admin edits.`
+        : `${KIND === 'b2b' ? 'Where applications go and who to contact' : 'Who to contact and when each agreement started'}. View only; Admin edits.`;
     }
     draw();
+    if (justSaved) {
+      const c = document.querySelector(`.bp-card[data-id="${CSS.escape(justSaved)}"]`);
+      if (c) c.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      justSaved = '';
+    }
   }
   $('add').addEventListener('click', addOne);
   $('search').addEventListener('input', () => data && draw());
