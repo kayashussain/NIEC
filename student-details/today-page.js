@@ -5,7 +5,7 @@
 //   2. what needs attention: one short list, a line per kind of work with how many students wait, opened with a click.
 // The numbers, charts and buttons live on the Dashboard and on All Students, not here.
 (function () {
-  const { el, h, api, initials, stagePill, taskThread, taskRoute, handOn, taskActions } = window.Portal;
+  const { el, h, api, initials, stagePill, taskThread, taskRoute, handOn, taskActions, taskTagPill, taskPriority, doFirst, tagOf, tagLabel } = window.Portal;
   const view = document.getElementById('view');
   if (new URLSearchParams(location.search).get('notice') === 'admin') {
     history.replaceState(null, '', location.pathname);
@@ -16,6 +16,12 @@
   let me = '';
 
   let showDone = false;
+  // Calm by design (the owner, 15 Nov 2026): the tasks can be narrowed to one kind (Payment, Application ...), each list is in the
+  // order the system works out (what is new, then money and the visa, then the application ..., a task waiting longer climbs), and
+  // only the first five of a list show until "Show all" is pressed.
+  let tagFilter = 'all';
+  const expanded = new Set();
+  const FIRST = 5;
   // One task: the tick (only for whoever the task is for), what to do, the student, who gave it to whom and when, and its comments.
   function taskRow(t, refresh) {
     const r = el('div', `td-task${t.done ? ' is-done' : ''}${t.unread ? ' has-unread' : ''}`);
@@ -41,6 +47,10 @@
     top.append(el('div', 'td-task-text', t.text));
     if (t.unread) top.append(el('span', 'td-dot', String(t.unread)));
     mid.append(top);
+    const tagLine = el('div', 'td-tag-line');
+    tagLine.append(taskTagPill(t, { rowId: t.studentId, stage: t.stage, canChange: t.forMe || t.by === me || canAssignAll, onChanged: () => refresh(true) }));
+    if (doFirst(t, t.stage)) tagLine.append(el('span', 'td-first', 'Do first'));
+    mid.append(tagLine);
     // From whom, to whom, and when: "From SK Kayas Hussain to the Application Team · 14 Nov".
     const fromName = t.by === me ? 'You' : t.by || 'Someone';
     const toName = t.forMe ? (t.team === 'head' ? 'you' : `your team (${t.teamLabel})`) : t.teamLabel;
@@ -65,9 +75,10 @@
   let allTeams = [];
 
   // One list of tasks under its own heading, the newest word first; the ones done in the last 7 days fold away at the bottom.
-  function group(title, hint, list, refresh, emptyText) {
+  function group(title, hint, all, refresh, emptyText) {
     const g = el('div', 'td-group');
-    const open = list.filter((x) => !x.done);
+    const list = tagFilter === 'all' ? all : all.filter((x) => tagOf(x, x.stage) === tagFilter);
+    const open = list.filter((x) => !x.done).sort((a, b) => taskPriority(b, b.stage) - taskPriority(a, a.stage));
     const done = list.filter((x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000);
     const head = el('div', 'td-group-head');
     const words = el('div');
@@ -77,16 +88,24 @@
     const chips = el('div', 'td-sum');
     const fresh = list.reduce((n, x) => n + (x.unread || 0), 0);
     if (fresh) chips.append(el('span', 'td-chip is-new', `${fresh} new`));
+    const first = open.filter((x) => doFirst(x, x.stage)).length;
+    if (first) chips.append(el('span', 'td-chip is-first', `${first} to do first`));
     chips.append(el('span', 'td-chip', `${open.length} open`));
     head.append(chips);
     g.append(head);
     if (!open.length) {
       const empty = el('div', 'td-empty');
       empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-      empty.append(el('div', '', emptyText));
+      empty.append(el('div', '', tagFilter === 'all' ? emptyText : `Nothing open about ${tagLabel(tagFilter).toLowerCase()} here.`));
       g.append(empty);
     }
-    open.forEach((x) => g.append(taskRow(x, refresh)));
+    const many = open.length > FIRST && !expanded.has(title);
+    (many ? open.slice(0, FIRST) : open).forEach((x) => g.append(taskRow(x, refresh)));
+    if (open.length > FIRST) {
+      const more = h('button', { class: 'td-more', type: 'button' }, many ? `Show all ${open.length} open tasks` : 'Show only the first five');
+      more.addEventListener('click', () => { if (many) expanded.add(title); else expanded.delete(title); refresh(); });
+      g.append(more);
+    }
     if (done.length) {
       const key = title;
       const shown = showDone === key;
@@ -108,6 +127,25 @@
     titles.append(el('h2', '', 'Tasks'), el('p', '', 'Assigned tasks and their updates. A red dot marks anything new.'));
     head.append(titles);
     box.append(head);
+    // One row of pills to see one kind of task at a time, each with how many are open.
+    const openAll = t.tasks.filter((x) => !x.done);
+    if (openAll.length) {
+      const counts = {};
+      openAll.forEach((x) => { const k = tagOf(x, x.stage); counts[k] = (counts[k] || 0) + 1; });
+      if (tagFilter !== 'all' && !counts[tagFilter]) tagFilter = 'all';
+      const bar = el('div', 'td-filter');
+      bar.setAttribute('role', 'tablist');
+      bar.setAttribute('aria-label', 'Show the tasks about');
+      const pill = (k, label, n) => {
+        const b = h('button', { class: `td-filter-pill${k === 'all' ? '' : ' tag-' + k}`, type: 'button', role: 'tab', 'aria-selected': String(tagFilter === k) }, label);
+        b.append(el('span', 'td-filter-n', String(n)));
+        b.addEventListener('click', () => { tagFilter = k; refresh(); });
+        bar.append(b);
+      };
+      pill('all', 'All', openAll.length);
+      ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (counts[k]) pill(k, label, counts[k]); });
+      box.append(bar);
+    }
     const forMe = t.tasks.filter((x) => x.forMe);
     const gave = t.tasks.filter((x) => !x.forMe && (x.given || x.by === me));
     const others = t.canAssign ? t.tasks.filter((x) => !x.forMe && x.by !== me) : [];

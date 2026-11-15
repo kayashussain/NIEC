@@ -435,11 +435,10 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual((await admin('POST', '/api/templates/signature', { name: 'Head of UK Recruitment', phone: '+977 1 5550000' })).status, 200);
   assert.match((await app('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'offer_received' })).json.text, /Head of UK Recruitment\n/);
 
-  // B2B Partners and Message templates: the Application Team and the Manager look (the team without the commission, see
-  // partner-access.test.js); only Admin changes them.
-  for (const url of ['/api/b2b', '/message-templates', '/b2b-partners']) assert.strictEqual((await app('GET', url)).status, 200, `${url} opens for the Application Team to look at`);
-  assert.strictEqual((await app('GET', '/api/b2b')).json.access, 'team');
-  assert.strictEqual((await app('POST', '/api/b2b', { name: 'X' })).status, 403, 'a team does not change B2B Partners');
+  // B2B Partners and Message templates: the Manager looks with the commission; the Application Team sets B2B partners up (the owner,
+  // 15 Nov 2026) without the commission (see partner-access.test.js); only Admin changes the templates.
+  for (const url of ['/api/b2b', '/message-templates', '/b2b-partners']) assert.strictEqual((await app('GET', url)).status, 200, `${url} opens for the Application Team`);
+  assert.strictEqual((await app('GET', '/api/b2b')).json.access, 'setup');
   assert.strictEqual((await manager('GET', '/api/b2b')).json.access, 'commission');
   assert.strictEqual((await manager('POST', '/api/b2b', { name: 'X' })).status, 403, 'the Manager does not change B2B Partners');
   const partner = (await admin('POST', '/api/b2b', { name: 'Himal Education Hub' })).json;

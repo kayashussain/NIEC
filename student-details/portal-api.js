@@ -695,6 +695,12 @@ function createPortalApi({
           const from = task.team;
           out = cards.handTask(rowId, sub, { team: text(body.handTo), reason: body.reason }, by(req));
           if (!out.error) { cards.markSeen(req.user.username, [task.id]); note(req, [`${who2}: handed the task from ${teamLabel(from)} to ${teamLabel(out.task.team)}: ${String(body.reason).slice(0, 120)}`], 'Handed a task on'); }
+        } else if (body.tag !== undefined) {
+          // The tag of a task (Payment, Visa and CAS, Application ...): whoever gave it, the team it is with, Admin or the Manager.
+          if (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
+          if (!Fields.TASK_TAG_IDS.includes(text(body.tag))) { sendJSON(res, 400, { error: 'Choose what the task is about.' }); return true; }
+          out = cards.tagTask(rowId, sub, text(body.tag), by(req));
+          if (!out.error) note(req, [`${who2}: tagged the task for ${teamLabel(task.team)} as ${(Fields.TASK_TAGS.find(([k]) => k === out.task.tag) || [])[1]}`], 'Task');
         } else if (body.comment !== undefined) {
           // The team, whoever gave the task (Admin, the Manager, or the branch that gave it) and the teams it was with talk it through here.
           if (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task) && !hadIt(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
@@ -1423,7 +1429,8 @@ function createPortalApi({
   }
   async function handleB2b(req, res, urlPath) {
     if (urlPath === '/api/b2b/not-partner' && req.method === 'POST') {
-      if (!adminOnly(req, res, 'B2B Partners')) return true;
+      // Admin, and the Application Team, who sets B2B partners up too (the owner, 15 Nov 2026).
+      if (partnerAccess(req.user).b2b !== 'setup' && !adminOnly(req, res, 'B2B Partners')) return true;
       const body = await bodyOf(req, res, 4096);
       if (!body) return true;
       const name = text(body.name).slice(0, 120);
@@ -1451,14 +1458,16 @@ function createPortalApi({
     // Admin changes the list; the Manager (with the commission) and the Application and Mock Teams (without it) look at it.
     const level = partnerAccess(req.user)[kind];
     const reading = req.method === 'GET' && !/\/delete$/.test(urlPath);
-    if (!level || (level !== 'full' && !reading)) { if (!adminOnly(req, res, level ? `Changing ${label}` : label)) return true; }
+    // 'setup' (the Application Team on B2B Partners): adds a partner and changes its details, never its files or removes it.
+    const settingUp = level === 'setup' && req.method === 'POST' && !/\/delete$/.test(urlPath) && !/\/files(\/|$)/.test(urlPath);
+    if (!level || (level !== 'full' && !reading && !settingUp)) { if (!adminOnly(req, res, level ? `Changing ${label}` : label)) return true; }
     const id = (urlPath.match(new RegExp(`^/api/${prefix}/([a-f0-9]{12})`)) || [])[1];
     const record = (line) => activity.record(req, req.user, 'Edited partners', { app: label, changes: [line] });
     const fileMatch = urlPath.match(new RegExp(`^/api/${prefix}/[a-f0-9]{12}/files(?:/([a-f0-9]{12})(/delete)?)?$`));
     if (fileMatch) {
       const fid = fileMatch[1];
       if (req.method === 'GET' && fid && !fileMatch[2]) {
-        if (level === 'team') { sendJSON(res, 403, { error: 'The commission lists and agreement files are not open to your account.' }); return true; }
+        if (level === 'team' || level === 'setup') { sendJSON(res, 403, { error: 'The commission lists and agreement files are not open to your account.' }); return true; }
         const file = b2b.agreementFile(id, fid);
         if (!file) { sendJSON(res, 404, { error: 'No such file.' }); return true; }
         // ?open=1 shows a PDF or a picture in the browser (a commission list opens when it is clicked); anything else is downloaded.
@@ -1493,7 +1502,7 @@ function createPortalApi({
     }
     if (req.method === 'GET') {
       if (!id && urlPath !== `/api/${prefix}`) { sendJSON(res, 404, { error: 'No such partner.' }); return true; }
-      if (!id && level !== 'full') { sendJSON(res, 200, { access: level, partners: b2b.list().map((p) => shapePartner(p, level, seesLogins(req.user))), statuses: PARTNER_STATUSES, performance: partnerPerformance(kind), currentIntake: (currentIntake() || {}).name || '' }); return true; }
+      if (!id && level !== 'full') { sendJSON(res, 200, { access: level, partners: b2b.list().map((p) => shapePartner(p, level, seesLogins(req.user))), ...(level === 'setup' ? { onSheet: sheetPartners(), notPartners: planning.all().settings.notPartners || [] } : {}), statuses: PARTNER_STATUSES, performance: partnerPerformance(kind), currentIntake: (currentIntake() || {}).name || '' }); return true; }
       if (!id) { sendJSON(res, 200, { access: level, partners: b2b.list(), ...(kind === 'b2b' ? { onSheet: sheetPartners(), notPartners: planning.all().settings.notPartners || [] } : { onSheet: sheetAgents(), notPartners: planning.all().settings.notAgents || [] }), statuses: PARTNER_STATUSES, performance: partnerPerformance(kind), currentIntake: (currentIntake() || {}).name || '', intakes: (() => { const wb = getWorkbook(); return wb ? wb.sheets.filter((x) => !x.hidden || true).map((x) => x.name) : []; })() }); return true; }
       const one = shapePartner(b2b.get(id), level, seesLogins(req.user));
       if (one) sendJSON(res, 200, one); else sendJSON(res, 404, { error: 'No such partner.' });
@@ -1506,7 +1515,7 @@ function createPortalApi({
       const made = b2b.create(body.name, req.user.label);
       if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
       record(`Added ${made.university.name} to ${label}`);
-      sendJSON(res, 200, made.university);
+      sendJSON(res, 200, shapePartner(made.university, level, seesLogins(req.user)));
       return true;
     }
     if (urlPath.endsWith('/delete')) {
@@ -1516,10 +1525,12 @@ function createPortalApi({
       sendJSON(res, 200, { ok: true });
       return true;
     }
+    // Setting up keeps what only Admin changes (the commission lists and the notes) exactly as they were.
+    if (level === 'setup') { const old = b2b.get(id); if (!old) { sendJSON(res, 404, { error: 'No such partner.' }); return true; } body.commissions = old.commissions || []; body.notes = old.notes || ''; }
     const saved = b2b.update(id, body, req.user.label);
     if (saved.error) { sendJSON(res, 400, { error: saved.error }); return true; }
     record(`Updated ${saved.university.name} in ${label}`);
-    sendJSON(res, 200, saved.university);
+    sendJSON(res, 200, shapePartner(saved.university, level, seesLogins(req.user)));
     return true;
   }
 
@@ -1817,7 +1828,7 @@ function createPortalApi({
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
           if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
-          out.push({ ...t, forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
+          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

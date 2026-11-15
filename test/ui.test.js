@@ -119,14 +119,16 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     // An empty date box (Language Test with no date) is one line with its calendar icon: the "nothing here yet" look of the
     // empty panels (a round badge, big padding) must never be drawn inside it.
     const box = await page.locator('#body td.lang-test').first().evaluate((cell) => {
-      const el = document.createElement('input'); // drawn the way the sheet draws a Language Test date that is still empty
-      el.type = 'date'; el.className = 'date-input empty';
-      cell.append(el);
-      const out = { height: Math.round(el.getBoundingClientRect().height), badge: getComputedStyle(el, '::before').content, padding: getComputedStyle(el).paddingTop };
-      el.remove();
+      // Drawn the way the sheet draws a Language Test date that is still empty: the words, with the date box lying over them.
+      const wrap = document.createElement('span'); wrap.className = 'lt-date';
+      const face = document.createElement('span'); face.className = 'lt-date-face empty'; face.textContent = 'Choose the date';
+      const el = document.createElement('input'); el.type = 'date'; el.className = 'date-input empty';
+      wrap.append(face, el); cell.append(wrap);
+      const out = { height: Math.round(wrap.getBoundingClientRect().height), badge: getComputedStyle(el, '::before').content, padding: getComputedStyle(el).paddingTop };
+      wrap.remove();
       return out;
     });
-    assert.ok(box.height <= 46 && box.badge === 'none' && box.padding === '2px', `an empty date box is one plain line, got ${JSON.stringify(box)}`);
+    assert.ok(box.height <= 46 && box.badge === 'none' && box.padding === '0px', `an empty date box is one plain line, got ${JSON.stringify(box)}`);
     await page.close();
   });
 

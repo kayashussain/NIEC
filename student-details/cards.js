@@ -234,8 +234,20 @@ function createCards(dir, { now = () => new Date() } = {}) {
       // through in the task's comments. Older tasks keep the date they were given with; it is simply not shown.
       let task;
       const out = update(rowId, by, (card, stamp) => {
-        task = { id: newId(), team, text, by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
+        // The tag chosen when the task was given (Payment, Visa and CAS, Application, Mock interview, Documents, Other), if any.
+        const tag = Fields.TASK_TAG_IDS.includes(input && input.tag) ? input.tag : '';
+        task = { id: newId(), team, text, ...(tag ? { tag } : {}), by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
         card.tasks = [...card.tasks, task].slice(-LIMITS.tasks);
+      });
+      return out.error ? out : { ...out, task };
+    },
+    tagTask(rowId, taskId, tag, by) {
+      if (!Fields.TASK_TAG_IDS.includes(tag)) return { error: 'Choose what the task is about.' };
+      let task;
+      const out = update(rowId, by, (card) => {
+        task = card.tasks.find((t) => t.id === taskId);
+        if (!task) return { error: 'No such task.' };
+        task.tag = tag;
       });
       return out.error ? out : { ...out, task };
     },

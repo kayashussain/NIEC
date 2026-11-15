@@ -1,6 +1,7 @@
 // B2B Partners and Agents (one page script for both, chosen by data-kind on the body). Admin edits them; the Manager (with the
-// commission) and the Application and Mock Teams (without the commission and the portal login) look at them: the server sends
-// each account only what partner-access.js allows, and `data.access` says which ('full', 'commission' or 'team').
+// commission) and the Mock Team (without the commission and the portal login) look at them; the Application Team sets B2B partners
+// up without the commission (the owner, 15 Nov 2026): the server sends each account only what partner-access.js allows, and
+// `data.access` says which ('full', 'setup', 'commission' or 'team').
 //   B2B Partners: the businesses you send applications to (they hold the direct agreement with a university). Each card shows how to
 //   submit (the portal and its login, or the email) so it can be used without opening the partner.
 //   Agents: the businesses that send you their students.
@@ -14,7 +15,9 @@
   const API = '/api/' + KIND;
   const EMAIL = /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/;
   let data = null;
-  const viewer = () => data && data.access && data.access !== 'full';
+  // 'setup': the Application Team sets B2B partners up (details, how to submit, contacts) but not the commission, files or notes.
+  const settingUp = () => data && data.access === 'setup';
+  const viewer = () => data && data.access && data.access !== 'full' && data.access !== 'setup';
   const open = (id) => (viewer() ? view(id) : edit(id));
 
   const stats = (name) => data.performance[String(name).toLowerCase()] || { students: 0, visas: 0, intakes: {} };
@@ -62,7 +65,7 @@
     who.append(el('div', 'bp-name', x.name), el('div', 'bp-sub', `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(x.students)} student${x.students === 1 ? '' : 's'} on the sheet`));
     head.append(who, el('span', 'bp-status amber', 'Not set up'));
     const note = el('div', 'bp-submit');
-    note.append(el('div', 'bp-submit-title', 'Named on the sheet'), el('div', 'bp-none', KIND === 'agents' ? 'Named in the Receiving Partner column. Set it up to add the contact, the agreement and the commission list.' : 'Set it up to add how to submit applications, the contact and the commission list.'));
+    note.append(el('div', 'bp-submit-title', 'Named on the sheet'), el('div', 'bp-none', KIND === 'agents' ? 'Named in the Receiving Partner column. Set it up to add the contact, the agreement and the commission list.' : settingUp() ? 'Set it up to add how to submit applications and the contact.' : 'Set it up to add how to submit applications, the contact and the commission list.'));
     const foot = el('div', 'bp-foot');
     const notWord = KIND === 'agents' ? 'Not an agent' : 'Not a partner';
     foot.append(btn('btn', notWord, async () => {
@@ -87,7 +90,7 @@
     // The commission of the intake that is running: open it, or a calm note that it is missing.
     const cur = data.currentIntake;
     const found = (p.commissions || []).find((x) => same(x.intake, cur) && (x.fileId || x.link));
-    if (data.access === 'team') { /* a team does not see the commission */ } else if (found) row(`Commission list, ${cur}`, found.fileId ? openLink('Open the PDF ↗', `${API}/${p.id}/files/${found.fileId}?open=1`) : openLink('Open the link ↗', found.link));
+    if (data.access === 'team' || settingUp()) { /* a team does not see the commission */ } else if (found) row(`Commission list, ${cur}`, found.fileId ? openLink('Open the PDF ↗', `${API}/${p.id}/files/${found.fileId}?open=1`) : openLink('Open the link ↗', found.link));
     else if (p.status === 'Ended') row('Commission', 'Ended');
     else if (viewer()) row(`Commission list, ${cur || 'this intake'}`, el('span', 'bp-none', 'Not uploaded yet'));
     else { const m = btn('bp-missing', 'Not uploaded yet', () => edit(p.id)); row(`Commission list, ${cur || 'this intake'}`, m); }
@@ -262,9 +265,10 @@
     const contacts = repeater([['name', 'Name', 'e.g. Partner manager'], ['phone', 'Phone', 'e.g. 98XXXXXXXX'], ['email', 'Email', 'name@partner.com']], p.contacts, 'Add a contact');
     s3.append(contacts.node); steps.push(s3);
 
+    const full = !settingUp();
     const s4 = step(++n, 'Commission list by intake', 'The partner\'s own commission list for each intake (it covers its universities, each with its own rate). Choose the intake, then paste the link or upload the PDF.');
     const commissions = commissionEditor(id, p);
-    s4.append(commissions.node); steps.push(s4);
+    s4.append(commissions.node); if (full) steps.push(s4); else n -= 1;
 
     const s5 = step(++n, 'Agreement and other files', 'PDF, Word or an image, up to 10 MB. Files are saved as soon as they are uploaded.');
     const fl = el('div', 'bp-files');
@@ -291,7 +295,7 @@
       up.disabled = false;
     });
     const upRow = el('div', 'p-bar'); upRow.append(pick, up);
-    s5.append(fl, upRow); steps.push(s5);
+    s5.append(fl, upRow); if (full) steps.push(s5); else n -= 1;
 
     const byIntake = Object.entries(st.intakes || {});
     const s6 = step(++n, 'Visas by intake', '');
@@ -306,13 +310,14 @@
 
     const notes = field('Notes', { kind: 'area', value: p.notes, max: 12000, wide: true });
     const s7 = step(++n, 'Notes', '');
-    s7.append(grid('bp-one', notes.wrap)); steps.push(s7);
+    s7.append(grid('bp-one', notes.wrap)); if (full) steps.push(s7);
     form.append(...steps);
 
     const bar = el('div', 'bp-savebar');
     const save = btn('btn btn-primary', 'Save', async () => {
       try {
-        const body = { name: name.input.value, status: status.input.value, city: city.input.value, agreementStart: start.input.value, agreementEnd: end.input.value, contacts: contacts.values(), commissions: commissions.values(), notes: notes.input.value };
+        const body = { name: name.input.value, status: status.input.value, city: city.input.value, agreementStart: start.input.value, agreementEnd: end.input.value, contacts: contacts.values() };
+        if (full) Object.assign(body, { commissions: commissions.values(), notes: notes.input.value });
         if (apply) Object.assign(body, { apply: apply.input.value, applyUser: applyUser.input.value, applyPassword: applyPassword.input.value });
         const saved = await api(`${API}/${id}`, body);
         if (apply && apply.input.value.trim() && !saved.applyPortal && !saved.applyEmail) say('Saved, but the application link could not be kept: it must be a web address or an email address.', true);
@@ -321,7 +326,9 @@
       } catch (e) { say(e.message, true); }
     });
     const del = btn('btn btn-danger', 'Remove from list', async () => { if (!(await window.NiecUI.confirm(`Remove ${p.name} from ${WORD.title}?`, { danger: true, confirmText: 'Remove' }))) return; await api(`${API}/${id}/delete`, {}); say('Removed'); closeEditor(); load(); });
-    bar.append(save, btn('btn', 'Back to the list', closeEditor), el('span', 'grow'), del);
+    bar.append(save, btn('btn', 'Back to the list', closeEditor), el('span', 'grow'));
+    if (full) bar.append(del);
+    else bar.append(el('span', 'p-muted p-small', 'The commission list, files and notes are kept by Admin.'));
     form.append(bar);
     ed.replaceChildren(form);
     $('listView').hidden = true; ed.hidden = false;
@@ -344,6 +351,7 @@
   async function load() {
     data = await api(API);
     if (!viewer()) { const c = document.querySelector('#pageTitle .p-chip'); if (c) c.hidden = true; } // others look at it too now
+    if (settingUp()) $('intro').textContent = 'Where applications go, contacts and agreements. Set up a partner named on the sheet, or add a new one; the commission is kept by Admin.';
     if (viewer()) {
       $('add').hidden = true;
       const chip = document.querySelector('#pageTitle .p-chip'); if (chip) chip.textContent = 'View only';

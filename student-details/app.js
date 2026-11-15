@@ -588,15 +588,26 @@
       e.stopPropagation();
       if (input.showPicker) { try { input.showPicker(); } catch (err) { /* unsupported */ } }
     });
+    // The date reads "17 Jul 2026" like every other date on the sheet (it showed the browser's 07/17/2026); the real date box lies
+    // invisibly over the words and opens the calendar, as in the other date cells.
+    const box = document.createElement('span');
+    box.className = 'lt-date';
+    const face = document.createElement('span');
+    face.className = 'lt-date-face';
+    face.textContent = input.value ? displayDate(input.value) : 'Choose the date';
+    if (!input.value) face.classList.add('empty');
     confirmDateInput(input, toISODate(val), (value) => {
       const target = liveRow(student);
       if (!target) { NiecUI.toast('That student is no longer on this sheet, so the date was not saved.'); return; }
       pushUndo();
       target[col] = value || 'Test Date';
       markDirty();
+      face.textContent = value ? displayDate(value) : 'Choose the date';
+      face.classList.toggle('empty', !value);
       applyLanguageTestFlag(td, value);
     });
-    td.appendChild(input);
+    box.append(face, input);
+    td.appendChild(box);
     applyLanguageTestFlag(td, input.value);
   }
 

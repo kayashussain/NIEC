@@ -88,20 +88,44 @@
     return box;
   }
 
+  // The source in a few plain words, for the line under the name. A campaign's own date is left out (it is the day the campaign
+  // started, not the student's), and so is a "Marketing:" or "Event:" word the records sometimes keep in front of the name.
+  function sourceLine(s) {
+    if (!s.source) return '';
+    const p = profile();
+    const plain = (v) => String(v || '').replace(/^(Marketing|Event)\s*:\s*/i, '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '').trim();
+    const g = F.sourceGroup(s.source) || s.source;
+    const parts = [g === 'Branch' ? s.source : g];
+    if (p.sourcePlatform) parts.push(p.sourcePlatform);
+    const what = data.event ? plain(data.event.name) : plain(p.sourceDetail);
+    if (p.sourceWay === 'Advert') parts.push(what ? `Advert: ${what}` : 'Advert');
+    else if (p.sourceWay === 'Organic') parts.push('Organic');
+    else if (what && !parts.includes(what)) parts.push(what);
+    return parts.filter(Boolean).join(' \u00b7 ');
+  }
+
   // ---- the top: name, stage, contact ----
   function hero() {
     const s = data.student;
     if (editingHero) return heroEdit();
     const c = el('section', 'p-card p-hero');
     c.append(el('div', 'p-avatar', initials(s.name)));
-    const mid = el('div');
-    mid.append(el('h1', '', s.name));
+    const mid = el('div', 'p-hero-mid');
+    // The name and the buttons share the top row; a long name (SANJIP KUMAR MAHTO Mahato) wraps and the buttons move under it,
+    // they never sit on top of each other (the owner, 15 Nov 2026).
+    const top = el('div', 'p-hero-top');
+    const name = el('h1', '', s.name);
+    name.title = s.name;
+    const act = el('div', 'p-hero-actions');
+    top.append(name, act);
+    mid.append(top);
     const line = el('div', 'p-hero-line');
-    line.append(stagePill(s.stage), el('span', '', s.intake));
-    if (s.source) line.append(el('span', 'p-chip', data.event ? s.source : s.source + (profile().sourceDetail ? ': ' + profile().sourceDetail : '')));
-    // An event or marketing tag shows when and for how long it ran.
-    if (data.event) { const e = data.event; line.append(el('span', 'p-chip', `${e.kind === 'Marketing' ? 'Marketing' : 'Event'}: ${e.name}, ${e.endDate && e.endDate !== e.date ? day(e.date) + ' to ' + day(e.endDate) : day(e.date)}`)); }
+    line.append(stagePill(s.stage), el('span', 'p-hero-intake', s.intake));
     mid.append(line);
+    // Where the student came from, as one quiet line in smaller grey type: "Social Media · Facebook · Advert: Facebook ads ...".
+    // The full story (dates, first inquiry, remarks) is under Where the student came from.
+    const src = sourceLine(s);
+    if (src) { const sl = el('div', 'p-hero-source', src); sl.title = src; mid.append(sl); }
     mid.append(journey(s.stage));
     const facts = el('dl', 'p-facts');
     const fact = (k, v, href) => { if (!v) return; const d = el('div', 'p-fact'); const dd = el('dd'); if (href) { const a = el('a', '', v); a.href = href; dd.append(a); } else dd.textContent = v; d.append(el('dt', '', k), dd); facts.append(d); };
@@ -150,11 +174,11 @@
       d.append(el('dt', '', data.apply.via ? `Application link (through ${data.apply.via})` : 'Application link'), dd); facts.append(d);
     }
     mid.append(facts);
-    const act = el('div', 'p-hero-actions');
-    if (can()) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('message') }, 'Send a message'));
+    if (can()) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('message', null, true) }, 'Send a message'));
     if (can()) act.append(h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }, 'Edit details'));
     if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: assignTask }, 'Assign a task'));
-    c.append(mid, act);
+    if (!act.childNodes.length) act.remove();
+    c.append(mid);
     return c;
   }
 
@@ -168,6 +192,13 @@
       const targets = (data.assignTeams || data.taskTeams || []).map((t) => [t.id, t.label]);
       const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : '' });
       const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submit the application to Coventry University.' });
+      // What the task is about: the system suggests it from the words, the team and the stage, until a tag is pressed.
+      const guess = () => F.guessTaskTag(text.input.value, team.input.value, data.student.stage);
+      const tag = window.Portal.tagPicker(guess());
+      const tagWrap = el('div', 'p-field p-wide');
+      tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
+      text.input.addEventListener('input', () => tag.set(guess()));
+      team.input.addEventListener('change', () => tag.set(guess()));
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Assign');
@@ -175,10 +206,10 @@
         if (!team.input.value) { msg.textContent = 'Choose who should do it.'; msg.className = 'p-msg error'; return; }
         if (!text.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await save('tasks', { team: team.input.value, text: text.input.value }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        try { await save('tasks', { team: team.input.value, text: text.input.value, tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap);
+      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, tagWrap);
       body.append(g, msg, foot);
       setTimeout(() => text.input.focus(), 0);
     }).then((done) => { if (done) render(); });
@@ -214,6 +245,9 @@
       const top = el('div', 'td-task-top');
       top.append(el('div', 'td-task-text', t.text));
       if (unread[t.id]) top.append(el('span', 'td-dot', String(unread[t.id])));
+      const tagLine = el('div', 'td-tag-line');
+      tagLine.append(window.Portal.taskTagPill(t, { rowId: id, stage: data.student.stage, canChange: !data.can.readOnly && (mine || t.by === me), onChanged: async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); } }));
+      if (window.Portal.doFirst({ ...t, unread: unread[t.id] }, data.student.stage)) tagLine.append(el('span', 'td-first', 'Do first'));
       // From whom, to whom, and when.
       const route = window.Portal.taskRoute(t, { fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team), teams: data.taskTeams || [] });
       route.append(el('span', 'td-when', t.at ? when(t.at) : ''));
@@ -227,7 +261,7 @@
       const had = (t.route || []).some((x) => (data.can.myTeams || []).includes(x) || (x === 'head' && (data.me || {}).role === 'admin'));
       const canWrite = !data.can.readOnly && (mine || t.by === me || had);
       const thread = window.Portal.taskThread(t, { rowId: id, me, canWrite, unread: unread[t.id] || 0, teams: data.taskTeams || [] });
-      mid.append(top, route, thread);
+      mid.append(top, tagLine, route, thread);
       r.append(box, mid);
       if (unread[t.id]) r.addEventListener('pointerdown', () => thread.markRead());
       c.append(r);
@@ -252,6 +286,8 @@
       }
       wrap.append(kind);
     }
+    // While the source is being changed its form gets the card's full width (not the narrow left column beside the notes).
+    if (editingOrigin) wrap.classList.add('p-editing-origin');
     wrap.append(origin(), notes());
     return wrap;
   }
@@ -508,8 +544,11 @@
   }
 
   const openCompose = (template) => { (window.top || window).location.href = `/compose?id=${encodeURIComponent(id)}&template=${encodeURIComponent(template)}`; };
-  function select(name, template) {
+  function select(name, template, reveal) {
     const changed = name !== tab;
+    // From the button at the top: the messages are below the student's details, so glide down to them, else the press looked
+    // like it did nothing (the owner, 15 Nov 2026).
+    if (reveal) setTimeout(() => { const t = view.querySelector('.p-tabs'); if (t) t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }, changed ? 260 : 0);
     tab = name;
     history.replaceState(null, '', location.pathname + location.search + '#' + name);
     // Another tab cross-fades in, as on a Mac; the same tab again is redrawn at once.

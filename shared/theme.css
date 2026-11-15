@@ -736,15 +736,19 @@ body:has(#sheet) .footbar { padding: 10px 32px 14px; background: transparent; bo
 
 /* 🔴 CSS CHANGED (2026-11-13): the Student Details buttons and the student card | from: buttons in the order + Add student, Add many, Export Excel, Colour rows, Bulk follow-up, Delete rows; the top of the student card kept jumping between three layouts as the zoom changed (buttons at the right, then underneath; details in two columns, then one, then two again) and broke emails in the middle | to: + Add student, Follow-up, Colour rows, Delete rows, Export Excel, with Add many students as a grey box at the top of the Add student window; the card has one steady layout at every zoom: the name, the buttons under it, then the details in two columns (one on a phone), and an email only breaks when it cannot fit (the card's width is changed in student-details/portal.css) */
 /* 🔴 CSS CHANGED (2026-11-13): the top of the wider student card | from: buttons always under the name and the details in two columns (made for a 600px card) | to: in the 920px card (and the card opened as its own page) the buttons sit in the top right corner, the name keeps clear of them, and the journey line and the details (three columns) use the full width under the name; a window narrower than the card falls back to buttons under the name and two columns */
-body.p-embed .p-hero { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
-body.p-embed .p-hero-actions { grid-column: 1 / -1; justify-content: flex-start; }
+/* 🔴 CSS CHANGED (2026-11-15): the top of the student card, a long name (a bug fix) | from: the buttons were pinned to the top right corner and the name kept a fixed 330px clear of them, so a long name (SANJIP KUMAR MAHTO Mahato) ran under "Send a message"; the source was a big grey pill reading "Social Media: Marketing: Facebook ads Bangalore University, 6 Nov 2026" | to: the name and the buttons share one row that wraps: the name takes the room it needs (up to two lines, 30px) and the buttons move under it when they do not fit, never on top; the stage and intake on one line, then the source as one quiet grey line in 13.5px ("Social Media · Facebook · Advert: Facebook ads Bangalore University"), cut with … if longer than the card (the whole text shows on hover) */
+body:has(.p-embed-bar) .p-card.p-hero, body.p-embed .p-hero { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+.p-hero-mid { min-width: 0; }
+.p-hero-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; }
+body:has(.p-embed-bar) .p-hero .p-hero-top h1 { flex: 1 1 280px; min-width: 0; margin: 0; font-size: 30px; line-height: 1.15; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+body:has(.p-embed-bar) .p-hero .p-hero-top .p-hero-actions { position: static; flex: 0 1 auto; max-width: 100%; flex-wrap: wrap; margin: 2px 0 0; justify-content: flex-start; }
+.p-hero-line .p-hero-intake { color: var(--text-dim); font-size: 14px; font-weight: 500; }
+.p-hero-source { margin-top: 8px; max-width: 100%; overflow: hidden; color: var(--text-dim); font-size: 13.5px; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; }
 body.p-embed .p-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 761px) {
-  body:has(.p-embed-bar) .p-card.p-hero { grid-template-columns: auto minmax(0, 1fr); }
-  body:has(.p-embed-bar) .p-hero-actions { position: absolute; top: 28px; right: 28px; margin: 0; grid-column: auto; justify-content: flex-end; }
-  body:has(.p-embed-bar) .p-hero h1, body:has(.p-embed-bar) .p-hero-line { margin-right: 330px; }
   body:has(.p-embed-bar) .p-hero .p-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+@media (max-width: 520px) { body:has(.p-embed-bar) .p-hero .p-hero-top h1 { font-size: 26px; } .p-hero-source { white-space: normal; } }
 body.p-embed .p-fact dd, body.p-embed .p-fact dd a { overflow-wrap: break-word; word-break: normal; }
 @media (max-width: 460px) { body.p-embed .p-facts { grid-template-columns: minmax(0, 1fr); } }
 .ns-many { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; margin: 0 0 18px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--soft); color: var(--text-dim); }
@@ -869,6 +873,12 @@ body:has(.p-embed-bar) .p-template small { display: block; margin-top: 3px; font
   body:has(.p-embed-bar) .p-tabs + div:has(.p-note-box) > .p-card:not(:has(.p-note-box)) .p-facts { grid-template-columns: minmax(0, 1fr); }
   body:has(.p-embed-bar) .p-card:not(.p-hero) .p-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   body:has(.p-embed-bar) .p-templates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 🔴 CSS CHANGED (2026-11-15): "Where the student came from", Edit (a bug fix) | from: the form was squeezed into the 300px left column in three columns, so labels and choices broke onto many lines ("Social / Media", "Other / (type / its / name)") and the Organic / Advert switch spilled over the notes | to: while editing, the card takes the full width above the notes, its fields in rows of up to three, each at least 220px wide; any other form in the left column (Why the student did not go on) is one column */
+  body:has(.p-embed-bar) .p-tabs + div.p-editing-origin:has(.p-note-box) { display: flex; flex-direction: column; align-items: stretch; gap: 20px; }
+  .p-editing-origin .p-seg { justify-self: start; width: max-content; }
+  body:has(.p-embed-bar) .p-tabs + div.p-editing-origin > .p-card { margin: 0; }
+  body:has(.p-embed-bar) .p-tabs + div.p-editing-origin .p-form { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; }
+  body:has(.p-embed-bar) .p-tabs + div:has(.p-note-box):not(.p-editing-origin) > .p-card:not(:has(.p-note-box)) .p-form { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* 🔴 CSS CHANGED (2026-11-13): "Application link" on the student card | from: nothing | to: a full-width line under the student's details with "Open portal" as a small navy-outlined button with an arrow (opens in a new tab) and the application email as a link beside it, taken from the student's university on Partner Universities */
@@ -1185,7 +1195,11 @@ body:has(#sheet) #sheet td.col-idx { color: #8e8e93; font-size: 13px; font-varia
 body:has(#sheet) #sheet td.date { font-variant-numeric: tabular-nums; color: #3a3a3c; }
 body:has(#sheet) #sheet tbody tr:not(.pad-row):hover td { background-color: var(--row-hover); }
 body:has(#sheet) #sheet .status-select { height: 28px; padding: 0 24px 0 10px; border: 0; border-radius: 8px; font-size: 13px; font-weight: 600; line-height: 28px; box-shadow: none; }
-body:has(#sheet) #sheet .status-select.badge-gray { background: transparent; color: #3a3a3c; font-weight: 500; }
+/* 🔴 CSS CHANGED (2026-11-15): dropdown cells on All Students, Receiving Partner, University Partner, NOC and the other plain ones (a bug fix) | from: a click drew a second blue ring around the small dropdown inside the cell's own blue frame (a box in a box), the dropdown was only as wide as its words, had no arrow and its words were smaller than the rest of the row | to: one frame only (the cell's); the dropdown fills the cell, its words are the size of the other cells, and a small grey chevron at the right shows it is a choice; an empty one reads "Select" in grey */
+body:has(#sheet) #sheet .status-select.badge-gray { width: 100%; padding-right: 26px; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%23a1a1a6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center; color: #1d1d1f; font-size: 14.5px; font-weight: 400; text-overflow: ellipsis; }
+body:has(#sheet) #sheet .status-select.badge-gray:has(> option:checked[value=""]) { color: #8e8e93; }
+body:has(#sheet) #sheet .status-select:focus, body:has(#sheet) #sheet .status-select:focus-visible { outline: none; box-shadow: none !important; }
+body:has(#sheet) #sheet td:has(> .status-select.badge-gray) { padding-left: 4px; padding-right: 4px; }
 body:has(#sheet) .sheet-tabs { padding: 10px 12px; border-top: 1px solid var(--border); background: var(--panel); }
 body:has(#sheet) .sheet-tabs-list { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: #ececf0; }
 body:has(#sheet) .sheet-tab { padding: 6px 12px; border: 0; border-radius: 9px; background: transparent; color: #5c5c63; font-weight: 550; box-shadow: none; }
@@ -1803,3 +1817,39 @@ select option { color: #1d1d1f; }
 .activity-more > summary { display: inline-block; padding: 2px 0; color: #0066cc; font-size: 14px; font-weight: 600; cursor: pointer; list-style: none; }
 .activity-more > summary::-webkit-details-marker { display: none; }
 .activity-more[open] > summary { display: none; }
+
+/* 🔴 CSS CHANGED (2026-11-15): tasks with tags, in the order the system works out (new) | from: every task in one long list, newest word first, all of them shown at once, nothing saying what a task is about | to: each task has a small soft coloured tag under its words, Payment (orange), Visa and CAS (purple), Application (blue), Mock interview (teal), Documents (brown), Other (grey), pressed to change it; an open task about money or the visa, waiting a week or more, or with something new on it has a quiet red "Do first" beside the tag; on Today a row of pills above the tasks (All, then each kind with how many are open) shows one kind at a time; each list shows its first five tasks and "Show all N open tasks" under them; the list heading adds "N to do first" in soft red; in Assign a task the same tags are chosen in a row of pills (the system picks one from the words, the team and the stage) */
+.td-tag-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 6px; }
+.td-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; font: 600 12.5px/24px var(--font); letter-spacing: .01em; cursor: pointer; transition: filter .15s ease, box-shadow .15s ease; }
+.td-tag:disabled { cursor: default; }
+.td-tag:not(:disabled):hover { filter: brightness(.96); }
+.td-tag.tag-payment { background: #fff1e0; color: #a35200; }
+.td-tag.tag-visa { background: #f1e9fb; color: #6b3fa0; }
+.td-tag.tag-application { background: #e6f0fc; color: #0058b0; }
+.td-tag.tag-mock { background: #e3f4f2; color: #0f6e66; }
+.td-tag.tag-documents { background: #f3ece4; color: #7a5230; }
+.td-tag.tag-other { background: #ececf0; color: #515154; }
+.td-first { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #fdecea; color: #c4271c; font: 600 12px/22px var(--font); }
+.td-chip.is-first { background: #fdecea; color: #c4271c; }
+.td-tag-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.td-tag-pick .td-tag { min-height: 34px; padding: 0 14px; font-size: 14px; line-height: 34px; opacity: .55; }
+.td-tag-pick .td-tag[aria-checked="true"] { opacity: 1; box-shadow: 0 0 0 2px currentColor inset; }
+.td-tag-pick .td-tag:hover { opacity: 1; }
+.td-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
+.td-filter-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #ececf0; color: #1d1d1f; font: 500 14.5px/36px var(--font); cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
+.td-filter-pill:hover { background: #e2e2e7; }
+.td-filter-pill[aria-selected="true"] { background: #1d1d1f; color: #fff; }
+.td-filter-n { min-width: 22px; padding: 0 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); font-size: 12.5px; font-weight: 600; line-height: 20px; text-align: center; }
+.td-filter-pill[aria-selected="true"] .td-filter-n { background: rgba(255, 255, 255, .22); }
+.td-more { display: block; margin: 10px 0 2px; padding: 0; border: 0; background: none; color: #0066cc; font: 500 14.5px var(--font); cursor: pointer; }
+.td-more:hover { text-decoration: underline; }
+
+/* 🔴 CSS CHANGED (2026-11-15): phones, found in the review | from: on Today the task filter pills wrapped onto two or three lines; on B2B Partners and Agents the figures stacked with a stray grey line down their left edge | to: the filter pills stay on one line and slide sideways; the stacked figures are divided by thin lines between them, with no line at the edge */
+@media (max-width: 600px) {
+  .td-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -2px; padding: 2px; }
+  .td-filter::-webkit-scrollbar { display: none; }
+  .td-filter-pill { flex: none; }
+  .bp-band { grid-template-columns: minmax(0, 1fr); }
+  .bp-band > div { border-left: 0; border-top: 1px solid var(--border); }
+  .bp-band > div:first-child { border-top: 0; }
+}

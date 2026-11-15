@@ -213,7 +213,10 @@
       const W = 1000; const H = 330; const L = 40; const R = 16; const TOP = 30; const BOT = 290;
       const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'tr-svg', role: 'img', 'aria-label': 'Ups and downs over time' });
       const defs = svg('defs'); s.append(defs);
-      const max = Math.max(4, ...series.flatMap((x) => x.vals));
+      // The top of the scale is rounded up so the four steps are whole, even numbers (0, 3, 6, 9, 12, not 0, 3, 6, 8, 11).
+      const top = Math.max(4, ...series.flatMap((x) => x.vals));
+      const unit = [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 1500, 2000, 2500, 5000].find((u) => u * 4 >= top) || Math.ceil(top / 4);
+      const max = unit * 4;
       const xOfI = (i) => L + ((W - L - R) * (i + .5)) / ps.length;
       const yOf = (v) => BOT - ((BOT - TOP) * v) / max;
       [0, .25, .5, .75, 1].forEach((f) => { const y = BOT - (BOT - TOP) * f; s.append(svg('line', { x1: L, x2: W - R, y1: y, y2: y, class: 'tr-grid' })); const t = svg('text', { x: L - 8, y: y + 4, class: 'tr-axis', 'text-anchor': 'end' }); t.textContent = fmt(Math.round(max * f)); s.append(t); });

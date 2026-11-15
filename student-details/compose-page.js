@@ -90,10 +90,12 @@
         preview = await api(`/api/cards/${id}/messages/preview`, { template: templateKey, subject: subject.input.value, body: bodyText.input.value, to: to.input.value });
         frame.srcdoc = preview.html;
         const gaps = preview.missing.length > 0;
-        sendEmail.disabled = gaps || !mail.ready; copyBtn.disabled = gaps; if (typeof waBtn !== 'undefined') waBtn.disabled = gaps;
-        [sendEmail, copyBtn].concat(typeof waBtn !== 'undefined' ? [waBtn] : []).forEach((b) => { b.title = gaps ? 'Fill in what is missing on the student first' : ''; });
+        // A gap (no university options yet, no offer date ...) never switches the buttons off: that looked like Send a message
+        // was broken (the owner, 15 Nov 2026). The note below says what is missing and Send or WhatsApp asks "anyway?" first.
+        sendEmail.disabled = !mail.ready;
+        sendEmail.title = mail.ready ? '' : 'Set up your email first (My email and WhatsApp)';
         notes.replaceChildren();
-        if (preview.missing.length) notes.append(el('div', 'p-notice warn', 'Check before sending: this student has no ' + preview.missing.join(' and no ') + ' yet, so the message below has gaps. Fill them in on the student card first, or write the message yourself.'));
+        if (gaps) notes.append(el('div', 'p-notice warn', 'Check before sending: this student has no ' + preview.missing.join(' and no ') + ' yet, so the message below has gaps. Add them on the student card, change the words here, or send it as it is.'));
         if (!mail.ready && mail.own) { const n = el('div', 'p-notice warn', 'To send emails, set up your own email first (it takes a minute): '); const a = el('a', '', 'My email and WhatsApp'); a.href = '/my-email'; n.append(a, '. You can copy the text meanwhile.'); notes.append(n); }
         else if (!mail.ready) notes.append(el('div', 'p-notice', 'Email is not set up on this computer (normal for a test copy). Copy the text instead.'));
       } catch (e) { notes.replaceChildren(el('div', 'p-notice bad', e.message)); }
@@ -134,7 +136,7 @@
     });
     waBar.append(waBtn);
     right.append(waBar);
-    const showWa = () => { wa.textContent = preview ? preview.whatsapp.text : ''; waBtn.disabled = !(preview && preview.whatsapp.number) || Boolean(preview && preview.missing.length); if (preview && !preview.whatsapp.number) wa.textContent += '\n\n(This student has no WhatsApp number on the sheet.)'; };
+    const showWa = () => { wa.textContent = preview ? preview.whatsapp.text : ''; waBtn.disabled = !(preview && preview.whatsapp.number); if (preview && !preview.whatsapp.number) wa.textContent += '\n\n(This student has no WhatsApp number on the sheet.)'; };
     const oldRefresh = refresh;
     cols.append(left, right);
     wrap.append(cols);

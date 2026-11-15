@@ -1,6 +1,6 @@
 // The B2B Partners list: the other businesses NIEC works with to recruit students or to apply to universities. Each has its contact
-// people, agreement dates and files, the commission structure of each intake and notes. Admin changes them; the Manager and the
-// Application and Mock Teams look at them, with what partner-access.js allows. Kept in b2b-partners.json in the data folder, with the agreement files in b2b-files/
+// people, agreement dates and files, the commission structure of each intake and notes. Admin changes them, the Application Team sets
+// them up without the commission, and the Manager and the Mock Team look at them, with what partner-access.js allows. Kept in b2b-partners.json in the data folder, with the agreement files in b2b-files/
 // (never in git, never served as pages). The store itself is the one the Partner Universities use (direct.js).
 
 const { createDirect, applyRoute, STATUSES, LIMITS } = require('./direct');

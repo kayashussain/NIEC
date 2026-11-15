@@ -160,8 +160,10 @@ const money = (v) => { const s = text(v); return !s ? '' : (/^[\d,.\s]+$/.test(s
 
 // The values of every {word} for one student. `row`: the student's row of the sheet; `card`: the student card.
 function valuesFor({ row = {}, sheetName = '', card = {}, sender = '', today = new Date(), company = COMPANY, short = '' }) {
-  const first = text(row['FIRST NAME']);
-  const last = text(row['LAST NAME']);
+  // A name typed all in capitals (or all small) reads "Sanjip Kumar" in a message, not "SANJIP KUMAR"; the sheet keeps it as typed.
+  const nameCase = (s) => (s && (s === s.toUpperCase() || s === s.toLowerCase()) ? s.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()) : s);
+  const first = nameCase(text(row['FIRST NAME']));
+  const last = nameCase(text(row['LAST NAME']));
   const mock = [4, 3, 2, 1].map((n) => longDate(row[`MOCK SCHEDULE ${n}`])).find(Boolean) || '';
   const v = {
     company_name: company, company_short: short || initialsOf(company),

@@ -331,5 +331,55 @@
     list.filter(Boolean).forEach(([label, onClick, danger]) => box.append(h('button', { class: `td-act${danger ? ' danger' : ''}`, type: 'button', onclick: onClick }, label)));
     return box.childNodes.length ? box : null;
   }
-  root.Portal = { taskThread, taskRoute, handOn, taskActions, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  // ---- what a task is about (the owner, 15 Nov 2026) and the order the system puts tasks in ----
+  const TAGS = () => ((root.CardFields && root.CardFields.TASK_TAGS) || [['other', 'Other']]);
+  const tagOf = (task, stage) => (root.CardFields ? root.CardFields.taskTag(task, stage) : (task.tag || 'other'));
+  const tagLabel = (id) => (TAGS().find(([k]) => k === id) || [id, 'Other'])[1];
+  // How soon a task should be done, worked out by the system so nobody has to set a priority: a task with something new on it first,
+  // then money and the visa, then the application, the mock interview, documents; and a task waiting longer climbs.
+  const URGENCY = { payment: 40, visa: 36, application: 26, mock: 22, documents: 16, other: 8 };
+  const daysWaiting = (t) => Math.max(0, Math.floor((Date.now() - Date.parse(t.at || 0)) / 86400000));
+  function taskPriority(t, stage) {
+    if (t.done) return -1;
+    return (t.unread ? 100 : 0) + (URGENCY[tagOf(t, stage)] || 8) + Math.min(daysWaiting(t), 14) * 2;
+  }
+  // "Do first": an open task that is about money or the visa, has waited a week or more, or has something new on it.
+  const doFirst = (t, stage) => !t.done && (Boolean(t.unread) || ['payment', 'visa'].includes(tagOf(t, stage)) || daysWaiting(t) >= 7);
+  // The tag as a small coloured pill; whoever may change it presses it to choose another.
+  function taskTagPill(task, { rowId, stage, canChange, onChanged }) {
+    const id = tagOf(task, stage);
+    const pill = h('button', { class: `td-tag tag-${id}`, type: 'button', disabled: !canChange, title: canChange ? 'What the task is about (press to change)' : 'What the task is about' }, tagLabel(id));
+    if (canChange) pill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dialog('What is this task about?', (body, close) => {
+        const pick = tagPicker(id);
+        const foot = el('div', 'p-dialog-foot');
+        const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
+        ok.addEventListener('click', async () => {
+          ok.disabled = true;
+          try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { tag: pick.value() }); close(true); } catch (err) { ok.disabled = false; if (root.NiecUI) root.NiecUI.toast(err.message, { type: 'error' }); }
+        });
+        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+        body.append(pick.node, foot);
+      }).then((done) => { if (done && onChanged) onChanged(); });
+    });
+    return pill;
+  }
+  // The tags as a row of pills to choose one (Assign a task, and changing a tag).
+  function tagPicker(initial) {
+    let value = initial || 'other';
+    let touched = false;
+    const node = el('div', 'td-tag-pick');
+    node.setAttribute('role', 'radiogroup');
+    node.setAttribute('aria-label', 'What the task is about');
+    const buttons = TAGS().map(([k, label]) => {
+      const b = h('button', { class: `td-tag tag-${k}`, type: 'button', role: 'radio', 'aria-checked': String(k === value) }, label);
+      b.addEventListener('click', () => { touched = true; set(k); });
+      node.append(b);
+      return [k, b];
+    });
+    function set(k) { value = k; buttons.forEach(([kk, b]) => b.setAttribute('aria-checked', String(kk === k))); }
+    return { node, value: () => value, set: (k) => { if (!touched) set(k); }, touched: () => touched };
+  }
+  root.Portal = { taskThread, taskRoute, handOn, taskActions, taskTagPill, tagPicker, taskPriority, doFirst, tagOf, tagLabel, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

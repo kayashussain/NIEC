@@ -161,8 +161,31 @@
     return d.length >= 8 && d.length <= 15 ? d : '';
   }
 
+  // What a task is about (the owner, 15 Nov 2026): a tag, so Today can show the tasks in calm groups and put first what matters most.
+  // The order is the order of urgency the system uses: money and the visa first, then the application, the mock interview, documents.
+  const TASK_TAGS = [['payment', 'Payment'], ['visa', 'Visa and CAS'], ['application', 'Application'], ['mock', 'Mock interview'], ['documents', 'Documents'], ['other', 'Other']];
+  const TASK_TAG_IDS = TASK_TAGS.map(([k]) => k);
+  // The tag a task gets when none was chosen (older tasks, or a quick assign): from the words, then the team, then the student's stage.
+  function guessTaskTag(text, team, stage) {
+    const t = String(text || '').toLowerCase();
+    if (/\b(pay|payment|deposit|fee|fees|invoice|receipt|tuition|refund)\b/.test(t)) return 'payment';
+    if (/\b(visa|cas|vfs|biometric|e-?visa|brp|lodge)\b/.test(t)) return 'visa';
+    if (/\b(mock|interview|pre-?cas)\b/.test(t)) return 'mock';
+    if (/\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|noc|medical|ielts|pte|toefl|moi)\b/.test(t)) return 'documents';
+    if (/\b(apply|application|submit|offer|portal|university|course)\b/.test(t)) return 'application';
+    if (team === 'mock') return 'mock';
+    if (team === 'application') return 'application';
+    const st = String(stage || '');
+    if (/Payment/.test(st)) return 'payment';
+    if (/CAS|Visa/.test(st)) return 'visa';
+    if (/Mock/.test(st)) return 'mock';
+    if (/Application/.test(st)) return 'application';
+    return 'other';
+  }
+  const taskTag = (task, stage) => (TASK_TAG_IDS.includes(task && task.tag) ? task.tag : guessTaskTag(task && task.text, task && task.team, stage));
+
   return {
-    BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
+    TASK_TAGS, TASK_TAG_IDS, guessTaskTag, taskTag, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
     OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, SHEET_SECTIONS, columnLabel, whatsappNumber, courseSearchUrl,
   };

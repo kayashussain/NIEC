@@ -4,6 +4,10 @@
 //   Manager                   every detail with the commission (slabs, payment terms, commission lists, agreement files), to look at.
 //   Application and Mock Team Partner Universities, B2B Partners and Agents without the commission: no slabs, payment terms,
 //                             commission lists, agreement files or notes.
+//   B2B Partners, set up      the Application Team also sets B2B partners up (the owner, 15 Nov 2026): it sees the whole list with the
+//                             names on the sheet that are not set up yet, presses Set up or Not a partner, adds a new partner and
+//                             changes its name, status, agreement dates, how to submit (portal and login, or email) and contacts.
+//                             The commission lists, the files, the notes and removing a partner stay Admin's.
 //   Portal logins             the username and password of a portal are for Admin and the Application Team only (the owner,
 //                             14 Nov 2026): the Application Team submits the applications; everyone else sees the portal link only.
 //   A branch                  Partner Universities the same way (without the commission). No B2B Partners or Agents.
@@ -20,9 +24,10 @@ function partnerAccess(user) {
   const appMock = w.departments.some((d) => d === 'application' || d === 'mock');
   const branch = w.departments.some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source);
   const team = appMock ? 'team' : null;
+  const application = w.departments.includes('application');
   return {
     direct: manager ? 'commission' : (appMock || branch ? 'team' : null),
-    b2b: manager ? 'commission' : team,
+    b2b: manager ? 'commission' : application ? 'setup' : team,
     agents: manager ? 'commission' : team,
     templates: manager || appMock || branch ? 'view' : null,
   };

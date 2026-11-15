@@ -342,9 +342,16 @@ td.duplicate-phone { background: #fff176 !important; color: #1c2126; font-weight
 /* 🔴 CSS CHANGED (2026-11-14): hint text no longer slanted | from: italic grey | to: plain grey (Apple never slants text) */
 td.date-note { color: var(--text-dim); }
 #body td.lang-test, td.lang-test { padding: 5px 8px; white-space: nowrap; text-overflow: clip; }
-td.lang-test .date-input { width: 128px; margin-left: 8px; padding: 2px 0; vertical-align: middle; outline: none; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
-td.lang-test .date-input:focus { outline: none; background: transparent; }
-td.lang-test .date-input::-webkit-calendar-picker-indicator { opacity: .7; }
+/* 🔴 CSS CHANGED (2026-11-15): the language test date on All Students (a bug fix) | from: the browser's own box, "07/17/2026" (month first) with its own calendar icon | to: "17 Jul 2026" like every other date on the sheet, with the same light calendar icon after it; a click opens the calendar as before */
+td.lang-test .lt-date { position: relative; display: inline-flex; align-items: center; min-width: 124px; height: 28px; margin-left: 8px; padding-right: 24px; vertical-align: middle; cursor: pointer;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a6' stroke-width='1.8' stroke-linecap='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='3'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E") no-repeat right 2px center; }
+td.lang-test .lt-date-face { font-variant-numeric: tabular-nums; }
+td.lang-test .lt-date-face.empty { color: var(--text-dim); }
+td.lang-test .lt-date .date-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; border-radius: 0; outline: none; box-shadow: none; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+td.lang-test .lt-date .date-input:focus { outline: none; background: transparent; }
+td.lang-test .lt-date .date-input:not(.typing)::-webkit-datetime-edit { opacity: 0; }
+td.lang-test .lt-date .date-input.typing { background: var(--panel); }
+td.lang-test .lt-date .date-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 
 .date-input {
   width: 100%;
