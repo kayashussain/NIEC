@@ -1097,7 +1097,10 @@ body:has(.p-embed-bar) .p-tabs + div > .p-card.p-tasks { grid-column: 1 / -1 !im
   .td-hello h1 { font-size: 32px; }
   .td-tasks, .td-attn { padding: 20px 18px; }
   .td-task { grid-template-columns: 30px minmax(0, 1fr); }
-  .td-attn-list { grid-template-columns: 1fr; }
+  /* 🔴 CSS CHANGED (2026-11-15): Needs attention on a phone (a bug fix) | from: a student's line (initials, name, what is missing and the stage) was wider than the panel and stuck out about 15px on the right | to: the line keeps inside the panel; the stage tag moves under the name when there is no room */
+  .td-attn-list { grid-template-columns: minmax(0, 1fr); }
+  .td-attn-student { flex-wrap: wrap; min-width: 0; }
+  .td-attn-student > * { min-width: 0; }
 }
 
 /* 🔴 CSS CHANGED (2026-11-14): a Dashboard of its own for each team (My dashboard) | from: nothing (a team that opened Dashboard was sent back to Today) | to: four figure cards in navy serif, a slim task line (amber edge when a task is late), then four calm cards: This week against last week, Where your students are (navy bars), Coming up in the next 7 days, Good news of the last 30 days */
@@ -1818,23 +1821,29 @@ select option { color: #1d1d1f; }
 .activity-more > summary::-webkit-details-marker { display: none; }
 .activity-more[open] > summary { display: none; }
 
-/* 🔴 CSS CHANGED (2026-11-15): tasks with tags, in the order the system works out (new) | from: every task in one long list, newest word first, all of them shown at once, nothing saying what a task is about | to: each task has a small soft coloured tag under its words, Payment (orange), Visa and CAS (purple), Application (blue), Mock interview (teal), Documents (brown), Other (grey), pressed to change it; an open task about money or the visa, waiting a week or more, or with something new on it has a quiet red "Do first" beside the tag; on Today a row of pills above the tasks (All, then each kind with how many are open) shows one kind at a time; each list shows its first five tasks and "Show all N open tasks" under them; the list heading adds "N to do first" in soft red; in Assign a task the same tags are chosen in a row of pills (the system picks one from the words, the team and the stage) */
-.td-tag-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 6px; }
-.td-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; font: 600 12.5px/24px var(--font); letter-spacing: .01em; cursor: pointer; transition: filter .15s ease, box-shadow .15s ease; }
-.td-tag:disabled { cursor: default; }
-.td-tag:not(:disabled):hover { filter: brightness(.96); }
-.td-tag.tag-payment { background: #fff1e0; color: #a35200; }
-.td-tag.tag-visa { background: #f1e9fb; color: #6b3fa0; }
+/* 🔴 CSS CHANGED (2026-11-15): tasks with tags (new) | from: every task in one long list, all of them shown at once, nothing saying what a task is about | to: each task has a small soft coloured tag under its words, Application (blue), Mock interview (teal), Payment (orange), Documents (brown), NOC (indigo), Medical (pink), Visa and CAS (purple), Other (grey); on Today a row of pills (All and each kind with how many are open) shows one kind at a time; each list shows its first five tasks and "Show all N open tasks" under them; in Assign a task the tag is chosen in a row of pills (the system suggests one) */
+/* 🔴 CSS CHANGED (2026-11-15): how important a task is, in place of "Do first" | from: a red "Do first" on almost every task (even one given today) and "N to do first" in each list heading | to: no "Do first"; a task marked Super priority has a soft red "Super priority" pill before its tag and a thin red line down its left edge, a Medium one a quiet grey "Medium" pill, a usual (Priority) one no extra pill; the list heading says "N super priority" in soft red; in Assign a task "How important is it?" is a row of three pills, Super priority (red), Priority (blue, chosen at first), Medium (grey) */
+.td-tag-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 8px; }
+.td-tag, .td-prio { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; font: 500 12.5px/24px var(--font); letter-spacing: .01em; cursor: pointer; transition: filter .15s ease, box-shadow .15s ease, opacity .15s ease; }
+.td-tag:disabled, .td-prio:disabled { cursor: default; }
+.td-tag:not(:disabled):hover, .td-prio:not(:disabled):hover { filter: brightness(.96); }
 .td-tag.tag-application { background: #e6f0fc; color: #0058b0; }
 .td-tag.tag-mock { background: #e3f4f2; color: #0f6e66; }
+.td-tag.tag-payment { background: #fff1e0; color: #a35200; }
 .td-tag.tag-documents { background: #f3ece4; color: #7a5230; }
+.td-tag.tag-noc { background: #e9ebfb; color: #3c46a8; }
+.td-tag.tag-medical { background: #fce8ef; color: #b0305c; }
+.td-tag.tag-visa { background: #f1e9fb; color: #6b3fa0; }
 .td-tag.tag-other { background: #ececf0; color: #515154; }
-.td-first { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #fdecea; color: #c4271c; font: 600 12px/22px var(--font); }
-.td-chip.is-first { background: #fdecea; color: #c4271c; }
+.td-prio.prio-super { background: #fdecea; color: #c4271c; font-weight: 600; }
+.td-prio.prio-high { background: #e6f0fc; color: #0058b0; }
+.td-prio.prio-medium { background: #ececf0; color: #6e6e73; }
+.td-chip.is-super { background: #fdecea; color: #c4271c; }
+.td-task.is-super:not(.has-unread) { box-shadow: inset 3px 0 0 #ff3b30; }
 .td-tag-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.td-tag-pick .td-tag { min-height: 34px; padding: 0 14px; font-size: 14px; line-height: 34px; opacity: .55; }
-.td-tag-pick .td-tag[aria-checked="true"] { opacity: 1; box-shadow: 0 0 0 2px currentColor inset; }
-.td-tag-pick .td-tag:hover { opacity: 1; }
+.td-tag-pick :is(.td-tag, .td-prio) { min-height: 34px; padding: 0 14px; font-size: 14px; line-height: 34px; opacity: .55; }
+.td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { opacity: 1; font-weight: 600; box-shadow: 0 0 0 2px currentColor inset; }
+.td-tag-pick :is(.td-tag, .td-prio):hover { opacity: 1; }
 .td-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
 .td-filter-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #ececf0; color: #1d1d1f; font: 500 14.5px/36px var(--font); cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
 .td-filter-pill:hover { background: #e2e2e7; }
@@ -1853,3 +1862,27 @@ select option { color: #1d1d1f; }
   .bp-band > div { border-left: 0; border-top: 1px solid var(--border); }
   .bp-band > div:first-child { border-top: 0; }
 }
+
+/* 🔴 CSS CHANGED (2026-11-15): the words of a task, bold only for what matters | from: nearly everything in a task was bold (the task, the giver's and the team's names, the student, the stage, the "1 open" chips, "Add an update", Reassign), so nothing stood out | to: only the task itself is in semibold near-black; the student's name is medium weight; who gave it to whom, the day, the chips, the stage, "Add an update", Reassign and Remove are regular weight in grey or near-black; the list heading stays semibold */
+.td-tasks .td-task-text, .p-tasks .td-task-text { color: #1d1d1f; font-size: 16px; font-weight: 600; line-height: 1.45; letter-spacing: -.005em; }
+.td-tasks .td-task.is-done .td-task-text, .p-tasks .td-task.is-done .td-task-text { color: #86868b; font-weight: 400; }
+.td-route { color: #6e6e73; font-size: 13.5px; font-weight: 400; }
+.td-route .td-from-who, .td-route .td-to-who { color: #3a3a3c; font-weight: 500; }
+.td-route .td-donemark { font-weight: 500; }
+.td-student { color: #1d1d1f; font-size: 14.5px; font-weight: 500; }
+.td-task-who .p-pill { font-size: 12.5px; font-weight: 500; }
+.td-chip { font-size: 13px; font-weight: 500; }
+.td-chip.is-new { font-weight: 600; }
+.tk-toggle { font-weight: 500; color: #3a3a3c; }
+.td-act { font-weight: 500; }
+.td-group-head h3 { font-weight: 600; }
+.td-group-head p, .td-tasks-head p { color: #6e6e73; font-weight: 400; }
+
+/* 🔴 CSS CHANGED (2026-11-15): ticking a task done (new) | from: the circle turned blue and the row folded away | to: the same, with a small happy burst of soft coloured dots from the circle for about half a second; nothing moves for people who ask their computer for less motion */
+.isr-burst { position: fixed; z-index: 9999; width: 0; height: 0; pointer-events: none; }
+.isr-burst i { position: absolute; left: -3.5px; top: -3.5px; width: 7px; height: 7px; border-radius: 50%; opacity: 0; animation: isr-burst .75s cubic-bezier(.2, .8, .3, 1) forwards; }
+@keyframes isr-burst { 0% { opacity: 1; transform: translate(0, 0) scale(.6); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .isr-burst { display: none; } }
+/* 🔴 CSS CHANGED (2026-11-15): a shorter task | from: the tag on a line of its own, then who gave it to whom on the next line | to: the tag first and who gave it to whom beside it on one line (they wrap onto two lines only when there is no room) */
+.td-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; }
+.td-meta > .td-tag-line, .td-meta > .td-route { margin-top: 0; }

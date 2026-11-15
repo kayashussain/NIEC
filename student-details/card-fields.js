@@ -161,17 +161,19 @@
     return d.length >= 8 && d.length <= 15 ? d : '';
   }
 
-  // What a task is about (the owner, 15 Nov 2026): a tag, so Today can show the tasks in calm groups and put first what matters most.
-  // The order is the order of urgency the system uses: money and the visa first, then the application, the mock interview, documents.
-  const TASK_TAGS = [['payment', 'Payment'], ['visa', 'Visa and CAS'], ['application', 'Application'], ['mock', 'Mock interview'], ['documents', 'Documents'], ['other', 'Other']];
+  // What a task is about (the owner, 15 Nov 2026): a tag, so Today can show the tasks in calm groups. NOC and Medical are tags of
+  // their own (the owner, 15 Nov 2026), as each is its own piece of work for the team.
+  const TASK_TAGS = [['application', 'Application'], ['mock', 'Mock interview'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
   const TASK_TAG_IDS = TASK_TAGS.map(([k]) => k);
   // The tag a task gets when none was chosen (older tasks, or a quick assign): from the words, then the team, then the student's stage.
   function guessTaskTag(text, team, stage) {
     const t = String(text || '').toLowerCase();
+    if (/\bnoc\b|no objection/.test(t)) return 'noc';
+    if (/\b(medical|health check|tb test|tuberculosis|x-?ray)\b/.test(t)) return 'medical';
     if (/\b(pay|payment|deposit|fee|fees|invoice|receipt|tuition|refund)\b/.test(t)) return 'payment';
     if (/\b(visa|cas|vfs|biometric|e-?visa|brp|lodge)\b/.test(t)) return 'visa';
     if (/\b(mock|interview|pre-?cas)\b/.test(t)) return 'mock';
-    if (/\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|noc|medical|ielts|pte|toefl|moi)\b/.test(t)) return 'documents';
+    if (/\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|ielts|pte|toefl|moi)\b/.test(t)) return 'documents';
     if (/\b(apply|application|submit|offer|portal|university|course)\b/.test(t)) return 'application';
     if (team === 'mock') return 'mock';
     if (team === 'application') return 'application';
@@ -183,9 +185,14 @@
     return 'other';
   }
   const taskTag = (task, stage) => (TASK_TAG_IDS.includes(task && task.tag) ? task.tag : guessTaskTag(task && task.text, task && task.team, stage));
+  // How important a task is, chosen by whoever gives it (the owner, 15 Nov 2026): every task is Priority unless it is marked Super
+  // priority or Medium. Older tasks with nothing chosen count as Priority.
+  const TASK_PRIORITIES = [['super', 'Super priority'], ['high', 'Priority'], ['medium', 'Medium']];
+  const TASK_PRIORITY_IDS = TASK_PRIORITIES.map(([k]) => k);
+  const taskPriorityOf = (task) => (TASK_PRIORITY_IDS.includes(task && task.priority) ? task.priority : 'high');
 
   return {
-    TASK_TAGS, TASK_TAG_IDS, guessTaskTag, taskTag, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
+    TASK_TAGS, TASK_TAG_IDS, guessTaskTag, taskTag, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
     OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, SHEET_SECTIONS, columnLabel, whatsappNumber, courseSearchUrl,
   };

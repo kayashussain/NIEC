@@ -236,18 +236,26 @@ function createCards(dir, { now = () => new Date() } = {}) {
       const out = update(rowId, by, (card, stamp) => {
         // The tag chosen when the task was given (Payment, Visa and CAS, Application, Mock interview, Documents, Other), if any.
         const tag = Fields.TASK_TAG_IDS.includes(input && input.tag) ? input.tag : '';
-        task = { id: newId(), team, text, ...(tag ? { tag } : {}), by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
+        // How important it is: Priority unless Super priority or Medium was chosen.
+        const priority = Fields.TASK_PRIORITY_IDS.includes(input && input.priority) ? input.priority : 'high';
+        task = { id: newId(), team, text, ...(tag ? { tag } : {}), priority, by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
         card.tasks = [...card.tasks, task].slice(-LIMITS.tasks);
       });
       return out.error ? out : { ...out, task };
     },
-    tagTask(rowId, taskId, tag, by) {
-      if (!Fields.TASK_TAG_IDS.includes(tag)) return { error: 'Choose what the task is about.' };
+    // What a task is about and how important it is, changed after it was given. `change`: { tag, priority }, either or both.
+    tagTask(rowId, taskId, change, by) {
+      const c = typeof change === 'string' ? { tag: change } : (change || {});
+      if (c.tag !== undefined && !Fields.TASK_TAG_IDS.includes(c.tag)) return { error: 'Choose what the task is about.' };
+      if (c.priority !== undefined && !Fields.TASK_PRIORITY_IDS.includes(c.priority)) return { error: 'Choose how important the task is.' };
+      if (c.tag === undefined && c.priority === undefined) return { error: 'Nothing to change.' };
       let task;
       const out = update(rowId, by, (card) => {
         task = card.tasks.find((t) => t.id === taskId);
         if (!task) return { error: 'No such task.' };
-        task.tag = tag;
+        if (c.tag !== undefined) task.tag = c.tag;
+        if (c.priority !== undefined) task.priority = c.priority;
+        return null;
       });
       return out.error ? out : { ...out, task };
     },

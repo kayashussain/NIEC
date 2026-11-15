@@ -331,49 +331,59 @@
     list.filter(Boolean).forEach(([label, onClick, danger]) => box.append(h('button', { class: `td-act${danger ? ' danger' : ''}`, type: 'button', onclick: onClick }, label)));
     return box.childNodes.length ? box : null;
   }
-  // ---- what a task is about (the owner, 15 Nov 2026) and the order the system puts tasks in ----
-  const TAGS = () => ((root.CardFields && root.CardFields.TASK_TAGS) || [['other', 'Other']]);
-  const tagOf = (task, stage) => (root.CardFields ? root.CardFields.taskTag(task, stage) : (task.tag || 'other'));
+  // ---- what a task is about, how important it is (the owner, 15 Nov 2026), and the order the tasks are listed in ----
+  const F = () => root.CardFields || {};
+  const TAGS = () => (F().TASK_TAGS || [['other', 'Other']]);
+  const PRIORITIES = () => (F().TASK_PRIORITIES || [['super', 'Super priority'], ['high', 'Priority'], ['medium', 'Medium']]);
+  const tagOf = (task, stage) => (F().taskTag ? F().taskTag(task, stage) : (task.tag || 'other'));
+  const priorityOf = (task) => (F().taskPriorityOf ? F().taskPriorityOf(task) : (task.priority || 'high'));
   const tagLabel = (id) => (TAGS().find(([k]) => k === id) || [id, 'Other'])[1];
-  // How soon a task should be done, worked out by the system so nobody has to set a priority: a task with something new on it first,
-  // then money and the visa, then the application, the mock interview, documents; and a task waiting longer climbs.
-  const URGENCY = { payment: 40, visa: 36, application: 26, mock: 22, documents: 16, other: 8 };
-  const daysWaiting = (t) => Math.max(0, Math.floor((Date.now() - Date.parse(t.at || 0)) / 86400000));
-  function taskPriority(t, stage) {
+  const priorityLabel = (id) => (PRIORITIES().find(([k]) => k === id) || [id, 'Priority'])[1];
+  // The order of a list: Super priority, then Priority, then Medium (as chosen by whoever gave the task); inside each, a task with
+  // something new on it first, then the one waiting longest. No date or "do first" is worked out by the system any more (the owner,
+  // 15 Nov 2026: a task given today was marked "Do first" and everything looked urgent).
+  const RANK = { super: 3, high: 2, medium: 1 };
+  function taskPriority(t) {
     if (t.done) return -1;
-    return (t.unread ? 100 : 0) + (URGENCY[tagOf(t, stage)] || 8) + Math.min(daysWaiting(t), 14) * 2;
+    return (RANK[priorityOf(t)] || 2) * 1e13 + (t.unread ? 1e12 : 0) + (1e12 - 1 - Math.min(1e12 - 1, Date.parse(t.at || 0) / 1000 || 0));
   }
-  // "Do first": an open task that is about money or the visa, has waited a week or more, or has something new on it.
-  const doFirst = (t, stage) => !t.done && (Boolean(t.unread) || ['payment', 'visa'].includes(tagOf(t, stage)) || daysWaiting(t) >= 7);
-  // The tag as a small coloured pill; whoever may change it presses it to choose another.
-  function taskTagPill(task, { rowId, stage, canChange, onChanged }) {
-    const id = tagOf(task, stage);
-    const pill = h('button', { class: `td-tag tag-${id}`, type: 'button', disabled: !canChange, title: canChange ? 'What the task is about (press to change)' : 'What the task is about' }, tagLabel(id));
-    if (canChange) pill.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dialog('What is this task about?', (body, close) => {
-        const pick = tagPicker(id);
-        const foot = el('div', 'p-dialog-foot');
-        const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
-        ok.addEventListener('click', async () => {
-          ok.disabled = true;
-          try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { tag: pick.value() }); close(true); } catch (err) { ok.disabled = false; if (root.NiecUI) root.NiecUI.toast(err.message, { type: 'error' }); }
-        });
-        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-        body.append(pick.node, foot);
-      }).then((done) => { if (done && onChanged) onChanged(); });
+  // The priority (only when it is not the usual Priority, so the eye goes to what matters) and the tag, as two small pills. Whoever may
+  // change them presses either to choose again.
+  function taskBadges(task, { rowId, stage, canChange, onChanged }) {
+    const line = el('div', 'td-tag-line');
+    const pr = priorityOf(task);
+    const tag = tagOf(task, stage);
+    const open = (e) => { e.stopPropagation(); changeTask(task, { rowId, tag, priority: pr }).then((done) => { if (done && onChanged) onChanged(); }); };
+    const pill = (cls, text) => { const b = h('button', { class: cls, type: 'button', disabled: !canChange, title: canChange ? 'Press to change what it is about or how important it is' : '' }, text); if (canChange) b.addEventListener('click', open); return b; };
+    if (pr !== 'high') line.append(pill(`td-prio prio-${pr}`, priorityLabel(pr)));
+    line.append(pill(`td-tag tag-${tag}`, tagLabel(tag)));
+    return line;
+  }
+  function changeTask(task, { rowId, tag, priority }) {
+    return dialog('Change the task', (body, close) => {
+      const pr = priorityPicker(priority);
+      const tg = tagPicker(tag);
+      const field2 = (label, node) => { const w = el('div', 'p-field p-wide'); w.append(el('span', 'p-label', label), node); return w; };
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
+      ok.addEventListener('click', async () => {
+        ok.disabled = true;
+        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { tag: tg.value(), priority: pr.value() }); close(true); } catch (err) { ok.disabled = false; if (root.NiecUI) root.NiecUI.toast(err.message, { type: 'error' }); }
+      });
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+      const g = el('div', 'p-form'); g.append(field2('How important is it?', pr.node), field2('What is it about?', tg.node));
+      body.append(g, foot);
     });
-    return pill;
   }
-  // The tags as a row of pills to choose one (Assign a task, and changing a tag).
-  function tagPicker(initial) {
-    let value = initial || 'other';
+  // A row of pills to choose one of `choices`; `cls(k)` gives each its look.
+  function picker(choices, initial, cls, label) {
+    let value = initial;
     let touched = false;
     const node = el('div', 'td-tag-pick');
     node.setAttribute('role', 'radiogroup');
-    node.setAttribute('aria-label', 'What the task is about');
-    const buttons = TAGS().map(([k, label]) => {
-      const b = h('button', { class: `td-tag tag-${k}`, type: 'button', role: 'radio', 'aria-checked': String(k === value) }, label);
+    node.setAttribute('aria-label', label);
+    const buttons = choices.map(([k, text]) => {
+      const b = h('button', { class: cls(k), type: 'button', role: 'radio', 'aria-checked': String(k === value) }, text);
       b.addEventListener('click', () => { touched = true; set(k); });
       node.append(b);
       return [k, b];
@@ -381,5 +391,30 @@
     function set(k) { value = k; buttons.forEach(([kk, b]) => b.setAttribute('aria-checked', String(kk === k))); }
     return { node, value: () => value, set: (k) => { if (!touched) set(k); }, touched: () => touched };
   }
-  root.Portal = { taskThread, taskRoute, handOn, taskActions, taskTagPill, tagPicker, taskPriority, doFirst, tagOf, tagLabel, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  const tagPicker = (initial) => picker(TAGS(), initial || 'other', (k) => `td-tag tag-${k}`, 'What the task is about');
+  const priorityPicker = (initial) => picker(PRIORITIES(), initial || 'high', (k) => `td-prio prio-${k}`, 'How important the task is');
+  // A few words of thanks when a task is ticked, not the same line every time.
+  const CHEERS = ['Done. Nice work.', 'Ticked off. Well done.', 'One less to think about.', 'Great job, that is done.', 'Done. The student is a step closer.', 'Nicely done.'];
+  const cheer = () => CHEERS[Math.floor(Math.random() * CHEERS.length)];
+  // A small, happy burst of soft coloured dots from where a task was ticked (nothing moves for people who ask for less motion).
+  function celebrate(from) {
+    if (!from || (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    const r = from.getBoundingClientRect();
+    const box = el('div', 'isr-burst');
+    box.style.left = `${r.left + r.width / 2}px`;
+    box.style.top = `${r.top + r.height / 2}px`;
+    const colours = ['#0071e3', '#34c759', '#ff9f0a', '#af52de', '#ff375f', '#5ac8fa'];
+    for (let i = 0; i < 14; i += 1) {
+      const d = el('i');
+      const angle = (Math.PI * 2 * i) / 14 + Math.random() * 0.4;
+      const dist = 26 + Math.random() * 22;
+      d.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+      d.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+      d.style.background = colours[i % colours.length];
+      box.append(d);
+    }
+    document.body.append(box);
+    setTimeout(() => box.remove(), 900);
+  }
+  root.Portal = { taskThread, taskRoute, handOn, taskActions, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

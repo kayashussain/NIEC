@@ -695,12 +695,15 @@ function createPortalApi({
           const from = task.team;
           out = cards.handTask(rowId, sub, { team: text(body.handTo), reason: body.reason }, by(req));
           if (!out.error) { cards.markSeen(req.user.username, [task.id]); note(req, [`${who2}: handed the task from ${teamLabel(from)} to ${teamLabel(out.task.team)}: ${String(body.reason).slice(0, 120)}`], 'Handed a task on'); }
-        } else if (body.tag !== undefined) {
-          // The tag of a task (Payment, Visa and CAS, Application ...): whoever gave it, the team it is with, Admin or the Manager.
+        } else if (body.tag !== undefined || body.priority !== undefined) {
+          // What the task is about and how important it is: whoever gave it, the team it is with, Admin or the Manager.
           if (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
-          if (!Fields.TASK_TAG_IDS.includes(text(body.tag))) { sendJSON(res, 400, { error: 'Choose what the task is about.' }); return true; }
-          out = cards.tagTask(rowId, sub, text(body.tag), by(req));
-          if (!out.error) note(req, [`${who2}: tagged the task for ${teamLabel(task.team)} as ${(Fields.TASK_TAGS.find(([k]) => k === out.task.tag) || [])[1]}`], 'Task');
+          const change = {};
+          if (body.tag !== undefined) change.tag = text(body.tag);
+          if (body.priority !== undefined) change.priority = text(body.priority);
+          out = cards.tagTask(rowId, sub, change, by(req));
+          const label = (list, k) => (list.find(([id]) => id === k) || [])[1];
+          if (!out.error) note(req, [`${who2}: the task for ${teamLabel(task.team)} is now ${[change.tag && label(Fields.TASK_TAGS, out.task.tag), change.priority && label(Fields.TASK_PRIORITIES, out.task.priority)].filter(Boolean).join(', ')}`], 'Task');
         } else if (body.comment !== undefined) {
           // The team, whoever gave the task (Admin, the Manager, or the branch that gave it) and the teams it was with talk it through here.
           if (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task) && !hadIt(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
@@ -1828,7 +1831,7 @@ function createPortalApi({
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
           if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
-          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
+          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

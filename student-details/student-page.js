@@ -197,6 +197,10 @@
       const tag = window.Portal.tagPicker(guess());
       const tagWrap = el('div', 'p-field p-wide');
       tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
+      // How important it is: Priority unless Super priority or Medium is chosen (the owner, 15 Nov 2026).
+      const prio = window.Portal.priorityPicker('high');
+      const prioWrap = el('div', 'p-field p-wide');
+      prioWrap.append(el('span', 'p-label', 'How important is it?'), prio.node);
       text.input.addEventListener('input', () => tag.set(guess()));
       team.input.addEventListener('change', () => tag.set(guess()));
       const msg = el('div', 'p-msg');
@@ -206,10 +210,10 @@
         if (!team.input.value) { msg.textContent = 'Choose who should do it.'; msg.className = 'p-msg error'; return; }
         if (!text.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await save('tasks', { team: team.input.value, text: text.input.value, tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        try { await save('tasks', { team: team.input.value, text: text.input.value, tag: tag.value(), priority: prio.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, tagWrap);
+      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, prioWrap, tagWrap);
       body.append(g, msg, foot);
       setTimeout(() => text.input.focus(), 0);
     }).then((done) => { if (done) render(); });
@@ -218,7 +222,8 @@
   // task" button is at the top).
   function tasksCard() {
     const lastAt = (t) => { const c = t.comments || []; return String(c.length ? c[c.length - 1].at : t.at); };
-    const tasks = (data.card.tasks || []).slice().sort((a, b) => (a.done - b.done) || lastAt(b).localeCompare(lastAt(a)));
+    // Open ones first, in order of how important each was marked; the done ones after, the newest word first.
+    const tasks = (data.card.tasks || []).slice().sort((a, b) => (a.done - b.done) || (a.done ? 0 : window.Portal.taskPriority(b) - window.Portal.taskPriority(a)) || lastAt(b).localeCompare(lastAt(a)));
     if (!tasks.length) return null;
     const c = el('section', 'p-card p-tasks');
     const head = el('div', 'p-card-head');
@@ -238,16 +243,15 @@
       box.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
       box.addEventListener('click', async () => {
         box.disabled = true;
-        if (!t.done) r.classList.add('is-ticking');
-        try { await save(`tasks/${t.id}`, { done: !t.done }, t.done ? 'Marked as not done' : 'Done. Nice work.'); setTimeout(render, t.done ? 0 : 450); } catch (e) { r.classList.remove('is-ticking'); box.disabled = false; }
+        if (!t.done) { r.classList.add('is-ticking'); window.Portal.celebrate(box); }
+        try { await save(`tasks/${t.id}`, { done: !t.done }, t.done ? 'Marked as not done' : window.Portal.cheer()); setTimeout(render, t.done ? 0 : 450); } catch (e) { r.classList.remove('is-ticking'); box.disabled = false; }
       });
       const mid = el('div', 'td-task-mid');
       const top = el('div', 'td-task-top');
       top.append(el('div', 'td-task-text', t.text));
       if (unread[t.id]) top.append(el('span', 'td-dot', String(unread[t.id])));
-      const tagLine = el('div', 'td-tag-line');
-      tagLine.append(window.Portal.taskTagPill(t, { rowId: id, stage: data.student.stage, canChange: !data.can.readOnly && (mine || t.by === me), onChanged: async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); } }));
-      if (window.Portal.doFirst({ ...t, unread: unread[t.id] }, data.student.stage)) tagLine.append(el('span', 'td-first', 'Do first'));
+      const tagLine = window.Portal.taskBadges(t, { rowId: id, stage: data.student.stage, canChange: !data.can.readOnly && (mine || t.by === me), onChanged: async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); } });
+      if (!t.done && window.Portal.priorityOf(t) === 'super') r.classList.add('is-super');
       // From whom, to whom, and when.
       const route = window.Portal.taskRoute(t, { fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team), teams: data.taskTeams || [] });
       route.append(el('span', 'td-when', t.at ? when(t.at) : ''));
@@ -261,7 +265,9 @@
       const had = (t.route || []).some((x) => (data.can.myTeams || []).includes(x) || (x === 'head' && (data.me || {}).role === 'admin'));
       const canWrite = !data.can.readOnly && (mine || t.by === me || had);
       const thread = window.Portal.taskThread(t, { rowId: id, me, canWrite, unread: unread[t.id] || 0, teams: data.taskTeams || [] });
-      mid.append(top, tagLine, route, thread);
+      const meta = el('div', 'td-meta');
+      meta.append(tagLine, route);
+      mid.append(top, meta, thread);
       r.append(box, mid);
       if (unread[t.id]) r.addEventListener('pointerdown', () => thread.markRead());
       c.append(r);

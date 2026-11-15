@@ -5,7 +5,7 @@
 //   2. what needs attention: one short list, a line per kind of work with how many students wait, opened with a click.
 // The numbers, charts and buttons live on the Dashboard and on All Students, not here.
 (function () {
-  const { el, h, api, initials, stagePill, taskThread, taskRoute, handOn, taskActions, taskTagPill, taskPriority, doFirst, tagOf, tagLabel } = window.Portal;
+  const { el, h, api, initials, stagePill, taskThread, taskRoute, handOn, taskActions, taskBadges, taskPriority, priorityOf, tagOf, tagLabel, celebrate } = window.Portal;
   const view = document.getElementById('view');
   if (new URLSearchParams(location.search).get('notice') === 'admin') {
     history.replaceState(null, '', location.pathname);
@@ -16,9 +16,9 @@
   let me = '';
 
   let showDone = false;
-  // Calm by design (the owner, 15 Nov 2026): the tasks can be narrowed to one kind (Payment, Application ...), each list is in the
-  // order the system works out (what is new, then money and the visa, then the application ..., a task waiting longer climbs), and
-  // only the first five of a list show until "Show all" is pressed.
+  // Calm by design (the owner, 15 Nov 2026): the tasks can be narrowed to one kind (Payment, Application, NOC ...), each list is
+  // in the order of how important each task was marked (Super priority, Priority, Medium; inside that, something new first, then the
+  // one waiting longest), and only the first five of a list show until "Show all" is pressed.
   let tagFilter = 'all';
   const expanded = new Set();
   const FIRST = 5;
@@ -33,11 +33,11 @@
       // The circle turns blue with a tick and the row folds away (about half a second), and only then is the list redrawn, so the
       // next task never jumps under the mouse.
       const quick = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (!t.done) r.classList.add('is-ticking');
+      if (!t.done) { r.classList.add('is-ticking'); celebrate(tick); }
       const folded = new Promise((ok) => setTimeout(ok, t.done || quick ? 0 : 520));
       try {
         await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}`, { done: !t.done });
-        window.NiecUI.toast(t.done ? 'Marked as not done' : 'Done. Nice work.', { type: 'success' });
+        window.NiecUI.toast(t.done ? 'Marked as not done' : window.Portal.cheer(), { type: 'success' });
         await folded;
         refresh(true);
       } catch (e) { r.classList.remove('is-ticking'); tick.disabled = false; window.NiecUI.toast(e.message, { type: 'error' }); }
@@ -47,10 +47,8 @@
     top.append(el('div', 'td-task-text', t.text));
     if (t.unread) top.append(el('span', 'td-dot', String(t.unread)));
     mid.append(top);
-    const tagLine = el('div', 'td-tag-line');
-    tagLine.append(taskTagPill(t, { rowId: t.studentId, stage: t.stage, canChange: t.forMe || t.by === me || canAssignAll, onChanged: () => refresh(true) }));
-    if (doFirst(t, t.stage)) tagLine.append(el('span', 'td-first', 'Do first'));
-    mid.append(tagLine);
+    const badges = taskBadges(t, { rowId: t.studentId, stage: t.stage, canChange: t.forMe || t.by === me || canAssignAll, onChanged: () => refresh(true) });
+    if (priorityOf(t) === 'super' && !t.done) r.classList.add('is-super');
     // From whom, to whom, and when: "From SK Kayas Hussain to the Application Team · 14 Nov".
     const fromName = t.by === me ? 'You' : t.by || 'Someone';
     const toName = t.forMe ? (t.team === 'head' ? 'you' : `your team (${t.teamLabel})`) : t.teamLabel;
@@ -66,7 +64,10 @@
     const who = el('div', 'td-task-who');
     who.append(h('a', { class: 'td-student', href: '/student?id=' + encodeURIComponent(t.studentId), title: 'Open the student card' }, t.student), stagePill(t.stage));
     const thread = taskThread(t, { rowId: t.studentId, me, canWrite: true, unread: t.unread || 0, teams: allTeams });
-    mid.append(route, who, thread);
+    // The tag and who gave it to whom share one line, so a task stays short.
+    const meta = el('div', 'td-meta');
+    meta.append(badges, route);
+    mid.append(meta, who, thread);
     r.append(tick, mid);
     if (t.unread) r.addEventListener('pointerdown', () => thread.markRead());
     return r;
@@ -78,7 +79,7 @@
   function group(title, hint, all, refresh, emptyText) {
     const g = el('div', 'td-group');
     const list = tagFilter === 'all' ? all : all.filter((x) => tagOf(x, x.stage) === tagFilter);
-    const open = list.filter((x) => !x.done).sort((a, b) => taskPriority(b, b.stage) - taskPriority(a, a.stage));
+    const open = list.filter((x) => !x.done).sort((a, b) => taskPriority(b) - taskPriority(a));
     const done = list.filter((x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000);
     const head = el('div', 'td-group-head');
     const words = el('div');
@@ -88,8 +89,8 @@
     const chips = el('div', 'td-sum');
     const fresh = list.reduce((n, x) => n + (x.unread || 0), 0);
     if (fresh) chips.append(el('span', 'td-chip is-new', `${fresh} new`));
-    const first = open.filter((x) => doFirst(x, x.stage)).length;
-    if (first) chips.append(el('span', 'td-chip is-first', `${first} to do first`));
+    const urgent = open.filter((x) => priorityOf(x) === 'super').length;
+    if (urgent) chips.append(el('span', 'td-chip is-super', `${urgent} super priority`));
     chips.append(el('span', 'td-chip', `${open.length} open`));
     head.append(chips);
     g.append(head);
