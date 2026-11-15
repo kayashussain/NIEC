@@ -192,7 +192,20 @@
   // read. `me` is the reader's name; `rowId` the student's card; `unread` how much is new for the reader.
   const openThreads = new Set();
   const initialsOf = (name) => String(name || '?').split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-  function taskThread(task, { rowId, me, canWrite, unread = 0, teams = [] }) {
+  // A day as people say it: "Today", "Tomorrow", else "Wed 18 Nov". `today`: YYYY-MM-DD.
+  function dayLabel(iso, today) {
+    if (!iso) return 'Today';
+    const d = Date.parse(iso + 'T00:00:00Z');
+    if (!today) return new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const t = Date.parse(today + 'T00:00:00Z');
+    const n = Math.round((d - t) / 86400000);
+    if (n <= 0) return 'Today';
+    if (n === 1) return 'Tomorrow';
+    return new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  }
+  // The updates of a task. `inline` (Today and the student card, the owner, 15 Nov 2026): always open on the task, the latest two
+  // updates shown ("Show all N updates" for the rest) and the box to write one right there, no click needed.
+  function taskThread(task, { rowId, me, canWrite, unread = 0, teams = [], inline = false, today = '' }) {
     const labelOf = (id) => (teams.find((t) => t.id === id) || { label: id === 'head' ? 'Admin' : id }).label;
     const box = el('div', 'tk-thread');
     const list = el('ol', 'tk-list');
@@ -222,15 +235,29 @@
       const main = el('div', 'tk-main');
       const head = el('div', 'tk-head');
       head.append(el('b', '', c.by === me ? 'You' : c.by || 'Someone'), el('time', '', when(c.at)));
-      // A hand-on reads as one plain line in the thread: "Mock Team handed this to Application Team", then the reason.
-      if (c.handoff) { li.classList.add('is-handoff'); main.append(head, el('p', 'tk-hand', `Reassigned: ${labelOf(c.handoff.from)} \u2192 ${labelOf(c.handoff.to)}`), el('p', 'tk-text', c.text)); } else main.append(head, el('p', 'tk-text', c.text));
+      // A hand-on reads as one plain line in the thread: "Mock Team handed this to Application Team", then the reason; a move to
+      // another day as "Moved to Wed 18 Nov", then why.
+      if (c.handoff) { li.classList.add('is-handoff'); main.append(head, el('p', 'tk-hand', `Reassigned: ${labelOf(c.handoff.from)} \u2192 ${labelOf(c.handoff.to)}`), el('p', 'tk-text', c.text)); }
+      else if (c.schedule) { li.classList.add('is-schedule'); main.append(head, el('p', 'tk-hand', c.schedule.to && c.schedule.to > (today || '') ? `Moved to ${dayLabel(c.schedule.to, today)}` : 'Moved back to today')); if (c.text) main.append(el('p', 'tk-text', c.text)); }
+      else main.append(head, el('p', 'tk-text', c.text));
       li.append(av, main);
       return li;
     };
+    let showAll = false;
+    const LATEST = 2;
     const draw = () => {
       const all = comments();
-      list.replaceChildren(...all.map((c, i) => entry(c, i >= all.length - fresh && c.by !== me)));
-      if (!all.length) list.append(el('li', 'tk-empty', canWrite ? 'Progress, a question or what is needed. Everyone on the task sees it on Today.' : 'No updates yet.'));
+      const from = inline && !showAll ? Math.max(0, all.length - Math.max(LATEST, fresh)) : 0;
+      const items = all.slice(from).map((c, i) => entry(c, from + i >= all.length - fresh && c.by !== me));
+      if (from > 0) {
+        const more = h('button', { class: 'tk-earlier', type: 'button' }, `Show all ${all.length} updates`);
+        more.addEventListener('click', () => { showAll = true; draw(); });
+        items.unshift(el('li', 'tk-earlier-row'));
+        items[0].append(more);
+      }
+      list.replaceChildren(...items);
+      if (!all.length && !inline) list.append(el('li', 'tk-empty', canWrite ? 'Progress, a question or what is needed. Everyone on the task sees it on Today.' : 'No updates yet.'));
+      list.hidden = inline && !all.length;
     };
     // Read: the dot goes, here and in the menu (shared/header.js listens for "isr-tasks-read").
     const markRead = () => {
@@ -250,7 +277,8 @@
     // What is new opens by itself so it is seen, but counts as read only once the person deals with it: a click on the comments or
     // on their line, or a comment of their own. So a red dot never disappears by itself.
     toggle.addEventListener('click', () => { markRead(); const open = !box.classList.contains('is-open'); setOpen(open); if (open && input) setTimeout(() => input.focus(), 250); });
-    body.addEventListener('pointerdown', markRead);
+    // A click or typing in the updates reads them (a touch to scroll past does not).
+    body.addEventListener('click', markRead);
     body.addEventListener('focusin', markRead);
     const inner = el('div', 'tk-inner');
     body.append(inner);
@@ -258,7 +286,7 @@
     if (canWrite) {
       const form = el('div', 'tk-compose');
       input = el('textarea', 'tk-input');
-      input.rows = 1; input.maxLength = 2000; input.placeholder = 'Write an update';
+      input.rows = 1; input.maxLength = 2000; input.placeholder = inline ? (comments().length ? 'Write an update' : 'Write the first update: progress, a question, or what is needed') : 'Write an update';
       input.setAttribute('aria-label', 'Write an update');
       const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; };
       const send = h('button', { class: 'btn btn-primary btn-sm tk-send', type: 'button', disabled: true }, 'Post');
@@ -274,6 +302,7 @@
           input.value = ''; grow();
           fresh = 0;
           const empty = list.querySelector('.tk-empty'); if (empty) empty.remove();
+          list.hidden = false;
           list.append(entry(comments()[comments().length - 1], false, true));
           label();
           window.dispatchEvent(new Event('isr-tasks-read'));
@@ -290,6 +319,8 @@
     }
     label(); draw();
     box.markRead = markRead; // read from a notification (Today)
+    box.badge = badge; // inline: shown at the task's top right when something is new
+    if (inline) { box.classList.add('is-inline', 'is-open'); box.append(body); return box; }
     box.append(toggle, body);
     setOpen(openThreads.has(task.id) || fresh > 0);
     return box;
@@ -390,6 +421,8 @@
     const sub = el('div', 'td-sub');
     const badges = taskBadges(t, { rowId: o.rowId, stage: o.stage, canChange: o.canChange, onChanged: o.onChanged });
     sub.append(...badges.childNodes);
+    // Moved to a later day: a small blue pill with the day ("Tomorrow", "Wed 18 Nov").
+    if (!t.done && t.doOn && o.today && t.doOn > o.today) sub.prepend(el('span', 'td-when-pill', dayLabel(t.doOn, o.today)));
     if (o.student) {
       const a = h('a', { class: 'td-student', href: o.student.href, title: 'Open the student card' }, o.student.name);
       sub.append(a);
@@ -402,16 +435,17 @@
     if (!t.done && waited >= 2 && waited < 400) route.append(el('span', `td-waiting${waited >= 7 ? ' is-long' : ''}`, `Open ${waited} days`));
     if (t.editedAt) { const ed = el('span', 'td-edited', 'Edited'); ed.title = `Changed by ${t.editedBy || 'someone'}, ${when(t.editedAt)}`; route.append(ed); }
     if (t.done) route.append(el('span', 'td-donemark', t.doneBy ? `Done by ${t.doneBy}` : 'Done'));
-    const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite, unread: o.unread || 0, teams: o.teams });
-    // The updates button sits at the right of the task; the updates themselves open under it.
+    // The updates are always open on the task, with the box to write one (the owner, 15 Nov 2026); a done task keeps them folded.
+    const thread = taskThread(t, { rowId: o.rowId, me: o.me, canWrite: o.canWrite && !t.done, unread: o.unread || 0, teams: o.teams, inline: !t.done, today: o.today });
     const toggle = thread.querySelector('.tk-toggle');
     if (toggle) side.append(toggle);
+    else if (o.unread && thread.badge) side.append(thread.badge);
     const menu = taskMenu(o.actions || []);
     if (menu) side.append(menu);
     mid.append(top, sub, route, thread);
     r.append(tick, mid);
-    // From a notification: open the updates and mark the task read (it may already be open, as new updates open by themselves).
-    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); else thread.markRead(); };
+    // From a notification: open the updates and mark the task read.
+    r.openThread = () => { if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click(); else thread.markRead(); if (thread.badge) thread.badge.hidden = true; };
     // Read only when the person opens its updates, writes one, or presses its notification: never by touching or scrolling past the
     // task (on a phone that cleared the notifications before anyone had read them).
     return r;
@@ -452,20 +486,49 @@
       const words = field('What should they do?', { kind: 'area', max: 2000, wide: true, value: task.text });
       words.input.rows = 3;
       const pr = priorityPicker(priorityOf(task));
-      const tg = tagPicker(tagOf(task, stage));
-      const field2 = (label, node) => { const w = el('div', 'p-field p-wide'); w.append(el('span', 'p-label', label), node); return w; };
+      // The tag follows the words by itself (unless one was pressed on the task), shown in the priority section.
+      const auto = el('div', 'p-auto-tag');
+      const chosen = root.CardFields && root.CardFields.TASK_TAG_IDS.includes(task.tag);
+      const showTag = () => { const k = chosen ? task.tag : (root.CardFields ? root.CardFields.guessTaskTag(words.input.value, task.team, stage) : tagOf(task, stage)); auto.replaceChildren(el('span', 'p-auto-label', chosen ? 'Tag:' : 'Tag, set automatically:'), el('span', `td-tag tag-${k}`, tagLabel(k))); };
+      words.input.addEventListener('input', showTag);
+      showTag();
+      const field2 = (label, ...nodes) => { const w = el('div', 'p-field p-wide'); w.append(el('span', 'p-label', label), ...nodes); return w; };
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save changes');
       ok.addEventListener('click', async () => {
         if (!words.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { text: words.input.value, priority: pr.value(), tag: tg.value() }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; ok.disabled = false; }
+        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { text: words.input.value, priority: pr.value() }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(words.wrap, field2('How important is it?', pr.node), field2('What is it about?', tg.node));
+      const g = el('div', 'p-form'); g.append(words.wrap, field2('How important is it?', pr.node, auto));
       body.append(g, el('p', 'p-muted p-small', 'The team sees the task marked Edited, with a notification. To give it to another team, use Reassign.'), msg, foot);
       setTimeout(() => { words.input.focus(); words.input.setSelectionRange(words.input.value.length, words.input.value.length); }, 0);
+    });
+  }
+  // Move a task to another day (the team it is with, whoever gave it, Admin, the Manager): only the calendar, the day is picked there
+  // (the owner, 15 Nov 2026). A task moved earlier can be brought back to today. Resolves true once moved.
+  function scheduleTask(task, { rowId, today }) {
+    const add = (n) => new Date(Date.parse(today + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+    const moved = task.doOn && task.doOn > today;
+    return dialog('Move to another day', (body, close) => {
+      const date = field('Which day?', { kind: 'date', value: moved ? task.doOn : add(1) });
+      date.input.min = add(1);
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const go = async (day) => {
+        try { await api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { schedule: day }); close(true); } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; }
+      };
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Move');
+      ok.addEventListener('click', () => {
+        if (!date.input.value || date.input.value <= today) { msg.textContent = 'Choose a day after today.'; msg.className = 'p-msg error'; return; }
+        ok.disabled = true; go(date.input.value).then(() => { ok.disabled = false; });
+      });
+      if (moved) foot.append(h('button', { class: 'btn', type: 'button', onclick: () => go('') }, 'Back to today'));
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+      const g = el('div', 'p-form'); g.append(date.wrap);
+      body.append(el('p', 'p-muted p-small', 'It waits under Upcoming and comes back under Today on that day by itself.'), g, msg, foot);
     });
   }
   function changeTask(task, { rowId, tag, priority }) {
@@ -525,5 +588,5 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  root.Portal = { taskThread, taskRoute, handOn, editTask, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, priorityPicker, taskPriority, tagOf, priorityOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

@@ -99,7 +99,14 @@ function createPortalApi({
     const sig = (messages && messages.signature && messages.signature()) || {};
     return `${(admins[0] && admins[0].name) || text(sig.name) || 'Admin'} (${text(sig.title) || 'Head of Recruitment'})`;
   };
-  const TASK_TEAMS = () => [...Object.entries(Teams.DEPARTMENTS).map(([id, d]) => ({ id, label: d.label })), { id: HEAD, label: headLabel() }];
+  // Who gets a team's tasks, by name (the owner, 15 Nov 2026), so whoever gives a task sees exactly who will have it: everyone in the
+  // team whose own team it is, or who is in that team and has no own team chosen.
+  const membersOf = (id) => {
+    const list = accounts && accounts.people ? accounts.people() : [];
+    if (id === HEAD) return list.filter((p) => p.access === 'Admin').map((p) => p.name);
+    return list.filter((p) => p.role !== 'admin' && (p.departments || []).includes(id) && (!p.taskTeam || p.taskTeam === id)).map((p) => p.name);
+  };
+  const TASK_TEAMS = () => [...Object.entries(Teams.DEPARTMENTS).map(([id, d]) => ({ id, label: d.label, members: membersOf(id) })), { id: HEAD, label: headLabel(), members: membersOf(HEAD) }];
   const teamLabel = (id) => (id === HEAD ? headLabel() : Teams.DEPARTMENTS[id] ? Teams.DEPARTMENTS[id].label : id);
   const canAssign = (user) => Teams.isAdmin(user) || Teams.isManager(user);
   // A branch gives tasks too, about its own students, to the Application Team and the Mock Team (the owner, 14 Nov 2026). Whoever gave
@@ -134,7 +141,7 @@ function createPortalApi({
     const ownLast = comments.filter((c) => c.by === user.name).map((c) => c.at).sort().pop() || '';
     const since = [seen[t.id] || '', ownLast].sort().pop();
     const out = comments.filter((c) => c.by !== user.name)
-      .map((c) => ({ kind: c.handoff ? 'reassigned' : 'update', by: c.by || 'Someone', at: c.at, text: String(c.text || '').slice(0, 160), isNew: String(c.at) > since }));
+      .map((c) => ({ kind: c.handoff ? 'reassigned' : c.schedule ? 'scheduled' : 'update', by: c.by || 'Someone', at: c.at, text: String(c.text || '').slice(0, 160), ...(c.schedule ? { to: c.schedule.to || '' } : {}), isNew: String(c.at) > since }));
     if (forMe(user, t) && t.by !== user.name) out.push({ kind: 'task', by: t.by || 'Someone', at: t.at, text: '', isNew: !t.done && !seen[t.id] && Date.now() - Date.parse(t.at) < 3 * 86400000 });
     if (t.editedAt && t.editedBy !== user.name && forMe(user, t)) out.push({ kind: 'edited', by: t.editedBy || 'Someone', at: t.editedAt, text: '', isNew: Boolean(seen[t.id]) && String(t.editedAt) > since });
     // (New only in its first week, so tasks done long ago do not all arrive as new at once.)
@@ -713,6 +720,12 @@ function createPortalApi({
           const from = task.team;
           out = cards.handTask(rowId, sub, { team: text(body.handTo), reason: body.reason }, by(req));
           if (!out.error) { cards.markSeen(req.user.username, [task.id]); note(req, [`${who2}: handed the task from ${teamLabel(from)} to ${teamLabel(out.task.team)}: ${String(body.reason).slice(0, 120)}`], 'Handed a task on'); }
+        } else if (body.schedule !== undefined) {
+          // Moved to another day: the team it is with, whoever gave it, Admin or the Manager.
+          if (Teams.isReadOnly(req.user) || (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task))) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
+          if (task.done) { sendJSON(res, 400, { error: 'This task is done already.' }); return true; }
+          out = cards.scheduleTask(rowId, sub, { date: text(body.schedule), reason: body.reason }, by(req), cards.today());
+          if (!out.error) { cards.markSeen(req.user.username, [task.id]); note(req, [`${who2}: the task for ${teamLabel(task.team)} moved to ${out.task.doOn || 'today'}${text(body.reason) ? `: ${text(body.reason).slice(0, 120)}` : ''}`], 'Task'); }
         } else if (body.text !== undefined) {
           // The words of the task: whoever gave it, Admin or the Manager. The priority and the tag can come with it.
           if (!canAssign(req.user) && !gaveIt(req.user, task)) { sendJSON(res, 403, { error: 'Only whoever gave the task, Admin or the Manager can change it.' }); return true; }
@@ -1887,7 +1900,9 @@ function createPortalApi({
       // Open first, then the one with the newest word (a comment, or the task itself) first.
       const lastWord = (t) => { const c = Array.isArray(t.comments) && t.comments.length ? t.comments[t.comments.length - 1].at : ''; return String(c > t.at ? c : t.at); };
       out.sort((a, b) => (a.done - b.done) || lastWord(b).localeCompare(lastWord(a)));
-      sendJSON(res, 200, { tasks: out.slice(0, 500), canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS() });
+      // Whose tasks come to this person, said on Today, so a person in two teams with no own team chosen sees why both teams' tasks come.
+      const mineFrom = { teams: taskTeamsOf(req.user).map(teamLabel), allTeams: teamsOf(req.user).length, ownChosen: Boolean(req.user.taskTeam && teamsOf(req.user).includes(req.user.taskTeam)) };
+      sendJSON(res, 200, { tasks: out.slice(0, 500), today: cards.today(), mineFrom, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS() });
       return true;
     }
     // How much is new on the tasks for this person (the red dot on Today in the menu): new comments, and tasks just given to them.

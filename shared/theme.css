@@ -1978,3 +1978,31 @@ select option { color: #1d1d1f; }
 .td-note:not(.is-new) .td-note-task { font-weight: 400; color: #3a3a3c; }
 .td-note.kind-done .td-note-av { background: #e3f5e8; color: #1f7a3a; }
 .td-inbox-empty { margin: 4px 0 4px; color: #6e6e73; font-size: 14.5px; line-height: 1.5; }
+
+/* 🔴 CSS CHANGED (2026-11-15): tasks with Today and Upcoming, updates always open, and who gets a task (new) | from: every open task in one list; the updates hidden behind "Add an update", so a task with no update looked empty; no way to put a task off; nothing said who exactly gets a team's task | to: each list shows the tasks for today; under them a quiet grey "Upcoming (3) next: Tomorrow" line opens the later ones, each day under a small grey heading; a moved task has a small blue day pill ("Tomorrow", "Wed 18 Nov") before its tag; every open task shows its latest two updates and a write box right on it (the first one says "Write the first update"), "Show all N updates" for older ones, a red "N new" at the task's top right; a move shows in the updates as "Moved to Wed 18 Nov" in blue; the list heading says "N for today" and "N upcoming" (soft blue); the Today panel says "N tasks for today", "N more upcoming" and "Tasks of the Application Team" in grey (or, in soft orange, that the person gets every team's tasks until Admin chooses their own team); in Assign a task, "Goes to Parvati, Sovat" in grey under the team (orange when nobody has it as their own team) */
+.td-when-pill { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #e6f0fc; color: #0058b0; font-size: 12px; font-weight: 600; line-height: 22px; }
+.td-chip.is-later { background: #e6f0fc; color: #0058b0; }
+.td-up-toggle { display: flex; align-items: center; gap: 10px; width: 100%; margin: 12px 0 2px; padding: 10px 12px; border: 0; border-radius: 12px; background: #f2f2f5; color: #1d1d1f; font: 500 14.5px var(--font); text-align: left; cursor: pointer; transition: background-color .15s; }
+.td-up-toggle:hover { background: #ebebef; }
+.td-up-toggle small { margin-left: auto; color: #6e6e73; font-size: 13px; font-weight: 400; }
+.td-up-chev { width: 8px; height: 8px; border-right: 2px solid #86868b; border-bottom: 2px solid #86868b; transform: rotate(-45deg); transition: transform .2s; }
+.td-up-toggle[aria-expanded="true"] .td-up-chev { transform: rotate(45deg); }
+.td-upcoming { padding-left: 2px; }
+.td-day { margin: 14px 4px 2px; color: #6e6e73; font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.tk-thread.is-inline { margin-top: 12px; }
+.tk-thread.is-inline .tk-body { display: block; opacity: 1; visibility: visible; }
+.tk-thread.is-inline .tk-list[hidden] { display: none; }
+.tk-thread.is-inline .tk-compose { margin-top: 8px; }
+.tk-earlier-row { list-style: none; padding: 0 0 6px; }
+.tk-earlier { padding: 0; border: 0; background: none; color: #0066cc; font: 400 13.5px var(--font); cursor: pointer; }
+.tk-earlier:hover { text-decoration: underline; }
+.tk-msg.is-schedule .tk-hand { color: #0058b0; }
+.td-side .tk-new { margin-right: 4px; }
+.td-from { margin-top: 4px; color: #86868b; font-size: 13.5px; }
+.td-from-warn { margin-top: 6px; padding: 8px 12px; border-radius: 10px; background: #fff6ec; color: #a35200; font-size: 13.5px; line-height: 1.45; }
+.p-goes { margin-top: 6px; color: #6e6e73; font-size: 13.5px; }
+.p-goes.is-warn { color: #a35200; }
+/* 🔴 CSS CHANGED (2026-11-15): the tag set automatically, in the priority section (Assign a task, Edit the task) | from: a separate "What is it about?" row of eight tag pills to choose from | to: no tag row; under the three priority pills a grey line "Tag, set automatically:" with the tag the system picked from the words, as its small coloured pill, changing as the task is typed */
+.p-auto-tag { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.p-auto-label { color: #6e6e73; font-size: 13.5px; }
+.p-auto-tag .td-tag { cursor: default; }

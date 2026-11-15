@@ -191,18 +191,31 @@
       // A team, or Admin (named with their title): the teams and branches can give Admin a task too.
       const targets = (data.assignTeams || data.taskTeams || []).map((t) => [t.id, t.label]);
       const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : '' });
+      // Exactly who gets it (the owner, 15 Nov 2026): the people whose own team it is.
+      const goes = el('div', 'p-goes');
+      const showGoes = () => {
+        const t = (data.assignTeams || data.taskTeams || []).find((x) => x.id === team.input.value);
+        goes.replaceChildren();
+        if (!t) return;
+        const names = t.members || [];
+        goes.append(names.length ? `Goes to ${names.join(', ')}` : 'Nobody has this as their own team yet: set it in Users.');
+        goes.classList.toggle('is-warn', !names.length);
+      };
+      team.wrap.append(goes);
+      team.input.addEventListener('change', showGoes);
+      showGoes();
       const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submit the application to Coventry University.' });
-      // What the task is about: the system suggests it from the words, the team and the stage, until a tag is pressed.
+      // How important it is, and what it is about, in one section (the owner, 15 Nov 2026): the tag is set by the system from the
+      // words, the team and the stage, shown here as it is typed; nobody has to pick it (press the tag on the task to correct it).
       const guess = () => F.guessTaskTag(text.input.value, team.input.value, data.student.stage);
-      const tag = window.Portal.tagPicker(guess());
-      const tagWrap = el('div', 'p-field p-wide');
-      tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
-      // How important it is: Priority unless Super priority or Medium is chosen (the owner, 15 Nov 2026).
       const prio = window.Portal.priorityPicker('high');
+      const auto = el('div', 'p-auto-tag');
+      const showTag = () => { const k = guess(); auto.replaceChildren(el('span', 'p-auto-label', 'Tag, set automatically:'), el('span', `td-tag tag-${k}`, window.Portal.tagLabel(k))); };
       const prioWrap = el('div', 'p-field p-wide');
-      prioWrap.append(el('span', 'p-label', 'How important is it?'), prio.node);
-      text.input.addEventListener('input', () => tag.set(guess()));
-      team.input.addEventListener('change', () => tag.set(guess()));
+      prioWrap.append(el('span', 'p-label', 'How important is it?'), prio.node, auto);
+      text.input.addEventListener('input', showTag);
+      team.input.addEventListener('change', showTag);
+      showTag();
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Assign');
@@ -210,10 +223,10 @@
         if (!team.input.value) { msg.textContent = 'Choose who should do it.'; msg.className = 'p-msg error'; return; }
         if (!text.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await save('tasks', { team: team.input.value, text: text.input.value, tag: tag.value(), priority: prio.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        try { await save('tasks', { team: team.input.value, text: text.input.value, priority: prio.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, prioWrap, tagWrap);
+      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, prioWrap);
       body.append(g, msg, foot);
       setTimeout(() => text.input.focus(), 0);
     }).then((done) => { if (done) render(); });
@@ -241,11 +254,12 @@
       const had = (t.route || []).some((x) => (data.can.myTeams || []).includes(x) || (x === 'head' && (data.me || {}).role === 'admin'));
       const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
       c.append(window.Portal.taskCard(t, {
-        rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0,
+        rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0, today: data.today,
         canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
         actions: [
           // Reassign (the team it is with, whoever gave it, Admin and the Manager) and Remove.
+          !t.done && !data.can.readOnly && (mine || t.by === me) && [t.doOn && t.doOn > data.today ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: id, today: data.today })) { say('Moved. It waits under Upcoming.'); reload(); } }],
           (data.can.removeAnyTask || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: id, stage: data.student.stage })) { say('Task updated. The team is told.'); reload(); } }],
           !data.can.readOnly && (mine || t.by === me) && ['Reassign to another team', async () => { if (await window.Portal.handOn(t, { rowId: id, teams: data.taskTeams || [] })) { say('Reassigned'); reload(); } }],
           (data.can.removeAnyTask || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { await save(`tasks/${t.id}/delete`, {}, 'Task removed'); render(); } }, true],

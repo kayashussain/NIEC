@@ -160,6 +160,25 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { done: true })).status, 200);
   const toGiver = (await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
   assert.deepStrictEqual([toGiver.news[0].kind, toGiver.news[0].by], ['done', 'maya'], 'Admin is told the task is done');
+  // Today and Upcoming (the owner, 15 Nov 2026): the team moves a task to a later day with a reason; whoever gave it is told.
+  const later = (await admin('POST', `/api/cards/${mockStudent}/tasks`, { team: 'application', text: 'Collect the bank statement' })).json.card.tasks.find((x) => x.text === 'Collect the bank statement');
+  const today = (await both('GET', '/api/tasks')).json.today;
+  const in3 = new Date(Date.parse(today + 'T00:00:00Z') + 3 * 86400000).toISOString().slice(0, 10);
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${later.id}`, { schedule: '2001-01-01' })).status, 400, 'not a day in the past');
+  assert.strictEqual((await mock('POST', `/api/cards/${mockStudent}/tasks/${later.id}`, { schedule: in3 })).status, 403, 'not by another team');
+  const moved2 = await both('POST', `/api/cards/${mockStudent}/tasks/${later.id}`, { schedule: in3, reason: 'The student comes on that day' });
+  assert.strictEqual(moved2.status, 200);
+  const m2 = moved2.json.card.tasks.find((x) => x.id === later.id);
+  assert.deepStrictEqual([m2.doOn, m2.comments.slice(-1)[0].schedule.to, m2.comments.slice(-1)[0].text], [in3, in3, 'The student comes on that day']);
+  const giverSees = (await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === later.id).news[0];
+  assert.deepStrictEqual([giverSees.kind, giverSees.to], ['scheduled', in3], 'whoever gave it is told it was moved');
+  const back = (await both('POST', `/api/cards/${mockStudent}/tasks/${later.id}`, { schedule: '' })).json.card.tasks.find((x) => x.id === later.id);
+  assert.strictEqual(back.doOn, undefined, 'back to today');
+  // Who gets a team's tasks is named, and Today says whose tasks come to the person.
+  const appTeam = (await admin('GET', `/api/cards/${mockStudent}`)).json.taskTeams.find((x) => x.id === 'application');
+  assert.ok(appTeam.members.includes('maya') && appTeam.members.includes('asha'), 'Goes to: the Application Team');
+  assert.ok(!(await admin('GET', `/api/cards/${mockStudent}`)).json.taskTeams.find((x) => x.id === 'mock').members.includes('maya'), 'not the Mock Team, which is only extra access for maya');
+  assert.deepStrictEqual((await both('GET', '/api/tasks')).json.mineFrom, { teams: ['Application Team'], allTeams: 2, ownChosen: true });
   // A choice that is not one of their teams (or for a person in one team only) is not kept.
   assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application'], taskTeam: 'mock' })).status, 200);
   assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').taskTeam, '');

@@ -30,11 +30,12 @@
     const fromName = t.by === me ? 'You' : t.by || 'Someone';
     const toName = t.forMe ? (t.team === 'head' ? 'you' : `your team (${t.teamLabel})`) : t.teamLabel;
     return window.Portal.taskCard(t, {
-      rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true,
+      rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true, today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
       canChange: t.forMe || t.by === me || canAssignAll,
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [
+        !t.done && (t.forMe || t.by === me || canAssignAll) && [t.doOn && t.doOn > todayIso ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: t.studentId, today: todayIso })) { window.NiecUI.toast('Moved. It waits under Upcoming.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: t.studentId, stage: t.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
         t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: allTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
@@ -51,13 +52,18 @@
     });
   }
   let canAssignAll = false;
+  let todayIso = '';
   let allTeams = [];
 
   // One list of tasks under its own heading, the newest word first; the ones done in the last 7 days fold away at the bottom.
   function group(title, hint, all, refresh, emptyText) {
     const g = el('div', 'td-group');
     const list = tagFilter === 'all' ? all : all.filter((x) => tagOf(x, x.stage) === tagFilter);
-    const open = list.filter((x) => !x.done).sort((a, b) => taskPriority(b) - taskPriority(a));
+    // Today and Upcoming (the owner, 15 Nov 2026): a task moved to a later day waits under Upcoming and is back under Today on its day.
+    const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
+    const openAll = list.filter((x) => !x.done);
+    const open = openAll.filter((x) => !later(x)).sort((a, b) => taskPriority(b) - taskPriority(a));
+    const upcoming = openAll.filter(later).sort((a, b) => a.doOn.localeCompare(b.doOn) || taskPriority(b) - taskPriority(a));
     const done = list.filter((x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000);
     const head = el('div', 'td-group-head');
     const words = el('div');
@@ -69,13 +75,14 @@
     if (fresh) chips.append(el('span', 'td-chip is-new', `${fresh} new`));
     const urgent = open.filter((x) => priorityOf(x) === 'super').length;
     if (urgent) chips.append(el('span', 'td-chip is-super', `${urgent} super priority`));
-    chips.append(el('span', 'td-chip', `${open.length} open`));
+    chips.append(el('span', 'td-chip', `${open.length} for today`));
+    if (upcoming.length) chips.append(el('span', 'td-chip is-later', `${upcoming.length} upcoming`));
     head.append(chips);
     g.append(head);
     if (!open.length) {
       const empty = el('div', 'td-empty');
       empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-      empty.append(el('div', '', tagFilter === 'all' ? emptyText : `Nothing open about ${tagLabel(tagFilter).toLowerCase()} here.`));
+      empty.append(el('div', '', tagFilter !== 'all' ? `Nothing for today about ${tagLabel(tagFilter).toLowerCase()} here.` : upcoming.length ? 'Nothing for today. The rest is under Upcoming.' : emptyText));
       g.append(empty);
     }
     const many = open.length > FIRST && !expanded.has(title) && !open.slice(FIRST).some((x) => x.id === focusTask);
@@ -84,6 +91,21 @@
       const more = h('button', { class: 'td-more', type: 'button' }, many ? `Show all ${open.length} open tasks` : 'Show only the first five');
       more.addEventListener('click', () => { if (many) expanded.add(title); else expanded.delete(title); refresh(); });
       g.append(more);
+    }
+    // Upcoming: folded under Today so the eye stays on today; opened, each day under its own small heading.
+    if (upcoming.length) {
+      const key = 'up:' + title;
+      const shown = expanded.has(key) || upcoming.some((x) => x.id === focusTask);
+      const tg = h('button', { class: 'td-up-toggle', type: 'button', 'aria-expanded': String(shown) });
+      tg.append(el('span', 'td-up-chev'), el('span', '', `Upcoming (${upcoming.length})`), el('small', '', upcoming.length ? `next: ${window.Portal.dayLabel(upcoming[0].doOn, todayIso)}` : ''));
+      tg.addEventListener('click', () => { if (shown) expanded.delete(key); else expanded.add(key); refresh(); });
+      g.append(tg);
+      if (shown) {
+        const box = el('div', 'td-upcoming');
+        let day = '';
+        upcoming.forEach((x) => { if (x.doOn !== day) { day = x.doOn; box.append(el('div', 'td-day', window.Portal.dayLabel(day, todayIso))); } box.append(taskRow(x, refresh)); });
+        g.append(box);
+      }
     }
     if (done.length) {
       const key = title;
@@ -98,6 +120,7 @@
 
   function tasksPanel(t, refresh) {
     canAssignAll = Boolean(t.canAssign);
+    todayIso = t.today || todayIso;
     allTeams = t.teams || [];
     if (t.me) me = t.me;
     const box = el('section', 'td-tasks');
@@ -151,7 +174,7 @@
     return shortDay(iso);
   };
   let inboxAll = false;
-  const NOTE_VERB = { task: (x) => ` gave ${x.forMe && x.team !== 'head' ? 'your team' : 'you'} a new task`, reassigned: () => ' reassigned a task', edited: () => ' changed a task', done: () => ' marked a task as done', update: () => ' posted an update' };
+  const NOTE_VERB = { task: (x) => ` gave ${x.forMe && x.team !== 'head' ? 'your team' : 'you'} a new task`, reassigned: () => ' reassigned a task', edited: () => ' changed a task', scheduled: (x, n) => (n.to && n.to > todayIso ? ` moved a task to ${window.Portal.dayLabel(n.to, todayIso)}` : ' moved a task back to today'), done: () => ' marked a task as done', update: () => ' posted an update' };
   // Notifications (the owner, 15 Nov 2026): every task given, update, change, reassignment and completion of the last 30 days, kept
   // after they are read. The new ones come first under "New" with a blue dot; the rest under "Earlier". Always on Today.
   function inbox(t, refresh) {
@@ -193,7 +216,7 @@
       av.setAttribute('aria-hidden', 'true');
       const words = el('div', 'td-note-words');
       const line = el('div', 'td-note-line');
-      line.append(el('b', '', n.by === me ? 'You' : n.by), (NOTE_VERB[n.kind] || NOTE_VERB.update)(x));
+      line.append(el('b', '', n.by === me ? 'You' : n.by), (NOTE_VERB[n.kind] || NOTE_VERB.update)(x, n));
       words.append(line, el('div', 'td-note-task', x.text));
       if (n.text) words.append(el('div', 'td-note-text', `\u201c${n.text}\u201d`));
       const side = el('div', 'td-note-side');
@@ -263,7 +286,9 @@
   function pulse(tasks, sections) {
     const recent = (x) => x.done && Date.now() - Date.parse(x.doneAt || 0) < 7 * 86400000;
     const mine = tasks.tasks.filter((x) => x.forMe);
-    const open = mine.filter((x) => !x.done).length;
+    const later = (x) => x.doOn && tasks.today && x.doOn > tasks.today;
+    const open = mine.filter((x) => !x.done && !later(x)).length;
+    const upcoming = mine.filter((x) => !x.done && later(x)).length;
     const done = mine.filter(recent).length;
     const waiting = sections.reduce((n, x) => n + x.count, 0);
     const box = el('section', 'td-pulse');
@@ -273,7 +298,13 @@
     if (open + done) ring.append(el('b', '', `${Math.round(share * 100)}%`), el('small', '', 'this week')); else ring.append(el('b', 'td-ring-tick', '\u2713'));
     const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('span', '', label)); return x; };
     const words = el('div', 'td-pulse-words');
-    words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} open for you` : 'All caught up'), el('p', '', open ? 'Tick each one when it is done.' : 'Nothing open for you. Well done.'));
+    words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} for today` : 'All caught up for today'), el('p', '', `${open ? 'Tick each one when it is done.' : 'Nothing left for today. Well done.'}${upcoming ? ` ${upcoming} more upcoming.` : ''}`));
+    // Whose tasks come here: "Tasks of the Application Team". A person in two or more teams with no own team chosen is told so.
+    const from = tasks.mineFrom;
+    if (from && from.teams && from.teams.length && !tasks.canAssign) {
+      if (from.allTeams > 1 && !from.ownChosen) words.append(el('p', 'td-from-warn', `You get the tasks of every team you are in (${from.teams.join(', ')}). Admin can choose your own team in Users, so only its tasks come here.`));
+      else words.append(el('p', 'td-from', `Tasks of the ${from.teams.join(', ')}`));
+    }
     box.append(ring, words, stat(done, 'done this week', 'good'), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
     return box;
   }
@@ -292,6 +323,7 @@
     const top = el('div');
     const refresh = async (reload) => {
       if (reload) { try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ } }
+      todayIso = tasks.today || d.today || todayIso;
       top.replaceChildren(inbox(tasks, refresh), pulse(tasks, d.sections));
       slot.replaceChildren(tasksPanel(tasks, refresh));
     };

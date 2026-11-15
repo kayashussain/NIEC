@@ -710,7 +710,8 @@ function createAccounts({
   }
 
   // The people with a login that works, by name (for the Counselor box on a student card). Nothing private is in it.
-  const people = () => users().filter((u) => !u.disabled).map((u) => ({ name: u.name, access: accessLabel(u) }));
+  // Also their teams and their own team, so a task given to a team can say exactly who gets it (no email, no password).
+  const people = () => users().filter((u) => !u.disabled).map((u) => ({ name: u.name, access: accessLabel(u), role: u.role, departments: u.departments || [], taskTeam: cleanTaskTeam(u.taskTeam, u.departments || []) }));
   return { requireAuth, handleApi, emailConfig, userForSessionKey, people };
 }
 

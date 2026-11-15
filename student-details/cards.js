@@ -258,6 +258,26 @@ function createCards(dir, { now = () => new Date() } = {}) {
       });
       return out.error ? out : { ...out, task };
     },
+    // A task moved to another day by the team or whoever gave it (the owner, 15 Nov 2026: "the student says not today, in 3 days"):
+    // it waits under Upcoming until that day, then is back under Today by itself. `date`: YYYY-MM-DD, or '' for today. The move is
+    // written in the task's updates with its reason, so everyone sees why.
+    scheduleTask(rowId, taskId, input, by, today) {
+      const date = String((input && input.date) || '');
+      if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00Z')))) return { error: 'Choose the day.' };
+      if (date && today && date < today) return { error: 'Choose today or a later day.' };
+      if (date && today && Date.parse(date) - Date.parse(today) > 366 * 86400000) return { error: 'Choose a day within a year.' };
+      const reason = str(input && input.reason, LIMITS.text);
+      let task;
+      const out = update(rowId, by, (card, stamp) => {
+        task = card.tasks.find((t) => t.id === taskId);
+        if (!task) return { error: 'No such task.' };
+        const to = date && (!today || date > today) ? date : '';
+        if (to) task.doOn = to; else delete task.doOn;
+        task.comments = [...(Array.isArray(task.comments) ? task.comments : []), { id: newId(), by: by || '', at: stamp, text: reason, schedule: { to: to || today || '' } }].slice(-LIMITS.comments);
+        return null;
+      });
+      return out.error ? out : { ...out, task };
+    },
     // What a task is about and how important it is, changed after it was given. `change`: { tag, priority }, either or both.
     tagTask(rowId, taskId, change, by) {
       const c = typeof change === 'string' ? { tag: change } : (change || {});
