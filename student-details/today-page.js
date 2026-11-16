@@ -37,8 +37,6 @@
     return window.Portal.taskCard(t, {
       rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true, today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
-      // What the Mark as done window needs to know about the student (see doneDialog in portal-ui.js).
-      finishInfo: { university: t.university || '', course: t.course || '', appSubmitted: t.appSubmitted || '', nocNumber: t.nocNumber || '', nextFeedback: t.nextFeedback || 0 },
       canChange: t.forMe || t.by === me || canAssignAll,
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [

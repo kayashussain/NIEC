@@ -844,10 +844,6 @@ try {
 } catch (e) {
   console.error('[startup] could not read', DATA_FILE, '-', e.message);
 }
-// A booked medical test becomes Received on its day (portal-api.js medicalSweep): checked at the start and every hour.
-const sweepMedical = () => { try { const n = portal.medicalSweep(); if (n) console.log('[medical] marked Received:', n); } catch (e) { console.error('[medical]', e.message); } };
-setTimeout(sweepMedical, 5000).unref();
-setInterval(sweepMedical, 60 * 60 * 1000).unref();
 // The owner's one-time tidy-up of the partners (15 Nov 2026, see partner-tidy.js); it runs once and is written in Activity.
 try {
   const out = tidyPartners({

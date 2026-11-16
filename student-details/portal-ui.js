@@ -395,143 +395,243 @@
     wrap.append(btn, menu);
     return wrap;
   }
+  // The "Mark as done?" window (the owner, 16 Nov 2026: nothing is filled in by itself; the team is asked, checks, then it is saved).
+  // Step 1 shows what ISR already knows about the student (every application with its days) and asks what the task's tag needs, with
+  // no answer chosen and no day filled in. Step 2 shows the server's own list of exactly what will change, what stays as it is and
+  // anything that does not add up; only "Yes, this is correct" saves it. A task with nothing to ask (Documents, Other) takes one
+  // optional line and is done. Resolves the confirmed answers ({ ..., confirmed: true }) or null when Not yet is pressed.
+  function doneDialog(t, o) {
+    let answer = null;
+    const url = `/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`;
+    const tag = tagOf(t, o.stage);
+    const asks = ['application', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
+    return dialog('Mark as done?', (body, close) => {
+      body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
+      const ask = el('div', 'td-done-step');
+      const sure = el('div', 'td-done-step');
+      sure.hidden = true;
+      body.append(ask, sure);
+      const msg = el('div', 'p-msg');
+      const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; };
+      if (!asks) { build(null); return; }
+      const wait = el('p', 'p-muted p-small', 'Loading what ISR knows about this student...');
+      ask.append(wait);
+      api(url, { finishState: true }).then((r) => { wait.remove(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
+
+      function build(state) {
+        const form = el('div', 'p-form td-done-form');
+        ask.append(form);
+        const today = (state && state.today) || o.today || new Date().toISOString().slice(0, 10);
+        const sheet = (state && state.sheet) || {};
+        // A short question answered with pills; nothing is chosen until the person chooses.
+        const question = (label, choices, onChange) => {
+          const w = el('div', 'p-field p-wide');
+          w.append(el('span', 'p-label', label));
+          const p = picker(choices, '', (k) => `td-prio td-answer ans-${k}`, label);
+          p.node.addEventListener('click', () => setTimeout(() => onChange && onChange(p.value()), 0));
+          w.append(p.node);
+          form.append(w);
+          return p;
+        };
+        const show = (nodes, on) => [].concat(nodes).forEach((n) => { n.hidden = !on; });
+        const dateField = (label, max) => { const f = field(label, { kind: 'date', value: '' }); if (max) f.input.max = max; form.append(f.wrap); return f; };
+        // What is on the sheet now, in one quiet line, so the team answers knowing it.
+        const nowLine = (cols) => {
+          const bits = cols.filter((c) => String(sheet[c] || '').trim()).map((c) => `${(state.labels || {})[c] || c}: ${day(sheet[c])}`);
+          if (bits.length) form.append(el('p', 'p-muted p-small p-wide td-done-now', `Now on All Students: ${bits.join(' · ')}`));
+        };
+        let read = () => ({});
+        let check = () => '';
+        if (tag === 'application') {
+          // So far: every application ISR knows, each with its days; a press on one starts a line for it below.
+          const apps = state.applications || [];
+          const listId = `td-unis-${t.id}`;
+          form.append(datalist(listId, state.universities || []));
+          const so = el('div', 'p-wide td-sofar');
+          so.append(el('span', 'p-label', apps.length ? 'Applications so far (press one to record news for it)' : 'No application is recorded yet.'));
+          apps.forEach((a) => {
+            const line = h('button', { class: 'td-sofar-row', type: 'button', title: 'Record something for this university' });
+            line.append(el('b', '', a.university), a.course ? el('span', 'td-sofar-course', a.course) : '');
+            const pills = el('span', 'td-sofar-pills');
+            if (a.applied) pills.append(el('span', 'p-applied', `Applied ${day(a.applied)}`));
+            if (a.offer) pills.append(el('span', 'p-applied is-offer', `${a.offerType ? a.offerType + ' offer' : 'Offer'} ${day(a.offer)}`));
+            if (a.refused) pills.append(el('span', 'p-applied is-refused', `Refused ${day(a.refused)}`));
+            if (a.withdrawn) pills.append(el('span', 'p-applied is-refused', `Withdrawn ${day(a.withdrawn)}`));
+            if (a.onSheet) pills.append(el('span', 'td-sofar-sheet', 'On All Students'));
+            line.append(pills);
+            line.addEventListener('click', () => { const r = rows.find((x) => !x.uf.input.value.trim()) || addRow(); r.uf.input.value = a.university; r.cf.input.value = a.course || ''; r.what.input.focus(); });
+            so.append(line);
+          });
+          form.append(so);
+          // What happened now: one line per university, as many as needed, each with its own answer; one day for all.
+          const box = el('div', 'p-wide td-unis');
+          box.append(el('span', 'p-label', 'What happened? One line per university'));
+          const rows = [];
+          const WHAT = [['submitted', 'Applied'], ['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn']];
+          const more = h('button', { class: 'btn btn-sm td-uni-more', type: 'button', onclick: () => addRow().uf.input.focus() }, '+ Another university');
+          function addRow(u = '', c = '') {
+            const r = el('div', 'td-uni-row td-uni-row-3');
+            const uf = field('', { value: u, max: 160, placeholder: 'University', list: listId });
+            const cf = field('', { value: c, max: 240, placeholder: 'Course' });
+            const what = field('', { kind: 'select', choices: WHAT, value: '' });
+            uf.input.setAttribute('aria-label', 'University'); cf.input.setAttribute('aria-label', 'Course'); what.input.setAttribute('aria-label', 'What happened');
+            // A university chosen from the list brings its course with it.
+            uf.input.addEventListener('change', () => { const k = apps.find((a) => a.university.toLowerCase() === uf.input.value.trim().toLowerCase()); if (k && !cf.input.value.trim()) cf.input.value = k.course || ''; });
+            r.append(uf.wrap, cf.wrap, what.wrap);
+            const x = { r, uf, cf, what };
+            if (rows.length) r.append(h('button', { class: 'td-uni-x', type: 'button', 'aria-label': 'Remove this line', onclick: () => { r.remove(); rows.splice(rows.indexOf(x), 1); } }, '×'));
+            rows.push(x);
+            more.before(r);
+            return x;
+          }
+          box.append(more);
+          form.append(box);
+          // A first application starts with the sheet's university written in; what happened is always chosen by the person.
+          if (!apps.length) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); else addRow();
+          const on = dateField('On (the day it happened)', today);
+          form.append(el('p', 'p-muted p-small p-wide', 'Leave the lines empty if there is nothing to record: only the note is saved.'));
+          const filled = () => rows.map((x) => ({ university: x.uf.input.value.trim(), course: x.cf.input.value.trim(), what: x.what.input.value })).filter((x) => x.university || x.what);
+          read = () => (filled().length ? { app: 'record', date: on.input.value, unis: filled() } : {});
+          check = () => {
+            const f = filled();
+            const noWhat = f.find((x) => !x.what); const noName = f.find((x) => !x.university);
+            return noWhat ? `Choose what happened with ${noWhat.university}.` : noName ? 'Name the university on each line.' : f.length && !on.input.value ? 'Choose the day it happened.' : '';
+          };
+        } else if (tag === 'noc') {
+          nowLine(['NOC', 'NOC NUMBER']);
+          const q = question('The NOC', [['Pending', 'Pending (account made)'], ['Submitted', 'Submitted'], ['none', 'Nothing to record']], (v) => show(num.wrap, v !== 'none'));
+          const num = field('NOC number', { value: sheet['NOC NUMBER'] || '', max: 60, placeholder: 'If there is one' });
+          form.append(num.wrap);
+          read = () => (q.value() && q.value() !== 'none' ? { noc: q.value(), nocNumber: num.input.value.trim() } : {});
+          check = () => (!q.value() ? 'Choose Pending, Submitted or Nothing to record.' : '');
+        } else if (tag === 'mock') {
+          nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW']);
+          const q = question('What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
+            show([date.wrap, rem], v === 'set'); show([slot.wrap, fb.wrap], v === 'feedback'); show(res, v === 'precas');
+          });
+          const date = dateField('Mock interview on');
+          const rem = el('label', 'p-check p-wide');
+          const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
+          rem.append(remind, el('span', '', 'Remind the team to write the feedback on that day'));
+          form.append(rem);
+          const said = /mock interview (\d)/i.exec(String(t.text || ''));
+          const slot = field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: said ? said[1] : String(state.nextFeedback || '') });
+          const fb = field('Feedback', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Confident; work on the finance answers.' });
+          fb.input.rows = 3;
+          form.append(slot.wrap, fb.wrap);
+          const res = el('div', 'p-field p-wide');
+          const result = picker([['Passed', 'Passed'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS result');
+          res.append(el('span', 'p-label', 'Pre-CAS result'), result.node);
+          form.append(res);
+          show([date.wrap, rem, slot.wrap, fb.wrap, res], false);
+          read = () => (q.value() === 'set' ? { mock: 'set', date: date.input.value, remind: remind.checked } : q.value() === 'feedback' ? { mock: 'feedback', slot: Number(slot.input.value), feedback: fb.input.value.trim() } : q.value() === 'precas' ? { mock: 'precas', result: result.value() } : {});
+          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'set' && !date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !slot.input.value ? 'Choose which mock.' : q.value() === 'feedback' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !result.value() ? 'Choose Passed or Fail.' : '');
+        } else if (tag === 'medical') {
+          nowLine(['MEDICAL REPORT']);
+          const q = question('The medical test', [['booked', 'Booked'], ['received', 'Report received'], ['notBooked', 'Not booked yet'], ['none', 'Nothing to record']], (v) => { show(date.wrap, v === 'booked'); show(place.wrap, v === 'booked' || v === 'received'); show(hint, v === 'booked'); });
+          const date = dateField('Booked for');
+          const place = field('Hospital or clinic', { max: 200, placeholder: 'e.g. IOM Kathmandu' });
+          form.append(place.wrap);
+          const hint = el('p', 'p-muted p-small p-wide', 'Medical Report says Booked. On that day the team is asked whether the report is received.');
+          form.append(hint);
+          show([date.wrap, place.wrap, hint], false);
+          read = () => (q.value() && q.value() !== 'none' ? { medical: q.value(), date: date.input.value, place: place.input.value.trim() } : {});
+          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'booked' && !date.input.value ? 'Choose the day it is booked for.' : '');
+        } else if (tag === 'payment') {
+          nowLine(['PAYMENT DATE', 'TUITION FEE DEPOSIT(1st Installment)', 'TUITION FEE DEPOSIT(2nd Installment)', 'TUITION FEE DEPOSIT(3rd Installment)']);
+          const q = question('Was a payment made?', [['yes', 'Yes, paid'], ['no', 'No']], (v) => show([date.wrap, amount.wrap], v === 'yes'));
+          const date = dateField('Paid on', today);
+          const amount = field('Amount', { max: 20, placeholder: 'e.g. 5000' });
+          amount.input.inputMode = 'decimal';
+          form.append(amount.wrap);
+          show([date.wrap, amount.wrap], false);
+          read = () => (q.value() === 'yes' ? { paid: true, date: date.input.value, amount: amount.input.value.trim() } : {});
+          check = () => (!q.value() ? 'Choose Yes or No.' : q.value() === 'yes' && !date.input.value ? 'Choose the day it was paid.' : '');
+        } else if (tag === 'visa') {
+          nowLine(['CAS REQUESTED DATE', 'CAS RECEIVED DATE', 'VISA LODGE DATE', 'VFS ATTENDED DATE', 'VISA RECEIVED DATE']);
+          const q = question('Which step is done?', [['casRequested', 'CAS requested'], ['casReceived', 'CAS received'], ['lodged', 'Visa lodged'], ['vfs', 'VFS attended'], ['visa', 'Visa received'], ['refused', 'Visa refused'], ['none', 'Nothing to record']], (v) => show(date.wrap, v !== 'none'));
+          const date = dateField('On', today);
+          read = () => (q.value() && q.value() !== 'none' ? { step: q.value(), date: date.input.value } : {});
+          check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : '');
+        }
+        const words = field(asks ? 'A note (optional)' : 'What was done? (optional)', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
+        words.input.rows = 2;
+        form.append(words.wrap);
+        ask.append(msg, el('p', 'p-muted p-small', asks ? 'Nothing is saved until you check it on the next step.' : "Saved in the student's notes."));
+        const foot = el('div', 'p-dialog-foot');
+        const next = h('button', { class: 'btn btn-primary', type: 'button' }, asks ? 'Next: check' : 'Yes, it is done');
+        next.addEventListener('click', async () => {
+          const problem = check();
+          if (problem) { fail({ message: problem }); return; }
+          const answers = { ...read(), note: words.input.value.trim() };
+          if (!asks) { answer = answers; close(true); return; }
+          next.disabled = true;
+          try { const r = await api(url, { done: true, finish: answers, preview: true }); msg.textContent = ''; msg.className = 'p-msg'; review(r.preview, answers); } catch (e) { fail(e); }
+          next.disabled = false;
+        });
+        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Not yet'), next);
+        ask.append(foot);
+      }
+
+      // Step 2: exactly what will be saved, from the server, to be confirmed.
+      function review(p, answers) {
+        sure.replaceChildren();
+        sure.append(el('h3', 'td-check-title', 'Check before saving'));
+        const block = (title, items, cls) => {
+          if (!items.length) return;
+          const b = el('div', `td-check-block ${cls || ''}`);
+          b.append(el('span', 'p-label', title));
+          const ul = el('ul', 'td-check-list');
+          items.forEach((x) => ul.append(x.nodeType ? x : el('li', '', x)));
+          b.append(ul);
+          sure.append(b);
+        };
+        block('Please look at this first', p.warnings, 'is-warn');
+        block('Changes on All Students', p.changes.map((c) => { const li = el('li', 'td-check-change'); li.append(el('b', '', c.label), el('span', c.from === '(empty)' ? 'td-check-from is-empty' : 'td-check-from', c.from), el('span', 'td-check-arrow', '→'), el('span', 'td-check-to', c.to)); return li; }));
+        block('University options', p.options);
+        block('A new task for the team', p.remind ? [p.remind] : []);
+        block('Stays as it is', p.kept, 'is-quiet');
+        block('Note on the student', p.note ? [p.note + (p.remarks ? ' (also shown in Remarks)' : '')] : []);
+        if (!p.changes.length && !p.options.length && !p.remind) sure.append(el('p', 'p-muted', `Nothing changes on All Students. The task is marked done${p.note ? ' and the note is saved' : ''}.`));
+        const foot = el('div', 'p-dialog-foot');
+        const yes = h('button', { class: 'btn btn-primary', type: 'button' }, 'Yes, this is correct');
+        yes.addEventListener('click', () => { answer = { ...answers, confirmed: true }; close(true); });
+        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => { sure.hidden = true; ask.hidden = false; } }, 'Back'), yes);
+        sure.append(foot);
+        ask.hidden = true;
+        sure.hidden = false;
+        yes.focus();
+      }
+    }, { wide: tag === 'application' }).then(() => answer);
+  }
+  // Reopening a task that recorded something (the owner, 16 Nov 2026): it says what the task recorded and offers to put it back, so a
+  // wrong answer is corrected in one step. Resolves { revert: true }, {} (only reopen) or null (cancelled).
+  function reopenDialog(t) {
+    const w = t.wrote || {};
+    const label = (c) => (root.CardFields && root.CardFields.columnLabel ? root.CardFields.columnLabel(c) : c);
+    const lines = Object.entries(w.columns || {}).filter(([c]) => c !== 'REMARKS').map(([c, [from, to]]) => `${label(c)}: ${to ? day(to) : '(empty)'} (was ${from ? day(from) : 'empty'})`);
+    if ((w.options || []).length) lines.push(`University options: ${w.options.length} line${w.options.length === 1 ? '' : 's'}`);
+    if (w.remind) lines.push('The task it gave the team');
+    if (!lines.length) return root.NiecUI.confirm('Reopen this task? It goes back to the team as not done.', { confirmText: 'Reopen' }).then((ok) => (ok ? {} : null));
+    let out = null;
+    return dialog('Reopen this task?', (body, close) => {
+      body.append(el('p', '', 'When it was marked done, it recorded:'));
+      const ul = el('ul', 'td-check-list');
+      lines.forEach((x) => ul.append(el('li', '', x)));
+      body.append(ul, el('p', 'p-muted p-small', 'Put it back if the answer was wrong. Anything changed by hand since stays as it is.'));
+      const foot = el('div', 'p-dialog-foot');
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'),
+        h('button', { class: 'btn', type: 'button', onclick: () => { out = {}; close(); } }, 'Only reopen'),
+        h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { out = { revert: true }; close(); } }, 'Reopen and put it back'));
+      body.append(foot);
+    }).then(() => out);
+  }
   // One task, the same on Today and on the student card (the owner, 15 Nov 2026: "as Apple would make it"): a round tick; the task
   // in semibold; beside it, on the right, its updates (a speech bubble with how many, a red count when something is new) and "...";
   // under it one grey line with the tag, the student and the stage; then who gave it to whom and
   // when, in small grey type. The updates open under the task.
   //   o: { rowId, me, teams, mayTick, tickTitle, canWrite, canChange, unread, stage, student: { name, href } | null, fromName,
   //        toName, actions: [[label, onClick, danger]], onTick: async (done) => {}, onChanged }
-  // The "Mark as done?" window (the owner, 15 Nov 2026): it asks what the task's tag needs, and the server puts each answer where it
-  // belongs (the sheet, a note on the student, a reminder): Application (submitted on, to which university), NOC (Pending or
-  // Submitted, the NOC number), Mock interview (the day it is set for, a reminder to write the feedback), Medical (booked for a day and
-  // where, report received, or not booked yet); anything else, one line on what was done. Resolves the answers ({ note, ... }) or
-  // null when Not yet is pressed.
-  function doneDialog(t, o) {
-    let answer = null;
-    const info = o.finishInfo || {};
-    const tag = tagOf(t, o.stage);
-    const today = o.today || new Date().toISOString().slice(0, 10);
-    return dialog('Mark as done?', (body, close) => {
-      const who = o.fromName === 'You' ? 'you see' : (o.fromName || 'whoever gave it') + ' sees';
-      body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
-      const form = el('div', 'p-form td-done-form');
-      body.append(form);
-      const msg = el('div', 'p-msg');
-      // A short question answered with pills (Yes / No, Pending / Submitted ...).
-      const ask = (label, choices, initial, onChange) => {
-        const w = el('div', 'p-field p-wide');
-        w.append(el('span', 'p-label', label));
-        const p = picker(choices, initial, (k) => `td-prio td-answer ans-${k}`, label);
-        p.node.addEventListener('click', () => setTimeout(() => onChange && onChange(p.value()), 0));
-        w.append(p.node);
-        form.append(w);
-        return p;
-      };
-      const parts = {}; // the boxes shown for the current answer
-      const show = (node, on) => { node.hidden = !on; };
-      const dateField = (label, value, max) => { const f = field(label, { kind: 'date', value }); if (max) f.input.max = max; form.append(f.wrap); return f; };
-      let read = () => ({});
-      let check = () => '';
-      if (tag === 'application') {
-        // What happened, its day, and one row per university with its course (+ Another university). The first row is filled in
-        // with the sheet's university only for a first application, so a backup application starts empty (the owner, 15 Nov 2026).
-        const q = ask('What happened?', [['submitted', 'Submitted'], ['offer', 'Offer received'], ['refused', 'Refused'], ['none', 'Nothing yet']], 'submitted', (v) => { [parts.date.wrap, parts.unis, parts.had].forEach((n) => show(n, v !== 'none')); parts.had.textContent = hint(v); });
-        parts.date = dateField('On', today, today);
-        parts.unis = el('div', 'p-wide td-unis');
-        const rows = [];
-        const addRow = (u = '', c = '') => {
-          const r = el('div', 'td-uni-row');
-          const uf = field(rows.length ? '' : 'University', { value: u, max: 160, placeholder: 'e.g. University of Roehampton' });
-          const cf = field(rows.length ? '' : 'Course', { value: c, max: 240, placeholder: 'e.g. BSc Adult Nursing' });
-          r.append(uf.wrap, cf.wrap);
-          if (rows.length) r.append(h('button', { class: 'td-uni-x', type: 'button', 'aria-label': 'Remove this university', onclick: () => { r.remove(); rows.splice(rows.findIndex((x) => x.r === r), 1); } }, '×'));
-          rows.push({ r, uf, cf });
-          more.before(r);
-        };
-        const more = h('button', { class: 'btn btn-sm td-uni-more', type: 'button', onclick: () => addRow() }, '+ Another university');
-        parts.unis.append(more);
-        const first = !info.appSubmitted;
-        addRow(first ? info.university || '' : '', first ? info.course || '' : '');
-        form.append(parts.unis);
-        const hint = (v) => (v === 'submitted' ? (info.appSubmitted ? 'Application submitted on All Students stays as it is.' : 'Goes into Application submitted.') : v === 'offer' ? 'Goes into Offer received for the sheet’s university.' : v === 'refused' ? 'Kept in the notes and University options.' : '');
-        parts.had = el('p', 'p-muted p-small p-wide', hint('submitted'));
-        form.append(parts.had);
-        const unis = () => rows.map((x) => ({ university: x.uf.input.value.trim(), course: x.cf.input.value.trim() })).filter((x) => x.university);
-        read = () => (q.value() === 'none' ? {} : { app: q.value(), date: parts.date.input.value, unis: unis() });
-        check = () => (q.value() === 'none' ? '' : !parts.date.input.value ? 'Choose the day.' : q.value() !== 'submitted' && !unis().length ? 'Name the university.' : '');
-      } else if (tag === 'noc') {
-        const q = ask('The NOC', [['Pending', 'Pending (account made)'], ['Submitted', 'Submitted']], '', null);
-        parts.num = field('NOC number', { value: info.nocNumber || '', max: 60, placeholder: 'If there is one' });
-        form.append(parts.num.wrap, el('p', 'p-muted p-small p-wide', 'Goes into NOC and NOC Number.'));
-        read = () => ({ noc: q.value(), nocNumber: parts.num.input.value.trim() });
-        check = () => (!q.value() ? 'Choose Pending or Submitted.' : '');
-      } else if (tag === 'mock') {
-        // A mock set for a day, the feedback of a mock held, or the Pre-CAS result: chosen first from the task's own words.
-        const words = String(t.text || '');
-        const start = /feedback/i.test(words) ? 'feedback' : /pre-?cas/i.test(words) ? 'precas' : 'set';
-        const q = ask('What happened?', [['set', 'Mock set'], ['feedback', 'Feedback'], ['precas', 'Pre-CAS result'], ['none', 'Nothing yet']], start, (v) => {
-          [parts.date.wrap, parts.rem].forEach((n) => show(n, v === 'set')); [parts.slot.wrap, parts.fb.wrap].forEach((n) => show(n, v === 'feedback')); show(parts.res, v === 'precas');
-        });
-        parts.date = dateField('Mock interview on', today);
-        parts.rem = el('label', 'p-check p-wide');
-        const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
-        parts.rem.append(remind, el('span', '', 'Remind the team to write the feedback'));
-        form.append(parts.rem);
-        const said = /mock interview (\d)/i.exec(words);
-        parts.slot = field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: said ? said[1] : String(info.nextFeedback || 1) });
-        parts.fb = field('Feedback', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Confident; work on the finance answers.' });
-        parts.fb.input.rows = 3;
-        form.append(parts.slot.wrap, parts.fb.wrap);
-        const resWrap = el('div', 'p-field p-wide');
-        const res = picker([['Passed', 'Passed'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS result');
-        resWrap.append(el('span', 'p-label', 'Pre-CAS result'), res.node);
-        parts.res = resWrap;
-        form.append(resWrap);
-        [parts.date.wrap, parts.rem].forEach((n) => show(n, start === 'set')); [parts.slot.wrap, parts.fb.wrap].forEach((n) => show(n, start === 'feedback')); show(parts.res, start === 'precas');
-        read = () => (q.value() === 'set' ? { mock: 'set', date: parts.date.input.value, remind: remind.checked } : q.value() === 'feedback' ? { mock: 'feedback', slot: Number(parts.slot.input.value), feedback: parts.fb.input.value.trim() } : q.value() === 'precas' ? { mock: 'precas', result: res.value() } : {});
-        check = () => (q.value() === 'set' && !parts.date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !parts.fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !res.value() ? 'Choose Passed or Fail.' : '');
-      } else if (tag === 'medical') {
-        const q = ask('The medical test', [['booked', 'Booked'], ['received', 'Report received'], ['none', 'Not booked yet']], '', (v) => { show(parts.date.wrap, v === 'booked'); show(parts.place.wrap, v !== 'none'); show(parts.hint, v === 'booked'); });
-        parts.date = dateField('Booked for', '');
-        parts.place = field('Hospital or clinic', { max: 200, placeholder: 'e.g. IOM Kathmandu' });
-        form.append(parts.place.wrap);
-        parts.hint = el('p', 'p-muted p-small p-wide', 'Medical Report says Booked, then Received on that day.');
-        form.append(parts.hint);
-        [parts.date.wrap, parts.place.wrap, parts.hint].forEach((n) => { n.hidden = true; });
-        read = () => ({ medical: q.value(), date: parts.date.input.value, place: parts.place.input.value.trim() });
-        check = () => (!q.value() ? 'Choose Booked, Report received or Not booked yet.' : q.value() === 'booked' && !parts.date.input.value ? 'Choose the day it is booked for.' : '');
-      }
-      else if (tag === 'payment') {
-        const q = ask('Was a payment made?', [['yes', 'Yes, paid'], ['no', 'No']], 'yes', (v) => { show(parts.date.wrap, v === 'yes'); show(parts.amount.wrap, v === 'yes'); });
-        parts.date = dateField('Paid on', today, today);
-        parts.amount = field('Amount', { max: 20, placeholder: 'e.g. 5000' });
-        parts.amount.input.inputMode = 'decimal';
-        form.append(parts.amount.wrap, el('p', 'p-muted p-small p-wide', 'Goes into Payment Date and the next deposit.'));
-        read = () => (q.value() === 'yes' ? { paid: true, date: parts.date.input.value, amount: parts.amount.input.value.trim() } : {});
-        check = () => (q.value() === 'yes' && !parts.date.input.value ? 'Choose the day it was paid.' : '');
-      } else if (tag === 'visa') {
-        const q = ask('Which step is done?', [['casRequested', 'CAS requested'], ['casReceived', 'CAS received'], ['lodged', 'Visa lodged'], ['vfs', 'VFS attended'], ['visa', 'Visa received'], ['refused', 'Visa refused']], '', null);
-        parts.date = dateField('On', today, today);
-        form.append(el('p', 'p-muted p-small p-wide', 'The stage moves on by itself.'));
-        read = () => ({ step: q.value(), date: parts.date.input.value });
-        check = () => (!q.value() ? 'Choose the step.' : !parts.date.input.value ? 'Choose the day.' : '');
-      }
-      const words = field(tag === 'other' || !['application', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag) ? 'What was done? (optional)' : 'A note (optional)', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. MSc Data Science, Application ID 12345.' : tag === 'noc' ? 'e.g. NOC account created, documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
-      words.input.rows = 2;
-      form.append(words.wrap);
-      body.append(msg, el('p', 'p-muted p-small', `Saved in the student's notes.`));
-      const foot = el('div', 'p-dialog-foot');
-      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Yes, it is done');
-      ok.addEventListener('click', () => {
-        const problem = check();
-        if (problem) { msg.textContent = problem; msg.className = 'p-msg error'; return; }
-        answer = { ...read(), note: words.input.value.trim() };
-        close(true);
-      });
-      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Not yet'), ok);
-      body.append(foot);
-    }).then(() => answer);
-  }
   function taskCard(t, o) {
     const r = el('div', `td-task${t.done ? ' is-done' : ''}${o.unread ? ' has-unread' : ''}`);
     r.dataset.taskId = t.id;
@@ -543,6 +643,9 @@
       let finish = null;
       if (!t.done && root.NiecUI) {
         finish = await doneDialog(t, o);
+        if (!finish) return;
+      } else if (t.done && t.wrote && root.NiecUI) {
+        finish = await reopenDialog(t);
         if (!finish) return;
       }
       tick.disabled = true;
@@ -735,5 +838,5 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  root.Portal = { niceName, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

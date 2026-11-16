@@ -227,7 +227,6 @@
       const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
       list.append(window.Portal.taskCard(t, {
         rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0, today: data.today,
-        finishInfo: { university: data.student.row['UNIVERSITY NAME'] || '', course: data.student.row['COURSE NAME'] || '', appSubmitted: String(data.student.row['APPLICATION SUBMISSION DATE'] || '').trim(), nocNumber: data.student.row['NOC NUMBER'] || '', nextFeedback: [1, 2, 3, 4].find((n) => String(data.student.row[`MOCK SCHEDULE ${n}`] || '').trim() && !String(data.student.row[`FEEDBACK ${n}`] || '').trim()) || 0 },
         canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
         actions: [
@@ -364,7 +363,7 @@
         else if (c.schedule) events.push({ kind: 'task', at: c.at, by: c.by, title: c.schedule.to ? `Moved “${short(t.text)}” to ${window.Portal.dayLabel(c.schedule.to, data.today)}` : `Moved “${short(t.text)}” back to today`, text: c.text || '' });
         else if (c.text) events.push({ kind: 'update', at: c.at, by: c.by, title: `Update on “${short(t.text)}”`, text: c.text });
       });
-      if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, title: `Done: “${short(t.text)}”`, text: '' });
+      if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, title: `Done: “${short(t.text)}”`, text: '', task: t });
     });
     events.sort((x, y) => String(y.at).localeCompare(String(x.at)));
     const nTasks = events.filter((e) => e.kind !== 'note').length;
@@ -394,6 +393,18 @@
         li.append(head, el('p', '', e.text));
       } else {
         head.append(el('span', `p-history-chip is-${e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : 'Task'));
+        // A done task can be reopened (the team it is for, Admin and the Manager), and what it recorded put back (the owner, 16 Nov
+        // 2026: a wrong answer is corrected in one step).
+        const mayReopen = e.task && !data.can.readOnly && (data.can.removeAnyTask || (data.can.myTeams || []).includes(e.task.team) || (e.task.team === 'head' && (data.me || {}).role === 'admin'));
+        if (mayReopen) {
+          head.append(h('button', { class: 'p-link', type: 'button', onclick: async () => {
+            const how = await window.Portal.reopenDialog(e.task);
+            if (!how) return;
+            const r = await save(`tasks/${e.task.id}`, { done: false, finish: how }, 'Reopened');
+            if (r && r.undone && r.undone.length) say(`Reopened. Put back: ${r.undone.join('; ')}${r.left && r.left.length ? `. ${r.left.join('; ')}` : ''}`);
+            data = await api('/api/cards/' + encodeURIComponent(id)); render();
+          } }, 'Reopen'));
+        }
         li.append(head, el('p', 'p-history-title', e.title));
         if (e.text) li.append(el('p', '', e.text));
         if (e.tag) li.lastChild.prepend(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' ');
@@ -420,8 +431,9 @@
       const header = el('header');
       header.append(el('h4', '', `${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
       if (o.applied) header.firstChild.append(' ', el('span', 'p-applied', `Applied ${day(o.applied)}`));
-      if (o.offer) header.firstChild.append(' ', el('span', 'p-applied is-offer', `Offer ${day(o.offer)}`));
+      if (o.offer) header.firstChild.append(' ', el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
       if (o.refused) header.firstChild.append(' ', el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
+      if (o.withdrawn) header.firstChild.append(' ', el('span', 'p-applied is-refused', `Withdrawn ${day(o.withdrawn)}`));
       if (can()) header.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { await save('options/' + o.id + '/delete', {}); render(); } }, 'Remove'));
       const form = el('div', 'p-form');
       const fee = field('Tuition fee', { value: o.fee, disabled: !can(), max: 400 });
@@ -580,10 +592,26 @@
     if (changed && window.NiecUI && window.NiecUI.swap) window.NiecUI.swap(() => render(template), { soft: true });
     else render(template);
   }
+  // Details that do not add up (the owner, 16 Nov 2026), right under the student's name: each says what is wrong. Correct it with
+  // Edit above (or the sheet), or press "It is correct" once checked, and it leaves the list (and Today's "Details to check").
+  function checksBox() {
+    const box = el('section', 'p-checks');
+    box.append(el('h2', '', 'Details to check'));
+    const list = el('ul');
+    data.checks.forEach((c) => {
+      const li = el('li');
+      li.append(el('span', '', c.text));
+      if (can()) li.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { await save('checks', { key: c.key }, 'Marked as checked'); data = await api('/api/cards/' + encodeURIComponent(id)); render(); } }, 'It is correct'));
+      list.append(li);
+    });
+    box.append(list, el('p', 'p-muted p-small', 'Wrong? Correct it with Edit above, or on All Students.'));
+    return box;
+  }
   function render(template) {
     document.title = `${data.student.name} · Student · ISR`;
     const frag = document.createDocumentFragment();
     frag.append(hero());
+    if ((data.checks || []).length) frag.append(checksBox());
     if (!can()) frag.append(el('div', 'p-notice', 'View only.'));
     const tabs = el('div', 'p-tabs');
     tabs.style.marginTop = '16px';

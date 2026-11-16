@@ -2438,3 +2438,32 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 
 
 /* 🔴 CSS CHANGED (2026-11-15): clean-up, nothing on screen changes | from: styles kept for things removed earlier today (the ring in Today's top panel, the priority pills, the old Partner Universities cards) | to: those styles are deleted, so the stylesheet holds only what the pages use */
+
+/* 🔴 CSS CHANGED (2026-11-16): the Mark as done window asks, then shows what will be saved; Details to check on the student card (new) | from: one step: the answers were saved as soon as "Yes, it is done" was pressed, with Submitted, Yes paid and today's day already chosen | to: step 1, under the task, "Applications so far" as soft grey rows (the university in bold, its course in grey, the green Applied, blue Offer and red Refused pills, a small grey "On All Students" tag; a press starts a line for it), then one line per university with University, Course and a "What happened?" box side by side, and one quiet grey line "Now on All Students: ..." for the other tags; step 2 "Check before saving": an orange box "Please look at this first" when something does not add up, then each change as "Offer received  (empty) → 16 Nov 2026" (the old value grey and struck through, "(empty)" grey only, the new one in bold blue), University options, a new task, "Stays as it is" in grey and the note, with Back and "Yes, this is correct"; on the student card under the name, a soft orange panel "Details to check" listing what does not add up, each with an "It is correct" button */
+.td-sofar { display: grid; gap: 6px; }
+.td-sofar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; width: 100%; padding: 9px 12px; border: 0; border-radius: 12px; background: #f0f0f3; color: #1d1d1f; font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; transition: background-color .15s; }
+.td-sofar-row:hover { background: #e8e8ed; }
+.td-sofar-course { color: #6e6e73; }
+.td-sofar-pills { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
+.td-sofar-pills .p-applied { margin-left: 0; }
+.td-sofar-sheet { padding: 1px 8px; border-radius: 999px; background: #e5e5ea; color: #515154; font-size: 12px; font-weight: 600; }
+.td-uni-row-3 { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) 32px; }
+.td-uni-row-3 > .p-field:nth-child(3):last-child { grid-column: 3 / span 2; }
+@media (max-width: 600px) { .td-uni-row-3 { grid-template-columns: minmax(0, 1fr) 32px; } .td-uni-row-3 .p-field { grid-column: 1; } }
+.td-done-now { margin: 0; }
+.td-check-title { margin: 0 0 12px; font-size: 17px; font-weight: 650; }
+.td-check-block { margin: 0 0 12px; }
+.td-check-list { display: grid; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+.td-check-list li { padding: 9px 12px; border-radius: 12px; background: #f0f0f3; color: #1d1d1f; font-size: 14.5px; line-height: 1.45; }
+.td-check-change { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.td-check-from { color: #6e6e73; text-decoration: line-through; }
+.td-check-from.is-empty { text-decoration: none; }
+.td-check-arrow { color: #86868b; }
+.td-check-to { color: #0058b0; font-weight: 650; }
+.td-check-block.is-warn .td-check-list li { background: #fff4e0; color: #8a4b00; }
+.td-check-block.is-quiet .td-check-list li { background: #f5f5f7; color: #6e6e73; }
+.p-checks { margin: 14px 0 0; padding: 14px 16px; border-radius: 16px; background: #fff4e0; color: #5c3300; }
+.p-checks h2 { margin: 0 0 8px; font-size: 16px; font-weight: 650; color: #8a4b00; }
+.p-checks ul { display: grid; gap: 8px; margin: 0 0 8px; padding: 0; list-style: none; }
+.p-checks li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; font-size: 14.5px; line-height: 1.45; }
+.p-checks .p-muted { margin: 0; }

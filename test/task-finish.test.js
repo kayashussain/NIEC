@@ -1,7 +1,8 @@
-// Finishing a task fills in the student by itself (the owner, 15 Nov 2026): an Application task writes Application submitted (only
-// when empty; a second application stays in the notes), a NOC task writes NOC (Pending or Submitted) and NOC Number, a Mock task
-// writes the next Mock Schedule and gives the team "Write the feedback" on that day, a Medical task books the test (Booked, then
-// Received on the day by itself, unless booked again). Every answer is also a note on the student. All students are made up.
+// Finishing a task (the owner, 16 Nov 2026): nothing is filled in by itself. The team answers, the answers are shown back (preview)
+// and only confirmed answers are written: an Application task writes Application submitted (only when empty; a second application
+// stays in University options and the notes), a NOC task writes NOC (Pending or Submitted) and NOC Number, a Mock task writes the next
+// Mock Schedule and gives the team "Write the feedback" on that day, a Medical task books the test (Booked, and on that day the team is
+// asked whether the report is received). Every answer is also a note on the student. All students are made up.
 const test = require('node:test');
 const assert = require('node:assert');
 const os = require('node:os');
@@ -13,7 +14,7 @@ const { spawn } = require('node:child_process');
 const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, async (t) => {
+test('finishing a task writes confirmed answers to the sheet and the notes', { timeout: 120000 }, async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-finish-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
@@ -40,7 +41,7 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   const today = (await admin('GET', '/api/tasks')).json.today;
   const add = (n) => new Date(Date.parse(today + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
   const give = async (text, tag) => (await admin('POST', `/api/cards/${id}/tasks`, { team: 'application', text, tag })).json.card.tasks.find((x) => x.text === text).id;
-  const finish = (tid, f) => app('POST', `/api/cards/${id}/tasks/${tid}`, { done: true, finish: f });
+  const finish = (tid, f) => app('POST', `/api/cards/${id}/tasks/${tid}`, { done: true, finish: { ...f, confirmed: true } });
   const row = async () => (await admin('GET', `/api/cards/${id}`)).json.student.row;
   const notes = async () => (await admin('GET', `/api/cards/${id}`)).json.card.notes.map((n) => n.text);
 
@@ -49,11 +50,11 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   assert.strictEqual((await finish(a1, { submitted: true, date: add(2) })).status, 400, 'not a day still to come');
   assert.strictEqual((await finish(a1, { submitted: true, date: add(-1), university: 'Example University', note: 'MSc Data Science, ID 55501' })).status, 200);
   assert.strictEqual((await row())['APPLICATION SUBMISSION DATE'], add(-1));
-  assert.match((await notes()).join('\n'), /Application submitted on .* to Example University\. MSc Data Science, ID 55501\./);
+  assert.match((await notes()).join('\n'), /^On .*: applied to Example University\. MSc Data Science, ID 55501\./m);
   const a2 = await give('Submit a backup option', 'application');
   assert.strictEqual((await finish(a2, { submitted: true, date: today, university: 'Backup University' })).status, 200);
   assert.strictEqual((await row())['APPLICATION SUBMISSION DATE'], add(-1), 'the first date stays');
-  assert.match((await notes()).join('\n'), /to Backup University\. \(The first application, on .*, stays in Application submitted\.\)/);
+  assert.match((await notes()).join('\n'), /^On .*: applied to Backup University\./m);
   // Both applications are in the student's University options with their own dates.
   const opts = (await admin('GET', `/api/cards/${id}`)).json.card.options.map((o) => [o.university, o.applied]);
   assert.deepStrictEqual(opts.sort(), [['Backup University', today], ['Example University', add(-1)]]);
@@ -74,7 +75,7 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   const rem = (await admin('GET', `/api/cards/${id}`)).json.card.tasks.find((x) => /Write the feedback of mock interview 1/.test(x.text));
   assert.ok(rem && rem.doOn === add(3) && rem.team === 'application' && !rem.done, 'the reminder waits for the day');
 
-  // Medical: booked (Booked on the sheet), booked again for another day, then received by itself on the day.
+  // Medical: booked (Booked on the sheet, and "is the report received?" waiting for that day), booked again; never Received by itself.
   const d1 = await give('Book the medical test', 'medical');
   assert.strictEqual((await finish(d1, { medical: 'booked' })).status, 400, 'the day is needed');
   assert.strictEqual((await finish(d1, { medical: 'booked', date: add(5), place: 'IOM Kathmandu' })).status, 200);
@@ -82,7 +83,9 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.medical.date, add(5));
   const d2 = await give('Book the medical test again', 'medical');
   assert.strictEqual((await finish(d2, { medical: 'booked', date: today, place: 'IOM Kathmandu' })).status, 200, 'booked again, for today');
-  assert.strictEqual((await row())['MEDICAL REPORT'], 'Received', 'a test on a day already come counts as received');
+  assert.strictEqual((await row())['MEDICAL REPORT'], 'Booked', 'never Received by itself, even on the day');
+  const ask = (await admin('GET', `/api/cards/${id}`)).json.card.tasks.filter((x) => /is the report received\?/.test(x.text));
+  assert.ok(ask.length === 2 && ask.some((x) => x.doOn === add(5)) && ask.some((x) => !x.doOn), 'the team is asked on the day of each booking');
   assert.match((await notes()).join('\n'), /Medical test booked for .* at IOM Kathmandu\./);
 
   // Payment: Payment Date and the first empty deposit; Visa and CAS: the step's date, and the stage moves on (never back).
@@ -119,7 +122,7 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   wb2.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id2) r['OFFER RECEIVED DATE'] = add(-5); }));
   await admin('POST', '/api/data', { baseRevision: wb2.revision, sheets: wb2.sheets, activeSheetId: wb2.activeSheetId });
   const late = (await admin('POST', `/api/cards/${id2}/tasks`, { team: 'application', text: 'Submit late', tag: 'application' })).json.card.tasks[0].id;
-  assert.strictEqual((await app('POST', `/api/cards/${id2}/tasks/${late}`, { done: true, finish: { submitted: true, date: today } })).status, 400, 'not after the offer');
+  assert.strictEqual((await app('POST', `/api/cards/${id2}/tasks/${late}`, { done: true, finish: { submitted: true, date: today, confirmed: true } })).status, 400, 'not after the offer');
 
   // The owner's case (15 Nov 2026): a student applied to one university, with an offer, now applies to three more at once.
   const tId = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Tara', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000073' } })).json.id;
@@ -127,7 +130,7 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   wbT.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === tId) Object.assign(r, { 'UNIVERSITY NAME': 'First University', 'COURSE NAME': 'BSc Adult Nursing', 'APPLICATION SUBMISSION DATE': add(-30), 'OFFER RECEIVED DATE': add(-5) }); }));
   await admin('POST', '/api/data', { baseRevision: wbT.revision, sheets: wbT.sheets, activeSheetId: wbT.activeSheetId });
   const giveT = async (text, tag) => (await admin('POST', `/api/cards/${tId}/tasks`, { team: 'application', text, tag })).json.card.tasks.find((x) => x.text === text).id;
-  const finishT = (tid, f) => app('POST', `/api/cards/${tId}/tasks/${tid}`, { done: true, finish: f });
+  const finishT = (tid, f) => app('POST', `/api/cards/${tId}/tasks/${tid}`, { done: true, finish: { ...f, confirmed: true } });
   const rowT = async () => (await admin('GET', `/api/cards/${tId}`)).json.student.row;
   const cardT = async () => (await admin('GET', `/api/cards/${tId}`)).json.card;
   const t1 = await giveT('Apply to three more', 'application');
@@ -137,7 +140,7 @@ test('finishing a task fills in the sheet and the notes', { timeout: 120000 }, a
   const optsT = (await cardT()).options.map((o) => [o.university, o.course, o.applied]).sort();
   assert.deepStrictEqual(optsT, [['First University', 'BSc Adult Nursing', add(-30)], ['Fourth University', 'BSc Adult Nursing', today], ['Second University', 'BSc Adult Nursing', today], ['Third University', 'BSc Adult Nursing', today]], 'each university its own line, the first one too');
   assert.strictEqual((await cardT()).options.find((o) => o.university === 'First University').offer, add(-5));
-  assert.match((await cardT()).notes.map((n) => n.text).join('\n'), /to Second University, Third University and Fourth University \(BSc Adult Nursing\)\. \(The first application, on .*, stays in Application submitted\.\) Backup options\./);
+  assert.match((await cardT()).notes.map((n) => n.text).join('\n'), /applied to Second University, Third University and Fourth University \(BSc Adult Nursing\)\. Backup options\./);
   // An offer from a backup university: in its option and the notes, the sheet's offer stays.
   const t2 = await giveT('Chase the offers', 'application');
   assert.strictEqual((await finishT(t2, { app: 'offer', date: today, unis: [{ university: 'Third University' }] })).status, 200);

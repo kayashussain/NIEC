@@ -70,9 +70,12 @@ function cleanOption(input, old = {}) {
     note: pick('note', 400),
     // The day an application to it was submitted (set when an Application task is finished with this university).
     applied: (() => { const v = pick('applied', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
-    // The day it gave an offer, or refused (set from an Application task).
+    // The day it gave an offer (and whether Conditional or Unconditional), refused, or the student withdrew (set from an
+    // Application task, after the team has checked and confirmed it).
     offer: (() => { const v = pick('offer', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    offerType: (() => { const v = pick('offerType', 20); return ['Conditional', 'Unconditional'].includes(v) ? v : ''; })(),
     refused: (() => { const v = pick('refused', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    withdrawn: (() => { const v = pick('withdrawn', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     addedAt: old.addedAt, addedBy: old.addedBy,
   };
 }
@@ -91,11 +94,14 @@ function normalize(raw) {
     // (older tasks may also have `due`, the date they were once given with, no longer shown). A task handed on has `route`: the teams
     // it was with before, oldest first, and a comment with `handoff: { from, to }` for each hand-on.
     tasks: (Array.isArray(c.tasks) ? c.tasks : []).filter((t) => t && t.id && t.team && t.text).slice(-LIMITS.tasks),
-    // The medical test booked from a Medical task (the owner, 15 Nov 2026): { date, place, by, at }. On that day the sheet's Medical
-    // Report becomes Received by itself, unless it was booked again for another day meanwhile. null when nothing is booked.
+    // The medical test booked from a Medical task (the owner, 15 Nov 2026): { date, place, by, at }. Nothing changes by itself on that
+    // day (the owner, 16 Nov 2026): the team is given "confirm the report is received" for that day and answers it. null when none.
     medical: c.medical && /^\d{4}-\d{2}-\d{2}$/.test(String(c.medical.date)) ? { date: c.medical.date, place: str(c.medical.place, 200), by: str(c.medical.by, 80), at: str(c.medical.at, 40), done: Boolean(c.medical.done) } : null,
     // The last line ISR itself wrote in the sheet's Remarks (finishing a task), so a later one replaces it but never a person's remark.
     autoRemark: str(c.autoRemark, 300),
+    // The details someone checked and said are correct (the owner, 16 Nov 2026), so they leave "Details to check": { key: ISO time }.
+    // A key holds the values it was about, so a later change is checked again.
+    checked: Object.fromEntries(Object.entries(c.checked && typeof c.checked === 'object' && !Array.isArray(c.checked) ? c.checked : {}).filter(([k]) => typeof k === 'string' && k.length <= 200).slice(0, 100).map(([k, v]) => [k, str(v, 40)])),
     createdAt: str(c.createdAt, 40), createdBy: str(c.createdBy, 80), updatedAt: str(c.updatedAt, 40), updatedBy: str(c.updatedBy, 80),
   };
 }
@@ -230,6 +236,22 @@ function createCards(dir, { now = () => new Date() } = {}) {
     // Every card, keyed by row id (for the Dashboard and the backup). Not a copy: do not change it.
     all() { return load().cards; },
 
+    // A detail checked and found correct (see `checked`).
+    setChecked(rowId, key, by) {
+      const k = str(key, 200);
+      if (!k) return { error: 'Nothing to mark.' };
+      return update(rowId, by, (card, stamp) => { card.checked = Object.fromEntries([...Object.entries(card.checked || {}), [k, stamp]].slice(-100)); });
+    },
+    // What finishing a task wrote (columns, University options, the medical booking, a reminder), kept on the task so reopening it
+    // can put everything back: see finishTask in portal-api.js. null clears it.
+    setTaskWrote(rowId, taskId, wrote, by) {
+      return update(rowId, by, (card) => {
+        const task = card.tasks.find((t) => t.id === taskId);
+        if (!task) return { error: 'No such task.' };
+        if (wrote) task.wrote = wrote; else delete task.wrote;
+        return null;
+      });
+    },
     setAutoRemark(rowId, remark, by) { return update(rowId, by, (card) => { card.autoRemark = str(remark, 300); }); },
     // The medical test booked (a date and where), or none (null): see `medical` on the card.
     setMedical(rowId, input, by) {
