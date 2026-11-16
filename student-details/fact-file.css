@@ -52,7 +52,7 @@ input:focus, textarea:focus { outline: 2px solid var(--blue); outline-offset: 1p
 @media (prefers-reduced-motion: reduce) { .uni-card:hover { transform: none; } }
 .chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .chip { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--blue-tint); color: var(--blue-text); }
-.empty { padding: 28px; text-align: center; color: var(--dim); background: var(--panel); border: 1px dashed var(--border-strong); border-radius: 12px; }
+/* 🔴 CSS CHANGED (2026-11-16): clean-up, nothing on screen changes | from: an unused style for the plain class "empty" | to: deleted (the Fact File's empty panel is .ui-empty) */
 
 /* One university: the document */
 .doc { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 34px 40px 40px; }

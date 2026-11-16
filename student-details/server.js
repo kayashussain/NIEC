@@ -34,6 +34,7 @@ const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createPortalApi } = require('./portal-api');
 const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
+const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
 const { createUserMail } = require('./user-mail');
 const { createRates } = require('../shared/exchange-rates');
@@ -858,6 +859,16 @@ try {
   if (rep.changes && rep.changes.length) console.log('[startup] The Official Representative:', rep.changes.join('; '));
 } catch (e) {
   console.error('[startup] partner tidy-up failed:', e.message);
+}
+// Dates in one form (YYYY-MM-DD) and an office in one spelling, at every start (see data-tidy.js); written in Activity.
+try {
+  const out = tidyData({
+    getWorkbook: () => current, writeWorkbook,
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Tidied the data', { app: 'Data tidy-up', changes }),
+  });
+  if (out.changes.length) console.log('[startup] data tidied:', out.changes.join('; '));
+} catch (e) {
+  console.error('[startup] data tidy-up failed:', e.message);
 }
 
 // Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Fact File and

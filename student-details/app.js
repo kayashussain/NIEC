@@ -596,7 +596,7 @@
     const face = document.createElement('span');
     face.className = 'lt-date-face';
     face.textContent = input.value ? displayDate(input.value) : 'Choose the date';
-    if (!input.value) face.classList.add('empty');
+    if (!input.value) face.classList.add('is-empty');
     confirmDateInput(input, toISODate(val), (value) => {
       const target = liveRow(student);
       if (!target) { NiecUI.toast('That student is no longer on this sheet.'); return; }
@@ -604,7 +604,7 @@
       target[col] = value || 'Test Date';
       markDirty();
       face.textContent = value ? displayDate(value) : 'Choose the date';
-      face.classList.toggle('empty', !value);
+      face.classList.toggle('is-empty', !value);
       applyLanguageTestFlag(td, value);
     });
     box.append(face, input);
@@ -1111,7 +1111,8 @@
     const family = getComputedStyle(document.body).fontFamily;
     const header = textWidth(columnLabel(col), `650 13px ${family}`) + HEAD_PAD;
     let cell;
-    if (col === LANGUAGE_TEST_COL) cell = 420;
+    /* 🔴 CSS CHANGED (2026-11-16): the width of the Language Test column on All Students | from: 420px, a wide empty gap on most rows | to: 340px, still room for the choice, the date and an Expiring or Expired warning */
+    if (col === LANGUAGE_TEST_COL) cell = 340;
     else if (SELECT_COLS[col]) cell = Math.max(...SELECT_COLS[col].map((o) => textWidth(o, `600 13px ${family}`)), 60) + 76;
     else if (DATE_COLS.has(col)) cell = 168;
     else if (NUM_COLS.has(col)) cell = 132;
@@ -1601,6 +1602,7 @@
           });
         };
         addOptions(val ? [val] : []);
+        if (val) select.title = val; // a long name ends in "..." in its cell; the whole of it shows on hover
         // A team picks only from its own moves (e.g. Application Stage → Mock Stage), and can't touch
         // the other dropdowns outside its columns.
         const isStatus = col === 'APPLICATION STATUS';
@@ -1641,6 +1643,7 @@
             pushUndo();
             target[col] = newVal;
             shown = newVal;
+            select.title = newVal;
             select.className = 'status-select ' + badgeClass(newVal);
             markDirty();
             if (col === 'APPLICATION STATUS') renderBody(); // re-run the defer-move check, refresh the warning

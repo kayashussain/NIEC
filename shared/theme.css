@@ -325,10 +325,11 @@ p.count:empty { display: none; }
 @keyframes fly-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .ui-skeleton { display: block; border-radius: 12px; background: linear-gradient(100deg, var(--soft) 30%, color-mix(in srgb, var(--soft) 40%, var(--panel)) 50%, var(--soft) 70%); background-size: 220% 100%; animation: fly-shimmer 1.3s linear infinite; }
 @keyframes fly-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+/* 🔴 CSS CHANGED (2026-11-16): the "nothing here yet" look (round badge with a dot) | from: also given to anything with the plain word "empty" as a class, which drew a big circle with a dot inside the Language Test cell of a student whose test is "Test Date" but no date yet (the words "Choose the date" were pushed out of the row) | to: only the panels made for it (.p-empty); the Language Test cell is one line again */
 /* 🔴 CSS CHANGED (2026-11-13): an empty date box on the sheet (seen in the Language Test column) | from: the "nothing here yet" look (a round badge with a dot, big padding) was also drawn inside every empty date box, so a student with no test date had a tall row with a stray circle and the calendar icon pushed below | to: that look is only for the "nothing here yet" panels; an empty date box is again one line with the calendar icon */
-.p-empty, .empty:not(input) { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 38px 20px; text-align: center; color: var(--text-dim); }
-.p-empty b, .empty:not(input) b { color: var(--ink); font-size: 15px; font-weight: 650; }
-.p-empty::before, .empty:not(input)::before { content: ""; width: 46px; height: 46px; margin-bottom: 6px; border-radius: 50%; background: var(--focus-dim) radial-gradient(circle at 50% 50%, var(--gold) 0 4px, transparent 5px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 25%, transparent); }
+.p-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 38px 20px; text-align: center; color: var(--text-dim); }
+.p-empty b { color: var(--ink); font-size: 15px; font-weight: 650; }
+.p-empty::before { content: ""; width: 46px; height: 46px; margin-bottom: 6px; border-radius: 50%; background: var(--focus-dim) radial-gradient(circle at 50% 50%, var(--gold) 0 4px, transparent 5px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 25%, transparent); }
 .ui-toast { border-radius: 16px; box-shadow: var(--sh-3); animation: fly-pop .28s var(--ease) both; }
 @keyframes fly-pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 dialog.p-dialog, .ui-dialog { animation: fly-pop .24s var(--ease) both; }
@@ -1199,6 +1200,8 @@ body:has(#sheet) #sheet .status-select { height: 28px; padding: 0 24px 0 10px; b
 /* 🔴 CSS CHANGED (2026-11-15): dropdown cells on All Students, Receiving Partner, University Partner, NOC and the other plain ones (a bug fix) | from: a click drew a second blue ring around the small dropdown inside the cell's own blue frame (a box in a box), the dropdown was only as wide as its words, had no arrow and its words were smaller than the rest of the row | to: one frame only (the cell's); the dropdown fills the cell, its words are the size of the other cells, and a small grey chevron at the right shows it is a choice; an empty one reads "Select" in grey */
 body:has(#sheet) #sheet .status-select.badge-gray { width: 100%; padding-right: 26px; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%23a1a1a6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center; color: #1d1d1f; font-size: 14.5px; font-weight: 400; text-overflow: ellipsis; }
 body:has(#sheet) #sheet .status-select.badge-gray:has(> option:checked[value=""]) { color: #8e8e93; }
+/* 🔴 CSS CHANGED (2026-11-16): a long name in a grey dropdown on All Students (University Partner, Receiving Partner, a long course) | from: the words ran on under the small arrow and were cut off in the middle of a letter ("The Official Representati") | to: the words stop before the arrow and end with "..." ("The Official Repre..."); the whole name shows on hover and in the list */
+body:has(#sheet) #sheet select.status-select.badge-gray { appearance: none; display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 body:has(#sheet) #sheet .status-select:focus, body:has(#sheet) #sheet .status-select:focus-visible { outline: none; box-shadow: none !important; }
 body:has(#sheet) #sheet td:has(> .status-select.badge-gray) { padding-left: 4px; padding-right: 4px; }
 body:has(#sheet) .sheet-tabs { padding: 10px 12px; border-top: 1px solid var(--border); background: var(--panel); }
@@ -1332,6 +1335,8 @@ dialog.p-dialog.is-closing::backdrop { animation: isr-fade-out .16s ease-in both
 .p-x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #e8e8ed; color: #515154; font-size: 18px; line-height: 1; transition: background .2s; }
 .p-x:hover { background: #dcdce2; color: #1d1d1f; }
 .p-dialog-foot { border-top: 0 !important; }
+/* 🔴 CSS CHANGED (2026-11-16): the Cancel / Save buttons at the bottom of a long window (Add a student, Edit details, Mark as done) | from: the buttons stayed 24px above the window's bottom edge, so the form scrolled through that gap underneath them (half a heading, "Where the student came from", showed cut off below the buttons) | to: the button bar reaches the bottom edge and covers the gap; the buttons stay where they were */
+.p-dialog-body > .p-dialog-foot { bottom: -24px; margin-bottom: -24px; padding-bottom: 24px; }
 .ns-many { border: 0; border-radius: 14px; background: #f0f0f3; }
 /* toasts: Mac-style notifications */
 .ui-toast { border: 0; border-radius: 16px; background: rgba(251, 251, 253, .92); color: #1d1d1f; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 12px 40px -12px rgba(0, 0, 0, .3), 0 0 0 .5px rgba(0, 0, 0, .08); }
