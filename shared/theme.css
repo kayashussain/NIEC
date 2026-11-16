@@ -1579,8 +1579,21 @@ svg .dd-slice, svg circle[stroke-dasharray] { animation: isr-ring .9s cubic-bezi
 .isr-cal.above { transform-origin: bottom left; }
 .isr-cal.is-closing { animation: isr-cal-out .14s ease-in both; }
 .isr-cal-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 10px; }
-.isr-cal-title { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+/* 🔴 CSS CHANGED (2026-11-16): calendar month and year title | from: plain text "November 2026", only the arrows moved the month | to: a button with a small arrow; a click shows a grid of years, then the twelve months, so 1999 is two clicks away */
+.isr-cal-title { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; margin: 0 0 0 -8px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent; color: #1d1d1f; font: inherit; font-size: 17px; font-weight: 650; letter-spacing: -.01em; cursor: pointer; transition: background-color .15s; }
+.isr-cal-title:hover { background: rgba(0, 0, 0, .06); }
 .isr-cal-title span { color: #0071e3; }
+.isr-cal-title svg { width: 15px; height: 15px; fill: none; stroke: #0071e3; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.isr-cal-years-link { min-height: 30px; padding: 0 12px; border: 0; border-radius: 980px; background: rgba(0, 113, 227, .1); color: #0071e3; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.isr-cal-pick { display: grid; gap: 6px; padding: 2px; }
+.isr-cal-pick.is-months { grid-template-columns: repeat(3, 1fr); }
+.isr-cal-pick.is-years { grid-template-columns: repeat(4, 1fr); max-height: 264px; overflow-y: auto; overscroll-behavior: contain; }
+.isr-cal-cell { min-height: 40px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: #1d1d1f; font: inherit; font-size: 15px; font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color .12s, color .12s; }
+.isr-cal-pick.is-months .isr-cal-cell { min-height: 48px; }
+.isr-cal-cell:hover:not(:disabled):not(.is-on) { background: rgba(0, 0, 0, .06); }
+.isr-cal-cell.is-today { color: #0071e3; font-weight: 700; }
+.isr-cal-cell.is-on { background: #0071e3; color: #fff; font-weight: 650; }
+.isr-cal-cell:disabled { color: #c7c7cc; cursor: default; }
 .isr-cal-nav { display: flex; gap: 4px; }
 .isr-cal-nav button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #0071e3; cursor: pointer; transition: background-color .15s, transform .15s; }
 .isr-cal-nav button:hover { background: rgba(0, 113, 227, .1); }

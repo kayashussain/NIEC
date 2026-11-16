@@ -33,18 +33,9 @@
         make('dob', 'Date of birth', { kind: 'date' }), make('passportNo', 'Passport number', { max: 20, placeholder: 'e.g. PA1234567' }),
         make('address', 'Address (as in the passport)', { max: 200, wide: true, placeholder: 'e.g. Butwal-11, Rupandehi' }),
         make('nationality', 'Nationality', { kind: 'select', choices: F.NATIONALITIES, value: 'Nepali' }));
-      // From Application Stage on, the passport details are needed; an inquiry often has none yet (the owner, 14 Nov 2026).
-      const passportNote = el('p', 'p-muted p-small ns-passport-note');
-      form.append(passportNote);
-      const stageNow = () => {
-        if (inputs.stage) return inputs.stage.value;
-        const d = (lists.departments || []).find((x) => x.id === (inputs.dept ? inputs.dept.value : (lists.departments[0] || {}).id));
-        return d ? d.start : defaultStage;
-      };
-      const needsPassport = () => stageNow() && stageNow() !== 'Inquiry';
-      const sayPassport = () => { passportNote.textContent = needsPassport() ? 'Needed from Application Stage on.' : 'Optional at Inquiry.'; };
-      [inputs.stage, inputs.dept].filter(Boolean).forEach((i) => i.addEventListener('change', sayPassport));
-      sayPassport();
+      inputs.dob.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10); // a date of birth is never in the future; the calendar's years end this year
+      // Only the name is needed to add a student (the owner, 16 Nov 2026): everything else can be filled in later on the student card.
+      form.append(el('p', 'p-muted p-small ns-passport-note', 'Only the name is needed. The rest can be added later on the student card.'));
 
       // Where the student came from: the source, then exactly which (the branch, the agent, the event ...). The choices are shared: a missing one is added once.
       // A branch account adds its own students, so the source is not asked: the server tags them with the branch.
@@ -66,7 +57,6 @@
       ok.addEventListener('click', async () => {
         const v = (k) => (inputs[k] ? inputs[k].value : '');
         if (!v('FIRST NAME').trim() && !v('LAST NAME').trim()) { msg.textContent = "Please enter the student's name."; msg.className = 'p-msg error'; inputs['FIRST NAME'].focus(); return; }
-        if (needsPassport() && (!v('dob') || !v('passportNo').trim() || !v('address').trim())) { msg.textContent = 'Fill in the date of birth, passport number and address.'; msg.className = 'p-msg error'; return; }
         // Where the student came from must be complete (the event, or the campaign answer), so the student counts in its cost.
         const missing = picker ? picker.check() : '';
         if (missing) { msg.textContent = missing; msg.className = 'p-msg error'; return; }

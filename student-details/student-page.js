@@ -52,6 +52,7 @@
     // And from the passport, kept on the card.
     const pp = profile();
     const dob = field('Date of birth', { kind: 'date', value: pp.dob });
+    dob.input.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10); // never in the future; the calendar's years then end this year
     const passNo = field('Passport number', { value: pp.passportNo, max: 20 });
     const address = field('Address (as in the passport)', { value: pp.address, max: 200 });
     const nation = field('Nationality', { kind: 'select', choices: F.NATIONALITIES, value: pp.nationality || 'Nepali' });

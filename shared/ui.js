@@ -277,7 +277,44 @@
     p.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - w - 8))}px`;
     p.classList.toggle('above', !below);
   }
+  // The month and the year can be picked at once (the owner, 16 Nov 2026: a date of birth in 1999 took a click for every month): a
+  // click on "November 2026" shows the years, a year shows the twelve months, and a month goes back to its days.
+  function yearRange() {
+    const { input } = open;
+    const now = new Date().getFullYear();
+    const lo = /^\d{4}/.test(input.min || '') ? Number(input.min.slice(0, 4)) : 1940;
+    const hi = /^\d{4}/.test(input.max || '') ? Number(input.max.slice(0, 4)) : now + 15;
+    return [Math.min(lo, open.y), Math.max(hi, open.y)];
+  }
+  function drawPick() {
+    const { panel, y, m, input, view } = open;
+    const chosen = /^\d{4}-\d{2}/.test(input.value) ? input.value.slice(0, 7) : '';
+    const thisYear = new Date().getFullYear(); const thisMonth = new Date().getMonth();
+    let cells = '';
+    if (view === 'years') {
+      const [lo, hi] = yearRange();
+      for (let v = hi; v >= lo; v -= 1) cells += `<button type="button" class="isr-cal-cell${v === thisYear ? ' is-today' : ''}${v === y ? ' is-on' : ''}" data-y="${v}"${v === y ? ' aria-pressed="true"' : ''}>${v}</button>`;
+    } else {
+      MONTHS.forEach((name, i) => {
+        const v = `${y}-${pad(i + 1)}`;
+        const off = (input.min && v < input.min.slice(0, 7)) || (input.max && v > input.max.slice(0, 7));
+        cells += `<button type="button" class="isr-cal-cell${y === thisYear && i === thisMonth ? ' is-today' : ''}${v === chosen || (!chosen && i === m) ? ' is-on' : ''}" data-m="${i}"${off ? ' disabled' : ''} aria-label="${name} ${y}">${name.slice(0, 3)}</button>`;
+      });
+    }
+    panel.innerHTML = `
+      <div class="isr-cal-head">
+        <button type="button" class="isr-cal-title is-open" aria-label="Back to the days">${view === 'years' ? 'Choose a year' : `${MONTHS[m]} <span>${y}</span>`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+        ${view === 'months' ? `<button type="button" class="isr-cal-years-link">${y}</button>` : ''}
+      </div>
+      <div class="isr-cal-pick ${view === 'years' ? 'is-years' : 'is-months'}">${cells}</div>`;
+    if (view === 'years') {
+      const on = panel.querySelector('.isr-cal-cell.is-on');
+      const box = panel.querySelector('.isr-cal-pick');
+      if (on && box) box.scrollTop = on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2;
+    }
+  }
   function draw() {
+    if (open.view && open.view !== 'days') { drawPick(); return; }
     const { panel, y, m, input } = open;
     const chosen = input.value;
     const min = input.min || ''; const max = input.max || '';
@@ -294,7 +331,7 @@
     }
     panel.innerHTML = `
       <div class="isr-cal-head">
-        <b class="isr-cal-title">${MONTHS[m]} <span>${y}</span></b>
+        <button type="button" class="isr-cal-title" aria-label="Choose the month and year">${MONTHS[m]} <span>${y}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="isr-cal-nav">
           <button type="button" class="isr-cal-prev" aria-label="Previous month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
           <button type="button" class="isr-cal-next" aria-label="Next month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
@@ -317,9 +354,10 @@
   }
   function keys(e) {
     if (!open) return;
+    if (e.key === 'Escape' && open.view !== 'days') { e.preventDefault(); e.stopPropagation(); open.view = 'days'; draw(); place(); return; }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(true); return; }
     const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
-    if (step && (document.activeElement === open.input || open.panel.contains(document.activeElement))) {
+    if (step && open.view === 'days' && (document.activeElement === open.input || open.panel.contains(document.activeElement))) {
       e.preventDefault();
       const base = open.focus || open.input.value || todayIso();
       const [y, m, d] = base.split('-').map(Number);
@@ -348,7 +386,11 @@
     panel.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b || b.disabled) return;
-      if (b.classList.contains('isr-cal-prev')) move(-1);
+      if (b.classList.contains('isr-cal-title')) { open.view = open.view && open.view !== 'days' ? 'days' : 'years'; draw(); place(); }
+      else if (b.classList.contains('isr-cal-years-link')) { open.view = 'years'; draw(); place(); }
+      else if (b.dataset.y) { open.y = Number(b.dataset.y); open.view = 'months'; draw(); place(); }
+      else if (b.dataset.m) { open.m = Number(b.dataset.m); open.view = 'days'; draw(); place(); }
+      else if (b.classList.contains('isr-cal-prev')) move(-1);
       else if (b.classList.contains('isr-cal-next')) move(1);
       else if (b.classList.contains('isr-cal-today')) choose(todayIso());
       else if (b.classList.contains('isr-cal-clear')) choose('');
@@ -358,7 +400,7 @@
     // It is placed inside the open pop-up when there is one (the rest of the page cannot be clicked then).
     (input.closest('dialog[open]') || document.body).append(panel);
     if (typeof panel.showPopover === 'function') { panel.popover = 'manual'; panel.showPopover(); }
-    open = { input, panel, y, m: m - 1, focus: '' };
+    open = { input, panel, y, m: m - 1, focus: '', view: 'days' };
     draw();
     place();
     document.addEventListener('mousedown', outside, true);
@@ -382,7 +424,7 @@
   document.addEventListener('input', (e) => {
     if (!open || e.target !== open.input || !/^\d{4}-\d{2}-\d{2}$/.test(open.input.value)) return;
     const [y, m] = open.input.value.split('-').map(Number);
-    open.y = y; open.m = m - 1; draw();
+    open.y = y; open.m = m - 1; open.view = 'days'; draw();
   }, true);
 })();
 

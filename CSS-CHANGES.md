@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-16 · shared/theme.css (ui.js) · the calendar's month and year · from: "November 2026" as plain text; only the arrows moved, one month a click (a date of birth in 1999 took over 300 clicks) · to: "November 2026" is a button with a small arrow; a click shows the years (four across, scrolled to the shown year), a year shows the twelve months, a month goes back to its days; the chosen year or month is blue, this year or month in blue text · why: the owner asked to pick the month and year directly when adding a student.**
+
 - **2026-11-15 · shared/theme.css, student-details/direct.html · clean-up, nothing on screen changes · from: styles of things removed earlier today (Today's ring, priority pills, the old Partner Universities cards) · to: deleted, so the stylesheets hold only what the pages use · why: the owner asked for clean code.**
 
 - **2026-11-15 · shared/theme.css (portal-ui.js, student-page.js) · several universities in one application task; Offer and Refused pills · from: one "To which university" box; only an "Applied" pill in University options · to: a row per university with University and Course, a round "×" to remove a row, "+ Another university"; blue "Offer" and soft red "Refused" pills beside "Applied" · why: the owner's case of a student applying to three more universities at once.**
