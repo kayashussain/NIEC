@@ -3325,3 +3325,19 @@ body.p-embed { padding-bottom: 76px; }
 .stage-chip.on { background: #0071e3; color: #fff; }
 .stage-chip.on .stage-chip-n { background: rgba(255, 255, 255, .22); color: #fff; }
 .stage-chip:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+
+/* 🔴 CSS CHANGED (2026-11-17): Dashboard: the five figures at the top open their students | from: five figure boxes you could only look at | to: the same boxes, pressable: on hover they lift a little and show a small blue "See the students ›" under the figure; a press opens a window with a grey pill search box and the students as a list (a round initials badge, the name in bold, the university in grey, the stage as a grey pill on the right), each row soft grey on hover */
+button.ov-kpi { width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
+button.ov-kpi:hover { transform: translateY(-2px); box-shadow: var(--pl-shadow-hover, 0 10px 30px -14px rgba(0, 0, 0, .25)); }
+button.ov-kpi:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+button.ov-kpi .ov-kpi-hint::after { content: "  ·  See the students ›"; color: #0066cc; font-weight: 600; opacity: 0; transition: opacity .2s ease; }
+button.ov-kpi:hover .ov-kpi-hint::after, button.ov-kpi:focus-visible .ov-kpi-hint::after { opacity: 1; }
+.ov-people-search { width: 100%; min-height: 42px; margin: 0 0 12px; padding: 0 16px; border: 0; border-radius: 999px; background: #ececf0; color: #1d1d1f; font: 15px var(--font); }
+.ov-people-search:focus { outline: 2px solid #0071e3; outline-offset: 0; }
+.ov-people { display: grid; gap: 2px; max-height: 60vh; overflow: auto; }
+.ov-person { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px; color: inherit; text-decoration: none; }
+.ov-person:hover, .ov-person:focus-visible { background: #f0f0f3; }
+.ov-person-text { display: grid; flex: 1; min-width: 0; }
+.ov-person-text b { font-weight: 600; color: #1d1d1f; }
+.ov-person-text small { color: #5f5f64; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-person-stage { flex: none; padding: 2px 10px; border-radius: 999px; background: #ececf0; color: #3a3a3c; font-size: 13px; font-weight: 600; }

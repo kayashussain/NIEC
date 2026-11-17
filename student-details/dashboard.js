@@ -74,15 +74,64 @@
       { label: 'Paid', value: num(s.paid), color: COLORS.paid, series: trend.map((t) => t.paid), hint: `${pct(s.toPayment)} of offers` },
       { label: 'Visas', value: num(s.visas), color: COLORS.visa, series: trend.map((t) => t.visa), hint: ins.target && ins.target.visas ? `target ${ins.target.visas}` : `${pct(s.visaSuccess)} of decisions` },
     ];
+    // Who is behind each figure, by the same rules as the figure (Applied as /api/applicants counts it: past Inquiry, not Defer, Hold
+    // or Withdrawn, or with a submission day).
+    const NOT_APPLIED = ['', 'Inquiry', 'Defer', 'Hold', 'Withdrawn'];
+    const who = {
+      Students: () => true, Applied: (x) => !NOT_APPLIED.includes(x.s || '') || x.a, Offers: (x) => x.o, Paid: (x) => x.p, Visas: (x) => x.v,
+    };
     const row = el('div', 'ov-kpis');
     cards.forEach((c) => {
-      const k = el('article', 'ov-kpi' + (c.main ? ' main' : ''));
+      const list = (ins.people || []).filter(who[c.label]);
+      const clickable = ins.people && list.length > 0;
+      const k = el(clickable ? 'button' : 'article', 'ov-kpi' + (c.main ? ' main' : '') + (clickable ? ' is-click' : ''));
+      if (clickable) {
+        k.type = 'button';
+        k.title = `See the ${list.length} student${list.length === 1 ? '' : 's'}`;
+        k.addEventListener('click', () => peopleDialog(`${c.label}: ${list.length} student${list.length === 1 ? '' : 's'}`, list));
+      }
       k.style.setProperty('--accent', c.color);
       k.append(el('span', 'ov-kpi-label', c.label), el('b', 'ov-kpi-value', c.value), el('span', 'ov-kpi-hint', c.hint));
       if (c.series && c.series.some(Boolean)) k.append(sparkline(c.series, c.color));
       row.append(k);
     });
     return row;
+  }
+
+  // The students behind a figure, in a window: a search box, then each student (name, stage, university); a press opens the card
+  // over the Dashboard with ‹ › through the list (card-drawer.js).
+  function peopleDialog(title, list) {
+    window.Portal.dialog(title, (body, close) => {
+      const q = el('input', 'ov-people-search');
+      q.type = 'search';
+      q.placeholder = 'Search by name, stage or university';
+      q.setAttribute('aria-label', 'Search the students');
+      const box = el('div', 'ov-people');
+      const sorted = list.slice().sort((x, y) => x.n.localeCompare(y.n));
+      const draw = () => {
+        const w = q.value.trim().toLowerCase();
+        const shown = w ? sorted.filter((x) => `${x.n} ${x.s} ${x.u}`.toLowerCase().includes(w)) : sorted;
+        box.replaceChildren(...(shown.length ? shown.map((x) => {
+          const a = el('a', 'ov-person');
+          a.href = '/student?id=' + encodeURIComponent(x.id);
+          const t = el('span', 'ov-person-text');
+          t.append(el('b', '', x.n || 'No name'), el('small', '', x.u || 'University not recorded'));
+          a.append(el('span', 'p-avatar sm', window.Portal.initials(x.n || '?')), t, el('span', 'ov-person-stage', x.s || 'No stage'));
+          a.addEventListener('click', (e) => {
+            if (!window.CardDrawer || e.ctrlKey || e.metaKey || e.shiftKey) return;
+            e.preventDefault();
+            // The list makes way for the card, and comes back when the card is closed.
+            close();
+            window.CardDrawer.open(x.id, { list: shown.map((y) => y.id), onClose: () => setTimeout(() => peopleDialog(title, list), 60) }); // after the Escape that closed the card has finished
+          });
+          return a;
+        }) : [el('div', 'p-empty', 'No student matches.')]));
+      };
+      q.addEventListener('input', draw);
+      body.append(q, box);
+      draw();
+      setTimeout(() => q.focus(), 30);
+    }, { wide: true });
   }
 
   // ---- the visa target as a ring ----
