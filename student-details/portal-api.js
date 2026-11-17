@@ -890,7 +890,8 @@ function createPortalApi({
   // The workspace of a person (Today's title and lists, their dashboard): their own team when one is chosen (Users, "Their own
   // team"), so a person in the Application Team with Mock Team access has the Application Team's Today and dashboard.
   const homeKind = (user) => (user && user.taskTeam && teamsOf(user).includes(user.taskTeam) && !Teams.isManager(user) ? Teams.kindOf({ ...user, departments: [user.taskTeam] }) : Teams.kindOf(user));
-  function todayFor(user) {
+  // `perList`: how many students each list carries (Today shows 6; the team's Dashboard opens them all with "+N more").
+  function todayFor(user, { perList = 6 } = {}) {
     const all = cards.all();
     const today = cards.today();
     const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
@@ -971,7 +972,7 @@ function createPortalApi({
       tiles: space.tiles.map((k) => ({ key: k, label: TILE_LABEL[k], value: value[k] })),
       // How many different students wait in these lists: a student in two lists (no passport details and not applied yet) counts once.
       waiting: new Set(space.sections.flatMap((k) => by[k].rows.map((r) => r.id))).size,
-      sections: space.sections.map((k) => by[k]).map((x) => ({ key: x.key, title: x.title, hint: x.hint, stage: x.stage, count: x.rows.length, students: x.rows.sort((a, b) => b.waited - a.waited).slice(0, x.key === 'check' ? 100 : 6) })),
+      sections: space.sections.map((k) => by[k]).map((x) => ({ key: x.key, title: x.title, hint: x.hint, stage: x.stage, count: x.rows.length, students: x.rows.sort((a, b) => b.waited - a.waited).slice(0, x.key === 'check' ? 100 : perList) })),
     };
   }
 
@@ -1190,7 +1191,7 @@ function createPortalApi({
     const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
     const now = dayNo(today);
     const all = cards.all();
-    const t = todayFor(user);
+    const t = todayFor(user, { perList: 200 });
     const counts = Object.fromEntries(t.sections.map((x) => [x.key, x.count]));
     const students = visibleStudents(user);
     const v = { ...t.totals, toSubmit: counts.apply || 0, waitingOffer: counts.noOffer || 0, toSchedule: counts.mock || 0, feedbackMissing: counts.mockFeedback || 0, toFollow: counts.inquiries || 0, submitted: 0, offers: 0, visas: 0, mocksWeek: 0, contactedWeek: 0 };
@@ -1259,7 +1260,7 @@ function createPortalApi({
       tasks: { open, doneWeek },
       // What waits for the team now, the same lists as Needs attention on Today (the owner, 15 Nov 2026: the dashboard of a team
       // should show only what is theirs to do).
-      todo: t.sections.filter((x) => x.count).map((x) => ({ key: x.key, title: x.title, hint: x.hint, count: x.count, students: x.students.slice(0, 3).map((r) => ({ id: r.id, name: r.name, detail: r.detail })) })),
+      todo: t.sections.filter((x) => x.count).map((x) => ({ key: x.key, title: x.title, hint: x.hint, count: x.count, students: x.students.slice(0, 200).map((r) => ({ id: r.id, name: r.name, detail: r.detail })) })), // the first 3 shown, "+N more" opens the rest
       upcoming: upcoming.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8),
       wins: wins.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8),
     };
