@@ -86,6 +86,16 @@ https://<your-site>/advisor-mcp/<NIEC_ADVISOR_TOKEN>
 Anyone with that address can read all students, so keep it private. To cut access off, remove or change the variable and restart.
 Make a secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
+### The rest of the portal through the same connector
+
+The same connector also reads **everything else the portal stores** (the owner, 17 Nov 2026), read-only and live:
+`get_tasks` (every task with its student, team, tag, who gave it, when, whether done, and all comments), `get_student_file`
+(one student's sheet row and whole card: profile, notes, course options, messages, tasks), `get_portal_areas` (the list of areas)
+and `get_portal_data` (one area: student cards, partner universities, B2B partners, agents, planning, users, mail settings,
+templates, source options, course links and watch, Route2Uni and Navitas readings, exchange rates, the activity record, the
+message log). **Passwords, password hashes, tokens, keys, login sessions and phone push keys are never shown.** Nothing can be
+changed through it. Claude may need the connector refreshed in claude.ai to list the new tools.
+
 ### Incentive questions through the same connector
 
 The connector above also answers questions about the **Incentive page**, with no second connector and no new address. After the

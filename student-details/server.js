@@ -187,6 +187,8 @@ const advisor = createAdvisorMcp({
     getAdvances: (sheets) => { const names = uniqueNames(sheets); return advancesByName(readIncentiveFile('advances.json', {}) || {}, sheets.map((x, i) => ({ id: x.id, name: names[i] }))); },
     getRate: () => { const c = readIncentiveFile('exchange-rate-cache.json', null); return c && typeof c.rate === 'number' ? { rate: c.rate, date: c.date, fetchedAt: c.fetchedAt || null } : null; },
   },
+  // The rest of the portal (tasks, cards, partners, users and so on), read-only and never passwords (advisor-data.js).
+  dataDir: DATA_DIR,
   memoryDir: path.join(DATA_DIR, 'advisor-memory'),
 });
 
