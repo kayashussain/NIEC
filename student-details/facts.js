@@ -127,13 +127,13 @@ function clean(input, old = {}) {
     programs,
     intakes,
     process,
-    // Kept automatically from the Route2Uni partner portal (fact-sync.js): where the page's figures came from and when, and the
+    // Kept automatically (the Navitas toolkit; pages read from the Route2Uni portal before it was removed on 17 Nov 2026 keep theirs): where the page's figures came from and when, and the
     // rules in numbers for the eligibility finder (eligibility.js). A save from the page keeps them as they are.
     source: input.source !== undefined ? cleanSource(input.source) : (old.source || null),
     rules: input.rules !== undefined ? cleanRules(input.rules) : (old.rules || []),
   };
 }
-// Where the page's figures come from: the Route2Uni portal (fact-sync.js) and/or the Navitas product toolkit (navitas-toolkit.js).
+// Where the page's figures come from: the Navitas product toolkit (navitas-toolkit.js), or the Route2Uni portal for a page read before it was removed (17 Nov 2026).
 function cleanSource(v) {
   if (!v || typeof v !== 'object' || !(v.route2uni || v.navitas)) return null;
   const at = (x) => (/^\d{4}-\d{2}-\d{2}T/.test(String(x)) ? String(x) : '');

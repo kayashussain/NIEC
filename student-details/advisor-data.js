@@ -27,7 +27,6 @@ const AREAS = {
   'course-links': { file: 'course-links.json', about: 'Links typed for single courses.' },
   'course-watch': { file: 'course-watch.json', about: 'Courses being watched for changes, and what was found.' },
   'course-sitemaps': { file: 'course-sitemaps.json', about: 'The universities\' course lists read from their websites.' },
-  route2uni: { file: 'route2uni.json', about: 'The last reading of the Route2Uni partner portal.' },
   'navitas-toolkit': { file: 'navitas-toolkit.json', about: 'The last reading of the Navitas toolkit sheet.' },
   'exchange-rates': { file: 'exchange-rates.json', about: 'Saved exchange rates.' },
   activity: { file: 'activity.jsonl', lines: true, about: 'The activity record: who did what, when, from which device (newest first).' },

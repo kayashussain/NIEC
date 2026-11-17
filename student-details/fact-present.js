@@ -1,5 +1,5 @@
 // How a university's Fact File page is shown (the owner, 17 Nov 2026: "put the correct information in the correct section, nothing
-// twice, not an extra word"). The page is kept as it was read (Route2Uni, the Navitas toolkit, the starting sheets); this file turns
+// twice, not an extra word"). The page is kept as it was read (the Navitas toolkit, the starting sheets, or Route2Uni before it was removed); this file turns
 // any stored page into one clean view, whatever its source:
 //
 //   deadlines     every intake's dates, first on the page: "Apply by" and each key date with how many days are left. Dates written in

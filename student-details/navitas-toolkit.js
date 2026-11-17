@@ -1,8 +1,8 @@
 // The Navitas product toolkit in the Fact File (the owner, 17 Nov 2026): Navitas keeps a public Google Sheet for Nepal ("Nepal
 // UK/Europe Navitas product toolkit") with, for each of its pathway colleges, the entry requirements, the course list, fees,
 // scholarships and deadlines, sample interview questions, the Flywire payment and refund links, the application process,
-// accommodation links, tips and key selling points. Twice a week (Monday and Thursday from 2 a.m. office time, with the Route2Uni
-// reading) ISR reads that sheet and writes each UK college into its own Fact File page. Only UK colleges: the German and Dutch ones
+// accommodation links, tips and key selling points. Twice a week (Monday and Thursday from 2 a.m. office time)
+// ISR reads that sheet and writes each UK college into its own Fact File page. Only UK colleges: the German and Dutch ones
 // are left out, and so is a college the sheet puts on hold or the owner has closed (Manchester Metropolitan University
 // International College).
 //
@@ -447,7 +447,7 @@ function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImp
     return running;
   }
 
-  // Twice a week, like Route2Uni: Monday and Thursday from 2 a.m. office time (see twiceAWeekDue in shared/server-utils.js).
+  // Twice a week: Monday and Thursday from 2 a.m. office time (see twiceAWeekDue in shared/server-utils.js).
   const due = (date = now()) => enabled && !running && twiceAWeekDue(read().runs, date);
   const tick = () => { if (due()) run('schedule').catch(() => {}); };
   return {

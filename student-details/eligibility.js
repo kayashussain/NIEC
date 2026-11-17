@@ -67,7 +67,7 @@ function bandOf(score) {
 // A CEFR level ("B2") is not a score; a number under 4 is not an overall score of any test.
 const overallOf = (score) => { const t = String(score || ''); if (/^\s*[A-C][12]\b/i.test(t)) return null; const m = /(\d{1,3}(?:\.\d)?)/.exec(t); const v = m ? num(m[1]) : null; return v !== null && v >= 4 ? v : null; };
 
-// The rules of one university, by level, from its portal reading (route2uni.js shape()).
+// The rules of one university, by level, from its requirements, English and tests (the Navitas toolkit, a page typed by hand).
 function rulesFrom(r) {
   const levels = new Map();
   const at = (name) => {

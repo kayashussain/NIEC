@@ -6,7 +6,6 @@ const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
 const E = require('../student-details/eligibility');
-const { syncFacts, firstDate } = require('../student-details/fact-sync');
 const { createFacts } = require('../student-details/facts');
 
 const reading = (fee = 12000) => ({
@@ -51,40 +50,11 @@ test('a student is checked with reasons: eligible, to check, or not eligible wit
   assert.strictEqual(check({ level: 'Pre-Masters', grade: '3.0' }), null, 'no rules for that level');
 });
 
-test('one Fact File: the portal is written into the university\'s own page, the team\'s own words are kept', () => {
-  const facts = createFacts(fs.mkdtempSync(path.join(os.tmpdir(), 'sync-')));
-  const made = facts.create('University of Testtown', 'Owner').university;
-  facts.update(made.id, { ...made, overview: 'Our own overview.', notes: 'Ask Ram about this one.', intakes: [{ name: 'September 2027', notes: 'Our own intake' }] }, 'Owner');
-  assert.deepStrictEqual(syncFacts(facts, { fetchedAt: '2026-11-17T10:00:00.000Z', universities: [reading()] }), { updated: 1, added: 0, unchanged: 0 });
-  let u = facts.get(made.id);
-  assert.strictEqual(u.overview, 'Our own overview.');
-  assert.strictEqual(u.notes, 'Ask Ram about this one.');
-  assert.deepStrictEqual(u.intakes.map((i) => [i.name, i.deadline]), [['January 2027', 'Friday 27 November 2026'], ['September 2027', '']], 'the open intake with its deadline; a closed one is not added; the team\'s own intake stays');
-  assert.match(u.intakes[0].deadlines, /Deposit - 9 December 2026/);
-  const pg = u.programs.find((p) => p.name === 'Postgraduate');
-  assert.deepStrictEqual([pg.tuition, pg.deposit, pg.scholarship], ['1 Year Fee: £12,000', 'CAS Deposit: £5,000', '£2,000']);
-  assert.match(pg.english, /IELTS: 6.0 overall/);
-  assert.match(u.courses, /## Postgraduate\n- MSc Data Science \(London\)/);
-  assert.strictEqual(u.city, 'Testtown');
-  assert.strictEqual(u.rules.find((r) => r.level === 'Postgraduate').minPercent, 45);
-  // The same reading again changes nothing; a new fee is written; a university the Fact File lacks is added.
-  assert.strictEqual(syncFacts(facts, { fetchedAt: '2026-11-20T10:00:00.000Z', universities: [reading()] }).unchanged, 1);
-  const second = syncFacts(facts, { fetchedAt: '2026-11-24T10:00:00.000Z', universities: [reading(12500), { ...reading(), id: 8, name: 'University of Elsewhere' }] });
-  assert.deepStrictEqual(second, { updated: 2, added: 1, unchanged: 0 });
-  u = facts.get(made.id);
-  assert.strictEqual(u.programs.find((p) => p.name === 'Postgraduate').tuition, '1 Year Fee: £12,500');
-  // A save from the page keeps the portal's dates and rules.
-  facts.update(made.id, { ...u, rules: undefined, source: undefined, intakes: u.intakes.map((i) => ({ ...i })) }, 'Owner');
-  assert.ok(facts.get(made.id).rules.length && facts.get(made.id).source.route2uni.id === 7);
-  assert.strictEqual(firstDate('Application Deadline: 6 NOVEMBER 2026'), '6 NOVEMBER 2026');
-});
-
-test('on the server: a reading is written into the Fact File at the start, and the finder answers the team and a student', { timeout: 120000 }, async (t) => {
+test('on the server: the finder answers the team and a student, and courses are shortlisted', { timeout: 120000 }, async (t) => {
   const net = require('node:net');
   const { spawn } = require('node:child_process');
   const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-elig-'));
-  fs.writeFileSync(path.join(dir, 'route2uni.json'), JSON.stringify({ fetchedAt: '2026-11-17T10:00:00.000Z', universities: [reading()], hub: { deadlines: [], notices: [], webinars: [] }, changes: [], runs: [{ at: '2026-11-17T10:00:00.000Z', ok: true }] }));
   const port = await freePort();
   const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir }, stdio: 'ignore' });
   t.after(() => server.kill());
@@ -100,22 +70,20 @@ test('on the server: a reading is written into the Fact File at the start, and t
   const code = fs.readFileSync(path.join(dir, 'first-admin-code.txt'), 'utf8').trim();
   await admin('POST', '/api/login/first-admin', { setupCode: code, username: 'owner', name: 'Owner' });
   await admin('POST', '/api/login/new-password', { password: 'Strong-Pass-2026' });
-  const page = (await admin('GET', '/api/facts')).json.find((u) => u.name === 'University of Testtown');
-  assert.ok(page, 'the portal\'s university is in the Fact File');
-  assert.match((await admin('GET', `/api/facts/${page.id}`)).json.intakes[0].deadlines, /27 November 2026/);
-  const find = await admin('POST', '/api/eligibility', { level: 'Postgraduate', grade: '62%', gap: '3', test: 'IELTS Academic', score: '6.5', band: '6', subject: 'data' });
-  assert.strictEqual(find.status, 200);
-  const r = find.json.results.find((x) => x.name === 'University of Testtown');
-  assert.deepStrictEqual([r.status, r.courses.map((c) => c.name), r.fee, r.intake.deadline], ['yes', ['MSc Data Science'], '1 Year Fee: £12,000', 'Friday 27 November 2026']);
+  // No Route2Uni any more (the owner, 17 Nov 2026): the finder reads the Fact File's own pages.
+  assert.strictEqual((await admin('GET', '/api/route2uni')).status, 404, 'the Route2Uni panel is gone');
+  const page = (await admin('GET', '/api/facts')).json[0];
+  assert.ok(page, 'the Fact File has its starting pages');
   const all = await admin('POST', '/api/eligibility', { level: 'Postgraduate', grade: '62%', gap: '3', test: 'IELTS Academic', score: '6.5', band: '6' });
-  assert.ok(all.json.results.length > 10, 'the pages typed by hand are checked too, not only the portal\'s');
+  assert.strictEqual(all.status, 200);
+  assert.ok(all.json.results.length > 10, 'the pages typed by hand are checked');
   assert.strictEqual((await admin('POST', '/api/eligibility', { grade: '3' })).status, 400, 'the level is needed');
   // A student's own login uses the finder too.
   const sid = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000131' } })).json.id;
   const made = (await admin('POST', '/api/users', { username: 'mina', name: 'Mina Demo', email: '', role: 'student', studentRow: sid })).json;
   const stu = person();
   await stu('POST', '/api/login', { username: 'mina', password: made.temporaryPassword }); await stu('POST', '/api/login/new-password', { password: 'Student-Strong-2026' });
-  assert.strictEqual((await stu('POST', '/api/eligibility', { level: 'Postgraduate', grade: '40%' })).json.results.find((x) => x.name === 'University of Testtown').status, 'no');
+  assert.strictEqual((await stu('POST', '/api/eligibility', { level: 'Postgraduate', grade: '40%' })).status, 200, 'a student uses the finder');
   // No "Submit application" any more (the owner, 17 Nov 2026): the team shortlists courses on the card and sends them, numbered, to
   // the Application Team in one go.
   assert.notStrictEqual((await admin('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', studentId: sid })).status, 200);

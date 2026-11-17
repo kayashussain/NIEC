@@ -2607,16 +2607,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .pl-wait { margin: 6px 0 0; color: #0058b0; font-size: 14px; font-weight: 500; }
 @media (max-width: 640px) { .pl-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): the Route2Uni partner portal in the Fact File (new; the separate "From Route2Uni" section was removed the same day: the portal's figures are now written into each university's own page, so only the panel's styles stay) | from: nothing | to: on a university's page, a "From Route2Uni" section with a grey line saying when it was read; the intakes as rows with a green "Open" or grey "Closed" pill and the deadline text kept as written; fees, scholarships and language tests as light tables with hairline rows; entry requirements and English as soft grey boxes per level; courses grouped by level in folding rows with a "Find a course" box; on the list of universities, an off-white "Route2Uni" panel (when it was read, a grey "Check now" pill for Admin) with grey segmented tabs: Deadlines, Information Hub, What changed, Not in the Fact File (each with a blue "Add to the Fact File" pill) */
-.r2u-meta { color: var(--text-dim); font-size: 13px; }
-.r2u-panel { margin: 0 0 16px; }
-.r2u-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.r2u-panel-head h2 { margin: 0 0 2px; }
-.r2u-tabs { margin-top: 10px; flex-wrap: wrap; }
-.r2u-list { margin: 10px 0 0; padding: 0; list-style: none; max-height: 420px; overflow: auto; }
-.r2u-list li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1px solid var(--border); }
-.r2u-list li:first-child { border-top: 0; }
-.r2u-line { color: var(--text); font-size: 14.5px; overflow-wrap: anywhere; }
+/* 🔴 CSS CHANGED (2026-11-17): the Route2Uni panel removed (the owner) | from: an off-white panel above the Fact File list, "Kept up to date by itself, every Monday and Thursday", with when Route2Uni, Navitas and the course pages were last read and grey tabs Information Hub and What changed | to: no panel; its styles (.r2u-*) deleted */
 
 /* 🔴 CSS CHANGED (2026-11-17): "Find universities for a student" (new) and an intake's key dates (new) | from: no way to check a student against the universities; an intake showed only one short deadline | to: an off-white panel at the top of the Fact File and in the student card's University options: six fields in one row (level, grade, gap, English, score, subject), a blue Find pill, then grey filter pills (All, Eligible, To check, Not eligible) and one rounded card per university with a coloured edge (green eligible, amber to check, grey not eligible), its status pill, the reasons as a list (green tick, amber question mark, red cross), the fee, scholarship and deposit, the intake and its deadline, and its courses with Add; under each intake on a university's page, its key dates as written */
 .fd-card { margin: 0 0 18px; }
@@ -2697,7 +2688,7 @@ html body .page-head h1 + p, html body .page-head > div > p, html body .p-head >
 }
 /* One panel. */
 html body .p-card, html body .page .card, html body .md-card, html body .bp-card, html body .pu-card, html body .ov-card, html body .wk-card, html body .fd-card,
-html body .ss-card, html body .sl-card, html body .r2u-panel, html body .uni-card, html body .md-kpi, html body .p-kpi {
+html body .ss-card, html body .sl-card, html body .uni-card, html body .md-kpi, html body .p-kpi {
   border: 0; border-radius: var(--pl-radius); background: var(--panel); box-shadow: var(--pl-shadow);
 }
 html body a.uni-card, html body .uni-card { transition: box-shadow .2s ease, transform .2s ease; }

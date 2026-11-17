@@ -338,7 +338,7 @@ async function readJSONBody(req, maxBytes) {
   }
 }
 
-// The twice-a-week readings (Route2Uni, the Navitas toolkit): due on a Monday or a Thursday from 2 a.m. office time, once that
+// The twice-a-week reading (the Navitas toolkit): due on a Monday or a Thursday from 2 a.m. office time, once that
 // day; never more than 4 days without a good reading; a failed try is not repeated within 3 hours. `runs` is newest first.
 function twiceAWeekDue(runs, date = new Date()) {
   const lastGood = ((runs || []).find((r) => r.ok) || {}).at;

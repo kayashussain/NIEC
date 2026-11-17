@@ -5,7 +5,7 @@
 // words and the same degree (MSc, BA (Hons) ...). A course with no clear match is left without a link (the page's "Find the course
 // page" button still looks it up one at a time). Links a person typed or found are never replaced.
 //
-// Twice a week (after each Route2Uni reading, the owner, 17 Nov 2026), it takes the next universities in turn until at least 100
+// Every 4 days it takes the next universities in turn until at least 100
 // courses have been checked, and goes on from there next time, so every course is reached in a few weeks and then checked again. A
 // course checked and not found on the university's website is listed (missingFor), and the Fact File shows a warning beside it so a
 // person adds the link by hand. The result of each university is kept in course-sitemaps.json in the data folder.

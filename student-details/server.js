@@ -34,8 +34,6 @@ const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createPortalApi } = require('./portal-api');
 const { createPush } = require('./push');
-const { createRoute2Uni } = require('./route2uni');
-const { syncFacts } = require('./fact-sync');
 const { createCourseSitemaps } = require('./course-sitemap');
 const { createNavitasToolkit } = require('./navitas-toolkit');
 const { studentFrom, checkLevel, rulesFromPage, ourLevel: eligLevel } = require('./eligibility');
@@ -96,7 +94,6 @@ const STATIC_FILES = {
   '/phone-link.js': 'text/javascript; charset=utf-8',
   '/shortlist.js': 'text/javascript; charset=utf-8',
   '/finder.js': 'text/javascript; charset=utf-8',
-  '/route2uni-panel.js': 'text/javascript; charset=utf-8',
   '/wa.html': 'text/html; charset=utf-8',
   '/pair.html': 'text/html; charset=utf-8',
   '/pair-page.js': 'text/javascript; charset=utf-8',
@@ -705,7 +702,7 @@ async function handlePresence(req, res) {
   return sendJSON(res, 200, stateFor(tabKey(req.user, tabOf(body.id)), req.user));
 }
 
-// The Fact File (the owner, 17 Nov 2026): kept by the automatic readings only (Route2Uni, the Navitas toolkit, the course pages).
+// The Fact File (the owner, 17 Nov 2026): kept by the automatic readings only (the Navitas toolkit, the course pages).
 // Nobody adds, edits or deletes a university by hand; the team may only correct the dates of the intakes.
 async function handleFacts(req, res, urlPath) {
   const id = (urlPath.match(/^\/api\/facts\/([a-f0-9]{12})/) || [])[1];
@@ -828,29 +825,9 @@ const userMail = createUserMail(DATA_DIR);
 const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
 // The page of every course on the university's own website (course-sitemap.js), twice a week, at least 100 courses each time.
 const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks });
-// The Route2Uni partner portal, read twice a week into the Fact File (see route2uni.js). Off until ROUTE2UNI_EMAIL and
-// ROUTE2UNI_PASSWORD are set on the server.
-// Every reading is written into the Fact File itself (fact-sync.js): one Fact File, kept up to date twice a week.
 // The Navitas product toolkit (a public Google Sheet), read twice a week into the Fact File: one page per UK Navitas college (see
 // navitas-toolkit.js). NAVITAS_SHEET_ID is the sheet's id (else the one the owner gave); NAVITAS_TOOLKIT=off switches it off.
 const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.env.NAVITAS_SHEET_ID || undefined, enabled: process.env.NAVITAS_TOOLKIT !== 'off', clean: cleanFact });
-const route2uni = createRoute2Uni({ dir: DATA_DIR, email: process.env.ROUTE2UNI_EMAIL || '', password: process.env.ROUTE2UNI_PASSWORD || '', onRead: (reading) => {
-  const out = syncFacts(facts, reading);
-  console.log(`[route2uni] Fact File: ${out.updated} universities updated, ${out.added} added, ${out.unchanged} unchanged`);
-  // The Navitas toolkit with every Route2Uni reading too (it is also read on its own, below, when Route2Uni is not set up).
-  if (navitas.enabled() && !navitas.isRunning()) navitas.run('with Route2Uni').catch(() => {});
-  // Then the next course pages, from the universities' own websites (course-sitemap.js): at least 100 courses each time.
-  setTimeout(() => courseSitemaps.run().then((r) => console.log(`[course links] ${r.checked} courses checked, ${r.linked} links added`)).catch(() => {}), 1000).unref();
-  return out;
-} });
-// A reading not yet in the Fact File (the first start after this update, or a restored data folder) is written in at the start.
-try {
-  const r = route2uni.reading();
-  if (r && r.fetchedAt && facts.all().some((u) => !u.source || !u.source.route2uni || u.source.route2uni.at < r.fetchedAt) && (r.universities || []).length) {
-    const out = syncFacts(facts, r);
-    if (out.updated || out.added) console.log(`[startup] Fact File updated from the Route2Uni reading of ${r.fetchedAt}: ${out.updated} updated, ${out.added} added`);
-  }
-} catch (e) { console.error('[startup] Route2Uni into the Fact File:', e.message); }
 const portal = createPortalApi({
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
@@ -1160,7 +1137,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
     // Who can go where (eligibility.js): one student's level, grade, gap and English against every university of the Fact File that
-    // has its rules in numbers (kept from Route2Uni), with the courses of that level (narrowed by the subject), the fee and the open
+    // has its rules in numbers, with the courses of that level (narrowed by the subject), the fee and the open
     // intake's deadline. For everyone who reads the Fact File, a student's own login too.
     if (urlPath === '/api/eligibility' && req.method === 'POST') {
       let body;
@@ -1175,12 +1152,9 @@ const server = http.createServer(async (req, res) => {
         if (!rules.length) { without.push(u.name); continue; }
         const r = checkLevel(rules, s);
         if (!r) continue;
-        const reading = u.source && u.source.route2uni ? route2uni.byId(u.source.route2uni.id) : null;
-        // Only the courses of the intakes open now (a closed intake's courses would only repeat them); a page typed by hand gives its
-        // own course lists.
-        const openNow = new Set((reading ? reading.intakes : []).filter((i) => i.open).map((i) => i.name));
+        // The page's own course lists (Route2Uni was removed, the owner, 17 Nov 2026).
         const pageCourses = () => [...parseFactCourses(u.courses).map((c) => ({ name: c.course, level: c.group || '', campus: '', intake: '' })), ...(u.intakes || []).flatMap((i) => parseFactCourses(i.courses).map((c) => ({ name: c.course, level: c.group || '', campus: '', intake: i.name })))];
-        const all = (reading ? reading.courses : pageCourses()).filter((c) => (eligLevel(c.level) || eligLevel(c.name)) === s.level && (!openNow.size || !c.intake || openNow.has(c.intake)));
+        const all = pageCourses().filter((c) => (eligLevel(c.level) || eligLevel(c.name)) === s.level);
         const courses = words.length ? all.filter((c) => words.every((w) => c.name.toLowerCase().includes(w))) : all;
         if (words.length && !courses.length) continue; // nothing in that subject here
         const seen = new Set();
@@ -1188,7 +1162,7 @@ const server = http.createServer(async (req, res) => {
         const row = (u.programs || []).find((p) => eligLevel(p.name) === s.level) || {};
         const open = (u.intakes || []).find((i) => i.deadlines || i.deadline) || (u.intakes || [])[0] || null;
         const links = courseLinks.all(facts.all());
-        // Copies with their link: the courses may be the Route2Uni reading's own (kept in memory and saved again), never changed here.
+        // Copies with their link, never changed here.
         const linked = list.map((c) => ({ ...c, link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
         results.push({ id: u.id, name: u.name, city: u.city, status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit: row.deposit || '',
           intake: open ? { name: open.name, deadline: open.deadline || '' } : null, courses: linked.slice(0, 40), more: Math.max(0, linked.length - 40), total: linked.length });
@@ -1197,15 +1171,7 @@ const server = http.createServer(async (req, res) => {
       const feeOf = (x) => { const m = /£\s?([\d,]+)/.exec(x.fee); return m ? Number(m[1].replace(/,/g, '')) : 1e9; };
       results.sort((a, b) => order[a.status] - order[b.status] || feeOf(a) - feeOf(b) || a.name.localeCompare(b.name));
       const counts = { yes: results.filter((x) => x.status === 'yes').length, check: results.filter((x) => x.status === 'check').length, no: results.filter((x) => x.status === 'no').length };
-      return sendJSON(res, 200, { results, counts, without: without.length, readAt: (route2uni.reading() || {}).fetchedAt || '' });
-    }
-    // The automatic readings (Route2Uni, the Navitas toolkit, the course pages): the line on the Fact File list.
-    if (urlPath === '/api/route2uni' && req.method === 'GET') {
-      // With the course links: when the last batch ran, and how many courses are waiting for a link by hand.
-      const st = courseSitemaps.status();
-      const unis = Object.values(st.universities || {});
-      const links = { lastRun: (st.runs || [])[0] || null, notFound: unis.reduce((n, u) => n + (u.missing || []).length, 0), unreadable: unis.filter((u) => u.error).map((u) => u.name) };
-      return sendJSON(res, 200, { ...route2uni.summary(), links, navitas: navitas.summary(), admin: isAdmin(req.user) });
+      return sendJSON(res, 200, { results, counts, without: without.length, readAt: '' });
     }
     if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/deadlines)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
     // The student cards and the pages around them (portal-api.js).
@@ -1261,20 +1227,14 @@ server.listen(PORT, () => {
 // The weekly check of the course pages (course-watch.js): a slice of the courses every six hours, so each is visited about once a week.
 // The first one starts ten minutes after the server does. COURSE_WATCH=off switches it off.
 portalRef = portal;
-// Route2Uni: looked at every half hour whether a reading is due (Monday and Thursday from 2 a.m.), the first look two minutes after
-// the server starts.
-if (route2uni.configured()) {
-  setTimeout(() => route2uni.tick(), 2 * 60 * 1000).unref();
-  setInterval(() => route2uni.tick(), 30 * 60 * 1000).unref();
-}
 // The Navitas toolkit: looked at every half hour whether a reading is due (Monday and Thursday from 2 a.m.), the first look three
 // minutes after the server starts (so a new installation fills in the Navitas colleges at once).
 if (navitas.enabled()) {
   setTimeout(() => navitas.tick(), 3 * 60 * 1000).unref();
   setInterval(() => navitas.tick(), 30 * 60 * 1000).unref();
 }
-// Without Route2Uni (or if a reading fails for days), the course links still go on: whenever 4 days have passed since the last batch.
-if (process.env.COURSE_WATCH !== 'off') setInterval(() => { if (courseSitemaps.due() && !route2uni.isRunning()) courseSitemaps.run().catch(() => {}); }, 6 * 60 * 60 * 1000).unref();
+// The course links: whenever 4 days have passed since the last batch.
+if (process.env.COURSE_WATCH !== 'off') setInterval(() => { if (courseSitemaps.due()) courseSitemaps.run().catch(() => {}); }, 6 * 60 * 60 * 1000).unref();
 if (process.env.COURSE_WATCH !== 'off') {
   const tick = () => courseWatch.run().then((r) => { if (r && r.checked) console.log(`Course pages checked: ${r.checked}`); }).catch((e) => console.log(`Course page check stopped: ${e.message}`));
   setTimeout(tick, 10 * 60 * 1000).unref();

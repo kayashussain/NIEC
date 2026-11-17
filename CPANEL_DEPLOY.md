@@ -205,23 +205,16 @@ New in the same app, no new setup needed: the data goes in new files of the Stud
 
 New files of the same kind since then: `agents.json` with `agent-files/` (the Agents page), `source-options.json` (choices added to "Where exactly") and `course-watch.json` (the weekly check of the course pages; set `COURSE_WATCH=off` to switch it off). A file the server could not read is never deleted: it is set aside as `<name>.damaged-<time>.json` next to the data.
 
-## Route2Uni in the Fact File
+## Route2Uni (removed)
 
-ISR reads the Route2Uni partner portal twice a week (Monday and Thursday from 2 a.m. office time) and shows each university's
-figures, deadlines, notices and webinars in the Fact File. It needs the portal's login, kept in the app's settings only:
-
-1. cPanel, **Setup Node.js App**, the app, **Environment variables**, **Add Variable**:
-   `ROUTE2UNI_EMAIL` = the email you log into the portal with, and `ROUTE2UNI_PASSWORD` = its password.
-2. **Save**, then **Restart**.
-3. Open the Fact File: the line at the top shows when it was last read. It runs by itself; there is no button to start it.
-
-If the portal password is changed, change `ROUTE2UNI_PASSWORD` the same way and Restart. To switch it off, remove the two
-variables and Restart (the last reading stays on the pages).
+Route2Uni was removed on 17 Nov 2026 (the owner): ISR no longer logs into the Route2Uni portal, and the Fact File has no
+"Kept up to date by itself" panel. What it had already written into the Fact File pages stays. If `ROUTE2UNI_EMAIL` and
+`ROUTE2UNI_PASSWORD` are still in the app's Environment variables, delete them (they are no longer used), then Restart.
 
 ## The Navitas product toolkit in the Fact File
 
 ISR reads the Navitas product toolkit (the public Google Sheet "Nepal UK/Europe Navitas product toolkit") twice a week, Monday and
-Thursday from 2 a.m. office time and after every Route2Uni reading, and gives each UK Navitas college its own Fact File page: fees,
+Thursday from 2 a.m. office time, and gives each UK Navitas college its own Fact File page: fees,
 scholarships, entry requirements, English, study gap, courses, the January intake with its deadlines and courses, interview
 questions, Flywire payment and refund links, accommodation and the application steps. German and Dutch colleges are left out,
 and so is Manchester Metropolitan University International College (closed). Nothing needs to be set up: the sheet must stay shared
