@@ -112,6 +112,31 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   answer = 410;
   assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: sita })).status, 502);
   assert.strictEqual((await fu('GET', '/api/push')).json.devices.length, 0, 'the phone that has gone is forgotten');
+  // Pairing, the simple way (the owner, 17 Nov 2026): the computer shows a code; the phone, not logged in, opens it and connects.
+  const pc = (await fu('POST', '/api/push/pair-code', {})).json;
+  const token = new URL(pc.url).searchParams.get('t');
+  assert.ok(/^[\w-]{20,40}$/.test(token));
+  const phoneGet = (u) => fetch(base + u, { redirect: 'manual' });
+  assert.strictEqual((await phoneGet('/pair?t=' + token)).status, 200, 'the pairing page needs no login');
+  const st = await (await phoneGet('/api/push/pair-state?t=' + token)).json();
+  assert.deepStrictEqual([st.valid, st.name, st.key], [true, 'Sunita', key]);
+  assert.strictEqual((await (await phoneGet('/api/push/pair-state?t=nope-nope-nope-nope-nope')).json()).valid, false);
+  assert.strictEqual(JSON.parse(await (await phoneGet('/manifest.webmanifest?pair=' + token)).text()).start_url, '/pair?t=' + token, 'an iPhone Home Screen icon comes back to finish');
+  const ua2 = crypto.createECDH('prime256v1'); ua2.generateKeys(); const auth2 = crypto.randomBytes(16);
+  const sub2 = { endpoint: `http://127.0.0.1:${pushPort}/push/def`, keys: { p256dh: b64u(ua2.getPublicKey()), auth: b64u(auth2) } };
+  answer = 201;
+  const pairPost = (b2) => fetch(base + '/api/push/pair', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b2) });
+  assert.strictEqual((await pairPost({ token: 'wrong-wrong-wrong-wrong-wrong', subscription: sub2 })).status, 400);
+  const paired = await pairPost({ token, subscription: sub2, name: 'iPhone' });
+  assert.strictEqual(paired.status, 200);
+  assert.deepStrictEqual((await fu('GET', '/api/push')).json.devices.map((x) => x.name), ['iPhone'], 'the phone belongs to the person who showed the code');
+  assert.strictEqual((await pairPost({ token, subscription: sub2, name: 'Again' })).status, 400, 'a code works once');
+  await wait(300);
+  assert.strictEqual(decrypt(got[got.length - 1].body, ua2, auth2).title, 'WhatsApp is on', 'the phone is told it worked');
+  assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: sita })).status, 200);
+  assert.strictEqual(decrypt(got[got.length - 1].body, ua2, auth2).title, 'WhatsApp Sita Demo');
+  assert.strictEqual((await phoneGet('/api/push/pair-code')).status === 200, false, 'only a logged-in person makes a code');
+
   // The phone's page and the Home Screen settings.
   assert.strictEqual((await fu('GET', '/wa?n=9779800000091')).status, 200);
   const manifest = await fetch(base + '/manifest.webmanifest');

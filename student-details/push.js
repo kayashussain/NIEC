@@ -76,6 +76,7 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
     return `${head}.${body}.${b64u(sig)}`;
   }
 
+  const pairs = new Map(); // pairing code -> { userId, user, until }
   const readDevices = () => { try { const d = JSON.parse(fs.readFileSync(devFile, 'utf8')); return d && typeof d.people === 'object' && d.people ? d : { people: {} }; } catch (e) { return { people: {} }; } };
   const devicesOf = (userId) => readDevices().people[userId] || [];
   const saveDevices = (userId, list) => { const d = readDevices(); if (list.length) d.people[userId] = list; else delete d.people[userId]; write(devFile, d); };
@@ -93,6 +94,25 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
       const device = { id: crypto.randomBytes(6).toString('hex'), endpoint, p256dh: String(k.p256dh), auth: String(k.auth), name: String(name || 'Phone').slice(0, 60), at: new Date().toISOString() };
       saveDevices(userId, [...list, device].slice(-5)); // up to five phones or tablets a person
       return { device: { id: device.id, name: device.name, at: device.at } };
+    },
+    // Pairing (the owner, 17 Nov 2026: connecting must be simple): the computer shows a code; the phone's camera opens it, and one
+    // tap turns the notifications on, without logging the phone in. A code is random, belongs to one person, works for 30 minutes
+    // and only once. Kept in memory only (a restart simply asks for a new code).
+    pairCode(user) {
+      const now = Date.now();
+      for (const [k, v] of pairs) if (v.until < now) pairs.delete(k);
+      const token = crypto.randomBytes(18).toString('base64url');
+      pairs.set(token, { userId: user.id, user: { id: user.id, name: user.name, username: user.username, label: user.label }, until: now + 30 * 60 * 1000 });
+      return { token, until: new Date(now + 30 * 60 * 1000).toISOString() };
+    },
+    pairOf(token) { const p = pairs.get(String(token || '')); return p && p.until > Date.now() ? p : null; },
+    pairWith(token, sub, name) {
+      const p = this.pairOf(token);
+      if (!p) return { error: 'This code has expired or was already used. Press "Connect my phone" on the computer again for a new one.' };
+      const out = this.connect(p.userId, sub, name);
+      if (out.error) return out;
+      pairs.delete(String(token));
+      return { ...out, user: p.user };
     },
     disconnect(userId, id) {
       const list = devicesOf(userId);

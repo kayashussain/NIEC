@@ -2616,7 +2616,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-next .td-next-why { margin: 2px 0 10px; }
 .td-next .p-field { margin-top: 10px; }
 
-/* 🔴 CSS CHANGED (2026-11-17): "Connect my phone" (new) and the page a tap on the WhatsApp notification opens on the phone (new) | from: nothing (WhatsApp opened only on the device that was clicked) | to: a window listing the connected phones (a green tick, the phone's name, when it was connected, a grey Disconnect pill) with one blue "Connect this phone" pill on a phone, or three numbered steps on a computer; on the phone, a calm centred page with "WhatsApp" in small green capitals, the student's name large, the number, and one big green "Open the chat in WhatsApp" button */
+/* 🔴 CSS CHANGED (2026-11-17): "Connect my phone" (new; the phone's own pages, the WhatsApp page and the pairing page, now have their styles in student-details/phone.css) | from: nothing (WhatsApp opened only on the device that was clicked) | to: a window listing the connected phones (a green tick, the phone's name, when it was connected, a grey Disconnect pill) with one blue "Connect this phone" pill on a phone, or three numbered steps on a computer; on the phone, a calm centred page with "WhatsApp" in small green capitals, the student's name large, the number, and one big green "Open the chat in WhatsApp" button */
 .pl-dialog { max-width: 560px; }
 .pl-ready { margin: 14px 0 6px; color: #1f7a35; font-weight: 600; }
 .pl-devices { margin: 0 0 10px; padding: 0; list-style: none; }
@@ -2624,13 +2624,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .pl-devices li:first-child { border-top: 0; }
 .pl-ok { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #e3f5e8; color: #1f7a35; font-size: 13px; font-weight: 700; }
 .pl-steps { margin: 6px 0 14px; padding-left: 22px; color: var(--text-dim); font-size: 15px; line-height: 1.6; }
-.wa-open { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; margin: 0; padding: 24px; background: var(--bg); }
-.wa-box { width: 100%; max-width: 420px; padding: 32px 24px; border-radius: 22px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 0 0 .5px rgba(0, 0, 0, .06); text-align: center; }
-.wa-kicker { margin: 0 0 6px; color: #1f7a35; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.wa-box h1 { margin: 0 0 4px; color: var(--ink); font-size: 28px; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
-.wa-num { margin: 0 0 22px; color: var(--text-dim); font-size: 17px; font-variant-numeric: tabular-nums; }
-.wa-box .wa-go { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 54px; margin: 0 0 12px; border-radius: 999px; background: #25d366; border-color: #25d366; color: #fff; font-size: 17px; font-weight: 600; }
-.wa-box .wa-go:hover { background: #1fbe5a; }
 
 /* 🔴 CSS CHANGED (2026-11-17): a student's own login on the Fact File (new), and the Student choice on Users (new) | from: nothing (only the team had logins) | to: on the Fact File, an off-white "Welcome, <name>" panel with one line of help and "Your shortlist" (each course in bold with its university as a blue link and a grey "Take off" pill); beside each course of a university a small grey pill "I am interested" that turns soft green "✓ On your shortlist" when chosen; on Users, a "Student (Fact File only)" box under Manager and, when ticked, a soft grey box asking which student the login is for, with a search and the found students as rows; a soft violet "Student, Fact File only" chip in the list */
 .sl-card { margin: 0 0 18px; }
@@ -2656,3 +2649,14 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .student-result small { color: var(--text-dim); }
 .chip-student { background: #efe9fb; color: #5b3ea8; }
 @media print { .sl-card, .sl-pick { display: none !important; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): "WhatsApp on your phone" made simple | from: three written steps to follow on the phone (open the website, log in, find the menu) | to: the code to scan on the left (white, rounded, a faint shadow) and two numbered steps on the right in large type ("Point your phone's camera at this code", "On your phone, tap Turn on"), a quiet line "Waiting for your phone..." that turns into a green "✓ Done" by itself */
+.pl-pair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin: 8px 0 4px; }
+.pl-qr { padding: 10px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 2px 10px rgba(0, 0, 0, .06); line-height: 0; }
+.pl-qr svg { display: block; width: 240px; height: 240px; }
+.pl-two { margin: 0 0 10px; padding-left: 26px; font-size: 17px; line-height: 1.4; }
+.pl-two li { margin: 0 0 14px; }
+.pl-two b { display: block; color: var(--ink); }
+.pl-two span { color: var(--text-dim); font-size: 15px; }
+.pl-wait { margin: 6px 0 0; color: #0058b0; font-size: 14px; font-weight: 500; }
+@media (max-width: 640px) { .pl-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } }

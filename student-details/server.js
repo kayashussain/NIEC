@@ -90,6 +90,10 @@ const STATIC_FILES = {
   '/phone-link.js': 'text/javascript; charset=utf-8',
   '/shortlist.js': 'text/javascript; charset=utf-8',
   '/wa.html': 'text/html; charset=utf-8',
+  '/pair.html': 'text/html; charset=utf-8',
+  '/pair-page.js': 'text/javascript; charset=utf-8',
+  '/phone.css': 'text/css; charset=utf-8',
+  '/qr.js': 'text/javascript; charset=utf-8',
   '/wa-page.js': 'text/javascript; charset=utf-8',
   '/sw.js': 'text/javascript; charset=utf-8',
   '/card-fields.js': 'text/javascript; charset=utf-8',
@@ -1027,12 +1031,34 @@ const server = http.createServer(async (req, res) => {
     // (a browser asks for it without the login cookie).
     if (urlPath === '/manifest.webmanifest' && req.method === 'GET') {
       const sig = messages.signature();
-      return send(res, 200, JSON.stringify({ name: `ISR · ${sig.short || 'International Student Recruitment'}`, short_name: 'ISR', start_url: '/today', scope: '/', display: 'standalone', background_color: '#f5f5f7', theme_color: '#f5f5f7',
+      // Added to an iPhone's Home Screen from the pairing page, ISR opens on that page again to finish turning WhatsApp on.
+      const pairing = new URL(req.url, 'http://x').searchParams.get('pair') || '';
+      const start = /^[\w-]{20,40}$/.test(pairing) ? `/pair?t=${pairing}` : '/today';
+      return send(res, 200, JSON.stringify({ name: `ISR · ${sig.short || 'International Student Recruitment'}`, short_name: 'ISR', start_url: start, scope: '/', display: 'standalone', background_color: '#f5f5f7', theme_color: '#f5f5f7',
         icons: [{ src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }, { src: '/favicon.png', sizes: '128x128', type: 'image/png' }] }), { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache' });
     }
     // The service worker shows the notification on the phone and opens the chat when it is tapped (see push.js). It must be at the
     // top of the site to work for every page.
     if (urlPath === '/sw.js' && req.method === 'GET') { req.url = '/sw.js'; return serveStatic(req, res); }
+    // Connecting a phone (the owner, 17 Nov 2026: as simple as possible): the phone's camera opens /pair?t=<code> from the code on the
+    // computer; one tap turns the notifications on. The phone does not log in: the one-time code says whose phone it is. The page that
+    // opens a chat (/wa) shows only what is in its own address, so it needs no login either.
+    if (req.method === 'GET' && (urlPath === '/pair' || urlPath === '/wa')) { req.url = urlPath + '.html'; return serveStatic(req, res); }
+    if (req.method === 'GET' && ['/pair-page.js', '/wa-page.js', '/phone.css'].includes(urlPath)) return serveStatic(req, res);
+    if (urlPath === '/api/push/pair-state' && req.method === 'GET') {
+      const p = push.pairOf(new URL(req.url, 'http://x').searchParams.get('t'));
+      return sendJSON(res, 200, p ? { valid: true, name: String(p.user.name || '').split(/\s+/)[0], key: push.publicKey() } : { valid: false });
+    }
+    if (urlPath === '/api/push/pair' && req.method === 'POST') {
+      let body;
+      try { body = await readJSONBody(req, 8 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
+      const out = push.pairWith(body && body.token, body && body.subscription, String((body && body.name) || '').slice(0, 60));
+      if (out.error) return sendJSON(res, 400, { error: out.error });
+      activity.record(req, out.user, 'Changed settings', { app: 'My phone', changes: [`Connected their phone (${out.device.name}) for WhatsApp, with the code from the computer`] });
+      const site = `https://${String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '')}`;
+      push.send(out.user.id, { title: 'WhatsApp is on', body: 'From now on, WhatsApp on the computer opens the chat here.', url: '/today', tag: 'isr-test' }, site).catch(() => {});
+      return sendJSON(res, 200, { ok: true, name: String(out.user.name || '').split(/\s+/)[0] });
+    }
     if (PUBLIC_SHARED.has(urlPath)) return serveShared(req, res); // the logo, for the login page
     // The Advisor connector checks its own secret in the address, so it answers before the login.
     if (await advisor.handle(req, res, urlPath)) return;

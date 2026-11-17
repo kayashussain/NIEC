@@ -2493,6 +2493,15 @@ function createPortalApi({
       sendJSON(res, 200, { key: push.publicKey(), devices: push.devices(req.user.id) });
       return true;
     }
+    // The one-time code the computer shows, for the phone's camera (see push.js pairCode and /pair in server.js).
+    if (urlPath === '/api/push/pair-code' && req.method === 'POST') {
+      if (!push) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
+      const made = push.pairCode(req.user);
+      const host = String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '');
+      const proto = (req.socket && req.socket.encrypted) || /^https/.test(String(req.headers['x-forwarded-proto'] || '')) ? 'https' : 'http';
+      sendJSON(res, 200, { url: `${proto}://${host}/pair?t=${made.token}`, until: made.until });
+      return true;
+    }
     if (/^\/api\/push\/(connect|disconnect|whatsapp)$/.test(urlPath) && req.method === 'POST') {
       if (!push) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
       const body = await bodyOf(req, res, 8 * 1024);
