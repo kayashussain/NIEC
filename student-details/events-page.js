@@ -54,6 +54,8 @@
       ['Cost per visa', per(t.cost, t.visas), '', true],
     ]), { id: 'band' }));
     $('note').replaceChildren();
+    const waitingAll = acts.reduce((n, a) => n + ((a.follow && a.follow.new) || 0) + ((a.follow && a.follow.due) || 0), 0);
+    if (waitingAll > 0) $('note').append(el('div', 'ev-note due', `${number(waitingAll)} ${waitingAll === 1 ? 'inquiry from an event waits' : 'inquiries from events wait'} for a follow-up. Open an event to see who.`));
     if (data.unlinkedSocial > 0) $('note').append(el('div', 'ev-note', `${number(data.unlinkedSocial)} social media ${data.unlinkedSocial === 1 ? 'inquiry is' : 'inquiries are'} not linked to a campaign.`));
     $('add').hidden = !data.canEdit;
     const q = find.trim().toLowerCase();
@@ -79,6 +81,17 @@
       const who = el('div');
       const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', `${ran(a)} · ${a.days} day${a.days === 1 ? '' : 's'}`));
       const words = el('div', 'ev-lwords'); words.append(el('div', 'ev-lname', a.name), meta);
+      // The follow-up of the event at a glance: who still waits for a call, and how much has converted.
+      const fo = a.follow || {};
+      const waiting = (fo.new || 0) + (fo.due || 0);
+      if (a.leads) {
+        const line = el('div', 'ev-lfollow');
+        if (fo.new) line.append(el('span', 'ev-fpill new', `${fo.new} not contacted`));
+        if (fo.due) line.append(el('span', 'ev-fpill due', `${fo.due} follow-up due`));
+        if (!waiting) line.append(el('span', 'ev-fpill ok', '\u2713 All followed up'));
+        line.append(el('span', 'ev-lconv', `${Math.round((a.applied / a.leads) * 100)}% converted`));
+        words.append(line);
+      }
       who.className = 'ev-lwho'; who.append(leaf(a), words);
       const num = (label, v, gold) => { const d = el('div', 'num' + (gold ? ' gold' : '') + (v === 'None yet' || v === '-' ? ' none' : ''), v); d.dataset.label = label; return d; };
       r.append(who, num('Cost', a.cost ? rupees(a.cost) : '-'), num('Inquiries', number(a.leads)), num('Visas', number(a.visas)), num('Per inquiry', per(a.cost, a.leads), a.cost > 0 && a.leads > 0), num('Per visa', per(a.cost, a.visas), a.cost > 0 && a.visas > 0), el('div', 'ev-go', '→'));
@@ -117,10 +130,11 @@
     const flow = funnel(a);
     const upload = data.canEdit ? uploadPanel(a) : null;
     const people = el('section', 'ev-panel');
-    people.append(el('h3', '', 'Inquiries'), el('p', '', 'Everyone from this event, in every intake.'));
+    people.classList.add('ev-follow');
+    people.append(el('h3', '', 'Follow-up'), el('p', '', 'Everyone from this event, in every intake: where they stand, the last contact and the remark. Click a name to open the card, or write a note here.'));
     const listBox = el('div'); listBox.innerHTML = '<div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     people.append(listBox);
-    v.replaceChildren(back, head, figs, flow, ...(upload ? [upload] : []), people);
+    v.replaceChildren(back, head, figs, flow, people, ...(upload ? [upload] : []));
     loadPeople(a, listBox);
   }
   // From inquiry to visa: how many of the inquiries went on to apply and to a visa, as bars against the inquiries.
@@ -140,46 +154,129 @@
   }
   function closeEvent() { open = null; $('eventView').hidden = true; $('eventView').replaceChildren(); $('listView').hidden = false; window.scrollTo({ top: 0 }); }
 
+  // Where each student of the event stands in the follow-up (worked out on the server from the stage, the notes and the messages).
+  const FOLLOW = {
+    new: { label: 'Not contacted', hint: 'No note or message yet' },
+    due: { label: 'Follow-up due', hint: 'No contact for a few days' },
+    ok: { label: 'Followed up', hint: 'Contacted recently' },
+    applied: { label: 'Applying', hint: 'Converted: past Inquiry and applying' },
+    visa: { label: 'Visa', hint: 'Visa received' },
+    inactive: { label: 'Inactive', hint: 'Withdrawn, on hold, deferred or refused' },
+  };
+  const FOLLOW_ORDER = ['new', 'due', 'ok', 'applied', 'visa', 'inactive'];
+  const ago = (d) => (d === null || d === undefined ? '' : d === 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`);
+
   async function loadPeople(a, box) {
-    let list;
-    try { list = (await api(`/api/activities/${a.id}/students`)).students; } catch (e) { box.replaceChildren(el('div', 'p-notice bad', e.message)); return; }
-    if (!list.length) { box.replaceChildren(el('div', 'ev-empty', data.canEdit ? 'No inquiries yet.' : 'No inquiries yet.')); return; }
-    const search = h('input', { class: 'ev-search', type: 'search', placeholder: 'Search a name or phone', 'aria-label': 'Search the inquiries' });
-    const rows = el('div', 'ev-people');
-    // The stages these inquiries are at, each with how many, to see one group at a time.
-    let stage = '';
-    const stages = [...list.reduce((m, s) => m.set(s.stage || 'No stage', (m.get(s.stage || 'No stage') || 0) + 1), new Map())];
-    const chips = el('div', 'ev-stages');
-    chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Show a stage');
-    const chip = (key, label, n) => {
-      const b = h('button', { type: 'button', class: key === stage ? 'on' : '' }, label);
-      b.append(el('span', '', String(n)));
-      b.setAttribute('aria-pressed', String(key === stage));
-      b.addEventListener('click', () => { stage = key; chips.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); drawPeople(); });
+    let got;
+    try { got = await api(`/api/activities/${a.id}/students`); } catch (e) { box.replaceChildren(el('div', 'p-notice bad', e.message)); return; }
+    const list = got.students || [];
+    const team = got.team || [];
+    const rule = got.followDays || 3;
+    if (!list.length) { box.replaceChildren(el('div', 'ev-empty small', 'No inquiries yet. Upload the inquiry list to start the follow-up.')); return; }
+    const count = (k) => list.filter((s) => s.follow === k).length;
+    const contacted = list.filter((s) => s.contacts > 0 || ['applied', 'visa'].includes(s.follow)).length;
+    const converted = count('applied') + count('visa');
+    const pc = (n) => `${Math.round((n / list.length) * 100)}%`;
+
+    // The summary: how much of the event has been followed up and converted, at a glance.
+    const sum = el('div', 'ev-fsum');
+    const meter = (label, n, k) => { const d = el('div', 'ev-fmeter ' + k); const bar = el('div', 'ev-fmeter-bar'); const i = el('i'); i.style.setProperty('--w', pc(n)); bar.append(i); d.append(el('span', '', label), el('b', '', `${pc(n)}`), el('small', '', `${n} of ${list.length}`), bar); return d; };
+    sum.append(meter('Contacted at least once', contacted, 'reach'), meter('Converted (applying or visa)', converted, 'conv'), meter('Still waiting for a follow-up', count('new') + count('due'), 'wait'));
+
+    // The status tiles double as the filter.
+    let state = '';
+    const tiles = el('div', 'ev-ftiles');
+    tiles.setAttribute('role', 'group'); tiles.setAttribute('aria-label', 'Show');
+    const tile = (k, label, n, hint) => {
+      const b = h('button', { type: 'button', class: `ev-ftile ${k || 'all'}${k === state ? ' on' : ''}` });
+      b.append(el('b', '', String(n)), el('span', '', label));
+      if (hint) b.title = hint;
+      b.setAttribute('aria-pressed', String(k === state));
+      b.addEventListener('click', () => { state = state === k ? '' : k; tiles.querySelectorAll('button').forEach((x) => { const on = x === b && state === k; x.classList.toggle('on', on || (!state && x.classList.contains('all'))); x.setAttribute('aria-pressed', String(on)); }); drawPeople(); });
       return b;
     };
-    if (stages.length > 1) chips.append(chip('', 'All', list.length), ...stages.map(([k, n]) => chip(k, k, n)));
+    tiles.append(tile('', 'Everyone', list.length), ...FOLLOW_ORDER.map((k) => tile(k, FOLLOW[k].label, count(k), k === 'due' ? `At Inquiry, no note or message for ${rule} days or more` : FOLLOW[k].hint)));
+    tiles.querySelector('.all').classList.add('on');
+
+    // Who in the team has followed these students up.
+    let who = null;
+    if (team.length) {
+      who = el('div', 'ev-team');
+      who.append(el('span', 'ev-team-title', 'Followed up by'));
+      team.slice(0, 12).forEach((t) => {
+        const c = el('div', 'ev-team-person');
+        c.append(el('span', 'ev-team-av', window.Portal.initials ? window.Portal.initials(t.name) : t.name.slice(0, 2)));
+        const w = el('div'); w.append(el('b', '', t.name), el('small', '', `${t.students} student${t.students === 1 ? '' : 's'} · ${t.notes} contact${t.notes === 1 ? '' : 's'} · last ${localDay(t.last)}`));
+        c.append(w);
+        who.append(c);
+      });
+    }
+
+    const search = h('input', { class: 'ev-search', type: 'search', placeholder: 'Search a name or phone', 'aria-label': 'Search the inquiries' });
+    const shownCount = el('span', 'p-muted');
+    const rows = el('div', 'ev-people');
     const drawPeople = () => {
       const q = search.value.trim().toLowerCase();
-      const shown = list.filter((s) => (!stage || (s.stage || 'No stage') === stage) && (!q || `${s.name} ${s.phone} ${s.email}`.toLowerCase().includes(q)));
-      if (!shown.length) { rows.replaceChildren(el('div', 'ev-empty small', 'No inquiry matches.')); return; }
-      const hd = el('div', 'ev-person head'); ['Name', 'Phone', 'Stage', 'Intake', 'Latest note'].forEach((x) => hd.append(el('div', '', x)));
+      const shown = list.filter((s) => (!state || s.follow === state) && (!q || `${s.name} ${s.phone} ${s.email}`.toLowerCase().includes(q)))
+        .sort((x, y) => FOLLOW_ORDER.indexOf(x.follow) - FOLLOW_ORDER.indexOf(y.follow) || (y.days ?? 999) - (x.days ?? 999) || x.name.localeCompare(y.name));
+      shownCount.textContent = `${shown.length} of ${list.length}`;
+      if (!shown.length) { rows.replaceChildren(el('div', 'ev-empty small', state ? `Nobody is ${FOLLOW[state].label.toLowerCase()} right now.` : 'No inquiry matches.')); return; }
+      const hd = el('div', 'ev-person head'); ['Student', 'Follow-up', 'Stage', 'Last contact and remark', ''].forEach((x) => hd.append(el('div', '', x)));
       rows.replaceChildren(hd, ...shown.map((s) => {
         const r = el('div', 'ev-person');
-        const who = h('button', { class: 'who', type: 'button', onclick: () => window.CardDrawer.open(s.id, { onClose: () => refresh() }) }, s.name);
-        const last = el('div', 'last');
-        if (s.lastNote) last.append(el('b', '', `${localDay(s.lastNote.at)}${s.lastNote.by ? ', ' + s.lastNote.by : ''}: `), s.lastNote.text); else last.textContent = 'No note yet';
+        const name = el('div', 'ev-pname');
+        name.append(h('button', { class: 'who', type: 'button', onclick: () => window.CardDrawer.open(s.id, { onClose: () => refresh() }) }, s.name));
+        const sub = el('div', 'ev-psub');
+        if (s.phone) sub.append(h('a', { href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone));
+        sub.append(el('span', '', s.intake));
+        name.append(sub);
+        const fol = el('div', 'ev-fcell');
+        fol.append(el('span', `ev-fpill ${s.follow}`, FOLLOW[s.follow] ? FOLLOW[s.follow].label : s.follow));
+        if (s.lastContact) fol.append(el('small', '', `${s.contacts} contact${s.contacts === 1 ? '' : 's'}, last ${ago(s.days)}`));
+        else fol.append(el('small', '', ['new', 'due', 'ok'].includes(s.follow) ? 'Never contacted' : 'No contact recorded'));
         const stageCell = el('div'); stageCell.append(window.Portal.stagePill(s.stage));
-        const phone = el('div', 'tel');
-        if (s.phone) phone.append(h('a', { href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone)); else phone.textContent = '-';
-        r.append(who, phone, stageCell, el('div', '', s.intake), last);
+        const last = el('div', 'last');
+        if (s.lastContact) {
+          const lc = s.lastContact;
+          last.append(el('b', '', `${localDay(lc.at)}${lc.by ? ', ' + lc.by : ''}${lc.what !== 'note' ? ` (${lc.what})` : ''}: `), lc.text || (lc.what === 'note' ? '' : 'sent'));
+        } else last.append(el('span', 'ev-none', 'No note yet'));
+        if (s.remarks && (!s.lastContact || s.remarks !== s.lastContact.text)) last.append(el('div', 'ev-remark', `Remark: ${s.remarks}`));
+        if (s.follow === 'inactive' && s.lostReason) last.append(el('div', 'ev-remark', `Why: ${s.lostReason}`));
+        const act = el('div', 'ev-pact');
+        if (s.canNote) {
+          const add = h('button', { class: 'btn btn-sm', type: 'button', title: `Write a note on ${s.name}'s card` }, '+ Note');
+          add.addEventListener('click', () => quickNote(r, s, add));
+          act.append(add);
+        }
+        r.append(name, fol, stageCell, last, act);
         return r;
       }));
     };
+    // A note written here goes on the student's card, as if written there, and the list is refreshed.
+    function quickNote(row, s, btn) {
+      if (row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('ev-qnote')) { row.nextSibling.querySelector('textarea').focus(); return; }
+      const box = el('div', 'ev-qnote');
+      const area = h('textarea', { rows: '2', maxlength: '2000', placeholder: `What happened with ${s.name}? (a call, a message, their answer)`, 'aria-label': `Note on ${s.name}` });
+      const save = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Save note');
+      const cancel = h('button', { class: 'btn btn-sm', type: 'button', onclick: () => box.remove() }, 'Cancel');
+      const go = async () => {
+        const t = area.value.trim();
+        if (!t) { area.focus(); return; }
+        save.disabled = true;
+        try { await api(`/api/cards/${s.id}/notes`, { text: t }); say(`Note saved on ${s.name}'s card`); await refresh(); } catch (e) { say(e.message, true); save.disabled = false; }
+      };
+      save.addEventListener('click', go);
+      area.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); go(); } if (e.key === 'Escape') box.remove(); });
+      const foot = el('div', 'ev-qnote-foot'); foot.append(save, cancel, el('span', 'p-muted', 'Saved on the student’s card. Ctrl+Enter to save.'));
+      box.append(area, foot);
+      row.after(box);
+      area.focus();
+      btn.blur();
+    }
     search.addEventListener('input', drawPeople);
     drawPeople();
-    const top = el('div', 'ev-actions ev-find-row'); top.append(search, el('span', 'p-muted', `${list.length} ${list.length === 1 ? 'inquiry' : 'inquiries'}`));
-    box.replaceChildren(top, ...(stages.length > 1 ? [chips] : []), rows);
+    const top = el('div', 'ev-actions ev-find-row'); top.append(search, shownCount);
+    box.replaceChildren(sum, tiles, ...(who ? [who] : []), top, rows);
   }
 
   function uploadPanel(a) {

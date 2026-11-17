@@ -170,15 +170,6 @@
   .ev-drop-words span { color: #0066cc; font-size: 14px; font-weight: 500; }
   .ev-upload > label:first-child { justify-content: flex-end; }
   .ev-find-row { margin: 0 0 12px; }
-  .ev-stages { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
-  .ev-stages button { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 8px 0 14px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color .2s, color .2s, transform .15s; }
-  .ev-stages button:hover { background: #dcdce2; }
-  .ev-stages button:active { transform: scale(.96); }
-  .ev-stages button span { min-width: 22px; padding: 1px 7px; border-radius: 980px; background: rgba(255, 255, 255, .8); color: #515154; font-size: 12.5px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
-  .ev-stages button.on { background: #1d1d1f; color: #fff; }
-  .ev-stages button.on span { background: rgba(255, 255, 255, .2); color: #fff; }
-  .ev-person .tel a { color: #0066cc; text-decoration: none; font-variant-numeric: tabular-nums; }
-  .ev-person .tel a:hover { text-decoration: underline; }
   html body .ev-person.head { background: #f7f7f9; color: #5f5f64; font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
   .ev-person:not(.head) { transition: background-color .2s; }
   .ev-person:not(.head):hover { background: rgba(0, 0, 0, .02); }
@@ -196,6 +187,72 @@
     .ev-flow-row { grid-template-columns: 80px minmax(0, 1fr) 40px 40px; gap: 10px; }
     .ev-panel-head .btn { margin-bottom: 14px; }
   }
+
+  /* 🔴 CSS CHANGED (2026-11-17): Follow-up on Events and marketing (new) | from: an "Inquiries" list under the upload, with name, phone, stage, intake and the latest note, and grey stage pills with counts above it; event rows with no word on the follow-up | to: on each event row, small pills under the dates ("2 not contacted" in soft red, "3 follow-up due" in soft amber, or "✓ All followed up" in soft green) and "67% converted" in grey; a soft notice with an amber dot above the list ("12 inquiries from events wait for a follow-up"); on an event, a "Follow-up" panel just under the funnel (the upload moves below it) with three meters (Contacted at least once in blue, Converted (applying or visa) in green, Still waiting for a follow-up in amber: the share in large figures, "4 of 6" in grey and a thin bar); a row of seven status tiles that filter the list (Everyone, Not contacted, Follow-up due, Followed up, Applying, Visa, Inactive: the number large, the word under it, a coloured dot, the chosen tile with a blue ring); "Followed up by" with a grey round badge per person, the name in bold and "5 students · 9 contacts · last 13 Nov 2026"; the list with the student (name, then the phone in blue and the intake in grey), a status pill in its colour with "3 contacts, last 2 days ago", the stage pill, the last contact and the remark ("Remark: ..." and, for an inactive student, "Why: ..." in grey) and a small grey "+ Note" pill that opens a two-line box under the row with a blue "Save note" | the old stage pills and phone column styles are deleted */
+  .ev-person { grid-template-columns: minmax(180px, 1.2fr) 190px 170px minmax(0, 2.4fr) 84px; align-items: start; }
+  .ev-person.head { align-items: center; }
+  .ev-pname .who { font-size: 15.5px; }
+  .ev-psub { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; color: #6e6e73; font-size: 13.5px; }
+  .ev-psub a { color: #0066cc; text-decoration: none; font-variant-numeric: tabular-nums; }
+  .ev-psub a:hover { text-decoration: underline; }
+  .ev-fcell small { display: block; margin-top: 5px; color: #6e6e73; font-size: 13px; }
+  .ev-fpill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 980px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+  .ev-fpill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
+  .ev-fpill.new { background: var(--red-bg, #fdeceb); color: var(--red-fg, #c9271d); }
+  .ev-fpill.due { background: var(--amber-bg, #fff4e0); color: var(--amber-fg, #9a5b00); }
+  .ev-fpill.ok { background: rgba(52, 199, 89, .13); color: #1e7d34; }
+  .ev-fpill.applied { background: rgba(0, 113, 227, .1); color: #0066cc; }
+  .ev-fpill.visa { background: #28a745; color: #fff; }
+  .ev-fpill.inactive { background: #e8e8ed; color: #6e6e73; }
+  .ev-lfollow .ev-fpill.ok::before { display: none; }
+  .ev-person .last { font-size: 14.5px; line-height: 1.45; }
+  .ev-remark { margin-top: 4px; color: #6e6e73; font-size: 13.5px; }
+  .ev-none { color: #a1a1a6; }
+  .ev-pact { text-align: right; }
+  .ev-qnote { padding: 12px 16px 14px; border-top: 1px solid var(--border); background: #f5f9ff; animation: isr-row-in .3s cubic-bezier(.32, .72, 0, 1); }
+  .ev-qnote textarea { width: 100%; min-height: 64px; padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: 12px; background: #fdfdfe; font: inherit; font-size: 15px; resize: vertical; }
+  .ev-qnote-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .ev-lfollow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 8px; }
+  .ev-lfollow .ev-fpill { padding: 2px 10px; font-size: 13px; }
+  .ev-lconv { color: #6e6e73; font-size: 13.5px; font-weight: 500; }
+  html body .ev-note.due::before { background: #ff9500; }
+  .ev-fsum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 4px 0 16px; }
+  .ev-fmeter { padding: 14px 18px; border-radius: 16px; background: #f5f5f7; }
+  .ev-fmeter span { display: block; color: #515154; font-size: 14px; font-weight: 500; }
+  .ev-fmeter b { display: inline-block; margin-top: 4px; color: #1d1d1f; font-size: 28px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .ev-fmeter small { margin-left: 8px; color: #6e6e73; font-size: 14px; }
+  .ev-fmeter-bar { height: 6px; margin-top: 10px; border-radius: 980px; background: #e3e3e8; overflow: hidden; }
+  .ev-fmeter-bar i { display: block; width: var(--w, 0%); height: 100%; border-radius: inherit; background: #0071e3; animation: ev-grow .9s cubic-bezier(.16, 1, .3, 1) backwards; }
+  .ev-fmeter.conv .ev-fmeter-bar i { background: #28a745; }
+  .ev-fmeter.wait .ev-fmeter-bar i { background: #ff9500; }
+  .ev-ftiles { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; }
+  .ev-ftile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border: 0; border-radius: 14px; background: #fdfdfe; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07); font: inherit; text-align: left; cursor: pointer; transition: box-shadow .2s, background-color .2s, transform .15s; }
+  .ev-ftile:hover { background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .12), 0 4px 14px -6px rgba(0, 0, 0, .18); }
+  .ev-ftile:active { transform: scale(.97); }
+  .ev-ftile.on { box-shadow: 0 0 0 2px #0071e3, 0 4px 14px -6px rgba(0, 113, 227, .35); }
+  .ev-ftile b { color: #1d1d1f; font-size: 24px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .ev-ftile span { color: #515154; font-size: 13.5px; font-weight: 500; }
+  .ev-ftile::after { content: ""; position: absolute; top: 14px; right: 14px; width: 8px; height: 8px; border-radius: 50%; background: #c7c7cc; }
+  .ev-ftile.new::after { background: #ff3b30; }
+  .ev-ftile.due::after { background: #ff9500; }
+  .ev-ftile.ok::after { background: #34c759; }
+  .ev-ftile.applied::after { background: #0071e3; }
+  .ev-ftile.visa::after { background: #28a745; }
+  .ev-ftile.all::after { display: none; }
+  .ev-team { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; margin: 0 0 16px; padding: 12px 16px; border-radius: 16px; background: #f5f5f7; }
+  .ev-team-title { color: #515154; font-size: 14px; font-weight: 600; margin-right: 4px; }
+  .ev-team-person { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 980px; background: #fdfdfe; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
+  .ev-team-av { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font-size: 12.5px; font-weight: 700; }
+  .ev-team-person b { display: block; font-size: 14px; font-weight: 600; }
+  .ev-team-person small { display: block; color: #6e6e73; font-size: 12.5px; }
+  @media (max-width: 1100px) { .ev-ftiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 900px) { .ev-person { grid-template-columns: minmax(0, 1fr); } .ev-pact { text-align: left; } }
+  @media (max-width: 700px) {
+    .ev-fsum { grid-template-columns: minmax(0, 1fr); }
+    .ev-ftiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ev-fmeter b { font-size: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ev-fmeter-bar i, .ev-qnote { animation: none; } }
 </style>
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />

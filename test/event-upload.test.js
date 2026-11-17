@@ -142,6 +142,21 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   const people = (await admin('GET', `/api/activities/${ids['ABC event']}/students`)).json.students;
   assert.strictEqual(people.length, 4);
   assert.ok(people.every((s) => s.lastNote));
+  // The follow-up of the event (the owner, 17 Nov 2026): each student's status, worked out from the stage, the notes and the messages,
+  // the last contact, who followed up, and the counts on the list of events.
+  const got = (await admin('GET', `/api/activities/${ids['ABC event']}/students`)).json;
+  assert.strictEqual(got.followDays, 3, 'the same rule as Inquiries to follow up on Today');
+  assert.ok(got.students.every((s) => ['new', 'due', 'ok', 'applied', 'visa', 'inactive'].includes(s.follow)));
+  assert.ok(got.students.every((s) => s.lastContact && s.contacts >= 1 && s.follow !== 'new'), 'a student with a note has been contacted');
+  assert.ok(got.team.length >= 1 && got.team.every((t) => t.students >= 1 && t.notes >= 1));
+  const quiet = got.students.find((s) => s.stage === 'Inquiry');
+  const ev = (await admin('GET', '/api/activities')).json.activities.find((x) => x.id === ids['ABC event']);
+  assert.strictEqual(Object.values(ev.follow).reduce((n, x) => n + x, 0) + got.students.filter((s) => ['applied', 'visa'].includes(s.follow)).length, ev.leads, 'every student of the event is counted once');
+  if (quiet) {
+    assert.strictEqual((await admin('POST', `/api/cards/${quiet.id}/notes`, { text: 'Called from the event page' })).status, 200);
+    const again = (await admin('GET', `/api/activities/${ids['ABC event']}/students`)).json.students.find((s) => s.id === quiet.id);
+    assert.deepStrictEqual([again.follow, again.days, again.lastContact.text], ['ok', 0, 'Called from the event page'], 'a note written today counts as followed up');
+  }
   const tags = (await follow('GET', '/api/event-tags')).json;
   assert.ok(Object.values(tags.rows).every((label) => typeof label === 'string'));
   assert.ok(!JSON.stringify(tags).includes('20000'), 'no cost in the tags');

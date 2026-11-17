@@ -1272,11 +1272,40 @@ function createPortalApi({
     if (!d) return null;
     return eventFor(planning.all().events, detail);
   };
+  // Where a student of an event stands in the follow-up (the owner, 17 Nov 2026: "which event has converted, and has the student
+  // been followed up"), worked out from what is already recorded, so nothing new has to be typed:
+  //   visa      a visa (Visa Issued, or a visa received date)
+  //   applied   past Inquiry and still going (or an application submitted): converted
+  //   inactive  Withdrawn, Hold, Defer or Visa Rejected
+  //   new       at Inquiry, no note and no message yet: not contacted
+  //   due       at Inquiry, the last note or message FOLLOW_DAYS days ago or more: the same rule as "Inquiries to follow up" on Today
+  //   ok        at Inquiry, contacted in the last FOLLOW_DAYS days
+  const FOLLOW_DAYS = 3;
+  const INACTIVE_STAGES = ['Withdrawn', 'Hold', 'Defer', 'Visa Rejected'];
+  function followOf(row, card, todayNo) {
+    const stage = text(row[STATUS]);
+    const touches = [...((card && card.notes) || []).map((n) => ({ at: n.at, by: n.by, what: 'note', text: n.text })), ...((card && card.messages) || []).filter((m) => m.status !== 'failed' && m.status !== 'preview').map((m) => ({ at: m.at, by: m.by, what: m.channel === 'whatsapp' ? 'WhatsApp' : 'email', text: m.subject || '' }))]
+      .filter((x) => x.at).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    const last = touches.length ? touches[touches.length - 1] : null;
+    const lastDay = last ? Math.floor(Date.parse(localDate(new Date(last.at)) + 'T00:00:00Z') / 86400000) : null;
+    const days = lastDay === null ? null : Math.max(0, todayNo - lastDay);
+    let state;
+    if (stage === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) state = 'visa';
+    else if (INACTIVE_STAGES.includes(stage)) state = 'inactive';
+    else if (stage !== 'Inquiry' || text(row['APPLICATION SUBMISSION DATE'])) state = 'applied';
+    else if (!last) state = 'new';
+    else if (days >= FOLLOW_DAYS) state = 'due';
+    else state = 'ok';
+    return { state, stage, last, days, touches };
+  }
+  const todayNumber = () => Math.floor(Date.parse(cards.today() + 'T00:00:00Z') / 86400000);
+
   function activities(user) {
     const wb = getWorkbook();
     const plan = planning.all();
     const all = cards.all();
-    const list = plan.events.map((e) => ({ ...e, leads: 0, applied: 0, visas: 0, students: [] }));
+    const list = plan.events.map((e) => ({ ...e, leads: 0, applied: 0, visas: 0, students: [], follow: { new: 0, due: 0, ok: 0, inactive: 0 } }));
+    const todayNo = todayNumber();
     const byName = (detail) => eventFor(list, detail);
     let unlinkedSocial = 0; // students from social media not tagged with any campaign: in no cost per student
     if (wb) wb.sheets.forEach((sheet) => sheet.rows.forEach((row) => {
@@ -1288,6 +1317,8 @@ function createPortalApi({
       const stage = text(row[STATUS]);
       if (!['Inquiry', 'Defer', 'Hold', 'Withdrawn'].includes(stage) || text(row['APPLICATION SUBMISSION DATE'])) e.applied += 1;
       if (stage === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) e.visas += 1;
+      const f = followOf(row, card, todayNo).state;
+      if (f in e.follow) e.follow[f] += 1;
       if (e.students.length < 60) e.students.push({ id: row._id, name: nameOf(row), stage, intake: sheet.name });
     }));
     const day = (iso) => Math.round(Date.parse(iso + 'T00:00:00Z') / 86400000);
@@ -1295,7 +1326,7 @@ function createPortalApi({
       id: e.id, name: e.name, kind: e.kind || 'Event', type: e.type, channel: channelOf(e), place: e.place, date: e.date, endDate: e.endDate || '',
       days: e.date ? (e.endDate ? day(e.endDate) - day(e.date) + 1 : 1) : 0, note: e.note, cost: e.cost, costCurrency: e.costCurrency || 'NPR', costAmount: e.costAmount === undefined ? e.cost : e.costAmount, costRate: e.costRate || 0, leads: e.leads, applied: e.applied, visas: e.visas,
       costPerLead: e.cost > 0 && e.leads > 0 ? Math.round(e.cost / e.leads) : null, costPerVisa: e.cost > 0 && e.visas > 0 ? Math.round(e.cost / e.visas) : null,
-      students: e.students, registered: e.registered, attended: e.attended,
+      students: e.students, registered: e.registered, attended: e.attended, follow: e.follow,
     }));
     return { list: shaped, unlinkedSocial };
   }
@@ -1960,18 +1991,39 @@ function createPortalApi({
 
   // Every student of one event, for its page on Events and marketing: who, the phone, the stage, the intake and the latest note, so the
   // team can work through the list (open the card, call, write the note) without looking through the intakes one by one.
+  // The students of one event with where each stands in the follow-up (see followOf), the last contact and the remark, and who in
+  // the team has followed them up, so the event page shows it all without opening each card.
   function eventStudents(user, ev) {
     const plan = planning.all();
     const all = cards.all();
+    const todayNo = todayNumber();
     const out = [];
+    const team = new Map(); // a person: the students they contacted, their notes and messages, their latest contact
     for (const { sheet, row } of visibleStudents(user)) {
       const card = all[row._id];
       const e = card && eventFor(plan.events, card.profile.sourceDetail);
       if (!e || e.id !== ev.id) continue;
-      const last = card.notes && card.notes.length ? card.notes[card.notes.length - 1] : null;
-      out.push({ id: row._id, name: nameOf(row), phone: text(row['CONTACT NUMBER']), email: text(row.EMAIL), stage: text(row[STATUS]), intake: sheet.name, visa: text(row[STATUS]) === 'Visa Issued' || Boolean(text(row['VISA RECEIVED DATE'])), lastNote: last ? { at: last.at, by: last.by, text: String(last.text).slice(0, 160) } : null });
+      const f = followOf(row, card, todayNo);
+      const lastNote = card.notes && card.notes.length ? card.notes[card.notes.length - 1] : null;
+      const met = new Set();
+      f.touches.forEach((x) => {
+        const who = text(x.by).replace(/\s*\(the student\)$/, '');
+        if (!who || who !== text(x.by)) return; // a note the student wrote is not a follow-up
+        const t = team.get(who) || { name: who, students: 0, notes: 0, last: '' };
+        t.notes += 1; if (!met.has(who)) { met.add(who); t.students += 1; }
+        if (String(x.at) > t.last) t.last = String(x.at);
+        team.set(who, t);
+      });
+      out.push({
+        id: row._id, name: nameOf(row), phone: text(row['CONTACT NUMBER']), email: text(row.EMAIL), stage: f.stage, intake: sheet.name,
+        visa: f.state === 'visa', follow: f.state, days: f.days, contacts: f.touches.length,
+        lastContact: f.last ? { at: f.last.at, by: f.last.by, what: f.last.what, text: String(f.last.text || '').slice(0, 200) } : null,
+        lastNote: lastNote ? { at: lastNote.at, by: lastNote.by, text: String(lastNote.text).slice(0, 200) } : null,
+        remarks: text(row.REMARKS).slice(0, 200), lostReason: text(card.profile && card.profile.lostReason),
+        canNote: canChange(user, rowIndex().get(row._id)),
+      });
     }
-    return out.sort((a, b) => a.name.localeCompare(b.name));
+    return { students: out.sort((a, b) => a.name.localeCompare(b.name)), team: [...team.values()].sort((a, b) => b.students - a.students || b.notes - a.notes), followDays: FOLLOW_DAYS };
   }
 
   // Which event or campaign each student came from, for the Source filter of All Students: only the students the account
@@ -2737,7 +2789,7 @@ function createPortalApi({
         if (!managers(req, res, 'Events and marketing')) return true;
         const ev = planning.all().events.find((e) => e.id === m[1]);
         if (!ev) { sendJSON(res, 404, { error: 'No such event or marketing.' }); return true; }
-        sendJSON(res, 200, { students: eventStudents(req.user, ev) });
+        sendJSON(res, 200, eventStudents(req.user, ev));
         return true;
       }
       if (m && req.method === 'POST') {
