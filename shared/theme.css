@@ -3314,17 +3314,7 @@ html body .sl-pick.is-sent { background: #ececf0; color: #3a3a3c; cursor: defaul
 /* (the same change) room at the bottom of a card opened over a page, so the ‹ › pill never covers its last line */
 body.p-embed { padding-bottom: 76px; }
 
-/* 🔴 CSS CHANGED (2026-11-17): All Students: a row of stage buttons above the sheet (new) | from: nothing between the tool buttons and the sheet (a stage was shown only through the small ▼ menu of the Application Status column) | to: one row of grey pills, "All 116", "Inquiry 20", "Application Stage 41" ..., each with its count in a small bubble; the one shown is a filled blue pill with white text; the row lines up with the sheet's left edge and scrolls sideways when it does not fit; hidden when printing */
-.stage-chips { display: flex; gap: 8px; margin: 2px 0 12px; padding: 2px 32px 4px; overflow-x: auto; scrollbar-width: none; scroll-padding-inline: 32px; }
-@media (max-width: 900px) { .stage-chips { padding-left: 14px; padding-right: 14px; } }
-.stage-chips[hidden] { display: none; }
-.stage-chips::-webkit-scrollbar { display: none; }
-.stage-chip { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 8px 0 14px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 500 14.5px var(--font); white-space: nowrap; cursor: pointer; transition: background-color .15s ease, color .15s ease; }
-.stage-chip:hover { background: #dcdce2; }
-.stage-chip-n { min-width: 24px; padding: 1px 7px; border-radius: 999px; background: rgba(255, 255, 255, .75); color: #3a3a3c; font-size: 12.5px; font-weight: 650; text-align: center; font-variant-numeric: tabular-nums; }
-.stage-chip.on { background: #0071e3; color: #fff; }
-.stage-chip.on .stage-chip-n { background: rgba(255, 255, 255, .22); color: #fff; }
-.stage-chip:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+/* 🔴 CSS CHANGED (2026-11-17): All Students: the row of stage buttons above the sheet removed | from: a row of grey pills "All 116", "Inquiry 48", "Application Stage 19" ... with counts, the chosen one blue | to: nothing between the tool buttons and the sheet, as before (the owner: Show numbers already gives every count) */
 
 /* 🔴 CSS CHANGED (2026-11-17): Dashboard: the five figures at the top open their students | from: five figure boxes you could only look at | to: the same boxes, pressable: on hover they lift a little and show a small blue "See the students ›" under the figure; a press opens a window with a grey pill search box and the students as a list (a round initials badge, the name in bold, the university in grey, the stage as a grey pill on the right), each row soft grey on hover */
 button.ov-kpi { width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
