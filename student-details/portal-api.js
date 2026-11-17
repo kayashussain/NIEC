@@ -476,7 +476,7 @@ function createPortalApi({
   // Every application ISR knows for a student: University options with a day, and the sheet's own university when it has a date.
   function applicationsOf(row, card) {
     const out = (card.options || []).filter((o) => o.applied || o.offer || o.refused || o.withdrawn)
-      .map((o) => ({ id: o.id, university: o.university, course: o.course, applied: o.applied || '', offer: o.offer || '', offerType: o.offerType || '', refused: o.refused || '', withdrawn: o.withdrawn || '' }));
+      .map((o) => ({ id: o.id, university: o.university, course: o.course, applied: o.applied || '', offer: o.offer || '', offerType: o.offerType || '', refused: o.refused || '', withdrawn: o.withdrawn || '', reason: o.reason || '' }));
     const uni = text(row['UNIVERSITY NAME']);
     const applied = isoDate(row['APPLICATION SUBMISSION DATE']) || '';
     const offer = isoDate(row['OFFER RECEIVED DATE']) || '';

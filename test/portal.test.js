@@ -44,6 +44,12 @@ test('notes and options are saved on the card and survive a restart', () => {
   assert.strictEqual(option.deposit, '£8,000');
   assert.ok(cards.addOption('row-1', { university: 'University of West London', course: 'msc cyber security' }, 'Asha').duplicate, 'the same course is listed once');
   cards.updateOption('row-1', option.id, { link: 'https://www.uwl.ac.uk/course/cyber' }, 'Asha');
+  // The Application Team records the submission and the answer on the card, with the reason for a refusal (the owner, 17 Nov 2026).
+  cards.updateOption('row-1', option.id, { applied: '2026-11-02', refused: '2026-11-10', reason: 'Grades below the entry requirement' }, 'Asha');
+  const rec = cards.get('row-1').options.find((o) => o.id === option.id);
+  assert.deepStrictEqual([rec.applied, rec.refused, rec.reason, rec.link], ['2026-11-02', '2026-11-10', 'Grades below the entry requirement', 'https://www.uwl.ac.uk/course/cyber']);
+  cards.updateOption('row-1', option.id, { applied: 'soon' }, 'Asha');
+  assert.strictEqual(cards.get('row-1').options.find((o) => o.id === option.id).applied, '', 'only a real day is kept');
   // Only the writer (or Admin) removes a note.
   const second = cards.addNote('row-1', { text: 'Documents promised' }, 'Asha');
   assert.ok(cards.removeNote('row-1', added.note.id, 'Bikram').error);

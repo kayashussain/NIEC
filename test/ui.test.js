@@ -157,8 +157,11 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     assert.match(await frame.locator('.p-hero h1').textContent(), /Student/);
     assert.ok(await frame.locator('.p-tabs button').count() === 2, 'two tabs only: Notes and University options (no Send a message, the owner, 17 Nov 2026)');
     assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp, Email and Copy number are under the name');
-    // No source recorded: the card asks for it every time it opens (the owner, 17 Nov 2026); Not now closes it and the card is used as before.
-    await frame.locator('dialog.p-dialog h2', { hasText: 'Where did this student come from?' }).waitFor();
+    // No source recorded: the card asks for it every time it opens (the owner, 17 Nov 2026), and from Application Stage on also the
+    // missing details (phone, email, date of birth, passport); never the application or offer day. Not now closes it.
+    await frame.locator('dialog.p-dialog h2', { hasText: /Where did this student come from\?|Details missing for this student/ }).waitFor();
+    assert.strictEqual(await frame.locator('dialog.p-dialog').getByText('Student source', { exact: true }).count(), 1, 'the source is asked');
+    assert.strictEqual(await frame.locator('dialog.p-dialog').getByText(/Application submitted|Offer received/).count(), 0, 'never the application or offer day');
     await frame.getByRole('button', { name: 'Not now' }).click();
     await frame.locator('dialog.p-dialog').waitFor({ state: 'detached' });
     // The keyboard is in the card now: typing must not reach the cell of the sheet hidden behind it.

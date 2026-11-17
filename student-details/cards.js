@@ -77,6 +77,8 @@ function cleanOption(input, old = {}) {
     offerType: (() => { const v = pick('offerType', 20); return ['Conditional', 'Unconditional'].includes(v) ? v : ''; })(),
     refused: (() => { const v = pick('refused', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     withdrawn: (() => { const v = pick('withdrawn', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    // Why it was refused or withdrawn, in a few words (typed on the student card by the Application Team, the owner, 17 Nov 2026).
+    reason: pick('reason', 300),
     // Sent to the Application Team from the shortlist (the day), and its place in the order it was sent in (1, 2, 3 ...).
     sent: (() => { const v = pick('sent', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     rank: (() => { const v = pick('rank', 3); return /^\d{1,2}$/.test(v) ? v : ''; })(),
