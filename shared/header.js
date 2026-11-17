@@ -119,11 +119,15 @@
     return deps.includes('followup') ? 'followup' : 'staff';
   };
 
-  // Admin's own pages (people, the record of what happened, Incentive), under their own heading in the menu. The account menu holds
-// Connect my phone (WhatsApp chats open on the person's phone, the owner, 17 Nov 2026) and Log out; a person's own email, signature and WhatsApp number are set up on Follow-up, where
-// messages to students are sent from (the owner, 17 Nov 2026).
+  // Admin's own pages (people, the record of what happened), under their own heading in the menu. The account menu holds
+// Incentive (Admin only, behind its own password, moved there from the side menu, the owner, 17 Nov 2026), Connect my phone
+// (WhatsApp chats open on the person's phone, the owner, 17 Nov 2026) and Log out; a person's own email, signature and WhatsApp
+// number are set up on Follow-up, where messages to students are sent from (the owner, 17 Nov 2026).
   const MENU_LINKS = {
-    admin: [['users', '/users', 'Users'], ['activity', '/activity', 'Activity'], ['incentive', '/incentive/', 'Incentive']],
+    admin: [['users', '/users', 'Users'], ['activity', '/activity', 'Activity']],
+  };
+  const ACCOUNT_LINKS = {
+    admin: [['incentive', '/incentive/', 'Incentive']],
   };
 
   // The partner pages a person may open besides their own (the same rules as student-details/partner-access.js): the Manager all of
@@ -148,13 +152,13 @@
     const extra = sharedLinks(me);
     const at = own.findIndex(([id]) => id === 'factfile');
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
-    paletteLinks = [...links, ...(MENU_LINKS[me.role] || [])];
+    paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];
     // Follow-up and Add many students belong to All Students in a menu that has no link of their own.
     const menuPage = ['direct', 'b2b', 'agents'].includes(header.dataset.page) ? 'partners' : header.dataset.page;
     const page = links.some(([id]) => id === menuPage) || !['bulk', 'bulkadd'].includes(menuPage) ? menuPage : 'sheet';
     header.querySelector('.niec-nav').innerHTML = links
       .map(([id, href, label]) => `<a href="${href}" title="${label}"${id === page ? ' aria-current="page"' : ''}><span class="niec-ico" aria-hidden="true">${ICONS[id] || ''}</span><span class="niec-lbl">${label}</span></a>`).join('')
-      // Admin's own pages are in the menu too, under their own heading (Users, Activity, Incentive).
+      // Admin's own pages are in the menu too, under their own heading (Users, Activity); Incentive is in the account menu.
       + ((MENU_LINKS[me.role] || []).length ? `<div class="niec-sep" role="presentation"><span>Admin only</span></div>` + (MENU_LINKS[me.role] || []).map(([id, href, label]) => `<a href="${href}" title="${label}"${id === page ? ' aria-current="page"' : ''}><span class="niec-ico" aria-hidden="true">${ICONS[id] || ''}</span><span class="niec-lbl">${label}</span></a>`).join('') : '')
       ;
     const burger = header.querySelector('.niec-burger');
@@ -187,6 +191,7 @@
       </button>
       <div class="niec-menu" role="menu" hidden>
         <div class="niec-menu-head"><b>${esc(me.name)}</b><span>${esc(me.username)} · ${esc(me.roleLabel)}</span></div>
+        ${(ACCOUNT_LINKS[me.role] || []).map(([id, href, label]) => `<a href="${href}" role="menuitem" class="niec-${id}"${id === page ? ' aria-current="page"' : ''}>${esc(label)}</a>`).join('')}
         ${me.role === 'student' ? '' : '<button type="button" role="menuitem" class="niec-phone">Connect my phone</button>'}
         <button type="button" role="menuitem" class="niec-logout">Log out</button>
       </div>`;
