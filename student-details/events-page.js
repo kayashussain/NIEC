@@ -39,20 +39,15 @@
   const SIGN = { USD: '$', GBP: '\u00a3' };
   const UNIT = { USD: 'dollar', GBP: 'pound' };
   const paidIn = (a) => (a.costCurrency && a.costCurrency !== 'NPR' && a.costAmount ? `${SIGN[a.costCurrency]}${Number(a.costAmount).toLocaleString('en-US', { maximumFractionDigits: 2 })} at Rs ${Number(a.costRate).toFixed(2)} a ${UNIT[a.costCurrency]}` : '');
+  // Students of an event still waiting for a follow-up: never contacted, or no contact for a few days.
+  const waitOf = (a) => ((a.follow && a.follow.new) || 0) + ((a.follow && a.follow.due) || 0);
   const per = (cost, n) => (cost > 0 && n > 0 ? rupees(Math.round(cost / n)) : 'None yet');
-  const tag = (a) => el('span', 'ev-tag' + (a.kind === 'Marketing' ? ' mk' : ''), a.channel || 'Other');
-  // A small calendar leaf with the month and the day it started, so the list reads like a calendar at a glance.
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  function leaf(a, big) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(a.date || '');
-    const d = el('div', 'ev-leaf' + (big ? ' big' : '') + (a.kind === 'Marketing' ? ' mk' : ''));
-    d.setAttribute('aria-hidden', 'true');
-    d.append(el('span', '', m ? MONTHS[Number(m[2]) - 1] : '-'), el('b', '', m ? String(Number(m[3])) : '?'));
-    return d;
-  }
+  // The grey line under a name: where it ran and when.
+  const where = (a, more) => [a.channel || 'Other', ...more].filter(Boolean).join(' \u00b7 ');
   function band(items) {
     const b = el('div', 'ev-band');
-    items.forEach(([label, value, sub, gold]) => { const d = el('div', gold ? 'gold' : ''); d.append(el('span', '', label), el('b', '', value), el('small', '', sub || '')); b.append(d); });
+    b.style.setProperty('--n', String(items.length));
+    items.forEach(([label, value, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', value)); if (sub) d.append(el('small', '', sub)); b.append(d); });
     return b;
   }
 
@@ -62,21 +57,19 @@
     const acts = intake === 'all' ? every : every.filter((a) => a.intake === intake);
     const scopeName = intake === 'all' ? 'all intakes' : intakeName(intake);
     const t = acts.reduce((s, a) => ({ cost: s.cost + (a.cost || 0), leads: s.leads + a.leads, visas: s.visas + a.visas }), { cost: 0, leads: 0, visas: 0 });
+    const waitingAll = acts.reduce((n, a) => n + waitOf(a), 0);
     $('band').replaceWith(Object.assign(band([
       ['Total cost', rupees(t.cost) || 'Rs 0', `${acts.length === 1 ? '1 event or campaign' : `${acts.length} events and campaigns`}, ${scopeName}`],
-      ['Inquiries', number(t.leads)],
+      ['Inquiries', number(t.leads), waitingAll ? `${number(waitingAll)} to follow up` : (t.leads ? 'All followed up' : '')],
       ['Visas', number(t.visas)],
-      ['Cost per inquiry', per(t.cost, t.leads), '', true],
-      ['Cost per visa', per(t.cost, t.visas), '', true],
+      ['Cost per visa', per(t.cost, t.visas), t.leads ? `${per(t.cost, t.leads)} per inquiry` : ''],
     ]), { id: 'band' }));
     $('note').replaceChildren();
-    const waitingAll = acts.reduce((n, a) => n + ((a.follow && a.follow.new) || 0) + ((a.follow && a.follow.due) || 0), 0);
-    if (waitingAll > 0) $('note').append(el('div', 'ev-note due', `${number(waitingAll)} ${waitingAll === 1 ? 'inquiry from an event waits' : 'inquiries from events wait'} for a follow-up. Open an event to see who.`));
     const unlinked = intake === 'all' ? data.unlinkedSocial : ((data.unlinkedByIntake || {})[intake] || 0);
-    if (unlinked > 0) $('note').append(el('div', 'ev-note', `${number(unlinked)} social media ${unlinked === 1 ? 'inquiry' : 'inquiries'}${intake === 'all' ? '' : ` in ${scopeName}`} ${unlinked === 1 ? 'is' : 'are'} not linked to a campaign (and not marked Organic), so ${unlinked === 1 ? 'it is' : 'they are'} in no campaign's cost per inquiry.`));
+    if (unlinked > 0) $('note').append(el('p', 'ev-note', `${number(unlinked)} social media ${unlinked === 1 ? 'inquiry' : 'inquiries'}${intake === 'all' ? '' : ` in ${scopeName}`} ${unlinked === 1 ? 'is' : 'are'} not linked to a campaign (and not marked Organic), so ${unlinked === 1 ? 'it is' : 'they are'} in no campaign's cost per inquiry.`));
     // An event with no intake chosen and no students yet belongs to no intake: it is only under All intakes, so say so.
     const loose = intake === 'all' ? 0 : every.filter((a) => !a.intake).length;
-    if (loose > 0) $('note').append(el('div', 'ev-note', `${number(loose)} ${loose === 1 ? 'event or campaign has' : 'events and campaigns have'} no intake yet (none chosen and no students yet), so ${loose === 1 ? 'it is' : 'they are'} only under All intakes. Choose the intake with Edit.`));
+    if (loose > 0) $('note').append(el('p', 'ev-note', `${number(loose)} ${loose === 1 ? 'event or campaign has' : 'events and campaigns have'} no intake yet (none chosen and no students yet), so ${loose === 1 ? 'it is' : 'they are'} only under All intakes. Choose the intake with Edit.`));
     $('add').hidden = !data.canEdit;
     const q = find.trim().toLowerCase();
     const shown = (show === 'all' ? acts : acts.filter((a) => (show === 'Marketing' ? a.kind === 'Marketing' : a.kind !== 'Marketing')))
@@ -86,7 +79,7 @@
     const list = $('list');
     const empty = (title, line, withAdd) => {
       const e = el('div', 'ev-empty');
-      e.append(el('div', 'ev-empty-icon', '\u2726'), el('b', '', title), el('p', '', line));
+      e.append(el('b', '', title), el('p', '', line));
       if (withAdd && data.canEdit) e.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => form(null) }, '+ New event or campaign'));
       return e;
     };
@@ -94,29 +87,15 @@
     if (!acts.length) { list.replaceChildren(empty(`No events or campaigns for ${scopeName} yet`, 'Choose another intake at the top, or All intakes.', true)); return; }
     if (!shown.length) { list.replaceChildren(empty(q ? `Nothing matches \u201c${find.trim()}\u201d` : 'Nothing here yet', q ? 'Try another word, or clear the search.' : 'Choose All to see every event and campaign.')); return; }
     const head = el('div', 'ev-lrow head');
-    ['Event or campaign', 'Cost', 'Inquiries', 'Visas', 'Per inquiry', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
+    ['Event or campaign', 'Cost', 'Inquiries', 'To follow up', 'Visas', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
     list.replaceChildren(head, ...shown.map((a) => {
       const r = el('div', 'ev-lrow item');
-      r.style.setProperty('--i', String(Math.min(shown.indexOf(a), 12)));
       r.tabIndex = 0; r.setAttribute('role', 'button'); r.setAttribute('aria-label', `Open ${a.name}`);
       const who = el('div');
-      const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', [`${ran(a)} · ${a.days} day${a.days === 1 ? '' : 's'}`, intake === 'all' ? (a.intakeName || 'No intake yet') : ''].filter(Boolean).join(' · ')));
-      const words = el('div', 'ev-lwords'); words.append(el('div', 'ev-lname', a.name), meta);
-      // The follow-up of the event at a glance: who still waits for a call, and how many have applied.
-      const fo = a.follow || {};
-      const waiting = (fo.new || 0) + (fo.due || 0);
-      if (a.leads) {
-        const line = el('div', 'ev-lfollow');
-        if (fo.new) line.append(el('span', 'ev-fpill new', `${fo.new} not contacted`));
-        if (fo.due) line.append(el('span', 'ev-fpill due', `${fo.due} follow-up due`));
-        if (!waiting) line.append(el('span', 'ev-fpill ok', '\u2713 All followed up'));
-        // The same figure as Applied in the event's "From inquiry to visa" (ever applied), so the list and the event agree.
-        line.append(el('span', 'ev-lconv', `${Math.round((a.applied / a.leads) * 100)}% applied`));
-        words.append(line);
-      }
-      who.className = 'ev-lwho'; who.append(leaf(a), words);
-      const num = (label, v, gold) => { const d = el('div', 'num' + (gold ? ' gold' : '') + (v === 'None yet' || v === '-' ? ' none' : ''), v); d.dataset.label = label; return d; };
-      r.append(who, num('Cost', a.cost ? rupees(a.cost) : '-'), num('Inquiries', number(a.leads)), num('Visas', number(a.visas)), num('Per inquiry', per(a.cost, a.leads), a.cost > 0 && a.leads > 0), num('Per visa', per(a.cost, a.visas), a.cost > 0 && a.visas > 0), el('div', 'ev-go', '→'));
+      who.append(el('div', 'ev-lname', a.name), el('div', 'ev-lmeta', where(a, [ran(a), intake === 'all' ? (a.intakeName || 'No intake yet') : ''])));
+      const num = (label, v, k) => { const d = el('div', 'num' + (v === '-' ? ' none' : '') + (k ? ' ' + k : ''), v); d.dataset.label = label; return d; };
+      const wait = waitOf(a);
+      r.append(who, num('Cost', a.cost ? rupees(a.cost) : '-'), num('Inquiries', a.leads ? number(a.leads) : '-'), num('To follow up', a.leads ? number(wait) : '-', wait ? 'wait' : ''), num('Visas', a.leads ? number(a.visas) : '-'), num('Per visa', a.cost > 0 && a.visas > 0 ? per(a.cost, a.visas) : '-'), el('div', 'ev-go', '\u203a'));
       const go = () => window.NiecUI.swap(() => { openEvent(a.id); window.scrollTo({ top: 0 }); });
       r.addEventListener('click', go);
       r.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
@@ -134,145 +113,96 @@
     const back = h('button', { class: 'ev-back', type: 'button', onclick: () => window.NiecUI.swap(closeEvent) }, '← Events and campaigns');
     const head = el('div', 'ev-head');
     const left = el('div');
-    const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', [ran(a), `${a.days} day${a.days === 1 ? '' : 's'}`, a.place, a.intakeName ? `${a.intakeName}${a.intakeHow === 'students' ? ' (from its students)' : ''}` : 'No intake yet'].filter(Boolean).join(' \u00b7 ')));
-    const title = el('div', 'ev-title'); const words = el('div'); words.append(el('h2', '', a.name), meta);
-    title.append(leaf(a, true), words);
-    left.append(title);
+    left.append(el('h2', '', a.name), el('div', 'ev-lmeta', where(a, [ran(a), a.place, a.intakeName ? `${a.intakeName}${a.intakeHow === 'students' ? ' (from its students)' : ''}` : 'No intake yet'])));
     if (a.note) left.append(el('p', 'ev-about', a.note));
     // Its students in more than one intake: where they are, so the figures below (every intake) are read right.
     if ((a.perIntake || []).length > 1) left.append(el('p', 'ev-about', `Its students: ${a.perIntake.map((x) => `${number(x.students)} in ${x.name}`).join(', ')}. The figures below count all of them.`));
     head.append(left);
     if (data.canEdit) head.append(h('button', { class: 'btn', type: 'button', onclick: () => form(a) }, 'Edit'));
+    const pc = (n) => (a.leads ? `${Math.round((n / a.leads) * 100)}% of inquiries` : '');
     const figs = band([
       ['Cost', a.cost ? rupees(a.cost) : 'Not entered', paidIn(a) || (data.canEdit && !a.cost ? 'Add it with Edit' : '')],
-      ['Inquiries', number(a.leads), `${number(a.applied)} applied`],
-      ['Visas', number(a.visas)],
-      ['Cost per inquiry', per(a.cost, a.leads), '', true],
-      ['Cost per visa', per(a.cost, a.visas), '', true],
+      ['Inquiries', number(a.leads), a.cost > 0 && a.leads > 0 ? `${per(a.cost, a.leads)} each` : ''],
+      ['Applied', number(a.applied), pc(a.applied)],
+      ['Visas', number(a.visas), pc(a.visas)],
+      ['Cost per visa', per(a.cost, a.visas)],
     ]);
-    figs.style.marginTop = '20px';
-    const flow = funnel(a);
+    figs.style.marginTop = '22px';
     const upload = data.canEdit ? uploadPanel(a) : null;
-    const people = el('section', 'ev-panel');
-    people.classList.add('ev-follow');
-    people.append(el('h3', '', 'Follow-up'), el('p', '', 'Everyone from this event, in every intake: where they stand, the last contact and the remark. Click a name to open the card, or write a note here.'));
+    const people = el('section', 'ev-section');
+    const ph = el('div', 'ev-section-head'); const pw = el('div');
+    pw.append(el('h3', '', 'Students'), el('p', '', 'Everyone from this event, in every intake. Click a name to open the card.'));
+    ph.append(pw); people.append(ph);
     const listBox = el('div'); listBox.innerHTML = '<div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     people.append(listBox);
-    v.replaceChildren(back, head, figs, flow, people, ...(upload ? [upload] : []));
+    v.replaceChildren(back, head, figs, people, ...(upload ? [upload] : []));
     loadPeople(a, listBox);
-  }
-  // From inquiry to visa: how many of the inquiries went on to apply and to a visa, as bars against the inquiries.
-  function funnel(a) {
-    const p = el('section', 'ev-panel ev-flow');
-    p.append(el('h3', '', 'From inquiry to visa'));
-    const top = Math.max(a.leads || 0, 1);
-    [['Inquiries', a.leads || 0, 'one'], ['Applied', a.applied || 0, 'two'], ['Visas', a.visas || 0, 'three']].forEach(([label, n, k], i) => {
-      const r = el('div', 'ev-flow-row');
-      const bar = el('div', 'ev-flow-bar'); const fill = el('i', k); fill.style.setProperty('--w', `${Math.max(n ? 2 : 0, Math.round((n / top) * 100))}%`); fill.style.setProperty('--i', String(i)); bar.append(fill);
-      const pc = i && a.leads ? `${Math.round((n / a.leads) * 100)}%` : '';
-      r.append(el('span', 'ev-flow-label', label), bar, el('b', '', number(n)), el('span', 'ev-flow-pc', pc));
-      p.append(r);
-    });
-    if (!a.leads) p.append(el('p', 'ev-flow-none', 'The bars fill once the inquiry list is uploaded.'));
-    return p;
   }
   function closeEvent() { open = null; $('eventView').hidden = true; $('eventView').replaceChildren(); $('listView').hidden = false; window.scrollTo({ top: 0 }); }
 
   // Where each student of the event stands in the follow-up (worked out on the server from the stage, the notes and the messages).
-  const FOLLOW = {
-    new: { label: 'Not contacted', hint: 'No note or message yet' },
-    due: { label: 'Follow-up due', hint: 'No contact for a few days' },
-    ok: { label: 'Followed up', hint: 'Contacted recently' },
-    applied: { label: 'Applying', hint: 'Converted: past Inquiry and applying' },
-    visa: { label: 'Visa', hint: 'Visa received' },
-    inactive: { label: 'Inactive', hint: 'Withdrawn, on hold, deferred or refused' },
-  };
+  // The switch above the table: those still waiting (never contacted, or no contact for a few days) come first.
+  const VIEWS = [
+    ['', 'All', () => true],
+    ['wait', 'To follow up', (s) => s.follow === 'new' || s.follow === 'due'],
+    ['ok', 'Followed up', (s) => s.follow === 'ok'],
+    ['applied', 'Applying', (s) => s.follow === 'applied'],
+    ['visa', 'Visa', (s) => s.follow === 'visa'],
+    ['inactive', 'Inactive', (s) => s.follow === 'inactive'],
+  ];
   const FOLLOW_ORDER = ['new', 'due', 'ok', 'applied', 'visa', 'inactive'];
-  const ago = (d) => (d === null || d === undefined ? '' : d === 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`);
+  const ago = (d) => (d === null || d === undefined ? '' : d === 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago`);
 
   async function loadPeople(a, box) {
     let got;
     try { got = await api(`/api/activities/${a.id}/students`); } catch (e) { box.replaceChildren(el('div', 'p-notice bad', e.message)); return; }
     const list = got.students || [];
-    const team = got.team || [];
     const rule = got.followDays || 3;
-    if (!list.length) { box.replaceChildren(el('div', 'ev-empty small', 'No inquiries yet. Upload the inquiry list to start the follow-up.')); return; }
-    const count = (k) => list.filter((s) => s.follow === k).length;
-    const contacted = list.filter((s) => s.contacts > 0 || ['applied', 'visa'].includes(s.follow)).length;
-    const converted = count('applied') + count('visa');
-    const pc = (n) => `${Math.round((n / list.length) * 100)}%`;
-
-    // The summary: how much of the event has been followed up and converted, at a glance.
-    const sum = el('div', 'ev-fsum');
-    const meter = (label, n, k) => { const d = el('div', 'ev-fmeter ' + k); const bar = el('div', 'ev-fmeter-bar'); const i = el('i'); i.style.setProperty('--w', pc(n)); bar.append(i); d.append(el('span', '', label), el('b', '', `${pc(n)}`), el('small', '', `${n} of ${list.length}`), bar); return d; };
-    sum.append(meter('Contacted at least once', contacted, 'reach'), meter('Converted (applying or visa)', converted, 'conv'), meter('Still waiting for a follow-up', count('new') + count('due'), 'wait'));
-
-    // The status tiles double as the filter.
-    let state = '';
-    const tiles = el('div', 'ev-ftiles');
-    tiles.setAttribute('role', 'group'); tiles.setAttribute('aria-label', 'Show');
-    const tile = (k, label, n, hint) => {
-      const b = h('button', { type: 'button', class: `ev-ftile ${k || 'all'}${k === state ? ' on' : ''}` });
-      b.append(el('b', '', String(n)), el('span', '', label));
-      if (hint) b.title = hint;
+    if (!list.length) { const e = el('div', 'ev-people'); e.append(el('div', 'ev-empty small', 'No students yet. Upload the inquiry list below to start the follow-up.')); box.replaceChildren(e); return; }
+    let state = list.some(VIEWS[1][2]) ? 'wait' : '';
+    const seg = el('div', 'ev-pills');
+    seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Show');
+    const segs = VIEWS.filter(([k, , ok]) => !k || list.some(ok)).map(([k, label, ok]) => {
+      const b = h('button', { type: 'button', class: k === state ? 'on' : '' });
+      b.append(label, el('i', '', String(list.filter(ok).length)));
       b.setAttribute('aria-pressed', String(k === state));
-      b.addEventListener('click', () => { state = state === k ? '' : k; tiles.querySelectorAll('button').forEach((x) => { const on = x === b && state === k; x.classList.toggle('on', on || (!state && x.classList.contains('all'))); x.setAttribute('aria-pressed', String(on)); }); drawPeople(); });
+      b.addEventListener('click', () => { state = k; segs.forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); drawPeople(); });
       return b;
-    };
-    tiles.append(tile('', 'Everyone', list.length), ...FOLLOW_ORDER.map((k) => tile(k, FOLLOW[k].label, count(k), k === 'due' ? `At Inquiry, no note or message for ${rule} days or more` : FOLLOW[k].hint)));
-    tiles.querySelector('.all').classList.add('on');
-
-    // Who in the team has followed these students up.
-    let who = null;
-    if (team.length) {
-      who = el('div', 'ev-team');
-      who.append(el('span', 'ev-team-title', 'Followed up by'));
-      team.slice(0, 12).forEach((t) => {
-        const c = el('div', 'ev-team-person');
-        c.append(el('span', 'ev-team-av', window.Portal.initials ? window.Portal.initials(t.name) : t.name.slice(0, 2)));
-        const w = el('div'); w.append(el('b', '', t.name), el('small', '', `${t.students} student${t.students === 1 ? '' : 's'} · ${t.notes} contact${t.notes === 1 ? '' : 's'} · last ${localDay(t.last)}`));
-        c.append(w);
-        who.append(c);
-      });
-    }
-
-    const search = h('input', { class: 'ev-search', type: 'search', placeholder: 'Search a name or phone', 'aria-label': 'Search the inquiries' });
-    const shownCount = el('span', 'p-muted');
+    });
+    seg.append(...segs);
+    const search = h('input', { class: 'ev-search', type: 'search', placeholder: 'Search a name or phone', 'aria-label': 'Search the students' });
     const rows = el('div', 'ev-people');
     const drawPeople = () => {
       const q = search.value.trim().toLowerCase();
-      const shown = list.filter((s) => (!state || s.follow === state) && (!q || `${s.name} ${s.phone} ${s.email}`.toLowerCase().includes(q)))
+      const pick = VIEWS.find((x) => x[0] === state)[2];
+      const shown = list.filter((s) => pick(s) && (!q || `${s.name} ${s.phone} ${s.email}`.toLowerCase().includes(q)))
         .sort((x, y) => FOLLOW_ORDER.indexOf(x.follow) - FOLLOW_ORDER.indexOf(y.follow) || (y.days ?? 999) - (x.days ?? 999) || x.name.localeCompare(y.name));
-      shownCount.textContent = `${shown.length} of ${list.length}`;
-      if (!shown.length) { rows.replaceChildren(el('div', 'ev-empty small', state ? `Nobody is ${FOLLOW[state].label.toLowerCase()} right now.` : 'No inquiry matches.')); return; }
-      const hd = el('div', 'ev-person head'); ['Student', 'Follow-up', 'Stage', 'Last contact and remark', ''].forEach((x) => hd.append(el('div', '', x)));
+      if (!shown.length) { rows.replaceChildren(el('div', 'ev-empty small', q ? 'No student matches.' : 'Nobody here right now.')); return; }
+      const hd = el('div', 'ev-person head'); ['Student', 'Stage', 'Last contact', 'Remarks', ''].forEach((x) => hd.append(el('div', '', x)));
       rows.replaceChildren(hd, ...shown.map((s) => {
         const r = el('div', 'ev-person');
-        const name = el('div', 'ev-pname');
+        const name = el('div');
         name.append(h('button', { class: 'who', type: 'button', onclick: () => window.CardDrawer.open(s.id, { onClose: () => refresh() }) }, s.name));
-        const sub = el('div', 'ev-psub');
-        if (s.phone) sub.append(h('a', { href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone));
-        sub.append(el('span', '', s.intake));
-        name.append(sub);
-        const fol = el('div', 'ev-fcell');
-        fol.append(el('span', `ev-fpill ${s.follow}`, FOLLOW[s.follow] ? FOLLOW[s.follow].label : s.follow));
-        if (s.lastContact) fol.append(el('small', '', `${s.contacts} contact${s.contacts === 1 ? '' : 's'}, last ${ago(s.days)}`));
-        else fol.append(el('small', '', ['new', 'due', 'ok'].includes(s.follow) ? 'Never contacted' : 'No contact recorded'));
+        if (s.phone) { const sub = el('div', 'ev-psub'); sub.append(h('a', { href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone)); name.append(sub); }
         const stageCell = el('div'); stageCell.append(window.Portal.stagePill(s.stage));
-        const last = el('div', 'last');
-        if (s.lastContact) {
-          const lc = s.lastContact;
-          last.append(el('b', '', `${localDay(lc.at)}${lc.by ? ', ' + lc.by : ''}${lc.what !== 'note' ? ` (${lc.what})` : ''}: `), lc.text || (lc.what === 'note' ? '' : 'sent'));
-        } else last.append(el('span', 'ev-none', 'No note yet'));
-        if (s.remarks && (!s.lastContact || s.remarks !== s.lastContact.text)) last.append(el('div', 'ev-remark', `Remark: ${s.remarks}`));
-        if (s.follow === 'inactive' && s.lostReason) last.append(el('div', 'ev-remark', `Why: ${s.lostReason}`));
+        // The last contact: when and by whom, then its words; an inquiry still waiting says so in orange.
+        const last = el('div');
+        const lc = s.lastContact;
+        if (s.follow === 'new') last.append(el('div', 'ev-when wait', 'Never contacted'));
+        else if (lc) last.append(el('div', 'ev-when' + (s.follow === 'due' ? ' wait' : ''), `${ago(s.days) || localDay(lc.at)}${lc.by ? ' \u00b7 ' + lc.by : ''}${s.follow === 'due' ? ' \u00b7 follow-up due' : ''}`));
+        else last.append(el('div', 'ev-when ev-none', 'No contact recorded'));
+        if (lc && (lc.text || lc.what !== 'note')) { const w = el('div', 'ev-words', `${lc.what !== 'note' ? `${lc.what}: ` : ''}${lc.text || 'sent'}`); w.title = lc.text || ''; last.append(w); }
+        if (s.follow === 'due') last.title = `At Inquiry, no note or message for ${rule} days or more`;
+        const remark = el('div', 'ev-remark');
+        const said = [s.remarks && (!lc || s.remarks !== lc.text) ? s.remarks : '', s.follow === 'inactive' && s.lostReason ? `Why: ${s.lostReason}` : ''].filter(Boolean);
+        if (said.length) remark.textContent = said.join(' \u00b7 '); else remark.append(el('span', 'ev-none', '-'));
         const act = el('div', 'ev-pact');
         if (s.canNote) {
-          const add = h('button', { class: 'btn btn-sm', type: 'button', title: `Write a note on ${s.name}'s card` }, '+ Note');
+          const add = h('button', { class: 'btn btn-sm', type: 'button', title: `Write a note on ${s.name}'s card` }, 'Note');
           add.addEventListener('click', () => quickNote(r, s, add));
           act.append(add);
         }
-        r.append(name, fol, stageCell, last, act);
+        r.append(name, stageCell, last, remark, act);
         return r;
       }));
     };
@@ -299,13 +229,13 @@
     }
     search.addEventListener('input', drawPeople);
     drawPeople();
-    const top = el('div', 'ev-actions ev-find-row'); top.append(search, shownCount);
-    box.replaceChildren(sum, tiles, ...(who ? [who] : []), top, rows);
+    const tools = el('div', 'ev-tools'); tools.append(seg, search);
+    box.replaceChildren(tools, rows);
   }
 
   function uploadPanel(a) {
     const p = el('section', 'ev-panel');
-    const intro = el('div'); intro.append(el('h3', '', 'Upload the inquiry list'), el('p', '', 'Excel or CSV, one student per row. Checked before saving.'));
+    const intro = el('div'); intro.append(el('h3', '', 'Upload the inquiry list'), el('p', '', 'Excel or CSV, one student per row. Every line is checked before anything is saved.'));
     const ph = el('div', 'ev-panel-head'); ph.append(intro);
     p.append(ph);
     const intake = h('select', {});
@@ -335,13 +265,12 @@
     const out = el('div');
     // Take the list back (the owner, 14 Nov 2026): remove the enquiries this list added, to upload a better one, without deleting
     // the event. Only those nobody has worked on go; the review says who stays and why, and a copy of everything is saved first.
-    const takeBack = h('button', { class: 'btn', type: 'button' }, 'Remove the inquiries this list added');
+    const takeBack = h('button', { class: 'btn btn-sm', type: 'button' }, 'Remove the inquiries this list added');
     takeBack.addEventListener('click', async () => {
       takeBack.disabled = true;
       try { out.replaceChildren(removal(a, await api(`/api/activities/${a.id}/students/remove`, { preview: true }), () => out.replaceChildren())); } catch (e) { say(e.message, true); }
       takeBack.disabled = false;
     });
-    takeBack.classList.add('btn-sm');
     ph.append(takeBack);
     p.append(row, out);
     file.addEventListener('change', () => { const f = file.files && file.files[0]; if (f) useFile(f); });
