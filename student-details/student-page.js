@@ -156,8 +156,8 @@
     must('Address (passport)', pp.address);
     fact('WhatsApp', s.phone, F.whatsappNumber(s.phone) ? 'https://wa.me/' + F.whatsappNumber(s.phone) : '');
     { const a = facts.lastChild && facts.lastChild.querySelector('a[href^="https://wa.me/"]'); if (a) a.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(F.whatsappNumber(s.phone), s.name, '', id); }); }
-    fact('University', s.university);
-    fact('Course', s.course);
+    // No University and Course here (the owner, 17 Nov 2026): the student applies to many, so the one going ahead is chosen under
+    // Applications ("Go ahead with this one"), which writes it on All Students by itself.
     // How many universities were applied to and how many offers, from Applications (one student applies to many).
     { const ap = appStats(); if (ap.submitted || ap.offers) fact('Applications', `${ap.submitted} submitted · ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}`); }
     if (pp.nationality && pp.nationality !== 'Nepali') fact('Nationality', pp.nationality);
@@ -171,7 +171,7 @@
       mid.append(bar);
     }
     if (can()) act.append(h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }, 'Edit details'));
-    if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: assignTask }, 'Assign a task'));
+    if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: () => assignTask() }, 'Assign a task'));
     if (!act.childNodes.length) act.remove();
     c.append(mid);
     return c;
@@ -179,13 +179,15 @@
 
   // ---- Details: only the notes, and why a student did not go on ----
   // ---- tasks given to a team about this student ----
-  function assignTask() {
-    dialog('Assign a task', (body, close) => {
+  // preset (from an application, the owner, 17 Nov 2026): { team, text, tag } filled in for NOC, Medical or Mock for that university.
+  function assignTask(preset) {
+    const pre = preset && preset.text ? preset : {};
+    dialog(pre.title || 'Assign a task', (body, close) => {
       // Which team and what to do: no date to do it by (the owner, 14 Nov 2026). The team asks for anything it needs in the
       // task's comments, and ticks it when it is done.
       // A team, or Admin (named with their title): the teams and branches can give Admin a task too.
       const targets = (data.assignTeams || data.taskTeams || []).map((t) => [t.id, t.label]);
-      const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : '' });
+      const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : targets.some(([k]) => k === pre.team) ? pre.team : '' });
       // Exactly who gets it (the owner, 15 Nov 2026): the people whose own team it is.
       const goes = el('div', 'p-goes');
       const showGoes = () => {
@@ -199,10 +201,10 @@
       team.wrap.append(goes);
       team.input.addEventListener('change', showGoes);
       showGoes();
-      const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submit the application to Coventry University.' });
+      const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, value: pre.text || '', placeholder: 'e.g. Submit the application to Coventry University.' });
       // How important it is, and what it is about: the tag is chosen by hand by whoever gives the task (NOC, Medical, Application,
       // Documents and the rest), never set by the system (the owner, 15 Nov 2026).
-      const tag = window.Portal.tagPicker('');
+      const tag = window.Portal.tagPicker(pre.tag || '');
       const tagWrap = el('div', 'p-field p-wide');
       tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
       const msg = el('div', 'p-msg');
@@ -715,8 +717,8 @@
 
   // ---- University options ----
   // The shortlist (the owner, 17 Nov 2026): the courses shortlisted from the Fact File or added here, numbered 1, 2, 3 in the order to
-  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Email these options"
-  // and "Assign to the Application Team" open the same windows as on the Fact File (fact-finder.js): the second asks, for every course,
+  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Email" (emails these
+  // options, a short word so the row stays tidy) and "Assign to the Application Team" open the same windows as on the Fact File (fact-finder.js): the second asks, for every course,
   // through which partner it goes, and for notes. Up and Down change the order before assigning.
   const refreshCard = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
   let sendOrder = null; // option ids not yet sent, in the order chosen on this page
@@ -771,6 +773,20 @@
     if (o.skipped) sub.append(el('span', 'p-applied is-refused', `Not submitted (${day(o.skipped)})`));
     if (o.applied && !o.offer && !o.refused && !o.withdrawn) sub.append(el('span', 'p-applied is-sent', 'Waiting for the answer'));
     item.append(sub);
+    // The university the student goes ahead with (the owner, 17 Nov 2026): one press writes it and its course on All Students, and it
+    // can be changed at any time to another application. NOC, Medical and Mock are then assigned for that university from here.
+    const live = i < 0 && !o.refused && !o.withdrawn && !o.skipped;
+    if (live && (can() || data.can.assign)) {
+      const row2 = el('div', 'p-card-acts');
+      if (isGoingAhead(o)) row2.append(el('span', 'p-applied is-offer', 'Going ahead with this one'));
+      else if (can()) row2.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => goAhead(o) }, 'Go ahead with this one'));
+      if (data.can.assign) {
+        const where = [o.university, o.course].filter(Boolean).join(', ');
+        [['NOC', 'application', 'noc', `Fill in the NOC for ${where}.`], ['Medical', 'application', 'medical', `Book the medical for ${where}.`], ['Mock interview', 'mock', 'mock', `Start the mock interview for ${where}.`]]
+          .forEach(([label, team, tag, text]) => row2.append(h('button', { class: 'btn btn-sm', type: 'button', title: `Assign the ${label} for ${o.university}`, onclick: () => assignTask({ title: `${label}: ${o.university}`, team, tag, text }) }, label)));
+      }
+      item.append(row2);
+    }
     if (o.reason && (o.refused || o.withdrawn || o.skipped)) item.append(el('p', 'p-muted p-small', `Reason: ${o.reason}`));
     // What the Fact File says, read only (the owner, 17 Nov 2026: "I don't want to fill any details").
     const facts = el('dl', 'p-chosen-facts');
@@ -837,6 +853,21 @@
     if (saved) refreshCard();
   }
 
+  // The application the student goes ahead with: the one whose university (and course) All Students names.
+  const squashName = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  function isGoingAhead(o) {
+    const row = data.student.row || {};
+    const u = squashName(row['UNIVERSITY NAME']); const c = squashName(row['COURSE NAME']);
+    return Boolean(u) && squashName(o.university) === u && (!c || !o.course || squashName(o.course) === c);
+  }
+  async function goAhead(o) {
+    try {
+      await api(`/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': o.university || '', 'COURSE NAME': o.course || '' } });
+      say(`Going ahead with ${o.university}. All Students is updated.`);
+      refreshCard();
+    } catch (e) { say(e.message, true); }
+  }
+
   function chosenOptions() {
     const box = el('section', 'p-card');
     const head = el('div', 'p-card-head');
@@ -847,7 +878,7 @@
     // target _top: from the half card (an iframe on All Students) the Fact File opens as the whole page, not inside the card.
     if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id), target: '_top' }, 'Shortlist course'));
     if (data.card.options.length) {
-      acts.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Email these options'));
+      acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Email'));
       if (waiting.length && can()) acts.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => window.OptionActions.assign(studentRef(), waitingOptions()).then((r) => { if (r) { sendOrder = null; refreshCard(); } }) }, 'Assign to the Application Team'));
     }
     if (acts.children.length) head.append(acts);
@@ -878,7 +909,7 @@
     if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Shortlist courses above and press "Assign to the Application Team".')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
     box.append(el('p', 'p-muted p-small', `${submitted} submitted, ${offers} with an offer${waitingTeam ? `, ${waitingTeam} with the Application Team, not submitted yet` : ''}. Record submission or Update keeps each university's days.`));
-    const order = (o) => (o.offer ? 0 : o.applied && !o.refused && !o.withdrawn ? 1 : o.sent && !o.applied && !o.skipped ? 2 : 3);
+    const order = (o) => (isGoingAhead(o) ? -1 : o.offer ? 0 : o.applied && !o.refused && !o.withdrawn ? 1 : o.sent && !o.applied && !o.skipped ? 2 : 3);
     const list = el('ol', 'p-chosen');
     apps.slice().sort((a, b) => order(a) - order(b) || Number(a.rank || 99) - Number(b.rank || 99)).forEach((o) => list.append(optionItem(o, [])));
     box.append(list);
