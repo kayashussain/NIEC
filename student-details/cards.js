@@ -80,6 +80,8 @@ function cleanOption(input, old = {}) {
     // Sent to the Application Team from the shortlist (the day), and its place in the order it was sent in (1, 2, 3 ...).
     sent: (() => { const v = pick('sent', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     rank: (() => { const v = pick('rank', 3); return /^\d{1,2}$/.test(v) ? v : ''; })(),
+    // Through which partner the application goes: "Direct" or a B2B partner's name (asked when it is sent to the Application Team).
+    partner: pick('partner', 120),
     // Chosen by the student themselves on the Fact File (their own login, the owner, 17 Nov 2026).
     byStudent: input && Object.prototype.hasOwnProperty.call(input, 'byStudent') ? input.byStudent === true : Boolean(old.byStudent),
     addedAt: old.addedAt, addedBy: old.addedBy,

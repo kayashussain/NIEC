@@ -90,12 +90,21 @@ test('on the server: the finder answers the team and a student, and courses are 
   const o1 = (await admin('POST', `/api/cards/${sid}/options`, { universityId: page.id, university: page.name, course: 'MSc Data Science', intake: 'January 2027' })).json.option;
   const o2 = (await admin('POST', `/api/cards/${sid}/options`, { universityId: page.id, university: page.name, course: 'MSc Testing', intake: 'January 2027' })).json.option;
   assert.strictEqual((await admin('POST', `/api/cards/${sid}/options/send`, { ids: [] })).status, 400, 'something to send');
-  const sent = await admin('POST', `/api/cards/${sid}/options/send`, { ids: [o2.id, o1.id], note: 'Documents complete.' });
+  // Through which partner each course goes is asked every time (the owner, 17 Nov 2026): nothing is assigned without it.
+  const noPartner = await admin('POST', `/api/cards/${sid}/options/send`, { ids: [o2.id, o1.id], note: 'Documents complete.' });
+  assert.strictEqual(noPartner.status, 400, 'a partner is needed for every course');
+  assert.match(noPartner.json.error, /partner/);
+  const partners = await admin('GET', `/api/application-partners?u=${encodeURIComponent(page.name)}`);
+  assert.strictEqual(partners.status, 200);
+  assert.ok(Array.isArray(partners.json.b2b) && partners.json.universities[page.name], 'the partners to choose from');
+  assert.strictEqual((await stu('GET', `/api/application-partners?u=${encodeURIComponent(page.name)}`)).status, 403, 'not for a student login');
+  const sent = await admin('POST', `/api/cards/${sid}/options/send`, { ids: [o2.id, o1.id], partners: { [o2.id]: 'Real Dreams', [o1.id]: 'Direct' }, note: 'Documents complete.' });
   assert.strictEqual(sent.status, 200);
   const card = (await admin('GET', `/api/cards/${sid}`)).json.card;
   const task = card.tasks.find((x) => /^Apply for Mina Demo: 2 courses in this order/.test(x.text));
   assert.ok(task && task.team === 'application' && !task.done);
-  assert.strictEqual(task.comments[0].text, `1. MSc Testing at ${page.name} (January 2027)\n2. MSc Data Science at ${page.name} (January 2027)\n\nDocuments complete.`);
+  assert.strictEqual(task.comments[0].text, `1. MSc Testing at ${page.name} (January 2027), through Real Dreams\n2. MSc Data Science at ${page.name} (January 2027), direct\n\nDocuments complete.`);
+  assert.deepStrictEqual(['MSc Testing', 'MSc Data Science'].map((c) => card.options.find((o) => o.course === c).partner), ['Real Dreams', 'Direct']);
   assert.deepStrictEqual(['MSc Testing', 'MSc Data Science'].map((c) => card.options.find((o) => o.course === c).rank), ['1', '2']);
   assert.ok(card.options.every((o) => /^\d{4}-\d{2}-\d{2}$/.test(o.sent)));
 });

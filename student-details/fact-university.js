@@ -4,7 +4,8 @@
 //
 //   the deadlines first, highlighted, each date with the days left (and "Change dates" for the team)
 //   one table: entry requirements, English, tuition fee, scholarship, deposit, one row per level
-//   the courses, grouped by level, each with Shortlist (for the student chosen at the top) and an amber warning when the automatic
+//   the courses, grouped by level, each with Shortlist (for the student chosen at the top; the shortlist waits in the tray at the
+//   bottom, see fact-finder.js) and an amber warning when the automatic
 //   check found no page for it on the university's website
 //   then the overview, the application steps, the interview (the team only), location, payments and notes, when there are any.
 //
@@ -254,7 +255,7 @@
           }
           const intake = c.intakes[0] || (view.intakeNames.length === 1 ? view.intakeNames[0] : '');
           if (student() && window.Shortlist.isLinked()) li.append(window.Shortlist.button(uni, c.full || c.course, intake));
-          else if (team() && window.ShortlistFor) li.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.course, intake, level: g, link, ...feesFor(view, g) }));
+          else if (team() && window.ShortlistFor) li.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.course, intake, level: g }));
           ul.append(li);
         });
         s.append(ul);
@@ -267,13 +268,6 @@
       });
     });
   }
-  // The fee, scholarship and deposit of the course's level (its first line), carried onto the student's option.
-  function feesFor(view, group) {
-    const row = view.programs.find((p) => P.levelGroup(p.name) === group) || (view.programs.length === 1 ? view.programs[0] : null);
-    const first = (t) => String((row && row[t]) || '').split('\n')[0].replace(/^[-*•]\s+/, '');
-    return { fee: first('tuition'), scholarship: first('scholarship'), deposit: first('deposit') };
-  }
-
   // ---- sharing ----
   // A short summary to paste into WhatsApp or an email (*bold* for WhatsApp): the deadlines, then per level the fee, scholarship,
   // entry and English, from the same clean view as the page.
@@ -388,7 +382,7 @@
     if (window.Shortlist) await window.Shortlist.ready;
     if (!BACKUP) { try { const r = await fetch('/api/fact-courses?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) courseData = await r.json(); } catch (e) { courseData = null; } }
     if (!BACKUP && !student()) { try { const r = await fetch('/api/course-watch?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) watch = await r.json(); } catch (e) { /* the page works without it */ } }
-    if (team() && window.ShortlistFor) { await window.ShortlistFor.ready(); window.ShortlistFor.onChange(render); }
+    if (team() && window.ShortlistFor) { await window.ShortlistFor.ready(); window.ShortlistFor.onChange(render); window.ShortlistFor.tray(); }
     render();
   }
   if (BACKUP) { const back = document.querySelector('a[href="/fact-file"]'); if (back) back.href = '/fact-file?backup=' + encodeURIComponent(BACKUP); }

@@ -67,7 +67,7 @@
     return names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ');
   }
 
-  // One list of tasks under its own heading, the newest word first; the ones done in the last 7 days fold away at the bottom.
+  // One list of tasks under its own heading, the oldest first and the newest last; the ones done in the last 7 days fold away at the bottom.
   // The tasks sit in one calm list, a hairline between each (the owner, 15 Nov 2026: not a separate box per task).
   function listOf(items, refresh) { const l = el('div', 'td-list'); items.forEach((x) => l.append(taskRow(x, refresh))); return l; }
   // Tasks grouped by their day, each day under a small heading.
@@ -125,7 +125,7 @@
 
   // ---- the Board (Admin and the Manager) ----
   // A column per team, the team's open tasks as small tiles (the student, the task, its tag, how long it has waited, its updates), the
-  // most important and the longest waiting first. A press opens the whole task (tick, updates, Edit, Reassign) in a window.
+  // oldest first and the newest last. A press opens the whole task (tick, updates, Edit, Reassign) in a window.
   const daysOpen = (x) => Math.max(0, Math.floor((Date.now() - Date.parse(x.at || 0)) / 86400000));
   function tile(x, refresh) {
     const later = x.doOn && todayIso && x.doOn > todayIso;
@@ -172,8 +172,8 @@
     if (!keys.length || (keys.length === 1 && !cols.get(keys[0]).length)) { wrap.replaceChildren(); wrap.append(emptyNote(searchQ || tagFilter !== 'all' ? 'No task matches.' : 'Every team is up to date.')); return wrap; }
     keys.forEach((k) => {
       const items = cols.get(k);
-      // Something new first, then the one waiting longest.
-      const open = items.slice().sort((a, b) => (b.unread > 0) - (a.unread > 0) || daysOpen(b) - daysOpen(a));
+      // The oldest first, the newest last (the owner, 17 Nov 2026), whatever is new on it (its blue dot shows that).
+      const open = items.slice().sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
       const slow = open.filter((x) => daysOpen(x) >= 3).length;
       const label = k === 'head' ? 'For you' : ((allTeams.find((x) => x.id === k) || {}).label || (items[0] && items[0].teamLabel) || k).replace(/\s*\(.*\)$/, '');
       const col = el('section', 'tb-col');

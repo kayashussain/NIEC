@@ -177,6 +177,32 @@ const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: u.intak
 const courseLines = (u) => [u.courses, ...u.intakes.map((i) => i.courses)]
   .join('\n').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('##') && !/^The course list is under/.test(l));
 
+// The matching courses of a page, each with its level (the "## " heading above it) and the intake it is listed under, so a course
+// can be shortlisted straight from the search (the owner, 17 Nov 2026).
+function matchingCourses(u, words) {
+  const out = [];
+  const seen = new Set();
+  const read = (text, intake) => {
+    let level = '';
+    String(text || '').split('\n').forEach((raw) => {
+      const l = raw.trim().replace(/^[-*\u2022]\s+/, '');
+      if (!l) return;
+      const head = /^##\s+(.*)$/.exec(l);
+      if (head) { level = head[1].trim(); return; }
+      if (/^The course list is under/.test(l) || /:$/.test(l)) return;
+      const t = l.toLowerCase();
+      if (!words.every((w) => t.includes(w))) return;
+      const key = t;
+      if (seen.has(key)) { if (intake) { const was = out.find((c) => c.course.toLowerCase() === key); if (was && !was.intakes.includes(intake)) was.intakes.push(intake); } return; }
+      seen.add(key);
+      out.push({ course: l, level, intakes: intake ? [intake] : [] });
+    });
+  };
+  read(u.courses, '');
+  (u.intakes || []).forEach((i) => read(i.courses, i.name));
+  return out;
+}
+
 // Universities matching every word typed, by name, city or any course, so "cyber security" finds who
 // teaches it. `matches` holds up to four of the courses that matched; `matchCount` is how many.
 function searchIn(universities, q) {
@@ -187,7 +213,7 @@ function searchIn(universities, q) {
     const head = `${u.name} ${u.city}`.toLowerCase();
     const nameHit = words.every((w) => head.includes(w));
     const lines = courseLines(u).filter((l) => { const t = l.toLowerCase(); return words.every((w) => t.includes(w)); });
-    if (nameHit || lines.length) hits.push({ ...summary(u), matches: [...new Set(lines)].slice(0, 4), matchCount: new Set(lines).size, nameHit });
+    if (nameHit || lines.length) hits.push({ ...summary(u), matches: [...new Set(lines)].slice(0, 4), matchCount: new Set(lines).size, nameHit, courses: matchingCourses(u, words).slice(0, 80) });
   });
   return hits.sort((a, b) => (b.nameHit - a.nameHit) || (b.matchCount - a.matchCount) || a.name.localeCompare(b.name));
 }

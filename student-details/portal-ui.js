@@ -762,8 +762,10 @@
   const tagOf = (task, stage) => (F().taskTag ? F().taskTag(task, stage) : (task.tag || 'other'));
   const tagLabel = (id) => (TAGS().find(([k]) => k === id) || [id, 'Other'])[1];
   // The order of a list: a task with something new on it first, then the one waiting longest (no priorities, the owner, 15 Nov 2026).
+  // The order of tasks everywhere (the owner, 17 Nov 2026): the oldest first and the newest last, like the Application Team's list, for
+  // every account. Something new on a task shows as its blue dot; it no longer moves the task up the list.
   function taskPriority(t) {
-    return (t.unread ? 1e12 : 0) + (1e12 - 1 - Math.min(1e12 - 1, Date.parse(t.at || 0) / 1000 || 0));
+    return 1e12 - 1 - Math.min(1e12 - 1, Date.parse(t.at || 0) / 1000 || 0);
   }
 
   // The tag as a small pill; whoever may change it presses it to choose again.

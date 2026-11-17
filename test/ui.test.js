@@ -272,10 +272,12 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.waitForSelector('.uni-card:not(.skeleton)');
     assert.strictEqual(await page.locator('#addForm').count(), 0, 'no university is added by hand');
     await page.fill('#search', 'cyber security');
-    await page.waitForSelector('.matches');
-    assert.ok((await page.locator('.uni-card').count()) > 5, 'many universities teach it');
+    // A board: every matching course of every university, each with Shortlist, without opening the university (the owner, 17 Nov 2026).
+    await page.waitForSelector('.uni-card.is-board .ub-courses li');
+    assert.ok((await page.locator('.uni-card.is-board').count()) > 5, 'many universities teach it');
+    assert.ok((await page.locator('.ub-courses .sl-pick').count()) > 5, 'each course can be shortlisted from the search');
     assert.match(await page.textContent('#count'), /universities match/);
-    await page.locator('.uni-card').first().click();
+    await page.locator('.uni-card.is-board .ub-name').first().click();
     await page.waitForSelector('.doc');
     await admin.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.click('button:has-text("Copy summary")');

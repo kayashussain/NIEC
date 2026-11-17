@@ -26,29 +26,66 @@
     return (pick.length > 1 ? pick[0][0] + pick[pick.length - 1][0] : String(pick[0] || '?').slice(0, 2)).toUpperCase();
   }
 
+  // Whether this account shortlists for students (the team; not a student's own login, not a view-only account, not a backup).
+  let team = false;
+  const expanded = new Set(); // universities whose whole course list is open
+  const uniHref = (u) => '/fact-file?u=' + encodeURIComponent(u.id) + (BACKUP ? '&backup=' + encodeURIComponent(BACKUP) : '');
+
+  // A university of the list. While searching a course ("nursing"), the card lists every matching course with its level and intake,
+  // each with Shortlist for the team, so nobody opens university after university (the owner, 17 Nov 2026).
   function card(u) {
+    const courses = query && u.courses && u.courses.length ? u.courses : null;
+    if (courses) return boardCard(u, courses);
     const a = el('a', 'uni-card');
-    a.href = '/fact-file?u=' + encodeURIComponent(u.id) + (BACKUP ? '&backup=' + encodeURIComponent(BACKUP) : '');
+    a.href = uniHref(u);
     a.append(el('span', 'uni-mono', monogram(u.name)));
     a.append(el('h2', '', u.name));
     if (u.city) a.append(el('div', 'city', u.city));
-    if (u.matches && u.matches.length) {
-      const box = el('div', 'matches');
-      box.append(el('div', 'match-count', `${u.matchCount} matching course${u.matchCount === 1 ? '' : 's'}`));
-      const ul = el('ul');
-      u.matches.forEach((m) => ul.append(el('li', '', m)));
-      box.append(ul);
-      if (u.matchCount > u.matches.length) box.append(el('div', 'match-more', `and ${u.matchCount - u.matches.length} more`));
-      a.append(box);
-    }
     if (u.intakes.length) {
       const chips = el('div', 'chips');
       u.intakes.forEach((n) => chips.append(el('span', 'chip', n)));
       a.append(chips);
     }
-    if (!u.city && !u.intakes.length && !(u.matches && u.matches.length)) a.append(el('div', 'city', 'Details not added yet'));
+    if (!u.city && !u.intakes.length) a.append(el('div', 'city', 'Details not added yet'));
     a.append(el('div', 'updated', u.updatedAt && (Date.now() - new Date(u.updatedAt).getTime()) > 90 * 86400000 ? 'Last updated ' + when(u.updatedAt) + ', check it' : ''));
     return a;
+  }
+  function boardCard(u, courses) {
+    const c = el('article', 'uni-card is-board');
+    const top = el('div', 'ub-top');
+    const name = el('a', 'ub-name', u.name);
+    name.href = uniHref(u);
+    const words = el('div', 'ub-words');
+    words.append(name, el('span', 'city', [u.city, u.intakes.join(', ')].filter(Boolean).join(' · ')));
+    top.append(el('span', 'uni-mono', monogram(u.name)), words);
+    const open = el('a', 'btn btn-sm ub-open', 'Open');
+    open.href = uniHref(u);
+    top.append(open);
+    c.append(top);
+    c.append(el('div', 'ub-count', `${courses.length} matching course${courses.length === 1 ? '' : 's'}`));
+    const ul = el('ul', 'ub-courses');
+    const SHOW = 6;
+    courses.forEach((co, n) => {
+      const li = el('li');
+      if (n >= SHOW && !expanded.has(u.id)) li.hidden = true;
+      const t = el('div', 'ub-course');
+      t.append(el('span', 'ub-course-name', co.course));
+      const level = co.level && window.FactPresent ? window.FactPresent.levelGroup(co.level) : co.level;
+      const meta = [level, co.intakes.join(', ')].filter(Boolean).join(' · ');
+      if (meta) t.append(el('span', 'ub-meta', meta));
+      li.append(t);
+      if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button({ id: u.id, name: u.name }, co.course, co.intakes[0] || ''));
+      else if (team) li.append(window.ShortlistFor.button({ universityId: u.id, university: u.name, course: co.course, intake: co.intakes[0] || (u.intakes.length === 1 ? u.intakes[0] : ''), level: level || '' }));
+      ul.append(li);
+    });
+    c.append(ul);
+    if (courses.length > SHOW && !expanded.has(u.id)) {
+      const more = el('button', 'p-link ub-more', `Show all ${courses.length}`);
+      more.type = 'button';
+      more.addEventListener('click', () => { expanded.add(u.id); ul.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
+      c.append(more);
+    }
+    return c;
   }
 
   function skeletons() {
@@ -70,7 +107,12 @@
       box.replaceChildren(empty);
       return;
     }
-    box.replaceChildren(...list.map(card));
+    const board = Boolean(query) && list.some((u) => u.courses && u.courses.length);
+    box.classList.toggle('is-board', board);
+    const out = list.map(card);
+    // Above the board: who the courses are shortlisted for.
+    if (board && team) { const head = window.ShortlistFor.bar(); head.classList.add('ub-for'); out.unshift(head); }
+    box.replaceChildren(...out);
   }
 
   async function load() {
@@ -115,7 +157,13 @@
     anchor.after(box);
     fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then(async (me) => {
       const student = me.role === 'student';
-      if (!student && window.ShortlistFor && !(window.Teams && window.Teams.isReadOnly(me))) await window.ShortlistFor.ready();
+      if (!student && window.ShortlistFor && !(window.Teams && window.Teams.isReadOnly(me))) {
+        await window.ShortlistFor.ready();
+        team = true;
+        window.ShortlistFor.tray();
+        window.ShortlistFor.onChange(render);
+        if (loadedOnce) render();
+      }
       window.Finder.mount(box, student
         ? { title: 'Find the universities you can go to', intro: 'Enter your level, your grade, your study gap and your English test. Press "I am interested" on the courses you like.' }
         : { title: 'Find universities for a student', intro: 'Enter the student\'s level, grade, study gap and English: every university is checked at once, with what the student would need.', shortlist: Boolean(window.ShortlistFor) && !(window.Teams && window.Teams.isReadOnly(me)) });

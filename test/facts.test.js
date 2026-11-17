@@ -180,6 +180,8 @@ test('searching finds universities by name, city or any course they teach', () =
   assert.ok(cyber.length > 5, 'many universities teach cyber security');
   assert.ok(cyber.every((u) => u.matches.length > 0 && u.matchCount >= u.matches.length));
   assert.ok(cyber.every((u) => u.matches.every((m) => /cyber/i.test(m) && /security/i.test(m))));
+  // Every matching course with its level, for Shortlist straight from the search.
+  assert.ok(cyber.every((u) => u.courses.length >= 1 && u.courses.every((c) => /cyber/i.test(c.course) && Array.isArray(c.intakes))));
   assert.deepStrictEqual(facts.list('aston').slice(0, 1).map((u) => u.name), ['Aston University']);
   assert.strictEqual(facts.list('zzzz nothing').length, 0);
   assert.strictEqual(facts.list('').length, facts.list().length, 'no words: everything');

@@ -204,7 +204,7 @@
   // task" button is at the top).
   function tasksCard() {
     const lastAt = (t) => { const c = t.comments || []; return String(c.length ? c[c.length - 1].at : t.at); };
-    // Only the open tasks: a done one is in Notes and history (the owner, 15 Nov 2026). Something new first, then the longest waiting.
+    // Only the open tasks: a done one is in Notes and history (the owner, 15 Nov 2026). The oldest first, the newest last.
     const tasks = (data.card.tasks || []).filter((t) => !t.done).sort((a, b) => window.Portal.taskPriority(b) - window.Portal.taskPriority(a) || lastAt(b).localeCompare(lastAt(a)));
     if (!tasks.length) return null;
     const c = el('section', 'p-card p-tasks');
@@ -426,87 +426,68 @@
 
   // ---- University options ----
   // The shortlist (the owner, 17 Nov 2026): the courses shortlisted from the Fact File or added here, numbered 1, 2, 3 in the order to
-  // apply, and sent to the Application Team in one go (one task with the numbered list). Up and Down change the order before sending.
+  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Email these options"
+  // and "Assign to the Application Team" open the same windows as on the Fact File (fact-finder.js): the second asks, for every course,
+  // through which partner it goes, and for notes. Up and Down change the order before assigning.
+  const refreshCard = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
   let sendOrder = null; // option ids not yet sent, in the order chosen on this page
-  let sendSkip = new Set(); // option ids left out of the next send
-  function sendBox() {
+  const studentRef = () => ({ id, name: (data.student && data.student.name) || 'the student', email: (data.student && data.student.row && data.student.row.EMAIL) || '' });
+  function waitingOptions() {
     const waiting = data.card.options.filter((o) => !o.sent && !o.applied);
-    if (!waiting.length || !can()) return null;
     const ids = waiting.map((o) => o.id);
     sendOrder = (sendOrder || []).filter((x) => ids.includes(x));
     ids.forEach((x) => { if (!sendOrder.includes(x)) sendOrder.push(x); });
-    const box = el('div', 'p-send');
-    box.append(el('h3', '', 'Send to the Application Team'));
-    box.append(el('p', 'p-muted p-small', 'Numbered in the order to apply. Untick a course to keep it back.'));
-    const ol = el('ol', 'p-send-list');
-    const picked = () => sendOrder.filter((x) => !sendSkip.has(x));
-    const go = h('button', { class: 'btn btn-primary', type: 'button' }, '');
-    const label = () => { const n = picked().length; go.textContent = n ? `Send ${n} course${n === 1 ? '' : 's'} to the Application Team` : 'Choose a course to send'; go.disabled = !n; };
-    sendOrder.forEach((oid, i) => {
-      const o = data.card.options.find((x) => x.id === oid);
-      const li = el('li');
-      const tick = el('input'); tick.type = 'checkbox'; tick.checked = !sendSkip.has(oid);
-      tick.setAttribute('aria-label', `Send ${o.course}`);
-      tick.addEventListener('change', () => { if (tick.checked) sendSkip.delete(oid); else sendSkip.add(oid); label(); });
-      const t = el('span', 'p-send-text');
-      t.append(el('b', '', o.course || o.university), el('span', 'p-muted p-small', [o.course ? o.university : '', o.intake].filter(Boolean).join(' · ')));
-      const move = (d) => () => { const j = i + d; if (j < 0 || j >= sendOrder.length) return; [sendOrder[i], sendOrder[j]] = [sendOrder[j], sendOrder[i]]; render(); };
-      const tools = el('span', 'p-send-tools');
-      tools.append(h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'), h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === sendOrder.length - 1, onclick: move(1) }, '↓'));
-      li.append(tick, t, tools);
-      ol.append(li);
-    });
-    const note = field('A note for the Application Team (optional)', { kind: 'area', max: 1500, placeholder: 'e.g. Documents are complete. Apply for the January intake.' });
-    note.input.rows = 2;
-    go.addEventListener('click', async () => {
-      go.disabled = true;
-      try { await save('options/send', { ids: picked(), note: note.input.value.trim() }, 'Sent to the Application Team'); sendOrder = null; sendSkip = new Set(); render(); } catch (e) { label(); }
-    });
-    label();
-    box.append(ol, note.wrap, go);
-    return box;
+    return sendOrder.map((x) => waiting.find((o) => o.id === x));
   }
   function chosenOptions() {
     const box = el('section', 'p-card');
     const head = el('div', 'p-card-head');
     head.append(el('h2', '', `Shortlist (${data.card.options.length})`));
-    if (data.card.options.length) head.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => openCompose('options') }, 'Email these options'));
+    const waiting = waitingOptions();
+    if (data.card.options.length) {
+      const acts = el('div', 'p-card-acts');
+      acts.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Email these options'));
+      if (waiting.length && can()) acts.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => window.OptionActions.assign(studentRef(), waitingOptions()).then((r) => { if (r) { sendOrder = null; refreshCard(); } }) }, 'Assign to the Application Team'));
+      head.append(acts);
+    }
     box.append(head);
     if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No courses yet. Press Shortlist on a course in the Fact File, or search below and press Add.')); return box; }
-    const send = sendBox();
-    if (send) box.append(send);
-    const list = el('div', 'p-chosen');
-    data.card.options.forEach((o) => {
-      const item = el('div', 'p-chosen-item');
+    const list = el('ol', 'p-chosen');
+    const ordered = [...waiting, ...data.card.options.filter((o) => o.sent || o.applied)];
+    ordered.forEach((o) => {
+      const item = el('li', 'p-chosen-item');
       const header = el('header');
-      header.append(el('h3', '', `${o.rank ? o.rank + '. ' : ''}${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
-      if (o.sent && !o.applied) header.firstChild.append(' ', el('span', 'p-applied is-sent', `Sent to the Application Team ${day(o.sent)}`));
-      if (o.applied) header.firstChild.append(' ', el('span', 'p-applied', `Applied ${day(o.applied)}`));
-      if (o.offer) header.firstChild.append(' ', el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
-      if (o.refused) header.firstChild.append(' ', el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
-      if (o.withdrawn) header.firstChild.append(' ', el('span', 'p-applied is-refused', `Withdrawn ${day(o.withdrawn)}`));
-      if (can()) header.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { await save('options/' + o.id + '/delete', {}); render(); } }, 'Remove'));
-      const form = el('div', 'p-form');
-      const fee = field('Tuition fee', { value: o.fee, disabled: !can(), max: 400 });
-      const dep = field('Minimum cash deposit', { value: o.deposit, disabled: !can(), max: 400 });
-      const sch = field('Scholarship', { value: o.scholarship, disabled: !can(), max: 400 });
-      const link = field('Course link', { value: o.link, disabled: !can(), max: 500, placeholder: 'https://…' });
-      const note = field('Note for the student', { value: o.note, disabled: !can(), max: 400 });
-      if (!o.link && can()) {
-        // No link yet: the server looks the course page up and the link is filled in and kept.
+      const title = el('h3', '', `${o.course || o.university}`);
+      header.append(title);
+      const tools = el('div', 'p-chosen-tools');
+      const i = waiting.indexOf(o);
+      if (can() && i >= 0 && waiting.length > 1) {
+        const move = (d) => () => { const j = i + d; if (j < 0 || j >= sendOrder.length) return; [sendOrder[i], sendOrder[j]] = [sendOrder[j], sendOrder[i]]; render(); };
+        tools.append(h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'), h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === waiting.length - 1, onclick: move(1) }, '↓'));
+      }
+      if (can() && !o.sent && !o.applied) tools.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { await save('options/' + o.id + '/delete', {}); render(); } }, 'Remove'));
+      header.append(tools);
+      item.append(header);
+      const sub = el('div', 'p-chosen-sub');
+      sub.append(el('span', '', [o.university, o.intake, o.level].filter(Boolean).join(' · ')));
+      if (o.partner) sub.append(el('span', 'p-chosen-partner', /^direct$/i.test(o.partner) ? 'Direct' : `Through ${o.partner}`));
+      if (o.sent && !o.applied) sub.append(el('span', 'p-applied is-sent', `With the Application Team since ${day(o.sent)}`));
+      if (o.applied) sub.append(el('span', 'p-applied', `Applied ${day(o.applied)}`));
+      if (o.offer) sub.append(el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
+      if (o.refused) sub.append(el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
+      if (o.withdrawn) sub.append(el('span', 'p-applied is-refused', `Withdrawn ${day(o.withdrawn)}`));
+      item.append(sub);
+      // What the Fact File says, read only (the owner, 17 Nov 2026: "I don't want to fill any details").
+      const facts = el('dl', 'p-chosen-facts');
+      [['Tuition fee', o.fee], ['Scholarship', o.scholarship], ['Deposit', o.deposit]].forEach(([k, v]) => { if (v) { const d = el('div'); d.append(el('dt', '', k), el('dd', '', v)); facts.append(d); } });
+      if (o.link) { const d = el('div'); const a = el('a', '', 'Course page'); a.href = o.link; a.target = '_blank'; a.rel = 'noopener'; const dd = el('dd'); dd.append(a); d.append(el('dt', '', 'Link'), dd); facts.append(d); }
+      if (facts.children.length) item.append(facts);
+      if (!o.link && can() && o.universityId) {
+        // No link yet: the server looks the course page up and keeps it.
         window.SendToStudent.lookupLink(o).then(async (found) => {
-          if (!found) return; // the twice-a-week check marks it on the Fact File; nobody searches by hand
-          link.input.value = found;
+          if (!found) return;
           try { await save('options/' + o.id, { link: found }); o.link = found; } catch (e) { /* shown */ }
         });
-      }
-      form.append(fee.wrap, dep.wrap, sch.wrap, link.wrap, note.wrap);
-      item.append(header, form);
-      if (can()) {
-        const save1 = h('button', { class: 'btn btn-sm', type: 'button' }, 'Save changes');
-        save1.addEventListener('click', async () => { try { await save('options/' + o.id, { fee: fee.input.value, deposit: dep.input.value, scholarship: sch.input.value, link: link.input.value, note: note.input.value }, 'Saved'); render(); } catch (e) { /* shown */ } });
-        item.append(el('div', 'p-bar'));
-        item.lastChild.append(save1);
       }
       list.append(item);
     });

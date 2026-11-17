@@ -3107,3 +3107,123 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
   .fw-info { flex-basis: 100%; order: -1; font-size: 14px; }
   .fw-foot .btn { flex: 1 1 0; padding: 0 16px; }
 }
+
+/* 🔴 CSS CHANGED (2026-11-17): the "Shortlist for which student?" window was broken (the owner: "the CSS crashes") | from: each student's
+   two-letter badge stretched into a huge grey oval across half the row, the name pushed to the right | to: a round 34px badge on the left,
+   the name and its line (stage, intake, email) beside it, the whole row lit soft grey on hover */
+html body .p-pick > .p-avatar { flex: 0 0 auto; width: 34px; height: 34px; }
+html body .p-pick > .p-pick-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+html body .p-pick { padding: 10px 12px; border-radius: 12px; }
+html body .p-pick-list { max-height: 52vh; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the shortlist tray (new) | from: shortlisting sent you to the student card ("Open the card to send"), leaving
+   the Fact File | to: an off-white bar fixed to the bottom of the Fact File pages (rounded top, soft shadow): the student's round badge, name
+   and how many courses are shortlisted, a small arrow that opens the numbered list (1, 2, 3 in blue circles, each course with ↑ ↓ Remove),
+   and on the right grey pills Change student, Open the card, Email these options and a blue pill Assign to the Application Team */
+.sl-tray { position: fixed; z-index: 40; left: calc(var(--side-w, 0px) + 16px); right: 16px; bottom: 0; max-width: 1100px; margin: 0 auto; padding: 10px 16px 12px; border-radius: 18px 18px 0 0; background: #fbfbfd; box-shadow: 0 -10px 40px -12px rgba(0, 0, 0, .25), 0 0 0 .5px rgba(0, 0, 0, .1); }
+.sl-tray[hidden] { display: none; }
+body.has-sl-tray main { padding-bottom: 120px; }
+.sl-tray-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.sl-tray-who { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 8px 4px 4px; border: 0; border-radius: 12px; background: transparent; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; }
+.sl-tray-who:hover { background: #ececf0; }
+.sl-tray-words { display: flex; flex-direction: column; min-width: 0; }
+.sl-tray-words b { font-size: 16px; font-weight: 600; }
+.sl-tray-words small { color: #515154; font-size: 14px; }
+.sl-tray-chev { flex: none; width: 9px; height: 9px; margin-left: 4px; border-right: 2px solid #6e6e73; border-top: 2px solid #6e6e73; transform: rotate(-45deg); transition: transform .2s ease; }
+.sl-tray-chev.is-open { transform: rotate(135deg); }
+.sl-tray-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.sl-tray-list { counter-reset: tray; list-style: none; max-height: 42vh; overflow: auto; margin: 10px 0 0; padding: 0; }
+.sl-tray-list li { counter-increment: tray; display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-top: 1px solid #e5e5ea; }
+.sl-tray-list li::before { content: counter(tray); flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 13px; font-weight: 700; }
+.sl-tray-text { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; }
+.sl-tray-text b { color: #1d1d1f; font-weight: 600; overflow-wrap: anywhere; }
+.sl-tray-text span { color: #515154; font-size: 13.5px; overflow-wrap: anywhere; }
+.sl-tray-tools { display: flex; flex: none; gap: 4px; }
+@media (max-width: 900px) { .sl-tray { left: 12px; right: 12px; } }
+@media (max-width: 700px) {
+  .sl-tray { left: 0; right: 0; padding: 10px 12px 12px; }
+  .sl-tray-acts { width: 100%; }
+  .sl-tray-acts .btn { flex: 1 1 auto; }
+  .sl-tray-list li { flex-wrap: wrap; }
+  body.has-sl-tray main { padding-bottom: 220px; }
+}
+@media print { .sl-tray { display: none !important; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): searching a course on the Fact File shows a board (new) | from: small cards listing four matching courses as
+   plain bullets, no way to shortlist without opening the university | to: wider off-white cards (two per row on a computer, one on a phone),
+   each with the university's name as a link and a grey Open pill, "6 matching courses" in blue, then one row per course (name in dark
+   type, its level and intake in grey below, a grey "+ Shortlist" pill on the right that turns green "✓ Shortlisted"), "Show all" for the rest;
+   above the board a bar "Shortlisting for ..." with Change student */
+.cards.is-board { grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); align-items: start; }
+.cards.is-board > .ub-for { grid-column: 1 / -1; }
+html body .uni-card.is-board { padding: 18px 20px 14px; gap: 6px; }
+html body .uni-card.is-board:hover { transform: none; }
+.ub-top { display: flex; align-items: center; gap: 12px; }
+.ub-top .uni-mono { position: static; flex: none; }
+.ub-words { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; }
+.ub-name { color: #1d1d1f; font-size: 17px; font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.ub-name:hover { color: #0066cc; }
+.ub-open { flex: none; }
+.ub-count { margin: 6px 0 0; color: #0058b0; font-size: 14px; font-weight: 600; }
+.ub-courses { margin: 0; padding: 0; list-style: none; }
+.ub-courses li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid #e5e5ea; }
+.ub-courses li:first-child { border-top: 0; }
+.ub-courses li[hidden] { display: none; }
+.ub-course { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; }
+.ub-course-name { color: #1d1d1f; font-size: 15px; overflow-wrap: anywhere; }
+.ub-meta { color: #6e6e73; font-size: 13px; }
+.ub-courses .sl-pick { flex: none; margin-left: auto; }
+.ub-more { align-self: flex-start; margin-top: 4px; }
+
+/* 🔴 CSS CHANGED (2026-11-17): Shortlist pills easier to see | from: a pale grey pill "Shortlist" in 13px type | to: a blue-tinted pill
+   "+ Shortlist" in blue 14px type (green "✓ Shortlisted" once chosen); the "Shortlisting for" bar a soft blue-grey strip with larger type */
+html body .sl-pick { min-height: 34px; padding: 0 14px; background: #e8f2fd; color: #0058b0; font: 600 14px/34px var(--font); }
+html body .sl-pick:hover { background: #d6e8fc; }
+html body .sl-pick.is-on { background: #e3f5e8; color: #1f7a35; }
+html body .sl-for { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0 12px; padding: 10px 14px; border-radius: 14px; background: #eef3f9; font-size: 15px; }
+html body .sl-for-text { flex: 1 1 auto; color: #1d1d1f; }
+
+/* 🔴 CSS CHANGED (2026-11-17): "Find universities for a student" easier to read | from: courses as small rows with a 14.5px name and a pale
+   meta line | to: courses in a soft grey rounded box, each row 15px dark type with its campus and intake beneath, the Shortlist pill on the right */
+html body .fd-courses { padding: 4px 12px; border-radius: 12px; background: #f5f5f7; }
+html body .fd-courses li { flex-wrap: nowrap; padding: 9px 0; font-size: 15px; }
+html body .fd-courses li > .fd-course { flex: 1 1 auto; min-width: 0; }
+html body .fd-label { color: #1d1d1f; font-size: 14px; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the windows "Email the options" and "Assign to the Application Team" (new) | from: no such windows ("Email these
+   options" did nothing; the send box was on the student card only, without a partner) | to: a numbered list of the courses (blue circles),
+   beside each a menu "Choose the partner..." (Direct, or a B2B partner) with a small grey hint under it, a Notes box, then the blue pill; the
+   email window shows the email as the student will see it in a white framed preview */
+.oa-sub { margin: 0 0 4px; }
+.oa-list, .oa-assign { counter-reset: oa; list-style: none; margin: 0 0 14px; padding: 0; }
+.oa-list li, .oa-assign li { counter-increment: oa; position: relative; display: grid; gap: 2px; padding: 10px 12px 10px 48px; margin: 0 0 6px; border-radius: 12px; background: #f5f5f7; }
+.oa-list li::before, .oa-assign li::before { content: counter(oa); position: absolute; left: 12px; top: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 13px; font-weight: 700; }
+.oa-assign li { grid-template-columns: minmax(0, 1fr) minmax(200px, 260px); align-items: center; gap: 4px 14px; }
+.oa-assign-text { display: flex; flex-direction: column; min-width: 0; }
+.oa-assign-text b { color: #1d1d1f; overflow-wrap: anywhere; }
+.oa-partner { width: 100%; min-height: 40px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 10px; background: #fff; color: #1d1d1f; font: 15px var(--font); }
+.oa-partner:invalid, .oa-partner:has(option[value=""]:checked) { border-color: #ff9f0a; }
+.oa-hint { grid-column: 2; color: #6e6e73; font-size: 12.5px; }
+.oa-hint:empty { display: none; }
+.oa-preview:not(:empty) { margin: 6px 0 10px; }
+.oa-frame { display: block; width: 100%; height: 420px; border: 0; border-radius: 12px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .12); }
+@media (max-width: 640px) { .oa-assign li { grid-template-columns: minmax(0, 1fr); } .oa-hint { grid-column: 1; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): the student card's Shortlist without boxes to fill in (the owner: "I don't want to fill any details") | from:
+   each course with five boxes to type in (Tuition fee, Minimum cash deposit, Scholarship, Course link, Note) and Save changes, plus a grey
+   "Send to the Application Team" box with ticks | to: a numbered list (blue circles), each course with its university, intake and level in
+   grey, the partner as a small grey pill ("Through Real Dreams"), and the fee, scholarship, deposit and course page as read-only lines
+   from the Fact File; Email these options and the blue Assign to the Application Team pill sit at the top right */
+html body ol.p-chosen { counter-reset: chosen; list-style: none; margin: 0; padding: 0; }
+html body ol.p-chosen > li.p-chosen-item { counter-increment: chosen; position: relative; padding: 14px 16px 14px 54px; }
+html body ol.p-chosen > li.p-chosen-item::before { content: counter(chosen); position: absolute; left: 16px; top: 14px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 13px; font-weight: 700; }
+html body .p-chosen-item header { align-items: center; }
+html body .p-chosen-item h3 { margin: 0; font-size: 16px; }
+.p-chosen-tools { display: flex; flex: none; align-items: center; gap: 6px; }
+.p-chosen-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 2px 0 0; color: #515154; font-size: 14px; }
+.p-chosen-partner { padding: 1px 10px; border-radius: 999px; background: #ececf0; color: #1d1d1f; font-size: 13px; font-weight: 600; }
+.p-chosen-facts { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 10px 0 0; }
+.p-chosen-facts div { display: flex; flex-direction: column; min-width: 0; }
+.p-chosen-facts dt { color: #6e6e73; font-size: 12.5px; }
+.p-chosen-facts dd { margin: 0; color: #1d1d1f; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+.p-card-acts { display: flex; flex-wrap: wrap; gap: 8px; }

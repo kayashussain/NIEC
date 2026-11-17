@@ -266,10 +266,62 @@ function createPortalApi({
     const picked = Array.isArray(optionIds) && optionIds.length ? card.options.filter((o) => optionIds.includes(o.id)) : card.options;
     return {
       values: Messages.valuesFor({ row: found.row, sheetName: found.sheet.name, card, sender: req.user.name, company: messages.signature().company, short: messages.signature().short }),
-      options: picked,
+      options: picked.map(withFacts),
       ...Messages.documentLists(card),
     };
   }
+  // ---- what a shortlisted course carries by itself (the owner, 17 Nov 2026: "I don't want to fill any details") ----
+  // The tuition fee, scholarship and deposit of the course's level and the course's own page, from the Fact File; nobody types them.
+  const FactPresent = require('./fact-present');
+  function factsForOption(o) {
+    const uni = o.universityId ? facts.all().find((u) => u.id === o.universityId) : null;
+    if (!uni) return {};
+    const group = FactPresent.levelGroup(o.level || '');
+    const programs = uni.programs || [];
+    const row = programs.find((p) => FactPresent.levelGroup(p.name) === group) || (programs.length === 1 ? programs[0] : null);
+    const first = (k) => String((row && row[k]) || '').split('\n').map((l) => l.replace(/^[-*\u2022]\s+/, '').trim()).filter(Boolean)[0] || '';
+    const links = courseLinks.all(facts.all());
+    const link = links[linkKey(uni.id, o.course)] || links[linkKey(uni.id, String(o.course || '').replace(/\s*\([^)]*\)\s*$/, '').trim())] || '';
+    return { fee: first('tuition'), scholarship: first('scholarship'), deposit: first('deposit'), link };
+  }
+  // An option as it is shown and emailed: what was saved on it, else what the Fact File says now.
+  function withFacts(o) {
+    const f = factsForOption(o);
+    return { ...o, fee: o.fee || f.fee || '', scholarship: o.scholarship || f.scholarship || '', deposit: o.deposit || f.deposit || '', link: o.link || f.link || '' };
+  }
+
+  // ---- through which partner an application goes (the owner, 17 Nov 2026: always asked before the Application Team gets it) ----
+  // The choices: Direct (the university itself, when it is on Partner Universities as Direct) and every B2B partner still working
+  // with NIEC. The one used most for this university on the sheet (University Partner column) is suggested first.
+  function applicationPartners(universityNames) {
+    const directOnes = (direct ? direct.all() : []).filter((u) => u.status !== 'Ended');
+    const b2bNames = [...new Set((b2b ? b2b.list() : []).filter((p) => p.status !== 'Ended').map((p) => p.name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const used = new Map(); // squashed university -> Map(partner -> count)
+    const wb = getWorkbook();
+    if (wb) wb.sheets.forEach((sheet) => sheet.rows.forEach((row) => {
+      const uni = squash(row['UNIVERSITY NAME']);
+      const partner = text(row['UNIVERSITY PARTNER']);
+      if (!uni || !partner) return;
+      const name = partnerNamed(partner);
+      if (!used.has(uni)) used.set(uni, new Map());
+      used.get(uni).set(name, (used.get(uni).get(name) || 0) + 1);
+    }));
+    const out = {};
+    (universityNames || []).forEach((uniName) => {
+      const k = squash(uniName);
+      const d = directOnes.find((u) => squash(u.name) === k || (k.length > 6 && (squash(u.name).includes(k) || k.includes(squash(u.name)))));
+      const directHere = Boolean(d && d.type !== 'Through a B2B partner');
+      const counts = [...((used.get(k) || new Map()).entries())].sort((a, b) => b[1] - a[1]);
+      const isUni = (n) => squash(n) === k || /universit|college/i.test(n);
+      let suggested = '';
+      if (d && d.type === 'Through a B2B partner' && d.via) suggested = d.via;
+      else if (counts.length) suggested = isUni(counts[0][0]) ? 'Direct' : counts[0][0];
+      else if (directHere) suggested = 'Direct';
+      out[uniName] = { direct: directHere, suggested, used: counts.map(([n]) => (isUni(n) ? 'Direct' : n)).filter((n, i, a) => a.indexOf(n) === i) };
+    });
+    return { b2b: b2bNames, universities: out };
+  }
+
   // The newest sends of each account, so a slip of the finger (or a script) cannot send hundreds of emails.
   const sends = new Map(); // account id -> [times]
   function tooManySends(userId) {
@@ -1261,7 +1313,8 @@ function createPortalApi({
       if (!part) {
         sendJSON(res, 200, {
           student: { ...brief(found.sheet, found.row), color: found.row._color || '', remarks: text(found.row.REMARKS), columns: found.sheet.columns, row: Object.fromEntries(found.sheet.columns.map((c) => [c, found.row[c] ?? ''])) },
-          card,
+          // Each option with its fee, scholarship, deposit and course page from the Fact File when the option has none of its own.
+          card: { ...card, options: (card.options || []).map(withFacts) },
           checks: checksOf(found.row, card),
           can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
           taskTeams: TASK_TEAMS(),
@@ -1466,13 +1519,19 @@ function createPortalApi({
       const ids = (Array.isArray(body.ids) ? body.ids : []).map(text).filter(Boolean).slice(0, 30);
       const chosen = ids.map((oid) => (card.options || []).find((o) => o.id === oid)).filter(Boolean);
       if (!chosen.length) { sendJSON(res, 400, { error: 'Choose at least one course first.' }); return true; }
-      const list = chosen.map((o, n) => `${n + 1}. ${[o.course, o.university].filter(Boolean).join(' at ')}${o.intake ? ` (${o.intake})` : ''}`);
+      // Through which partner each one goes (Direct or a B2B partner): asked every time, nothing goes to the team without it.
+      const partners = body.partners && typeof body.partners === 'object' ? body.partners : {};
+      const via = (o) => text(partners[o.id] || o.partner).replace(/\s+/g, ' ').slice(0, 120);
+      const without = chosen.filter((o) => !via(o));
+      if (without.length) { sendJSON(res, 400, { error: `Choose the partner for ${without.map((o) => o.university || o.course).join(', ')} first.` }); return true; }
+      const through = (o) => (/^direct$/i.test(via(o)) ? 'direct' : `through ${via(o)}`);
+      const list = chosen.map((o, n) => `${n + 1}. ${[o.course, o.university].filter(Boolean).join(' at ')}${o.intake ? ` (${o.intake})` : ''}, ${through(o)}`);
       const made = cards.addTask(rowId, { team: 'application', text: `Apply for ${who}: ${chosen.length} course${chosen.length === 1 ? '' : 's'} in this order (University options)`, tag: 'application', priority: 'high' }, by(req));
       if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
       const words = text(body.note).slice(0, 1500);
       cards.commentTask(rowId, made.task.id, [list.join('\n'), words].filter(Boolean).join('\n\n'), by(req));
       const today = localDate();
-      chosen.forEach((o, n) => cards.updateOption(rowId, o.id, { sent: today, rank: String(n + 1) }, by(req)));
+      chosen.forEach((o, n) => cards.updateOption(rowId, o.id, { sent: today, rank: String(n + 1), partner: via(o) }, by(req)));
       activity.record(req, req.user, 'Task', { app: 'Student card', changes: [`Sent ${chosen.length} course${chosen.length === 1 ? '' : 's'} of ${who} to the Application Team`] });
       sendJSON(res, 200, { ok: true, card: cards.get(rowId) });
       return true;
@@ -1481,7 +1540,9 @@ function createPortalApi({
     } else if (part === 'options' && sub) {
       out = cards.updateOption(rowId, sub, body, by(req));
     } else if (part === 'options') {
-      out = cards.addOption(rowId, body, by(req));
+      // The fee, scholarship, deposit and course page come from the Fact File by themselves (nobody types them).
+      const auto = factsForOption({ universityId: text(body.universityId), course: text(body.course), level: text(body.level) });
+      out = cards.addOption(rowId, { ...body, fee: text(body.fee) || auto.fee || '', scholarship: text(body.scholarship) || auto.scholarship || '', deposit: text(body.deposit) || auto.deposit || '', link: text(body.link) || auto.link || '' }, by(req));
       if (!out.error) note(req, [`${who}: added the option ${[out.option.university, out.option.course].filter(Boolean).join(', ')}`]);
     } else {
       send(res, 404, 'Not found');
@@ -2879,6 +2940,14 @@ function createPortalApi({
       const linkOf = (c) => links[linkKey(uid, c)] || links[linkKey(uid, c.replace(/\s*\([^)]*\)\s*$/, '').trim())] || '';
       const shape = (block) => parseCourses(block).map((c) => { const link = linkOf(c.course); return { course: c.course, group: c.group, link, notFound: !link && Boolean(miss && miss.courses.has(c.course.toLowerCase())) }; });
       sendJSON(res, 200, { id: uid, general: shape(uni.courses), intakes: Object.fromEntries((uni.intakes || []).map((i) => [i.name, shape(i.courses)])), canFind: !Teams.isReadOnly(req.user) });
+      return true;
+    }
+    // The partners an application can go through, for the universities asked about (?u=Name&u=Name), with the one to suggest.
+    if (urlPath === '/api/application-partners' && req.method === 'GET') {
+      if (Teams.isReadOnly && Teams.isReadOnly(req.user)) { sendJSON(res, 403, { error: 'Your account can only look.' }); return true; }
+      if (req.user.role === 'student') { sendJSON(res, 403, { error: 'Not for a student login.' }); return true; }
+      const names = new URL(req.url, 'http://x').searchParams.getAll('u').map((x) => text(x).slice(0, 160)).filter(Boolean).slice(0, 30);
+      sendJSON(res, 200, applicationPartners(names));
       return true;
     }
     if (urlPath === '/api/course-link' && req.method === 'POST') {
