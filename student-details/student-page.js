@@ -311,7 +311,7 @@
       main.append(ico, mw);
       box.append(main);
       const dl = el('dl', 'p-origin-rows');
-      const fact = (k, v) => { const d = el('div', 'p-origin-row'); d.append(el('dt', '', k), el('dd', '', v || 'Not recorded')); dl.append(d); };
+      const fact = (k, v) => { const d = el('div', 'p-origin-row'); d.append(el('dt', '', k), el('dd', v ? '' : 'is-empty', v || 'Not recorded')); dl.append(d); };
       // An event or campaign is shown by its name: the date kept beside it in the records is the day the campaign started, not the
       // student's (the owner, 14 Nov 2026). The student's own first inquiry day and time are shown below it.
       const plain = (v) => String(v || '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '');
@@ -490,6 +490,18 @@
     whatsapp: '<path d="M4 20l1.3-4A8 8 0 1 1 8 18.8z"/>',
   };
   const tlIcon = (name) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = TL_ICON[name]; return s; };
+  let tlLastSeen = null; // when this person last opened this student ('' the first time), read once when the card opens
+  // A note being written is kept in this browser until it is added, so closing the card or the window never loses it.
+  const draftKey = () => `isrDraft:${(data && data.me && data.me.name) || ''}:${id}`;
+  // N starts a note (when nothing is being typed and no window is open), as a quick key in Apple's apps.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const a = document.activeElement;
+    if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
+    if (document.querySelector('dialog[open], .p-dialog')) return;
+    const box = document.querySelector('.p-tl-input');
+    if (box) { e.preventDefault(); box.focus(); box.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  });
   let tlRevealFrom = 0; // after Show all, the entries from here on fade in once
   // The time of an entry as people say it: "Just now", "5 min ago" in the last hour, then the clock time ("3:40 PM"). The words are
   // kept fresh every minute while the card is open.
@@ -526,7 +538,16 @@
     // can be read day by day. What is written stays as it was written: no pinning and no changing (the owner, 17 Nov 2026); a note can
     // still be removed by the person who wrote it or Admin, and a done task reopened. The applications are not repeated here: the
     // tasks and notes already say each step, and Applications has the rest.
-    wrap.append(el('h2', 'p-tl-title-h', 'Timeline'));
+    // The title on the left and the switch (All, Notes, Tasks, Messages) on the right of the same row, as in Apple's apps.
+    const top = el('div', 'p-tl-top');
+    top.append(el('h2', '', 'Timeline'));
+    wrap.append(top);
+    // What is new since this person last opened the student: a small blue dot, as in Mail. Kept in this browser only.
+    const meName = (data.me || {}).name || '';
+    if (tlLastSeen === null) {
+      const key = `isrSeen:${meName}:${id}`;
+      try { tlLastSeen = localStorage.getItem(key) || ''; localStorage.setItem(key, new Date().toISOString()); } catch (e) { tlLastSeen = ''; }
+    }
     if (can()) {
       // The box to write a note, with its button inside it at the bottom, as in Apple's own apps. "p-note-box" keeps the card's
       // two-column layout (theme.css).
@@ -544,7 +565,7 @@
       const add = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Add note');
       // The button appears once something is typed (Ctrl+Enter or Cmd+Return also adds it).
       const showAdd = () => { box.classList.toggle('has-text', Boolean(text.value.trim())); };
-      text.addEventListener('input', () => { noteDraft = text.value; showAdd(); });
+      text.addEventListener('input', () => { noteDraft = text.value; showAdd(); try { if (noteDraft.trim()) localStorage.setItem(draftKey(), noteDraft); else localStorage.removeItem(draftKey()); } catch (e) { /* not kept */ } });
       text.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); add.click(); } });
       add.addEventListener('click', async () => {
         if (!text.value.trim()) { text.focus(); return; }
@@ -552,7 +573,7 @@
         try {
           const r = await save('notes', { text: text.value, kind: 'note' }, 'Note added');
           justAdded = (r && r.note && r.note.id) || '';
-          noteDraft = ''; historyFilter = historyFilter === 'all' || historyFilter === 'note' ? historyFilter : 'all'; render();
+          noteDraft = ''; try { localStorage.removeItem(draftKey()); } catch (e) { /* nothing kept */ } historyFilter = historyFilter === 'all' || historyFilter === 'note' ? historyFilter : 'all'; render();
         } catch (e) { add.disabled = false; }
       });
       bar.append(add);
@@ -656,11 +677,11 @@
       if (acts.children.length) body.append(acts);
       li.append(av, body);
       if (e.note && e.note.id === justAdded) { li.classList.add('is-new'); justAdded = ''; }
+      else if (tlLastSeen && String(e.at) > tlLastSeen && e.by !== meName) { li.classList.add('is-unseen'); li.title = 'New since you last opened this student'; }
       return li;
     };
     // Everything, Notes, Tasks or Messages.
     const present = new Set(events.map(kindOfEvent));
-    const tools = el('div', 'p-tl-tools');
     if (present.size > 1) {
       const seg = el('div', 'p-tl-seg');
       seg.setAttribute('role', 'tablist');
@@ -669,9 +690,8 @@
         b.addEventListener('click', () => { historyFilter = k; render(); });
         seg.append(b);
       });
-      tools.append(seg);
+      top.append(seg);
     } else historyFilter = 'all';
-    if (tools.children.length) wrap.append(tools);
     // The sheet's Remarks, unless it is only the latest progress line ISR wrote there (that is already a note above).
     const remark = data.student.remarks && data.student.remarks !== data.card.autoRemark ? data.student.remarks : '';
     const LIMIT = 8;
@@ -1124,6 +1144,7 @@
     try {
       const [d, l] = await Promise.all([api('/api/cards/' + encodeURIComponent(id)), api('/api/card-lists')]);
       data = d; lists = l;
+      try { noteDraft = localStorage.getItem(draftKey()) || ''; } catch (e) { /* none kept */ }
       if (!TABS.some(([k]) => k === tab)) tab = 'details';
       render();
     } catch (e) {
