@@ -329,14 +329,65 @@
       try {
         const missing = picker.check();
         if (missing) { say(missing, true); return; }
-        const v = picker.value();
-        if (data.can.source && v.source !== (s.source || '')) { await save('source', { source: v.source }); data.student.source = v.source; }
-        await save('profile', { sourceDetail: v.detail, sourceRemarks: v.remarks, sourcePlatform: v.platform || '', sourceWay: v.way || '' }, 'Saved');
+        await saveSource(picker.value());
         editingOrigin = false; render();
       } catch (e) { /* shown */ }
     } }, 'Save'), h('button', { class: 'btn', type: 'button', onclick: () => { editingOrigin = false; render(); } }, 'Cancel'));
     box.append(bar);
     return box;
+  }
+
+  async function saveSource(v) {
+    const s = data.student;
+    if (data.can.source && v.source !== (s.source || '')) { await save('source', { source: v.source }); data.student.source = v.source; }
+    await save('profile', { sourceDetail: v.detail, sourceRemarks: v.remarks, sourcePlatform: v.platform || '', sourceWay: v.way || '' }, 'Saved');
+  }
+
+  // What is still missing from the source ('' when it is complete): the source itself, and then how exactly the student reached us
+  // (the branch, the platform and Organic or Advert, the event, the agent, the class, how a visitor came, who referred them).
+  function sourceGap(v) {
+    const g = v.group;
+    if (!g) return 'Choose the student source.';
+    if (g === 'Branch') return v.source ? '' : 'Choose the branch.';
+    if (g === 'Social Media') {
+      if (!v.platform) return 'Choose the platform.';
+      if (!v.way) return 'Choose Organic or Advert.';
+      return v.way === 'Advert' && !v.detail ? 'Choose the campaign.' : '';
+    }
+    if (!v.detail) return `Fill in: ${F.SOURCE_DETAIL_LABEL[g] || 'where exactly'}.`;
+    return '';
+  }
+  const storedSourceValue = () => {
+    const s = data.student; const p = profile(); const g = F.sourceGroup(s.source);
+    return { group: g, source: s.source || '', detail: p.sourceDetail || '', platform: p.sourcePlatform || '', way: p.sourceWay || '' };
+  };
+
+  // Asked every time the card opens (the owner, 17 Nov 2026): when the source is not recorded, or recorded without how exactly the
+  // student reached us ("Visitor" alone), a window asks for it. "Not now" closes it and the card is used as before; the next time the
+  // card opens it asks again, until the source is complete. Only for those who can change the card.
+  async function askSource() {
+    if (!can() || !sourceGap(storedSourceValue())) return;
+    const s = data.student; const p = profile();
+    if (!F.sourceGroup(s.source) && !data.can.source) return; // nobody here may set the source itself
+    const saved = await dialog('Where did this student come from?', (body, close) => {
+      body.append(el('p', 'p-muted', `The source of ${s.name || 'this student'} is not complete. Please choose the source and how exactly they reached us.`));
+      const picker = window.SourcePicker.create({ lists, initial: { source: s.source, detail: p.sourceDetail, remarks: p.sourceRemarks, platform: p.sourcePlatform, way: p.sourceWay }, disabled: !data.can.source });
+      const form = el('div', 'p-form');
+      picker.nodes.forEach((n) => form.append(n));
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
+      ok.addEventListener('click', async () => {
+        const v = picker.value();
+        const missing = picker.check() || sourceGap(v);
+        if (missing) { msg.textContent = missing; msg.className = 'p-msg error'; return; }
+        ok.disabled = true;
+        try { await saveSource(v); close(true); } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.disabled = false; }
+      });
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Not now'), ok);
+      body.append(form, msg, foot);
+    });
+    if (saved) render();
   }
 
   // ---- Notes (replace the Remarks column of the sheet) ----
@@ -467,14 +518,15 @@
     const waiting = waitingOptions();
     const acts = el('div', 'p-card-acts');
     // Straight to the Fact File with this student already chosen, so the team shortlists without searching for the student again.
-    if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id) }, 'Shortlist in the Fact File'));
+    // target _top: from the half card (an iframe on All Students) the Fact File opens as the whole page, not inside the card.
+    if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id), target: '_top' }, 'Shortlist course'));
     if (data.card.options.length) {
       acts.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Email these options'));
       if (waiting.length && can()) acts.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => window.OptionActions.assign(studentRef(), waitingOptions()).then((r) => { if (r) { sendOrder = null; refreshCard(); } }) }, 'Assign to the Application Team'));
     }
     if (acts.children.length) head.append(acts);
     box.append(head);
-    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No courses yet. Press "Shortlist in the Fact File", or search below and press Add.')); return box; }
+    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No courses yet. Press "Shortlist course" to open the Fact File with this student chosen.')); return box; }
     const list = el('ol', 'p-chosen');
     const ordered = [...waiting, ...data.card.options.filter((o) => o.sent || o.applied)];
     ordered.forEach((o) => {
@@ -517,91 +569,12 @@
     box.append(list);
     return box;
   }
-  async function addOption(o) {
-    try { await save('options', { universityId: o.universityId, university: o.university, course: o.course, level: o.level, intake: o.intake, fee: o.fee, deposit: o.deposit, scholarship: o.scholarship, link: o.link }, 'Added to the options'); render(); } catch (e) { /* shown */ }
-  }
-  function optionCard(o) {
-    const c = el('div', `p-option${o.closed ? ' closed' : ''}`);
-    const left = el('div');
-    left.append(el('h3', '', o.course), el('div', 'p-uni', `${o.university}${o.intake ? ' · ' + o.intake : ''}${o.level ? ' · ' + o.level : ''}`));
-    c.append(left);
-    const act = el('div', 'p-option-act');
-    if (can()) act.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => addOption(o) }, 'Add'));
-    if (o.universityId) { const open = h('a', { class: 'btn btn-sm', href: '/fact-file?u=' + encodeURIComponent(o.universityId), target: '_blank', rel: 'noopener' }, 'Open'); act.append(open); }
-    c.append(act);
-    const money = el('div', 'p-money');
-    [['Fee', o.fee], ['Scholarship', o.scholarship]].forEach(([k, v]) => { const sp = el('span'); sp.append(el('span', 'p-muted', k + ': '), el('b', '', v || 'to be confirmed')); money.append(sp); });
-    c.append(money);
-    const w = el('div', 'p-why');
-    const addLink = (text, href) => { const a = el('a', 'p-link p-small', text); a.href = href; a.target = '_blank'; a.rel = 'noopener'; if (w.childNodes.length) w.append(' · '); w.append(a); };
-    if (o.link) addLink(o.linkIsCourse ? 'Course page' : 'University website', o.link);
-    c.append(w);
-    return c;
-  }
-  // University options (the owner, 14 Nov 2026): the study level, a course search with its own Search button, and remarks. Each course
-  // found has Add (to this student's options) and Open (its university's page in the Fact File). What is typed is kept on the card.
+  // University options (the owner, 17 Nov 2026): only the shortlist and one button, Shortlist course. The button opens the whole Fact
+  // File page with this student already chosen (/fact-file?for=ID), never inside the half card, and the courses are shortlisted there.
+  // The course finder and the course search that were here are gone: they are on the Fact File.
   function optionsTab() {
     const wrap = el('div');
-    let chosen = chosenOptions();
-    wrap.append(chosen);
-    const p = profile();
-    const lock = !can();
-    // Who can go where (the owner, 17 Nov 2026): the card's own details (level, grade, gap, English, subject) checked against every
-    // university at once (finder.js); Add puts a course into the options above, and changed details can be saved on the card.
-    if (window.Finder) {
-      const fbox = el('div');
-      wrap.append(fbox);
-      window.Finder.mount(fbox, {
-        title: 'Universities this student can go to',
-        intro: 'Filled in from the student card. Change anything and press Find; save it on the card when it is right.',
-        prefill: { level: F.OLDER_STUDY_LEVELS[p.studyLevel] || p.studyLevel || '', grade: p.grade || '', gap: p.gapYears || '', test: p.englishTest || '', score: p.englishScore || '', band: p.englishBand || '', subject: p.subject || '' },
-        addLabel: 'Add to options',
-        onAdd: lock ? null : async (r, co) => {
-          await save('options', { universityId: r.id, university: r.name, course: co.name, level: profile().studyLevel || '', intake: co.intake, fee: (r.fee || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0], scholarship: (r.scholarship || '').split('\n')[0] }, `Added: ${co.name}`);
-          const next = chosenOptions(); chosen.replaceWith(next); chosen = next;
-        },
-        onSave: lock ? null : (v) => save('profile', { studyLevel: v.level, grade: v.grade, gapYears: v.gap, englishTest: v.test, englishScore: v.score, englishBand: v.band, subject: v.subject }, ''),
-      });
-    }
-    const box = el('section', 'p-card');
-    box.append(el('h2', '', 'Search courses by name'));
-    const form = el('form', 'p-find');
-    const lv = field('Study level', { kind: 'select', choices: [['', 'Any level'], ...F.STUDY_LEVELS.map((x) => [x, x])], value: F.OLDER_STUDY_LEVELS[p.studyLevel] || p.studyLevel });
-    const q = field('Course name', { placeholder: 'e.g. Cyber Security, Nursing, Business', value: p.subject || '', max: 160 });
-    q.input.type = 'search';
-    const go = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Search');
-    // In the owner's order (15 Nov 2026): Study level, Course name, Remarks, then Search.
-    const remarks = field('Remarks', { kind: 'area', wide: true, value: p.optionRemarks || '', max: 1500, disabled: lock, placeholder: 'e.g. Prefers Manchester or London, 5 options, 2 year study gap' });
-    remarks.input.rows = 2;
-    form.append(lv.wrap, q.wrap, remarks.wrap, go);
-    const out = el('div', 'p-option-results');
-    box.append(form, out);
-    wrap.append(box);
-    let saved = JSON.stringify([p.studyLevel || '', p.subject || '', p.optionRemarks || '']);
-    // What was searched and the remarks are kept on the card, only when something changed.
-    const keep = () => {
-      if (lock) return;
-      const now = [lv.input.value, q.input.value.trim(), remarks.input.value.trim()];
-      if (JSON.stringify(now) === saved) return;
-      saved = JSON.stringify(now);
-      save('profile', { studyLevel: now[0], subject: now[1], optionRemarks: now[2] }, '').catch(() => {});
-    };
-    const run = async () => {
-      keep();
-      go.disabled = true;
-      out.replaceChildren(el('div', 'p-muted p-small', 'Searching…'));
-      try {
-        const r = await api('/api/courses?' + new URLSearchParams({ q: q.input.value, level: lv.input.value }));
-        out.replaceChildren(el('div', 'p-muted p-small p-found', r.total ? `${r.total} course${r.total === 1 ? '' : 's'}${r.total > r.options.length ? `, the first ${r.options.length} shown` : ''}` : 'No course found. Try fewer words.'));
-        r.options.forEach((o) => out.append(optionCard(o)));
-      } catch (e) { out.replaceChildren(el('div', 'p-notice bad', e.message)); }
-      go.disabled = false;
-    };
-    form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
-    lv.input.addEventListener('change', run);
-    remarks.input.addEventListener('blur', keep);
-    if (p.subject || p.studyLevel) run();
-    else out.append(el('p', 'p-muted p-small', 'Choose a level or type a course, then Search.'));
+    wrap.append(chosenOptions());
     return wrap;
   }
 
@@ -765,7 +738,9 @@
       render();
     } catch (e) {
       view.replaceChildren(h('div', { class: 'p-card' }, el('h1', 'p-error-title', 'This student cannot be opened'), el('p', '', e.message), h('a', { class: 'btn', href: '/students' }, 'Back to All Students')));
+      return;
     }
+    askSource();
   }
   window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (data && t !== tab && TABS.some(([k]) => k === t)) { tab = t; render(); } });
   start();

@@ -157,6 +157,10 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     assert.match(await frame.locator('.p-hero h1').textContent(), /Student/);
     assert.ok(await frame.locator('.p-tabs button').count() === 2, 'two tabs only: Notes and University options (no Send a message, the owner, 17 Nov 2026)');
     assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp, Email and Copy number are under the name');
+    // No source recorded: the card asks for it every time it opens (the owner, 17 Nov 2026); Not now closes it and the card is used as before.
+    await frame.locator('dialog.p-dialog h2', { hasText: 'Where did this student come from?' }).waitFor();
+    await frame.getByRole('button', { name: 'Not now' }).click();
+    await frame.locator('dialog.p-dialog').waitFor({ state: 'detached' });
     // The keyboard is in the card now: typing must not reach the cell of the sheet hidden behind it.
     assert.strictEqual(await page.evaluate(() => document.activeElement && document.activeElement.tagName), 'IFRAME');
     await page.keyboard.type('x');
@@ -738,6 +742,8 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.click('.p-dialog-foot .btn-primary');
     await page.waitForFunction(() => document.querySelectorAll('#body tr:not(.pad-row)').length === 3);
     await page.waitForSelector('.p-drawer iframe');
+    // The new student has no source yet, so the card asks for it first (the owner, 17 Nov 2026).
+    { const card = page.frameLocator('.p-drawer iframe'); await card.getByRole('button', { name: 'Not now' }).click(); await card.locator('dialog.p-dialog').waitFor({ state: 'detached' }); }
     await page.keyboard.press('Escape');
     const added = await page.locator('#body tr:not(.pad-row)').last().locator('td').nth(await colIndex('APPLICATION STATUS')).locator('select').inputValue();
     assert.strictEqual(added, 'Application Stage', 'the new student starts at the filtered status');
