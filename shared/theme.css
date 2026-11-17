@@ -3368,3 +3368,16 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 .pc-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 @media (max-width: 640px) { .pc-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } .pc-side { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .pc-dot, .pc-done.is-new .pc-check { animation: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): Data to fix: By gap | By student | from: the gap pills alone above the lists; a student missing three details listed three times, one box each | to: the pills on the left and a segmented switch "By gap | By student" on the right of the same row; By student shows one panel "Students with gaps" with each student once: the name, stage and intake on the left, a small grey label above each box they are missing (Date of birth, Passport number, Address) side by side in the middle, and one blue Save on the right; the boxes look like the ones of By gap (rounded, 12px inside, the blue focus ring) */
+.df-bar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; margin: 0 0 18px; }
+.df-bar .df-pills { margin: 0; }
+.df-mode { flex: none; }
+.df-row.df-row-student { grid-template-columns: minmax(200px, 1fr) minmax(280px, 2fr) auto; }
+.df-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
+.df-field { display: grid; gap: 4px; flex: 1 1 170px; min-width: 0; }
+.df-field > span { color: #5f5f64; font-size: 12.5px; font-weight: 600; }
+.df-field .df-input, .df-field .p-date { width: 100%; }
+.df-field .df-input { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--edit-bg); font: inherit; font-size: 15px; }
+.df-field .df-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
+@media (max-width: 760px) { .df-row.df-row-student { grid-template-columns: 1fr; } }

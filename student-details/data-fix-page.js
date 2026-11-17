@@ -11,6 +11,11 @@
   const SHOWN = 8; // rows of a group before "Show all"
   let data = null;
   let only = ''; // the group shown, or '' for all
+  // By gap (a list per missing detail) or By student (each student once, with every gap of theirs in one row and one Save), kept in
+  // this browser (the owner, 17 Nov 2026: less work for the team).
+  let mode = (() => { try { return localStorage.getItem('isrDataFixMode') === 'student' ? 'student' : 'gap'; } catch (e) { return 'gap'; } })();
+  // After a save, the cursor goes to the next box to fill in, so a list is typed straight through with Enter.
+  let focusNext = null;
   const opened = new Set(); // groups showing every row
 
   const cardHref = (id) => '/student?id=' + encodeURIComponent(id);
@@ -58,7 +63,78 @@
     g.count = g.students.length;
     data.total -= 1;
     row.classList.add('is-done');
+    // The box of the next row in the same list keeps the keyboard.
+    const next = row.nextElementSibling && row.nextElementSibling.querySelector('.df-input');
+    focusNext = next ? next.getAttribute('aria-label') : null;
     setTimeout(() => { draw(); }, 420);
+  }
+
+  // ---- By student: each student once, every gap of theirs in one row ----
+  function byStudent(groups) {
+    const map = new Map();
+    groups.forEach((g) => g.students.forEach((s) => {
+      const x = map.get(s.id) || { s, gaps: [] };
+      x.gaps.push({ g, s });
+      map.set(s.id, x);
+    }));
+    return [...map.values()].sort((a, b) => b.gaps.length - a.gaps.length || String(a.s.name).localeCompare(String(b.s.name)));
+  }
+  function studentRow(x) {
+    const { s, gaps } = x;
+    const li = el('li', 'df-row df-row-student');
+    const who = el('div', 'df-who');
+    const meta = el('div', 'df-meta');
+    if (s.stage) meta.append(stagePill(s.stage));
+    meta.append(el('span', '', [s.intake, s.university].filter(Boolean).join(' · ')));
+    who.append(h('a', { class: 'df-name', href: cardHref(s.id) }, s.name || 'Student with no name yet'), meta);
+    const boxes = el('div', 'df-fields');
+    const inputs = [];
+    const looks = [];
+    gaps.forEach(({ g, s: gs }) => {
+      const f = gs.fix;
+      if (!f || data.readOnly) { looks.push(g.title); return; }
+      // The same detail asked by two lists is one box; saving it clears it from both.
+      const same = inputs.find((i) => i.f.on === f.on && i.f.field === f.field);
+      if (same) { same.groups.push(g); return; }
+      const lab = el('label', 'df-field');
+      const input = h('input', { type: f.kind === 'date' ? 'date' : 'text', class: 'df-input', 'aria-label': `${f.label} for ${s.name}`, placeholder: f.label, maxlength: f.max || 200 });
+      if (f.kind === 'date' && f.field === 'dob') input.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      lab.append(el('span', '', f.label), input);
+      boxes.append(lab);
+      inputs.push({ g, groups: [g], f, input });
+    });
+    if (looks.length) boxes.append(el('div', 'df-detail', `Needs a look on the card: ${looks.join(', ')}`));
+    const act = el('div', 'df-fix');
+    if (inputs.length) {
+      const ok = h('button', { class: 'btn btn-primary btn-sm', type: 'button', disabled: true }, 'Save');
+      const ready = () => { ok.disabled = !inputs.some((i) => i.input.value.trim()); };
+      const go = async () => {
+        const filled = inputs.filter((i) => i.input.value.trim());
+        if (!filled.length) return;
+        ok.disabled = true;
+        const profile = {}; const sheet = {};
+        filled.forEach((i) => { let v = i.input.value.trim(); if (i.f.upper) v = v.toUpperCase(); (i.f.on === 'profile' ? profile : sheet)[i.f.field] = v; });
+        try {
+          if (Object.keys(profile).length) await api(`/api/cards/${encodeURIComponent(s.id)}/profile`, profile);
+          if (Object.keys(sheet).length) await api(`/api/cards/${encodeURIComponent(s.id)}/sheet`, { fields: sheet });
+          say(`Saved: ${s.name}, ${filled.map((i) => i.f.label.toLowerCase()).join(', ')}`);
+          filled.forEach((i) => i.groups.forEach((g) => { g.students = g.students.filter((y) => y.id !== s.id); g.count = g.students.length; data.total -= 1; }));
+          li.classList.add('is-done');
+          const next = li.nextElementSibling && li.nextElementSibling.querySelector('.df-input');
+          focusNext = next ? next.getAttribute('aria-label') : null;
+          setTimeout(() => { draw(); }, 420);
+        } catch (e) { say(e.message, true); ok.disabled = false; }
+      };
+      inputs.forEach((i) => {
+        i.input.addEventListener('input', ready);
+        i.input.addEventListener('change', ready);
+        i.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+      });
+      ok.addEventListener('click', go);
+      act.append(ok);
+    } else act.append(h('a', { class: 'btn btn-sm', href: cardHref(s.id) }, 'Open the card'));
+    li.append(who, boxes, act);
+    return li;
   }
 
   function groupCard(g) {
@@ -113,10 +189,36 @@
     const pill = (key, label, n) => { const b = h('button', { type: 'button', class: 'df-pill' + (only === key ? ' on' : ''), 'aria-pressed': String(only === key), onclick: () => { only = key; draw(); } }, label); if (n !== undefined) b.append(el('span', 'df-pill-n', String(n))); return b; };
     pills.append(pill('', 'All', data.total));
     [...left].sort((a, b) => b.count - a.count).forEach((g) => pills.append(pill(g.key, g.title, g.count)));
-    page.append(pills);
-    (only ? left.filter((g) => g.key === only) : left).forEach((g) => page.append(groupCard(g)));
+    // By gap or By student.
+    const seg = el('div', 'p-seg df-mode');
+    seg.setAttribute('role', 'group');
+    seg.setAttribute('aria-label', 'Group the list');
+    [['gap', 'By gap'], ['student', 'By student']].forEach(([k, label]) => {
+      const b = h('button', { type: 'button', class: mode === k ? 'on' : '', 'aria-pressed': String(mode === k) }, label);
+      b.addEventListener('click', () => { mode = k; try { localStorage.setItem('isrDataFixMode', k); } catch (e) { /* this page only */ } draw(); });
+      seg.append(b);
+    });
+    const bar = el('div', 'df-bar');
+    bar.append(pills, seg);
+    page.append(bar);
     if (only && !left.some((g) => g.key === only)) { only = ''; draw(); return; }
+    const chosen = only ? left.filter((g) => g.key === only) : left;
+    if (mode === 'student') {
+      const list = byStudent(chosen);
+      const c = el('section', 'p-card df-group');
+      const head = el('div', 'df-group-head');
+      const t = el('div', 'df-group-title');
+      t.append(el('h2', '', 'Students with gaps'), el('span', 'df-count', String(list.length)));
+      head.append(t);
+      c.append(head, el('p', 'df-hint', 'Each student once, with every detail they are missing. Fill in what you have and press Save (or Enter).'));
+      const ul = el('ul', 'df-list');
+      (opened.has('_students') ? list : list.slice(0, 25)).forEach((x) => ul.append(studentRow(x)));
+      c.append(ul);
+      if (list.length > 25 && !opened.has('_students')) c.append(h('button', { class: 'p-link df-more', type: 'button', onclick: () => { opened.add('_students'); draw(); } }, `Show all ${list.length}`));
+      page.append(c);
+    } else chosen.forEach((g) => page.append(groupCard(g)));
     view.replaceChildren(page);
+    if (focusNext) { const f = [...view.querySelectorAll('.df-input')].find((i) => i.getAttribute('aria-label') === focusNext); if (f) f.focus({ preventScroll: false }); focusNext = null; }
   }
 
   async function load() {
