@@ -168,98 +168,6 @@
     doc.append(s);
   }
 
-  // The partner portal's own figures for this university (route2uni.js, read twice a week): intakes and deadlines, fees,
-  // scholarships, entry requirements, English, language tests, documents and courses, as of the last reading. Nothing here is typed
-  // by a person; the rest of the page is the team's own.
-  let r2u = null;
-  function route2uniSection(doc) {
-    if (!r2u) return;
-    const s = el('section', 'r2u');
-    s.append(el('h2', '', 'From Route2Uni'));
-    s.append(el('p', 'r2u-note', `The partner portal's own figures, read ${when(r2u.fetchedAt)}. Updated by itself twice a week.`));
-    const sub = (title) => { const h = el('h3', 'r2u-h', title); s.append(h); return h; };
-    const table = (head, rows) => {
-      const t = el('table', 'r2u-table');
-      const tr = el('tr'); head.forEach((x) => tr.append(el('th', '', x))); t.append(tr);
-      rows.forEach((r) => { const row = el('tr'); r.forEach((x) => row.append(el('td', '', x))); t.append(row); });
-      const w = el('div', 'r2u-scroll'); w.append(t); s.append(w);
-    };
-    if (r2u.intakes.length) {
-      sub('Intakes and deadlines');
-      const ul = el('ul', 'r2u-intakes');
-      r2u.intakes.forEach((i) => {
-        const li = el('li', i.open ? 'is-open' : '');
-        const head = el('div', 'r2u-intake');
-        head.append(el('b', '', i.name), el('span', i.open ? 'r2u-pill is-open' : 'r2u-pill', i.open ? 'Open' : 'Closed'));
-        li.append(head);
-        if (i.deadline) li.append(el('div', 'r2u-pre', i.deadline));
-        ul.append(li);
-      });
-      s.append(ul);
-    }
-    const money = (n) => (n ? `£${Number(n).toLocaleString('en-GB')}` : '');
-    if (r2u.fees.some((f) => f.items.length)) { sub('Fees'); table(['Level', 'What', 'Amount'], r2u.fees.flatMap((f) => f.items.map((x) => [f.level, x.text || 'Tuition fee', money(x.amount)]))); }
-    if (r2u.scholarships.length) { sub('Scholarships'); table(['Level', 'Scholarship'], r2u.scholarships.map((x) => [x.level, x.amounts.join('\n')])); }
-    if (r2u.requirements.some((r) => r.criteria.length)) {
-      sub('Entry requirements');
-      r2u.requirements.filter((r) => r.criteria.length).forEach((r) => {
-        const box = el('div', 'r2u-block');
-        box.append(el('b', '', r.level), el('span', 'r2u-gap', `Study gap: ${r.gap}`));
-        const ul = el('ul'); r.criteria.forEach((c) => ul.append(el('li', '', c))); box.append(ul);
-        s.append(box);
-      });
-    }
-    if (r2u.english.length) {
-      sub('English and waivers');
-      r2u.english.forEach((e) => {
-        const box = el('div', 'r2u-block');
-        box.append(el('b', '', e.level), el('span', 'r2u-gap', e.waiver ? 'English waiver possible' : 'No waiver'));
-        if (e.criteria.length) { const ul = el('ul'); e.criteria.forEach((c) => ul.append(el('li', '', c))); box.append(ul); }
-        s.append(box);
-      });
-    }
-    if (r2u.tests.length) { sub('Language tests'); table(['Test', 'Level', 'Score needed'], r2u.tests.map((t) => [t.test, t.level, t.score])); }
-    if (r2u.documents.required.length || r2u.documents.optional.length) {
-      sub('Documents');
-      const p = el('p', 'r2u-docs');
-      if (r2u.documents.required.length) p.append(el('b', '', 'Needed: '), r2u.documents.required.join(', '), el('br'));
-      if (r2u.documents.optional.length) p.append(el('b', '', 'If available: '), r2u.documents.optional.join(', '));
-      s.append(p);
-    }
-    if (r2u.courses.length) {
-      sub(`Courses (${r2u.courses.length})`);
-      const find = el('input', 'r2u-find');
-      find.type = 'search'; find.placeholder = 'Find a course'; find.setAttribute('aria-label', 'Find a Route2Uni course');
-      s.append(find);
-      const levels = [...new Set(r2u.courses.map((c) => c.level || 'Other'))];
-      const boxes = levels.map((lv) => {
-        const d = el('details', 'r2u-courses');
-        const list = r2u.courses.filter((c) => (c.level || 'Other') === lv);
-        d.append(el('summary', '', `${lv} (${list.length})`));
-        const ul = el('ul');
-        list.forEach((c) => {
-          const li = el('li');
-          li.dataset.find = `${c.name} ${c.campus} ${c.intake}`.toLowerCase();
-          li.append(el('span', 'r2u-course', c.name), el('span', 'r2u-meta', [c.campus, c.intake].filter(Boolean).join(' · ')));
-          if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button(uni, c.name, c.intake || ''));
-          ul.append(li);
-        });
-        d.append(ul);
-        s.append(d);
-        return d;
-      });
-      find.addEventListener('input', () => {
-        const q = find.value.trim().toLowerCase();
-        boxes.forEach((d) => {
-          let n = 0;
-          d.querySelectorAll('li').forEach((li) => { const on = !q || li.dataset.find.includes(q); li.hidden = !on; if (on) n += 1; });
-          d.hidden = q && !n; if (q && n) d.open = true;
-        });
-      });
-    }
-    doc.append(s);
-  }
-
   function renderView() {
     const view = $('view');
     view.replaceChildren();
@@ -314,6 +222,8 @@
         const h = el('h3', '', i.name);
         if (has(i.deadline)) h.append(' ', el('span', 'deadline', `(apply by ${i.deadline})`));
         box.append(h);
+        // Every date of the intake as the partner portal gives them (application, deposit, CAS, visa), kept up to date by itself.
+        if (has(i.deadlines)) { box.append(el('div', 'label', 'Key dates')); box.append(el('div', 'key-dates', i.deadlines.replace(/^[\s•\-]+/gm, '').trim())); }
         [['Requirements', i.requirements], ['Courses', i.courses], ['Notes', i.notes]].forEach(([label, text]) => {
           if (!has(text)) return;
           box.append(el('div', 'label', label));
@@ -323,9 +233,10 @@
       });
       doc.append(s);
     }
-    route2uniSection(doc);
     section(doc, 'Notes', uni.notes);
-    doc.append(el('div', 'foot', has(uni.updatedBy) ? `Last updated ${when(uni.updatedAt)} by ${uni.updatedBy}.` : ''));
+    const synced = uni.source && uni.source.route2uni && uni.source.route2uni.at;
+    doc.append(el('div', 'foot', [synced ? `The fees, entry requirements, English, intakes, key dates and courses are kept up to date from the Route2Uni partner portal twice a week (last read ${when(synced)}).` : '',
+      has(uni.updatedBy) ? `Last changed ${when(uni.updatedAt)} by ${uni.updatedBy}.` : ''].filter(Boolean).join(' ')));
     // A bar to jump between the sections of a long page (hidden when printing).
     const heads = [...doc.querySelectorAll('section > h2')];
     if (heads.length >= 4) {
@@ -498,7 +409,7 @@
       const head = el('div', 'block-head');
       const remove = el('button', 'btn btn-sm btn-danger', 'Remove');
       remove.type = 'button';
-      const rec = { id: i && i.id, block, name: line(i && i.name, 'e.g. September 2026'), deadline: line(i && i.deadline, 'e.g. 31 July 2026'), requirements: text(i && i.requirements, 4), courses: text(i && i.courses, 4), notes: text(i && i.notes, 3) };
+      const rec = { id: i && i.id, deadlines: (i && i.deadlines) || '', block, name: line(i && i.name, 'e.g. September 2026'), deadline: line(i && i.deadline, 'e.g. 31 July 2026'), requirements: text(i && i.requirements, 4), courses: text(i && i.courses, 4), notes: text(i && i.notes, 3) };
       remove.addEventListener('click', () => { intakeRows.splice(intakeRows.indexOf(rec), 1); block.remove(); });
       head.append(el('b', '', 'Intake'), remove);
       const pair = el('div', 'two');
@@ -544,7 +455,7 @@
         programs: programRows.map((r) => Object.fromEntries(PROGRAM_COLUMNS.map(([key]) => [key, r[key].value]))),
         entryRequirements: entry.value, languageTests: lang.value, courses: courses.value, interview: interview.value, notes: notes.value,
         process: stepRows.map((r) => ({ title: r.title.value, detail: r.detail.value })),
-        intakes: intakeRows.map((r) => ({ id: r.id, name: r.name.value, deadline: r.deadline.value, requirements: r.requirements.value, courses: r.courses.value, notes: r.notes.value })),
+        intakes: intakeRows.map((r) => ({ id: r.id, deadlines: r.deadlines, name: r.name.value, deadline: r.deadline.value, requirements: r.requirements.value, courses: r.courses.value, notes: r.notes.value })),
       };
       try {
         const res = await fetch(`/api/facts/${uni.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -580,8 +491,6 @@
       return;
     }
     if (window.Shortlist) await window.Shortlist.ready;
-    if (!BACKUP) { try { const r = await fetch('/api/route2uni/university?name=' + encodeURIComponent(uni.name), { cache: 'no-store' }); if (r.ok) r2u = await r.json(); } catch (e) { r2u = null; } }
-    if (r2u && !Array.isArray(r2u.intakes)) r2u = null;
     if (!BACKUP) { try { const r = await fetch('/api/fact-courses?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) courseData = await r.json(); } catch (e) { courseData = null; } }
     if (isAdmin && new URLSearchParams(location.search).get('edit')) renderEdit(); else renderView();
     if (!BACKUP && !(window.Shortlist && window.Shortlist.isStudent())) courseWarnings();

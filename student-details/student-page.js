@@ -495,11 +495,29 @@
   // found has Add (to this student's options) and Open (its university's page in the Fact File). What is typed is kept on the card.
   function optionsTab() {
     const wrap = el('div');
-    wrap.append(chosenOptions());
+    let chosen = chosenOptions();
+    wrap.append(chosen);
     const p = profile();
     const lock = !can();
+    // Who can go where (the owner, 17 Nov 2026): the card's own details (level, grade, gap, English, subject) checked against every
+    // university at once (finder.js); Add puts a course into the options above, and changed details can be saved on the card.
+    if (window.Finder) {
+      const fbox = el('div');
+      wrap.append(fbox);
+      window.Finder.mount(fbox, {
+        title: 'Universities this student can go to',
+        intro: 'Filled in from the student card. Change anything and press Find; save it on the card when it is right.',
+        prefill: { level: F.OLDER_STUDY_LEVELS[p.studyLevel] || p.studyLevel || '', grade: p.grade || '', gap: p.gapYears || '', test: p.englishTest || '', score: p.englishScore || '', subject: p.subject || '' },
+        addLabel: 'Add to options',
+        onAdd: lock ? null : async (r, co) => {
+          await save('options', { universityId: r.id, university: r.name, course: co.name, level: profile().studyLevel || '', intake: co.intake, fee: (r.fee || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0], scholarship: (r.scholarship || '').split('\n')[0] }, `Added: ${co.name}`);
+          const next = chosenOptions(); chosen.replaceWith(next); chosen = next;
+        },
+        onSave: lock ? null : (v) => save('profile', { studyLevel: v.level, grade: v.grade, gapYears: v.gap, englishTest: v.test, englishScore: v.score, subject: v.subject }, ''),
+      });
+    }
     const box = el('section', 'p-card');
-    box.append(el('h2', '', 'Find a course'));
+    box.append(el('h2', '', 'Search courses by name'));
     const form = el('form', 'p-find');
     const lv = field('Study level', { kind: 'select', choices: [['', 'Any level'], ...F.STUDY_LEVELS.map((x) => [x, x])], value: F.OLDER_STUDY_LEVELS[p.studyLevel] || p.studyLevel });
     const q = field('Course name', { placeholder: 'e.g. Cyber Security, Nursing, Business', value: p.subject || '', max: 160 });

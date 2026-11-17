@@ -34,7 +34,9 @@ const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createPortalApi } = require('./portal-api');
 const { createPush } = require('./push');
-const { createRoute2Uni, niceName: r2uName } = require('./route2uni');
+const { createRoute2Uni } = require('./route2uni');
+const { syncFacts } = require('./fact-sync');
+const { studentFrom, checkLevel, ourLevel: eligLevel } = require('./eligibility');
 const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
 const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
@@ -90,6 +92,7 @@ const STATIC_FILES = {
   '/sender-setup.js': 'text/javascript; charset=utf-8',
   '/phone-link.js': 'text/javascript; charset=utf-8',
   '/shortlist.js': 'text/javascript; charset=utf-8',
+  '/finder.js': 'text/javascript; charset=utf-8',
   '/route2uni-panel.js': 'text/javascript; charset=utf-8',
   '/wa.html': 'text/html; charset=utf-8',
   '/pair.html': 'text/html; charset=utf-8',
@@ -850,7 +853,20 @@ const userMail = createUserMail(DATA_DIR);
 const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
 // The Route2Uni partner portal, read twice a week into the Fact File (see route2uni.js). Off until ROUTE2UNI_EMAIL and
 // ROUTE2UNI_PASSWORD are set on the server.
-const route2uni = createRoute2Uni({ dir: DATA_DIR, email: process.env.ROUTE2UNI_EMAIL || '', password: process.env.ROUTE2UNI_PASSWORD || '' });
+// Every reading is written into the Fact File itself (fact-sync.js): one Fact File, kept up to date twice a week.
+const route2uni = createRoute2Uni({ dir: DATA_DIR, email: process.env.ROUTE2UNI_EMAIL || '', password: process.env.ROUTE2UNI_PASSWORD || '', onRead: (reading) => {
+  const out = syncFacts(facts, reading);
+  console.log(`[route2uni] Fact File: ${out.updated} universities updated, ${out.added} added, ${out.unchanged} unchanged`);
+  return out;
+} });
+// A reading not yet in the Fact File (the first start after this update, or a restored data folder) is written in at the start.
+try {
+  const r = route2uni.reading();
+  if (r && r.fetchedAt && facts.all().some((u) => !u.source || !u.source.route2uni || u.source.route2uni.at < r.fetchedAt) && (r.universities || []).length) {
+    const out = syncFacts(facts, r);
+    if (out.updated || out.added) console.log(`[startup] Fact File updated from the Route2Uni reading of ${r.fetchedAt}: ${out.updated} updated, ${out.added} added`);
+  }
+} catch (e) { console.error('[startup] Route2Uni into the Fact File:', e.message); }
 const portal = createPortalApi({
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
@@ -1003,7 +1019,7 @@ async function studentGate(req, res, urlPath) {
     sendJSON(res, 200, { ...uni, notes: '', process: [], updatedBy: '', intakes: (uni.intakes || []).map((i) => ({ ...i, notes: '' })) });
     return true;
   }
-  if (get && urlPath === '/api/route2uni/university') return false; // the partner portal's figures on a Fact File page
+  if (urlPath === '/api/eligibility' && req.method === 'POST') return false; // the finder: which universities the student can go to
   if ((get && urlPath === '/api/fact-courses') || urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) return false; // portal-api.js answers for a student
   if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for the Fact File only.' }); return true; }
   send(res, 302, '', { Location: '/fact-file' });
@@ -1151,29 +1167,46 @@ const server = http.createServer(async (req, res) => {
         'Content-Disposition': `attachment; filename="uk-student-niec-${which}-${localDate()}.json"`,
       });
     }
-    // Route2Uni in the Fact File: one university's reading (everyone who reads the Fact File), the summary (the team), a reading now
-    // and adding a university of the portal to the Fact File (Admin).
-    if (urlPath === '/api/route2uni/university' && req.method === 'GET') {
-      const u = route2uni.forName(new URL(req.url, 'http://x').searchParams.get('name') || '');
-      return sendJSON(res, 200, u || null); // null: this university is not on Route2Uni (not an error)
-    }
-    if (urlPath === '/api/route2uni' && req.method === 'GET') return sendJSON(res, 200, { ...route2uni.summary(facts.all().map((u) => u.name)), admin: isAdmin(req.user) });
-    if ((urlPath === '/api/route2uni/run' || urlPath === '/api/route2uni/add') && req.method === 'POST') {
-      if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
-      if (urlPath === '/api/route2uni/run') {
-        if (!route2uni.configured()) return sendJSON(res, 400, { error: 'Set ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD on the server first (cPanel, Setup Node.js App, Environment variables), then Restart.' });
-        route2uni.run(req.user.name).then((r) => activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [r.error ? `Route2Uni reading failed: ${r.error}` : `Read Route2Uni: ${r.universities} universities, ${r.changed} changes`] })).catch(() => {});
-        return sendJSON(res, 200, { started: true });
-      }
+    // Who can go where (eligibility.js): one student's level, grade, gap and English against every university of the Fact File that
+    // has its rules in numbers (kept from Route2Uni), with the courses of that level (narrowed by the subject), the fee and the open
+    // intake's deadline. For everyone who reads the Fact File, a student's own login too.
+    if (urlPath === '/api/eligibility' && req.method === 'POST') {
       let body;
-      try { body = await readJSONBody(req, 4096); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
-      const u = route2uni.byId(body && body.id);
-      if (!u) return sendJSON(res, 404, { error: 'That university is not on Route2Uni.' });
-      const made = facts.create(r2uName(u.name), req.user.label);
-      if (made.error) return sendJSON(res, 400, { error: made.error });
-      if (u.cities.length || u.website) facts.update(made.university.id, { ...made.university, city: u.cities.join(', '), website: u.website }, req.user.label);
-      activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [`Added ${made.university.name} to the Fact File from Route2Uni`] });
-      return sendJSON(res, 200, { id: made.university.id });
+      try { body = await readJSONBody(req, 8 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
+      const s = studentFrom(body || {});
+      if (!s.level) return sendJSON(res, 400, { error: 'Choose the study level first.' });
+      const words = s.subject.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !['and', 'the', 'with', 'hons', 'bsc', 'msc'].includes(w));
+      const results = []; const without = [];
+      for (const u of facts.all()) {
+        if (!u.rules || !u.rules.length) { without.push(u.name); continue; }
+        const r = checkLevel(u.rules, s);
+        if (!r) continue;
+        const reading = u.source && u.source.route2uni ? route2uni.byId(u.source.route2uni.id) : null;
+        // Only the courses of the intakes open now (a closed intake's courses would only repeat them).
+        const openNow = new Set((reading ? reading.intakes : []).filter((i) => i.open).map((i) => i.name));
+        const all = (reading ? reading.courses : []).filter((c) => (eligLevel(c.level) || eligLevel(c.name)) === s.level && (!openNow.size || !c.intake || openNow.has(c.intake)));
+        const courses = words.length ? all.filter((c) => words.every((w) => c.name.toLowerCase().includes(w))) : all;
+        if (words.length && !courses.length) continue; // nothing in that subject here
+        const seen = new Set();
+        const list = courses.filter((c) => { const k = `${c.name}|${c.intake}`.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+        const row = (u.programs || []).find((p) => eligLevel(p.name) === s.level) || {};
+        const open = (u.intakes || []).find((i) => i.deadlines || i.deadline) || (u.intakes || [])[0] || null;
+        results.push({ id: u.id, name: u.name, city: u.city, status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit: row.deposit || '',
+          intake: open ? { name: open.name, deadline: open.deadline || '' } : null, courses: list.slice(0, 40), more: Math.max(0, list.length - 40), total: list.length });
+      }
+      const order = { yes: 0, check: 1, no: 2 };
+      const feeOf = (x) => { const m = /£\s?([\d,]+)/.exec(x.fee); return m ? Number(m[1].replace(/,/g, '')) : 1e9; };
+      results.sort((a, b) => order[a.status] - order[b.status] || feeOf(a) - feeOf(b) || a.name.localeCompare(b.name));
+      const counts = { yes: results.filter((x) => x.status === 'yes').length, check: results.filter((x) => x.status === 'check').length, no: results.filter((x) => x.status === 'no').length };
+      return sendJSON(res, 200, { results, counts, without: without.length, readAt: (route2uni.reading() || {}).fetchedAt || '' });
+    }
+    // Route2Uni: the line on the Fact File list (the team) and a reading now (Admin).
+    if (urlPath === '/api/route2uni' && req.method === 'GET') return sendJSON(res, 200, { ...route2uni.summary(), admin: isAdmin(req.user) });
+    if (urlPath === '/api/route2uni/run' && req.method === 'POST') {
+      if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
+      if (!route2uni.configured()) return sendJSON(res, 400, { error: 'Set ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD on the server first (cPanel, Setup Node.js App, Environment variables), then Restart.' });
+      route2uni.run(req.user.name).then((r) => activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [r.error ? `Route2Uni reading failed: ${r.error}` : `Read Route2Uni: ${r.universities} universities, ${r.changed} changes; the Fact File: ${(r.synced && r.synced.updated) || 0} updated, ${(r.synced && r.synced.added) || 0} added`] })).catch(() => {});
+      return sendJSON(res, 200, { started: true });
     }
     if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/delete)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
     // The student cards and the pages around them (portal-api.js).

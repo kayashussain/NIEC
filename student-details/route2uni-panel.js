@@ -1,7 +1,7 @@
-// The Route2Uni panel on the Fact File's list of universities (route2uni.js reads the partner portal twice a week): when it was
-// last read, the deadlines of the open intakes, the Information Hub (deadlines, notices, webinars), what changed since the reading
-// before, and for Admin "Check now" and the portal's universities that have no Fact File page yet ("Add"). Not for a student's
-// login.
+// One quiet line on the Fact File's list of universities (the owner, 17 Nov 2026: one Fact File, no separate lists): the Fact File is
+// kept up to date from the Route2Uni partner portal twice a week (route2uni.js, fact-sync.js), when it was last read, what changed
+// since the reading before, any notice or webinar of the portal's Information Hub, and "Check now" for Admin. The deadlines are on
+// each university's page, under its intakes. Not for a student's login.
 (function () {
   const { el, h, api } = window.Portal;
   const say = (t, bad) => window.NiecUI.toast(t, { type: bad ? 'error' : 'success' });
@@ -22,10 +22,10 @@
     box.replaceChildren();
     const head = el('div', 'r2u-panel-head');
     const words = el('div');
-    words.append(el('h2', '', 'Route2Uni'),
+    words.append(el('h2', '', 'Kept up to date from Route2Uni'),
       el('p', 'p-muted p-small', !d.configured ? 'Not connected yet: set ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD on the server, then Restart.'
         : d.running ? 'Reading the portal now (a few minutes)...'
-          : d.fetchedAt ? `${d.universities} universities, read ${when(d.fetchedAt)}. Read again by itself every Monday and Thursday.` : 'Not read yet.'));
+          : d.fetchedAt ? `Fees, entry requirements, English, intakes with their key dates and courses of ${d.universities} universities, last read ${when(d.fetchedAt)}. Read again by itself every Monday and Thursday.` : 'Not read yet.'));
     if (d.lastRun && !d.lastRun.ok) words.append(el('div', 'p-notice warn', `The last try did not work: ${d.lastRun.error}`));
     head.append(words);
     if (d.admin && d.configured) {
@@ -36,11 +36,6 @@
     box.append(head);
 
     const tabs = [];
-    if (d.deadlines.length) tabs.push(['deadlines', `Deadlines (${d.deadlines.length})`, () => {
-      const ul = el('ul', 'r2u-list');
-      d.deadlines.forEach((x) => { const li = el('li'); li.append(el('b', '', x.university), el('span', 'r2u-meta', x.intake), el('span', 'r2u-line', firstLine(x.deadline))); ul.append(li); });
-      return ul;
-    }]);
     const hub = [...d.hub.deadlines.map((x) => ['Deadline', x]), ...d.hub.notices.map((x) => ['Notice', x]), ...d.hub.webinars.map((x) => ['Webinar', x])];
     if (hub.length) tabs.push(['hub', `Information Hub (${hub.length})`, () => {
       const ul = el('ul', 'r2u-list');
@@ -58,19 +53,7 @@
       d.changes.forEach((c) => { const li = el('li'); li.append(el('b', '', c.university), el('span', 'r2u-meta', when(c.at))); c.lines.forEach((l) => li.append(el('span', 'r2u-line', l))); ul.append(li); });
       return ul;
     }]);
-    if (d.admin && d.missing.length) tabs.push(['missing', `Not in the Fact File (${d.missing.length})`, () => {
-      const ul = el('ul', 'r2u-list');
-      d.missing.forEach((u) => {
-        const li = el('li', 'r2u-missing');
-        const t = el('div'); t.append(el('b', '', u.name), el('span', 'r2u-meta', [u.cities.join(', '), `${u.courses} courses`].filter(Boolean).join(' · ')));
-        const add = h('button', { class: 'btn btn-sm btn-primary', type: 'button' }, 'Add to the Fact File');
-        add.addEventListener('click', async () => { add.disabled = true; try { const r = await api('/api/route2uni/add', { id: u.id }); location.href = '/fact-file?u=' + r.id; } catch (e) { say(e.message, true); add.disabled = false; } });
-        li.append(t, add);
-        ul.append(li);
-      });
-      return ul;
-    }]);
-    if (!tabs.length) return;
+    if (!tabs.length) { box.append(el('span', 'r2u-meta', 'Nothing has changed since the reading before.')); return; }
     const bar = el('div', 'p-tabs r2u-tabs');
     bar.setAttribute('role', 'tablist');
     const body = el('div', 'r2u-body');

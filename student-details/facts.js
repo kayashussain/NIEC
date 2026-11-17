@@ -91,6 +91,8 @@ function clean(input, old = {}) {
     requirements: str(i && i.requirements, LIMITS.text),
     courses: str(i && i.courses, LIMITS.text),
     notes: str(i && i.notes, LIMITS.text),
+    // Every date of the intake as the partner portal writes them (application, deposit, CAS, visa), shown on the page.
+    deadlines: str(i && i.deadlines, LIMITS.text),
   })).filter((i) => i.name);
   const process = (Array.isArray(input.process) ? input.process : []).slice(0, LIMITS.steps).map((s) => ({
     title: str(s && s.title, LIMITS.short).trim(),
@@ -121,7 +123,25 @@ function clean(input, old = {}) {
     programs,
     intakes,
     process,
+    // Kept automatically from the Route2Uni partner portal (fact-sync.js): where the page's figures came from and when, and the
+    // rules in numbers for the eligibility finder (eligibility.js). A save from the page keeps them as they are.
+    source: input.source !== undefined ? cleanSource(input.source) : (old.source || null),
+    rules: input.rules !== undefined ? cleanRules(input.rules) : (old.rules || []),
   };
+}
+function cleanSource(v) {
+  if (!v || typeof v !== 'object' || !v.route2uni) return null;
+  const r = v.route2uni;
+  return { route2uni: { id: Number(r.id) || 0, at: /^\d{4}-\d{2}-\d{2}T/.test(String(r.at)) ? String(r.at) : '' } };
+}
+function cleanRules(list) {
+  const n = (x) => (Number.isFinite(Number(x)) && x !== null && x !== '' ? Number(x) : null);
+  return (Array.isArray(list) ? list : []).slice(0, 12).map((L) => ({
+    level: str(L && L.level, LIMITS.short).trim(),
+    minGpa: n(L && L.minGpa), minPercent: n(L && L.minPercent), gap: n(L && L.gap), gapText: str(L && L.gapText, LIMITS.short),
+    tests: Object.fromEntries(Object.entries((L && L.tests) || {}).filter(([k, v]) => /^[A-Z]{2,15}$/.test(k) && n(v) !== null).slice(0, 12).map(([k, v]) => [k, n(v)])),
+    waiver: Boolean(L && L.waiver), waiverRules: (Array.isArray(L && L.waiverRules) ? L.waiverRules : []).slice(0, 20).map((x) => str(x, 400)).filter(Boolean),
+  })).filter((L) => L.level);
 }
 
 const startKey = (name) => String(name || '').trim().toLowerCase();

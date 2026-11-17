@@ -49,16 +49,14 @@ test('reads the portal, says what changed, matches the Fact File names, and runs
   assert.match((await createRoute2Uni({ dir: fs.mkdtempSync(path.join(os.tmpdir(), 'r2u-')), email: 'a@b.c', password: 'wrong', fetchImpl: p.fetchImpl, pause: 0 }).run()).error, /refused the login/);
 
   const first = await r2u.run('test');
-  assert.deepStrictEqual(first, { ok: true, universities: 2, changed: 0 });
+  assert.deepStrictEqual(first, { ok: true, universities: 2, changed: 0, synced: null });
   assert.ok(p.calls.every((u) => u.startsWith('https://portal.route2unigroup.com/api/')), 'only the portal is called');
-  const t = r2u.forName('University of Testtown');
+  const t = r2u.byId(1);
   assert.strictEqual(t.name, 'University of Testtown');
   assert.deepStrictEqual(t.intakes, [{ name: 'January 2027', open: true, deadline: 'Application deadline: 1 December 2026' }]);
   assert.strictEqual(t.fees[0].items[0].amount, 12000);
-  assert.ok(r2u.forName('University of Roehampton'), 'the same university under another name is matched');
-  const sum = r2u.summary(['University of Testtown']);
-  assert.deepStrictEqual(sum.missing.map((u) => u.name), ['Roehampton University'], 'what has no Fact File page yet');
-  assert.strictEqual(sum.deadlines[0].deadline, 'Application deadline: 1 December 2026');
+  const sum = r2u.summary();
+  assert.strictEqual(sum.universities, 2);
   assert.ok(!JSON.stringify(sum).includes('right'), 'the password is never kept or shown');
   assert.ok(!fs.readFileSync(path.join(dir, 'route2uni.json'), 'utf8').includes('right'));
 
@@ -67,11 +65,11 @@ test('reads the portal, says what changed, matches the Fact File names, and runs
   state.webinars = [{ id: 9, title: 'January intake briefing', startTime: '2026-11-20T09:00:00Z', description: 'For partners' }];
   const second = await r2u.run('test');
   assert.strictEqual(second.ok, true);
-  const lines = r2u.summary([]).changes.flatMap((c) => c.lines);
+  const lines = r2u.summary().changes.flatMap((c) => c.lines);
   assert.ok(lines.includes('Fee changed, Postgraduate (1 year): £12,000 → £12,500'), lines.join(' | '));
   assert.ok(lines.some((l) => /^1 new course: MBA/.test(l)));
   assert.ok(lines.some((l) => /^Webinar: January intake briefing/.test(l)));
-  assert.strictEqual(r2u.summary([]).hub.webinars[0].title, 'January intake briefing');
+  assert.strictEqual(r2u.summary().hub.webinars[0].title, 'January intake briefing');
 
   // Twice a week: Monday and Thursday from 2 a.m. office time, once that day; never more than 4 days without a reading.
   assert.strictEqual(r2u.due(new Date('2026-11-17T12:00:00Z')), false, 'Tuesday: just read');

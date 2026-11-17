@@ -118,6 +118,21 @@
   // The option finder for a student, above the list (not on an earlier backup, which is only looked at).
   skeletons();
   load();
+  // Who can go where (finder.js): at the top of the Fact File, for the team and for a student's own login.
+  if (window.Finder && !BACKUP) {
+    const box = document.createElement('div');
+    box.id = 'finderBox';
+    const anchor = document.querySelector('.page-head');
+    anchor.after(box);
+    fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then((me) => {
+      const student = me.role === 'student';
+      window.Finder.mount(box, student
+        ? { title: 'Find the universities you can go to', intro: 'Enter your level, your grade, your study gap and your English test. Press "I am interested" on the courses you like.' }
+        : { title: 'Find universities for a student', intro: 'Enter the student\'s level, grade, study gap and English: every university is checked at once, with what the student would need.' });
+      const shortlist = document.getElementById('shortlist');
+      if (shortlist) box.before(shortlist); // a student's welcome and shortlist first
+    }).catch(() => {});
+  }
 })();
 
 // A line under the search box when the weekly check of the course pages has warnings (the details are on each university's page).

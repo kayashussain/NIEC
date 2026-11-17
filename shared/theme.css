@@ -2661,30 +2661,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .pl-wait { margin: 6px 0 0; color: #0058b0; font-size: 14px; font-weight: 500; }
 @media (max-width: 640px) { .pl-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): the Route2Uni partner portal in the Fact File (new) | from: nothing | to: on a university's page, a "From Route2Uni" section with a grey line saying when it was read; the intakes as rows with a green "Open" or grey "Closed" pill and the deadline text kept as written; fees, scholarships and language tests as light tables with hairline rows; entry requirements and English as soft grey boxes per level; courses grouped by level in folding rows with a "Find a course" box; on the list of universities, an off-white "Route2Uni" panel (when it was read, a grey "Check now" pill for Admin) with grey segmented tabs: Deadlines, Information Hub, What changed, Not in the Fact File (each with a blue "Add to the Fact File" pill) */
-.r2u-note { margin: 0 0 12px; color: var(--text-dim); font-size: 14px; }
-.r2u-h { margin: 18px 0 8px; color: var(--ink); font-size: 16px; font-weight: 650; }
-.r2u-intakes { margin: 0; padding: 0; list-style: none; }
-.r2u-intakes li { padding: 10px 0; border-top: 1px solid var(--border); }
-.r2u-intakes li:first-child { border-top: 0; }
-.r2u-intake { display: flex; align-items: center; gap: 10px; }
-.r2u-pill { padding: 1px 9px; border-radius: 999px; background: #ececf0; color: #515154; font-size: 12.5px; font-weight: 600; }
-.r2u-pill.is-open { background: #e3f5e8; color: #1f7a35; }
-.r2u-pre { margin-top: 4px; color: var(--text-dim); font-size: 14.5px; white-space: pre-line; overflow-wrap: anywhere; }
-.r2u-scroll { overflow-x: auto; }
-.r2u-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
-.r2u-table th { padding: 8px 10px; border-bottom: 1px solid var(--border-strong); color: var(--text-dim); font-size: 13px; font-weight: 600; text-align: left; }
-.r2u-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; white-space: pre-line; }
-.r2u-block { margin: 0 0 10px; padding: 12px 14px; border-radius: 12px; background: #f2f2f5; }
-.r2u-block b { margin-right: 10px; color: var(--ink); }
-.r2u-gap { color: var(--text-dim); font-size: 13.5px; }
-.r2u-block ul { margin: 6px 0 0; padding-left: 20px; font-size: 14.5px; }
-.r2u-docs { font-size: 14.5px; line-height: 1.6; }
-.r2u-find { width: 100%; max-width: 360px; height: 40px; margin: 0 0 8px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--panel); font: inherit; font-size: 15px; }
-.r2u-courses { border-top: 1px solid var(--border); }
-.r2u-courses summary { padding: 10px 0; cursor: pointer; font-weight: 600; }
-.r2u-courses ul { margin: 0 0 10px; padding: 0; list-style: none; }
-.r2u-courses li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 0; font-size: 14.5px; }
+/* 🔴 CSS CHANGED (2026-11-17): the Route2Uni partner portal in the Fact File (new; the separate "From Route2Uni" section was removed the same day: the portal's figures are now written into each university's own page, so only the panel's styles stay) | from: nothing | to: on a university's page, a "From Route2Uni" section with a grey line saying when it was read; the intakes as rows with a green "Open" or grey "Closed" pill and the deadline text kept as written; fees, scholarships and language tests as light tables with hairline rows; entry requirements and English as soft grey boxes per level; courses grouped by level in folding rows with a "Find a course" box; on the list of universities, an off-white "Route2Uni" panel (when it was read, a grey "Check now" pill for Admin) with grey segmented tabs: Deadlines, Information Hub, What changed, Not in the Fact File (each with a blue "Add to the Fact File" pill) */
 .r2u-meta { color: var(--text-dim); font-size: 13px; }
 .r2u-panel { margin: 0 0 16px; }
 .r2u-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -2693,7 +2670,45 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .r2u-list { margin: 10px 0 0; padding: 0; list-style: none; max-height: 420px; overflow: auto; }
 .r2u-list li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1px solid var(--border); }
 .r2u-list li:first-child { border-top: 0; }
-.r2u-list li.r2u-missing { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
-.r2u-list .r2u-missing div { display: flex; flex-direction: column; }
 .r2u-line { color: var(--text); font-size: 14.5px; overflow-wrap: anywhere; }
-@media print { .r2u-find { display: none; } .r2u-courses ul { display: block; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): "Find universities for a student" (new) and an intake's key dates (new) | from: no way to check a student against the universities; an intake showed only one short deadline | to: an off-white panel at the top of the Fact File and in the student card's University options: six fields in one row (level, grade, gap, English, score, subject), a blue Find pill, then grey filter pills (All, Eligible, To check, Not eligible) and one rounded card per university with a coloured edge (green eligible, amber to check, grey not eligible), its status pill, the reasons as a list (green tick, amber question mark, red cross), the fee, scholarship and deposit, the intake and its deadline, and its courses with Add; under each intake on a university's page, its key dates as written */
+.fd-card { margin: 0 0 18px; }
+.fd-head h2 { margin: 0 0 2px; }
+.fd-head p { margin: 0 0 12px; }
+.fd-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 12px; align-items: end; }
+.fd-form .p-field { margin: 0; }
+.fd-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.fd-out { margin-top: 8px; }
+.fd-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+.fd-uni { margin: 0 0 12px; padding: 16px 18px 14px; border-radius: 16px; background: var(--panel); box-shadow: 0 0 0 .5px rgba(0, 0, 0, .08), 0 1px 3px rgba(0, 0, 0, .04); border-left: 4px solid #d2d2d7; }
+.fd-uni.is-yes { border-left-color: #34c759; }
+.fd-uni.is-check { border-left-color: #ff9f0a; }
+.fd-uni-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fd-uni-top > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fd-uni-name { color: var(--ink); font-size: 17px; font-weight: 650; text-decoration: none; }
+.fd-uni-name:hover { color: var(--link); }
+.fd-city { color: var(--text-dim); font-size: 13.5px; }
+.fd-status { flex: none; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #ececf0; color: #515154; }
+.fd-status.is-yes { background: #e3f5e8; color: #1f7a35; }
+.fd-status.is-check { background: #fff4e0; color: #9a5b00; }
+.fd-why { margin: 10px 0 4px; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 14.5px; }
+.fd-why li::before { display: inline-block; width: 20px; font-weight: 700; }
+.fd-why li.is-ok::before { content: "✓"; color: #1f7a35; }
+.fd-why li.is-ask::before { content: "?"; color: #b25000; }
+.fd-why li.is-bad::before { content: "✕"; color: #c4251c; }
+.fd-money { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 8px 0 2px; font-size: 14px; }
+.fd-money div { display: flex; flex-direction: column; min-width: 0; }
+.fd-money span { color: var(--text-dim); font-size: 12.5px; }
+.fd-money b { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+.fd-label { margin: 10px 0 2px; color: var(--text-dim); font-size: 13px; font-weight: 600; }
+.fd-courses { margin: 0; padding: 0; list-style: none; }
+.fd-courses li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 0; border-top: 1px solid var(--border); font-size: 14.5px; }
+.fd-courses li:first-child { border-top: 0; }
+.fd-course { color: var(--ink); }
+.fd-meta { color: var(--text-dim); font-size: 13px; }
+.fd-courses li .btn, .fd-courses li .sl-pick { margin-left: auto; }
+.fd-foot { margin-top: 8px; }
+.key-dates { color: var(--text); font-size: 15px; line-height: 1.6; white-space: pre-line; }
+@media (max-width: 1100px) { .fd-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .fd-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }

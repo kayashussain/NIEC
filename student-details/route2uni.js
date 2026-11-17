@@ -2,8 +2,8 @@
 // logs into portal.route2unigroup.com with the consultancy's own account, reads every university (entry requirements, English
 // rules and waivers, language test scores, fees, scholarships, intakes with their deadlines, documents, courses) and the
 // Information Hub (university deadlines, notices, webinars), and keeps the latest reading in route2uni.json in the data folder
-// (never in git). Each Fact File page then shows a "From Route2Uni" section with that university's figures as of the last check,
-// and the Fact File lists what changed since the check before. Nothing typed into the Fact File by a person is ever changed.
+// (never in git), with what changed since the reading before; fact-sync.js writes it into each university's own Fact File page (one
+// Fact File, kept up to date by itself).
 //
 // The portal's login is a setting on the server only: ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD (never in code, git or a page). Only
 // portal.route2unigroup.com is called, and only to read.
@@ -79,7 +79,7 @@ function diff(a, b) {
   return out;
 }
 
-function createRoute2Uni({ dir, email = '', password = '', fetchImpl = (...a) => fetch(...a), now = () => new Date(), pause = 350 } = {}) {
+function createRoute2Uni({ dir, email = '', password = '', fetchImpl = (...a) => fetch(...a), now = () => new Date(), pause = 350, onRead = null } = {}) {
   const file = path.join(dir, 'route2uni.json');
   let cache = null;
   let running = null;
@@ -131,7 +131,10 @@ function createRoute2Uni({ dir, email = '', password = '', fetchImpl = (...a) =>
         }
         const runs = [{ at: stamp, started, by, ok: true, universities: universities.length, changed: changes.length }, ...(old.runs || [])].slice(0, 20);
         write({ fetchedAt: stamp, universities, hub, changes: [...changes, ...(old.changes || [])].slice(0, 300), runs });
-        return { ok: true, universities: universities.length, changed: changes.length };
+        // Into the Fact File itself (fact-sync.js): one Fact File, kept up to date.
+        let synced = null;
+        if (onRead) { try { synced = onRead(read()); } catch (e) { synced = { error: e.message }; } }
+        return { ok: true, universities: universities.length, changed: changes.length, synced };
       } catch (e) {
         const d = read();
         write({ ...d, runs: [{ at: now().toISOString(), started, by, ok: false, error: e.message }, ...(d.runs || [])].slice(0, 20) });
@@ -161,22 +164,16 @@ function createRoute2Uni({ dir, email = '', password = '', fetchImpl = (...a) =>
 
   return {
     configured, run, due, tick, isRunning: () => Boolean(running),
-    // The reading of one Fact File university, by its name (or null).
-    forName(name) { const k = keyOf(name); const d = read(); const u = (d.universities || []).find((x) => keyOf(x.name) === k); return u ? { ...u, fetchedAt: d.fetchedAt } : null; },
-    // For the Fact File page: when it was read, what changed lately, the Information Hub, the intakes' deadlines, and the portal's
-    // universities that have no Fact File page yet (`factNames`: the Fact File's names).
-    summary(factNames = []) {
+    // For the line on the Fact File list: when it was read, what changed lately, and the Information Hub.
+    summary() {
       const d = read();
-      const known = new Set(factNames.map(keyOf));
       return {
         configured: configured(), running: Boolean(running), fetchedAt: d.fetchedAt || '', lastRun: (d.runs || [])[0] || null,
-        changes: (d.changes || []).slice(0, 60), hub: d.hub || { deadlines: [], notices: [], webinars: [] },
-        deadlines: (d.universities || []).flatMap((u) => u.intakes.filter((i) => i.open && i.deadline).map((i) => ({ university: u.name, intake: i.name, deadline: i.deadline }))),
-        missing: (d.universities || []).filter((u) => !known.has(keyOf(u.name))).map((u) => ({ id: u.id, name: u.name, cities: u.cities, courses: u.courses.length })),
-        universities: (d.universities || []).length,
+        changes: (d.changes || []).slice(0, 60), hub: d.hub || { deadlines: [], notices: [], webinars: [] }, universities: (d.universities || []).length,
       };
     },
     byId: (id) => (read().universities || []).find((u) => String(u.id) === String(id)) || null,
+    reading: () => read(),
   };
 }
 
