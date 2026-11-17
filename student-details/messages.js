@@ -11,6 +11,10 @@
 //
 // A message is plain text: a blank line starts a new paragraph, a line that starts with "- " is a bullet and one that starts with
 // "## " is a small heading. {curly} words are filled in from the student (see FIELDS).
+// For a marketing email (the owner, 17 Nov 2026) three more kinds of line: "# Title | small line under it" as the very first line
+// is a coloured banner across the top of the email; "!! words" is a highlighted box; "[[Label | address]]" is a big button
+// (several on one line sit side by side). A button to wa.me or WhatsApp is green, every other one blue; the address may be
+// https, http, tel: (a phone call) or mailto:.
 
 const fs = require('fs');
 const path = require('path');
@@ -152,6 +156,31 @@ function blockHtml(key, ctx) {
   return `<ul style="margin:0 0 14px;padding-left:22px">${ctx.documents.map((d) => `<li style="margin:4px 0">${esc(d)}</li>`).join('')}</ul>`;
 }
 
+// The buttons of a "[[Label | address]]" line, or null when the line is not one. Only safe addresses are taken.
+const BUTTON_LINE = /^(\[\[[^\[\]]+\]\]\s*)+$/;
+function buttonsOf(line) {
+  if (!BUTTON_LINE.test(line)) return null;
+  const out = [];
+  for (const m of line.matchAll(/\[\[([^\[\]|]+)\|([^\[\]]+)\]\]/g)) {
+    const label = m[1].trim(); const href = m[2].trim().replace(/\s+/g, '');
+    if (label && /^(https?:\/\/|tel:\+?[0-9]|mailto:)/i.test(href)) out.push({ label, href });
+  }
+  return out.length ? out : null;
+}
+const isWhatsApp = (href) => /^https?:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?whatsapp\.com)\//i.test(href);
+/* 🔴 CSS CHANGED (2026-11-17): marketing email parts (new): banner, highlighted box, big buttons | from: none, an email was plain paragraphs, small headings and bullets | to: a navy-to-blue banner with a large white title, a soft amber box with an orange left edge, and big rounded buttons (WhatsApp green #25d366, others blue #0071e3) */
+function bannerHtml(title, sub) {
+  return `<tr><td style="background:#0b2e59;background-image:linear-gradient(135deg,#0b2e59 0%,#0071e3 100%);border-radius:12px 12px 0 0;padding:38px 28px 34px;text-align:center;color:#ffffff">`
+    + `<div style="font-size:28px;line-height:1.25;font-weight:800;color:#ffffff">${esc(title)}</div>`
+    + (sub ? `<div style="margin-top:10px;font-size:16px;line-height:1.5;color:#dbe9ff">${esc(sub)}</div>` : '')
+    + '</td></tr>';
+}
+const calloutHtml = (t) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 18px"><tr><td style="background:#fff6e5;border-left:5px solid #fc6e1f;border-radius:8px;padding:14px 18px;font-size:16px;line-height:1.55;font-weight:600;color:#5a3300">${linkify(esc(t))}</td></tr></table>`;
+function buttonsHtml(buttons) {
+  const cell = (b) => `<td align="center" style="padding:6px"><a href="${esc(b.href)}" style="display:block;background:${isWhatsApp(b.href) ? '#25d366' : '#0071e3'};color:#ffffff;text-decoration:none;font-weight:700;font-size:18px;line-height:1.2;padding:18px 22px;border-radius:40px;text-align:center">${esc(b.label)}</a></td>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 18px"><tr>${buttons.map(cell).join('')}</tr></table>`;
+}
+
 // Web addresses in a paragraph become links (only http and https ones).
 const linkify = (escaped) => escaped.replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a href="${url}" style="color:#066a97">${url}</a>`);
 
@@ -175,8 +204,36 @@ function renderEmail({ subject, body, values, signature, options = [], documents
   const html = [];
   let list = null; // bullet lines being collected
   const closeList = () => { if (list) { html.push(`<ul style="margin:0 0 14px;padding-left:22px">${list.join('')}</ul>`); list = null; } };
+  let banner = '';
+  let first = true;
   str(body, LIMITS.body).split('\n').forEach((raw) => {
     const line = raw.trim();
+    const wasFirst = first && line;
+    if (line) first = false;
+    const top = wasFirst ? /^#\s+(.*)$/.exec(line) : null;
+    if (top) {
+      const [t, ...rest] = fill(top[1], values, missing).split('|');
+      const sub = rest.join('|').trim();
+      textOut.push(t.trim().toUpperCase(), ...(sub ? [sub] : []), '');
+      banner = bannerHtml(t.trim(), sub);
+      return;
+    }
+    const buttons = buttonsOf(line);
+    if (buttons) {
+      closeList();
+      const filled = buttons.map((b) => ({ label: fill(b.label, values, missing), href: b.href }));
+      textOut.push(...filled.map((b) => `${b.label}: ${b.href.replace(/^(tel|mailto):/i, '')}`));
+      html.push(buttonsHtml(filled));
+      return;
+    }
+    const callout = /^!!\s+(.*)$/.exec(line);
+    if (callout) {
+      closeList();
+      const c = fill(callout[1], values, missing);
+      textOut.push(c);
+      html.push(calloutHtml(c));
+      return;
+    }
     const block = /^\{(options_table|documents_list)\}$/.exec(line);
     if (block) {
       closeList();
@@ -219,7 +276,7 @@ function renderEmail({ subject, body, values, signature, options = [], documents
   const page = `<!doctype html><html><body style="margin:0;background:#eef1f5;padding:24px 12px;font-family:Segoe UI,Arial,Helvetica,sans-serif;color:#1f2933">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#ffffff;border-radius:12px;border-top:4px solid #00adef">
-${logo}<tr><td style="padding:${logo ? '12px' : '26px'} 28px 6px;font-size:15px;line-height:1.6">
+${banner}${logo}<tr><td style="padding:${logo ? '12px' : '26px'} 28px 6px;font-size:15px;line-height:1.6">
 ${html.join('\n')}
 ${signatureSrc ? `<p style="margin:22px 0 0"><img src="${esc(signatureSrc)}" alt="${esc(text(signature && signature.name) || COMPANY)}" width="600" style="display:block;border:0;max-width:100%;height:auto"></p>` : `<div style="margin:18px 0 18px;padding:12px 0 0 14px;border-left:3px solid #fc6e1f;font-size:13px;line-height:1.55;color:#4f5b69">${sigHtml}</div>`}
 </td></tr>
