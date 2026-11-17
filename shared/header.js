@@ -97,15 +97,16 @@
     templates: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 8l9 6 9-6"/>'),
     incentive: svg('<path d="M12 3v18M16.5 7.5C15.8 6.4 14.2 6 12.5 6 10.3 6 8.5 7 8.5 8.8c0 4 8 2 8 6.2 0 1.8-1.9 3-4.2 3-2 0-3.7-.6-4.5-1.8"/>'),
     events: svg('<path d="M4 14V8l12-4v14L4 14z"/><path d="M16 8a3 3 0 0 1 0 6M7 14v4a2 2 0 0 0 4 0v-3"/>'),
+    datafix: svg('<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="4"/>'),
     factfile: svg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>'),
   };
   const LINKS = {
-    admin: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'],
+    admin: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'],
       ['direct', '/partner-universities', 'Partner Universities'], ['events', '/events', 'Events and marketing'], ['b2b', '/b2b-partners', 'B2B Partners'], ['agents', '/agents', 'Agents'], ['factfile', '/fact-file', 'Fact File'], ['templates', '/message-templates', 'Message templates']],
-    manager: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Fact File']],
-    staff: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Fact File']],
-    followup: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
-    branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulkadd', '/bulk-add', 'Add many students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
+    manager: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Fact File']],
+    staff: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['factfile', '/fact-file', 'Fact File']],
+    followup: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
+    branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['bulkadd', '/bulk-add', 'Add many students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
   };
   // The menu of an account: Admin and Manager have their own; a team gets the pages its work needs (a branch adds students, the Follow-up Team follows up).
   const kindOf = (me) => {

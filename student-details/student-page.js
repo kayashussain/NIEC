@@ -607,10 +607,104 @@
     box.append(list, el('p', 'p-muted p-small', 'Wrong? Correct it with Edit above, or on All Students.'));
     return box;
   }
+  // ---- fewer clicks (the owner, 17 Nov 2026) ----
+  // Working through a list (Data to fix, "Work through them"): "3 of 12" with Previous and Next, and the [ and ] keys, so the next
+  // student opens without going back to the list.
+  function queue() {
+    try {
+      const q = JSON.parse(sessionStorage.getItem('isrQueue') || 'null');
+      if (!q || !Array.isArray(q.ids)) return null;
+      const at = q.ids.indexOf(id);
+      return at === -1 ? null : { ...q, at };
+    } catch (e) { return null; }
+  }
+  function queueBar() {
+    const q = queue();
+    if (!q || embedded) return null;
+    const bar = el('nav', 'p-queue');
+    bar.setAttribute('aria-label', 'Students in this list');
+    const go = (i) => { location.href = '/student?id=' + encodeURIComponent(q.ids[i]); };
+    const prev = h('button', { class: 'btn btn-sm', type: 'button', disabled: q.at === 0, onclick: () => go(q.at - 1), title: 'The student before ( [ )' }, '‹ Previous');
+    const next = h('button', { class: 'btn btn-primary btn-sm', type: 'button', disabled: q.at === q.ids.length - 1, onclick: () => go(q.at + 1), title: 'The next student ( ] )' }, 'Next ›');
+    const where = el('div', 'p-queue-where');
+    where.append(el('b', '', `${q.at + 1} of ${q.ids.length}`), el('span', '', q.label || ''));
+    bar.append(h('a', { class: 'p-queue-back', href: q.back || '/today' }, 'Back to the list'), where, el('span', 'p-queue-gap'), prev, next);
+    if (!queueBar.keys) {
+      queueBar.keys = true;
+      document.addEventListener('keydown', (e) => {
+        if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) || document.querySelector('dialog[open]')) return;
+        const cur = queue(); if (!cur) return;
+        if (e.key === ']' && cur.at < cur.ids.length - 1) go(cur.at + 1);
+        if (e.key === '[' && cur.at > 0) go(cur.at - 1);
+      });
+    }
+    return bar;
+  }
+  // One tap to reach the student: call, WhatsApp, email, or copy the number.
+  function contactBar() {
+    const s = data.student;
+    const wa = F.whatsappNumber(s.phone);
+    if (!s.phone && !s.email) return null;
+    const bar = el('div', 'p-reach');
+    if (s.phone) bar.append(h('a', { class: 'p-reach-btn', href: 'tel:' + String(s.phone).replace(/[^\d+]/g, '') }, el('span', 'p-reach-ico', '☎'), 'Call'));
+    if (wa) bar.append(h('a', { class: 'p-reach-btn is-wa', href: 'https://wa.me/' + wa, target: '_blank', rel: 'noopener' }, el('span', 'p-reach-ico', '●'), 'WhatsApp'));
+    if (s.email) bar.append(h('a', { class: 'p-reach-btn', href: 'mailto:' + s.email }, el('span', 'p-reach-ico', '@'), 'Email'));
+    if (s.phone) bar.append(h('button', { class: 'p-reach-btn', type: 'button', onclick: async () => say(await window.Portal.copy(s.phone) ? `Copied ${s.phone}` : 'Could not copy', false) }, el('span', 'p-reach-ico', '⎘'), 'Copy number'));
+    return bar;
+  }
+  // The next thing the sheet needs for this student, done right here: one day to pick and Save, or the passport details to add.
+  function nextStep() {
+    if (!can()) return null;
+    const s = data.student;
+    const row = s.row || {};
+    const iso = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : '');
+    const applied = iso(row['APPLICATION SUBMISSION DATE']);
+    const pp = profile();
+    let step = null;
+    if (String(row['LANGUAGE TEST DATE'] || '').trim() === 'Test Date') step = { title: 'Pick the language test day', why: 'The test is chosen as "Test Date", but no day is on the sheet.', col: 'LANGUAGE TEST DATE', label: 'Test date' };
+    else if (s.stage === 'Application Stage' && !applied) step = { title: 'Record the application', why: 'When the application is submitted, pick the day: All Students is updated.', col: 'APPLICATION SUBMISSION DATE', label: 'Submitted on' };
+    else if (applied && !iso(row['OFFER RECEIVED DATE']) && ['Application Stage', 'Mock Stage'].includes(s.stage)) {
+      const waited = Math.max(0, Math.round((Date.parse(data.today || new Date().toISOString().slice(0, 10)) - Date.parse(applied)) / 86400000));
+      step = { title: 'Record the offer', why: `Applied ${day(applied)}, ${waited} ${waited === 1 ? 'day' : 'days'} ago. When the offer comes, pick the day.`, col: 'OFFER RECEIVED DATE', label: 'Offer received on', min: applied };
+    } else if (s.stage && !['Inquiry', 'Visa Issued', ...F.LOST_STAGES].includes(s.stage) && (!pp.dob || !pp.passportNo || !pp.address)) {
+      const gone = [['date of birth', pp.dob], ['passport number', pp.passportNo], ['address', pp.address]].filter(([, v]) => !v).map(([k]) => k);
+      step = { title: 'Add the passport details', why: `Still missing: ${gone.join(', ')}.`, edit: true };
+    }
+    if (!step) return null;
+    const box = el('section', 'p-next');
+    const words = el('div', 'p-next-words');
+    words.append(el('span', 'p-next-eyebrow', 'Next step'), el('b', '', step.title), el('span', 'p-next-why', step.why));
+    const act = el('div', 'p-next-act');
+    if (step.edit) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { editingHero = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 'Add them'));
+    else {
+      const input = h('input', { type: 'date', 'aria-label': step.label });
+      input.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      if (step.col === 'LANGUAGE TEST DATE') input.removeAttribute('max'); // a test can be booked ahead
+      if (step.min) input.min = step.min;
+      const ok = h('button', { class: 'btn btn-primary', type: 'button', disabled: true }, 'Save');
+      input.addEventListener('change', () => { ok.disabled = !input.value; });
+      input.addEventListener('input', () => { ok.disabled = !input.value; });
+      ok.addEventListener('click', async () => {
+        ok.disabled = true;
+        try {
+          await api(`/api/cards/${encodeURIComponent(id)}/sheet`, { fields: { [step.col]: input.value } });
+          data = await api('/api/cards/' + encodeURIComponent(id));
+          say(`Saved: ${step.label.toLowerCase()} ${day(input.value)}`);
+          render();
+        } catch (e) { say(e.message, true); ok.disabled = false; }
+      });
+      act.append(input, ok);
+    }
+    box.append(words, act);
+    return box;
+  }
+
   function render(template) {
     document.title = `${data.student.name} · Student · ISR`;
     const frag = document.createDocumentFragment();
+    const q = queueBar(); if (q) frag.append(q);
     frag.append(hero());
+    if (!editingHero) { const r = contactBar(); if (r) frag.append(r); const n = nextStep(); if (n) frag.append(n); }
     if ((data.checks || []).length) frag.append(checksBox());
     if (!can()) frag.append(el('div', 'p-notice', 'View only.'));
     const tabs = el('div', 'p-tabs');

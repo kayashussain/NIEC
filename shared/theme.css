@@ -2472,3 +2472,113 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-checks ul { display: grid; gap: 8px; margin: 0 0 8px; padding: 0; list-style: none; }
 .p-checks li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; font-size: 14.5px; line-height: 1.45; }
 .p-checks .p-muted { margin: 0; }
+
+/* 🔴 CSS CHANGED (2026-11-17): Data to fix, a new page (data-fix-page.js) | from: no such page; gaps were found one card at a time | to: the page in the site's look: a small grey heading line, the big "Data to fix" title and one line saying how many gaps; grey pills for each kind of gap with its number (the chosen one dark); then one off-white rounded panel per kind of gap, its title with a grey count, a grey hint, and a row per student: the name in semibold (a link to the card), the stage pill, intake and university in grey, what is missing, then a box to fill in and a blue Save; a filled row fades out; "All clear" with a green tick when nothing is left */
+.df-page { max-width: 1100px; margin: 0 auto; }
+.df-top { margin: 6px 0 18px; }
+.df-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6e6e73; }
+.df-top h1 { margin: 4px 0 6px; font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
+.df-lead { margin: 0; max-width: 720px; font-size: 17px; line-height: 1.45; color: var(--text-dim); }
+.df-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+.df-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #e8e8ed; color: var(--ink); font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: background .2s; }
+.df-pill:hover { background: #dcdce2; }
+.df-pill.on { background: var(--ink); color: #fff; }
+.df-pill-n { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); font-size: 12.5px; font-weight: 600; text-align: center; }
+.df-pill.on .df-pill-n { background: rgba(255, 255, 255, .2); }
+.df-group { margin: 0 0 16px; padding: 20px 22px 12px; }
+.df-group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.df-group-title { display: flex; align-items: center; gap: 10px; }
+.df-group-title h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.015em; color: var(--ink); }
+.df-count { padding: 2px 10px; border-radius: 999px; background: #f0f0f3; color: #48484e; font-size: 13px; font-weight: 600; }
+.df-hint { margin: 4px 0 10px; font-size: 14.5px; color: #6e6e73; }
+.df-list { margin: 0; padding: 0; list-style: none; }
+.df-row { display: grid; grid-template-columns: minmax(200px, 1.3fr) minmax(120px, 1fr) minmax(260px, auto); align-items: center; gap: 8px 18px; padding: 12px 0; border-top: 1px solid var(--border); transition: opacity .35s ease, transform .35s ease; }
+.df-row.is-done { opacity: 0; transform: translateX(14px); }
+.df-who { min-width: 0; }
+.df-name { display: block; overflow: hidden; color: var(--ink); font-size: 16px; font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.df-name:hover { color: var(--link); }
+.df-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 3px; font-size: 13px; color: #6e6e73; }
+.df-detail { font-size: 14.5px; color: var(--text-dim); }
+.df-fix { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.df-fix .df-input, .df-fix .p-date { width: 200px; }
+.df-fix .df-input { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--edit-bg); font: inherit; font-size: 15px; }
+.df-fix .df-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
+.df-more { margin: 8px 0 4px; }
+.df-clear { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 20px; text-align: center; }
+.df-clear b { font-size: 18px; color: var(--ink); }
+.df-clear-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--green-bg); color: var(--green-fg); font-size: 22px; font-weight: 700; }
+@media (max-width: 760px) {
+  .df-top h1 { font-size: 32px; }
+  .df-row { grid-template-columns: 1fr; gap: 6px; }
+  .df-fix { justify-content: flex-start; }
+  .df-fix .df-input, .df-fix .p-date { flex: 1; width: auto; min-width: 0; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-17): the student card, fewer clicks (student-page.js) | from: only Send a message, Edit details and Assign a task at the top; to reach the next student of a list, back to the list each time | to: (1) when the card is opened from a list, a slim off-white bar above the card: "Back to the list", "3 of 12" in semibold with the list's name in grey, then a grey "Previous" and a blue "Next" pill; (2) under the card, a row of soft grey pill buttons with a small icon: Call, WhatsApp (green icon), Email, Copy number; (3) a soft blue panel "Next step" with the step in semibold, why in grey, and a date box with a blue Save (or a blue "Add them" for the passport details) */
+.p-queue { position: sticky; top: 8px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; padding: 8px 10px 8px 16px; border-radius: 16px; background: rgba(251, 251, 253, .9); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); box-shadow: 0 6px 24px -14px rgba(0, 0, 0, .35), 0 0 0 .5px rgba(0, 0, 0, .08); }
+.p-queue-back { color: var(--link); font-size: 14px; text-decoration: none; }
+.p-queue-back:hover { text-decoration: underline; }
+.p-queue-where { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 14.5px; }
+.p-queue-where b { color: var(--ink); font-weight: 650; }
+.p-queue-where span { overflow: hidden; color: #6e6e73; text-overflow: ellipsis; white-space: nowrap; }
+.p-queue-gap { flex: 1; }
+.p-reach { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.p-reach-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #e8e8ed; color: var(--ink); font: inherit; font-size: 15px; font-weight: 500; text-decoration: none; cursor: pointer; transition: background .2s; }
+.p-reach-btn:hover { background: #dcdce2; color: var(--ink); }
+.p-reach-ico { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #fbfbfd; color: #48484e; font-size: 12px; line-height: 1; }
+.p-reach-btn.is-wa .p-reach-ico { background: #25d366; color: #fff; font-size: 9px; }
+.p-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 14px 0 0; padding: 16px 18px; border-radius: 18px; background: var(--blue-tint); }
+.p-next-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.p-next-eyebrow { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--blue-fg); }
+.p-next-words b { font-size: 17px; font-weight: 650; color: var(--ink); }
+.p-next-why { font-size: 14.5px; color: var(--text-dim); }
+.p-next-act { display: flex; align-items: center; gap: 8px; }
+.p-next-act .p-date { width: 190px; }
+@media (max-width: 600px) { .p-next-act { width: 100%; } .p-next-act .p-date { flex: 1; width: auto; } .p-queue-gap { display: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): the weekly summary, a new page (weekly-page.js), and a blue "Weekly summary" pill on the Dashboard beside the intake | from: no such page | to: a grey heading line ("This week"), the big "Weekly summary" title, the dates in grey, grey "Earlier week" and "Later week" pills and a blue Print; the week in one large sentence; off-white tiles (seven of the same size in one row: label in grey, the number large, then "3 more than the week before" in green or "2 fewer" in orange); panels listing who received a visa, an offer, paid or applied (day in grey, name as a link, the stage pill); the teams' work as small tiles; soft blue bars for tasks done by team and new students by source. Printed: no menu, no buttons, panels kept whole */
+.wk-page { max-width: 1180px; margin: 0 auto; }
+.wk-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 6px 0 14px; }
+.wk-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6e6e73; }
+.wk-top h1 { margin: 4px 0 6px; font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
+.wk-lead { margin: 0; font-size: 16px; color: var(--text-dim); }
+.wk-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.wk-headline { margin: 6px 0 18px; font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: var(--ink); }
+.wk-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; margin: 0 0 16px; }
+.wk-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 0 0 .5px rgba(0, 0, 0, .06); }
+.wk-tile-label { font-size: 14px; font-weight: 500; color: #6e6e73; }
+.wk-tile-n { font-size: 38px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.wk-tiles.is-small { margin: 4px 0 6px; }
+.wk-tiles.is-small .wk-tile { background: #f5f5f7; box-shadow: none; }
+.wk-tiles.is-small .wk-tile-n { font-size: 28px; }
+.wk-change { font-size: 12.5px; font-weight: 500; }
+.wk-change.up { color: var(--green-fg); }
+.wk-change.down { color: var(--orange); }
+.wk-change.same { color: #8e8e93; }
+.wk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 0 0 16px; }
+.wk-card { margin: 0; padding: 20px 22px; }
+.wk-grid .wk-card { margin: 0; }
+.wk-page > .wk-card { margin: 0 0 16px; }
+.wk-card h2 { margin: 0 0 10px; font-size: 19px; font-weight: 650; letter-spacing: -.015em; color: var(--ink); }
+.wk-empty { margin: 0; color: #8e8e93; font-size: 14.5px; }
+.wk-people { margin: 0; padding: 0; list-style: none; }
+.wk-people li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
+.wk-people li:first-child { border-top: 0; }
+.wk-day { font-size: 13px; color: #6e6e73; font-variant-numeric: tabular-nums; }
+.wk-who { display: flex; flex-direction: column; min-width: 0; }
+.wk-who a { overflow: hidden; color: var(--ink); font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.wk-who a:hover { color: var(--link); }
+.wk-meta { overflow: hidden; font-size: 13px; color: #6e6e73; text-overflow: ellipsis; white-space: nowrap; }
+.wk-still { margin: 8px 0 0; font-size: 15px; color: var(--text-dim); }
+.wk-bar { display: grid; grid-template-columns: minmax(110px, 160px) 1fr 36px; align-items: center; gap: 12px; padding: 6px 0; font-size: 14.5px; }
+.wk-bar-label { overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
+.wk-track { height: 10px; border-radius: 999px; background: #f0f0f3; overflow: hidden; }
+.wk-track i { display: block; height: 100%; border-radius: 999px; background: #6fa8ec; }
+.wk-bar b { text-align: right; font-variant-numeric: tabular-nums; }
+.wk-foot { margin: 4px 0 24px; font-size: 13px; color: #8e8e93; }
+@media (max-width: 600px) { .wk-top h1 { font-size: 32px; } .wk-headline { font-size: 21px; } .wk-grid { grid-template-columns: 1fr; } }
+@media print {
+  .niec-header, .no-print { display: none !important; }
+  .wk-card, .wk-tile { break-inside: avoid; box-shadow: none; border: 1px solid #e3e3e8; }
+  .wk-page { max-width: none; }
+}

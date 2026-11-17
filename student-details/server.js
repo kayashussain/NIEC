@@ -66,6 +66,10 @@ const serveStatic = createStaticServer(ROOT, {
   '/my-email.html': 'text/html; charset=utf-8',
   '/my-email-page.js': 'text/javascript; charset=utf-8',
   '/my-dashboard-page.js': 'text/javascript; charset=utf-8',
+  '/data-fix.html': 'text/html; charset=utf-8',
+  '/data-fix-page.js': 'text/javascript; charset=utf-8',
+  '/weekly.html': 'text/html; charset=utf-8',
+  '/weekly-page.js': 'text/javascript; charset=utf-8',
   '/events-page.js': 'text/javascript; charset=utf-8',
   '/dashboard.js': 'text/javascript; charset=utf-8',
   '/dashboard-trends.js': 'text/javascript; charset=utf-8',
@@ -173,7 +177,7 @@ const advisor = createAdvisorMcp({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/compose', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/my-email', '/message-templates', '/b2b-partners', '/agents', '/events']);
+  '/student', '/compose', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/my-email', '/message-templates', '/b2b-partners', '/agents', '/events', '/data-to-fix', '/weekly']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -1002,6 +1006,7 @@ const server = http.createServer(async (req, res) => {
       const page = {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
         '/student': 'student.html', '/compose': 'compose.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/my-email': 'my-email.html', '/message-templates': 'templates.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/events': 'events.html',
+        '/data-to-fix': 'data-fix.html', '/weekly': 'weekly.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
       if (urlPath === '/fact-file') { // the list, or one university's page (?u=...); every account may read
@@ -1018,7 +1023,7 @@ const server = http.createServer(async (req, res) => {
         // the Dashboard is for Admin and the Manager; the partner pages and Message templates as partner-access.js says; the rest is Admin's.
         const access = partnerAccess(req.user);
         const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/message-templates': access.templates }[urlPath];
-        const allowed = Boolean(shared) || ['/students', '/student', '/today', '/my-dashboard', '/my-email'].includes(urlPath) || (['/compose', '/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
+        const allowed = Boolean(shared) || ['/students', '/student', '/today', '/my-dashboard', '/my-email', '/data-to-fix'].includes(urlPath) || (['/compose', '/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events', '/weekly'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
         if (!allowed) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
         req.url = '/' + page;
         return serveStatic(req, res);
