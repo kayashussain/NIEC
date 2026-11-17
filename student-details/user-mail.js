@@ -1,5 +1,5 @@
 // Each person's own mailbox (the owner, 14 Nov 2026): a team member who emails students sends from their own address, set up once
-// on the My email page (reached from Message templates and wherever an email is sent). Admin sends from their own mailbox if they set one, else from the office mailbox (mail.json, set
+// on Follow-up (Your setup), where the messages to students are sent from. Admin sends from their own mailbox if they set one, else from the office mailbox (mail.json, set
 // up with `node scripts/email.js setup`). Nobody else sends from the office mailbox.
 //
 // Kept in user-mail.json in the data folder (never in git, never served, never in the daily backups). The password is encrypted with
@@ -47,9 +47,25 @@ function createUserMail(dir) {
   return {
     // What a page may know about a person's mailbox: never the password.
     info(userId) {
-      const b = read().boxes[userId];
+      const d = read();
+      const b = d.boxes[userId];
       const signature = Boolean(this.picture(userId));
-      return b ? { set: true, from: b.from, user: b.user, host: b.host, port: b.port, security: b.security, phone: b.phone || '', checkedAt: b.checkedAt, signature } : { set: false, signature };
+      // The WhatsApp number is kept on its own (it is saved without a mailbox too); an older one typed with the mailbox still counts.
+      const phone = (d.phones && d.phones[userId]) || (b && b.phone) || '';
+      return b ? { set: true, from: b.from, user: b.user, host: b.host, port: b.port, security: b.security, phone, checkedAt: b.checkedAt, signature } : { set: false, phone, signature };
+    },
+    // Their own WhatsApp number, saved on its own; an empty one removes it.
+    savePhone(userId, value) {
+      const phone = str(value, 40);
+      if (phone && !/^\+?[\d\s()-]{6,25}$/.test(phone)) return { error: 'The number does not look right. Use digits, for example +977 9800000001.' };
+      const id = safeId(userId);
+      if (!id) return { error: 'No such person.' };
+      const d = read();
+      d.phones = d.phones && typeof d.phones === 'object' ? d.phones : {};
+      if (phone) d.phones[id] = phone; else delete d.phones[id];
+      if (d.boxes[id]) d.boxes[id].phone = phone;
+      write(d);
+      return { phone };
     },
     // The settings to send with, password included (only inside the server).
     config(userId) {
@@ -77,7 +93,10 @@ function createUserMail(dir) {
     },
     save(userId, box) {
       const d = read();
-      d.boxes[userId] = { ...box, pass: seal(box.pass), checkedAt: new Date().toISOString() };
+      // A number saved on its own is kept when the mailbox form leaves it empty.
+      const phone = box.phone || (d.phones && d.phones[userId]) || '';
+      if (phone) { d.phones = d.phones && typeof d.phones === 'object' ? d.phones : {}; d.phones[userId] = phone; }
+      d.boxes[userId] = { ...box, phone, pass: seal(box.pass), checkedAt: new Date().toISOString() };
       write(d);
     },
     // A person's own signature picture (PNG or JPG, at most 1 MB), put at the end of the emails they send, as the office signature

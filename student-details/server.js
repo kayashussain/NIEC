@@ -63,8 +63,6 @@ const serveStatic = createStaticServer(ROOT, {
   '/today.html': 'text/html; charset=utf-8',
   '/today-page.js': 'text/javascript; charset=utf-8',
   '/my-dashboard.html': 'text/html; charset=utf-8',
-  '/my-email.html': 'text/html; charset=utf-8',
-  '/my-email-page.js': 'text/javascript; charset=utf-8',
   '/my-dashboard-page.js': 'text/javascript; charset=utf-8',
   '/data-fix.html': 'text/html; charset=utf-8',
   '/data-fix-page.js': 'text/javascript; charset=utf-8',
@@ -86,24 +84,22 @@ const serveStatic = createStaticServer(ROOT, {
   '/direct-page.js': 'text/javascript; charset=utf-8',
   '/calc.js': 'text/javascript; charset=utf-8',
   '/suggest.js': 'text/javascript; charset=utf-8',
-  // The portal pages around the sheet: the student card, the compose page, message templates, B2B partners, the decision pages.
+  // The portal pages around the sheet: the student card, Follow-up, B2B partners, the decision pages.
+  '/sender-setup.js': 'text/javascript; charset=utf-8',
+  '/qr.js': 'text/javascript; charset=utf-8',
   '/card-fields.js': 'text/javascript; charset=utf-8',
   '/portal.css': 'text/css; charset=utf-8',
   '/portal-ui.js': 'text/javascript; charset=utf-8',
   '/student.html': 'text/html; charset=utf-8',
-  '/compose.html': 'text/html; charset=utf-8',
   '/bulk.html': 'text/html; charset=utf-8',
   '/bulk-add.html': 'text/html; charset=utf-8',
   '/bulk-add-page.js': 'text/javascript; charset=utf-8',
   '/student-file.js': 'text/javascript; charset=utf-8',
   '/bulk-page.js': 'text/javascript; charset=utf-8',
-  '/compose-page.js': 'text/javascript; charset=utf-8',
   '/student-page.js': 'text/javascript; charset=utf-8',
   '/card-drawer.js': 'text/javascript; charset=utf-8',
   '/new-student.js': 'text/javascript; charset=utf-8',
   '/source-picker.js': 'text/javascript; charset=utf-8',
-  '/templates.html': 'text/html; charset=utf-8',
-  '/templates-page.js': 'text/javascript; charset=utf-8',
   '/b2b.html': 'text/html; charset=utf-8',
   '/agents.html': 'text/html; charset=utf-8',
   '/b2b-page.js': 'text/javascript; charset=utf-8',
@@ -129,7 +125,7 @@ const { requireAuth } = accounts;
 const facts = createFacts(DATA_DIR);
 // Partner Universities: Admin only, kept out of the Advisor connector and every other account's reach.
 const direct = createDirect(DATA_DIR);
-// The student cards (what is known about a student besides the sheet), the message templates, the links typed for single
+// The student cards (what is known about a student besides the sheet), the email settings (the consultancy name, message-templates.json), the links typed for single
 // courses, the B2B partners and the management records of the Dashboard. Each is a file of its own in the data folder.
 const cards = createCards(DATA_DIR);
 const messages = createMessages(DATA_DIR);
@@ -177,7 +173,7 @@ const advisor = createAdvisorMcp({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/compose', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/my-email', '/message-templates', '/b2b-partners', '/agents', '/events', '/data-to-fix', '/weekly']);
+  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/b2b-partners', '/agents', '/events', '/data-to-fix', '/weekly']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -833,7 +829,7 @@ function servedInsights(user, intake) {
 const courseFinder = createCourseFinder();
 let portalRef = null;
 const courseWatch = createCourseWatch({ dir: DATA_DIR, getIndex: () => (portalRef ? portalRef.courseIndex() : []), facts, finder: courseFinder, courseLinks });
-// Each person's own mailbox for emailing students (My email); the office mailbox stays Admin's (see user-mail.js).
+// Each person's own mailbox for emailing students (Follow-up, Your setup for sending); the office mailbox stays Admin's (see user-mail.js).
 const userMail = createUserMail(DATA_DIR);
 const portal = createPortalApi({
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave,
@@ -959,7 +955,7 @@ async function handleRestore(req, res, urlPath) {
     if (snap.planning) planning.restoreAll(snap.planning);
     if (snap.templates) messages.restoreAll(snap.templates);
     if (snap.sourceOptions) sourceOptions.restoreAll(snap.sourceOptions);
-    done.push('the B2B partners, the Dashboard records and the message templates');
+    done.push('the B2B partners, the Dashboard records and the email settings and the consultancy name');
   }
   activity.record(req, req.user, 'Restored data', { app: 'Student Details', changes: [`Restored ${done.join(', ')} from the backup ${id}. The data as it was before is saved as ${safety}`] });
   return sendJSON(res, 200, { ok: true, restored: done, safety });
@@ -1005,7 +1001,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       const page = {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
-        '/student': 'student.html', '/compose': 'compose.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/my-email': 'my-email.html', '/message-templates': 'templates.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/events': 'events.html',
+        '/student': 'student.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/events': 'events.html',
         '/data-to-fix': 'data-fix.html', '/weekly': 'weekly.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
@@ -1014,23 +1010,28 @@ const server = http.createServer(async (req, res) => {
         return serveStatic(req, res);
       }
       if (urlPath === '/admin') return send(res, 302, '', { Location: isAdmin(req.user) ? '/users' : home }); // the old address
+      // Message templates and the one-student compose page are gone (the owner, 17 Nov 2026: the card has Call, WhatsApp, Email and
+      // Copy number); a person's email, signature and WhatsApp number are set up on Follow-up, where messages are sent from.
+      if (urlPath === '/my-email') return send(res, 302, '', { Location: isReadOnly(req.user) ? home : '/bulk#setup' });
+      if (urlPath === '/message-templates') return send(res, 302, '', { Location: isReadOnly(req.user) ? home : '/bulk#setup' });
+      if (urlPath === '/compose') { const sid = new URL(req.url, 'http://x').searchParams.get('id'); return send(res, 302, '', { Location: sid ? '/student?id=' + encodeURIComponent(sid) : home }); }
       // A team's Dashboard is its own page (My dashboard); Admin and the Manager keep the full one.
       const fullDashboard = isAdmin(req.user) || (isManager(req.user) && isReadOnly(req.user));
       if (urlPath === '/dashboard' && !fullDashboard && !isManager(req.user)) return send(res, 302, '', { Location: '/my-dashboard' });
       if (urlPath === '/my-dashboard' && fullDashboard) return send(res, 302, '', { Location: '/dashboard' });
       if (page) {
-        // Every account opens the sheet, a student card and the compose page (each shows only the students the account sees);
-        // the Dashboard is for Admin and the Manager; the partner pages and Message templates as partner-access.js says; the rest is Admin's.
+        // Every account opens the sheet and a student card (each shows only the students the account sees); the Dashboard is for
+        // Admin and the Manager; the partner pages as partner-access.js says; the rest is Admin's.
         const access = partnerAccess(req.user);
-        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/message-templates': access.templates }[urlPath];
-        const allowed = Boolean(shared) || ['/students', '/student', '/today', '/my-dashboard', '/my-email', '/data-to-fix'].includes(urlPath) || (['/compose', '/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events', '/weekly'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
+        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents }[urlPath];
+        const allowed = Boolean(shared) || ['/students', '/student', '/today', '/my-dashboard', '/data-to-fix'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events', '/weekly'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
         if (!allowed) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
         req.url = '/' + page;
         return serveStatic(req, res);
       }
     }
     if (urlPath === '/api/demo' && req.method === 'GET') return sendJSON(res, 200, { demo: process.env.ISR_DEMO === '1' });
-    // What this account sees of the partner pages and Message templates (the pages hide what is not theirs to change).
+    // What this account sees of the partner pages (the pages hide what is not theirs to change).
     if (urlPath === '/api/partner-access' && req.method === 'GET') return sendJSON(res, 200, partnerAccess(req.user));
     if (urlPath === '/api/dashboard' && req.method === 'GET') {
       if (!isAdmin(req.user) && !isManager(req.user)) return sendJSON(res, 403, { error: 'The dashboard is for Admin and the Manager.' });
@@ -1092,8 +1093,8 @@ const server = http.createServer(async (req, res) => {
     if (SHARED_FILES[urlPath]) return serveShared(req, res);
     // The page files of the Admin-only pages are Admin-only too (their data was already refused; now their shells are as well).
     const pageAccess = partnerAccess(req.user);
-    const sharedPage = { '/direct.html': pageAccess.direct, '/b2b.html': pageAccess.b2b, '/agents.html': pageAccess.agents, '/templates.html': pageAccess.templates }[urlPath];
-    if (['/users.html', '/activity.html', '/direct.html', '/dashboard.html', '/templates.html', '/b2b.html', '/agents.html', '/events.html'].includes(urlPath) && !isAdmin(req.user) && !sharedPage
+    const sharedPage = { '/direct.html': pageAccess.direct, '/b2b.html': pageAccess.b2b, '/agents.html': pageAccess.agents }[urlPath];
+    if (['/users.html', '/activity.html', '/direct.html', '/dashboard.html', '/b2b.html', '/agents.html', '/events.html'].includes(urlPath) && !isAdmin(req.user) && !sharedPage
       && !(['/dashboard.html', '/events.html'].includes(urlPath) && isManager(req.user))) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
     serveStatic(req, res);
   } catch (e) {

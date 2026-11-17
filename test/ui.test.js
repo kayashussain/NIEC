@@ -155,7 +155,8 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     const frame = page.frameLocator('.p-drawer iframe');
     await frame.locator('.p-hero h1').waitFor();
     assert.match(await frame.locator('.p-hero h1').textContent(), /Student/);
-    assert.ok(await frame.locator('.p-tabs button').count() === 3, 'three tabs only: Notes, University options, Send a message');
+    assert.ok(await frame.locator('.p-tabs button').count() === 2, 'two tabs only: Notes and University options (no Send a message, the owner, 17 Nov 2026)');
+    assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp, Email and Copy number are under the name');
     // The keyboard is in the card now: typing must not reach the cell of the sheet hidden behind it.
     assert.strictEqual(await page.evaluate(() => document.activeElement && document.activeElement.tagName), 'IFRAME');
     await page.keyboard.type('x');

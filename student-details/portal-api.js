@@ -1,6 +1,6 @@
 // The requests behind the portal pages around the sheet: the student card (notes, university options, messages), adding a
 // student from the card form, the course search over the
-// Fact File, the message templates, the B2B partners and the management records of the Dashboard.
+// Fact File, Follow-up messages, the B2B partners and the management records of the Dashboard.
 //
 // Who may see or change a student here is decided by the very same rules as on the sheet (shared/teams.js): Admin
 // everything, the Manager every student but view only, a team its own students in the current intake. A student the
@@ -69,7 +69,7 @@ function createPortalApi({
   // The teams a person belongs to (department keys); a task given to one of them can be seen and marked by that person.
   const teamsOf = (user) => (Array.isArray(user && user.departments) ? user.departments : []);
   // Tasks go to a team, or to the head of the consultancy (Admin): the Manager, every team and every branch can give Admin a task too
-  // (the owner, 14 Nov 2026). Admin is named by their own name and the title of the signature (Message templates), for example
+  // (the owner, 14 Nov 2026). Admin is named by their own name and the title of the office signature, for example
   // "SK Kayas Hussain (Head of Recruitment)".
   const HEAD = 'head';
   const headLabel = () => {
@@ -238,7 +238,7 @@ function createPortalApi({
   const officePicture = () => (signaturePicture ? { data: signaturePicture, type: 'image/png' } : null);
   const inlinePictures = (pic) => (pic ? [{ cid: 'niec-signature', type: pic.type, data: pic.data }] : []);
   const signatureSrc = (preview, pic) => (pic ? (preview ? `data:${pic.type};base64,${pic.data.toString('base64')}` : 'cid:niec-signature') : '');
-  // The mailbox a person sends from: their own (set up under My email) or, for Admin only, the office mailbox. A team member who has
+  // The mailbox a person sends from: their own (set up on Follow-up, Your setup for sending) or, for Admin only, the office mailbox. A team member who has
   // not set up their own mailbox cannot email (the owner, 14 Nov 2026). `personal` marks a person's own mailbox.
   function mailFor(user) {
     const own = userMail && user ? userMail.config(user.id) : null;
@@ -247,8 +247,8 @@ function createPortalApi({
     return Teams.isAdmin(user) ? office : null;
   }
   // What a page is told about the sender's mailbox.
-  const mailInfo = (user) => { const cfg = mailFor(user); return { ready: Boolean(cfg), from: cfg ? cfg.from : '', own: !Teams.isAdmin(user), setUp: '/my-email' }; };
-  // A team member's email ends with the signature picture they uploaded on My email (the owner, 14 Nov 2026); until they upload one,
+  const mailInfo = (user) => { const cfg = mailFor(user); return { ready: Boolean(cfg), from: cfg ? cfg.from : '', own: !Teams.isAdmin(user), setUp: '/bulk#setup' }; };
+  // A team member's email ends with the signature picture they uploaded on Follow-up (the owner, 14 Nov 2026); until they upload one,
   // with their own name, team and address as text. The office picture carries Admin's name, so it is only for Admin.
   function signatureFor(user, cfg) {
     const sig = messages.signature();
@@ -284,11 +284,9 @@ function createPortalApi({
   async function handleMessages(req, res, found, card, action) {
     const body = await bodyOf(req, res, action === 'send' ? 24 * 1024 * 1024 : 256 * 1024);
     if (!body) return true;
-    const template = messages.get(text(body.template)) || null;
-    const subject = typeof body.subject === 'string' ? body.subject : (template ? template.subject : '');
-    const own = text(body.template) === 'custom'; // "Other": the sender writes everything
-    const emailBody = typeof body.body === 'string' ? body.body : (template ? template.body : (own ? 'Dear {first_name},\n\n' : ''));
-    const whatsappBody = typeof body.whatsapp === 'string' ? body.whatsapp : (template ? template.whatsapp : (own ? 'Hello {first_name}, ' : ''));
+    const subject = typeof body.subject === 'string' ? body.subject : '';
+    const emailBody = typeof body.body === 'string' ? body.body : 'Dear {first_name},\n\n';
+    const whatsappBody = typeof body.whatsapp === 'string' ? body.whatsapp : 'Hello {first_name}, ';
     const ctx = messageContext(req, found, card, body.optionIds);
     const cfg = mailFor(req.user);
     const signed = signatureFor(req.user, cfg);
@@ -316,9 +314,9 @@ function createPortalApi({
     if (channel === 'whatsapp') {
       if (!number) return sendJSON(res, 400, { error: 'This student has no WhatsApp number on the sheet.' });
       if (!whatsapp.text) return sendJSON(res, 400, { error: 'The message is empty.' });
-      const logged = cards.logMessage(found.row._id, { channel, template: template ? template.name : 'Own message', subject: '', to: number, status: 'opened', text: whatsapp.text, options: usesOptions ? ctx.options.length : 0 }, by(req));
+      const logged = cards.logMessage(found.row._id, { channel, template: 'Follow-up', subject: '', to: number, status: 'opened', text: whatsapp.text, options: usesOptions ? ctx.options.length : 0 }, by(req));
       if (logged.error) return sendJSON(res, 400, { error: logged.error });
-      note(req, [`Opened WhatsApp for ${who} with the message "${template ? template.name : 'Own message'}"`], 'Sent message');
+      note(req, [`Opened WhatsApp for ${who} with the message "${'Follow-up'}"`], 'Sent message');
       return sendJSON(res, 200, { status: 'opened', message: logged.message, card: logged.card });
     }
     if (!email.subject || !emailBody.trim()) return sendJSON(res, 400, { error: 'The email needs a subject and a message.' });
@@ -334,7 +332,7 @@ function createPortalApi({
       files.push({ name: text(f.name).replace(/[\\/\u0000-\u001f]/g, '').slice(0, 120) || 'attachment', type: text(f.type).slice(0, 80), data });
     }
     if (total > 15 * 1024 * 1024) return sendJSON(res, 413, { error: 'The files are too large to send together (the limit is 15 MB).' });
-    const entry = { channel, template: template ? template.name : 'Own message', subject: email.subject, to, text: email.text, options: usesOptions ? ctx.options.length : 0, attachments: files.map((f) => f.name) };
+    const entry = { channel, template: 'Follow-up', subject: email.subject, to, text: email.text, options: usesOptions ? ctx.options.length : 0, attachments: files.map((f) => f.name) };
     if (usesOptions) {
       // A link typed on a card is only remembered for the Fact File when it is on that university's own website.
       const unis = facts.all();
@@ -441,6 +439,38 @@ function createPortalApi({
     'MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'FEEDBACK 1', 'FEEDBACK 2', 'FEEDBACK 3', 'FEEDBACK 4', 'PRE CAS INTERVIEW',
     'MEDICAL REPORT', 'PAYMENT DATE', 'TUITION FEE DEPOSIT(1st Installment)', 'TUITION FEE DEPOSIT(2nd Installment)', 'TUITION FEE DEPOSIT(3rd Installment)',
     'CAS REQUESTED DATE', 'CAS RECEIVED DATE', 'VISA LODGE DATE', 'VFS ATTENDED DATE', 'VISA RECEIVED DATE'];
+  // What must be said when a task is marked done (the owner, 17 Nov 2026: only what the system needs to track the student, so no
+  // student is left without a next step, and nothing more):
+  //   1. What happened. A task that records something (an application, a mock, a payment, a visa step ...) says it by its answer;
+  //      one that records nothing (Documents, Other, or "Nothing to record") needs a few words of what was done.
+  //   2. What next. When the student is still on the way (any stage but Visa Issued, Withdrawn, Hold, Defer or Visa Rejected) and this
+  //      was their last open task, the team picks the day someone gets back to the student (a task for the same team, waiting for that
+  //      day) or says no follow-up is needed. A task that already makes its own next task (a mock set for a day, a medical booked) does
+  //      not ask.
+  const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+  const MIN_NOTE = 8; // characters: "Called." is not enough, "Sent the checklist." is
+  function needsNextStep(found, task) {
+    const stage = text(found.row[STATUS]);
+    if (stage === 'Visa Issued' || Fields.LOST_STAGES.includes(stage)) return false;
+    return !(cards.get(found.row._id).tasks || []).some((x) => !x.done && x.id !== task.id);
+  }
+  // The next step as chosen: null (not needed), { day, text }, or { error }.
+  function nextStepOf(f, task) {
+    const v = text(f && f.next);
+    if (v === 'none') return null;
+    const d = realDay(v);
+    if (!d) return { error: 'Choose the day to follow up next, or "Not needed".' };
+    const today = cards.today();
+    if (d < today) return { error: 'The follow-up day is in the past. Choose today or a later day.' };
+    if (d > addDays(today, 366)) return { error: 'Choose a follow-up day within the next year.' };
+    return { day: d, text: text(f.nextText).slice(0, 300) || `Follow up with the student (after: ${task.text.slice(0, 80)})` };
+  }
+  function addNextStep(req, rowId, task, step) {
+    const made = cards.addTask(rowId, { team: task.team, text: step.text, tag: Fields.taskTag(task, ''), priority: 'high' }, by(req));
+    if (made.error) return '';
+    if (step.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: step.day, reason: 'The follow-up day chosen when the last task was done' }, by(req), cards.today());
+    return made.task.id;
+  }
   function finishState(found, task) {
     const row = found.row;
     const card = cards.get(row._id);
@@ -451,6 +481,7 @@ function createPortalApi({
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
+      needsNext: needsNextStep(found, task), stage: text(row[STATUS]), minNote: MIN_NOTE,
     };
   }
   // Works out what finishing `task` with the answers `f` changes, without writing anything. Returns { error } or
@@ -1333,19 +1364,35 @@ function createPortalApi({
           const f = body.finish && typeof body.finish === 'object' ? body.finish : null;
           // What the "Mark as done?" window shows before it asks (see finishState).
           if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task) }); return true; }
-          if (body.done && !task.done && f && Object.keys(f).some((k) => !['note', 'confirmed'].includes(k) && f[k] !== undefined && f[k] !== '')) {
+          // Done needs what happened, and the next step when the student would be left without one (see needsNextStep).
+          if (body.done && !task.done && !f) { sendJSON(res, 400, { error: 'Say what was done first.' }); return true; }
+          const answered = f && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText'].includes(k) && f[k] !== undefined && f[k] !== '');
+          let step = null;
+          if (body.done && !task.done && f) {
+            const plan0 = answered ? finishPlan(found, task, f) : null;
+            if (plan0 && plan0.error) { sendJSON(res, 400, { error: plan0.error }); return true; }
+            // An answer to the task's question says what happened by itself; without one, a few words are needed.
+            if (!answered && text(f.note).length < MIN_NOTE) { sendJSON(res, 400, { error: 'Write in a few words what was done, so the next person knows.' }); return true; }
+            if (needsNextStep(found, task) && !(plan0 && plan0.remind)) {
+              if (f.next === undefined || f.next === '') { sendJSON(res, 400, { error: 'This was the last open task for this student: choose the day to follow up next, or "Not needed".' }); return true; }
+              step = nextStepOf(f, task);
+              if (step && step.error) { sendJSON(res, 400, { error: step.error }); return true; }
+            }
+          }
+          const stepWords = (p) => (step ? { ...p, remind: [p.remind, `${step.text}, ${step.day > cards.today() ? `on ${niceDay(step.day)}` : 'today'}`].filter(Boolean).join('; ') } : p);
+          if (body.done && !task.done && answered) {
             // Answers are first shown back to the team (preview), and written only once the team confirms them (the owner, 16 Nov 2026).
             const plan = finishPlan(found, task, f);
-            if (plan.error) { sendJSON(res, 400, { error: plan.error }); return true; }
-            if (body.preview || f.confirmed !== true) { sendJSON(res, body.preview ? 200 : 400, body.preview ? { preview: planWords(found, plan) } : { error: 'Check what will be written and confirm it first.' }); return true; }
+            if (body.preview || f.confirmed !== true) { sendJSON(res, body.preview ? 200 : 400, body.preview ? { preview: stepWords(planWords(found, plan)) } : { error: 'Check what will be written and confirm it first.' }); return true; }
             applyPlan(req, found, task, plan);
             if (plan.note || Object.keys(plan.columns).length) note(req, [`${who2}: finished the task "${task.text.slice(0, 80)}"${Object.keys(plan.columns).length ? `; ${Object.entries(plan.columns).map(([c, v]) => `${c}: ${v || '(blank)'}`).join(', ')}` : ''}`], 'Task');
           } else if (body.done && !task.done && f) {
             // Only a note (no question to answer, or "Nothing to record").
             const words = text(f.note).slice(0, 2000);
-            if (body.preview) { sendJSON(res, 200, { preview: planWords(found, { columns: {}, kept: [], warnings: [], options: [], note: words, remind: null }) }); return true; }
+            if (body.preview) { sendJSON(res, 200, { preview: stepWords(planWords(found, { columns: {}, kept: [], warnings: [], options: [], note: words, remind: null })) }); return true; }
             if (words) cards.addNote(rowId, { kind: 'note', text: words }, by(req));
           }
+          if (step && !body.preview) { const made = addNextStep(req, rowId, task, step); if (made) note(req, [`${who2}: next follow-up for ${teamLabel(task.team)} on ${step.day}: ${step.text.slice(0, 80)}`], 'Task'); }
           // Reopened, putting back what finishing it wrote when asked (see undoPlan).
           let undone = null;
           if (!body.done && task.done && f && f.revert) {
@@ -2291,57 +2338,21 @@ function createPortalApi({
     return [...set].sort();
   }
 
-  // ---- message templates ----
+  // ---- the words a message can use, and the office's email settings ----
+  // There are no saved message templates any more (the owner, 17 Nov 2026). What is left: the {words} Follow-up offers, and Admin's
+  // office settings (the consultancy's name, a copy of every email to the office mailbox), kept at the same address as before.
   async function handleTemplates(req, res, urlPath) {
     if (req.method === 'GET' && urlPath === '/api/templates') {
-      sendJSON(res, 200, { templates: messages.list(), hiddenCount: messages.hiddenCount(), fields: Messages.FIELDS, signature: messages.signature(), stages: Teams.ALL_STATUSES, canEdit: Teams.isAdmin(req.user), mail: mailInfo(req.user) });
+      sendJSON(res, 200, { fields: Messages.FIELDS, signature: messages.signature(), canEdit: Teams.isAdmin(req.user), mail: mailInfo(req.user) });
       return true;
     }
-    if (req.method !== 'POST') { send(res, 405, 'Method not allowed'); return true; }
-    if (!adminOnly(req, res, 'Changing the message templates')) return true;
+    if (req.method !== 'POST' || urlPath !== '/api/templates/signature') { send(res, 404, 'Not found'); return true; }
+    if (!adminOnly(req, res, 'Changing the office email settings')) return true;
     const body = await bodyOf(req, res);
     if (!body) return true;
-    const record = (line) => activity.record(req, req.user, 'Edited templates', { app: 'Messages', changes: [line] });
-    if (urlPath === '/api/templates/signature') {
-      const out = messages.saveSignature(body);
-      record('Changed the email signature');
-      sendJSON(res, 200, { ok: true, signature: out.signature });
-      return true;
-    }
-    if (urlPath === '/api/templates') {
-      const out = messages.addTemplate(body, req.user.label);
-      if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
-      record(`Added the message template "${out.template.name}"`);
-      sendJSON(res, 200, { ok: true, template: out.template });
-      return true;
-    }
-    if (urlPath === '/api/templates/restore-hidden') {
-      const out = messages.restoreHidden();
-      record(`Brought back ${out.restored} deleted ready-made message template${out.restored === 1 ? '' : 's'}`);
-      sendJSON(res, 200, { ok: true, restored: out.restored });
-      return true;
-    }
-    const hideMatch = /^\/api\/templates\/([a-z0-9_]{1,40})\/hide$/.exec(urlPath);
-    if (hideMatch) {
-      const out = messages.hideTemplate(hideMatch[1]);
-      if (out.error) { sendJSON(res, 404, { error: out.error }); return true; }
-      record(`Deleted the ready-made message template "${out.removed.name}"`);
-      sendJSON(res, 200, { ok: true });
-      return true;
-    }
-    const m = /^\/api\/templates\/([a-z0-9_]{1,40})(\/delete)?$/.exec(urlPath);
-    if (!m) { send(res, 404, 'Not found'); return true; }
-    if (m[2]) {
-      const out = messages.removeTemplate(m[1]);
-      if (out.error) { sendJSON(res, 404, { error: out.error }); return true; }
-      record(out.reset ? `Put the message template "${out.removed.name}" back to its original text` : `Deleted the message template "${out.removed.name}"`);
-      sendJSON(res, 200, { ok: true, reset: out.reset });
-      return true;
-    }
-    const out = messages.saveTemplate(m[1], body, req.user.label);
-    if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
-    record(`Changed the message template "${out.template.name}"`);
-    sendJSON(res, 200, { ok: true, template: out.template });
+    const out = messages.saveSignature(body);
+    activity.record(req, req.user, 'Edited templates', { app: 'Messages', changes: ['Changed the office email settings'] });
+    sendJSON(res, 200, { ok: true, signature: out.signature });
     return true;
   }
 
@@ -2375,10 +2386,11 @@ function createPortalApi({
     if (!body) return true;
     const ids = [...new Set(Array.isArray(body.ids) ? body.ids.map(String) : [])].filter((i) => ROW_ID.test(i)).slice(0, 150);
     if (!ids.length) { sendJSON(res, 400, { error: 'Choose at least one student.' }); return true; }
-    const template = messages.get(text(body.template)) || null;
-    const subject = typeof body.subject === 'string' ? body.subject : (template ? template.subject : '');
-    const emailBody = typeof body.body === 'string' ? body.body : (template ? template.body : '');
-    const whatsappBody = typeof body.whatsapp === 'string' ? body.whatsapp : (template ? template.whatsapp : '');
+    const subject = typeof body.subject === 'string' ? body.subject : '';
+    const emailBody = typeof body.body === 'string' ? body.body : '';
+    const whatsappBody = typeof body.whatsapp === 'string' ? body.whatsapp : '';
+    // A {word} that is not one of ours (a typing slip such as {frist_name}) would reach every student as typed: refuse it first.
+    { const bad = Messages.badPlaceholder(subject, emailBody, whatsappBody); if (bad) { sendJSON(res, 400, { error: bad }); return true; } }
     const cfg = mailFor(req.user);
     const signed = signatureFor(req.user, cfg);
     const signature = signed.sig;
@@ -2402,7 +2414,7 @@ function createPortalApi({
       if (!cfg) { sendOut.push({ id, name: item.name, status: 'not-configured' }); continue; }
       const recent = (bulkSends.get(req.user.id) || []).filter((t) => Date.now() - t < 10 * 60 * 1000);
       if (recent.length >= 300) { sendOut.push({ id, name: item.name, status: 'skipped', error: 'Too many emails in a short time.' }); continue; }
-      const entry = { channel: 'email', template: template ? template.name : 'Own message', subject: email.subject, to, text: email.text, options: needsOptions ? 0 : ctx.options.length, attachments: [] };
+      const entry = { channel: 'email', template: 'Follow-up', subject: email.subject, to, text: email.text, options: needsOptions ? 0 : ctx.options.length, attachments: [] };
       try {
         await mailer.sendMail({ ...cfg, fromName: cfg.personal && !Teams.isAdmin(req.user) ? `${req.user.name}, ${signature.short || signature.company || Messages.COMPANY}` : (signature.company || Messages.COMPANY) }, { to, subject: email.subject, text: email.text, html: email.html, auto: false, bcc: copiesFor(cfg), inline: inlinePictures(signed.picture) });
         recent.push(Date.now()); bulkSends.set(req.user.id, recent);
@@ -2422,7 +2434,7 @@ function createPortalApi({
   async function handle(req, res, urlPath) {
     if (!urlPath.startsWith('/api/')) return false;
     const query = () => new URL(req.url, 'http://x').searchParams;
-    // My email: a person's own mailbox for emailing students (see user-mail.js). Saved only after a test email to that address went out.
+    // Your setup for sending (Follow-up): a person's own mailbox for emailing students (see user-mail.js). Saved only after a test email to that address went out.
     if (urlPath === '/api/my-mail' && req.method === 'GET') {
       const office = officeMailSettings();
       sendJSON(res, 200, { ...(userMail ? userMail.info(req.user.id) : { set: false }), admin: Teams.isAdmin(req.user), officeReady: Boolean(accounts.emailConfig()), defaults: { host: office.host || '', port: office.port || 465, security: office.security || 'ssl' } });
@@ -2447,7 +2459,7 @@ function createPortalApi({
       sendJSON(res, 200, { ok: true, ...userMail.info(req.user.id) });
       return true;
     }
-    // The person's own signature picture: shown on My email, uploaded (PNG or JPG, at most 1 MB) and removed there.
+    // The person's own signature picture: shown on Follow-up, uploaded (PNG or JPG, at most 1 MB) and removed there.
     if (urlPath === '/api/my-mail/signature' && req.method === 'GET') {
       const pic = userMail ? userMail.picture(req.user.id) : null;
       if (!pic) { sendJSON(res, 404, { error: 'No signature picture yet.' }); return true; }
@@ -2473,6 +2485,18 @@ function createPortalApi({
       const gone = userMail ? userMail.remove(req.user.id) : false;
       if (gone) activity.record(req, req.user, 'Changed settings', { app: 'My email', changes: ['Removed their own mailbox'] });
       sendJSON(res, 200, { ok: true, set: false });
+      return true;
+    }
+    // Their own WhatsApp number (the owner, 17 Nov 2026: Follow-up asks for it), for the signature of their emails and to know which
+    // WhatsApp the messages go from. Saved on its own, with or without a mailbox.
+    if (urlPath === '/api/my-mail/phone' && req.method === 'POST') {
+      if (!userMail) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
+      const body = await bodyOf(req, res, 4 * 1024);
+      if (!body) return true;
+      const out = userMail.savePhone(req.user.id, body.phone);
+      if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
+      activity.record(req, req.user, 'Changed settings', { app: 'My email', changes: [out.phone ? 'Saved their WhatsApp number' : 'Removed their WhatsApp number'] });
+      sendJSON(res, 200, { ok: true, ...userMail.info(req.user.id) });
       return true;
     }
     if (urlPath === '/api/my-dashboard' && req.method === 'GET') {

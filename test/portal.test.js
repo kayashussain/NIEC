@@ -90,11 +90,26 @@ test('a WhatsApp number gets the Nepal country code unless it has one', () => {
 
 // ---- messages ----
 
+// Two messages as a sender might write them on Follow-up (there are no saved templates any more).
+const SAMPLE = {
+ "options": {
+  "subject": "Your UK university options from {company_short}",
+  "body": "Dear {first_name},\n\nThank you for your interest in studying in the UK. Based on your academic background and what you are looking for, these are the options we recommend for you:\n\n{options_table}\n\nFees and scholarships are as published by each university for this intake and can change, so we confirm them again at the time of your offer.\n\n## Documents needed to apply\n\n{documents_list}\n\nPlease tell us which options you like, and send us the documents above. We can submit your application as soon as we have them.",
+  "whatsapp": "Namaste {first_name}, here are your UK university options from {company_short}:\n\n{options_table}\n\nDocuments needed to apply:\n{documents_list}\n\nPlease tell us which option you like. - {sender_name}, {company_short}"
+ },
+ "application_submitted": {
+  "subject": "Your application to {university} has been submitted",
+  "body": "Dear {first_name},\n\nWe are pleased to tell you that your application for {course} at {university} has been submitted{application_date_phrase}.\n\nThe university usually takes one to three weeks to give a decision. We will contact you as soon as we hear from them.\n\nWhile you wait:\n- Keep your phone and email active, as the university may contact you directly\n- Tell us at once if you receive any email from the university\n- Start preparing for the credibility interview that most universities hold after the offer\n\nIf you have any question, simply reply to this email.",
+  "whatsapp": "Namaste {first_name}, your application for {course} at {university} has been submitted. The decision usually takes one to three weeks. Please tell us if the university emails you. - {sender_name}, {company_short}"
+ }
+};
+
+
 test('a template is filled in from the student, and an empty detail is named instead of leaving a hole', () => {
   const row = { 'FIRST NAME': 'Sita', 'LAST NAME': 'Sharma', 'UNIVERSITY NAME': 'Bangor University', 'COURSE NAME': 'MSc Finance', 'APPLICATION SUBMISSION DATE': '11/2/2026' };
   const values = Messages.valuesFor({ row, sheetName: 'Jan Intake 2027', card: { profile: {} }, sender: 'Owner' });
   assert.strictEqual(values.application_date, '2 November 2026', 'a month-first date of the sheet is written out in full');
-  const t = Messages.DEFAULTS.find((x) => x.key === 'application_submitted');
+  const t = SAMPLE.application_submitted;
   const mail = Messages.renderEmail({ subject: t.subject, body: t.body, values, signature: { name: 'Asha Demo', title: 'Counselor', phone: '+977 1 5550000' } });
   assert.strictEqual(mail.subject, 'Your application to Bangor University has been submitted');
   assert.match(mail.text, /your application for MSc Finance at Bangor University has been submitted on 2 November 2026\./);
@@ -112,7 +127,7 @@ test('several university options go into one email as one table, with the docume
     { university: 'Ulster University', course: 'MSc Data Science', fee: '', scholarship: '', link: '' },
     { university: 'A <b>bold</b> name', course: 'MBA', fee: '£1', scholarship: '£2', link: '' },
   ];
-  const t = Messages.DEFAULTS.find((x) => x.key === 'options');
+  const t = SAMPLE.options;
   const lists = Messages.documentLists(card);
   const mail = Messages.renderEmail({ subject: t.subject, body: t.body, values: Messages.valuesFor({ row: { 'FIRST NAME': 'Sita' }, card }), signature: {}, options, ...lists });
   assert.strictEqual((mail.html.match(/<tr><td valign="top"/g) || []).length, 3, 'one row for each option');
@@ -127,21 +142,18 @@ test('several university options go into one email as one table, with the docume
   assert.match(wa.text, /^Namaste Sita, here are your UK university options from NIEC:\n\n1\. University of West London: MSc Cyber Security/);
 });
 
-test('Admin edits a template, adds one, and a built-in one can be put back', () => {
+test('the office settings are kept, and a file from an earlier version with templates in it still works', () => {
   const dir = tmp();
+  fs.writeFileSync(path.join(dir, 'message-templates.json'), JSON.stringify({ templates: [{ key: 'own_1', name: 'Old', subject: 's', body: 'b' }], signature: { company: 'Other Consultancy' } }));
   const m = createMessages(dir);
-  assert.ok(m.list().length === 6 && m.list().every((t) => t.builtIn && !t.edited));
-  assert.ok(m.saveTemplate('offer_received', { name: 'Offer', subject: 'Your offer', body: 'Dear {first_name},\n\nWell done.', whatsapp: 'Well done {first_name}' }, 'Owner').template);
-  assert.strictEqual(m.get('offer_received').subject, 'Your offer');
-  assert.ok(m.get('offer_received').edited);
-  const own = m.addTemplate({ name: 'Scholarship deadline', subject: 'Deadline', body: 'Dear {first_name}', stages: ['Inquiry'] }, 'Owner').template;
-  assert.match(own.key, /^own_/);
-  assert.ok(m.addTemplate({ name: 'scholarship deadline', subject: 's', body: 'b' }, 'Owner').error);
-  assert.strictEqual(m.removeTemplate('offer_received').reset, true);
-  assert.match(createMessages(dir).get('offer_received').subject, /^Good news/);
+  assert.strictEqual(m.signature().company, 'Other Consultancy');
   m.saveSignature({ name: 'Head of UK Recruitment', phone: '+977 1 5550000', copyToOffice: false });
   assert.strictEqual(createMessages(dir).signature().copyToOffice, false);
-  assert.strictEqual(createMessages(dir).signature().company, 'Nepal International Educational Consultancy');
+  assert.strictEqual(createMessages(dir).signature().company, 'Other Consultancy');
+  assert.strictEqual(createMessages(dir).stored().templates.length, 1, 'what an earlier version saved is left as it was');
+  assert.strictEqual(createMessages(tmp()).signature().company, 'Nepal International Educational Consultancy');
+  assert.match(Messages.badPlaceholder('Dear {frist_name}'), /not one of the words/);
+  assert.strictEqual(Messages.badPlaceholder('Dear {first_name}, {university}'), '');
 });
 const { createMessages } = Messages;
 
@@ -409,39 +421,44 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
     const added = await app('POST', `/api/cards/${sitaId}/options`, { universityId: o.universityId, university: o.university, course: o.course, level: o.level, intake: o.intake, fee: o.fee, scholarship: o.scholarship, link: 'https://example.org/course' });
     assert.strictEqual(added.status, 200, JSON.stringify(added.json));
   }
-  const preview = (await app('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'options' })).json;
+  const OPT = { subject: SAMPLE.options.subject, body: SAMPLE.options.body, whatsapp: SAMPLE.options.whatsapp };
+  const preview = (await app('POST', `/api/cards/${sitaId}/messages/preview`, OPT)).json;
   assert.strictEqual(preview.subject, 'Your UK university options from NIEC');
   assert.strictEqual(preview.to, 'sita.sharma@example.com');
   assert.strictEqual(preview.options, 2);
   assert.strictEqual((preview.html.match(/<tr><td valign="top"/g) || []).length, 2, 'both options in the one email');
   assert.strictEqual(preview.whatsapp.number, '9779800000001');
   // Email is not set up on this test server: nothing leaves, and the card keeps the message as a preview.
-  const sent = (await app('POST', `/api/cards/${sitaId}/messages/send`, { channel: 'email', template: 'options' })).json;
+  const sent = (await app('POST', `/api/cards/${sitaId}/messages/send`, { channel: 'email', ...OPT })).json;
   assert.strictEqual(sent.status, 'not-configured');
   assert.strictEqual(sent.card.messages[0].status, 'preview');
   assert.strictEqual(sent.card.messages[0].options, 2);
   const words = (await app('GET', `/api/cards/${sitaId}/messages/${sent.message.id}`)).json;
   assert.match(words.text, /Dear Sita,/);
   assert.strictEqual((await follow('GET', `/api/cards/${sitaId}/messages/${sent.message.id}`)).status, 404);
-  const wa = (await app('POST', `/api/cards/${sitaId}/messages/send`, { channel: 'whatsapp', template: 'offer_received' })).json;
+  const wa = (await app('POST', `/api/cards/${sitaId}/messages/send`, { channel: 'whatsapp', whatsapp: 'Hello {first_name}, well done on your offer.' })).json;
   assert.strictEqual(wa.status, 'opened');
-  assert.strictEqual((await app('POST', `/api/cards/${sitaId}/messages/send`, { channel: 'email', template: 'offer_received', to: 'not an address' })).status, 400);
+  assert.strictEqual((await app('POST', `/api/cards/${sitaId}/messages/send`, { channel: 'email', subject: 'Offer', body: 'Dear {first_name}', to: 'not an address' })).status, 400);
   // A link typed on a card that is not on the university's own website is not shared with every other student.
   assert.ok(!(await app('GET', `/api/courses?q=${encodeURIComponent(pick.course)}`)).json.options.some((o) => o.linkIsCourse && o.link === 'https://example.org/course'));
 
-  // Templates: everyone reads, Admin changes.
-  assert.ok((await app('GET', '/api/templates')).json.templates.length === 6);
-  assert.strictEqual((await app('POST', '/api/templates/offer_received', { name: 'x', subject: 'y', body: 'z' })).status, 403);
+  // No saved templates any more (the owner, 17 Nov 2026): the words Follow-up offers, and Admin's office settings.
+  const tpl = (await app('GET', '/api/templates')).json;
+  assert.ok(tpl.fields.some(([k]) => k === 'first_name') && tpl.templates === undefined);
+  assert.strictEqual((await app('POST', '/api/templates/offer_received', { name: 'x', subject: 'y', body: 'z' })).status, 404, 'templates cannot be saved any more');
+  assert.strictEqual((await app('POST', '/api/templates/signature', { copyToOffice: false })).status, 403, 'only Admin changes the office settings');
   assert.strictEqual((await admin('POST', '/api/templates/signature', { name: 'Head of UK Recruitment', phone: '+977 1 5550000' })).status, 200);
-  assert.match((await admin('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'offer_received' })).json.text, /Head of UK Recruitment\n/, 'Admin signs with the office signature');
+  const OFFER = { subject: 'Your offer', body: 'Dear {first_name},\n\nWell done on your offer.', whatsapp: 'Well done {first_name}' };
+  assert.match((await admin('POST', `/api/cards/${sitaId}/messages/preview`, OFFER)).json.text, /Head of UK Recruitment\n/, 'Admin signs with the office signature');
   // A team member signs as themselves, also before their own mailbox is set up, never with Admin's signature (the owner, 15 Nov 2026).
-  const teamPreview = (await app('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'offer_received' })).json;
+  const teamPreview = (await app('POST', `/api/cards/${sitaId}/messages/preview`, OFFER)).json;
   assert.doesNotMatch(teamPreview.text, /Head of UK Recruitment/);
   assert.ok(!/cid:niec-signature|data:image/.test(teamPreview.html || ''), 'and without the office signature picture');
 
-  // B2B Partners and Message templates: the Manager looks with the commission; the Application Team sets B2B partners up (the owner,
-  // 15 Nov 2026) without the commission (see partner-access.test.js); only Admin changes the templates.
-  for (const url of ['/api/b2b', '/message-templates', '/b2b-partners']) assert.strictEqual((await app('GET', url)).status, 200, `${url} opens for the Application Team`);
+  // B2B Partners: the Manager looks with the commission; the Application Team sets B2B partners up (the owner, 15 Nov 2026) without
+  // the commission (see partner-access.test.js). The old Message templates page now leads to Follow-up's setup.
+  for (const url of ['/api/b2b', '/b2b-partners']) assert.strictEqual((await app('GET', url)).status, 200, `${url} opens for the Application Team`);
+  assert.strictEqual((await app('GET', '/message-templates')).location, '/bulk#setup');
   assert.strictEqual((await app('GET', '/api/b2b')).json.access, 'setup');
   assert.strictEqual((await manager('GET', '/api/b2b')).json.access, 'commission');
   assert.strictEqual((await manager('POST', '/api/b2b', { name: 'X' })).status, 403, 'the Manager does not change B2B Partners');
@@ -456,7 +473,8 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual((await manager('GET', '/api/insights')).json.target.visas, 30, 'a new target shows at once');
   assert.strictEqual((await admin('POST', '/api/planning/spend', { month: '2026-10', source: 'Social Media', amount: 20000 })).status, 200);
   assert.strictEqual((await manager('GET', '/api/planning')).json.settings.valuePerVisa, undefined, 'the value of a visa is for Admin only');
-  for (const page of ['/student', '/compose']) assert.strictEqual((await follow('GET', page)).status, 200, `${page} opens for every account`);
+  assert.strictEqual((await follow('GET', '/student')).status, 200, 'a student card opens for every account');
+  assert.strictEqual((await follow('GET', '/compose?id=row-1')).location, '/student?id=row-1', 'the old compose page opens the student card');
   assert.strictEqual((await follow('GET', '/follow-ups')).status, 404, 'the Follow-ups page is gone');
 
   // "Other": a message written from nothing; the signature picture is in the preview; sending to many students.
@@ -602,15 +620,10 @@ test('the weekly check warns about a page that is gone, no longer about the cour
   assert.strictEqual(watch.summary().noLink, 1);
 });
 
-test('a template with an unknown or unclosed placeholder is refused', () => {
-  const os = require('os'); const fsx = require('fs'); const pathx = require('path');
-  const { createMessages } = require('../student-details/messages.js');
-  const dir = fsx.mkdtempSync(pathx.join(os.tmpdir(), 'msg-'));
-  const m = createMessages(dir);
-  const key = m.list()[0].key;
-  assert.match(m.saveTemplate(key, { name: 'x', subject: 'Hi {first_name}', body: 'Hello {nonsense_field}' }, 't').error, /not one of the words/);
-  assert.match(m.saveTemplate(key, { name: 'x', subject: 'Hi', body: 'Hello {first_name' }, 't').error, /not closed/);
-  assert.ok(m.saveTemplate(key, { name: 'x', subject: 'Hi {first_name}', body: 'Hello {full_name}' }, 't').template);
+test('a message with an unknown or unclosed {word} is refused', () => {
+  assert.match(Messages.badPlaceholder('Hi {first_name}', 'Hello {nonsense_field}'), /not one of the words/);
+  assert.match(Messages.badPlaceholder('Hi', 'Hello {first_name'), /not closed/);
+  assert.strictEqual(Messages.badPlaceholder('Hi {first_name}', 'Hello {full_name}'), '');
 });
 
 test('each kind of account gets its own workspace, and every branch in the list is a branch team', () => {
@@ -633,15 +646,3 @@ test('each kind of account gets its own workspace, and every branch in the list 
   assert.strictEqual(Fields.storedSource('Branch', 'Palpa'), 'Palpa Branch');
 });
 
-test('a ready-made message template can be deleted and brought back', () => {
-  const os = require('os'); const fsx = require('fs'); const pathx = require('path');
-  const { createMessages } = require('../student-details/messages.js');
-  const m = createMessages(fsx.mkdtempSync(pathx.join(os.tmpdir(), 'msgdel-')));
-  const before = m.list().length;
-  const key = m.list().find((t) => t.builtIn).key;
-  assert.ok(m.hideTemplate(key).removed);
-  assert.strictEqual(m.list().length, before - 1);
-  assert.strictEqual(m.hiddenCount(), 1);
-  assert.strictEqual(m.restoreHidden().restored, 1);
-  assert.strictEqual(m.list().length, before);
-});

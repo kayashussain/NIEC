@@ -58,7 +58,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.deepStrictEqual(answered.json.card.tasks[0].comments.map((c) => [c.by, c.text]), [['bikram', 'Please send the student email.'], ['Owner', 'Sent it to your inbox.']]);
   assert.strictEqual(answered.json.card.tasks[0].done, false, 'a comment does not tick the task');
   assert.strictEqual((await mock('GET', '/api/tasks')).json.tasks[0].comments.length, 2, 'the team sees the conversation on Today');
-  assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true })).status, 200);
+  assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
   const all = (await admin('GET', '/api/tasks')).json.tasks;
   assert.deepStrictEqual([all[0].done, all[0].doneBy, all[0].teamLabel], [true, 'bikram', 'Mock Team']);
   assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: false })).status, 200, 'marked not complete again');
@@ -98,8 +98,8 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await app('GET', '/api/tasks/unread')).json.count, 1, 'the team that gave it sees the answer as new');
   assert.strictEqual((await admin('GET', '/api/tasks/unread')).json.count, 0, 'their own comment is not new to Admin');
   assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { comment: 'x' })).status, 404, 'another team cannot see the student');
-  assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { done: true })).status, 403, 'only Admin ticks a task given to Admin');
-  assert.strictEqual((await admin('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { done: true })).status, 200);
+  assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'only Admin ticks a task given to Admin');
+  assert.strictEqual((await admin('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
   assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks/${headTask.id}/delete`, {})).status, 200, 'whoever gave a task removes it');
   const app2 = (await app('GET', '/api/my-dashboard')).json;
   assert.strictEqual(app2.stages.find((x) => x.stage === 'Application Stage').count, 1, 'Gita, added above at Application Stage');
@@ -121,7 +121,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   const forMock = (await mock('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id);
   assert.deepStrictEqual([forMock.forMe, forMock.had, forMock.mayHand], [false, true, false], 'the team it was with still sees it');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { comment: 'Feedback is on the card' })).status, 200, 'and comments');
-  assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { done: true })).status, 403, 'only the team it is with ticks it');
+  assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'only the team it is with ticks it');
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 403, 'not to the team it is already with (its own team)');
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'head', reason: 'Needs your approval' })).status, 200, 'on to Admin');
   assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id).route, ['mock', 'application']);
@@ -140,7 +140,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await both('GET', '/api/my-dashboard')).json.kind, 'application', 'their dashboard and Today are their own team\'s');
   assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').roleLabel, 'Application Team', 'the account menu names their own team');
   assert.strictEqual((await both('GET', `/api/cards/${mockStudent}`)).status, 200, 'the Mock Stage student is still open to them');
-  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${mockTask.id}`, { done: true })).status, 403, 'and the Mock Team\'s task is not theirs to tick');
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${mockTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'and the Mock Team\'s task is not theirs to tick');
 
   // Notifications: what exactly is new on each task, for whoever it is for.
   await admin('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { comment: 'The offer is in the portal' });
@@ -161,7 +161,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { seen: true })).status, 200);
   const kept = (await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
   assert.deepStrictEqual([kept.news.length, kept.history.map((n) => [n.kind, n.isNew])], [0, [['edited', false], ['update', false], ['task', false]]], 'read, and still listed');
-  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { done: true })).status, 200);
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
   const toGiver = (await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
   assert.deepStrictEqual([toGiver.news[0].kind, toGiver.news[0].by], ['done', 'maya'], 'Admin is told the task is done');
   // Today and Upcoming (the owner, 15 Nov 2026): the team moves a task to a later day with a reason; whoever gave it is told.

@@ -1,4 +1,4 @@
-// Who may look at Partner Universities, B2B Partners, Agents and Message templates, and how much of each they see (the owner, 14 Nov 2026):
+// Who may look at Partner Universities, B2B Partners and Agents, and how much of each they see (the owner, 14 Nov 2026):
 //
 //   Admin                     everything, and the only one who changes anything.
 //   Manager                   every detail with the commission (slabs, payment terms, commission lists, agreement files), to look at.
@@ -16,7 +16,6 @@
 //                             page is told only that there is one (`loginHidden`), to say "you do not have access" when asked.
 //   A branch                  Partner Universities the same way (without the commission). No B2B Partners or Agents.
 //   Follow-up Team            none of these pages.
-//   Message templates         Admin changes them; the Manager, the Application and Mock Teams and the branches read them.
 //
 // The server strips what an account may not see before anything is sent, so it is never in the page, not even hidden.
 const Teams = require('../shared/teams');
@@ -32,7 +31,7 @@ function appTeam(user) {
 
 function partnerAccess(user) {
   const w = Teams.who(user);
-  if (w.role === 'admin') return { direct: 'full', b2b: 'full', agents: 'full', templates: 'edit' };
+  if (w.role === 'admin') return { direct: 'full', b2b: 'full', agents: 'full' };
   const manager = w.role === 'manager';
   const appMock = w.departments.some((d) => d === 'application' || d === 'mock');
   const branch = w.departments.some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source);
@@ -42,7 +41,6 @@ function partnerAccess(user) {
     direct: manager ? 'commission' : (appMock || branch ? 'team' : null),
     b2b: manager ? 'commission' : application ? 'setup' : team,
     agents: manager ? 'commission' : team,
-    templates: manager || appMock || branch ? 'view' : null,
   };
 }
 

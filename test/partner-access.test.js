@@ -60,7 +60,7 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
     assert.strictEqual(one.json.contacts[0].name, 'Ann Example', `${who} sees the contacts`);
     assert.strictEqual((await p('POST', `/api/direct/${uni.id}`, { name: 'Changed' })).status, 403, `${who} cannot change it`);
     assert.strictEqual((await p('GET', '/partner-universities')).status, 200);
-    assert.strictEqual((await p('GET', '/message-templates')).status, 200, `${who} reads the templates`);
+    assert.strictEqual((await p('GET', '/message-templates')).status, 302, 'Message templates is gone: it leads to Follow-up');
   }
   for (const [who, p] of [['asha', asha], ['bikram', bikram]]) {
     const b = await p('GET', '/api/b2b');
@@ -124,8 +124,8 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   const taskId = given.json.card.tasks[0].id;
   assert.ok((await asha('GET', '/api/tasks')).json.tasks.some((x) => x.text === 'Submit to Example University'), 'the Application Team sees it on Today');
   assert.ok((await chitwan('GET', '/api/tasks')).json.tasks.some((x) => x.given && x.text === 'Submit to Example University'), 'the branch sees the task it gave');
-  assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true })).status, 403, 'the team ticks it, not the branch');
-  assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true })).status, 200);
+  assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'the team ticks it, not the branch');
+  assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
   assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 403);
   assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200, 'the branch removes the task it gave');
 });

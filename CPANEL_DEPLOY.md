@@ -118,12 +118,12 @@ students, columns and moves of every team they hold.
 | Follow-up Team | *Inquiry* and *Defer* students | Remarks only |
 | Each branch (Chitwan, Pokhara, Palpa, Butwal) | the students whose *Student Source* is that branch, at any stage (current intake) | every column of those students, any stage move; can add students (tagged with the branch) |
 
-**Partner pages and Message templates** (rules in `student-details/partner-access.js`; the server strips what an account may
+**Partner pages** (rules in `student-details/partner-access.js`; the server strips what an account may
 not see before sending anything): Admin sees and changes everything. The **Manager** looks at Partner Universities, B2B Partners
-and Agents **with the commission** (no portal login), and at Events and marketing and Message templates. The **Application and
+and Agents **with the commission** (no portal login), and at Events and marketing. The **Application and
 Mock Teams** look at Partner Universities, B2B Partners and Agents **without the commission** (no commission slabs, payment terms,
-commission lists, agreement files, notes or portal login), and read Message templates. **Branches** look at Partner Universities
-the same way (without the commission) and read Message templates. The **Follow-up Team** has none of these pages. A **branch** can
+commission lists, agreement files, notes or portal login). **Branches** look at Partner Universities
+the same way (without the commission). The **Follow-up Team** has none of these pages. A **branch** can
 give a task about its own student to the Application Team or the Mock Team (Assign a task on the student card), sees on Today
 whether it is done, talks it through in the task's comments, and removes only the tasks it gave.
 
@@ -199,7 +199,7 @@ site isn't possible any more, since uploads need a login.)
 
 New in the same app, no new setup needed: the data goes in new files of the Student Details data folder (`cards.json`, `message-log.jsonl`, `message-templates.json`, `course-links.json`, `b2b-partners.json` with `b2b-files/`, `planning.json`), never in git. They are in the 6 p.m. backup (restore them from Activity, Restore data) and the first save of each day also copies them into `backups/`.
 
-- **Email to students** goes from **each person's own mailbox** (the owner, 14 Nov 2026). Everyone sets theirs up once: **Message templates**, **Your email and signature** (the My email page), type the address and its password, **Check and save** (a test email is sent first; it is saved only if it works). The password is kept encrypted in `user-mail.json` with its key in `mail-key`, both in the Student Details data folder, never in git, never in the daily backups, never shown on a page. A team member without their own mailbox cannot email (Send email keeps a preview). Admin sends from their own mailbox if set, else from the office mailbox (`node scripts/email.js setup`, see Email above). A team member's email is signed with their name, team, address and phone; a copy goes to their own mailbox and to the office mailbox unless Admin switches copies off on **Message templates**.
+- **Email to students** goes from **each person's own mailbox** (the owner, 14 Nov 2026). Everyone sets theirs up once on **Follow-up**, **Your setup for sending**, type the address and its password, **Check and save** (a test email is sent first; it is saved only if it works). The password is kept encrypted in `user-mail.json` with its key in `mail-key`, both in the Student Details data folder, never in git, never in the daily backups, never shown on a page. A team member without their own mailbox cannot email (Send email keeps a preview). Admin sends from their own mailbox if set, else from the office mailbox (`node scripts/email.js setup`, see Email above). A team member's email is signed with their name, team, address and phone; a copy goes to their own mailbox and to the office mailbox unless Admin switches copies off (Follow-up, Your setup for sending).
 - **WhatsApp** always opens in the sender's own WhatsApp (phone, WhatsApp Web or WhatsApp Desktop linked to their phone); nothing to set up on the server.
 - **The Fact File assistant needs nothing set up:** it runs inside the server and reads the entry rules in the Fact File. No key, no outside service.
 

@@ -1,16 +1,16 @@
-// The messages your consultancy sends to a student from the student card: ready-made templates for each step of the journey
-// (university options and documents, application submitted, offer, mock interview, deferred), filled in with the
-// student's own details, sent by email from the office mailbox with the signature, or opened in WhatsApp.
+// The messages sent to many students at once from Follow-up: the words the sender writes, filled in with each student's own
+// details, sent by email from the sender's mailbox with their signature, or opened in WhatsApp. There are no saved templates any
+// more (the owner, 17 Nov 2026: the student card has Call, WhatsApp, Email and Copy number, and Follow-up is written each time).
 //
-// The system only sends. A student's reply goes to the office mailbox (or WhatsApp) like any other message; nothing
-// here reads replies.
+// The system only sends. A student's reply goes to the sender's mailbox (or WhatsApp) like any other message; nothing here reads
+// replies.
 //
-// Templates and the signature are kept in message-templates.json in the data folder (never in git). Admin edits them
-// on the Message templates page. The built-in ones below are the starting text: a template Admin has saved is never
-// overwritten, and one Admin has not touched follows the text here.
+// The consultancy's name and the office settings (copy every email to the office) are kept in message-templates.json in the data
+// folder (never in git; the name of the file stays, so the live server's file keeps working). Any templates saved there by an
+// earlier version are left as they are and no longer used.
 //
-// A template is plain text: a blank line starts a new paragraph, a line that starts with "- " is a bullet and one
-// that starts with "## " is a small heading. {curly} words are filled in from the student (see FIELDS).
+// A message is plain text: a blank line starts a new paragraph, a line that starts with "- " is a bullet and one that starts with
+// "## " is a small heading. {curly} words are filled in from the student (see FIELDS).
 
 const fs = require('fs');
 const path = require('path');
@@ -21,9 +21,9 @@ const { isoDate } = require('./dashboard-stats');
 // The company name of this installation is a setting (the signature, set by Admin); this is only what an installation starts with.
 const COMPANY = 'Nepal International Educational Consultancy';
 const initialsOf = (name) => String(name || '').split(/\s+/).filter((w) => /^[A-Za-z]/.test(w) && !/^(of|and|the|\(.*\))$/i.test(w)).map((w) => w[0].toUpperCase()).join('').slice(0, 8);
-const LIMITS = { name: 80, subject: 200, body: 8000, whatsapp: 3000, templates: 80, short: 200 };
+const LIMITS = { subject: 200, body: 8000, whatsapp: 3000, short: 200 };
 
-// The words that can be used in a template, and what each stands for.
+// The words that can be used in a message, and what each stands for.
 const FIELDS = [
   ['first_name', "The student's first name"], ['last_name', "The student's last name"], ['full_name', "The student's full name"],
   ['university', 'University name (from the sheet)'], ['course', 'Course name (from the sheet)'], ['intake', 'The intake (the name of the sheet)'],
@@ -37,7 +37,7 @@ const FIELDS = [
   ['documents_list', 'The checklist of documents needed to apply, on a line of its own'],
 ];
 // The short name of each word, for the note that tells the sender which details are still empty.
-// A message that uses a {word} nobody fills in, or a brace that is not closed, would go to the student as it is: refuse it when saving.
+// A message that uses a {word} nobody fills in, or a brace that is not closed, would go to the student as it is: refuse it.
 function badPlaceholder(...texts) {
   const known = new Set([...FIELDS.map(([k]) => k), 'options_table', 'documents_list', 'university_phrase', 'application_date_phrase', 'offer_date_phrase', 'mock_date_phrase']);
   for (const t of texts) {
@@ -55,94 +55,6 @@ FIELD_LABEL.options_table = 'university options added on the card';
 FIELD_LABEL.documents_list = 'document checklist';
 const BLOCK_FIELDS = new Set(['options_table', 'documents_list']);
 
-// The built-in templates. `stages`: the stages at which the card offers the template first.
-const DEFAULTS = [
-  {
-    key: 'options', name: 'University options and documents needed', stages: ['Inquiry', 'Application Stage'],
-    subject: 'Your UK university options from {company_short}',
-    body: [
-      'Dear {first_name},',
-      'Thank you for your interest in studying in the UK. Based on your academic background and what you are looking for, these are the options we recommend for you:',
-      '{options_table}',
-      'Fees and scholarships are as published by each university for this intake and can change, so we confirm them again at the time of your offer.',
-      '## Documents needed to apply',
-      '{documents_list}',
-      'Please tell us which options you like, and send us the documents above. We can submit your application as soon as we have them.',
-    ].join('\n\n'),
-    whatsapp: 'Namaste {first_name}, here are your UK university options from {company_short}:\n\n{options_table}\n\nDocuments needed to apply:\n{documents_list}\n\nPlease tell us which option you like. - {sender_name}, {company_short}',
-  },
-  {
-    key: 'documents_needed', name: 'Documents needed for the application', stages: ['Application Stage'],
-    subject: 'Documents needed for your UK university application',
-    body: [
-      'Dear {first_name},',
-      'To submit your application{university_phrase}, we need the following documents. Clear scans or photos are fine.',
-      '{documents_list}',
-      'Please send them by replying to this email or on WhatsApp. If any document is not ready yet, tell us and we will advise you.',
-    ].join('\n\n'),
-    whatsapp: 'Namaste {first_name}, to submit your application we need these documents:\n{documents_list}\n\nPlease send clear scans or photos here. - {sender_name}, {company_short}',
-  },
-  {
-    key: 'application_submitted', name: 'Application submitted', stages: ['Application Stage'],
-    subject: 'Your application to {university} has been submitted',
-    body: [
-      'Dear {first_name},',
-      'We are pleased to tell you that your application for {course} at {university} has been submitted{application_date_phrase}.',
-      'The university usually takes one to three weeks to give a decision. We will contact you as soon as we hear from them.',
-      'While you wait:',
-      '- Keep your phone and email active, as the university may contact you directly',
-      '- Tell us at once if you receive any email from the university',
-      '- Start preparing for the credibility interview that most universities hold after the offer',
-      'If you have any question, simply reply to this email.',
-    ].join('\n\n').replace(/\n\n- /g, '\n- '),
-    whatsapp: 'Namaste {first_name}, your application for {course} at {university} has been submitted. The decision usually takes one to three weeks. Please tell us if the university emails you. - {sender_name}, {company_short}',
-  },
-  {
-    key: 'offer_received', name: 'Offer received', stages: ['Application Stage', 'Mock Stage'],
-    subject: 'Good news: your offer from {university}',
-    body: [
-      'Dear {first_name},',
-      'Congratulations. {university} has offered you a place on {course}{offer_date_phrase}.',
-      'These are your next steps:',
-      '- Read the offer letter carefully and tell us if anything is not clear',
-      '- Send us any document the offer asks for (the conditions of the offer)',
-      '- Prepare for the credibility interview. We will arrange mock interviews with you before the real one',
-      '- Start arranging your funds for the tuition deposit and the bank balance needed for the visa',
-      'We will guide you at every step. Please confirm that you have received this email.',
-    ].join('\n\n').replace(/\n\n- /g, '\n- '),
-    whatsapp: 'Congratulations {first_name}! {university} has offered you a place on {course}. Next: check the offer conditions, prepare for the credibility interview (we will hold mock interviews with you) and start arranging your funds. - {sender_name}, {company_short}',
-  },
-  {
-    key: 'mock_interview', name: 'Mock interview schedule', stages: ['Mock Stage'],
-    subject: 'Your mock interview with {company_short}{mock_date_phrase}',
-    body: [
-      'Dear {first_name},',
-      'Your mock interview for {university} is scheduled{mock_date_phrase}. It prepares you for the credibility interview that the university holds before it issues your CAS.',
-      'Please be ready to talk about:',
-      '- Why you chose this course and this university, and how it fits what you studied before',
-      '- The modules of your course, the campus and the city',
-      '- Your tuition fee, your living costs and who is paying for your studies',
-      '- Your career plan after the course, and why you chose the UK',
-      'Join from a quiet place with a good internet connection, and keep your passport and offer letter with you.',
-      'If the time does not suit you, tell us today so that we can change it.',
-    ].join('\n\n').replace(/\n\n- /g, '\n- '),
-    whatsapp: 'Namaste {first_name}, your mock interview for {university} is scheduled{mock_date_phrase}. Please prepare: why this course and university, your modules, fees and funding, and your career plan. Join from a quiet place with good internet. - {sender_name}, {company_short}',
-  },
-  {
-    key: 'defer', name: 'Deferred to the next intake', stages: ['Defer'],
-    subject: 'Your UK study plan for the next intake',
-    body: [
-      'Dear {first_name},',
-      'As we discussed, your plan to study in the UK is moved to the next intake. This gives you time to prepare well.',
-      'To be ready early, we suggest:',
-      '- Completing any document or English test that is still missing',
-      '- Keeping your funds ready, as the bank balance must be held for at least 28 days before the visa application',
-      '- Telling us if you would like to look at other universities or courses',
-      'We will contact you when applications for the next intake open. You can also write to us at any time.',
-    ].join('\n\n').replace(/\n\n- /g, '\n- '),
-    whatsapp: 'Namaste {first_name}, your UK plan is moved to the next intake. To be ready early, please complete any missing document or English test and keep your funds ready. We will contact you when applications open. - {sender_name}, {company_short}',
-  },
-];
 
 const text = (v) => String(v ?? '').trim();
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -325,18 +237,6 @@ function renderWhatsApp({ body, values, options = [], documents = [] }) {
   return { text: out.join('\n').replace(/\n{3,}/g, '\n\n').trim(), missing: [...missing].map((k) => FIELD_LABEL[k] || k) };
 }
 
-// What is kept for a template, whatever was sent.
-function cleanTemplate(input, old = {}) {
-  const stages = Array.isArray(input.stages) ? input.stages.map((s) => str(s, 40).trim()).filter(Boolean).slice(0, 12) : (old.stages || []);
-  return {
-    key: old.key,
-    name: str(input.name, LIMITS.name).trim() || old.name || '',
-    stages,
-    subject: str(input.subject, LIMITS.subject).trim(),
-    body: str(input.body, LIMITS.body).trim(),
-    whatsapp: str(input.whatsapp, LIMITS.whatsapp).trim(),
-  };
-}
 function cleanSignature(input, old = {}) {
   const pick = (k) => (input && Object.prototype.hasOwnProperty.call(input, k) ? str(input[k], LIMITS.short).trim() : (old[k] || ''));
   return {
@@ -357,7 +257,7 @@ function createMessages(dir, { now = () => new Date() } = {}) {
     if (cache && cache.mtimeMs === stat.mtimeMs && cache.size === stat.size) return cache.data;
     try {
       const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-      if (data && Array.isArray(data.templates)) { cache = { mtimeMs: stat.mtimeMs, size: stat.size, data }; return data; }
+      if (data && typeof data === 'object' && !Array.isArray(data)) { cache = { mtimeMs: stat.mtimeMs, size: stat.size, data }; return data; }
     } catch (e) { /* unreadable: set aside below */ }
     try { fs.renameSync(file, path.join(dir, `message-templates.damaged-${now().toISOString().replace(/[:.]/g, '-')}.json`)); } catch (e) { /* ignore */ }
     return null;
@@ -368,73 +268,21 @@ function createMessages(dir, { now = () => new Date() } = {}) {
     const stat = fs.statSync(file);
     cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
   }
-  // The saved templates on top of the built-in ones: a built-in one nobody has edited follows the text in this file.
-  function load() {
-    const data = read() || { templates: [], signature: cleanSignature({}) };
-    const saved = new Map(data.templates.map((t) => [t.key, t]));
-    const hidden = Array.isArray(data.hidden) ? data.hidden : [];
-    const builtIn = DEFAULTS.filter((d) => !hidden.includes(d.key)).map((d) => (saved.has(d.key) ? { ...saved.get(d.key), builtIn: true, edited: true } : { ...d, builtIn: true, edited: false }));
-    const own = data.templates.filter((t) => !DEFAULTS.some((d) => d.key === t.key)).map((t) => ({ ...t, builtIn: false, edited: true }));
-    return { templates: [...builtIn, ...own], signature: cleanSignature(data.signature || {}), stored: data, hidden };
-  }
+  const stored = () => read() || { signature: cleanSignature({}) };
 
   return {
-    list: () => load().templates,
-    get: (key) => load().templates.find((t) => t.key === key) || null,
-    signature: () => load().signature,
-    saveTemplate(key, input, by) {
-      const { stored, templates } = load();
-      const old = templates.find((t) => t.key === key);
-      if (!old) return { error: 'No such template.' };
-      const cleaned = { ...cleanTemplate(input, old), key, updatedAt: now().toISOString(), updatedBy: by || '' };
-      if (!cleaned.name) return { error: 'Please give the template a name.' };
-      if (!cleaned.subject || !cleaned.body) return { error: 'A template needs a subject and a message.' };
-      { const bad = badPlaceholder(cleaned.subject, cleaned.body, cleaned.whatsapp); if (bad) return { error: bad }; }
-      write({ ...stored, templates: [...stored.templates.filter((t) => t.key !== key), cleaned] });
-      return { template: cleaned };
-    },
-    addTemplate(input, by) {
-      const { stored, templates } = load();
-      if (templates.length >= LIMITS.templates) return { error: 'The template list is full.' };
-      const cleaned = cleanTemplate(input, {});
-      if (!cleaned.name) return { error: 'Please give the template a name.' };
-      if (!cleaned.subject || !cleaned.body) return { error: 'A template needs a subject and a message.' };
-      { const bad = badPlaceholder(cleaned.subject, cleaned.body, cleaned.whatsapp); if (bad) return { error: bad }; }
-      if (templates.some((t) => t.name.toLowerCase() === cleaned.name.toLowerCase())) return { error: 'Another template already has that name.' };
-      const key = 'own_' + require('crypto').randomBytes(5).toString('hex');
-      const made = { ...cleaned, key, updatedAt: now().toISOString(), updatedBy: by || '' };
-      write({ ...stored, templates: [...stored.templates, made] });
-      return { template: made };
-    },
-    // A template of your own is deleted; a built-in one goes back to its original text.
-    // Deleting one of the ready-made templates hides it (and forgets any edit of it); the originals can be brought back.
-    hideTemplate(key) {
-      const { stored, templates, hidden } = load();
-      const old = templates.find((t) => t.key === key);
-      if (!old || !old.builtIn) return { error: 'No such ready-made template.' };
-      write({ ...stored, templates: stored.templates.filter((t) => t.key !== key), hidden: [...new Set([...hidden, key])] });
-      return { removed: old };
-    },
-    restoreHidden() { const { stored, hidden } = load(); write({ ...stored, hidden: [] }); return { restored: hidden.length }; },
-    hiddenCount: () => load().hidden.length,
-    removeTemplate(key) {
-      const { stored, templates } = load();
-      const old = templates.find((t) => t.key === key);
-      if (!old) return { error: 'No such template.' };
-      write({ ...stored, templates: stored.templates.filter((t) => t.key !== key) });
-      return { removed: old, reset: Boolean(old.builtIn) };
-    },
-    // The saved templates and signature as they are kept (for the backup), and putting them back from one.
-    stored: () => load().stored,
+    signature: () => cleanSignature(stored().signature || {}),
+    // The settings as they are kept (for the backup), and putting them back from one. Whatever else the file holds is kept.
+    stored,
     restoreAll(data) {
-      if (!data || typeof data !== 'object' || !Array.isArray(data.templates)) return { error: 'The backup has no message templates in it.' };
-      write({ templates: data.templates.filter((t) => t && typeof t.key === 'string').map((t) => ({ ...cleanTemplate(t, { key: t.key, name: t.name, stages: t.stages }), key: t.key })), signature: cleanSignature(data.signature || {}) });
+      if (!data || typeof data !== 'object' || Array.isArray(data)) return { error: 'The backup has no email settings in it.' };
+      write({ ...data, signature: cleanSignature(data.signature || {}) });
       return { ok: true };
     },
     saveSignature(input) {
-      const { stored, signature } = load();
-      const cleaned = cleanSignature(input, signature);
-      write({ ...stored, templates: stored.templates || [], signature: cleaned });
+      const old = stored();
+      const cleaned = cleanSignature(input, cleanSignature(old.signature || {}));
+      write({ ...old, signature: cleaned });
       return { signature: cleaned };
     },
   };
@@ -447,5 +295,5 @@ function documentLists(card) {
 }
 
 module.exports = {
-  createMessages, renderEmail, renderWhatsApp, valuesFor, documentLists, cleanTemplate, cleanSignature, longDate, DEFAULTS, FIELDS, COMPANY,
+  createMessages, renderEmail, renderWhatsApp, valuesFor, documentLists, cleanSignature, badPlaceholder, longDate, FIELDS, COMPANY,
 };

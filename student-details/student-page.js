@@ -1,5 +1,5 @@
-// One student's card (student.html), kept short: Details (where the student came from, the student, notes), University options
-// and Send a message. The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
+// One student's card (student.html), kept short: Notes (where the student came from, the notes and the history) and University
+// options. Call, WhatsApp, Email and Copy number are one tap under the name; messages to many students go from Follow-up. The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
 // which is chosen here (it is no longer a column of the sheet).
 (function () {
   const { el, h, api, day, when, stagePill, initials, field, dialog } = window.Portal;
@@ -8,11 +8,10 @@
   const id = params.get('id') || '';
   const embedded = params.get('embed') === '1';
   let data = null; // { student, card, can, me, mail, today }
-    let templates = [];
   let lists = { sourceOptions: {}, partners: [] };
   let showAllNotes = false;
   let historyFilter = 'all'; // the student's History: everything, the notes only, or the tasks only
-  const TABS = [['details', 'Notes'], ['options', 'University options'], ['message', 'Send a message']];
+  const TABS = [['details', 'Notes'], ['options', 'University options']];
   let tab = (location.hash || '#details').slice(1);
   const view = document.getElementById('view');
   const say = (text, error) => window.NiecUI.toast(text, { type: error ? 'error' : 'success' });
@@ -143,13 +142,13 @@
     must('Passport number', pp.passportNo);
     must('Address (passport)', pp.address);
     fact('WhatsApp', s.phone, F.whatsappNumber(s.phone) ? 'https://wa.me/' + F.whatsappNumber(s.phone) : '');
+    { const a = facts.lastChild && facts.lastChild.querySelector('a[href^="https://wa.me/"]'); if (a) a.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(F.whatsappNumber(s.phone), s.name); }); }
     fact('University', s.university);
     fact('Course', s.course);
     fact('Application submitted', s.row['APPLICATION SUBMISSION DATE'] ? day(s.row['APPLICATION SUBMISSION DATE']) : '');
     fact('Offer received', s.row['OFFER RECEIVED DATE'] ? day(s.row['OFFER RECEIVED DATE']) : '');
     if (pp.nationality && pp.nationality !== 'Nepali') fact('Nationality', pp.nationality);
     mid.append(facts);
-    if (can()) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('message', null, true) }, 'Send a message'));
     if (can()) act.append(h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }, 'Edit details'));
     if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: assignTask }, 'Assign a task'));
     if (!act.childNodes.length) act.remove();
@@ -365,19 +364,26 @@
       });
       if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, title: `Done: “${short(t.text)}”`, text: '', task: t });
     });
+    // The emails and WhatsApp messages sent from Follow-up are in the history too (the card itself sends nothing: Call, WhatsApp
+    // and Email under the name open the person's own phone, WhatsApp or email program).
+    (data.card.messages || []).forEach((m) => {
+      const how = m.channel === 'whatsapp' ? 'WhatsApp opened' : m.status === 'sent' ? 'Email sent' : m.status === 'failed' ? 'Email not sent' : 'Email prepared';
+      events.push({ kind: 'message', at: m.at, by: m.by, title: `${how}${m.subject ? `: “${short(m.subject)}”` : ''}`, text: '', message: m });
+    });
     events.sort((x, y) => String(y.at).localeCompare(String(x.at)));
-    const nTasks = events.filter((e) => e.kind !== 'note').length;
-    if (nTasks && events.length > nTasks) {
+    const kindOfEvent = (e) => (e.kind === 'note' ? 'note' : e.kind === 'message' ? 'message' : 'task');
+    const present = new Set(events.map(kindOfEvent));
+    if (present.size > 1) {
       const seg = el('div', 'p-history-filter');
       seg.setAttribute('role', 'tablist');
-      [['all', 'Everything'], ['note', 'Notes'], ['task', 'Tasks']].forEach(([k, label]) => {
+      [['all', 'Everything'], ['note', 'Notes'], ['task', 'Tasks'], ['message', 'Messages']].filter(([k]) => k === 'all' || present.has(k)).forEach(([k, label]) => {
         const b = h('button', { class: 'td-filter-pill', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label);
         b.addEventListener('click', () => { historyFilter = k; render(); });
         seg.append(b);
       });
       wrap.append(seg);
     }
-    const all = events.filter((e) => historyFilter === 'all' || (historyFilter === 'note' ? e.kind === 'note' : e.kind !== 'note'));
+    const all = events.filter((e) => historyFilter === 'all' || kindOfEvent(e) === historyFilter);
     const list = el('ol', 'p-timeline');
     const items = showAllNotes ? all : all.slice(0, 6);
     // The sheet's Remarks, unless it is only the latest progress line ISR wrote there (that is already a note above).
@@ -392,7 +398,8 @@
         if (can() && (n.by === data.me.name || data.can.removeAnyNote)) head.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'));
         li.append(head, el('p', '', e.text));
       } else {
-        head.append(el('span', `p-history-chip is-${e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : 'Task'));
+        head.append(el('span', `p-history-chip is-${e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : e.kind === 'message' ? 'Message' : 'Task'));
+        if (e.message && e.message.channel === 'email') head.append(h('button', { class: 'p-link', type: 'button', onclick: () => readMessage(e.message) }, 'Read'));
         // A done task can be reopened (the team it is for, Admin and the Manager), and what it recorded put back (the owner, 16 Nov
         // 2026: a wrong answer is corrected in one step).
         const mayReopen = e.task && !data.can.readOnly && (data.can.removeAnyTask || (data.can.myTeams || []).includes(e.task.team) || (e.task.team === 'head' && (data.me || {}).role === 'admin'));
@@ -533,43 +540,6 @@
     return wrap;
   }
 
-  // ---- Send a message: choose one, it opens on its own full page (compose.html) ----
-  function messageTab() {
-    const wrap = el('div');
-    const left = el('section', 'p-card');
-    left.append(el('h2', '', 'Choose a message'));
-    left.append(el('p', '', `${data.mail.ready ? `Emails go from ${data.mail.from}.` : data.mail.own ? 'Set up your email first (Message templates, Your email and signature).' : ''}`));
-    const stage = data.student.stage;
-    const ordered = [...templates].sort((a, b) => (b.stages.includes(stage) - a.stages.includes(stage)) || a.name.localeCompare(b.name));
-    const list = el('div', 'p-templates');
-    ordered.forEach((t) => {
-      const b = el('button', 'p-template');
-      b.type = 'button';
-      b.disabled = !can();
-      b.append(el('b', '', t.name), el('small', '', t.stages.includes(stage) ? 'Suits this stage' : t.stages.join(', ')));
-      b.addEventListener('click', () => openCompose(t.key));
-      list.append(b);
-    });
-    const own = el('button', 'p-template');
-    own.type = 'button';
-    own.disabled = !can();
-    own.append(el('b', '', 'Other: write my own message'), el('small', '', 'Your own words'));
-    own.addEventListener('click', () => openCompose('custom'));
-    list.append(own);
-    left.append(list);
-    const sentBox = el('section', 'p-card');
-    sentBox.append(el('h2', '', 'Sent to this student'));
-    if (!data.card.messages.length) sentBox.append(el('p', 'p-muted p-small', 'Nothing sent yet.'));
-    [...data.card.messages].reverse().slice(0, 10).forEach((m) => {
-      const row = el('div', 'p-sent');
-      row.append(el('b', '', m.template || 'Message'), el('span', 'p-chip', m.channel === 'whatsapp' ? 'WhatsApp opened' : m.status === 'sent' ? 'Email sent' : m.status === 'failed' ? 'Email failed' : m.status === 'opened' ? 'Email opened in your program' : 'Preview only'), el('span', 'p-muted p-small', `${m.by}, ${when(m.at)}`));
-      if (m.attachments && m.attachments.length) row.append(el('span', 'p-muted p-small', 'Files: ' + m.attachments.join(', ')));
-      if (m.channel === 'email') row.append(h('button', { class: 'p-link', type: 'button', onclick: () => readMessage(m) }, 'Read'));
-      sentBox.append(row);
-    });
-    wrap.append(left, sentBox);
-    return wrap;
-  }
   async function readMessage(m) {
     try {
       const r = await api(`/api/cards/${id}/messages/${m.id}`);
@@ -580,17 +550,13 @@
     } catch (e) { say(e.message, true); }
   }
 
-  const openCompose = (template) => { (window.top || window).location.href = `/compose?id=${encodeURIComponent(id)}&template=${encodeURIComponent(template)}`; };
-  function select(name, template, reveal) {
+  function select(name) {
     const changed = name !== tab;
-    // From the button at the top: the messages are below the student's details, so glide down to them, else the press looked
-    // like it did nothing (the owner, 15 Nov 2026).
-    if (reveal) setTimeout(() => { const t = view.querySelector('.p-tabs'); if (t) t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }, changed ? 260 : 0);
     tab = name;
     history.replaceState(null, '', location.pathname + location.search + '#' + name);
     // Another tab cross-fades in, as on a Mac; the same tab again is redrawn at once.
-    if (changed && window.NiecUI && window.NiecUI.swap) window.NiecUI.swap(() => render(template), { soft: true });
-    else render(template);
+    if (changed && window.NiecUI && window.NiecUI.swap) window.NiecUI.swap(() => render(), { soft: true });
+    else render();
   }
   // Details that do not add up (the owner, 16 Nov 2026), right under the student's name: each says what is wrong. Correct it with
   // Edit above (or the sheet), or press "It is correct" once checked, and it leaves the list (and Today's "Details to check").
@@ -647,7 +613,7 @@
     if (!s.phone && !s.email) return null;
     const bar = el('div', 'p-reach');
     if (s.phone) bar.append(h('a', { class: 'p-reach-btn', href: 'tel:' + String(s.phone).replace(/[^\d+]/g, '') }, el('span', 'p-reach-ico', '☎'), 'Call'));
-    if (wa) bar.append(h('a', { class: 'p-reach-btn is-wa', href: 'https://wa.me/' + wa, target: '_blank', rel: 'noopener' }, el('span', 'p-reach-ico', '●'), 'WhatsApp'));
+    if (wa) bar.append(h('a', { class: 'p-reach-btn is-wa', href: 'https://wa.me/' + wa, target: '_blank', rel: 'noopener', onclick: (e) => { e.preventDefault(); window.Portal.whatsapp(wa, s.name); } }, el('span', 'p-reach-ico', '●'), 'WhatsApp'));
     if (s.email) bar.append(h('a', { class: 'p-reach-btn', href: 'mailto:' + s.email }, el('span', 'p-reach-ico', '@'), 'Email'));
     if (s.phone) bar.append(h('button', { class: 'p-reach-btn', type: 'button', onclick: async () => say(await window.Portal.copy(s.phone) ? `Copied ${s.phone}` : 'Could not copy', false) }, el('span', 'p-reach-ico', '⎘'), 'Copy number'));
     return bar;
@@ -699,7 +665,7 @@
     return box;
   }
 
-  function render(template) {
+  function render() {
     document.title = `${data.student.name} · Student · ISR`;
     const frag = document.createDocumentFragment();
     const q = queueBar(); if (q) frag.append(q);
@@ -710,8 +676,7 @@
     const tabs = el('div', 'p-tabs');
     tabs.style.marginTop = '16px';
     tabs.setAttribute('role', 'tablist');
-    if (tab === 'message' && !can()) tab = 'details';
-    TABS.filter(([key]) => key !== 'message' || can()).forEach(([key, text]) => {
+    TABS.forEach(([key, text]) => {
       const b = el('button');
       b.type = 'button';
       b.setAttribute('role', 'tab');
@@ -722,16 +687,15 @@
       tabs.append(b);
     });
     frag.append(tabs);
-    frag.append(tab === 'options' ? optionsTab() : tab === 'message' ? messageTab() : details());
+    frag.append(tab === 'options' ? optionsTab() : details());
     view.replaceChildren(frag);
   }
 
   async function start() {
     if (!id) { view.replaceChildren(el('div', 'p-card', 'Choose a student from the sheet first.')); return; }
     try {
-      const [d, t, l] = await Promise.all([api('/api/cards/' + encodeURIComponent(id)), api('/api/templates'), api('/api/card-lists')]);
-      data = d; templates = t.templates; lists = l;
-      if (tab === 'messages') tab = 'message';
+      const [d, l] = await Promise.all([api('/api/cards/' + encodeURIComponent(id)), api('/api/card-lists')]);
+      data = d; lists = l;
       if (!TABS.some(([k]) => k === tab)) tab = 'details';
       render();
     } catch (e) {

@@ -256,9 +256,9 @@
     copy.addEventListener('click', copySummary);
     bar.append(copy);
     if (!BACKUP && window.SendToStudent) {
-      const send = el('button', 'btn btn-primary', 'Send to a student');
+      const send = el('button', 'btn btn-primary', 'Add to a student');
       send.type = 'button';
-      send.title = 'Choose courses and a student: they are added to the student card';
+      send.title = "Choose courses and a student: they are added to the student's University options";
       send.addEventListener('click', () => window.SendToStudent.sendUniversity(uni.id, uni.name));
       bar.append(send);
     }

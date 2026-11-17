@@ -1,21 +1,29 @@
-// Follow-up (the /bulk page): choose the intake and the stage, tick the students, choose email or WhatsApp, write (or choose) the message, then send the
-// emails in one go (when the office mailbox is set up) or open each student's WhatsApp chat one after the other.
+// Follow-up (the /bulk page): your setup for sending first (your email, signature and WhatsApp number, sender-setup.js), then choose
+// the intake and the stage, tick the students, choose email or WhatsApp, write the message (the {words} are filled in for each
+// student), then send the emails in one go or open each student's WhatsApp chat one after the other.
 (function () {
   const { el, h, api, field } = window.Portal;
   const view = document.getElementById('view');
   const say = (t, e) => window.NiecUI.toast(t, { type: e ? 'error' : 'success' });
   let students = [];
   let lists = { intakes: [], stages: [] };
-  let templates = [];
+  let fields = [];
   let mail = { ready: false };
+  const setupBox = el('div');
   const chosen = new Set();
   let items = []; // previews of the chosen students
 
   async function start() {
     try {
-      const [l, t] = await Promise.all([api('/api/bulk/students'), api('/api/templates')]);
-      students = l.students; lists = l; mail = l.mail; templates = t.templates;
+      const l = await api('/api/bulk/students');
+      students = l.students; lists = l; mail = l.mail;
       render();
+      // Your setup: open when the page was reached to set it up (#setup), or when email is not ready yet.
+      const info = await window.SenderSetup.mount(setupBox, { open: location.hash === '#setup' || !mail.ready, onChange: (i) => { mail = i.mail; if (window.bulkSetChannel) window.bulkSetChannel(); } });
+      mail = info.mail; fields = info.fields;
+      if (window.bulkSetChannel) window.bulkSetChannel();
+      if (window.bulkChips) window.bulkChips();
+      if (location.hash === '#setup') setupBox.scrollIntoView({ block: 'start' });
     } catch (e) { view.replaceChildren(el('div', 'p-card', e.message)); }
   }
 
@@ -25,7 +33,7 @@
     const title = el('div');
     title.append(el('h1', '', 'Follow-up'), el('p', '', 'One personal message to many students.'));
     head.append(title, h('a', { class: 'btn', href: '/students' }, 'Back to All Students'));
-    wrap.append(head);
+    wrap.append(head, setupBox);
 
     // 1. who
     const who = el('section', 'p-card');
@@ -84,20 +92,34 @@
     const wBtn = h('button', { type: 'button', role: 'tab', 'aria-selected': 'false' }, 'By WhatsApp');
     choice.append(eBtn, wBtn);
     how.append(choice);
-    const tmpl = field('Start from', { kind: 'select', choices: [['custom', 'Other: my own words'], ...templates.map((t) => [t.key, t.name])], value: 'custom' });
     const subject = field('Subject', { wide: true, max: 200 });
     const body = field('Email text', { kind: 'area', max: 8000, wide: true, value: 'Dear {first_name},\n\n' });
     body.input.style.minHeight = '200px';
     const wa = field('WhatsApp text', { kind: 'area', max: 2000, wide: true, value: 'Hello {first_name}, ' });
     const form = el('div', 'p-form');
-    form.append(tmpl.wrap, subject.wrap, body.wrap, wa.wrap);
+    // The words filled in for each student: a click puts one where the cursor is, in the box last typed in.
+    let lastBox = body.input;
+    [subject.input, body.input, wa.input].forEach((x) => x.addEventListener('focus', () => { lastBox = x; }));
+    const chips = el('div', 'tp-chips');
+    const chipsWrap = el('div', 'bk-words');
+    chipsWrap.append(el('span', 'tp-label', 'Filled in for each student (click to add)'), chips);
+    const SHOWN = ['first_name', 'full_name', 'university', 'course', 'intake', 'stage', 'offer_date', 'sender_name', 'company_name', 'options_table', 'documents_list'];
+    window.bulkChips = () => {
+      chips.replaceChildren(...fields.filter(([k]) => SHOWN.includes(k)).map(([k, d]) => {
+        const c = h('button', { class: 'tp-chip', type: 'button', title: d }, `{${k}}`);
+        c.addEventListener('mousedown', (e) => e.preventDefault()); // keep the cursor where it is
+        c.addEventListener('click', () => {
+          const box = lastBox.closest('[hidden]') ? (channel === 'email' ? body.input : wa.input) : lastBox;
+          const at = box.selectionStart ?? box.value.length; const end = box.selectionEnd ?? at;
+          box.value = box.value.slice(0, at) + `{${k}}` + box.value.slice(end);
+          box.focus(); box.selectionStart = box.selectionEnd = at + k.length + 2;
+        });
+        return c;
+      }));
+    };
+    window.bulkChips();
+    form.append(subject.wrap, body.wrap, wa.wrap, chipsWrap);
     how.append(form);
-    tmpl.input.addEventListener('change', () => {
-      const t = templates.find((x) => x.key === tmpl.input.value);
-      subject.input.value = t ? t.subject : '';
-      body.input.value = t ? t.body : 'Dear {first_name},\n\n';
-      wa.input.value = t ? t.whatsapp : 'Hello {first_name}, ';
-    });
     wrap.append(how);
 
     // 3. send
@@ -123,16 +145,16 @@
       out.replaceChildren();
       note.replaceChildren(c === 'email'
         ? (mail.ready ? el('p', 'p-muted p-small', `Each student gets their own email from ${mail.from || 'your mailbox'}. Press Check first.`)
-          : mail.own ? (() => { const n = el('div', 'p-notice warn', 'To send emails, set up your own email first: '); const a = el('a', '', 'My email and WhatsApp'); a.href = '/my-email'; n.append(a, '. Nothing is sent until then.'); return n; })()
-            : el('div', 'p-notice warn', 'Email is not set up here.'))
+          : (() => { const n = el('div', 'p-notice warn', 'To send emails, set up your email first in '); const a = h('a', { href: '#setup', onclick: (e) => { e.preventDefault(); setupBox.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, 'Your setup for sending'); n.append(a, ' above. Nothing is sent until then.'); return n; })())
         : el('p', 'p-muted p-small', 'Press Check, then WhatsApp beside each student.'));
       check.textContent = c === 'email' ? 'Check the emails' : 'Prepare the WhatsApp chats';
     };
     eBtn.addEventListener('click', () => setChannel('email'));
     wBtn.addEventListener('click', () => setChannel('whatsapp'));
     setChannel('email');
+    window.bulkSetChannel = () => { setChannel(channel); sendAll.disabled = true; };
 
-    const payload = () => ({ ids: [...chosen], template: tmpl.input.value, subject: subject.input.value, body: body.input.value, whatsapp: wa.input.value });
+    const payload = () => ({ ids: [...chosen], subject: subject.input.value, body: body.input.value, whatsapp: wa.input.value });
     check.addEventListener('click', async () => {
       if (!chosen.size) { say('Tick at least one student first.', true); return; }
       check.disabled = true;
@@ -152,8 +174,8 @@
           } else if (i.whatsapp && i.whatsapp.number) {
             row.append(el('span', 'p-muted p-small', '+' + i.whatsapp.number));
             row.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: (e) => {
-              window.open(`https://wa.me/${i.whatsapp.number}?text=${encodeURIComponent(i.whatsapp.text)}`, '_blank', 'noopener');
-              api(`/api/cards/${i.id}/messages/send`, { channel: 'whatsapp', template: tmpl.input.value, whatsapp: wa.input.value }).catch(() => {});
+              window.Portal.whatsapp(i.whatsapp.number, i.name, i.whatsapp.text); // on a computer: open here, or scan to open on the phone
+              api(`/api/cards/${i.id}/messages/send`, { channel: 'whatsapp', whatsapp: wa.input.value }).catch(() => {});
               e.target.textContent = 'WhatsApp opened'; e.target.disabled = true;
             } }, 'WhatsApp'));
           } else row.append(el('span', 'p-muted p-small', 'No WhatsApp number.'));

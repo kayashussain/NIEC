@@ -1,6 +1,6 @@
 // The side menu every page shares: the ISR mark and the name of the consultancy using it, navigation between the pages, and the account
 // menu with Log out. A page puts <header class="niec-header" data-page="..."></header> at the top (page
-// is dashboard, sheet, b2b, templates, incentive, users, activity or direct), loads header.css and this file (after
+// is dashboard, sheet, b2b, bulk, incentive, users, activity or direct), loads header.css and this file (after
 // session.js), and the header fills itself in.
 //
 // Navigation depends on the account: Admin sees every page (Users and Activity in the account menu), the Manager the Dashboard, All Students and
@@ -94,7 +94,6 @@
     bulkadd: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3.2-5.5 6.5-5.5 1.4 0 2.6.3 3.6.9"/><path d="M18 13v6M15 16h6"/>'),
     users: svg('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6"/>'),
     activity: svg('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
-    templates: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 8l9 6 9-6"/>'),
     incentive: svg('<path d="M12 3v18M16.5 7.5C15.8 6.4 14.2 6 12.5 6 10.3 6 8.5 7 8.5 8.8c0 4 8 2 8 6.2 0 1.8-1.9 3-4.2 3-2 0-3.7-.6-4.5-1.8"/>'),
     events: svg('<path d="M4 14V8l12-4v14L4 14z"/><path d="M16 8a3 3 0 0 1 0 6M7 14v4a2 2 0 0 0 4 0v-3"/>'),
     datafix: svg('<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="4"/>'),
@@ -102,7 +101,7 @@
   };
   const LINKS = {
     admin: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'],
-      ['direct', '/partner-universities', 'Partner Universities'], ['events', '/events', 'Events and marketing'], ['b2b', '/b2b-partners', 'B2B Partners'], ['agents', '/agents', 'Agents'], ['factfile', '/fact-file', 'Fact File'], ['templates', '/message-templates', 'Message templates']],
+      ['direct', '/partner-universities', 'Partner Universities'], ['events', '/events', 'Events and marketing'], ['b2b', '/b2b-partners', 'B2B Partners'], ['agents', '/agents', 'Agents'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
     manager: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Fact File']],
     staff: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['factfile', '/fact-file', 'Fact File']],
     followup: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
@@ -117,15 +116,14 @@
   };
 
   // Admin's own pages (people, the record of what happened, Incentive), under their own heading in the menu. The account menu holds
-// only Log out (the owner, 14 Nov 2026); a person's own email and signature are reached from Message templates and from wherever an
-// email is sent.
+// only Log out (the owner, 14 Nov 2026); a person's own email, signature and WhatsApp number are set up on Follow-up, where
+// messages to students are sent from (the owner, 17 Nov 2026).
   const MENU_LINKS = {
     admin: [['users', '/users', 'Users'], ['activity', '/activity', 'Activity'], ['incentive', '/incentive/', 'Incentive']],
   };
 
-  // The partner pages and Message templates a person may open besides their own (the same rules as student-details/partner-access.js):
-  // the Manager all of them; the Application and Mock Teams Partner Universities, B2B Partners, Agents and the templates; a branch
-  // Partner Universities and the templates. Admin has them already.
+  // The partner pages a person may open besides their own (the same rules as student-details/partner-access.js): the Manager all of
+  // them; the Application and Mock Teams Partner Universities, B2B Partners and Agents; a branch Partner Universities. Admin has them.
   function sharedLinks(me) {
     if (me.role === 'admin') return { before: [], after: [] };
     const deps = me.departments || [];
@@ -135,8 +133,7 @@
     const before = [];
     if (manager || appMock || branch) before.push(['direct', '/partner-universities', 'Partner Universities']);
     if (manager || appMock) before.push(['b2b', '/b2b-partners', 'B2B Partners'], ['agents', '/agents', 'Agents']);
-    const after = manager || appMock || branch ? [['templates', '/message-templates', 'Message templates']] : [];
-    return { before, after };
+    return { before, after: [] };
   }
 
   let bound = false; // the menu's own buttons are wired once, however often the menu is drawn
@@ -150,8 +147,7 @@
     const page = links.some(([id]) => id === header.dataset.page) || !['bulk', 'bulkadd'].includes(header.dataset.page) ? header.dataset.page : 'sheet';
     header.querySelector('.niec-nav').innerHTML = links
       .map(([id, href, label]) => `<a href="${href}" title="${label}"${id === page ? ' aria-current="page"' : ''}><span class="niec-ico" aria-hidden="true">${ICONS[id] || ''}</span><span class="niec-lbl">${label}</span></a>`).join('')
-      // Admin's own pages are in the menu too, under their own heading (Users, Activity, Incentive). Message templates is in the main
-      // menu: it is shared with the teams Admin gives it to (the owner, 14 Nov 2026).
+      // Admin's own pages are in the menu too, under their own heading (Users, Activity, Incentive).
       + ((MENU_LINKS[me.role] || []).length ? `<div class="niec-sep" role="presentation"><span>Admin only</span></div>` + (MENU_LINKS[me.role] || []).map(([id, href, label]) => `<a href="${href}" title="${label}"${id === page ? ' aria-current="page"' : ''}><span class="niec-ico" aria-hidden="true">${ICONS[id] || ''}</span><span class="niec-lbl">${label}</span></a>`).join('') : '')
       ;
     const burger = header.querySelector('.niec-burger');

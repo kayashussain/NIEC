@@ -46,7 +46,7 @@ test('answers are checked and confirmed before they are written, and can be put 
       assert.strictEqual((await admin('POST', '/api/data', { baseRevision: wb.revision, sheets: wb.sheets, activeSheetId: wb.activeSheetId })).status, 200);
     }
     const give = async (text, tag) => (await admin('POST', `/api/cards/${sid}/tasks`, { team: 'application', text, tag })).json.card.tasks.find((x) => x.text === text).id;
-    const call = (tid, body) => app('POST', `/api/cards/${sid}/tasks/${tid}`, body);
+    const call = (tid, body) => app('POST', `/api/cards/${sid}/tasks/${tid}`, body && body.finish ? { ...body, finish: { next: 'none', ...body.finish } } : body);
     const card = async () => (await admin('GET', `/api/cards/${sid}`)).json;
     return { sid, give, call, card, row: async () => (await card()).student.row };
   };

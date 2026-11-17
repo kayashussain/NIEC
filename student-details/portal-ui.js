@@ -413,7 +413,6 @@
       body.append(ask, sure);
       const msg = el('div', 'p-msg');
       const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; };
-      if (!asks) { build(null); return; }
       const wait = el('p', 'p-muted p-small', 'Loading what ISR knows about this student...');
       ask.append(wait);
       api(url, { finishState: true }).then((r) => { wait.remove(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
@@ -554,16 +553,54 @@
           read = () => (q.value() && q.value() !== 'none' ? { step: q.value(), date: date.input.value } : {});
           check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : '');
         }
-        const words = field(asks ? 'A note (optional)' : 'What was done? (optional)', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
+        // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
+        const minNote = (state && state.minNote) || 8;
+        const words = field(asks ? 'What was done? (needed when there is nothing to record above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
         words.input.rows = 2;
         form.append(words.wrap);
+        // What next: when this is the student's last open task and the student is still on the way, the team picks the day someone
+        // gets back to them, or says it is not needed. One tap for the usual days.
+        let nextValue = '';
+        const nextBox = el('div', 'p-field p-wide td-next');
+        let nextText = null;
+        if (state && state.needsNext) {
+          const plus = (n) => { const d = new Date(Date.parse(today + 'T12:00:00Z') + n * 86400000); return d.toISOString().slice(0, 10); };
+          nextBox.append(el('span', 'p-label', 'When should someone get back to this student?'));
+          nextBox.append(el('p', 'p-muted p-small td-next-why', 'This is the last open task for this student. Pick a day, so nobody is forgotten.'));
+          const custom = field('', { kind: 'date', value: '' });
+          custom.input.min = today;
+          custom.input.setAttribute('aria-label', 'Follow-up day');
+          custom.wrap.hidden = true;
+          const pick = picker([['1', 'Tomorrow'], ['3', 'In 3 days'], ['7', 'In a week'], ['day', 'Choose a day'], ['none', 'Not needed']], '', (k) => `td-prio td-answer ans-${k}`, 'When to follow up');
+          pick.node.addEventListener('click', () => setTimeout(() => {
+            const k = pick.value();
+            nextValue = k === 'none' ? 'none' : k === 'day' ? custom.input.value : plus(Number(k));
+            custom.wrap.hidden = k !== 'day';
+            nextText.wrap.hidden = !k || k === 'none';
+            if (k === 'day') custom.input.focus();
+          }, 0));
+          custom.input.addEventListener('change', () => { if (pick.value() === 'day') nextValue = custom.input.value; });
+          nextText = field('', { max: 300, placeholder: 'What to do then (optional), e.g. Ask if the bank statement is ready' });
+          nextText.input.setAttribute('aria-label', 'What to do then');
+          nextText.wrap.hidden = true;
+          nextBox.append(pick.node, custom.wrap, nextText.wrap);
+          form.append(nextBox);
+        }
+        const makesOwnNext = () => { const a = read(); return a.mock === 'set' || a.medical === 'booked'; };
+        // A mock set for a day or a medical booked already gives the team its next task on that day: no need to ask.
+        const syncNext = () => setTimeout(() => { nextBox.hidden = makesOwnNext(); }, 0);
+        form.addEventListener('click', syncNext); form.addEventListener('change', syncNext);
         ask.append(msg, el('p', 'p-muted p-small', asks ? 'Nothing is saved until you check it on the next step.' : "Saved in the student's notes."));
         const foot = el('div', 'p-dialog-foot');
         const next = h('button', { class: 'btn btn-primary', type: 'button' }, asks ? 'Next: check' : 'Yes, it is done');
         next.addEventListener('click', async () => {
           const problem = check();
           if (problem) { fail({ message: problem }); return; }
-          const answers = { ...read(), note: words.input.value.trim() };
+          const recorded = Object.keys(read()).length > 0;
+          if (!recorded && words.input.value.trim().length < minNote) { fail({ message: 'Write in a few words what was done, so the next person knows.' }); words.input.focus(); return; }
+          const wantsNext = state && state.needsNext && !makesOwnNext();
+          if (wantsNext && !nextValue) { fail({ message: 'Choose when someone should get back to this student, or "Not needed".' }); return; }
+          const answers = { ...read(), note: words.input.value.trim(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
           if (!asks) { answer = answers; close(true); return; }
           next.disabled = true;
           try { const r = await api(url, { done: true, finish: answers, preview: true }); msg.textContent = ''; msg.className = 'p-msg'; review(r.preview, answers); } catch (e) { fail(e); }
@@ -838,5 +875,41 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  root.Portal = { niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  // WhatsApp a student (the owner, 17 Nov 2026: the chat should open on the phone, not ask for a WhatsApp Web login). On a phone or
+  // tablet the WhatsApp app opens at once. On a computer a small window shows a QR code: scanned with the phone's camera, the
+  // student's chat opens in the phone's own WhatsApp; "Open on this computer" opens the WhatsApp Desktop app if it is installed
+  // (WhatsApp Web otherwise). `number`: digits with the country code, as card-fields.js whatsappNumber gives it.
+  function loadQr() {
+    if (root.IsrQr) return Promise.resolve(root.IsrQr);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = '/qr.js'; s.onload = () => resolve(root.IsrQr); s.onerror = () => reject(new Error('The QR code could not be drawn.'));
+      document.head.append(s);
+    });
+  }
+  async function whatsapp(number, name, text) {
+    const link = `https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+    const touch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (touch) { window.open(link, '_blank', 'noopener'); return; }
+    let qr = null;
+    try { qr = await loadQr(); } catch (e) { window.open(link, '_blank', 'noopener'); return; }
+    dialog(`WhatsApp ${name || ''}`.trim(), (body, close) => {
+      const wrap = el('div', 'p-wa');
+      const code = el('div', 'p-wa-qr');
+      code.innerHTML = qr.svg(link, { size: 220 });
+      code.firstChild.setAttribute('aria-label', `QR code: WhatsApp chat with ${name || 'the student'}`);
+      const words = el('div', 'p-wa-words');
+      words.append(el('b', '', 'Open it on your phone'),
+        el('p', '', 'Point your phone\'s camera at the code and tap the link: the chat with this student opens in WhatsApp on your phone.'),
+        el('p', 'p-wa-number', '+' + number));
+      const bar = el('div', 'p-wa-bar');
+      bar.append(
+        h('a', { class: 'btn btn-primary', href: link, target: '_blank', rel: 'noopener', onclick: () => setTimeout(() => close(), 50) }, 'Open on this computer'),
+        h('button', { class: 'btn', type: 'button', onclick: async () => { const ok = await copy('+' + number); window.NiecUI.toast(ok ? 'Number copied' : 'Could not copy', { type: ok ? 'success' : 'error' }); } }, 'Copy number'));
+      words.append(bar, el('p', 'p-muted p-small', 'On this computer, WhatsApp opens in the WhatsApp Desktop app if it is installed, or else in WhatsApp Web.'));
+      wrap.append(code, words);
+      body.append(wrap);
+    });
+  }
+  root.Portal = { whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

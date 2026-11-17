@@ -55,7 +55,7 @@ test('a team member emails from their own mailbox, signed with their own name, a
   const asha = person(); await asha('POST', '/api/login', { username: 'asha', password: made.temporaryPassword }); await asha('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
   const id = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Example', EMAIL: 'mina@example.org' } })).json.id;
 
-  assert.strictEqual((await asha('GET', '/my-email')).status, 200, 'every account opens My email');
+  assert.strictEqual((await asha('GET', '/my-email')).status, 302, 'My email is set up on Follow-up now');
   assert.strictEqual((await asha('GET', '/api/my-mail')).json.set, false);
   let pre = (await asha('POST', `/api/cards/${id}/messages/preview`, { template: 'custom', subject: 'Hello', body: 'Dear {first_name},' })).json;
   assert.deepStrictEqual([pre.mail.ready, pre.mail.own], [false, true], 'without a mailbox of their own, a team member cannot email');

@@ -1,5 +1,5 @@
-// The Fact File's links to the student cards: "Send to a student" (pick courses, pick a student, one email with all of them), and
-// the look-up of a course's page on the university website.
+// The Fact File's links to the student cards: "Add to a student" (pick courses, pick a student: the courses go into the student's
+// University options, which then open), and the look-up of a course's page on the university website.
 (function (root) {
   const { el, h, api, field, dialog } = root.Portal;
   const F = root.CardFields;
@@ -32,7 +32,7 @@
     });
   }
 
-  // Adds the options to the student's card and opens the message writer there, so one email carries every option.
+  // Adds the options to the student's card and opens the card's University options.
   async function open(options) {
     if (!options.length) { say('Choose at least one course first.', true); return; }
     const student = await pickStudent();
@@ -46,12 +46,12 @@
       } catch (e) { if (e.status === 409) skipped += 1; else { say(e.message, true); return; } }
     }
     say(`${added} option${added === 1 ? '' : 's'} added to ${student.name}${skipped ? ` (${skipped} already there)` : ''}`);
-    location.href = `/student?id=${encodeURIComponent(student.id)}#message`;
+    location.href = `/student?id=${encodeURIComponent(student.id)}#options`;
   }
 
   // A window listing the courses of one university, to tick and send.
   function pickCourses(universityId, universityName) {
-    return dialog(`Send ${universityName} courses to a student`, (body, close) => {
+    return dialog(`Add ${universityName} courses to a student`, (body, close) => {
       const q = field('Search the courses', { placeholder: 'cyber security', max: 100 });
       const lv = field('Level', { kind: 'select', choices: F.STUDY_LEVELS });
       const form = el('div', 'p-form p-form-2'); form.append(q.wrap, lv.wrap);
@@ -68,7 +68,7 @@
       const run = async () => {
         try {
           const r = await api('/api/courses?' + new URLSearchParams({ q: q.input.value, level: lv.input.value, university: universityId }));
-          info.textContent = `${r.total} courses${r.total > r.options.length ? `, the first ${r.options.length} shown` : ''}. Tick the ones to send.`;
+          info.textContent = `${r.total} courses${r.total > r.options.length ? `, the first ${r.options.length} shown` : ''}. Tick the ones to add.`;
           out.replaceChildren(...r.options.map((o) => {
             const row = el('label', 'p-check');
             const c = el('input'); c.type = 'checkbox'; c.checked = chosen.has(key(o));

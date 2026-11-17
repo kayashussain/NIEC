@@ -41,7 +41,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   const today = (await admin('GET', '/api/tasks')).json.today;
   const add = (n) => new Date(Date.parse(today + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
   const give = async (text, tag) => (await admin('POST', `/api/cards/${id}/tasks`, { team: 'application', text, tag })).json.card.tasks.find((x) => x.text === text).id;
-  const finish = (tid, f) => app('POST', `/api/cards/${id}/tasks/${tid}`, { done: true, finish: { ...f, confirmed: true } });
+  const finish = (tid, f) => app('POST', `/api/cards/${id}/tasks/${tid}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
   const row = async () => (await admin('GET', `/api/cards/${id}`)).json.student.row;
   const notes = async () => (await admin('GET', `/api/cards/${id}`)).json.card.notes.map((n) => n.text);
 
@@ -130,7 +130,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   wbT.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === tId) Object.assign(r, { 'UNIVERSITY NAME': 'First University', 'COURSE NAME': 'BSc Adult Nursing', 'APPLICATION SUBMISSION DATE': add(-30), 'OFFER RECEIVED DATE': add(-5) }); }));
   await admin('POST', '/api/data', { baseRevision: wbT.revision, sheets: wbT.sheets, activeSheetId: wbT.activeSheetId });
   const giveT = async (text, tag) => (await admin('POST', `/api/cards/${tId}/tasks`, { team: 'application', text, tag })).json.card.tasks.find((x) => x.text === text).id;
-  const finishT = (tid, f) => app('POST', `/api/cards/${tId}/tasks/${tid}`, { done: true, finish: { ...f, confirmed: true } });
+  const finishT = (tid, f) => app('POST', `/api/cards/${tId}/tasks/${tid}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
   const rowT = async () => (await admin('GET', `/api/cards/${tId}`)).json.student.row;
   const cardT = async () => (await admin('GET', `/api/cards/${tId}`)).json.card;
   const t1 = await giveT('Apply to three more', 'application');
@@ -168,7 +168,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
 
   // A task with no answers is simply done, as before; the Application Team may now fill in the Medical Report on the sheet.
   const o1 = await give('Call the student', 'other');
-  assert.strictEqual((await app('POST', `/api/cards/${id}/tasks/${o1}`, { done: true })).status, 200);
+  assert.strictEqual((await app('POST', `/api/cards/${id}/tasks/${o1}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
   const Teams = require('../shared/teams');
   assert.ok(Teams.DEPARTMENTS.application.editable.has('MEDICAL REPORT'));
 });
