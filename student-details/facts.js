@@ -175,7 +175,8 @@ const withStarterDetails = (u) => (hasStarter(u.name) ? { ...u, ...clean({ ...ST
 // courses, and whether it is a pathway college. Worked out once per page and day (the stored page object is kept while the file is unchanged).
 const FactPresent = require('./fact-present');
 const glanceMemo = new WeakMap();
-const PATHWAY = /international college|\bISC\b|oncampus|pathway|\b(ICD|UKIC|UBIC|UGIC|ENUIC|BUIC|ICAS)\b/i;
+// ARU College (Anglia Ruskin) and The College, Swansea University are pathway colleges too (the owner, 17 Nov 2026).
+const PATHWAY = /international college|\bISC\b|oncampus|pathway|\bARU College\b|\bThe College\b|\b(ICD|UKIC|UBIC|UGIC|ENUIC|BUIC|ICAS)\b/i;
 function glance(u) {
   const day = new Date().toDateString();
   const hit = glanceMemo.get(u);
@@ -400,4 +401,4 @@ function createFacts(dir, { now = () => new Date() } = {}) {
   };
 }
 
-module.exports = { createFacts, viewFacts, clean, mergeIntakeDates, STARTER_UNIVERSITIES, STARTER_STEPS, OIEG_REPORT };
+module.exports = { createFacts, viewFacts, clean, PATHWAY, mergeIntakeDates, STARTER_UNIVERSITIES, STARTER_STEPS, OIEG_REPORT };

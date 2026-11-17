@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
-const { createFacts, STARTER_UNIVERSITIES } = require('../student-details/facts');
+const { createFacts, STARTER_UNIVERSITIES, PATHWAY } = require('../student-details/facts');
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'niec-facts-'));
 
@@ -279,4 +279,9 @@ test('each card of the list says the next open deadline, how many courses, and w
   assert.ok(list.some((u) => u.kind === 'pathway') && list.some((u) => u.kind === 'university'));
   assert.ok(list.filter((u) => u.next).every((u) => u.next.days >= 0 && u.next.when && u.next.intake));
   assert.strictEqual(list.find((u) => /OnCampus/.test(u.name)).kind, 'pathway');
+});
+
+test('the Fact File list is in two parts: ARU College and The College, Swansea University are pathway colleges (the owner, 17 Nov 2026)', () => {
+  for (const name of ['Anglia Ruskin University College (ARU College)', 'The College, Swansea University', 'International College Portsmouth (ICP)', 'University of Hull - OnCampus (UG ICAS)']) assert.ok(PATHWAY.test(name), name);
+  for (const name of ['University College Birmingham', 'Swansea University', 'Anglia Ruskin University', 'Bath Spa University']) assert.ok(!PATHWAY.test(name), name);
 });
