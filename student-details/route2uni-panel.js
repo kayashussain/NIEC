@@ -1,8 +1,8 @@
 // One quiet line on the Fact File's list of universities (the owner, 17 Nov 2026: one Fact File, no separate lists): the Fact File is
 // kept up to date from the Route2Uni partner portal twice a week (route2uni.js, fact-sync.js) and from the Navitas product toolkit
 // (navitas-toolkit.js), when it was last read, what changed
-// since the reading before, any notice or webinar of the portal's Information Hub, and "Check now" for Admin. The deadlines are on
-// each university's page, under its intakes. Not for a student's login.
+// since the reading before, and any notice or webinar of the portal's Information Hub. Nothing is started by hand (the owner, 17 Nov
+// 2026: it runs by itself twice a week). The deadlines are at the top of each university's page. Not for a student's login.
 (function () {
   const { el, h, api } = window.Portal;
   const say = (t, bad) => window.NiecUI.toast(t, { type: bad ? 'error' : 'success' });
@@ -24,30 +24,20 @@
     box.replaceChildren();
     const head = el('div', 'r2u-panel-head');
     const words = el('div');
-    words.append(el('h2', '', 'Kept up to date from Route2Uni'),
+    words.append(el('h2', '', 'Kept up to date by itself, every Monday and Thursday'),
       el('p', 'p-muted p-small', !d.configured ? 'Not connected yet: set ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD on the server, then Restart.'
         : d.running ? 'Reading the portal now (a few minutes)...'
-          : d.fetchedAt ? `Fees, entry requirements, English, intakes with their key dates and courses of ${d.universities} universities, last read ${when(d.fetchedAt)}. Read again by itself every Monday and Thursday.` : 'Not read yet.'));
+          : d.fetchedAt ? `Route2Uni: ${d.universities} universities, last read ${when(d.fetchedAt)}.` : 'Route2Uni: not read yet.'));
     if (d.lastRun && !d.lastRun.ok) words.append(el('div', 'p-notice warn', `The last try did not work: ${d.lastRun.error}`));
     // The course pages (course-sitemap.js): when the last batch ran, and how many courses need their link added by hand.
-    if (d.links && d.links.lastRun) words.append(el('p', 'p-muted p-small', `Course pages from the universities' own websites: last checked ${when(d.links.lastRun.at)}.${d.links.notFound ? ` ${d.links.notFound} course${d.links.notFound === 1 ? '' : 's'} not found on the website (marked on each university's page, to add by hand).` : ''}${d.links.unreadable.length ? ` Website not readable: ${d.links.unreadable.slice(0, 6).join(', ')}${d.links.unreadable.length > 6 ? ' ...' : ''}.` : ''}`));
+    if (d.links && d.links.lastRun) words.append(el('p', 'p-muted p-small', `Course pages: last checked ${when(d.links.lastRun.at)}.${d.links.notFound ? ` ${d.links.notFound} course${d.links.notFound === 1 ? '' : 's'} not found (marked in amber on each university's page).` : ''}${d.links.unreadable.length ? ` Website not readable: ${d.links.unreadable.slice(0, 6).join(', ')}${d.links.unreadable.length > 6 ? ' ...' : ''}.` : ''}`));
     // The Navitas product toolkit (navitas-toolkit.js): its UK colleges, each on its own page, read twice a week.
     if (nav.enabled) {
       words.append(el('p', 'p-muted p-small', nav.running ? 'Reading the Navitas product toolkit now...'
-        : nav.fetchedAt ? `Navitas product toolkit: ${nav.colleges} UK colleges (fees, scholarships, entry requirements, courses, January deadlines, interview questions, payment links), last read ${when(nav.fetchedAt)}. Read again by itself every Monday and Thursday.` : 'Navitas product toolkit: not read yet.'));
+        : nav.fetchedAt ? `Navitas: ${nav.colleges} UK colleges, last read ${when(nav.fetchedAt)}.` : 'Navitas: not read yet.'));
       if (nav.lastRun && !nav.lastRun.ok) words.append(el('div', 'p-notice warn', `The last Navitas toolkit reading did not work: ${nav.lastRun.error}`));
     }
     head.append(words);
-    if (d.admin && nav.enabled) {
-      const go = h('button', { class: 'btn btn-sm', type: 'button', disabled: nav.running }, nav.running ? 'Reading...' : 'Read Navitas toolkit');
-      go.addEventListener('click', async () => { go.disabled = true; try { await api('/api/navitas-toolkit/run', {}); say('Reading the Navitas toolkit. This takes about a minute.'); setTimeout(draw, 20000); } catch (e) { say(e.message, true); go.disabled = false; } });
-      head.append(go);
-    }
-    if (d.admin && d.configured) {
-      const go = h('button', { class: 'btn btn-sm', type: 'button', disabled: d.running }, d.running ? 'Reading...' : 'Check now');
-      go.addEventListener('click', async () => { go.disabled = true; try { await api('/api/route2uni/run', {}); say('Reading Route2Uni. This takes a few minutes.'); setTimeout(draw, 1500); } catch (e) { say(e.message, true); go.disabled = false; } });
-      head.append(go);
-    }
     box.append(head);
 
     const tabs = [];

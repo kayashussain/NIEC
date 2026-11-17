@@ -12,7 +12,7 @@ const {
   isAdmin, isManager, isStudent, isReadOnly, kindOf, teamOf, viewKey, viewFor, teamChanges, canEdit, canColor, canDelete, checkMove, newestSheet, STATUS,
 } = require('../shared/teams');
 const { buildDashboard } = require('./dashboard-stats');
-const { createFacts, viewFacts, clean: cleanFact, STARTER_STEPS } = require('./facts');
+const { createFacts, viewFacts, clean: cleanFact } = require('./facts');
 const { createDirect, viewDirect, MAX_FILE_BYTES } = require('./direct');
 const { createBackups, ID: BACKUP_ID, HOUR: BACKUP_HOUR, KEEP_DAYS } = require('./backups');
 const { createAdvisorMcp } = require('./advisor-mcp');
@@ -122,6 +122,7 @@ const STATIC_FILES = {
   '/b2b-page.js': 'text/javascript; charset=utf-8',
   '/dashboard-insights.js': 'text/javascript; charset=utf-8',
   '/fact-finder.js': 'text/javascript; charset=utf-8',
+  '/fact-present.js': 'text/javascript; charset=utf-8',
   '/style.css': 'text/css; charset=utf-8',
   '/favicon.png': 'image/png',
   '/apple-touch-icon.png': 'image/png',
@@ -701,7 +702,8 @@ async function handlePresence(req, res) {
   return sendJSON(res, 200, stateFor(tabKey(req.user, tabOf(body.id)), req.user));
 }
 
-// The Fact File: everyone reads it, only Admin changes it.
+// The Fact File (the owner, 17 Nov 2026): kept by the automatic readings only (Route2Uni, the Navitas toolkit, the course pages).
+// Nobody adds, edits or deletes a university by hand; the team may only correct the dates of the intakes.
 async function handleFacts(req, res, urlPath) {
   const id = (urlPath.match(/^\/api\/facts\/([a-f0-9]{12})/) || [])[1];
   if (req.method === 'GET') {
@@ -709,29 +711,13 @@ async function handleFacts(req, res, urlPath) {
     const uni = facts.get(id);
     return uni ? sendJSON(res, 200, uni) : sendJSON(res, 404, { error: 'No such university.' });
   }
-  if (req.method !== 'POST') return send(res, 405, 'Method not allowed');
-  if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can change the Fact File.' });
+  if (req.method !== 'POST' || !id || !urlPath.endsWith('/deadlines')) return sendJSON(res, 405, { error: 'The Fact File is kept up to date by itself. Only the dates of an intake can be changed.' });
+  if (isReadOnly(req.user)) return sendJSON(res, 403, { error: 'Your account can only look.' });
   let body;
-  try {
-    body = await readJSONBody(req, 1024 * 1024);
-  } catch (e) {
-    return sendJSON(res, e.statusCode || 400, { error: e.message });
-  }
-  if (!id) {
-    const made = facts.create(body && body.name, req.user.label);
-    if (made.error) return sendJSON(res, 400, { error: made.error });
-    activity.record(req, req.user, 'Edited fact file', { app: 'Student Details', changes: [`Added ${made.university.name} to the Fact File`] });
-    return sendJSON(res, 200, made.university);
-  }
-  if (urlPath.endsWith('/delete')) {
-    const gone = facts.remove(id);
-    if (gone.error) return sendJSON(res, 404, { error: gone.error });
-    activity.record(req, req.user, 'Edited fact file', { app: 'Student Details', changes: [`Removed ${gone.removed.name} from the Fact File`] });
-    return sendJSON(res, 200, { ok: true });
-  }
-  const saved = facts.update(id, body || {}, req.user.label);
+  try { body = await readJSONBody(req, 64 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
+  const saved = facts.setDeadlines(id, body && body.intakes, req.user.label);
   if (saved.error) return sendJSON(res, 400, { error: saved.error });
-  activity.record(req, req.user, 'Edited fact file', { app: 'Student Details', changes: [`Updated the Fact File page for ${saved.university.name}`] });
+  activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [`Changed the intake dates of ${saved.university.name}`] });
   return sendJSON(res, 200, saved.university);
 }
 
@@ -844,7 +830,7 @@ const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks 
 // Every reading is written into the Fact File itself (fact-sync.js): one Fact File, kept up to date twice a week.
 // The Navitas product toolkit (a public Google Sheet), read twice a week into the Fact File: one page per UK Navitas college (see
 // navitas-toolkit.js). NAVITAS_SHEET_ID is the sheet's id (else the one the owner gave); NAVITAS_TOOLKIT=off switches it off.
-const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.env.NAVITAS_SHEET_ID || undefined, enabled: process.env.NAVITAS_TOOLKIT !== 'off', starterSteps: STARTER_STEPS, clean: cleanFact });
+const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.env.NAVITAS_SHEET_ID || undefined, enabled: process.env.NAVITAS_TOOLKIT !== 'off', clean: cleanFact });
 const route2uni = createRoute2Uni({ dir: DATA_DIR, email: process.env.ROUTE2UNI_EMAIL || '', password: process.env.ROUTE2UNI_PASSWORD || '', onRead: (reading) => {
   const out = syncFacts(facts, reading);
   console.log(`[route2uni] Fact File: ${out.updated} universities updated, ${out.added} added, ${out.unchanged} unchanged`);
@@ -1016,7 +1002,6 @@ async function studentGate(req, res, urlPath) {
     return true;
   }
   if (urlPath === '/api/eligibility' && req.method === 'POST') return false; // the finder: which universities the student can go to
-  if (urlPath === '/api/apply' && req.method === 'POST') return false; // "Submit my application" on a course (portal-api.js)
   if ((get && urlPath === '/api/fact-courses') || urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) return false; // portal-api.js answers for a student
   if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for the Fact File only.' }); return true; }
   send(res, 302, '', { Location: '/fact-file' });
@@ -1204,7 +1189,7 @@ const server = http.createServer(async (req, res) => {
       const counts = { yes: results.filter((x) => x.status === 'yes').length, check: results.filter((x) => x.status === 'check').length, no: results.filter((x) => x.status === 'no').length };
       return sendJSON(res, 200, { results, counts, without: without.length, readAt: (route2uni.reading() || {}).fetchedAt || '' });
     }
-    // Route2Uni: the line on the Fact File list (the team) and a reading now (Admin).
+    // The automatic readings (Route2Uni, the Navitas toolkit, the course pages): the line on the Fact File list.
     if (urlPath === '/api/route2uni' && req.method === 'GET') {
       // With the course links: when the last batch ran, and how many courses are waiting for a link by hand.
       const st = courseSitemaps.status();
@@ -1212,20 +1197,7 @@ const server = http.createServer(async (req, res) => {
       const links = { lastRun: (st.runs || [])[0] || null, notFound: unis.reduce((n, u) => n + (u.missing || []).length, 0), unreadable: unis.filter((u) => u.error).map((u) => u.name) };
       return sendJSON(res, 200, { ...route2uni.summary(), links, navitas: navitas.summary(), admin: isAdmin(req.user) });
     }
-    // The Navitas product toolkit read now (Admin).
-    if (urlPath === '/api/navitas-toolkit/run' && req.method === 'POST') {
-      if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
-      if (!navitas.enabled()) return sendJSON(res, 400, { error: 'The Navitas toolkit reading is switched off on the server (NAVITAS_TOOLKIT=off).' });
-      navitas.run(req.user.name).then((r) => activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [r.error ? `Navitas toolkit reading failed: ${r.error}` : `Read the Navitas toolkit: ${r.colleges} UK colleges; the Fact File: ${r.updated} updated, ${r.added} added`] })).catch(() => {});
-      return sendJSON(res, 200, { started: true });
-    }
-    if (urlPath === '/api/route2uni/run' && req.method === 'POST') {
-      if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
-      if (!route2uni.configured()) return sendJSON(res, 400, { error: 'Set ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD on the server first (cPanel, Setup Node.js App, Environment variables), then Restart.' });
-      route2uni.run(req.user.name).then((r) => activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [r.error ? `Route2Uni reading failed: ${r.error}` : `Read Route2Uni: ${r.universities} universities, ${r.changed} changes; the Fact File: ${(r.synced && r.synced.updated) || 0} updated, ${(r.synced && r.synced.added) || 0} added`] })).catch(() => {});
-      return sendJSON(res, 200, { started: true });
-    }
-    if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/delete)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
+    if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/deadlines)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
     // The student cards and the pages around them (portal-api.js).
     if (await portal.handle(req, res, urlPath)) return;
     if (urlPath === '/api/direct' || /^\/api\/direct\/[a-f0-9]{12}(\/delete|\/files(\/[a-f0-9]{12}(\/delete)?)?)?$/.test(urlPath)) return await handleDirect(req, res, urlPath);

@@ -45,7 +45,8 @@ function cleanProfile(input, old = {}) {
     const given = input && Object.prototype.hasOwnProperty.call(input, f.key);
     let v = given ? input[f.key] : old[f.key];
     if (f.type === 'date') v = isoDay(v);
-    else if (f.list) { v = str(v, 80); if (!LISTS[f.list].includes(v)) v = ''; } else v = str(v, f.max || LIMITS.short);
+    // A choice kept in another spelling ("MOI or waiver" before the owner's "MOI or Waiver", 17 Nov 2026) keeps its meaning.
+    else if (f.list) { v = str(v, 80); v = LISTS[f.list].find((c) => c.toLowerCase() === v.toLowerCase()) || ''; } else v = str(v, f.max || LIMITS.short);
     if (v) out[f.key] = v;
   });
   return out;
@@ -76,6 +77,9 @@ function cleanOption(input, old = {}) {
     offerType: (() => { const v = pick('offerType', 20); return ['Conditional', 'Unconditional'].includes(v) ? v : ''; })(),
     refused: (() => { const v = pick('refused', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     withdrawn: (() => { const v = pick('withdrawn', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    // Sent to the Application Team from the shortlist (the day), and its place in the order it was sent in (1, 2, 3 ...).
+    sent: (() => { const v = pick('sent', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    rank: (() => { const v = pick('rank', 3); return /^\d{1,2}$/.test(v) ? v : ''; })(),
     // Chosen by the student themselves on the Fact File (their own login, the owner, 17 Nov 2026).
     byStudent: input && Object.prototype.hasOwnProperty.call(input, 'byStudent') ? input.byStudent === true : Boolean(old.byStudent),
     addedAt: old.addedAt, addedBy: old.addedBy,

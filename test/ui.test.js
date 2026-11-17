@@ -267,9 +267,10 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.close();
   });
 
-  await t.test('the Fact File finds a course, and an unsaved edit is guarded', async () => {
+  await t.test('the Fact File finds a course; a page is read only, the team changes only the dates', async () => {
     const page = await open(admin, '/fact-file');
     await page.waitForSelector('.uni-card:not(.skeleton)');
+    assert.strictEqual(await page.locator('#addForm').count(), 0, 'no university is added by hand');
     await page.fill('#search', 'cyber security');
     await page.waitForSelector('.matches');
     assert.ok((await page.locator('.uni-card').count()) > 5, 'many universities teach it');
@@ -280,14 +281,11 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.click('button:has-text("Copy summary")');
     await page.waitForSelector('.ui-toast.success');
     assert.match(await page.evaluate(() => navigator.clipboard.readText()), /^\*.+\*[\s\S]*\S$/, 'a WhatsApp-ready summary was copied');
-    await page.click('text=Edit');
-    await page.waitForSelector('.editor');
-    await page.fill('.editor textarea >> nth=0', 'A change that is not saved');
-    await page.click('.sticky-actions button:has-text("Cancel")');
-    await page.waitForSelector('dialog.ui-dialog[open]');
-    assert.match(await page.textContent('.ui-dialog h2'), /Leave without saving/);
-    await page.click('.ui-dialog button:has-text("Keep editing")');
-    assert.ok(await page.isVisible('.editor'), 'still editing');
+    assert.strictEqual(await page.locator('button:has-text("Edit"), button:has-text("Delete"), button:has-text("Submit application"), button:has-text("Find the course page")').count(), 0, 'nothing to edit but the dates');
+    await page.click('.dl-head button:has-text("Change dates")');
+    await page.waitForSelector('dialog.p-dialog[open]');
+    assert.match(await page.textContent('.p-dialog h2'), /Change the dates/);
+    await page.click('.p-dialog button:has-text("Cancel")');
     assert.deepStrictEqual(page.errors, []);
     await page.close();
   });

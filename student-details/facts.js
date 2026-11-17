@@ -93,6 +93,10 @@ function clean(input, old = {}) {
     notes: str(i && i.notes, LIMITS.text),
     // Every date of the intake as the partner portal writes them (application, deposit, CAS, visa), shown on the page.
     deadlines: str(i && i.deadlines, LIMITS.text),
+    // The team may correct the dates (the owner, 17 Nov 2026: the only thing the team edits). Who did and when, and the dates the
+    // automatic reading last gave, so a reading keeps the team's dates until the source itself changes them (mergeIntakeDates).
+    editedBy: str(i && i.editedBy, 80), editedAt: str(i && i.editedAt, 40),
+    ...(i && typeof i.autoDeadline === 'string' ? { autoDeadline: str(i.autoDeadline, LIMITS.short), autoDeadlines: str(i.autoDeadlines, LIMITS.text) } : {}),
   })).filter((i) => i.name);
   const process = (Array.isArray(input.process) ? input.process : []).slice(0, LIMITS.steps).map((s) => ({
     title: str(s && s.title, LIMITS.short).trim(),
@@ -147,6 +151,15 @@ function cleanRules(list) {
     bands: Object.fromEntries(Object.entries((L && L.bands) || {}).filter(([k, v]) => /^[A-Z]{2,15}$/.test(k) && n(v) !== null).slice(0, 12).map(([k, v]) => [k, n(v)])),
     waiver: Boolean(L && L.waiver), waiverRules: (Array.isArray(L && L.waiverRules) ? L.waiverRules : []).slice(0, 20).map((x) => str(x, 400)).filter(Boolean),
   })).filter((L) => L.level);
+}
+
+// An intake as an automatic reading gives it (`fresh`), over what the page has (`was`): the reading's dates, unless the team changed
+// the dates since and the reading still gives what it gave then (its source has not changed them).
+function mergeIntakeDates(was = {}, fresh = {}) {
+  const auto = { autoDeadline: fresh.deadline || '', autoDeadlines: fresh.deadlines || '' };
+  const teamKept = was.editedAt && (was.autoDeadline === undefined || (was.autoDeadline === auto.autoDeadline && was.autoDeadlines === auto.autoDeadlines));
+  if (teamKept) return { ...was, ...fresh, deadline: was.deadline || '', deadlines: was.deadlines || '', editedBy: was.editedBy, editedAt: was.editedAt, ...auto };
+  return { ...was, ...fresh, editedBy: '', editedAt: '', ...auto };
 }
 
 const startKey = (name) => String(name || '').trim().toLowerCase();
@@ -292,6 +305,36 @@ function createFacts(dir, { now = () => new Date() } = {}) {
       write({ ...data, universities });
       return { university: universities[i] };
     },
+    // The team's change to the dates of the intakes (the only change to a page anyone makes by hand): [{ id or name, deadline,
+    // deadlines }]. An intake not on the page is added with its name.
+    setDeadlines(id, list, by) {
+      const data = load();
+      const i = data.universities.findIndex((u) => u.id === id);
+      if (i === -1) return { error: 'No such university.' };
+      const uni = data.universities[i];
+      const intakes = uni.intakes.map((x) => ({ ...x }));
+      const at = now().toISOString();
+      for (const given of (Array.isArray(list) ? list : []).slice(0, LIMITS.intakes)) {
+        const name = str(given && given.name, LIMITS.short).trim();
+        let target = intakes.find((x) => (given && given.id && x.id === given.id) || (name && x.name.toLowerCase() === name.toLowerCase()));
+        if (!target) {
+          if (!name) continue;
+          if (intakes.length >= LIMITS.intakes) return { error: 'This university already has the most intakes a page can hold.' };
+          target = { name, deadline: '', deadlines: '', requirements: '', courses: '', notes: '' };
+          intakes.push(target);
+        }
+        const deadline = str(given.deadline, LIMITS.short).trim();
+        const deadlines = str(given.deadlines, LIMITS.text).trim();
+        if (deadline === (target.deadline || '') && deadlines === (target.deadlines || '')) continue;
+        Object.assign(target, { deadline, deadlines, editedBy: str(by, 80), editedAt: at });
+      }
+      const cleaned = clean({ ...uni, intakes }, uni);
+      const universities = [...data.universities];
+      // Marked as changed by the person, so the page is no longer rebuilt from the starting sheets over the team's dates.
+      universities[i] = { ...cleaned, id, updatedAt: at, updatedBy: str(by, 80) };
+      write({ ...data, universities });
+      return { university: universities[i] };
+    },
     remove(id) {
       const data = load();
       const uni = data.universities.find((u) => u.id === id);
@@ -312,4 +355,4 @@ function createFacts(dir, { now = () => new Date() } = {}) {
   };
 }
 
-module.exports = { createFacts, viewFacts, clean, STARTER_UNIVERSITIES, STARTER_STEPS, OIEG_REPORT };
+module.exports = { createFacts, viewFacts, clean, mergeIntakeDates, STARTER_UNIVERSITIES, STARTER_STEPS, OIEG_REPORT };

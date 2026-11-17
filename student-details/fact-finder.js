@@ -1,13 +1,28 @@
-// The Fact File's links to the student cards: "Add to a student" (pick courses, pick a student: the courses go into the student's
-// University options, which then open), and the look-up of a course's page on the university website.
+// Shortlisting from the Fact File for a student (the owner, 17 Nov 2026: "shortlist instead of submit the application"). The team
+// chooses the student once ("Shortlist for: ..." at the top of the courses, kept while the browser tab is open); each course then has
+// Shortlist, which puts it into the student's University options (and takes it out again). On the student's card the shortlist is
+// numbered and sent to the Application Team in one go (student-page.js).
+//
+// Also the look-up of a course's page on the university's website for the student card (SendToStudent.lookupLink).
 (function (root) {
   const { el, h, api, field, dialog } = root.Portal;
-  const F = root.CardFields;
   const say = (t, e) => root.NiecUI.toast(t, { type: e ? 'error' : 'success' });
+  const KEY = 'isrShortlistFor';
+  const state = { student: null, options: [], listeners: [] };
+  const optKey = (universityId, course, intake) => `${universityId}|${String(course).toLowerCase()}|${String(intake || '').toLowerCase()}`;
+  const changed = () => state.listeners.forEach((f) => f());
 
-  // Pick one student from the ones this account sees (searches by name, email, phone number or course).
+  function remembered() { try { return JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+  function remember(s) { try { if (s) sessionStorage.setItem(KEY, JSON.stringify(s)); else sessionStorage.removeItem(KEY); } catch (e) { /* kept for this page only */ } }
+
+  async function loadOptions() {
+    if (!state.student) { state.options = []; return; }
+    try { const r = await api(`/api/cards/${encodeURIComponent(state.student.id)}`); state.options = (r.card && r.card.options) || []; } catch (e) { state.student = null; remember(null); state.options = []; }
+  }
+
+  // Pick one student from the ones this account sees (by name, email or phone number).
   function pickStudent() {
-    return dialog('Choose the student', (body, close) => {
+    return dialog('Shortlist for which student?', (body, close) => {
       const q = field('Search', { placeholder: 'Name, email or phone number', max: 100 });
       const results = el('div', 'p-pick-list');
       body.append(q.wrap, results);
@@ -18,10 +33,10 @@
           results.replaceChildren(...(r.students.length ? r.students.map((s) => {
             const b = el('button', 'p-pick');
             b.type = 'button';
-            const text = el('span');
-            text.append(el('b', '', s.name), el('small', '', [s.stage, s.intake, s.university, s.email].filter(Boolean).join(' · ')));
-            b.append(el('span', 'p-avatar sm', root.Portal.initials(s.name)), text);
-            b.addEventListener('click', () => close(s));
+            const t = el('span');
+            t.append(el('b', '', s.name), el('small', '', [s.stage, s.intake, s.email].filter(Boolean).join(' · ')));
+            b.append(el('span', 'p-avatar sm', root.Portal.initials(s.name)), t);
+            b.addEventListener('click', () => close({ id: s.id, name: s.name }));
             return b;
           }) : [el('div', 'p-empty', 'No student found.')]));
         } catch (e) { results.replaceChildren(el('div', 'p-notice bad', e.message)); }
@@ -31,67 +46,62 @@
       setTimeout(() => q.input.focus(), 30);
     });
   }
+  async function choose() {
+    const s = await pickStudent();
+    if (!s) return false;
+    state.student = s;
+    remember(s);
+    await loadOptions();
+    changed();
+    return true;
+  }
 
-  // Adds the options to the student's card and opens the card's University options.
-  async function open(options) {
-    if (!options.length) { say('Choose at least one course first.', true); return; }
-    const student = await pickStudent();
-    if (!student) return;
-    let added = 0;
-    let skipped = 0;
-    for (const o of options) {
-      try {
-        await api(`/api/cards/${student.id}/options`, { universityId: o.universityId, university: o.university, course: o.course, level: o.level, intake: o.intake, fee: o.fee, deposit: o.deposit, scholarship: o.scholarship, link: o.link });
-        added += 1;
-      } catch (e) { if (e.status === 409) skipped += 1; else { say(e.message, true); return; } }
+  // "Shortlist for: Ram Sharma (3) · Change · Open the card", or the button to choose the student.
+  function bar() {
+    const box = el('div', 'sl-for no-print');
+    if (!state.student) {
+      box.append(el('span', 'sl-for-text', 'Shortlist courses for a student:'), h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => choose() }, 'Choose the student'));
+      return box;
     }
-    say(`${added} option${added === 1 ? '' : 's'} added to ${student.name}${skipped ? ` (${skipped} already there)` : ''}`);
-    location.href = `/student?id=${encodeURIComponent(student.id)}#options`;
+    const n = state.options.length;
+    const t = el('span', 'sl-for-text');
+    t.append('Shortlisting for ', el('b', '', state.student.name), ` (${n} course${n === 1 ? '' : 's'})`);
+    const open = h('a', { class: 'btn btn-sm btn-primary', href: `/student?id=${encodeURIComponent(state.student.id)}#options` }, 'Open the card to send');
+    box.append(t, h('button', { class: 'btn btn-sm', type: 'button', onclick: () => choose() }, 'Change student'), open);
+    return box;
   }
 
-  // A window listing the courses of one university, to tick and send.
-  function pickCourses(universityId, universityName) {
-    return dialog(`Add ${universityName} courses to a student`, (body, close) => {
-      const q = field('Search the courses', { placeholder: 'cyber security', max: 100 });
-      const lv = field('Level', { kind: 'select', choices: F.STUDY_LEVELS });
-      const form = el('div', 'p-form p-form-2'); form.append(q.wrap, lv.wrap);
-      const info = el('div', 'p-muted p-small');
-      const out = el('div', 'p-option-results');
-      const chosen = new Map();
-      const foot = el('div', 'p-dialog-foot');
-      const go = h('button', { class: 'btn btn-primary', type: 'button' }, 'Choose the student');
-      go.addEventListener('click', () => close([...chosen.values()]));
-      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), go);
-      body.append(form, info, out, foot);
-      const key = (o) => `${o.course}|${o.intake}|${o.level}`;
-      let timer;
-      const run = async () => {
-        try {
-          const r = await api('/api/courses?' + new URLSearchParams({ q: q.input.value, level: lv.input.value, university: universityId }));
-          info.textContent = `${r.total} courses${r.total > r.options.length ? `, the first ${r.options.length} shown` : ''}. Tick the ones to add.`;
-          out.replaceChildren(...r.options.map((o) => {
-            const row = el('label', 'p-check');
-            const c = el('input'); c.type = 'checkbox'; c.checked = chosen.has(key(o));
-            c.addEventListener('change', () => { if (c.checked) chosen.set(key(o), o); else chosen.delete(key(o)); go.textContent = chosen.size ? `Choose the student (${chosen.size})` : 'Choose the student'; });
-            const t = el('span'); t.append(el('b', '', o.course), el('div', 'p-muted p-small', [o.intake, o.level, o.fee && 'Fee ' + o.fee, o.scholarship && 'Scholarship ' + o.scholarship].filter(Boolean).join(' · ')));
-            row.append(c, t);
-            return row;
-          }));
-        } catch (e) { out.replaceChildren(el('div', 'p-notice bad', e.message)); }
-      };
-      [q, lv].forEach((x) => x.input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 250); }));
-      run();
-    }, { wide: true });
+  // Shortlist / Shortlisted beside a course.
+  function button(o) {
+    const found = () => state.options.find((x) => optKey(x.universityId, x.course, x.intake) === optKey(o.universityId, o.course, o.intake));
+    const on = found();
+    const b = h('button', { class: `sl-pick no-print${on ? ' is-on' : ''}`, type: 'button', 'aria-pressed': String(Boolean(on)) }, on ? '✓ Shortlisted' : 'Shortlist');
+    b.addEventListener('click', async () => {
+      if (!state.student && !(await choose())) return;
+      b.disabled = true;
+      try {
+        const now = found();
+        if (now) {
+          if (now.sent || now.applied) { say('Already sent to the Application Team: change it on the student card.', true); b.disabled = false; return; }
+          await api(`/api/cards/${encodeURIComponent(state.student.id)}/options/${now.id}/delete`, {});
+          say(`Taken off ${state.student.name}'s shortlist`);
+        } else {
+          await api(`/api/cards/${encodeURIComponent(state.student.id)}/options`, { universityId: o.universityId, university: o.university, course: o.course, level: o.level || '', intake: o.intake || '', fee: o.fee || '', deposit: o.deposit || '', scholarship: o.scholarship || '', link: o.link || '' });
+          say(`Shortlisted for ${state.student.name}`);
+        }
+        await loadOptions();
+        changed();
+      } catch (e) { say(e.message, true); b.disabled = false; }
+    });
+    return b;
   }
-  async function sendUniversity(universityId, universityName) {
-    const options = await pickCourses(universityId, universityName);
-    if (options && options.length) await open(options);
-  }
+
+  const ready = async () => { state.student = remembered(); await loadOptions(); };
+  root.ShortlistFor = { ready, bar, button, onChange: (f) => state.listeners.push(f), current: () => state.student };
 
   // Looks the course page up on the university's website (the server does the search); resolves to a link or ''.
   async function lookupLink(o) {
     try { const r = await api('/api/course-link', { universityId: o.universityId, university: o.university, course: o.course }); return r.link || ''; } catch (e) { return ''; }
   }
-
-  root.SendToStudent = { open, sendUniversity, lookupLink };
+  root.SendToStudent = { lookupLink };
 })(this);

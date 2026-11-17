@@ -130,24 +130,26 @@ test('Admin can back up and restore; nobody else can; a restore saves the data a
   const same = (await admin('GET', `/api/restore/compare?id=${manual}`)).json;
   assert.deepStrictEqual([same.facts.comeBack, same.facts.lost, same.facts.changed], [0, 0, 0], 'right after a backup nothing would change');
   assert.strictEqual((await admin('GET', '/api/restore/compare?id=../../x')).status, 400);
-  const added = (await admin('POST', '/api/facts', { name: 'Temporary Mistake University' })).json;
+  // Nobody adds a page by hand any more (the owner, 17 Nov 2026); the team changes an intake's dates, and a restore puts them back.
+  assert.strictEqual((await admin('POST', '/api/facts', { name: 'Temporary Mistake University' })).status, 405, 'no page is added by hand');
+  const target = factList.find((u) => u.intakes.length);
+  const dated = await admin('POST', `/api/facts/${target.id}/deadlines`, { intakes: [{ name: target.intakes[0], deadline: '1 January 2030' }] });
+  assert.strictEqual(dated.status, 200);
   const factsBefore = (await admin('GET', '/api/facts')).json.length;
   const preview = (await admin('GET', `/api/restore/compare?id=${manual}`)).json;
-  assert.deepStrictEqual([preview.facts.lost, preview.facts.lostNames[0]], [1, 'Temporary Mistake University'], 'a page added since the backup would be lost, and is named');
-  assert.ok((await admin('GET', '/api/facts')).json.some((u) => u.id === added.id));
+  assert.strictEqual(preview.facts.changed, 1, 'a page changed since the backup would go back');
   const bad = await admin('POST', '/api/restore', { id: manual, parts: [] });
   assert.strictEqual(bad.status, 400);
   assert.strictEqual((await admin('POST', '/api/restore', { id: '../../etc/passwd', parts: ['facts'] })).status, 400);
   const done = await admin('POST', '/api/restore', { id: manual, parts: ['facts'] });
   assert.strictEqual(done.status, 200);
   assert.match(done.json.safety, /^before-restore-/);
-  const factsAfter = (await admin('GET', '/api/facts')).json;
-  assert.strictEqual(factsAfter.length, factsBefore - 1);
-  assert.ok(!factsAfter.some((u) => u.id === added.id), 'the page added after the backup is gone');
-  // ...and the safety copy still has it, so the restore can be undone.
+  assert.strictEqual((await admin('GET', '/api/facts')).json.length, factsBefore);
+  assert.notStrictEqual((await admin('GET', `/api/facts/${target.id}`)).json.intakes[0].deadline, '1 January 2030', 'the dates are as in the backup');
+  // ...and the safety copy still has the change, so the restore can be undone.
   const undo = await admin('POST', '/api/restore', { id: done.json.safety, parts: ['facts'] });
   assert.strictEqual(undo.status, 200);
-  assert.ok((await admin('GET', '/api/facts')).json.some((u) => u.id === added.id), 'undone');
+  assert.strictEqual((await admin('GET', `/api/facts/${target.id}`)).json.intakes[0].deadline, '1 January 2030', 'undone');
   // The students: add one after the backup, then restore the backup and the student is gone.
   const wb = (await admin('GET', '/api/data')).json;
   const rowsOf = (w) => w.sheets.reduce((n, sh) => n + sh.rows.length, 0);

@@ -2,20 +2,19 @@
 // After every reading of the Route2Uni partner portal (route2uni.js, twice a week), each university the portal has is written into
 // its own Fact File page:
 //
-//   Entry requirements, fees and scholarships   the table, one row per course level: academic entry, English, tuition fee,
-//                                                scholarship and deposit, exactly as the portal gives them
-//   Entry requirements, Language test            per level, the study gap allowed and the English waiver rules
-//   Courses available                            every course, grouped by level, with its campus
-//   Intakes                                      each open intake with its deadline and every date the portal gives (application,
-//                                                deposit, CAS, visa), and its courses; an intake the portal does not have is kept
-//   City and website                             filled in when empty
+//   the table      one row per course level: academic entry with the study gap, English (tests and the English Waiver rules),
+//                  tuition fee, scholarship and deposit, exactly as the portal gives them
+//   courses        every course, grouped by level, with its campus
+//   intakes        each open intake with its deadline and every date the portal gives (application, deposit, CAS, visa), and its
+//                  courses; an intake the portal does not have is kept; dates the team corrected are kept until the portal changes them
+//   city, website  filled in when empty
 //
-// Overview, Location, Interview, Notes and the Application process stay the team's own and are never changed. A university the
-// portal has and the Fact File does not is added. The rules in numbers (eligibility.js) are kept on the page for the finder.
+// Overview, Location, Interview and Notes are kept as they are (from the starting sheets). A university the portal has and the Fact
+// File does not is added. The rules in numbers (eligibility.js) are kept on the page for the finder.
 
 const { rulesFrom, ourLevel } = require('./eligibility');
 const { keyOf } = require('./route2uni');
-const { clean } = require('./facts');
+const { clean, mergeIntakeDates } = require('./facts');
 
 const money = (n) => (n ? `£${Number(n).toLocaleString('en-GB')}` : '');
 const bullets = (list) => list.map((x) => `- ${x}`).join('\n');
@@ -35,7 +34,7 @@ function pageFrom(r) {
       name: level,
       duration: '',
       academic: req ? [...req.criteria, req.gap ? `Study gap: ${req.gap}` : ''].filter(Boolean).join('\n') : '',
-      english: [...tests, ...(eng && eng.waiver ? ['English waiver possible:', ...eng.criteria.map((c) => `- ${c}`)] : [])].join('\n'),
+      english: [...tests, ...(eng && eng.waiver ? ['English Waiver:', ...eng.criteria.map((c) => `- ${c}`)] : [])].join('\n'),
       tuition: fee.filter((x) => !isDeposit(x)).map((x) => [x.text.replace(/[\s:]+$/, ''), money(x.amount)].filter(Boolean).join(': ')).join('\n'),
       scholarship: ((r.scholarships.find((x) => x.level === level) || {}).amounts || []).join('\n'),
       deposit: fee.filter(isDeposit).map((x) => [x.text.replace(/[\s:]+$/, ''), money(x.amount)].filter(Boolean).join(': ')).join('\n'),
@@ -50,8 +49,9 @@ function pageFrom(r) {
   const open = r.intakes.filter((i) => i.open);
   return {
     programs,
-    entryRequirements: r.requirements.length ? 'The academic entry and the study gap allowed for each course level are in the table above.' : '',
-    languageTests: r.english.length || r.tests.length ? `The English tests and scores for each course level are in the table above.${r.english.some((e) => e.waiver) ? `\n## English waiver\n${bullets(r.english.filter((e) => e.waiver).map((e) => `${e.level}: possible`))}` : ''}` : '',
+    // Everything about entry and English is in the table, one row per level (nothing said twice, the owner, 17 Nov 2026).
+    entryRequirements: '',
+    languageTests: '',
     courses: byLevel(unique(r.courses)),
     intakes: open.map((i) => ({
       name: i.name,
@@ -88,14 +88,14 @@ function syncFacts(facts, reading, by = 'Route2Uni (automatic)') {
     // Intakes: the portal's open ones (their dates and courses, the team's requirements and notes kept), then the page's others.
     const mine = page.intakes || [];
     const intakes = [
-      ...fresh.intakes.map((i) => { const was = mine.find((x) => x.name.toLowerCase() === i.name.toLowerCase()) || {}; return { ...was, ...i, requirements: was.requirements || '', notes: was.notes || '' }; }),
+      ...fresh.intakes.map((i) => { const was = mine.find((x) => x.name.toLowerCase() === i.name.toLowerCase()) || {}; return { ...mergeIntakeDates(was, i), requirements: was.requirements || '', notes: was.notes || '' }; }),
       ...mine.filter((x) => !fresh.intakes.some((i) => i.name.toLowerCase() === x.name.toLowerCase())),
     ];
     const next = {
       ...page,
       programs: fresh.programs.length ? fresh.programs : page.programs,
-      entryRequirements: fresh.entryRequirements || page.entryRequirements,
-      languageTests: fresh.languageTests || page.languageTests,
+      entryRequirements: fresh.programs.length ? fresh.entryRequirements : page.entryRequirements,
+      languageTests: fresh.programs.length ? fresh.languageTests : page.languageTests,
       courses: fresh.courses || page.courses,
       intakes,
       city: page.city || fresh.city,

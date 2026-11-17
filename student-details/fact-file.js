@@ -1,5 +1,5 @@
-// The Fact File list: every university as a card, a search box that also finds courses ("cyber security"
-// shows who teaches it), and (Admin) adding a university.
+// The Fact File list: every university as a card, and a search box that also finds courses ("cyber security" shows who teaches it).
+// The list is kept by the automatic readings only (the owner, 17 Nov 2026): nobody adds a university here.
 (function () {
   const $ = (id) => document.getElementById(id);
   let list = [];
@@ -66,7 +66,7 @@
     if (!list.length) {
       const empty = el('div', 'ui-empty');
       empty.append(el('span', 'ui-empty-icon', query ? '🔍' : '🎓'), el('strong', '', query ? 'No university matches' : 'No universities yet'),
-        el('span', '', query ? 'Try a university name, a city or a course such as "data science".' : 'Admin can add the first one above.'));
+        el('span', '', query ? 'Try a university name, a city or a course such as "data science".' : 'The universities appear here after the first automatic reading.'));
       box.replaceChildren(empty);
       return;
     }
@@ -104,17 +104,6 @@
       $('search').focus();
     }
   });
-  $('addForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    $('msg').className = 'msg';
-    $('msg').textContent = '';
-    const res = await fetch('/api/facts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('addName').value }) });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) { $('msg').textContent = json.error || 'Could not add it.'; $('msg').className = 'msg error'; return; }
-    location.href = '/fact-file?u=' + json.id + '&edit=1'; // straight to its page, ready to fill in
-  });
-
-  fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then((me) => { $('addForm').hidden = me.role !== 'admin' || Boolean(BACKUP); }).catch(() => {});
   // The option finder for a student, above the list (not on an earlier backup, which is only looked at).
   skeletons();
   load();
@@ -124,11 +113,12 @@
     box.id = 'finderBox';
     const anchor = document.querySelector('.page-head');
     anchor.after(box);
-    fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then((me) => {
+    fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then(async (me) => {
       const student = me.role === 'student';
+      if (!student && window.ShortlistFor && !(window.Teams && window.Teams.isReadOnly(me))) await window.ShortlistFor.ready();
       window.Finder.mount(box, student
         ? { title: 'Find the universities you can go to', intro: 'Enter your level, your grade, your study gap and your English test. Press "I am interested" on the courses you like.' }
-        : { title: 'Find universities for a student', intro: 'Enter the student\'s level, grade, study gap and English: every university is checked at once, with what the student would need.' });
+        : { title: 'Find universities for a student', intro: 'Enter the student\'s level, grade, study gap and English: every university is checked at once, with what the student would need.', shortlist: Boolean(window.ShortlistFor) && !(window.Teams && window.Teams.isReadOnly(me)) });
       const shortlist = document.getElementById('shortlist');
       if (shortlist) box.before(shortlist); // a student's welcome and shortlist first
     }).catch(() => {});

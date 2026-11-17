@@ -1,12 +1,24 @@
-// One university's page: read it as a document (print it, or save it as a PDF from the print window),
-// and, for Admin, edit it. Everything typed is put on the page as text, never as HTML.
+// One university's page (the owner, 17 Nov 2026): kept up to date by itself, read by everyone, edited by nobody, except the dates of
+// the intakes, which the team may correct. What is shown and in which section is decided in fact-present.js (nothing twice, nothing
+// extra); this file draws it:
+//
+//   the deadlines first, highlighted, each date with the days left (and "Change dates" for the team)
+//   one table: entry requirements, English, tuition fee, scholarship, deposit, one row per level
+//   the courses, grouped by level, each with Shortlist (for the student chosen at the top) and an amber warning when the automatic
+//   check found no page for it on the university's website
+//   then the overview, the application steps, the interview (the team only), location, payments and notes, when there are any.
+//
+// Everything is put on the page as text, never as HTML. Printing gives a clean document.
 (function () {
   const $ = (id) => document.getElementById(id);
   const id = new URLSearchParams(location.search).get('u');
-  // ?backup=ID: this is an earlier daily backup, read only (see backup-bar.js): no editing, no deleting.
+  // ?backup=ID: an earlier daily backup, read only (see backup-bar.js).
   const BACKUP = new URLSearchParams(location.search).get('backup') || '';
+  const P = window.FactPresent;
   let uni = null;
-  let isAdmin = false;
+  let me = {};
+  let courseData = null;
+  let watch = { warnings: [], admin: false };
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -14,497 +26,352 @@
     if (text !== undefined) e.textContent = text;
     return e;
   }
-  const when = (iso) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
   const has = (s) => String(s || '').trim() !== '';
+  const when = (iso) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+  const student = () => Boolean(window.Shortlist && window.Shortlist.isStudent());
+  const team = () => !student() && !BACKUP && me.role && !(window.Teams && window.Teams.isReadOnly(me));
   function say(text, error) { const m = $('msg'); m.textContent = text || ''; m.className = 'no-print msg' + (error ? ' error' : ''); }
 
-  // Typed text as paragraphs and bullet lists: a line starting with "- " or "* " is a bullet; blank lines separate paragraphs.
-  function richText(parent, text, { allBullets = false } = {}) {
+  // Text with "## " headings and "- " bullets, as headings, lists and paragraphs.
+  function richText(parent, text, { sub = false } = {}) {
     let list = null;
     String(text || '').split('\n').forEach((raw) => {
       const line = raw.trim();
       const heading = /^##\s+(.*)$/.exec(line);
-      if (heading) { list = null; parent.append(el('h3', '', heading[1])); return; }
-      const bullet = /^[-*•]\s+(.*)$/.exec(line) || (allBullets && line ? [line, line] : null);
+      if (heading) { list = null; parent.append(el(sub ? 'h4' : 'h3', '', heading[1])); return; }
+      const bullet = /^[-*•]\s+(.*)$/.exec(line);
       if (bullet) {
         if (!list) { list = el('ul'); parent.append(list); }
-        list.append(el('li', '', bullet[1]));
+        list.append(linked(el('li'), bullet[1]));
       } else {
         list = null;
-        if (line) parent.append(el('p', '', line));
+        if (line) parent.append(linked(el('p'), line));
       }
     });
   }
+  // A web address in the text as a link (payment and accommodation pages); "Fees page: https://..." as a link named "Fees page".
+  function linked(node, text) {
+    const named = /^([^:]{2,40}):\s*(https?:\/\/[^\s<>"']+)\s*$/.exec(String(text));
+    if (named) { const a = el('a', '', named[1]); a.href = named[2]; a.target = '_blank'; a.rel = 'noopener'; node.append(a); return node; }
+    String(text).split(/(https?:\/\/[^\s<>"')]+)/).forEach((part, i) => {
+      if (i % 2) { const a = el('a', '', part.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')); a.href = part; a.target = '_blank'; a.rel = 'noopener'; node.append(a); } else if (part) node.append(part);
+    });
+    return node;
+  }
+  function section(doc, title, fill) {
+    const s = el('section');
+    s.append(el('h2', '', title));
+    fill(s);
+    doc.append(s);
+    return s;
+  }
+
+  // ---- the deadlines ----
+  const countdown = (days) => {
+    if (days === null || days === undefined) return null;
+    const c = el('span', `dl-left ${days < 0 ? 'is-past' : days <= 7 ? 'is-urgent' : days <= 30 ? 'is-soon' : ''}`.trim(),
+      days < 0 ? 'Passed' : days === 0 ? 'Today' : days === 1 ? '1 day left' : `${days} days left`);
+    return c;
+  };
+  function renderDeadlines(doc, view) {
+    const box = el('section', 'dl-band');
+    box.setAttribute('aria-label', 'Deadlines');
+    const head = el('div', 'dl-head');
+    head.append(el('h2', '', 'Deadlines'));
+    if (team()) {
+      const edit = el('button', 'btn btn-sm no-print', 'Change dates');
+      edit.type = 'button';
+      edit.addEventListener('click', editDeadlines);
+      head.append(edit);
+    }
+    box.append(head);
+    if (!view.deadlines.some((d) => d.applyBy || d.dates.length)) { box.append(el('p', 'dl-none', 'No dates yet.')); doc.append(box); return; }
+    const grid = el('div', 'dl-grid');
+    view.deadlines.filter((d) => d.applyBy || d.dates.length).forEach((d) => {
+      // An intake whose dates have all passed is shown small, after the others.
+      const all = [d.applyBy, ...d.dates].filter((x) => x && x.days !== null && x.days !== undefined);
+      const over = !(d.applyBy && d.applyBy.closed) && all.length > 0 && all.every((x) => x.days < 0);
+      const card = el('div', `dl-card${over ? ' is-over' : ''}${d.applyBy && d.applyBy.closed ? ' is-closed' : ''}`);
+      card.append(el('div', 'dl-intake', d.name));
+      if (over) { card.append(el('div', 'dl-over', 'All dates have passed')); grid.append(card); return; }
+      if (d.applyBy) {
+        const main = el('div', 'dl-main');
+        main.append(el('span', 'dl-label', d.applyBy.closed ? 'Applications' : 'Apply by'), el('b', 'dl-date', d.applyBy.when));
+        const c = countdown(d.applyBy.days);
+        if (c) main.append(c);
+        card.append(main);
+        if (has(d.applyBy.note)) card.append(el('div', 'dl-note', d.applyBy.note));
+      }
+      if (d.dates.length) {
+        const ul = el('ul', 'dl-list');
+        d.dates.forEach((x) => {
+          const li = el('li', x.days !== null && x.days < 0 ? 'is-past' : '');
+          li.append(el('span', 'dl-what', x.label));
+          if (x.when) li.append(el('b', '', x.when));
+          const c = countdown(x.days);
+          if (c) li.append(c);
+          ul.append(li);
+        });
+        card.append(ul);
+      }
+      if (d.edited) card.append(el('div', 'dl-edited', `Dates changed by ${d.edited.by || 'the team'}, ${when(d.edited.at)}`));
+      grid.append(card);
+    });
+    // The open intakes first, the closed and passed ones after.
+    [...grid.children].filter((c) => c.classList.contains('is-over')).forEach((c) => grid.append(c));
+    box.append(grid);
+    doc.append(box);
+  }
+
+  // The team corrects the dates: per intake, "Apply by" and the other dates, one per line ("CAS deadline: 27 November 2026").
+  function editDeadlines() {
+    window.Portal.dialog('Change the dates', (body, close) => {
+      body.append(el('p', 'p-muted p-small', 'One date per line, for example "CAS deadline: 27 November 2026". The automatic reading keeps your dates until the university changes its own.'));
+      const rows = (uni.intakes || []).map((i) => ({ id: i.id, name: i.name, deadline: i.deadline || '', deadlines: i.deadlines || '' }));
+      const forms = [];
+      const list = el('div', 'dl-edit');
+      const add = (r) => {
+        const block = el('fieldset', 'dl-edit-block');
+        const name = window.Portal.field('Intake', { value: r.name, max: 120, placeholder: 'e.g. September 2027' });
+        name.input.disabled = Boolean(r.id);
+        const by = window.Portal.field('Apply by', { value: r.deadline, max: 120, placeholder: 'e.g. 30 June 2027' });
+        const dates = window.Portal.field('Other dates', { kind: 'area', value: r.deadlines, max: 4000, placeholder: 'Deposit deadline: 15 July 2027\nCAS deadline: 1 August 2027' });
+        dates.input.rows = 4;
+        block.append(name.wrap, by.wrap, dates.wrap);
+        forms.push({ id: r.id, name, by, dates });
+        list.append(block);
+      };
+      rows.forEach(add);
+      const more = el('button', 'btn btn-sm', 'Add an intake');
+      more.type = 'button';
+      more.addEventListener('click', () => add({ name: '', deadline: '', deadlines: '' }));
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const save = el('button', 'btn btn-primary', 'Save the dates');
+      save.type = 'button';
+      save.addEventListener('click', async () => {
+        save.disabled = true;
+        try {
+          const intakes = forms.map((f) => ({ id: f.id, name: f.name.input.value.trim(), deadline: f.by.input.value.trim(), deadlines: f.dates.input.value.trim() })).filter((x) => x.id || x.name);
+          const res = await fetch(`/api/facts/${uni.id}/deadlines`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ intakes }) });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(json.error || 'Could not save the dates.');
+          uni = json;
+          close(true);
+          render();
+          window.NiecUI.toast('Dates saved. Everyone sees them now.', { type: 'success' });
+        } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; save.disabled = false; }
+      });
+      const cancel = el('button', 'btn', 'Cancel');
+      cancel.type = 'button';
+      cancel.addEventListener('click', () => close());
+      foot.append(cancel, save);
+      body.append(list, more, msg, foot);
+    }, { wide: true });
+  }
+
+  // ---- the table ----
+  function renderTable(doc, view) {
+    if (!view.programs.length) return;
+    section(doc, 'Entry requirements and fees', (s) => {
+      const wrap = el('div', 'table-wrap');
+      wrap.tabIndex = 0;
+      wrap.setAttribute('role', 'region');
+      wrap.setAttribute('aria-label', 'Entry requirements and fees');
+      const table = el('table', 'programs');
+      const headRow = el('tr');
+      headRow.append(el('th', '', 'Level'));
+      view.columns.forEach(([, label]) => headRow.append(el('th', '', label)));
+      const thead = el('thead');
+      thead.append(headRow);
+      const tbody = el('tbody');
+      // A value the same for every level (the English rules of a pathway college) is written once, across the rows.
+      const same = Object.fromEntries(view.columns.map(([key]) => [key, view.programs.length > 1 && view.programs.every((p) => p[key] === view.programs[0][key])]));
+      view.programs.forEach((p, row) => {
+        const tr = el('tr');
+        const th = el('th', 'lvl');
+        th.scope = 'row';
+        th.append(el('b', '', p.name));
+        if (has(p.duration)) th.append(el('span', 'lvl-dur', p.duration));
+        tr.append(th);
+        view.columns.forEach(([key, label]) => {
+          if (same[key] && row > 0) return;
+          const td = el('td');
+          td.dataset.label = label;
+          if (same[key]) { td.rowSpan = view.programs.length; td.className = 'all-levels'; }
+          if (has(p[key])) richText(td, p[key]);
+          else td.append(el('span', 'dim', '-'));
+          tr.append(td);
+        });
+        tbody.append(tr);
+      });
+      table.append(thead, tbody);
+      wrap.append(table);
+      s.append(wrap);
+      // What the table does not say, under it: a small titled block each ("Entry requirements", "English").
+      view.more.forEach(([title, text]) => { const m = el('div', 'more-block'); m.append(el('h3', '', title)); richText(m, text, { sub: true }); s.append(m); });
+    });
+  }
+
+  // ---- the courses ----
+  function linkOf(name) {
+    if (!courseData) return { link: '', notFound: false };
+    const all = [...(courseData.general || []), ...Object.values(courseData.intakes || {}).flat()];
+    const hit = all.find((c) => c.course.toLowerCase() === name.toLowerCase());
+    return hit ? { link: hit.link, notFound: hit.notFound } : { link: '', notFound: false };
+  }
+  function renderCourses(doc, view) {
+    if (!view.courses.length) return;
+    section(doc, `Courses (${view.courses.length})`, (s) => {
+      if (team() && window.ShortlistFor) s.append(window.ShortlistFor.bar());
+      view.groups.forEach((g) => {
+        const items = view.courses.filter((c) => c.group === g);
+        if (view.groups.length > 1 || g !== 'Courses') s.append(el('h3', 'course-group', `${g} (${items.length})`));
+        const ul = el('ul', 'course-list');
+        const LONG = 12;
+        items.forEach((c, n) => {
+          const li = el('li');
+          if (n >= LONG) li.hidden = true;
+          const { link, notFound } = linkOf(c.full || c.course);
+          const name = el(link ? 'a' : 'span', 'course-name', c.course);
+          if (link) { name.href = link; name.target = '_blank'; name.rel = 'noopener'; }
+          li.append(name);
+          if (c.intakes.length) li.append(el('span', 'course-intakes', c.intakes.join(' · ')));
+          // Not found on the university's website by the automatic check (course-sitemap.js): only then does the team look.
+          if (notFound && !student()) li.append(el('span', 'course-warn', 'Course page not found'));
+          // The weekly check of the course pages (course-watch.js): a page gone or changed, until Admin confirms it.
+          const w = !student() && watch.warnings.find((x) => String(x.course).toLowerCase() === (c.full || c.course).toLowerCase());
+          if (w) {
+            const tag = el('span', 'course-warn', { inactive: 'Course page gone', unclear: 'Course page no longer matches', changed: 'Course page changed' }[w.status] || 'Course page to check');
+            tag.title = w.note || '';
+            li.append(tag);
+            if (watch.admin) {
+              const ok = el('button', 'p-link no-print', 'Checked');
+              ok.type = 'button';
+              ok.addEventListener('click', async () => { await fetch('/api/course-watch/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: w.key }) }); watch.warnings = watch.warnings.filter((x) => x !== w); render(); });
+              li.append(ok);
+            }
+          }
+          const intake = c.intakes[0] || (view.intakeNames.length === 1 ? view.intakeNames[0] : '');
+          if (student() && window.Shortlist.isLinked()) li.append(window.Shortlist.button(uni, c.full || c.course, intake));
+          else if (team() && window.ShortlistFor) li.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.course, intake, level: g, link, ...feesFor(view, g) }));
+          ul.append(li);
+        });
+        s.append(ul);
+        if (items.length > LONG) {
+          const more = el('button', 'p-link no-print course-more', `Show all ${items.length} courses`);
+          more.type = 'button';
+          more.addEventListener('click', () => { ul.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
+          s.append(more);
+        }
+      });
+    });
+  }
+  // The fee, scholarship and deposit of the course's level (its first line), carried onto the student's option.
+  function feesFor(view, group) {
+    const row = view.programs.find((p) => P.levelGroup(p.name) === group) || (view.programs.length === 1 ? view.programs[0] : null);
+    const first = (t) => String((row && row[t]) || '').split('\n')[0].replace(/^[-*•]\s+/, '');
+    return { fee: first('tuition'), scholarship: first('scholarship'), deposit: first('deposit') };
+  }
 
   // ---- sharing ----
-  // A short plain-text summary (*bold* for WhatsApp) of the fees, requirements and intakes of this university.
+  // A short summary to paste into WhatsApp or an email (*bold* for WhatsApp): the deadlines, then per level the fee, scholarship,
+  // entry and English, from the same clean view as the page.
   const flat = (t) => String(t || '').split('\n').map((l) => l.replace(/^\s*(?:[-*\u2022]\s+|##\s+)/, '').trim()).filter(Boolean).join('; ');
-  function summaryText() {
-    const out = [`*${uni.name}*${has(uni.city) ? ` (${uni.city})` : ''}`];
-    if (has(uni.website)) out.push(uni.website);
-    (uni.programs || []).forEach((p) => {
+  function summaryText(view) {
+    const out = [`*${view.name}*${has(view.city) ? ` (${view.city})` : ''}`];
+    if (has(view.website)) out.push(view.website);
+    view.deadlines.filter((d) => d.applyBy).forEach((d) => out.push(`${d.name}: ${d.applyBy.closed ? 'closed' : `apply by ${d.applyBy.when}`}`));
+    view.programs.forEach((p) => {
       out.push('', `*${p.name}${has(p.duration) ? ` (${p.duration})` : ''}*`);
       [['Tuition fee', p.tuition], ['Scholarship', p.scholarship], ['Entry', p.academic], ['English', p.english], ['Deposit', p.deposit]]
         .forEach(([label, value]) => { if (has(value)) out.push(`${label}: ${flat(value)}`); });
     });
-    if (!(uni.programs || []).length) [['Entry requirements', uni.entryRequirements], ['Language test', uni.languageTests]].forEach(([label, value]) => { if (has(value)) out.push('', `*${label}*`, flat(value)); });
-    if (uni.intakes.length) {
-      out.push('', '*Intakes*');
-      uni.intakes.forEach((i) => out.push(`- ${i.name}${has(i.deadline) ? `, apply by ${i.deadline}` : ''}`));
-    }
     return out.join('\n');
   }
-  async function copySummary() {
-    const text = summaryText();
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (e) { // clipboard blocked: the old way still works
-      const box = document.createElement('textarea');
-      box.value = text;
-      box.style.cssText = 'position:fixed;opacity:0';
-      document.body.appendChild(box);
-      box.select();
-      let ok = false;
-      try { ok = document.execCommand('copy'); } catch (err) { /* below */ }
-      box.remove();
-      if (!ok) { NiecUI.toast('Could not copy.', { type: 'error' }); return; }
-    }
-    NiecUI.toast('Summary copied. Paste it into WhatsApp or an email.', { type: 'success' });
+  async function copySummary(view) {
+    try { await navigator.clipboard.writeText(summaryText(view)); window.NiecUI.toast('Summary copied. Paste it into WhatsApp or an email.', { type: 'success' }); } catch (e) { window.NiecUI.toast('Could not copy.', { type: 'error' }); }
   }
 
-  // ---- reading ----
-  function section(doc, title, text, { force = false, allBullets = false } = {}) {
-    if (!has(text) && !(force && isAdmin)) return;
-    const s = el('section');
-    s.append(el('h2', '', title));
-    if (has(text)) richText(s, text, { allBullets }); else s.append(el('p', 'placeholder', 'Not added yet.'));
-    doc.append(s);
-  }
-
-  const PROGRAM_COLUMNS = [['name', 'Program'], ['duration', 'Duration'], ['academic', 'Academic requirement'], ['english', 'English language requirement'],
-    ['tuition', 'Total tuition fee'], ['scholarship', 'Scholarship'], ['deposit', 'CAS deposit structure']];
-
-  // Fees, scholarships and deposits by course level, as a table that scrolls sideways on a phone.
-  function renderPrograms(doc) {
-    const programs = uni.programs || [];
-    if (!programs.length && !isAdmin) return;
-    const s = el('section');
-    s.append(el('h2', '', 'Entry requirements, fees and scholarships'));
-    if (!programs.length) { s.append(el('p', 'placeholder', 'Not added yet.')); doc.append(s); return; }
-    s.append(el('p', 'scroll-hint', 'Scroll sideways to see every column.'));
-    const wrap = el('div', 'table-wrap');
-    wrap.tabIndex = 0; // the table scrolls sideways on a small screen: reachable (and scrollable) from the keyboard
-    wrap.setAttribute('role', 'region');
-    wrap.setAttribute('aria-label', 'Entry requirements, fees and scholarships');
-    const table = el('table', 'programs');
-    // A column nobody has filled in for any course is left out of the view (it is still there to fill in when editing).
-    const cols = PROGRAM_COLUMNS.filter(([key]) => key === 'name' || programs.some((p) => String(p[key] || '').trim()));
-    const headRow = el('tr');
-    cols.forEach(([, label]) => headRow.append(el('th', '', label)));
-    const thead = el('thead');
-    thead.append(headRow);
-    table.append(thead);
-    const body = el('tbody');
-    programs.forEach((p) => {
-      const tr = el('tr');
-      cols.forEach(([key, label]) => {
-        const td = el('td');
-        td.dataset.label = label;
-        if (key === 'name') td.append(el('b', '', p.name)); else richText(td, p[key]);
-        tr.append(td);
-      });
-      body.append(tr);
-    });
-    table.append(body);
-    wrap.append(table);
-    s.append(wrap);
-    doc.append(s);
-  }
-
-  // The courses as links: a course whose page is known opens it in a new tab; one without shows "Find the page", which looks for the
-  // course page on the university's own website, remembers it and opens it.
-  let courseData = null;
-  function courseList(into, intakeName) {
-    const list = intakeName === null ? (courseData && courseData.general) : (courseData && courseData.intakes[intakeName]);
-    if (!list || !list.length) { return false; }
-    const ul = el('ul', 'course-links');
-    let group = null;
-    list.forEach((c) => {
-      if (c.group && c.group !== group) { group = c.group; const hd = el('li', 'course-group', c.group); ul.append(hd); }
-      const li = el('li');
-      // A course with no page yet, for an account that cannot look one up, is plain text (never a link that goes nowhere).
-      const a = el(c.link || courseData.canFind ? 'a' : 'span', 'course-link', c.course);
-      if (a.tagName === 'A') { a.target = '_blank'; a.rel = 'noopener'; }
-      const show = () => { if (c.link) { a.href = c.link; a.removeAttribute('role'); } };
-      show();
-      li.append(a);
-      // Checked on the university's own website and not found (course-sitemap.js): a warning for the team to add the link by hand.
-      if (c.notFound && !(window.Shortlist && window.Shortlist.isStudent())) li.append(el('span', 'course-warn', 'Course page not found on the university website'));
-      // Submit an application for this course (finder.js): a student for themselves, the team for a student it chooses.
-      if (window.Finder && !(window.Shortlist && window.Shortlist.isStudent() && !window.Shortlist.isLinked())) {
-        const ap = el('button', 'find-link apply-link no-print', 'Submit application');
-        ap.type = 'button';
-        ap.addEventListener('click', () => window.Finder.applyDialog({ university: { id: uni.id, name: uni.name }, course: c.course, intake: intakeName || '' }));
-        li.append(ap);
-      }
-      // A student's own login: "I am interested" beside each course (shortlist.js).
-      if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button(uni, c.course, intakeName || ''));
-      if (!c.link && courseData.canFind) {
-        const find = el('button', 'find-link no-print', 'Find the course page');
-        find.type = 'button';
-        find.addEventListener('click', async () => {
-          find.disabled = true; find.textContent = 'Looking...';
-          try {
-            const r = await fetch('/api/course-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ universityId: uni.id, university: uni.name, course: c.course }) }).then((x) => x.json());
-            if (r.link) { c.link = r.link; show(); find.remove(); window.open(r.link, '_blank', 'noopener'); } else { find.disabled = false; find.textContent = r.error ? 'Could not reach the website. Try again' : 'No page found on the website. Try again'; }
-          } catch (e) { find.disabled = false; find.textContent = 'Find the course page'; }
-        });
-        li.append(find);
-        a.addEventListener('click', (e) => { if (!c.link) { e.preventDefault(); find.click(); } });
-        a.style.cursor = 'pointer'; a.tabIndex = 0;
-        a.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !c.link) { e.preventDefault(); find.click(); } });
-      }
-      ul.append(li);
-    });
-    into.append(ul);
-    return true;
-  }
-  function courseLinks(doc, title, text, intakeName) {
-    if (!has(text)) { section(doc, title, text, { force: true, allBullets: true }); return; }
-    const s = el('section');
-    s.append(el('h2', '', title));
-    if (!courseList(s, intakeName)) richText(s, text, { allBullets: true });
-    doc.append(s);
-  }
-
-  function renderView() {
-    const view = $('view');
-    view.replaceChildren();
+  // ---- the page ----
+  function render() {
+    const view = P.present(uni);
     const doc = el('article', 'doc');
-    const top = el('div', 'doc-top');
-    const brandName = el('span', 'doc-brand', 'International Student Recruitment');
-    top.append(brandName, el('span', 'kind', 'University Fact File'));
-    doc.append(top, el('h1', '', uni.name));
-    // The deadlines first (the owner, 17 Nov 2026): each intake with its dates, before anything else on the page.
-    const dated = (uni.intakes || []).filter((i) => has(i.deadline) || has(i.deadlines));
-    if (dated.length) {
-      const band = el('div', 'deadline-band');
-      dated.forEach((i) => {
-        const card = el('div', 'deadline-card');
-        card.append(el('span', 'deadline-intake', i.name), el('b', 'deadline-main', has(i.deadline) ? `Apply by ${i.deadline}` : 'Key dates'));
-        const dates = String(i.deadlines || '').split('\n').map((x) => x.replace(/^[\s•\-]+/, '').trim()).filter(Boolean);
-        if (dates.length > 1 || (dates.length && !has(i.deadline))) {
-          const ul = el('ul', 'deadline-list');
-          dates.slice(0, 8).forEach((d) => ul.append(el('li', '', d)));
-          card.append(ul);
-        }
-        band.append(card);
+    const top = el('header', 'doc-head');
+    const titles = el('div');
+    titles.append(el('h1', '', view.name));
+    const sub = el('div', 'doc-sub');
+    if (has(view.city)) sub.append(el('span', '', view.city));
+    if (has(view.website)) { const a = el('a', '', view.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')); a.href = view.website; a.target = '_blank'; a.rel = 'noopener'; sub.append(a); }
+    if (sub.children.length) titles.append(sub);
+    top.append(titles);
+    doc.append(top);
+
+    renderDeadlines(doc, view);
+    renderTable(doc, view);
+    renderCourses(doc, view);
+    // What is particular to one intake (its own requirements and notes); its dates are at the top.
+    const particular = view.deadlines.filter((d) => has(d.requirements) || has(d.notes));
+    if (particular.length) {
+      section(doc, particular.length === 1 ? `${particular[0].name} intake` : 'Intakes', (s) => {
+        particular.forEach((d) => {
+          if (particular.length > 1) s.append(el('h3', '', d.name));
+          if (has(d.requirements)) richText(s, d.requirements);
+          if (has(d.notes)) richText(s, d.notes);
+        });
       });
-      doc.append(band);
     }
-
-    const glance = el('dl', 'glance');
-    const row = (k, v, chips) => {
-      glance.append(el('dt', '', k));
-      const dd = el('dd');
-      if (chips) { const c = el('div', 'chips'); chips.forEach((n) => c.append(el('span', 'chip', n))); dd.append(c); } else dd.textContent = v;
-      glance.append(dd);
-    };
-    if (has(uni.city)) row('City', uni.city);
-    if (has(uni.website)) row('Website', uni.website);
-    if (uni.intakes.length) row('Intakes', '', uni.intakes.map((i) => i.name));
-    if (glance.children.length) doc.append(glance);
-
-    section(doc, 'Overview and key facts', uni.overview, { allBullets: true });
-    section(doc, 'Location', uni.location);
-    renderPrograms(doc);
-    section(doc, 'Entry requirements', uni.entryRequirements, { force: true });
-    section(doc, 'Language test', uni.languageTests, { force: true });
-    courseLinks(doc, 'Courses available', uni.courses, null);
-
-    if (uni.process.length || isAdmin) {
-      const s = el('section');
-      s.append(el('h2', '', 'Application process'));
-      if (uni.process.length) {
+    if (has(view.overview)) section(doc, 'Why students choose it', (s) => richText(s, view.overview));
+    if (view.process.length) {
+      section(doc, 'How to apply', (s) => {
         const ol = el('ol', 'steps');
-        uni.process.forEach((p) => {
-          const li = el('li');
-          li.append(el('div', 'step-title', p.title));
-          if (has(p.detail)) { const d = el('div'); richText(d, p.detail); li.append(d); }
-          ol.append(li);
-        });
+        view.process.forEach((p) => { const li = el('li'); li.append(el('div', 'step-title', p.title)); if (has(p.detail)) { const d = el('div'); richText(d, p.detail); li.append(d); } ol.append(li); });
         s.append(ol);
-      } else s.append(el('p', 'placeholder', 'Not added yet.'));
-      doc.append(s);
-    }
-    section(doc, 'Interview requirements', uni.interview, { force: true });
-
-    if (uni.intakes.length) {
-      const s = el('section');
-      s.append(el('h2', '', 'Intakes'));
-      s.append(el('p', '', 'What is different for each intake.'));
-      uni.intakes.forEach((i) => {
-        const box = el('div', 'intake');
-        const h = el('h3', '', i.name);
-        if (has(i.deadline)) h.append(' ', el('span', 'deadline', `(apply by ${i.deadline})`));
-        box.append(h);
-        // Every date of the intake as the partner portal gives them (application, deposit, CAS, visa), kept up to date by itself.
-        if (has(i.deadlines)) { box.append(el('div', 'label', 'Key dates')); box.append(el('div', 'key-dates', i.deadlines.replace(/^[\s•\-]+/gm, '').trim())); }
-        [['Requirements', i.requirements], ['Courses', i.courses], ['Notes', i.notes]].forEach(([label, text]) => {
-          if (!has(text)) return;
-          box.append(el('div', 'label', label));
-          if (label === 'Courses') courseList(box, i.name); else richText(box, text);
-        });
-        s.append(box);
       });
-      doc.append(s);
     }
-    section(doc, 'Notes', uni.notes);
-    const synced = uni.source && uni.source.route2uni && uni.source.route2uni.at;
-    const navitas = uni.source && uni.source.navitas && uni.source.navitas.at;
-    doc.append(el('div', 'foot', [synced ? `The fees, entry requirements, English, intakes, key dates and courses are kept up to date from the Route2Uni partner portal twice a week (last read ${when(synced)}).` : '',
-      navitas ? `The fees, scholarships, entry requirements, English, courses, January deadlines, interview questions and payment links are kept up to date from the Navitas product toolkit twice a week (last changed there ${when(navitas)}).` : '',
-      has(uni.updatedBy) ? `Last changed ${when(uni.updatedAt)} by ${uni.updatedBy}.` : ''].filter(Boolean).join(' ')));
-    // A bar to jump between the sections of a long page (hidden when printing).
-    const heads = [...doc.querySelectorAll('section > h2')];
+    // The interview questions are long: folded, opened when needed.
+    if (has(view.interview)) {
+      section(doc, 'Interview', (s) => {
+        const d = el('details', 'fold');
+        d.append(el('summary', '', 'Show the interview preparation'));
+        richText(d, view.interview);
+        s.append(d);
+      });
+    }
+    if (has(view.location)) section(doc, 'Location', (s) => richText(s, view.location));
+    if (has(view.notes)) section(doc, 'Payments and other information', (s) => richText(s, view.notes));
+    if (view.updatedAt) doc.append(el('div', 'foot', `Updated ${when(view.updatedAt)}`));
+
+    // A bar to jump between the sections of a long page.
+    const heads = [...doc.querySelectorAll('section > h2, section > .dl-head > h2')];
+    const view$ = $('view');
+    view$.replaceChildren();
     if (heads.length >= 4) {
       const toc = el('nav', 'toc no-print');
       toc.setAttribute('aria-label', 'On this page');
       heads.forEach((h, i) => {
-        h.parentElement.id = `sec-${i}`;
-        const a = el('a', '', h.textContent);
+        const sec = h.closest('section');
+        sec.id = `sec-${i}`;
+        const a = el('a', '', h.textContent.replace(/\s*\(\d+\)$/, ''));
         a.href = `#sec-${i}`;
-        a.addEventListener('click', (e) => { e.preventDefault(); h.parentElement.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.replaceState(null, '', location.pathname + location.search); });
+        a.addEventListener('click', (e) => { e.preventDefault(); sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
         toc.append(a);
       });
-      view.append(toc);
+      view$.append(toc);
     }
-    view.append(doc);
-    document.title = `${uni.name} · Fact File · ISR`;
+    view$.append(doc);
+    document.title = `${view.name} · Fact File · ISR`;
 
     const bar = $('toolbar');
     bar.replaceChildren();
     const copy = el('button', 'btn', 'Copy summary');
     copy.type = 'button';
-    copy.title = 'Copy a short summary';
-    copy.addEventListener('click', copySummary);
+    copy.addEventListener('click', () => copySummary(view));
     bar.append(copy);
-    if (!BACKUP && window.SendToStudent && !(window.Shortlist && window.Shortlist.isStudent())) {
-      const send = el('button', 'btn btn-primary', 'Add to a student');
-      send.type = 'button';
-      send.title = "Choose courses and a student: they are added to the student's University options";
-      send.addEventListener('click', () => window.SendToStudent.sendUniversity(uni.id, uni.name));
-      bar.append(send);
-    }
     const print = el('button', 'btn', 'Print or save as PDF');
     print.type = 'button';
     print.addEventListener('click', () => window.print());
     bar.append(print);
-    if (isAdmin) {
-      const edit = el('button', 'btn btn-primary', 'Edit');
-      edit.type = 'button';
-      edit.addEventListener('click', renderEdit);
-      bar.append(edit);
-      const remove = el('button', 'btn btn-danger', 'Delete');
-      remove.type = 'button';
-      remove.addEventListener('click', () => deleteUniversity());
-      bar.append(remove);
-    }
-  }
-
-  // Delete this university (Admin only; the server refuses anyone else). `before` runs once it is deleted.
-  async function deleteUniversity(before) {
-    const yes = await NiecUI.confirm(`Remove ${uni.name} from the Fact File? This cannot be undone.`,
-      { title: 'Delete this university?', confirmText: 'Delete university', danger: true });
-    if (!yes) return;
-    const res = await fetch(`/api/facts/${uni.id}/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-    if (res.ok) { if (before) before(); location.href = '/fact-file'; } else say('Could not delete it.', true);
-  }
-
-  // ---- editing (Admin) ----
-  function field(label, input) {
-    const l = el('label', '', label);
-    l.append(input);
-    return l;
-  }
-  const text = (value, rows) => { const t = el('textarea'); t.value = value || ''; if (rows) t.rows = rows; return t; };
-  const line = (value, ph) => { const i = el('input'); i.value = value || ''; if (ph) i.placeholder = ph; return i; };
-
-  function renderEdit() {
-    say('');
-    $('toolbar').replaceChildren();
-    const form = el('form', 'editor');
-    form.autocomplete = 'off';
-    // Anything changed and not yet saved: the browser asks before the page is left, and Cancel asks too.
-    let dirty = false;
-    const guard = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
-    window.addEventListener('beforeunload', guard);
-    const stopGuarding = () => { window.removeEventListener('beforeunload', guard); dirty = false; };
-    form.addEventListener('input', () => { dirty = true; });
-    form.addEventListener('click', (e) => { if (e.target.closest('button.btn-sm')) dirty = true; }); // add / remove / move a step or intake
-    form.addEventListener('keydown', (e) => { // Ctrl+S or Cmd+S saves
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); form.requestSubmit(); }
-    });
-    const name = line(uni.name); name.required = true; name.maxLength = 120;
-    const city = line(uni.city, 'e.g. London');
-    const website = line(uni.website, 'e.g. https://www.uwl.ac.uk');
-    const location = text(uni.location, 3);
-    const overview = text(uni.overview, 5);
-    const entry = text(uni.entryRequirements, 6);
-    const lang = text(uni.languageTests, 5);
-    const courses = text(uni.courses, 6);
-    const interview = text(uni.interview, 5);
-    const notes = text(uni.notes, 4);
-
-    form.append(el('h2', '', 'The university'));
-    const two = el('div', 'two');
-    two.append(field('Name', name), field('City', city));
-    form.append(two, field('Website', website), field('Where it is (campus, address, how to get there)', location));
-    form.append(field('Overview and key facts', overview));
-
-    form.append(el('h2', '', 'Fees and scholarships by course level'));
-    form.append(el('p', 'hint', 'One block per level (UG, PG ...). "- " for a bullet.'));
-    const programsBox = el('div');
-    form.append(programsBox);
-    const programRows = [];
-    function addProgram(p) {
-      const block = el('div', 'block');
-      const head = el('div', 'block-head');
-      const remove = el('button', 'btn btn-sm btn-danger', 'Remove');
-      remove.type = 'button';
-      const rec = { block };
-      PROGRAM_COLUMNS.forEach(([key]) => { rec[key] = key === 'name' || key === 'duration' ? line(p && p[key], key === 'name' ? 'e.g. PG' : 'e.g. 1 Year') : text(p && p[key], 4); });
-      remove.addEventListener('click', () => { programRows.splice(programRows.indexOf(rec), 1); block.remove(); });
-      head.append(el('b', '', 'Course level'), remove);
-      const pair = el('div', 'two');
-      pair.append(field('Program', rec.name), field('Duration', rec.duration));
-      block.append(head, pair);
-      PROGRAM_COLUMNS.slice(2).forEach(([key, label]) => block.append(field(label, rec[key])));
-      programRows.push(rec);
-      programsBox.append(block);
-    }
-    (uni.programs || []).forEach(addProgram);
-    const addProgramBtn = el('button', 'btn btn-sm', 'Add a course level');
-    addProgramBtn.type = 'button';
-    addProgramBtn.style.marginTop = '10px';
-    addProgramBtn.addEventListener('click', () => addProgram({}));
-    form.append(addProgramBtn);
-
-    form.append(el('h2', '', 'Requirements'));
-    form.append(el('p', 'hint', '"- ": bullet. "## ": heading. Blank line: new paragraph.'));
-    form.append(field('Entry requirements (grades, subjects, gap, backlogs)', entry), field('Language test (IELTS, PTE, Duolingo, waivers)', lang));
-    form.append(field('Courses available (one per line)', courses));
-
-    form.append(el('h2', '', 'Application process'));
-    form.append(el('p', 'hint', 'The steps from application to visa.'));
-    const steps = el('div');
-    form.append(steps);
-    const stepRows = [];
-    function addStep(s) {
-      const block = el('div', 'block');
-      const head = el('div', 'block-head');
-      const label = el('b', '', 'Step');
-      const tools = el('div', 'block-tools');
-      const mk = (t, fn) => { const b = el('button', 'btn btn-sm', t); b.type = 'button'; b.addEventListener('click', fn); return b; };
-      const rec = { block, title: line(s && s.title, 'e.g. Offer letter received'), detail: text(s && s.detail, 3) };
-      const renumber = () => stepRows.forEach((r, i) => { r.block.querySelector('.block-head b').textContent = `Step ${i + 1}`; });
-      tools.append(
-        mk('Up', () => { const i = stepRows.indexOf(rec); if (i > 0) { stepRows.splice(i, 1); stepRows.splice(i - 1, 0, rec); steps.insertBefore(block, stepRows[i].block); renumber(); } }),
-        mk('Down', () => { const i = stepRows.indexOf(rec); if (i < stepRows.length - 1) { stepRows.splice(i, 1); stepRows.splice(i + 1, 0, rec); steps.insertBefore(stepRows[i].block, block); renumber(); } }),
-        mk('Remove', () => { stepRows.splice(stepRows.indexOf(rec), 1); block.remove(); renumber(); }),
-      );
-      head.append(label, tools);
-      block.append(head, rec.title, field('What happens, and what the student needs', rec.detail));
-      stepRows.push(rec);
-      steps.append(block);
-      renumber();
-    }
-    (uni.process.length ? uni.process : [{}]).forEach(addStep);
-    const addStepBtn = el('button', 'btn btn-sm', 'Add a step');
-    addStepBtn.type = 'button';
-    addStepBtn.style.marginTop = '10px';
-    addStepBtn.addEventListener('click', () => addStep({}));
-    form.append(addStepBtn);
-    form.append(field('Interview requirements', interview));
-
-    form.append(el('h2', '', 'Intakes'));
-    form.append(el('p', 'hint', 'One per intake (requirements often differ).'));
-    const intakes = el('div');
-    form.append(intakes);
-    const intakeRows = [];
-    function addIntake(i) {
-      const block = el('div', 'block');
-      const head = el('div', 'block-head');
-      const remove = el('button', 'btn btn-sm btn-danger', 'Remove');
-      remove.type = 'button';
-      const rec = { id: i && i.id, deadlines: (i && i.deadlines) || '', block, name: line(i && i.name, 'e.g. September 2026'), deadline: line(i && i.deadline, 'e.g. 31 July 2026'), requirements: text(i && i.requirements, 4), courses: text(i && i.courses, 4), notes: text(i && i.notes, 3) };
-      remove.addEventListener('click', () => { intakeRows.splice(intakeRows.indexOf(rec), 1); block.remove(); });
-      head.append(el('b', '', 'Intake'), remove);
-      const pair = el('div', 'two');
-      pair.append(field('Intake name', rec.name), field('Apply by', rec.deadline));
-      block.append(head, pair, field('Requirements for this intake', rec.requirements), field('Courses open in this intake (one per line)', rec.courses), field('Notes', rec.notes));
-      intakeRows.push(rec);
-      intakes.append(block);
-    }
-    uni.intakes.forEach(addIntake);
-    const addIntakeBtn = el('button', 'btn btn-sm', 'Add an intake');
-    addIntakeBtn.type = 'button';
-    addIntakeBtn.style.marginTop = '10px';
-    addIntakeBtn.addEventListener('click', () => addIntake({}));
-    form.append(addIntakeBtn);
-
-    form.append(el('h2', '', 'Anything else'));
-    form.append(field('Notes', notes));
-
-    const actions = el('div', 'sticky-actions');
-    const save = el('button', 'btn btn-primary', 'Save');
-    save.type = 'submit';
-    const cancel = el('button', 'btn', 'Cancel');
-    cancel.type = 'button';
-    cancel.addEventListener('click', async () => {
-      if (dirty && !(await NiecUI.confirm('What you changed on this page has not been saved.', { title: 'Leave without saving?', confirmText: 'Leave without saving', cancelText: 'Keep editing', danger: true }))) return;
-      stopGuarding();
-      say('');
-      renderView();
-    });
-    const del = el('button', 'btn btn-danger', 'Delete this university');
-    del.type = 'button';
-    del.style.marginLeft = 'auto';
-    del.addEventListener('click', () => deleteUniversity(stopGuarding));
-    actions.append(save, cancel, del);
-    form.append(actions);
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      save.disabled = true;
-      say('Saving...');
-      const body = {
-        name: name.value, city: city.value, website: website.value, location: location.value, overview: overview.value,
-        programs: programRows.map((r) => Object.fromEntries(PROGRAM_COLUMNS.map(([key]) => [key, r[key].value]))),
-        entryRequirements: entry.value, languageTests: lang.value, courses: courses.value, interview: interview.value, notes: notes.value,
-        process: stepRows.map((r) => ({ title: r.title.value, detail: r.detail.value })),
-        intakes: intakeRows.map((r) => ({ id: r.id, deadlines: r.deadlines, name: r.name.value, deadline: r.deadline.value, requirements: r.requirements.value, courses: r.courses.value, notes: r.notes.value })),
-      };
-      try {
-        const res = await fetch(`/api/facts/${uni.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
-        uni = json;
-        stopGuarding();
-        renderView();
-        say('');
-        NiecUI.toast('Saved. Everyone can see the new version.', { type: 'success' });
-        window.scrollTo(0, 0);
-      } catch (err) {
-        say(err.message, true);
-        save.disabled = false;
-      }
-    });
-    $('view').replaceChildren(form);
-    // Long lists (a university's courses) show in full instead of a small box that scrolls.
-    const fit = (t) => { t.style.height = 'auto'; t.style.height = Math.min(Math.max(t.scrollHeight + 2, 84), 460) + 'px'; };
-    form.querySelectorAll('textarea').forEach((t) => { fit(t); t.addEventListener('input', () => fit(t)); });
-    name.focus();
   }
 
   async function start() {
@@ -512,7 +379,7 @@
     try {
       const [meRes, uniRes] = await Promise.all([fetch('/api/me', { cache: 'no-store' }), fetch((BACKUP ? '/api/restore/snapshot/' + encodeURIComponent(BACKUP) + '/facts/' : '/api/facts/') + encodeURIComponent(id), { cache: 'no-store' })]);
       if (!uniRes.ok) { say('That university is not in the Fact File.', true); return; }
-      isAdmin = (await meRes.json()).role === 'admin' && !BACKUP;
+      me = await meRes.json();
       uni = await uniRes.json();
     } catch (e) {
       say('Could not load this page. Please reload.', true);
@@ -520,35 +387,9 @@
     }
     if (window.Shortlist) await window.Shortlist.ready;
     if (!BACKUP) { try { const r = await fetch('/api/fact-courses?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) courseData = await r.json(); } catch (e) { courseData = null; } }
-    if (isAdmin && new URLSearchParams(location.search).get('edit')) renderEdit(); else renderView();
-    if (!BACKUP && !(window.Shortlist && window.Shortlist.isStudent())) courseWarnings();
-  }
-
-  // Warnings from the weekly check of this university's course pages (course-watch.js): what was found, for a person to confirm.
-  async function courseWarnings() {
-    try {
-      const r = await (await fetch('/api/course-watch?university=' + encodeURIComponent(id), { cache: 'no-store' })).json();
-      if (!r.warnings || !r.warnings.length) return;
-      const box = document.createElement('section');
-      box.className = 'p-card no-print';
-      const h2 = document.createElement('h2');
-      h2.textContent = `Course page warnings (${r.warnings.length})`;
-      const intro = document.createElement('p');
-      intro.textContent = 'Found by the weekly website check. Press Confirm once checked.';
-      box.append(h2, intro);
-      r.warnings.forEach((w) => {
-        const row = document.createElement('div');
-        row.className = 'p-notice warn';
-        const b = document.createElement('b');
-        b.textContent = `${w.course}: ${{ inactive: 'page not found', unclear: 'page no longer matches', changed: 'page changed' }[w.status] || w.status}. `;
-        row.append(b, document.createTextNode(`${w.note} (checked ${String(w.checkedAt).slice(0, 10)}) `));
-        if (w.link) { const a = document.createElement('a'); a.href = w.link; a.target = '_blank'; a.rel = 'noopener'; a.className = 'p-link'; a.textContent = 'Open the page'; row.append(a, ' '); }
-        if (r.admin) { const c = document.createElement('button'); c.type = 'button'; c.className = 'btn btn-sm'; c.textContent = 'Confirm'; c.addEventListener('click', async () => { await fetch('/api/course-watch/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: w.key }) }); row.remove(); }); row.append(c); }
-        box.append(row);
-      });
-      const view = document.getElementById('view');
-      view.parentNode.insertBefore(box, view);
-    } catch (e) { /* the warnings are extra: the page works without them */ }
+    if (!BACKUP && !student()) { try { const r = await fetch('/api/course-watch?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) watch = await r.json(); } catch (e) { /* the page works without it */ } }
+    if (team() && window.ShortlistFor) { await window.ShortlistFor.ready(); window.ShortlistFor.onChange(render); }
+    render();
   }
   if (BACKUP) { const back = document.querySelector('a[href="/fact-file"]'); if (back) back.href = '/fact-file?backup=' + encodeURIComponent(BACKUP); }
   start();

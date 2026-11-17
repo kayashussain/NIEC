@@ -213,8 +213,7 @@ figures, deadlines, notices and webinars in the Fact File. It needs the portal's
 1. cPanel, **Setup Node.js App**, the app, **Environment variables**, **Add Variable**:
    `ROUTE2UNI_EMAIL` = the email you log into the portal with, and `ROUTE2UNI_PASSWORD` = its password.
 2. **Save**, then **Restart**.
-3. Open the Fact File: the Route2Uni panel shows when it was read. Admin can press **Check now** at any time (a reading takes
-   about half a minute).
+3. Open the Fact File: the line at the top shows when it was last read. It runs by itself; there is no button to start it.
 
 If the portal password is changed, change `ROUTE2UNI_PASSWORD` the same way and Restart. To switch it off, remove the two
 variables and Restart (the last reading stays on the pages).
@@ -224,16 +223,16 @@ variables and Restart (the last reading stays on the pages).
 ISR reads the Navitas product toolkit (the public Google Sheet "Nepal UK/Europe Navitas product toolkit") twice a week, Monday and
 Thursday from 2 a.m. office time and after every Route2Uni reading, and gives each UK Navitas college its own Fact File page: fees,
 scholarships, entry requirements, English, study gap, courses, the January intake with its deadlines and courses, interview
-questions, Flywire payment and refund links, accommodation, the application steps and tips. German and Dutch colleges are left out,
+questions, Flywire payment and refund links, accommodation and the application steps. German and Dutch colleges are left out,
 and so is Manchester Metropolitan University International College (closed). Nothing needs to be set up: the sheet must stay shared
-as "Anyone with the link can view". The first reading is three minutes after a Restart. Admin can press **Read Navitas toolkit** on
-the Fact File at any time.
+as "Anyone with the link can view". The first reading is three minutes after a Restart; after that it runs by itself (there is no
+button to start it).
 
 - To read another copy of the toolkit, add the variable `NAVITAS_SHEET_ID` = the long id in the sheet's link (between `/d/` and
   `/edit`), then Restart.
 - To switch it off, add `NAVITAS_TOOLKIT` = `off` and Restart (the pages keep what they have).
-- The figures on these pages always follow the sheet. Overview, Location, Interview, Notes and Application process follow it too until
-  someone edits them on the page; from then on the edited text is kept.
+- Every part of these pages follows the sheet. Nobody edits a Fact File page; the team may only correct an intake's dates (Change
+  dates), which are kept until the sheet itself changes them.
 
 ## Updating the code later
 

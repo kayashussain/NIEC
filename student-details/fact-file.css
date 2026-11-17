@@ -27,9 +27,8 @@ input:focus, textarea:focus { outline: 2px solid var(--blue); outline-offset: 1p
 .msg.error { color: var(--danger); }
 
 /* The list */
+/* 🔴 CSS CHANGED (2026-11-17): unused styles removed, nothing on screen changes | from: the "Add a university" row, the "at a glance" box and the intake boxes of the old page | to: deleted (the page no longer has them) */
 .search { max-width: 360px; }
-.add-row { display: flex; gap: 8px; margin: 0 0 16px; max-width: 520px; }
-.add-row[hidden] { display: none; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 14px; }
 .uni-card { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--blue); border-radius: 12px; color: inherit; text-decoration: none; }
 .uni-card:hover { border-color: var(--blue); box-shadow: 0 4px 14px rgba(15, 23, 42, .08); }
@@ -61,9 +60,6 @@ input:focus, textarea:focus { outline: 2px solid var(--blue); outline-offset: 1p
 .doc-top .kind { color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
 .doc h1 { margin: 0 0 4px; font-size: 28px; line-height: 1.2; }
 .doc .sub { margin: 0 0 18px; color: var(--dim); }
-.glance { display: grid; grid-template-columns: 150px 1fr; gap: 6px 16px; margin: 0 0 22px; padding: 14px 16px; background: var(--blue-tint); border-radius: 10px; }
-.glance dt { font-weight: 700; color: var(--blue-text); }
-.glance dd { margin: 0; }
 .doc section { margin: 0 0 22px; }
 .doc h2 { break-after: avoid; }
 .doc h2 { margin: 0 0 8px; padding-bottom: 4px; font-size: 17px; color: var(--blue-text); border-bottom: 1px solid var(--border); }
@@ -82,10 +78,6 @@ input:focus, textarea:focus { outline: 2px solid var(--blue); outline-offset: 1p
 .programs td p { margin: 0 0 6px; }
 .programs td ul { margin: 0 0 6px; padding-left: 16px; }
 .programs tr { break-inside: avoid; }
-.intake { margin: 0 0 14px; padding: 12px 16px; border: 1px solid var(--border); border-left: 4px solid var(--orange); border-radius: 8px; break-inside: avoid; }
-.intake h3 { margin-top: 0; font-size: 15px; }
-.intake .deadline { color: var(--dim); font-weight: 400; font-size: 13px; }
-.label { margin: 8px 0 2px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--dim); }
 /* 🔴 CSS CHANGED (2026-11-14): hint text no longer slanted | from: italic grey | to: plain grey (Apple never slants text) */
 .placeholder { color: var(--dim); }
 .foot { margin-top: 24px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--dim); font-size: 12px; }
@@ -98,38 +90,22 @@ input:focus, textarea:focus { outline: 2px solid var(--blue); outline-offset: 1p
 .toc a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .doc section { scroll-margin-top: 56px; }
 
-/* Editing */
-.editor { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px 26px; }
-.editor h2 { margin: 22px 0 6px; font-size: 16px; }
-.editor h2:first-child { margin-top: 0; }
-.editor .hint { margin: 0 0 8px; color: var(--dim); font-size: 12px; }
-.editor label { display: flex; flex-direction: column; gap: 4px; margin: 10px 0 0; font-size: 12px; font-weight: 600; color: var(--dim); }
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.block { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
-.block-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-.block-head b { font-size: 13px; }
-.block-tools { display: flex; gap: 4px; }
-.sticky-actions { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 22px -24px -26px; padding: 12px 24px; background: var(--panel); border-top: 1px solid var(--border); border-radius: 0 0 12px 12px; }
+/* 🔴 CSS CHANGED (2026-11-17): the editing form's styles removed | from: the Fact File editor (Admin edited every field) | to: deleted (nobody edits a page any more; only the dates, in a small window) */
 
 @media (max-width: 700px) {
   .doc { padding: 20px 16px 24px; }
-  .glance { grid-template-columns: 1fr; }
-  .two { grid-template-columns: 1fr; }
 }
 
 /* On paper: only the document, in black on white. */
 @media print {
   @page { size: A4; margin: 16mm 14mm; }
   body { background: #fff; color: #000; font-size: 11pt; }
-  .niec-header, .page-head .toolbar, .no-print, .sticky-actions { display: none !important; }
+  .niec-header, .page-head .toolbar, .no-print { display: none !important; }
   .page { max-width: none; padding: 0; }
   .page-head { display: none; }
   .doc { border: none; padding: 0; border-radius: 0; background: #fff; }
   .doc h1 { font-size: 22pt; }
   .doc h2 { color: #000; border-bottom: 1px solid #999; }
-  .glance { background: #f1f1f1; }
-  .glance dt { color: #000; }
-  .intake { border-color: #999; }
   .programs th { background: #eee; color: #000; }
   .table-wrap { overflow: visible; }
   .steps > li::before { background: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }

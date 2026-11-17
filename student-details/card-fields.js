@@ -59,7 +59,7 @@
   const STUDY_LEVELS = ['Foundation', 'International Year 1', 'Top-up (final year)', 'Undergraduate', 'Pre-Masters', 'Postgraduate', 'Masters by Research or PhD'];
   const OLDER_STUDY_LEVELS = { MBA: 'Postgraduate', 'MRes or PhD': 'Masters by Research or PhD' };
   const QUALIFICATIONS = ['SEE (Grade 10)', '+2 or Grade 12', 'A Levels', 'Diploma or PCL', 'Bachelor (3 years)', 'Bachelor (4 years)', 'Masters'];
-  const ENGLISH_TESTS = ['IELTS Academic', 'IELTS UKVI', 'PTE Academic', 'PTE UKVI', 'Duolingo', 'TOEFL iBT', 'OET', 'University internal test', 'MOI or waiver', 'Not taken yet'];
+  const ENGLISH_TESTS = ['IELTS Academic', 'IELTS UKVI', 'PTE Academic', 'PTE UKVI', 'Duolingo', 'TOEFL iBT', 'OET', 'University Internal Test', 'MOI or Waiver', 'Not taken yet'];
   // Why a student did not go on. Fixed choices, so the Dashboard can count them (free typing would give ten spellings of one reason).
   const LOST_REASONS = [
     'Chose another consultancy', 'Applied by themselves', 'Chose another country', 'Fees or deposit too high',
@@ -150,8 +150,6 @@
 
   // A Nepal mobile number as WhatsApp wants it (country code, digits only): "9801234567" and "+977 980-1234567"
   // both become "9779801234567". A number that already carries another country code is kept. '' when it is not a number.
-  // A search for the course page, for a course with no link written down yet (the first result is normally the university's own course page).
-  const courseSearchUrl = (o) => 'https://www.google.com/search?q=' + encodeURIComponent(`${o.course || ''} ${o.university || ''} course page UK`.replace(/\s+/g, ' ').trim());
   function whatsappNumber(raw) {
     let d = String(raw ?? '').replace(/[^\d+]/g, '');
     if (d.startsWith('+')) d = d.slice(1);
@@ -197,6 +195,6 @@
   return {
     TASK_TAGS, TASK_TAG_IDS, guessTaskTag, taskTag, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
-    OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, SHEET_SECTIONS, columnLabel, whatsappNumber, courseSearchUrl,
+    OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, SHEET_SECTIONS, columnLabel, whatsappNumber,
   };
 });

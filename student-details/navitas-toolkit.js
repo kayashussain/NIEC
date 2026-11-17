@@ -10,15 +10,16 @@
 // Its address is the setting NAVITAS_SHEET_ID (the id in the sheet's link), else the toolkit the owner gave. NAVITAS_TOOLKIT=off
 // switches the reading off. The latest reading is kept in navitas-toolkit.json in the data folder (never in git).
 //
-// On each college's page the figures are always the sheet's (fees table, entry requirements, language test, courses, the January
-// intake with its deadlines and courses, city and website). The text the team may change (overview, location, interview, notes,
-// application process) is written when it is empty or still exactly what the toolkit wrote last time; once someone edits it,
-// their version is kept.
+// Each college's page is the sheet's, every field: the table per level (entry, study gap, English, fees, scholarship), the courses,
+// the January intake with its dates and courses, why students choose it, how to apply, the interview questions (the team only), the
+// payment, refund and accommodation links. The sheet's tips for agents and its general notes are not put on the page. Nobody edits
+// a page; the team may only correct an intake's dates (kept until the sheet changes them).
 
 const fs = require('fs');
 const path = require('path');
 const { writeFileAtomic, twiceAWeekDue } = require('../shared/server-utils');
 const { rulesFrom } = require('./eligibility');
+const { mergeIntakeDates } = require('./facts');
 
 const DEFAULT_SHEET_ID = '1P6XGHSG5svD-WG0CowbwoXlcF_-PrxFw';
 const BY = 'Navitas toolkit (automatic)';
@@ -238,11 +239,7 @@ function readToolkit(tabs) {
   const accNotes = looseText(accGrid, { skip: (t) => /^https?:\/\//.test(oneLine(t)) || /^(college name|accomm?odation links)$/i.test(oneLine(t)) || acc.some((p) => p.sheetName === t) });
   const interview = readInterview(tab(/interview/i));
   const processSteps = readProcess(tab(/application process/i));
-  const tipsGrid = tab(/tips/i);
-  const tips = looseText(tipsGrid).filter((t) => !/^tips\s*\d*:?$/i.test(oneLine(t)) && !/^the last one is important/i.test(oneLine(t)));
   const selling = readSelling(tab(/selling/i));
-  const reqGrid = tab(/overall requirement/i);
-  const notices = looseText(reqGrid).filter((t) => /^\*/.test(oneLine(t))).map((t) => oneLine(t).replace(/^\*+/, ''));
 
   const colleges = reqs.filter((c) => !isClosed(c.sheetName) && !NOT_UK.test(c.city) && (/-\s*uk\b/i.test(c.sheetName.split('\n')[0]) || !NOT_UK.test(c.sheetName)))
     .map((c) => {
@@ -262,7 +259,7 @@ function readToolkit(tabs) {
         interviewNote: interview.only.filter((t) => sameCollege(name, t)).join('\n'),
       };
     });
-  return { colleges, interview: interview.text, process: processSteps, payNotes, accNotes, tips, notices };
+  return { colleges, interview: interview.text, process: processSteps, payNotes, accNotes };
 }
 
 // ---- one college as a Fact File page ----
@@ -315,39 +312,35 @@ function pageFrom(c, kit) {
     return {
       name, duration,
       academic: [tidyLines(L.academic).filter(Boolean).join('\n'), oneLine(L.gap) ? `Study gap: ${oneLine(L.gap)}` : ''].filter(Boolean).join('\n'),
-      english: [scoreLine('IELTS', L.ielts), scoreLine('PTE', L.pte), scoreLine('Other tests', L.test), scoreLine('English waiver', L.waiver)].filter(Boolean).join('\n'),
+      english: [scoreLine('IELTS', L.ielts), scoreLine('PTE', L.pte), scoreLine('Other tests', L.test), /^(no waiver|n\/?a)$/i.test(oneLine(L.waiver)) ? 'English Waiver: none' : scoreLine('English Waiver', L.waiver)].filter(Boolean).join('\n'),
       tuition: [tidyLines(c.feeRange).filter((l) => l && !/refer to|link here/i.test(l)).join('\n'), c.feeLink ? `Fees page: ${c.feeLink}` : ''].filter(Boolean).join('\n'),
       scholarship: scholarshipFor(c.scholarship, L.level),
-      deposit: kit.process[2] ? kit.process[2].title : '',
+      deposit: '', // not given per college: the deposit is a step of How to apply
     };
   });
-  const distinct = (list) => { const seen = new Set(); return list.filter((x) => { const k = oneLine(x).toLowerCase(); if (!k || /^n\/?a$/.test(k) || seen.has(k)) return false; seen.add(k); return true; }); };
-  const tests = distinct(c.levels.map((L) => L.test));
-  const waivers = distinct(c.levels.map((L) => L.waiver));
   const byLevel = new Map();
   c.courses.forEach((s) => { if (!byLevel.has(s.level)) byLevel.set(s.level, new Set()); s.sept.forEach((x) => byLevel.get(s.level).add(x)); });
   const coursesText = [...byLevel].filter(([, set]) => set.size).map(([lvl, set]) => `## ${lvl}\n${[...set].map((x) => `- ${x}`).join('\n')}`).join('\n');
   const jan = c.courses.map((s) => s.jan).filter(Boolean).join('\n');
   const deadlines = deadlinesOf(c.scholarship);
   const janOpen = jan || /open for jan/i.test(c.scholarship);
-  const janCourses = tidyLines(jan).filter(Boolean).map((l) => (/:$/.test(l) ? `## ${l.replace(/:$/, '')}` : `- ${l}`)).join('\n');
+  // "IY1/3 years courses:" and "PRE-MASTERS Courses" are headings over the courses under them.
+  const janCourses = tidyLines(jan).filter(Boolean).map((l) => (/:$/.test(l) || /\bcourses\b/i.test(l) ? `## ${l.replace(/:$/, '')}` : `- ${l}`)).join('\n');
   const intakes = c.janName && janOpen ? [{ name: c.janName, deadline: firstDate(deadlines), deadlines: deadlines.join('\n'), courses: janCourses }] : [];
   const s = c.selling || {};
   const overview = [
-    s.usp ? `## Why students choose it\n${bullets(s.usp)}` : '',
+    s.usp ? bullets(s.usp) : '',
     s.ranking ? `Ranking: ${s.ranking}` : '',
     s.subjects ? `Popular subjects with Nepalese students: ${s.subjects}` : '',
     c.intake ? `Intakes: ${c.intake}` : '',
   ].filter(Boolean).join('\n');
   const location = [c.city, ...tidyLines(c.travel).filter(Boolean), s.known ? `Known for: ${s.known}` : ''].filter(Boolean).join('\n');
   const interview = [c.interviewNote ? `## For this college\n${bullets(c.interviewNote)}` : '', kit.interview].filter(Boolean).join('\n');
+  // Only what is not elsewhere on the page (the owner, 17 Nov 2026): the scholarships are in the table, the dates at the top; the team's
+  // tips, the sheet's general notes and where it comes from are not for the page.
   const notes = [
-    oneLine(c.scholarship) ? `## Scholarships and deadlines\n${bullets(c.scholarship)}` : '',
     c.flywire || c.refund ? `## Paying the fees\n${[c.flywire ? `- Flywire payment: ${c.flywire}` : '', c.refund ? `- Refund request: ${c.refund}` : '', ...kit.payNotes.map((t) => bullets(t))].filter(Boolean).join('\n')}` : '',
     c.accommodation ? `## Accommodation\n- ${c.accommodation}\n${kit.accNotes.map((t) => bullets(t)).join('\n')}`.trim() : '',
-    kit.tips.length ? `## Tips for the team\n${kit.tips.map((t) => bullets(t)).join('\n')}` : '',
-    kit.notices.length ? `## Please note\n${kit.notices.map((t) => `- ${t}`).join('\n')}` : '',
-    '## Where this comes from\n- The Navitas product toolkit (Google Sheet), read by itself twice a week.',
   ].filter(Boolean).join('\n');
   const rules = rulesFrom({
     requirements: c.levels.map((L) => ({ level: L.level, criteria: tidyLines(L.academic).filter(Boolean), gap: oneLine(L.gap) })),
@@ -361,12 +354,8 @@ function pageFrom(c, kit) {
   return {
     name: c.name, city: c.city, website: origin(c.feeLink || c.accommodation),
     programs,
-    entryRequirements: 'The academic entry and the study gap allowed for each course level are in the table above.',
-    languageTests: [
-      'The IELTS and PTE scores for each course level are in the table above.',
-      tests.length ? `## Other English tests\n${tests.map((t) => bullets(t)).join('\n')}` : '',
-      waivers.length ? `## English waiver\n${waivers.map((t) => bullets(t)).join('\n')}` : '',
-    ].filter(Boolean).join('\n'),
+    entryRequirements: '', // all in the table
+    languageTests: '',
     courses: coursesText,
     intakes,
     overview, location, interview, notes,
@@ -377,15 +366,14 @@ function pageFrom(c, kit) {
 
 // ---- into the Fact File ----
 
-const TEAM_FIELDS = ['overview', 'location', 'interview', 'notes', 'process'];
-const DATA_FIELDS = ['city', 'website', 'programs', 'entryRequirements', 'languageTests', 'courses', 'intakes', 'rules'];
+// Every field of a college's page comes from the sheet (nobody edits a page by hand, the owner, 17 Nov 2026), except the dates of the
+// intakes, which the team may correct (mergeIntakeDates in facts.js).
+const FIELDS = ['city', 'website', 'overview', 'location', 'programs', 'entryRequirements', 'languageTests', 'courses', 'interview', 'notes', 'process', 'rules'];
 const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
-const blankSteps = (list, starter) => !(list || []).length || ((list || []).every((s, i) => !s.detail && s.title === starter[i]) && list.length <= starter.length);
 
-// Writes a reading into the Fact File. `written` is what the toolkit wrote on each page last time (kept with the reading), so a
-// text the team has since changed is kept. Returns { updated, added, unchanged, written }.
-function syncToolkit(facts, reading, written = {}, { starterSteps = [], clean = (x) => x } = {}) {
-  const out = { updated: 0, added: 0, unchanged: 0, written: {} };
+// Writes a reading into the Fact File. Returns { updated, added, unchanged }.
+function syncToolkit(facts, reading, { clean = (x) => x } = {}) {
+  const out = { updated: 0, added: 0, unchanged: 0 };
   if (!reading || !Array.isArray(reading.pages)) return out;
   reading.pages.forEach((fresh) => {
     const key = squash(fresh.name);
@@ -398,28 +386,19 @@ function syncToolkit(facts, reading, written = {}, { starterSteps = [], clean = 
       page = made.university;
       out.added += 1;
     }
-    const before = written[key] || written[squash(page.name)] || {};
     const next = { ...page, name: fresh.name };
-    DATA_FIELDS.filter((k) => k !== 'intakes').forEach((k) => { if (k === 'website' || k === 'city' ? fresh[k] : true) next[k] = fresh[k]; });
-    // The sheet's intake (its dates and courses, the team's requirements and notes kept), then the page's other intakes.
+    FIELDS.forEach((k) => { if (!((k === 'website' || k === 'city') && !fresh[k])) next[k] = fresh[k]; });
+    // The sheet's intake (its dates and courses), then the page's other intakes.
     const mine = page.intakes || [];
     next.intakes = [
-      ...fresh.intakes.map((i) => { const was = mine.find((x) => x.name.toLowerCase() === i.name.toLowerCase()) || {}; return { ...was, ...i, requirements: was.requirements || '', notes: was.notes || '' }; }),
+      ...fresh.intakes.map((i) => mergeIntakeDates(mine.find((x) => x.name.toLowerCase() === i.name.toLowerCase()) || {}, i)),
       ...mine.filter((x) => !fresh.intakes.some((i) => i.name.toLowerCase() === x.name.toLowerCase())),
     ];
-    TEAM_FIELDS.forEach((k) => {
-      const now = page[k];
-      const empty = k === 'process' ? blankSteps(now, starterSteps) : !String(now || '').trim();
-      if (empty || (before[k] !== undefined && JSON.stringify(now) === JSON.stringify(before[k]))) next[k] = fresh[k];
-    });
-    // The date of the reading is kept on the page only when something changed (the page's date then says when it last changed).
     const cleaned = clean(next, page);
+    // The date of the reading is kept on the page only when something changed (the page's date then says when it last changed).
     next.source = { ...(page.source || {}), navitas: { at: reading.fetchedAt || new Date().toISOString() } };
-    // What the toolkit offered (not what the page kept), so a text the team changed stays theirs at every later reading.
-    const offered = clean({ ...page, ...Object.fromEntries(TEAM_FIELDS.map((k) => [k, fresh[k]])) }, page);
-    out.written[key] = Object.fromEntries(TEAM_FIELDS.map((k) => [k, offered[k] !== undefined ? offered[k] : fresh[k]]));
-    const pick = (u) => JSON.stringify(['name', ...DATA_FIELDS, ...TEAM_FIELDS].map((k) => (k === 'intakes' ? (u.intakes || []).map(({ id, ...i }) => i) : u[k] ?? null)));
-    if (pick(cleaned) === pick(page)) { out.unchanged += 1; return; }
+    const pick = (u) => JSON.stringify(['name', 'intakes', ...FIELDS].map((k) => (k === 'intakes' ? (u.intakes || []).map(({ id, ...i }) => i) : u[k] ?? null)));
+    if (page.source && page.source.navitas && pick(cleaned) === pick(page)) { out.unchanged += 1; return; }
     const saved = facts.update(page.id, next, BY);
     if (!saved.error) out.updated += 1;
   });
@@ -428,7 +407,7 @@ function syncToolkit(facts, reading, written = {}, { starterSteps = [], clean = 
 
 // ---- the twice-a-week reading ----
 
-function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImpl = (...a) => fetch(...a), now = () => new Date(), enabled = true, starterSteps = [], clean } = {}) {
+function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImpl = (...a) => fetch(...a), now = () => new Date(), enabled = true, clean } = {}) {
   const file = path.join(dir, 'navitas-toolkit.json');
   let cache = null; // the file, read once (only this server writes it)
   const read = () => { if (!cache) { try { cache = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { cache = {}; } } return cache; };
@@ -455,8 +434,8 @@ function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImp
         const pages = kit.colleges.map((c) => pageFrom(c, kit));
         const fetchedAt = now().toISOString();
         if (!facts) throw new Error('No Fact File to write into.');
-        const synced = syncToolkit(facts, { pages, fetchedAt }, d.written || {}, { starterSteps, clean });
-        write({ fetchedAt, colleges: pages.map((p) => p.name), written: { ...(d.written || {}), ...synced.written }, runs: [{ at: fetchedAt, started, by, ok: true, colleges: pages.length, updated: synced.updated, added: synced.added }, ...(d.runs || [])].slice(0, 20) });
+        const synced = syncToolkit(facts, { pages, fetchedAt }, { clean });
+        write({ fetchedAt, colleges: pages.map((p) => p.name), runs: [{ at: fetchedAt, started, by, ok: true, colleges: pages.length, updated: synced.updated, added: synced.added }, ...(d.runs || [])].slice(0, 20) });
         console.log(`[navitas toolkit] ${pages.length} UK colleges read; the Fact File: ${synced.updated} updated, ${synced.added} added, ${synced.unchanged} unchanged`);
         return { colleges: pages.length, updated: synced.updated, added: synced.added, unchanged: synced.unchanged };
       } catch (e) {

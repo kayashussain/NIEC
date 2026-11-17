@@ -45,7 +45,7 @@ test('a student is checked with reasons: eligible, to check, or not eligible wit
   assert.strictEqual(low.status, 'no');
   assert.ok(low.reasons.some((r) => r.text === 'Needs IELTS Academic 6.0 overall (has 5.5)'));
   assert.ok(low.reasons.some((r) => r.text === 'Gap of 12 years is over the 10 allowed'));
-  assert.strictEqual(check({ level: 'Postgraduate', grade: '3.0', gap: '1', test: 'MOI or waiver' }).status, 'check', 'a waiver is for a person to decide');
+  assert.strictEqual(check({ level: 'Postgraduate', grade: '3.0', gap: '1', test: 'MOI or Waiver' }).status, 'check', 'a waiver is for a person to decide');
   assert.strictEqual(check({ level: 'Postgraduate', grade: '2.6', gap: '0', test: 'PTE Academic', score: '60' }).reasons[0].text, 'GPA 2.6 (about 55%) meets 45%', 'a GPA against a percentage, by the NEB scale');
   assert.strictEqual(check({ level: 'Undergraduate', grade: '3.0', gap: '2', test: 'IELTS UKVI', score: '6' }).status, 'check', 'a gap where none is accepted is for a person to check');
   assert.strictEqual(check({ level: 'Pre-Masters', grade: '3.0' }), null, 'no rules for that level');
@@ -116,19 +116,20 @@ test('on the server: a reading is written into the Fact File at the start, and t
   const stu = person();
   await stu('POST', '/api/login', { username: 'mina', password: made.temporaryPassword }); await stu('POST', '/api/login/new-password', { password: 'Student-Strong-2026' });
   assert.strictEqual((await stu('POST', '/api/eligibility', { level: 'Postgraduate', grade: '40%' })).json.results.find((x) => x.name === 'University of Testtown').status, 'no');
-  // Submit an application: the student for themselves, the team for a student it chooses; the Application Team gets the task.
-  const sent = await stu('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', intake: 'January 2027', note: 'I prefer London.' });
+  // No "Submit application" any more (the owner, 17 Nov 2026): the team shortlists courses on the card and sends them, numbered, to
+  // the Application Team in one go.
+  assert.notStrictEqual((await admin('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', studentId: sid })).status, 200);
+  const o1 = (await admin('POST', `/api/cards/${sid}/options`, { universityId: page.id, university: page.name, course: 'MSc Data Science', intake: 'January 2027' })).json.option;
+  const o2 = (await admin('POST', `/api/cards/${sid}/options`, { universityId: page.id, university: page.name, course: 'MSc Testing', intake: 'January 2027' })).json.option;
+  assert.strictEqual((await admin('POST', `/api/cards/${sid}/options/send`, { ids: [] })).status, 400, 'something to send');
+  const sent = await admin('POST', `/api/cards/${sid}/options/send`, { ids: [o2.id, o1.id], note: 'Documents complete.' });
   assert.strictEqual(sent.status, 200);
-  assert.strictEqual((await stu('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', intake: 'January 2027' })).status, 409, 'once');
-  let card = (await admin('GET', `/api/cards/${sid}`)).json.card;
-  const task = card.tasks.find((x) => x.text === 'Submit the application: MSc Data Science at University of Testtown (January 2027)');
+  const card = (await admin('GET', `/api/cards/${sid}`)).json.card;
+  const task = card.tasks.find((x) => /^Apply for Mina Demo: 2 courses in this order/.test(x.text));
   assert.ok(task && task.team === 'application' && !task.done);
-  assert.strictEqual(task.comments[0].text, 'I prefer London.', 'the note is on the task');
-  assert.ok(card.options.some((o) => o.course === 'MSc Data Science' && o.byStudent));
-  assert.strictEqual((await admin('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science' })).status, 404, 'the team chooses the student');
-  assert.strictEqual((await admin('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', studentId: sid, note: 'Documents complete.' })).status, 200);
-  card = (await admin('GET', `/api/cards/${sid}`)).json.card;
-  assert.strictEqual(card.tasks.filter((x) => /^Submit the application: MSc Data Science/.test(x.text)).length, 2);
+  assert.strictEqual(task.comments[0].text, `1. MSc Testing at ${page.name} (January 2027)\n2. MSc Data Science at ${page.name} (January 2027)\n\nDocuments complete.`);
+  assert.deepStrictEqual(['MSc Testing', 'MSc Data Science'].map((c) => card.options.find((o) => o.course === c).rank), ['1', '2']);
+  assert.ok(card.options.every((o) => /^\d{4}-\d{2}-\d{2}$/.test(o.sent)));
 });
 
 test('English: the overall score and the lowest band; a hand-written page is read too', () => {

@@ -425,18 +425,62 @@
   }
 
   // ---- University options ----
+  // The shortlist (the owner, 17 Nov 2026): the courses shortlisted from the Fact File or added here, numbered 1, 2, 3 in the order to
+  // apply, and sent to the Application Team in one go (one task with the numbered list). Up and Down change the order before sending.
+  let sendOrder = null; // option ids not yet sent, in the order chosen on this page
+  let sendSkip = new Set(); // option ids left out of the next send
+  function sendBox() {
+    const waiting = data.card.options.filter((o) => !o.sent && !o.applied);
+    if (!waiting.length || !can()) return null;
+    const ids = waiting.map((o) => o.id);
+    sendOrder = (sendOrder || []).filter((x) => ids.includes(x));
+    ids.forEach((x) => { if (!sendOrder.includes(x)) sendOrder.push(x); });
+    const box = el('div', 'p-send');
+    box.append(el('h3', '', 'Send to the Application Team'));
+    box.append(el('p', 'p-muted p-small', 'Numbered in the order to apply. Untick a course to keep it back.'));
+    const ol = el('ol', 'p-send-list');
+    const picked = () => sendOrder.filter((x) => !sendSkip.has(x));
+    const go = h('button', { class: 'btn btn-primary', type: 'button' }, '');
+    const label = () => { const n = picked().length; go.textContent = n ? `Send ${n} course${n === 1 ? '' : 's'} to the Application Team` : 'Choose a course to send'; go.disabled = !n; };
+    sendOrder.forEach((oid, i) => {
+      const o = data.card.options.find((x) => x.id === oid);
+      const li = el('li');
+      const tick = el('input'); tick.type = 'checkbox'; tick.checked = !sendSkip.has(oid);
+      tick.setAttribute('aria-label', `Send ${o.course}`);
+      tick.addEventListener('change', () => { if (tick.checked) sendSkip.delete(oid); else sendSkip.add(oid); label(); });
+      const t = el('span', 'p-send-text');
+      t.append(el('b', '', o.course || o.university), el('span', 'p-muted p-small', [o.course ? o.university : '', o.intake].filter(Boolean).join(' · ')));
+      const move = (d) => () => { const j = i + d; if (j < 0 || j >= sendOrder.length) return; [sendOrder[i], sendOrder[j]] = [sendOrder[j], sendOrder[i]]; render(); };
+      const tools = el('span', 'p-send-tools');
+      tools.append(h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'), h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === sendOrder.length - 1, onclick: move(1) }, '↓'));
+      li.append(tick, t, tools);
+      ol.append(li);
+    });
+    const note = field('A note for the Application Team (optional)', { kind: 'area', max: 1500, placeholder: 'e.g. Documents are complete. Apply for the January intake.' });
+    note.input.rows = 2;
+    go.addEventListener('click', async () => {
+      go.disabled = true;
+      try { await save('options/send', { ids: picked(), note: note.input.value.trim() }, 'Sent to the Application Team'); sendOrder = null; sendSkip = new Set(); render(); } catch (e) { label(); }
+    });
+    label();
+    box.append(ol, note.wrap, go);
+    return box;
+  }
   function chosenOptions() {
     const box = el('section', 'p-card');
     const head = el('div', 'p-card-head');
-    head.append(el('h2', '', `Options for this student (${data.card.options.length})`));
-    if (data.card.options.length) head.append(h('button', { class: 'btn btn-primary btn-sm', type: 'button', onclick: () => openCompose('options') }, 'Email these options'));
+    head.append(el('h2', '', `Shortlist (${data.card.options.length})`));
+    if (data.card.options.length) head.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => openCompose('options') }, 'Email these options'));
     box.append(head);
-    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No options yet. Search below and press Add.')); return box; }
+    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No courses yet. Press Shortlist on a course in the Fact File, or search below and press Add.')); return box; }
+    const send = sendBox();
+    if (send) box.append(send);
     const list = el('div', 'p-chosen');
     data.card.options.forEach((o) => {
       const item = el('div', 'p-chosen-item');
       const header = el('header');
-      header.append(el('h3', '', `${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
+      header.append(el('h3', '', `${o.rank ? o.rank + '. ' : ''}${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
+      if (o.sent && !o.applied) header.firstChild.append(' ', el('span', 'p-applied is-sent', `Sent to the Application Team ${day(o.sent)}`));
       if (o.applied) header.firstChild.append(' ', el('span', 'p-applied', `Applied ${day(o.applied)}`));
       if (o.offer) header.firstChild.append(' ', el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
       if (o.refused) header.firstChild.append(' ', el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
@@ -451,7 +495,7 @@
       if (!o.link && can()) {
         // No link yet: the server looks the course page up and the link is filled in and kept.
         window.SendToStudent.lookupLink(o).then(async (found) => {
-          if (!found) { const f = el('a', 'p-link p-small', 'Search for the course page'); f.href = F.courseSearchUrl(o); f.target = '_blank'; f.rel = 'noopener'; link.wrap.append(f); return; }
+          if (!found) return; // the twice-a-week check marks it on the Fact File; nobody searches by hand
           link.input.value = found;
           try { await save('options/' + o.id, { link: found }); o.link = found; } catch (e) { /* shown */ }
         });
@@ -487,7 +531,6 @@
     const w = el('div', 'p-why');
     const addLink = (text, href) => { const a = el('a', 'p-link p-small', text); a.href = href; a.target = '_blank'; a.rel = 'noopener'; if (w.childNodes.length) w.append(' · '); w.append(a); };
     if (o.link) addLink(o.linkIsCourse ? 'Course page' : 'University website', o.link);
-    if (!o.linkIsCourse) addLink('Search for the course page', F.courseSearchUrl(o));
     c.append(w);
     return c;
   }
@@ -509,8 +552,6 @@
         intro: 'Filled in from the student card. Change anything and press Find; save it on the card when it is right.',
         prefill: { level: F.OLDER_STUDY_LEVELS[p.studyLevel] || p.studyLevel || '', grade: p.grade || '', gap: p.gapYears || '', test: p.englishTest || '', score: p.englishScore || '', band: p.englishBand || '', subject: p.subject || '' },
         addLabel: 'Add to options',
-        applyFor: { id, name: data.student.name },
-        canApply: !lock,
         onAdd: lock ? null : async (r, co) => {
           await save('options', { universityId: r.id, university: r.name, course: co.name, level: profile().studyLevel || '', intake: co.intake, fee: (r.fee || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0], scholarship: (r.scholarship || '').split('\n')[0] }, `Added: ${co.name}`);
           const next = chosenOptions(); chosen.replaceWith(next); chosen = next;

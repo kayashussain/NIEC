@@ -1460,6 +1460,22 @@ function createPortalApi({
       if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }
       sendJSON(res, 200, { ok: true, source: done.source, card });
       return true;
+    } else if (part === 'options' && sub === 'send') {
+      // The shortlist to the Application Team in one go (the owner, 17 Nov 2026): the courses chosen, in the order given (1, 2, 3 ...),
+      // as one task, each option marked with the day it was sent and its place in the order.
+      const ids = (Array.isArray(body.ids) ? body.ids : []).map(text).filter(Boolean).slice(0, 30);
+      const chosen = ids.map((oid) => (card.options || []).find((o) => o.id === oid)).filter(Boolean);
+      if (!chosen.length) { sendJSON(res, 400, { error: 'Choose at least one course first.' }); return true; }
+      const list = chosen.map((o, n) => `${n + 1}. ${[o.course, o.university].filter(Boolean).join(' at ')}${o.intake ? ` (${o.intake})` : ''}`);
+      const made = cards.addTask(rowId, { team: 'application', text: `Apply for ${who}: ${chosen.length} course${chosen.length === 1 ? '' : 's'} in this order (University options)`, tag: 'application', priority: 'high' }, by(req));
+      if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
+      const words = text(body.note).slice(0, 1500);
+      cards.commentTask(rowId, made.task.id, [list.join('\n'), words].filter(Boolean).join('\n\n'), by(req));
+      const today = localDate();
+      chosen.forEach((o, n) => cards.updateOption(rowId, o.id, { sent: today, rank: String(n + 1) }, by(req)));
+      activity.record(req, req.user, 'Task', { app: 'Student card', changes: [`Sent ${chosen.length} course${chosen.length === 1 ? '' : 's'} of ${who} to the Application Team`] });
+      sendJSON(res, 200, { ok: true, card: cards.get(rowId) });
+      return true;
     } else if (part === 'options' && sub && del) {
       out = cards.removeOption(rowId, sub, by(req));
     } else if (part === 'options' && sub) {
@@ -2807,36 +2823,6 @@ function createPortalApi({
       const w = courseWatch();
       if (w && !w.isRunning()) w.run().catch(() => {});
       sendJSON(res, 200, { started: Boolean(w && !w.isRunning()) });
-      return true;
-    }
-    // "Submit my application" on a course of the Fact File (the owner, 17 Nov 2026): a student's own login for themselves, anyone of
-    // the team for a student they choose. The course goes into the student's University options, a note says who asked and why, and
-    // the Application Team gets the task "Submit the application", with the note written on it as its first update.
-    if (urlPath === '/api/apply' && req.method === 'POST') {
-      const body = await bodyOf(req, res, 8 * 1024);
-      if (!body) return true;
-      const student = Teams.isStudent(req.user);
-      if (!student && Teams.isReadOnly(req.user) && !Teams.isManager(req.user)) { sendJSON(res, 403, { error: 'Your account can only view students.' }); return true; }
-      const found = rowIndex().get(text(student ? req.user.studentRow : body.studentId));
-      if (!found || (!student && !canSee(req.user, found))) { sendJSON(res, student ? 400 : 404, { error: student ? 'Your login is not linked to your file yet. Please ask the office.' : 'Choose the student first.' }); return true; }
-      const uni = facts.all().find((u) => u.id === text(body.universityId));
-      const course = text(body.course).slice(0, 240);
-      const intake = text(body.intake).slice(0, 80);
-      const words = text(body.note).slice(0, 1500);
-      if (!uni || !course) { sendJSON(res, 400, { error: 'Choose a course from the Fact File.' }); return true; }
-      const rowId = found.row._id;
-      const who = nameOf(found.row) || 'The student';
-      const taskText = `Submit the application: ${course} at ${uni.name}${intake ? ` (${intake})` : ''}`.slice(0, 500);
-      if ((cards.get(rowId).tasks || []).some((x) => !x.done && x.text === taskText)) { sendJSON(res, 409, { error: 'This application has already been asked for: the Application Team has it.' }); return true; }
-      const asker = student ? `${req.user.name} (the student)` : by(req);
-      const opt = cards.addOption(rowId, { universityId: uni.id, university: uni.name, course, intake, byStudent: student, note: student ? 'The student asked to apply (Fact File)' : 'Asked to apply from the Fact File' }, asker);
-      if (opt.error && !opt.duplicate) { sendJSON(res, 400, { error: opt.error }); return true; }
-      const made = cards.addTask(rowId, { team: 'application', text: taskText, tag: 'application', priority: 'high' }, asker);
-      if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
-      if (words) cards.commentTask(rowId, made.task.id, words, asker);
-      cards.addNote(rowId, { kind: 'note', text: `${student ? 'The student' : req.user.name} asked to apply to ${course} at ${uni.name}${intake ? ` (${intake})` : ''}.${words ? ` Note: ${words}` : ''}` }, asker);
-      activity.record(req, req.user, 'Task', { app: 'Fact File', changes: [`${student ? 'The student' : req.user.name} asked the Application Team to apply: ${who}, ${course} at ${uni.name}`] });
-      sendJSON(res, 200, { ok: true, student: who });
       return true;
     }
     // A student's own shortlist (the owner, 17 Nov 2026): a student with their own login reads the Fact File and presses "I am

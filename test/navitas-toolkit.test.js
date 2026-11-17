@@ -8,7 +8,7 @@ const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createNavitasToolkit, gridFromHtml, tabsFromHtml, sameCollege } = require('../student-details/navitas-toolkit');
-const { createFacts, clean, STARTER_STEPS } = require('../student-details/facts');
+const { createFacts, clean } = require('../student-details/facts');
 
 const td = (t, a = '') => `<td class="s1"${a}>${t}</td>`;
 const tr = (...cells) => `<tr><th class="row-headers-background">1</th>${cells.join('')}</tr>`;
@@ -94,7 +94,7 @@ test('each UK college gets its own Fact File page, the closed and non-UK ones no
   const dir = tmp();
   const facts = createFacts(dir);
   const google = fakeGoogle(sheet());
-  const kit = createNavitasToolkit({ dir, facts, fetchImpl: google.fetchImpl, starterSteps: STARTER_STEPS, clean, now: () => new Date('2026-11-19T00:00:00Z') });
+  const kit = createNavitasToolkit({ dir, facts, fetchImpl: google.fetchImpl, clean, now: () => new Date('2026-11-19T00:00:00Z') });
   const r = await kit.run('test');
   assert.strictEqual(r.error, undefined);
   assert.strictEqual(r.colleges, 2);
@@ -125,7 +125,10 @@ test('each UK college gets its own Fact File page, the closed and non-UK ones no
   assert.match(t.notes, /Flywire payment: https:\/\/pay\.example\.org\/tuic/);
   assert.match(t.notes, /Refund request: https:\/\/tuic\.example\.org\/refund\//);
   assert.match(t.notes, /## Accommodation\n- https:\/\/tuic\.example\.org\/accommodation\//);
-  assert.match(t.notes, /Use the portal for every message\./);
+  // The agents' tips, the sheet's general notes and the scholarships (in the table) are not in the notes (the owner, 17 Nov 2026).
+  assert.doesNotMatch(t.notes, /Use the portal for every message|Tips for the team|Please note|Where this comes from|Scholarship/);
+  assert.strictEqual(t.entryRequirements, '');
+  assert.strictEqual(t.languageTests, '');
   assert.match(t.overview, /Free internal English test/);
   assert.match(t.location, /1 hour by train to London\nKnown for: A made-up river/);
   assert.deepStrictEqual(t.process.map((s) => s.title), ['Apply online and upload documents', 'Pay the deposit after the Unconditional Offer Letter.']);
@@ -148,7 +151,7 @@ test('a college the sheet renames keeps its one page', async () => {
   const dir = tmp();
   const facts = createFacts(dir);
   let tabs = sheet();
-  const kit = createNavitasToolkit({ dir, facts, fetchImpl: (...a) => fakeGoogle(tabs).fetchImpl(...a), starterSteps: STARTER_STEPS, clean });
+  const kit = createNavitasToolkit({ dir, facts, fetchImpl: (...a) => fakeGoogle(tabs).fetchImpl(...a), clean });
   await kit.run('test');
   const before = facts.all().find((u) => u.name.startsWith('Testford'));
   tabs = { ...sheet(), 11: sheet()[11].replace('Testford University International College (TUIC) - UK', 'Testford University International College of London (TUIC) - UK') };
@@ -159,25 +162,27 @@ test('a college the sheet renames keeps its one page', async () => {
   assert.strictEqual(pages[0].name, 'Testford University International College of London (TUIC)');
 });
 
-test('the figures follow the sheet, and a text the team changed is kept', async () => {
+test('the page follows the sheet, and the corrected dates of the team are kept until the sheet changes them', async () => {
   const dir = tmp();
   const facts = createFacts(dir);
   let tabs = sheet();
   const google = { fetchImpl: (...a) => fakeGoogle(tabs).fetchImpl(...a) };
-  const kit = createNavitasToolkit({ dir, facts, fetchImpl: google.fetchImpl, starterSteps: STARTER_STEPS, clean });
+  const kit = createNavitasToolkit({ dir, facts, fetchImpl: google.fetchImpl, clean });
   await kit.run('test');
   const t = facts.all().find((u) => u.name.startsWith('Testford'));
-  facts.update(t.id, { ...t, interview: 'Our own interview notes.' }, 'Admin');
+  facts.setDeadlines(t.id, [{ id: t.intakes[0].id, deadline: '25 November 2026', deadlines: t.intakes[0].deadlines }], 'Asha');
   const again = await kit.run('test');
-  assert.strictEqual(again.updated, 0);
   assert.strictEqual(again.unchanged, 2);
+  assert.strictEqual(facts.get(t.id).intakes[0].deadline, '25 November 2026', 'the team\'s date is kept while the sheet says the same');
   tabs = sheet('Starts from 16500* GBP');
   const third = await kit.run('test');
   assert.strictEqual(third.updated, 1);
   const after = facts.all().find((u) => u.name.startsWith('Testford'));
   assert.match(after.programs[0].tuition, /16500/);
-  assert.strictEqual(after.interview, 'Our own interview notes.');
-  assert.match(after.notes, /Flywire payment/); // not changed by the team: still the toolkit's
+  assert.strictEqual(after.intakes[0].deadline, '25 November 2026');
+  tabs = { ...sheet('Starts from 16500* GBP'), 33: sheet()[33].replace('20th Nov 2026', '22nd Nov 2026') };
+  await kit.run('test');
+  assert.strictEqual(facts.get(t.id).intakes[0].deadline, '22nd Nov 2026', 'the sheet changed its date: the sheet\'s new date is shown');
 });
 
 test('a sheet that cannot be read is reported, and the schedule is twice a week', async () => {
@@ -189,7 +194,7 @@ test('a sheet that cannot be read is reported, and the schedule is twice a week'
   const r = await kit.run('test');
   assert.match(r.error, /Anyone with the link can view/);
   assert.strictEqual(kit.due(), false); // a failed try waits 3 hours
-  const ok = createNavitasToolkit({ dir: tmp(), facts, fetchImpl: fakeGoogle(sheet()).fetchImpl, now: () => clock, starterSteps: STARTER_STEPS, clean });
+  const ok = createNavitasToolkit({ dir: tmp(), facts, fetchImpl: fakeGoogle(sheet()).fetchImpl, now: () => clock, clean });
   await ok.run('test');
   clock = new Date('2026-11-17T00:00:00Z'); // Tuesday
   assert.strictEqual(ok.due(), false);
