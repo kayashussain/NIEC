@@ -127,19 +127,24 @@
     const card = el('section', 'p-card ss-card' + (allReady ? ' is-ready' : ''));
     card.id = 'setup';
     const head = el('div', 'ss-head');
-    const words = el('div');
+    const words = el('div', 'ss-words');
     words.append(el('h2', '', 'Your setup for sending'), el('p', 'p-muted p-small', allReady ? 'Everything is ready.' : 'Set these up once. They are yours: nobody else sends from them.'));
-    head.append(words);
+    // How many of the three are ready, as a pill at the right (the owner, 17 Nov 2026: the look of Apple's apps).
+    const nReady = [ready.email, d.admin || d.signature, ready.whatsapp].filter(Boolean).length;
+    head.append(el('span', 'ss-icon-main'), words, el('span', 'ss-sum' + (nReady === 3 ? ' is-ok' : ''), nReady === 3 ? 'All ready' : `${nReady} of 3 ready`));
     card.append(head);
     const list = el('div', 'ss-rows');
     rows.forEach((r) => {
       const row = el('div', 'ss-row');
       const ok = r.key === 'signature' ? (d.admin || d.signature) : ready[r.key];
+      // A coloured icon for email, signature or WhatsApp, with a small green tick or orange mark on its corner.
+      const icon = el('span', `ss-ico ss-ico-${r.key}`);
       const dot = el('span', 'ss-dot ' + (ok ? 'is-ok' : r.soft ? 'is-soft' : 'is-bad'), ok ? '✓' : '!');
       dot.setAttribute('aria-hidden', 'true');
+      icon.append(dot);
       const text = el('div', 'ss-text');
       text.append(el('b', '', r.title), el('span', '', r.state));
-      row.append(dot, text);
+      row.append(icon, text);
       const formBox = el('div', 'ss-form-box');
       const shown = openRow === r.key || (open && !openRow && !ok && r.key === 'email');
       if (r.action) {
