@@ -922,7 +922,7 @@ function createPortalApi({
     for (const { sheet, row } of visibleStudents(user)) {
       const stage = text(row[STATUS]);
       const card = all[row._id] || { notes: [], messages: [] };
-      const last = [...(card.notes || []).map((n) => n.at), ...(card.messages || []).map((m) => m.at)].filter(Boolean).sort().pop();
+      const last = (contactsOf(card).pop() || {}).at;
       const lastDay = last ? dayNo(localDate(new Date(last))) : null;
       const add = (key, detail, waited) => by[key].rows.push({ id: row._id, name: nameOf(row), stage, intake: sheet.name, detail, waited });
       // Details that do not add up, at any stage (see checksOf).
@@ -1228,8 +1228,8 @@ function createPortalApi({
       const lt = isoDate(row['LANGUAGE TEST DATE']);
       if (mineToName && lt && dayNo(lt) - now >= 0 && dayNo(lt) - now <= 7) upcoming.push({ id: row._id, name: nameOf(row), date: lt, what: 'English test', stage });
       bump('INQUIRY', isoDate(card.profile && card.profile.inquiryDate));
-      const touched = [...(card.notes || []).map((n) => n.at), ...(card.messages || []).map((m) => m.at)].filter(Boolean).map((at) => localDate(new Date(at)));
-      const lastTouch = touched.sort().pop();
+      const lastAt = (contactsOf(card).pop() || {}).at;
+      const lastTouch = lastAt ? localDate(new Date(lastAt)) : '';
       bump('CONTACT', lastTouch);
       if (lastTouch && now - dayNo(lastTouch) < 7) v.contactedWeek += 1;
       // The good news of the last 30 days, newest first.
@@ -1284,15 +1284,14 @@ function createPortalApi({
   const INACTIVE_STAGES = ['Withdrawn', 'Hold', 'Defer', 'Visa Rejected'];
   function followOf(row, card, todayNo) {
     const stage = text(row[STATUS]);
-    const touches = [...((card && card.notes) || []).map((n) => ({ at: n.at, by: n.by, what: 'note', text: n.text })), ...((card && card.messages) || []).filter((m) => m.status !== 'failed' && m.status !== 'preview').map((m) => ({ at: m.at, by: m.by, what: m.channel === 'whatsapp' ? 'WhatsApp' : 'email', text: m.subject || '' }))]
-      .filter((x) => x.at).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    const touches = contactsOf(card);
     const last = touches.length ? touches[touches.length - 1] : null;
     const lastDay = last ? Math.floor(Date.parse(localDate(new Date(last.at)) + 'T00:00:00Z') / 86400000) : null;
     const days = lastDay === null ? null : Math.max(0, todayNo - lastDay);
     let state;
     if (stage === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) state = 'visa';
     else if (INACTIVE_STAGES.includes(stage)) state = 'inactive';
-    else if (stage !== 'Inquiry' || text(row['APPLICATION SUBMISSION DATE'])) state = 'applied';
+    else if ((stage && stage !== 'Inquiry') || text(row['APPLICATION SUBMISSION DATE'])) state = 'applied';
     else if (!last) state = 'new';
     else if (days >= FOLLOW_DAYS) state = 'due';
     else state = 'ok';
@@ -1307,15 +1306,17 @@ function createPortalApi({
     const list = plan.events.map((e) => ({ ...e, leads: 0, applied: 0, visas: 0, students: [], follow: { new: 0, due: 0, ok: 0, inactive: 0 } }));
     const todayNo = todayNumber();
     const byName = (detail) => eventFor(list, detail);
-    let unlinkedSocial = 0; // students from social media not tagged with any campaign: in no cost per student
+    // Students from social media not tagged with any campaign, so in no campaign's cost per inquiry. Those marked Organic (they came
+    // by themselves, not from an advert) are left out: they belong to no campaign (the owner, 17 Nov 2026).
+    let unlinkedSocial = 0;
     if (wb) wb.sheets.forEach((sheet) => sheet.rows.forEach((row) => {
       if (!isStudent(row)) return;
       const card = all[row._id];
       const e = card && byName(card.profile.sourceDetail);
-      if (!e) { if (text(row['STUDENT SOURCE']) === 'Social Media') unlinkedSocial += 1; return; }
+      if (!e) { if (text(row['STUDENT SOURCE']) === 'Social Media' && !(card && card.profile && card.profile.sourceWay === 'Organic')) unlinkedSocial += 1; return; }
       e.leads += 1;
       const stage = text(row[STATUS]);
-      if (!['Inquiry', 'Defer', 'Hold', 'Withdrawn'].includes(stage) || text(row['APPLICATION SUBMISSION DATE'])) e.applied += 1;
+      if (!['', 'Inquiry', 'Defer', 'Hold', 'Withdrawn'].includes(stage) || text(row['APPLICATION SUBMISSION DATE'])) e.applied += 1;
       if (stage === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) e.visas += 1;
       const f = followOf(row, card, todayNo).state;
       if (f in e.follow) e.follow[f] += 1;
@@ -1952,6 +1953,16 @@ function createPortalApi({
   //   kept (in ISR before): linked by the list but in ISR before it: stays as it is.
   // { preview: true } only lists them. Before anything is removed, a copy of everything is saved (Admin, Restore, a "manual" copy).
   const LIST_NOTE = /^([EI]nquiry from .*, from its [ei]nquiry list|More from the list of |From the updated list of |Linked to .* from its [ei]nquiry list)/; // "Enquiry" in notes written before 14 Nov 2026
+  // The contacts with a student: the team's notes and the messages that went out. The note an uploaded list writes by itself
+  // ("Enquiry from <event>, from its enquiry list") and a message that failed or is only a preview are not a contact (the owner,
+  // 17 Nov 2026: a list just uploaded showed every student as followed up). Events and marketing, Today and the dashboards all
+  // use this one rule. [{ at, by, what: 'note' | 'WhatsApp' | 'email', text }], oldest first.
+  function contactsOf(card) {
+    return [
+      ...((card && card.notes) || []).filter((n) => !LIST_NOTE.test(String(n.text || ''))).map((n) => ({ at: n.at, by: n.by, what: 'note', text: n.text })),
+      ...((card && card.messages) || []).filter((m) => m.status !== 'failed' && m.status !== 'preview').map((m) => ({ at: m.at, by: m.by, what: m.channel === 'whatsapp' ? 'WhatsApp' : 'email', text: m.subject || '' })),
+    ].filter((x) => x.at).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  }
   function eventRemoval(req, ev, body) {
     const plan = planning.all();
     const all = cards.all();

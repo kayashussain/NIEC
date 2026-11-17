@@ -161,44 +161,6 @@
   document.addEventListener('DOMContentLoaded', () => all(false));
 })();
 
-// Big figures count up from zero the first time they appear (the Dashboard, the team dashboards, Events and marketing, the partner
-// pages), as Apple's own pages do: about 0.7s, fast at first and settling gently. The number written in the page is never changed:
-// it is only shown rising to it. Nothing moves for a person who asks their computer for less motion.
-(function () {
-  if (typeof document === 'undefined' || !window.MutationObserver || !window.requestAnimationFrame) return;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const FIGURES = '.ov-kpi-value, .md-kpi > b, .ev-band b, .pu-num, .bp-num';
-  const seen = new WeakSet();
-  function rise(el) {
-    if (seen.has(el) || el.children.length) return;
-    seen.add(el);
-    const m = /^(\D*?)(\d[\d,]*)(\D*)$/.exec(el.textContent.trim());
-    if (!m) return;
-    const target = Number(m[2].replace(/,/g, ''));
-    if (!(target >= 2) || target > 1e12) return;
-    const grouping = !m[2].includes(',') ? null : /\d,\d\d,\d{3}/.test(m[2]) ? 'en-IN' : 'en-US';
-    const shown = (n) => m[1] + (grouping ? n.toLocaleString(grouping) : String(n)) + m[3];
-    const final = el.textContent;
-    let last = shown(0);
-    el.textContent = last;
-    const start = performance.now();
-    const step = (now) => {
-      if (el.textContent !== last) return; // the page wrote something new: leave it
-      const k = Math.min(1, (now - start) / 700);
-      last = k < 1 ? shown(Math.round(target * (1 - Math.pow(1 - k, 3)))) : final;
-      el.textContent = last;
-      if (k < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }
-  const scan = (node) => {
-    if (!node || node.nodeType !== 1) return;
-    if (node.matches(FIGURES)) rise(node);
-    node.querySelectorAll(FIGURES).forEach(rise);
-  };
-  new MutationObserver((list) => list.forEach((m) => m.addedNodes.forEach(scan))).observe(document.documentElement, { childList: true, subtree: true });
-})();
-
 // Cards lower down a page rise softly into place as they are scrolled to, as on Apple's website. Only cards that start below the
 // visible part of the window are held back, so nothing on the first screen ever waits; nothing moves for people who ask for less.
 (function () {
@@ -497,7 +459,9 @@
 (function () {
   if (typeof window === 'undefined' || typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const SEL = '.md-kpi b, .bp-band b, .td-stat b, .td-team-num b, .bp-funnel-step b, .ev-band b, .tile-value';
+  // One count-up only (the owner, 17 Nov 2026): a second one ran on the same figures, each stopped when it saw the other write, and
+  // a figure could stay half way (Events and marketing showed 4 inquiries for 106). Never add another.
+  const SEL = '.ov-kpi-value, .md-kpi b, .bp-band b, .td-stat b, .td-team-num b, .bp-funnel-step b, .ev-band b, .tile-value, .pu-num, .bp-num';
   const started = Date.now();
   const WINDOW_MS = 6000; // only while the page is first coming in
   const seen = new WeakSet();

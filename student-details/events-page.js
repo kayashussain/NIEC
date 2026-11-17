@@ -47,7 +47,7 @@
     const acts = data.activities;
     const t = acts.reduce((s, a) => ({ cost: s.cost + (a.cost || 0), leads: s.leads + a.leads, visas: s.visas + a.visas }), { cost: 0, leads: 0, visas: 0 });
     $('band').replaceWith(Object.assign(band([
-      ['Total cost', rupees(t.cost) || 'Rs 0', `${acts.length} event${acts.length === 1 ? '' : 's'} and campaigns, in rupees`],
+      ['Total cost', rupees(t.cost) || 'Rs 0', `${acts.length === 1 ? '1 event or campaign' : `${acts.length} events and campaigns`}, in rupees`],
       ['Inquiries', number(t.leads)],
       ['Visas', number(t.visas)],
       ['Cost per inquiry', per(t.cost, t.leads), '', true],
@@ -56,7 +56,7 @@
     $('note').replaceChildren();
     const waitingAll = acts.reduce((n, a) => n + ((a.follow && a.follow.new) || 0) + ((a.follow && a.follow.due) || 0), 0);
     if (waitingAll > 0) $('note').append(el('div', 'ev-note due', `${number(waitingAll)} ${waitingAll === 1 ? 'inquiry from an event waits' : 'inquiries from events wait'} for a follow-up. Open an event to see who.`));
-    if (data.unlinkedSocial > 0) $('note').append(el('div', 'ev-note', `${number(data.unlinkedSocial)} social media ${data.unlinkedSocial === 1 ? 'inquiry is' : 'inquiries are'} not linked to a campaign.`));
+    if (data.unlinkedSocial > 0) $('note').append(el('div', 'ev-note', `${number(data.unlinkedSocial)} social media ${data.unlinkedSocial === 1 ? 'inquiry is' : 'inquiries are'} not linked to a campaign (and not marked Organic), so ${data.unlinkedSocial === 1 ? 'it is' : 'they are'} in no campaign's cost per inquiry.`));
     $('add').hidden = !data.canEdit;
     const q = find.trim().toLowerCase();
     const shown = (show === 'all' ? acts : acts.filter((a) => (show === 'Marketing' ? a.kind === 'Marketing' : a.kind !== 'Marketing')))
@@ -81,7 +81,7 @@
       const who = el('div');
       const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', `${ran(a)} · ${a.days} day${a.days === 1 ? '' : 's'}`));
       const words = el('div', 'ev-lwords'); words.append(el('div', 'ev-lname', a.name), meta);
-      // The follow-up of the event at a glance: who still waits for a call, and how much has converted.
+      // The follow-up of the event at a glance: who still waits for a call, and how many have applied.
       const fo = a.follow || {};
       const waiting = (fo.new || 0) + (fo.due || 0);
       if (a.leads) {
@@ -89,7 +89,8 @@
         if (fo.new) line.append(el('span', 'ev-fpill new', `${fo.new} not contacted`));
         if (fo.due) line.append(el('span', 'ev-fpill due', `${fo.due} follow-up due`));
         if (!waiting) line.append(el('span', 'ev-fpill ok', '\u2713 All followed up'));
-        line.append(el('span', 'ev-lconv', `${Math.round((a.applied / a.leads) * 100)}% converted`));
+        // The same figure as Applied in the event's "From inquiry to visa" (ever applied), so the list and the event agree.
+        line.append(el('span', 'ev-lconv', `${Math.round((a.applied / a.leads) * 100)}% applied`));
         words.append(line);
       }
       who.className = 'ev-lwho'; who.append(leaf(a), words);

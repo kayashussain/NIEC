@@ -147,8 +147,9 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   const got = (await admin('GET', `/api/activities/${ids['ABC event']}/students`)).json;
   assert.strictEqual(got.followDays, 3, 'the same rule as Inquiries to follow up on Today');
   assert.ok(got.students.every((s) => ['new', 'due', 'ok', 'applied', 'visa', 'inactive'].includes(s.follow)));
-  assert.ok(got.students.every((s) => s.lastContact && s.contacts >= 1 && s.follow !== 'new'), 'a student with a note has been contacted');
-  assert.ok(got.team.length >= 1 && got.team.every((t) => t.students >= 1 && t.notes >= 1));
+  // The note the list writes by itself is not a contact (the owner, 17 Nov 2026): a student with only that note waits for a first call.
+  assert.ok(got.students.filter((s) => s.stage === 'Inquiry').every((s) => !s.lastContact && s.contacts === 0 && s.follow === 'new'), 'the list\'s own note is not a contact');
+  assert.ok(got.team.every((t) => t.students >= 1 && t.notes >= 1));
   const quiet = got.students.find((s) => s.stage === 'Inquiry');
   const ev = (await admin('GET', '/api/activities')).json.activities.find((x) => x.id === ids['ABC event']);
   assert.strictEqual(Object.values(ev.follow).reduce((n, x) => n + x, 0) + got.students.filter((s) => ['applied', 'visa'].includes(s.follow)).length, ev.leads, 'every student of the event is counted once');
