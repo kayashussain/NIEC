@@ -360,7 +360,7 @@
     }, { wide: true });
   }
 
-  // The student comes from the address (?for=ID, from "Shortlist course" on the student card), else the one chosen before in this tab.
+  // The student comes from the address (?for=ID, from "Find course" on the student card), else the one chosen before in this tab.
   // A refresh starts clean: the student chosen before is forgotten (moving to another Fact File page keeps it).
   const refreshed = () => { try { const n = performance.getEntriesByType('navigation')[0]; return Boolean(n && n.type === 'reload'); } catch (e) { return false; } };
   const ready = async () => {
