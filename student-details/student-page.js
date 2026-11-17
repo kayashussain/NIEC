@@ -11,6 +11,9 @@
   let lists = { sourceOptions: {}, partners: [] };
   let showAllNotes = false;
   let historyFilter = 'all'; // the student's History: everything, the notes only, or the tasks only
+  let historyQuery = ''; // words searched for in the Timeline (kept while the card is redrawn)
+  let editingNote = ''; // the id of the note being changed in place
+  const openNotes = new Set(); // long notes opened with "Read more"
   // Named for what they hold (the owner, 17 Nov 2026): Timeline (every step, day by day) and Applications (shortlist and applications).
   const TABS = [['details', 'Timeline'], ['options', 'Applications']];
   let tab = (location.hash || '#details').slice(1);
@@ -482,7 +485,10 @@
     const wrap = el('section', 'p-card');
     // One timeline (the owner, 17 Nov 2026): every note, task, message and application step, newest first, so how the student moved
     // and every decision can be read day by day. The pills only narrow it for a moment; Everything is where it starts.
-    wrap.append(el('h2', '', 'Timeline'));
+    // The title with one quiet line beside it: how many entries and when the last thing happened.
+    const tlHead = el('div', 'p-tl-head');
+    tlHead.append(el('h2', '', 'Timeline'));
+    wrap.append(tlHead);
     // No sentence under the title (the owner, 15 Nov 2026: only what is needed).
     if (can()) {
       const box = el('div', 'p-note-box');
@@ -534,56 +540,176 @@
       if (o.sent) events.push({ kind: 'app', at: o.sent, dayOnly: true, by: '', title: `Given to the Application Team: ${name}${o.partner ? (/^direct$/i.test(o.partner) ? ', direct' : `, through ${o.partner}`) : ''}`, text: '' });
     });
     events.sort((x, y) => String(y.at).localeCompare(String(x.at)));
+    const AUTO = 'ISR (automatic)';
     const kindOfEvent = (e) => (e.kind === 'note' ? 'note' : e.kind === 'message' ? 'message' : e.kind === 'app' ? 'app' : 'task');
+    const counts = {};
+    events.forEach((e) => { const k = kindOfEvent(e); counts[k] = (counts[k] || 0) + 1; });
+    // The day of an entry in the reader's own time (YYYY-MM-DD), and how people say it: Today, Yesterday, Mon 16 Nov 2026.
+    const localDay = (e) => { if (e.dayOnly) return String(e.at).slice(0, 10); const d = new Date(e.at); return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+    const todayIso = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+    const daysAgo = (iso) => Math.round((Date.parse(todayIso + 'T00:00:00Z') - Date.parse(iso + 'T00:00:00Z')) / 86400000);
+    const dayName = (iso) => { const n = daysAgo(iso); if (n === 0) return 'Today'; if (n === 1) return 'Yesterday'; const d = new Date(iso + 'T00:00:00Z'); return Number.isNaN(d.getTime()) ? iso : `${d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })} ${day(iso)}`; };
+    const agoText = (iso) => { const n = daysAgo(iso); return n <= 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`; };
+    if (events.length) {
+      const last = events[0];
+      const sum = el('span', 'p-tl-sum', `${events.length} ${events.length === 1 ? 'entry' : 'entries'} · last ${agoText(localDay(last))}${last.by ? `, by ${last.by}` : ''}`);
+      tlHead.append(sum);
+    }
+    // Who may change a note: the person who wrote it, or Admin. Anyone who can change the card may pin one to the top.
+    const mayChange = (n) => can() && (n.by === data.me.name || data.can.removeAnyNote);
+    // The words searched for, marked in yellow.
+    const marked = (text) => {
+      const t = String(text || ''); const q = historyQuery.trim();
+      if (!q) return [t];
+      const out = []; const low = t.toLowerCase(); const ql = q.toLowerCase(); let i = 0; let j;
+      while ((j = low.indexOf(ql, i)) !== -1) { if (j > i) out.push(t.slice(i, j)); out.push(el('mark', '', t.slice(j, j + q.length))); i = j + q.length; }
+      if (i < t.length) out.push(t.slice(i));
+      return out;
+    };
+    // A note's words: long ones fold to a few lines with "Read more"; while it is being changed, a box with Save and Cancel.
+    const noteBody = (n, li) => {
+      if (editingNote === n.id) {
+        const box = el('div', 'p-tl-edit');
+        const ta = el('textarea', 'p-input');
+        ta.value = n.text; ta.maxLength = 4000; ta.setAttribute('aria-label', 'Change the note');
+        const bar = el('div', 'p-bar');
+        const ok = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Save');
+        ok.addEventListener('click', async () => {
+          if (!ta.value.trim()) { ta.focus(); return; }
+          ok.disabled = true;
+          try { await save('notes/' + n.id, { text: ta.value }, 'Note changed'); editingNote = ''; render(); } catch (e) { ok.disabled = false; }
+        });
+        ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ok.click(); } if (e.key === 'Escape') { e.stopPropagation(); editingNote = ''; render(); } });
+        bar.append(ok, h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { editingNote = ''; render(); } }, 'Cancel'));
+        box.append(ta, bar);
+        setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0);
+        return [box];
+      }
+      const p = el('p');
+      p.append(...marked(n.text));
+      const long = n.text.length > 420 || n.text.split('\n').length > 6;
+      if (!long || openNotes.has(n.id) || historyQuery.trim()) return [p];
+      p.classList.add('p-tl-fold');
+      const more = h('button', { class: 'p-link p-tl-more', type: 'button', onclick: () => { openNotes.add(n.id); p.classList.remove('p-tl-fold'); more.remove(); } }, 'Read more');
+      li.classList.add('has-more');
+      return [p, more];
+    };
+    // The buttons on a note: Pin (or Unpin), Change and Remove.
+    const noteActs = (n) => {
+      const acts = el('span', 'p-tl-acts');
+      if (can() && !data.can.readOnly) acts.append(h('button', { class: `p-link${n.pinned ? ' is-on' : ''}`, type: 'button', title: n.pinned ? 'Take it off the top' : 'Keep it at the top of the Timeline', onclick: async () => { try { await save('notes/' + n.id, { pinned: !n.pinned }, n.pinned ? 'Unpinned' : 'Pinned to the top'); render(); } catch (e) { /* shown */ } } }, n.pinned ? 'Unpin' : 'Pin'));
+      if (mayChange(n) && n.by !== AUTO) acts.append(h('button', { class: 'p-link', type: 'button', onclick: () => { editingNote = n.id; render(); } }, 'Change'));
+      if (mayChange(n)) acts.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'));
+      return acts;
+    };
+    const who = (name, fallback) => {
+      const frag = [];
+      const nm = name || fallback;
+      const av = el('i', `p-tl-av${name === AUTO ? ' is-auto' : ''}`, name === AUTO ? 'ISR' : initials(nm));
+      av.setAttribute('aria-hidden', 'true');
+      frag.push(av, el('b', '', nm));
+      return frag;
+    };
+    // One entry of the Timeline.
+    const entry = (e, inPins) => {
+      const k = e.kind === 'note' && e.by === AUTO ? 'auto' : e.kind;
+      const li = el('li', `${e.kind === 'note' ? '' : `p-history-${e.kind} `}is-k-${k}`);
+      const head = el('div', 'p-when');
+      const t = e.dayOnly ? '' : new Date(e.at);
+      const time = inPins ? (e.dayOnly ? day(e.at) : when(e.at)) : (t && !Number.isNaN(t.getTime()) ? t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : day(e.at));
+      head.append(...who(e.by, e.kind === 'app' ? 'Applications' : 'Someone'), el('span', '', time));
+      if (e.kind === 'note') {
+        const n = e.note;
+        if (n.by === AUTO) head.append(el('span', 'p-history-chip is-update', 'Automatic'));
+        if (n.pinned && !inPins) head.append(el('span', 'p-history-chip is-pin', 'Pinned'));
+        if (n.editedAt) { const ed = el('span', 'p-tl-edited', 'edited'); ed.title = `Changed ${when(n.editedAt)}${n.editedBy ? ` by ${n.editedBy}` : ''}`; head.append(ed); }
+        head.append(noteActs(n));
+        li.append(head, ...noteBody(n, li));
+        return li;
+      }
+      head.append(el('span', `p-history-chip is-${e.kind === 'app' ? 'task' : e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : e.kind === 'message' ? 'Message' : e.kind === 'app' ? 'Application' : 'Task'));
+      const acts = el('span', 'p-tl-acts');
+      if (e.message && e.message.channel === 'email') acts.append(h('button', { class: 'p-link', type: 'button', onclick: () => readMessage(e.message) }, 'Read'));
+      // A done task can be reopened (the team it is for, Admin and the Manager), and what it recorded put back (the owner, 16 Nov
+      // 2026: a wrong answer is corrected in one step).
+      const mayReopen = e.task && !data.can.readOnly && (data.can.removeAnyTask || (data.can.myTeams || []).includes(e.task.team) || (e.task.team === 'head' && (data.me || {}).role === 'admin'));
+      if (mayReopen) {
+        acts.append(h('button', { class: 'p-link', type: 'button', onclick: async () => {
+          const how = await window.Portal.reopenDialog(e.task);
+          if (!how) return;
+          const r = await save(`tasks/${e.task.id}`, { done: false, finish: how }, 'Reopened');
+          if (r && r.undone && r.undone.length) say(`Reopened. Put back: ${r.undone.join('; ')}${r.left && r.left.length ? `. ${r.left.join('; ')}` : ''}`);
+          data = await api('/api/cards/' + encodeURIComponent(id)); render();
+        } }, 'Reopen'));
+      }
+      if (acts.children.length) head.append(acts);
+      const title = el('p', 'p-history-title');
+      title.append(...marked(e.title));
+      li.append(head, title);
+      if (e.text) { const p = el('p'); p.append(...marked(e.text)); li.append(p); }
+      if (e.tag) li.lastChild.prepend(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' ');
+      return li;
+    };
+    // Pinned notes stay at the top, whatever is chosen below (the owner, 17 Nov 2026: the Timeline does more).
+    const pins = events.filter((e) => e.kind === 'note' && e.note.pinned);
+    if (pins.length) {
+      const box = el('section', 'p-tl-pins');
+      box.append(el('div', 'p-tl-pins-title', pins.length === 1 ? 'Pinned' : `Pinned (${pins.length})`));
+      const ol = el('ol', 'p-timeline');
+      pins.forEach((e) => ol.append(entry(e, true)));
+      box.append(ol);
+      wrap.append(box);
+    }
+    // The kinds to narrow to, each with how many, and a search through every word.
     const present = new Set(events.map(kindOfEvent));
+    const tools = el('div', 'p-tl-tools');
     if (present.size > 1) {
       const seg = el('div', 'p-history-filter');
       seg.setAttribute('role', 'tablist');
       [['all', 'Everything'], ['note', 'Notes'], ['task', 'Tasks'], ['app', 'Applications'], ['message', 'Messages']].filter(([k]) => k === 'all' || present.has(k)).forEach(([k, label]) => {
-        const b = h('button', { class: 'td-filter-pill', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label);
+        const b = h('button', { class: 'td-filter-pill', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label, el('span', 'td-filter-n', String(k === 'all' ? events.length : counts[k] || 0)));
         b.addEventListener('click', () => { historyFilter = k; render(); });
         seg.append(b);
       });
-      wrap.append(seg);
+      tools.append(seg);
     }
-    const all = events.filter((e) => historyFilter === 'all' || kindOfEvent(e) === historyFilter);
     const list = el('ol', 'p-timeline');
-    const items = showAllNotes ? all : all.slice(0, 6);
+    const moreBtn = h('button', { class: 'p-link p-tl-all', type: 'button' });
+    if (events.length > 3) {
+      const search = el('input', 'p-input p-tl-search');
+      search.type = 'search';
+      search.placeholder = 'Search the timeline';
+      search.setAttribute('aria-label', 'Search the timeline');
+      search.value = historyQuery;
+      search.addEventListener('input', () => { historyQuery = search.value; fill(); });
+      tools.append(search);
+    }
+    if (tools.children.length) wrap.append(tools);
     // The sheet's Remarks, unless it is only the latest progress line ISR wrote there (that is already a note above).
     const remark = data.student.remarks && data.student.remarks !== data.card.autoRemark ? data.student.remarks : '';
-    if (!all.length && !remark) list.append(el('li', '', 'Nothing yet.'));
-    items.forEach((e) => {
-      const li = el('li', e.kind === 'note' ? '' : `p-history-${e.kind}`);
-      const head = el('div', 'p-when');
-      head.append(el('b', '', e.by || (e.kind === 'app' ? 'Applications' : 'Someone')), el('span', '', e.dayOnly ? day(e.at) : when(e.at)));
-      if (e.kind === 'note') {
-        const n = e.note;
-        if (can() && (n.by === data.me.name || data.can.removeAnyNote)) head.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'));
-        li.append(head, el('p', '', e.text));
-      } else {
-        head.append(el('span', `p-history-chip is-${e.kind === 'app' ? 'task' : e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : e.kind === 'message' ? 'Message' : e.kind === 'app' ? 'Application' : 'Task'));
-        if (e.message && e.message.channel === 'email') head.append(h('button', { class: 'p-link', type: 'button', onclick: () => readMessage(e.message) }, 'Read'));
-        // A done task can be reopened (the team it is for, Admin and the Manager), and what it recorded put back (the owner, 16 Nov
-        // 2026: a wrong answer is corrected in one step).
-        const mayReopen = e.task && !data.can.readOnly && (data.can.removeAnyTask || (data.can.myTeams || []).includes(e.task.team) || (e.task.team === 'head' && (data.me || {}).role === 'admin'));
-        if (mayReopen) {
-          head.append(h('button', { class: 'p-link', type: 'button', onclick: async () => {
-            const how = await window.Portal.reopenDialog(e.task);
-            if (!how) return;
-            const r = await save(`tasks/${e.task.id}`, { done: false, finish: how }, 'Reopened');
-            if (r && r.undone && r.undone.length) say(`Reopened. Put back: ${r.undone.join('; ')}${r.left && r.left.length ? `. ${r.left.join('; ')}` : ''}`);
-            data = await api('/api/cards/' + encodeURIComponent(id)); render();
-          } }, 'Reopen'));
-        }
-        li.append(head, el('p', 'p-history-title', e.title));
-        if (e.text) li.append(el('p', '', e.text));
-        if (e.tag) li.lastChild.prepend(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' ');
-      }
-      list.append(li);
-    });
-    if (remark && historyFilter !== 'task') { const li = el('li'); li.append(el('div', 'p-when'), el('p', '', remark)); li.firstChild.append(el('b', '', 'Earlier remark from the sheet')); list.append(li); }
-    wrap.append(list);
-    if (all.length > 6) wrap.append(h('button', { class: 'p-link', type: 'button', style: 'margin-top:8px', onclick: () => { showAllNotes = !showAllNotes; render(); } }, showAllNotes ? 'Show fewer' : `Show all ${all.length}`));
+    const LIMIT = 8;
+    function fill() {
+      const q = historyQuery.trim().toLowerCase();
+      // A pinned note is shown once, in Pinned above (a search still finds it here).
+      const all = events.filter((e) => (historyFilter === 'all' || kindOfEvent(e) === historyFilter)
+        && (q ? [e.by, e.title, e.text].some((v) => String(v || '').toLowerCase().includes(q)) : !(e.kind === 'note' && e.note.pinned)));
+      const items = showAllNotes || q ? all : all.slice(0, LIMIT);
+      list.replaceChildren();
+      if (!all.length && (!remark || q)) list.append(el('li', 'p-tl-empty', q ? `Nothing found for “${historyQuery.trim()}”.` : 'Nothing yet.'));
+      // Grouped by day, newest first, with the day as a small heading.
+      let lastDay = null;
+      items.forEach((e) => {
+        const d = localDay(e);
+        if (d !== lastDay) { lastDay = d; const dh = el('li', 'p-tl-day'); dh.append(el('span', '', dayName(d))); list.append(dh); }
+        list.append(entry(e, false));
+      });
+      if (remark && !q && historyFilter !== 'task') { const li = el('li', 'is-k-auto'); li.append(el('div', 'p-when'), el('p', '', remark)); li.firstChild.append(el('b', '', 'Earlier remark from the sheet')); list.append(li); }
+      moreBtn.hidden = Boolean(q) || all.length <= LIMIT;
+      moreBtn.textContent = showAllNotes ? 'Show fewer' : `Show all ${all.length}`;
+    }
+    moreBtn.addEventListener('click', () => { showAllNotes = !showAllNotes; render(); });
+    fill();
+    wrap.append(list, moreBtn);
     return wrap;
   }
 

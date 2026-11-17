@@ -3389,3 +3389,39 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 /* 🔴 CSS CHANGED (2026-11-17): the team's Dashboard, Needs attention: "+16 more" | from: grey words "+16 more" that did nothing | to: the same grey words as a button (blue on hover, underlined) that shows every other name in place, as the same grey name pills */
 button.md-todo-more { border: 0; background: none; font: inherit; font-size: 13.5px; cursor: pointer; border-radius: 6px; }
 button.md-todo-more:hover, button.md-todo-more:focus-visible { color: #0066cc; text-decoration: underline; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline made more professional | from: one long list with the same blue dot on every line, the full date and time on each line, a plain name, the filter pills without numbers, long notes shown in full | to: a grey line beside the title ("24 entries · last 3 days ago, by Sita"); the filter pills with a count each and a rounded search box beside them (matches marked in soft yellow); pinned notes in a soft amber panel at the top; the list grouped by day under small grey headings (Today, Yesterday, Mon 16 Nov 2026) with only the time on each line; a small round grey badge with the writer's initials before the name; a dot in the colour of each kind (note blue, task orange, done green, update grey, message purple, application teal, automatic light grey); Pin, Change and Remove as small blue words on the right; "edited" in small grey; notes longer than 6 lines fold with "Read more" */
+.p-tl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.p-tl-head h2 { margin: 0; }
+.p-tl-sum { color: #6e6e73; font-size: 14px; }
+.p-tl-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 16px 0 4px; }
+.p-tl-tools .p-history-filter { margin: 0; flex: 1 1 auto; }
+.p-tl-search { flex: 0 1 240px; min-width: 160px; min-height: 36px; padding: 6px 14px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--edit-bg); font: inherit; font-size: 15px; }
+.p-tl-search:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
+.p-timeline mark { padding: 0 2px; border-radius: 4px; background: #fff1a8; color: inherit; }
+.p-tl-pins { margin: 16px 0 6px; padding: 12px 16px 4px; border: 1px solid #f1dfb0; border-radius: 14px; background: #fff9ec; }
+.p-tl-pins-title { color: #8a5a00; font-size: 13px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+.p-tl-pins .p-timeline, body:has(.p-embed-bar) .p-tl-pins .p-timeline { margin-top: 10px; }
+.p-timeline li.p-tl-day, body:has(.p-embed-bar) .p-timeline li.p-tl-day { padding: 6px 0 12px 22px; color: #6e6e73; font-size: 13px; font-weight: 650; letter-spacing: .01em; }
+.p-timeline li.p-tl-day::before, body:has(.p-embed-bar) .p-timeline li.p-tl-day::before { top: 9px; left: -4px; width: 6px; height: 6px; background: #c7c7cc; box-shadow: 0 0 0 3px var(--panel); }
+.p-timeline li.p-tl-empty { color: #6e6e73; }
+.p-timeline li.is-k-task::before, body:has(.p-embed-bar) .p-timeline li.is-k-task::before { background: #ff9f0a; }
+.p-timeline li.is-k-done::before, body:has(.p-embed-bar) .p-timeline li.is-k-done::before { background: #34c759; }
+.p-timeline li.is-k-update::before, body:has(.p-embed-bar) .p-timeline li.is-k-update::before { background: #8e8e93; }
+.p-timeline li.is-k-message::before, body:has(.p-embed-bar) .p-timeline li.is-k-message::before { background: #af52de; }
+.p-timeline li.is-k-app::before, body:has(.p-embed-bar) .p-timeline li.is-k-app::before { background: #30b0c7; }
+.p-timeline li.is-k-auto::before, body:has(.p-embed-bar) .p-timeline li.is-k-auto::before { background: #c7c7cc; }
+.p-tl-av { display: inline-grid; place-items: center; align-self: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #e8e8ed; color: #3a3a3c; font: 650 10.5px/1 var(--font); font-style: normal; letter-spacing: .02em; }
+.p-tl-av.is-auto { background: #f0f0f3; color: #8e8e93; font-size: 8.5px; }
+.p-tl-edited { color: #8e8e93; font-size: 12.5px; font-style: italic; }
+.p-tl-acts { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; margin-left: auto; }
+.p-tl-acts .p-link, body:has(.p-embed-bar) .p-when .p-tl-acts .p-link { margin-left: 0; font-size: 13.5px; }
+.p-tl-acts .p-link.is-on { color: #8a5a00; font-weight: 600; }
+.p-history-chip.is-pin { background: #fff1d6; color: #8a5a00; }
+.p-timeline p.p-tl-fold { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.p-tl-more { margin-top: 4px; font-size: 13.5px; }
+.p-tl-edit { display: grid; gap: 8px; margin-top: 8px; }
+.p-tl-edit textarea { min-height: 96px; }
+.p-tl-edit .p-bar { margin-top: 0; }
+.p-tl-all { margin-top: 8px; }
+@media (max-width: 640px) { .p-tl-search { flex: 1 1 100%; } }
