@@ -7,7 +7,9 @@ const path = require('node:path');
 // from character codes so this file itself does not contain one.
 const DASHES = new RegExp('[' + String.fromCharCode(0x2014, 0x2013) + ']');
 const ROOT = path.join(__dirname, '..');
-const SKIP = new Set(['node_modules', '.git', '.claude']);
+// The demo folder and the copy of the live data are never in git and hold data written elsewhere (made-up students, the partner
+// portal's own texts), not the project's own words.
+const SKIP = new Set(['node_modules', '.git', '.claude', 'demo-data', 'live-data']);
 const TEXT = /\.(js|mjs|cjs|html|css|md|json|jsonl|yaml|yml|sh|txt|py|svg)$|^\.gitignore$/;
 
 function* files(dir) {

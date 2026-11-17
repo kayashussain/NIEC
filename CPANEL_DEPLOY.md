@@ -205,6 +205,20 @@ New in the same app, no new setup needed: the data goes in new files of the Stud
 
 New files of the same kind since then: `agents.json` with `agent-files/` (the Agents page), `source-options.json` (choices added to "Where exactly") and `course-watch.json` (the weekly check of the course pages; set `COURSE_WATCH=off` to switch it off). A file the server could not read is never deleted: it is set aside as `<name>.damaged-<time>.json` next to the data.
 
+## Route2Uni in the Fact File
+
+ISR reads the Route2Uni partner portal twice a week (Monday and Thursday from 2 a.m. office time) and shows each university's
+figures, deadlines, notices and webinars in the Fact File. It needs the portal's login, kept in the app's settings only:
+
+1. cPanel, **Setup Node.js App**, the app, **Environment variables**, **Add Variable**:
+   `ROUTE2UNI_EMAIL` = the email you log into the portal with, and `ROUTE2UNI_PASSWORD` = its password.
+2. **Save**, then **Restart**.
+3. Open the Fact File: the Route2Uni panel shows when it was read. Admin can press **Check now** at any time (a reading takes
+   about half a minute).
+
+If the portal password is changed, change `ROUTE2UNI_PASSWORD` the same way and Restart. To switch it off, remove the two
+variables and Restart (the last reading stays on the pages).
+
 ## Updating the code later
 
 Use these commands, not `git pull`. The code on GitHub is sometimes rebuilt from the start (as on 14 Nov 2026), and `git pull`

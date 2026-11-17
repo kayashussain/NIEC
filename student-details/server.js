@@ -34,6 +34,7 @@ const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createPortalApi } = require('./portal-api');
 const { createPush } = require('./push');
+const { createRoute2Uni, niceName: r2uName } = require('./route2uni');
 const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
 const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
@@ -89,6 +90,7 @@ const STATIC_FILES = {
   '/sender-setup.js': 'text/javascript; charset=utf-8',
   '/phone-link.js': 'text/javascript; charset=utf-8',
   '/shortlist.js': 'text/javascript; charset=utf-8',
+  '/route2uni-panel.js': 'text/javascript; charset=utf-8',
   '/wa.html': 'text/html; charset=utf-8',
   '/pair.html': 'text/html; charset=utf-8',
   '/pair-page.js': 'text/javascript; charset=utf-8',
@@ -846,6 +848,9 @@ const courseWatch = createCourseWatch({ dir: DATA_DIR, getIndex: () => (portalRe
 const userMail = createUserMail(DATA_DIR);
 // A person's connected phones, for "WhatsApp opens on my phone" (see push.js). ISR_PUSH_LOCAL is for the tests' own push service only.
 const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
+// The Route2Uni partner portal, read twice a week into the Fact File (see route2uni.js). Off until ROUTE2UNI_EMAIL and
+// ROUTE2UNI_PASSWORD are set on the server.
+const route2uni = createRoute2Uni({ dir: DATA_DIR, email: process.env.ROUTE2UNI_EMAIL || '', password: process.env.ROUTE2UNI_PASSWORD || '' });
 const portal = createPortalApi({
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
@@ -998,6 +1003,7 @@ async function studentGate(req, res, urlPath) {
     sendJSON(res, 200, { ...uni, notes: '', process: [], updatedBy: '', intakes: (uni.intakes || []).map((i) => ({ ...i, notes: '' })) });
     return true;
   }
+  if (get && urlPath === '/api/route2uni/university') return false; // the partner portal's figures on a Fact File page
   if ((get && urlPath === '/api/fact-courses') || urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) return false; // portal-api.js answers for a student
   if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for the Fact File only.' }); return true; }
   send(res, 302, '', { Location: '/fact-file' });
@@ -1145,6 +1151,30 @@ const server = http.createServer(async (req, res) => {
         'Content-Disposition': `attachment; filename="uk-student-niec-${which}-${localDate()}.json"`,
       });
     }
+    // Route2Uni in the Fact File: one university's reading (everyone who reads the Fact File), the summary (the team), a reading now
+    // and adding a university of the portal to the Fact File (Admin).
+    if (urlPath === '/api/route2uni/university' && req.method === 'GET') {
+      const u = route2uni.forName(new URL(req.url, 'http://x').searchParams.get('name') || '');
+      return sendJSON(res, 200, u || null); // null: this university is not on Route2Uni (not an error)
+    }
+    if (urlPath === '/api/route2uni' && req.method === 'GET') return sendJSON(res, 200, { ...route2uni.summary(facts.all().map((u) => u.name)), admin: isAdmin(req.user) });
+    if ((urlPath === '/api/route2uni/run' || urlPath === '/api/route2uni/add') && req.method === 'POST') {
+      if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
+      if (urlPath === '/api/route2uni/run') {
+        if (!route2uni.configured()) return sendJSON(res, 400, { error: 'Set ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD on the server first (cPanel, Setup Node.js App, Environment variables), then Restart.' });
+        route2uni.run(req.user.name).then((r) => activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [r.error ? `Route2Uni reading failed: ${r.error}` : `Read Route2Uni: ${r.universities} universities, ${r.changed} changes`] })).catch(() => {});
+        return sendJSON(res, 200, { started: true });
+      }
+      let body;
+      try { body = await readJSONBody(req, 4096); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
+      const u = route2uni.byId(body && body.id);
+      if (!u) return sendJSON(res, 404, { error: 'That university is not on Route2Uni.' });
+      const made = facts.create(r2uName(u.name), req.user.label);
+      if (made.error) return sendJSON(res, 400, { error: made.error });
+      if (u.cities.length || u.website) facts.update(made.university.id, { ...made.university, city: u.cities.join(', '), website: u.website }, req.user.label);
+      activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [`Added ${made.university.name} to the Fact File from Route2Uni`] });
+      return sendJSON(res, 200, { id: made.university.id });
+    }
     if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/delete)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
     // The student cards and the pages around them (portal-api.js).
     if (await portal.handle(req, res, urlPath)) return;
@@ -1197,6 +1227,12 @@ server.listen(PORT, () => {
 // The weekly check of the course pages (course-watch.js): a slice of the courses every six hours, so each is visited about once a week.
 // The first one starts ten minutes after the server does. COURSE_WATCH=off switches it off.
 portalRef = portal;
+// Route2Uni: looked at every half hour whether a reading is due (Monday and Thursday from 2 a.m.), the first look two minutes after
+// the server starts.
+if (route2uni.configured()) {
+  setTimeout(() => route2uni.tick(), 2 * 60 * 1000).unref();
+  setInterval(() => route2uni.tick(), 30 * 60 * 1000).unref();
+}
 if (process.env.COURSE_WATCH !== 'off') {
   const tick = () => courseWatch.run().then((r) => { if (r && r.checked) console.log(`Course pages checked: ${r.checked}`); }).catch((e) => console.log(`Course page check stopped: ${e.message}`));
   setTimeout(tick, 10 * 60 * 1000).unref();
