@@ -171,45 +171,41 @@
     }, { wide: true });
   }
 
-  // ---- the table ----
+  // ---- entry requirements and fees: one card per level ----
+  // A wide table with five columns of long text was crushed and ran off the page (the owner, 17 Nov 2026: make it easy to read), so
+  // each level is a card with its facts one under another. A value the same for every level is written once, above the cards.
   function renderTable(doc, view) {
     if (!view.programs.length) return;
     section(doc, 'Entry requirements and fees', (s) => {
-      const wrap = el('div', 'table-wrap');
-      wrap.tabIndex = 0;
-      wrap.setAttribute('role', 'region');
-      wrap.setAttribute('aria-label', 'Entry requirements and fees');
-      const table = el('table', 'programs');
-      const headRow = el('tr');
-      headRow.append(el('th', '', 'Level'));
-      view.columns.forEach(([, label]) => headRow.append(el('th', '', label)));
-      const thead = el('thead');
-      thead.append(headRow);
-      const tbody = el('tbody');
-      // A value the same for every level (the English rules of a pathway college) is written once, across the rows.
-      const same = Object.fromEntries(view.columns.map(([key]) => [key, view.programs.length > 1 && view.programs.every((p) => p[key] === view.programs[0][key])]));
-      view.programs.forEach((p, row) => {
-        const tr = el('tr');
-        const th = el('th', 'lvl');
-        th.scope = 'row';
-        th.append(el('b', '', p.name));
-        if (has(p.duration)) th.append(el('span', 'lvl-dur', p.duration));
-        tr.append(th);
+      const same = Object.fromEntries(view.columns.map(([key]) => [key, view.programs.length > 1 && has(view.programs[0][key]) && view.programs.every((p) => p[key] === view.programs[0][key])]));
+      const shared = view.columns.filter(([key]) => same[key]);
+      if (shared.length) {
+        const box = el('dl', 'lvl-shared');
+        shared.forEach(([key, label]) => { const row = el('div'); row.append(el('dt', '', `${label}, every level`)); const dd = el('dd'); richText(dd, view.programs[0][key]); row.append(dd); box.append(row); });
+        s.append(box);
+      }
+      const grid = el('div', 'lvl-cards');
+      view.programs.forEach((p) => {
+        const card = el('article', 'lvl-card');
+        const head = el('header', 'lvl-head');
+        head.append(el('h3', '', p.name));
+        if (has(p.duration)) head.append(el('span', 'lvl-dur', p.duration));
+        card.append(head);
+        const dl = el('dl', 'lvl-facts');
         view.columns.forEach(([key, label]) => {
-          if (same[key] && row > 0) return;
-          const td = el('td');
-          td.dataset.label = label;
-          if (same[key]) { td.rowSpan = view.programs.length; td.className = 'all-levels'; }
-          if (has(p[key])) richText(td, p[key]);
-          else td.append(el('span', 'dim', '-'));
-          tr.append(td);
+          if (same[key]) return;
+          const row = el('div', `lvl-row lvl-${key}`);
+          row.append(el('dt', '', label));
+          const dd = el('dd');
+          if (has(p[key])) richText(dd, p[key]); else dd.append(el('span', 'dim', 'Not given'));
+          row.append(dd);
+          dl.append(row);
         });
-        tbody.append(tr);
+        card.append(dl);
+        grid.append(card);
       });
-      table.append(thead, tbody);
-      wrap.append(table);
-      s.append(wrap);
-      // What the table does not say, under it: a small titled block each ("Entry requirements", "English").
+      s.append(grid);
+      // What the cards do not say, under them: a small titled block each ("Entry requirements", "English").
       view.more.forEach(([title, text]) => { const m = el('div', 'more-block'); m.append(el('h3', '', title)); richText(m, text, { sub: true }); s.append(m); });
     });
   }
@@ -225,6 +221,21 @@
     if (!view.courses.length) return;
     section(doc, `Courses (${view.courses.length})`, (s) => {
       if (team() && window.ShortlistFor) s.append(window.ShortlistFor.bar());
+      // A filter for a long list: "nursing" shows only those courses, every group opened (the owner, 17 Nov 2026).
+      if (view.courses.length > 12) {
+        const wrap = el('div', 'course-filter no-print');
+        const box = el('input', 'search');
+        box.type = 'search';
+        box.placeholder = `Filter the ${view.courses.length} courses, e.g. nursing`;
+        box.setAttribute('aria-label', 'Filter the courses');
+        box.value = courseQuery;
+        const info = el('span', 'course-filter-info');
+        info.setAttribute('aria-live', 'polite');
+        wrap.append(box, info);
+        s.append(wrap);
+        box.addEventListener('input', () => { courseQuery = box.value; filterCourses(s, info); });
+        setTimeout(() => filterCourses(s, info), 0);
+      }
       view.groups.forEach((g) => {
         const items = view.courses.filter((c) => c.group === g);
         if (view.groups.length > 1 || g !== 'Courses') s.append(el('h3', 'course-group', `${g} (${items.length})`));
@@ -232,7 +243,8 @@
         const LONG = 12;
         items.forEach((c, n) => {
           const li = el('li');
-          if (n >= LONG) li.hidden = true;
+          li.dataset.name = `${c.course} ${c.intakes.join(' ')}`.toLowerCase();
+          if (n >= LONG) { li.hidden = true; li.dataset.folded = '1'; }
           const { link, notFound } = linkOf(c.full || c.course);
           const name = el(link ? 'a' : 'span', 'course-name', c.course);
           if (link) { name.href = link; name.target = '_blank'; name.rel = 'noopener'; }
@@ -258,16 +270,40 @@
           else if (team() && window.ShortlistFor) li.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.course, intake, level: g }));
           ul.append(li);
         });
+        ul.dataset.group = g;
         s.append(ul);
         if (items.length > LONG) {
           const more = el('button', 'p-link no-print course-more', `Show all ${items.length} courses`);
           more.type = 'button';
-          more.addEventListener('click', () => { ul.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
+          more.addEventListener('click', () => { ul.dataset.open = '1'; ul.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
           s.append(more);
         }
       });
     });
   }
+  // Shows only the courses with every word typed; with nothing typed, the list as it was (12 per group, then Show all).
+  let courseQuery = '';
+  function filterCourses(s, info) {
+    const words = courseQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    let count = 0;
+    s.querySelectorAll('ul.course-list').forEach((ul) => {
+      let inGroup = 0;
+      ul.querySelectorAll('li').forEach((li) => {
+        const hit = words.every((w) => li.dataset.name.includes(w));
+        li.hidden = words.length ? !hit : li.dataset.folded === '1' && !ul.dataset.open;
+        if (hit) inGroup += 1;
+      });
+      count += inGroup;
+      const off = words.length > 0 && inGroup === 0;
+      ul.hidden = off;
+      const head = ul.previousElementSibling;
+      if (head && head.classList.contains('course-group')) head.hidden = off;
+      const more = ul.nextElementSibling;
+      if (more && more.classList.contains('course-more')) more.hidden = words.length > 0;
+    });
+    info.textContent = words.length ? (count ? `${count} course${count === 1 ? '' : 's'} match` : 'No course matches') : '';
+  }
+
   // ---- sharing ----
   // A short summary to paste into WhatsApp or an email (*bold* for WhatsApp): the deadlines, then per level the fee, scholarship,
   // entry and English, from the same clean view as the page.

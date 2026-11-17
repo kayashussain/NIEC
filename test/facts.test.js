@@ -272,3 +272,11 @@ test('Bangor University comes with its January 2027 flyer details, and an edited
   fs.writeFileSync(path.join(dir2, 'fact-file.json'), JSON.stringify({ starterAdded: [...STARTER_UNIVERSITIES], universities: [old('aaaaaaaaaaaa', { city: 'Edited', updatedBy: 'Kayas' })] }));
   assert.strictEqual(createFacts(dir2).get('aaaaaaaaaaaa').city, 'Edited');
 });
+
+test('each card of the list says the next open deadline, how many courses, and whether it is a pathway college', () => {
+  const list = createFacts(tmp()).list();
+  assert.ok(list.every((u) => ['university', 'pathway'].includes(u.kind) && Number.isInteger(u.courseCount)));
+  assert.ok(list.some((u) => u.kind === 'pathway') && list.some((u) => u.kind === 'university'));
+  assert.ok(list.filter((u) => u.next).every((u) => u.next.days >= 0 && u.next.when && u.next.intake));
+  assert.strictEqual(list.find((u) => /OnCampus/.test(u.name)).kind, 'pathway');
+});

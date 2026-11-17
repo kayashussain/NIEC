@@ -10,6 +10,51 @@
   const API = BACKUP ? '/api/restore/snapshot/' + encodeURIComponent(BACKUP) + '/facts' : '/api/facts';
   let searchTimer = null;
   let searchSeq = 0; // answers arriving out of order: only the latest search is shown
+  // The filters above the cards (the owner, 17 Nov 2026: find the right university in seconds), kept in this browser.
+  const FKEY = 'isrFactFilters';
+  const filters = (() => { try { return { kind: 'all', intake: '', sort: 'az', ...JSON.parse(localStorage.getItem(FKEY) || '{}') }; } catch (e) { return { kind: 'all', intake: '', sort: 'az' }; } })();
+  const saveFilters = () => { try { localStorage.setItem(FKEY, JSON.stringify(filters)); } catch (e) { /* kept for this page only */ } };
+  const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const intakeOrder = (n) => { const m = /([A-Za-z]{3,9})\s+(\d{4})/.exec(n || ''); return m ? +m[2] * 12 + Math.max(0, MONTHS.indexOf(m[1].slice(0, 3).toLowerCase())) : 1e9; };
+  const urgency = (days) => (days <= 7 ? 'is-urgent' : days <= 30 ? 'is-soon' : '');
+  const left = (days) => (days === 0 ? 'Today' : days === 1 ? '1 day left' : `${days} days left`);
+  // The next deadline, on a card: "Apply by 4 Dec 2026 · January 2027" and the days left.
+  function nextLine(u) {
+    const n = el('div', 'uc-next');
+    if (!u.next) { n.classList.add('is-none'); n.append(el('span', 'uc-next-text', 'No open deadline listed')); return n; }
+    const t = el('span', 'uc-next-text');
+    t.append('Apply by ', el('b', '', u.next.when), el('span', 'uc-next-intake', u.next.intake));
+    n.append(t, el('span', `uc-days ${urgency(u.next.days)}`.trim(), left(u.next.days)));
+    return n;
+  }
+  function shown() {
+    let out = list.filter((u) => (filters.kind === 'all' || u.kind === filters.kind) && (!filters.intake || (u.intakes || []).includes(filters.intake)));
+    if (filters.sort === 'soon') out = out.slice().sort((a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name));
+    return out;
+  }
+  function drawBar() {
+    const bar = $('ffBar');
+    bar.hidden = !loadedOnce || !all.length;
+    bar.querySelectorAll('#ffKind button').forEach((b) => { const on = b.dataset.k === filters.kind; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    const sel = $('ffIntake');
+    const names = [...new Set(all.flatMap((u) => u.intakes || []))].sort((a, b) => intakeOrder(a) - intakeOrder(b) || a.localeCompare(b));
+    if (filters.intake && !names.includes(filters.intake)) names.push(filters.intake);
+    sel.replaceChildren(new Option('Any intake', ''), ...names.map((n) => new Option(n, n)));
+    sel.value = filters.intake;
+    $('ffSort').value = filters.sort;
+    $('ffClear').hidden = filters.kind === 'all' && !filters.intake && filters.sort === 'az';
+    // How many deadlines close in the next two weeks, with one click to see them first.
+    const soon = all.filter((u) => u.next && u.next.days <= 14);
+    const box = $('ffSoon');
+    box.hidden = !soon.length || query !== '' || filters.sort === 'soon';
+    if (!box.hidden) {
+      const go = el('button', 'p-link', 'Show them first');
+      go.type = 'button';
+      go.addEventListener('click', () => { filters.sort = 'soon'; saveFilters(); render(); });
+      box.replaceChildren(el('span', 'ff-soon-dot'), el('span', '', `${soon.length} universit${soon.length === 1 ? 'y closes' : 'ies close'} applications in the next 14 days.`), go);
+    }
+  }
+  let all = []; // every university (the list without a search), for the intake menu and the closing-soon line
 
   const when = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   function el(tag, cls, text) {
@@ -47,6 +92,11 @@
       a.append(chips);
     }
     if (!u.city && !u.intakes.length) a.append(el('div', 'city', 'Details not added yet'));
+    a.append(nextLine(u));
+    const foot = el('div', 'uc-foot');
+    if (u.courseCount) foot.append(el('span', '', `${u.courseCount} course${u.courseCount === 1 ? '' : 's'}`));
+    if (u.kind === 'pathway') foot.append(el('span', 'uc-kind', 'Pathway college'));
+    if (foot.children.length) a.append(foot);
     a.append(el('div', 'updated', u.updatedAt && (Date.now() - new Date(u.updatedAt).getTime()) > 90 * 86400000 ? 'Last updated ' + when(u.updatedAt) + ', check it' : ''));
     return a;
   }
@@ -62,6 +112,7 @@
     open.href = uniHref(u);
     top.append(open);
     c.append(top);
+    if (u.next) c.append(nextLine(u));
     c.append(el('div', 'ub-count', `${courses.length} matching course${courses.length === 1 ? '' : 's'}`));
     const ul = el('ul', 'ub-courses');
     const SHOW = 6;
@@ -99,17 +150,21 @@
 
   function render() {
     const box = $('cards');
-    $('count').textContent = loadedOnce && list.length ? (query ? `${list.length} of the universities match` : `${list.length} universities`) : '';
-    if (!list.length) {
+    drawBar();
+    const rows = shown();
+    const filtered = rows.length !== list.length;
+    $('count').textContent = loadedOnce && list.length ? (filtered ? `${rows.length} of the ${list.length} ${query ? 'matching ' : ''}universities` : query ? `${list.length} universit${list.length === 1 ? 'y matches' : 'ies match'}` : `${list.length} universities`) : '';
+    if (!rows.length) {
       const empty = el('div', 'ui-empty');
-      empty.append(el('span', 'ui-empty-icon', query ? '🔍' : '🎓'), el('strong', '', query ? 'No university matches' : 'No universities yet'),
-        el('span', '', query ? 'Try a university name, a city or a course such as "data science".' : 'The universities appear here after the first automatic reading.'));
+      const why = filtered && list.length;
+      empty.append(el('span', 'ui-empty-icon', query || why ? '🔍' : '🎓'), el('strong', '', why ? 'No university with these filters' : query ? 'No university matches' : 'No universities yet'),
+        el('span', '', why ? 'Choose "All" or "Any intake" above, or press Clear filters.' : query ? 'Try a university name, a city or a course such as "data science".' : 'The universities appear here after the first automatic reading.'));
       box.replaceChildren(empty);
       return;
     }
-    const board = Boolean(query) && list.some((u) => u.courses && u.courses.length);
+    const board = Boolean(query) && rows.some((u) => u.courses && u.courses.length);
     box.classList.toggle('is-board', board);
-    const out = list.map(card);
+    const out = rows.map(card);
     // Above the board: who the courses are shortlisted for.
     if (board && team) { const head = window.ShortlistFor.bar(); head.classList.add('ub-for'); out.unshift(head); }
     box.replaceChildren(...out);
@@ -123,6 +178,7 @@
       const data = await res.json();
       if (seq !== searchSeq) return;
       list = data;
+      if (!query) all = data;
       loadedOnce = true;
       $('msg').textContent = '';
       render();
@@ -139,6 +195,12 @@
     query = $('search').value.trim().slice(0, 100);
     searchTimer = setTimeout(load, 180);
   });
+  $('ffKind').addEventListener('click', (e) => { const b = e.target.closest('button[data-k]'); if (!b) return; filters.kind = b.dataset.k; saveFilters(); render(); });
+  $('ffIntake').addEventListener('change', () => { filters.intake = $('ffIntake').value; saveFilters(); render(); });
+  $('ffSort').addEventListener('change', () => { filters.sort = $('ffSort').value; saveFilters(); render(); });
+  $('ffClear').addEventListener('click', () => { Object.assign(filters, { kind: 'all', intake: '', sort: 'az' }); saveFilters(); render(); });
+  // Esc in the search box clears it.
+  $('search').addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('search').value) { $('search').value = ''; query = ''; load(); } });
   // "/" jumps to the search box, like on most sites.
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {

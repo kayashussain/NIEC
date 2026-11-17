@@ -2787,19 +2787,23 @@ html body .dl-card.is-closed .dl-date { color: #b42318; }
 html body .dl-edit { display: grid; gap: 12px; margin: 0 0 10px; }
 html body .dl-edit-block { display: grid; gap: 8px; margin: 0; padding: 12px 14px; border: 0; border-radius: 12px; background: #f5f5f7; }
 
-html body .doc .programs { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14.5px; }
-html body .doc .programs th, html body .doc .programs td { padding: 12px 14px; border: 0; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; background: none; }
-html body .doc .programs thead th { color: #515154; font-size: 12.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; background: #f5f5f7; }
-html body .doc .programs thead th:first-child { border-radius: 10px 0 0 10px; }
-html body .doc .programs thead th:last-child { border-radius: 0 10px 10px 0; }
-html body .doc .programs th.lvl { min-width: 130px; color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 15px; }
-html body .doc .programs td.all-levels { border-left: 1px solid var(--border); background: #fafafc; }
-html body .doc .programs th.lvl b { display: block; font-size: 15px; }
+/* 🔴 CSS CHANGED (2026-11-17): the entry requirements and fees of a university as one card per level | from: one wide table (Level, Entry requirements, English, Tuition fee, Scholarship, Deposit) whose columns were crushed to a word per line and ran off the right edge of the page | to: a grid of white rounded cards, one per level (level name bold 17px, duration in grey beside it), each fact on its own line with a small grey label (Entry requirements, English, Tuition fee ...) and the text in 15px dark type; tuition fee and scholarship in bold; a value the same for every level written once above the cards on a soft grey band */
 html body .lvl-dur { display: block; margin-top: 2px; color: #66666b; font-size: 13px; font-weight: 400; }
-html body .doc .programs td p { margin: 0 0 4px; }
-html body .doc .programs td ul { margin: 0 0 4px; padding-left: 16px; }
-html body .doc .programs td h3 { margin: 6px 0 2px; font-size: 13px; color: #515154; }
-html body .doc .programs .dim { color: #8e8e93; }
+html body .doc .lvl-shared { display: grid; gap: 8px; margin: 0 0 14px; padding: 12px 16px; border-radius: 12px; background: #f5f5f7; }
+html body .doc .lvl-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+html body .doc .lvl-card { display: flex; flex-direction: column; padding: 16px 18px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .08), 0 2px 10px -6px rgba(0, 0, 0, .12); break-inside: avoid; }
+html body .doc .lvl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid #ededf0; }
+html body .doc .lvl-head h3 { margin: 0; color: #1d1d1f; font-size: 17px; font-weight: 650; }
+html body .doc .lvl-head .lvl-dur { margin: 0; }
+html body .doc .lvl-facts { margin: 0; }
+html body .doc .lvl-row, html body .doc .lvl-shared > div { padding: 8px 0; }
+html body .doc .lvl-row + .lvl-row { border-top: 1px solid #f2f2f5; }
+html body .doc .lvl-facts dt, html body .doc .lvl-shared dt { margin: 0 0 2px; color: #6e6e73; font-size: 13px; font-weight: 600; }
+html body .doc .lvl-facts dd, html body .doc .lvl-shared dd { margin: 0; color: #1d1d1f; font-size: 15px; overflow-wrap: anywhere; }
+html body .doc .lvl-facts dd p, html body .doc .lvl-shared dd p { margin: 0 0 3px; }
+html body .doc .lvl-facts dd ul, html body .doc .lvl-shared dd ul { margin: 0 0 3px; padding-left: 18px; }
+html body .doc .lvl-tuition dd, html body .doc .lvl-scholarship dd { font-weight: 600; }
+html body .doc .lvl-facts .dim { color: #8e8e93; font-weight: 400; }
 html body .doc section > h3 { margin: 16px 0 6px; font-size: 15px; color: var(--ink); }
 
 html body .course-group { margin: 16px 0 6px; color: #515154; font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
@@ -2835,11 +2839,8 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 @media (max-width: 760px) {
   html body .doc { padding: 22px 16px 24px; }
   html body .doc-head h1 { font-size: 26px; }
-  html body .doc .programs thead { display: none; }
-  html body .doc .programs, html body .doc .programs tbody, html body .doc .programs tr, html body .doc .programs th, html body .doc .programs td { display: block; width: 100%; }
-  html body .doc .programs tr { margin: 0 0 12px; padding: 4px 0; border: 1px solid var(--border); border-radius: 14px; }
-  html body .doc .programs td::before { content: attr(data-label); display: block; margin-bottom: 2px; color: #515154; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
-  html body .doc .programs td:last-child { border-bottom: 0; }
+  /* 🔴 CSS CHANGED (2026-11-17): the phone view of the old fees table removed | from: the table's rows turned into cards on a phone | to: deleted (the level cards are already cards on every screen, one per row on a phone) */
+  html body .doc .lvl-cards { grid-template-columns: minmax(0, 1fr); }
   html body .doc .course-list { grid-template-columns: 1fr; }
   html body .toc { flex-wrap: nowrap; overflow-x: auto; }
 }
@@ -3227,3 +3228,28 @@ html body .p-chosen-item h3 { margin: 0; font-size: 16px; }
 .p-chosen-facts dt { color: #6e6e73; font-size: 12.5px; }
 .p-chosen-facts dd { margin: 0; color: #1d1d1f; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
 .p-card-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the Fact File list gives the answer without opening a page | from: 57 alike cards with only the name, city and intake chips; no filters; a course list on a university page with no way to search it | to: under the title a row of filters (a segmented switch All, Universities, Pathway colleges; Intake and Sort menus as soft grey pills; a blue "Clear filters" link); a soft amber line with an amber dot "4 universities close applications in the next 14 days. Show them first"; on each card a soft grey box "Apply by 4 Dec 2026" with the intake in grey and a days-left pill (grey; amber within 30 days; red within 7), "No open deadline listed" in grey when there is none, and at the bottom "123 courses" and a grey "Pathway college" pill; on a university page a search box above the courses "Filter the 123 courses" with how many match */
+.ff-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 18px 0 6px; }
+.ff-bar[hidden], .ff-soon[hidden] { display: none; }
+.ff-pick { display: inline-flex; align-items: center; gap: 8px; color: #515154; font-size: 14px; font-weight: 600; }
+.ff-pick select { width: auto; min-height: 38px; padding: 0 30px 0 14px; border: 0; border-radius: 999px; background-color: #e8e8ed; color: #1d1d1f; font: 500 14.5px var(--font); cursor: pointer; }
+.ff-pick select:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+.ff-clear { font-weight: 600; }
+.ff-soon { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 8px 0 0; padding: 10px 14px; border-radius: 12px; background: #fff7e8; color: #5c3b00; font-size: 14.5px; }
+.ff-soon-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff9f0a; }
+.ff-soon .p-link { font-weight: 600; }
+.uc-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: #f5f5f7; font-size: 14px; color: #1d1d1f; }
+.uc-next b { font-weight: 650; }
+.uc-next-intake { display: block; color: #6e6e73; font-size: 13px; }
+.uc-next.is-none { color: #6e6e73; }
+.uc-days { flex: none; padding: 1px 9px; border-radius: 999px; background: #e8e8ed; color: #3a3a3c; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.uc-days.is-soon { background: #ffefd0; color: #8a4b00; }
+.uc-days.is-urgent { background: #ffe3e0; color: #b42318; }
+.uc-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: #515154; font-size: 13.5px; }
+.uc-kind { padding: 1px 9px; border-radius: 999px; background: #ececf0; color: #3a3a3c; font-size: 12.5px; font-weight: 600; }
+.uni-card.is-board .uc-next { margin: 0 0 4px; }
+html body .doc .course-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 10px; }
+html body .doc .course-filter .search { flex: 1 1 260px; max-width: 420px; min-height: 40px; border: 0; border-radius: 999px; padding: 0 16px; background: #f0f0f3; }
+html body .doc .course-filter .search:focus { outline: 2px solid #0071e3; outline-offset: 1px; background: #fff; }
+.course-filter-info { color: #515154; font-size: 14px; font-weight: 600; }

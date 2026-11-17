@@ -171,7 +171,26 @@ const isBlank = (u) => !(u.city || u.website || u.overview || u.entryRequirement
 const starterFields = (u) => JSON.stringify([u.city, u.location, u.overview, u.website, u.entryRequirements, u.languageTests, u.courses, u.interview, u.notes, u.programs || [], u.intakes || [], u.process || []]);
 const withStarterDetails = (u) => (hasStarter(u.name) ? { ...u, ...clean({ ...STARTER_DETAILS[startKey(u.name)], name: u.name, website: u.website || STARTER_DETAILS[startKey(u.name)].website || '' }, u) } : u);
 
-const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: u.intakes.map((i) => i.name), updatedAt: u.updatedAt });
+// What each card of the list shows at a glance (the owner, 17 Nov 2026: less opening of pages): the next "Apply by" still open, how many
+// courses, and whether it is a pathway college. Worked out once per page and day (the stored page object is kept while the file is unchanged).
+const FactPresent = require('./fact-present');
+const glanceMemo = new WeakMap();
+const PATHWAY = /international college|\bISC\b|oncampus|pathway|\b(ICD|UKIC|UBIC|UGIC|ENUIC|BUIC|ICAS)\b/i;
+function glance(u) {
+  const day = new Date().toDateString();
+  const hit = glanceMemo.get(u);
+  if (hit && hit.day === day) return hit.value;
+  let value = { next: null, courseCount: 0 };
+  try {
+    const view = FactPresent.present(u);
+    const open = view.deadlines.filter((d) => d.applyBy && !d.applyBy.closed && typeof d.applyBy.days === 'number' && d.applyBy.days >= 0)
+      .sort((a, b) => a.applyBy.days - b.applyBy.days)[0];
+    value = { next: open ? { intake: open.name, when: open.applyBy.when, days: open.applyBy.days } : null, courseCount: view.courses.length };
+  } catch (e) { /* the card shows without it */ }
+  glanceMemo.set(u, { day, value });
+  return value;
+}
+const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: u.intakes.map((i) => i.name), updatedAt: u.updatedAt, kind: PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u) });
 
 // Course lines of a page: the course list and each intake's, without the "## " sub-headings.
 const courseLines = (u) => [u.courses, ...u.intakes.map((i) => i.courses)]
