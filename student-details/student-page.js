@@ -175,7 +175,6 @@
     return c;
   }
 
-  // ---- Details: only the notes, and why a student did not go on ----
   // ---- tasks given to a team about this student ----
   function assignTask() {
     dialog('Assign a task', (body, close) => {
@@ -234,13 +233,16 @@
     const c = el('section', 'p-card p-tasks');
     const head = el('div', 'p-card-head');
     const open = tasks.filter((t) => !t.done).length;
-    head.append(el('h2', '', 'Tasks'), el('span', 'td-chip', open ? `${open} open` : 'All done'));
+    // The title with how many are open in grey beside it, and a small red pill only when something is new.
+    const title = el('h2', '', 'Tasks');
+    title.append(el('span', 'p-tl-count', String(open)));
+    head.append(title);
     c.append(head);
     const label = (id) => ((data.taskTeams || []).find((t) => t.id === id) || { label: id }).label;
     const me = (data.me || {}).name || '';
     const unread = data.taskUnread || {};
     const fresh = Object.values(unread).reduce((n, x) => n + x, 0);
-    if (fresh) head.insertBefore(el('span', 'td-chip is-new', `${fresh} new`), head.lastChild);
+    if (fresh) head.append(el('span', 'td-chip is-new', `${fresh} new`));
     const list = el('div', 'td-list');
     c.append(list);
     tasks.forEach((t) => {
@@ -267,28 +269,16 @@
   }
 
   // The Timeline tab (the owner, 17 Nov 2026: calm and professional, as Apple would make it): the work on the left (the open tasks,
-  // then the Timeline) and a slim column on the right with where the student came from (and, for a student who did not go on, why).
+  // then the Timeline) and a slim column on the right with where the student came from. There is no box for why a student did not go
+  // on (the owner, 17 Nov 2026): a withdrawn student is explained in a note.
   function details() {
     const page = el('div', 'p-tl-page');
     const main = el('div', 'p-tl-main');
     const side = el('aside', 'p-tl-side');
-    const s = data.student;
     const tc = tasksCard();
     if (tc) main.append(tc);
     main.append(notes());
     side.append(origin());
-    if (F.LOST_STAGES.includes(s.stage) || profile().lostReason) {
-      const kind = el('section', 'p-card p-tl-why');
-      kind.append(el('h2', '', 'Why the student did not go on'));
-      const reason = field('Reason', { kind: 'select', choices: F.LOST_REASONS, value: profile().lostReason, disabled: !can() });
-      kind.append(reason.wrap);
-      if (can()) {
-        const ok = h('button', { class: 'btn btn-primary btn-sm', type: 'button', disabled: true, onclick: async () => { await save('profile', { lostReason: reason.input.value }, 'Saved'); render(); } }, 'Save');
-        reason.input.addEventListener('change', () => { ok.disabled = reason.input.value === (profile().lostReason || ''); });
-        const bar = el('div', 'p-bar'); bar.append(ok); kind.append(bar);
-      }
-      side.append(kind);
-    }
     // While the source is being changed its form gets the whole width, above the rest.
     if (editingOrigin) page.classList.add('p-editing-origin');
     page.append(main, side);
@@ -537,21 +527,23 @@
     const short = (t) => (t.length > 70 ? t.slice(0, 67) + '...' : t);
     const teamName = (id) => (((data.taskTeams || []).find((x) => x.id === id) || {}).label || id).replace(/\s*\(.*\)$/, '');
     const events = data.card.notes.map((n) => ({ kind: 'note', at: n.at, by: n.by, text: n.text, note: n }));
+    // Each entry says what it is in a few grey words beside the name ("Task for Application Team", "Update", "Reassigned"), and the
+    // task it belongs to is shown once, as a small grey quote, as a reply is in Apple's Mail (the owner, 17 Nov 2026).
     (data.card.tasks || []).forEach((t) => {
       const tag = window.Portal.tagOf(t, data.student.stage);
-      events.push({ kind: 'task', at: t.at, by: t.by, title: `Gave ${teamName(t.team)} a task`, text: t.text, tag });
+      events.push({ kind: 'task', at: t.at, by: t.by, label: `Task for ${teamName(t.team)}`, text: t.text, tag });
       (t.comments || []).forEach((c) => {
-        if (c.handoff) events.push({ kind: 'task', at: c.at, by: c.by, title: `Reassigned “${short(t.text)}”: ${teamName(c.handoff.from)} → ${teamName(c.handoff.to)}`, text: c.text || '' });
-        else if (c.schedule) events.push({ kind: 'task', at: c.at, by: c.by, title: c.schedule.to ? `Moved “${short(t.text)}” to ${window.Portal.dayLabel(c.schedule.to, data.today)}` : `Moved “${short(t.text)}” back to today`, text: c.text || '' });
-        else if (c.text) events.push({ kind: 'update', at: c.at, by: c.by, title: `Update on “${short(t.text)}”`, text: c.text });
+        if (c.handoff) events.push({ kind: 'task', at: c.at, by: c.by, label: 'Reassigned', lead: `${teamName(c.handoff.from)} → ${teamName(c.handoff.to)}`, ref: t.text, text: c.text || '' });
+        else if (c.schedule) events.push({ kind: 'task', at: c.at, by: c.by, label: 'Moved', lead: c.schedule.to ? `Moved to ${window.Portal.dayLabel(c.schedule.to, data.today)}` : 'Moved back to today', ref: t.text, text: c.text || '' });
+        else if (c.text) events.push({ kind: 'update', at: c.at, by: c.by, label: 'Update', ref: t.text, text: c.text });
       });
-      if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, title: `Done: “${short(t.text)}”`, text: '', task: t });
+      if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, label: 'Marked done', ref: t.text, text: '', task: t });
     });
     // The emails and WhatsApp messages sent from Follow-up are in the history too (the card itself sends nothing: Call, WhatsApp
     // and Email under the name open the person's own phone, WhatsApp or email program).
     (data.card.messages || []).forEach((m) => {
-      const how = m.channel === 'whatsapp' ? 'WhatsApp opened' : m.status === 'sent' ? 'Email sent' : m.status === 'failed' ? 'Email not sent' : 'Email prepared';
-      events.push({ kind: 'message', at: m.at, by: m.by, title: `${how}${m.subject ? `: “${short(m.subject)}”` : ''}`, text: '', message: m });
+      const label = m.channel === 'whatsapp' ? 'WhatsApp' : m.status === 'sent' ? 'Email sent' : m.status === 'failed' ? 'Email not sent' : 'Email prepared';
+      events.push({ kind: 'message', at: m.at, by: m.by, label, lead: m.subject || m.template || '', text: '', message: m });
     });
     events.sort((x, y) => String(y.at).localeCompare(String(x.at)));
     const AUTO = 'ISR (automatic)';
@@ -585,10 +577,11 @@
       const t = new Date(e.at);
       const time = el('time', 'p-tl-time', Number.isNaN(t.getTime()) ? '' : t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }));
       time.dateTime = e.at; time.title = when(e.at);
-      const label = k === 'auto' ? 'Automatic' : k === 'note' ? 'Note' : k === 'done' ? 'Done' : k === 'update' ? 'Update' : k === 'message' ? (e.message.channel === 'whatsapp' ? 'WhatsApp' : 'Email') : 'Task';
+      const label = k === 'auto' ? 'Automatic' : k === 'note' ? 'Note' : e.label;
       line.append(el('b', 'p-tl-who', k === 'auto' ? 'ISR' : e.by || 'Someone'), el('span', 'p-tl-kind', label), time);
       body.append(line);
-      if (e.title) { const ti = el('p', 'p-tl-title'); ti.append(e.title); body.append(ti); }
+      if (e.lead) body.append(el('p', 'p-tl-lead', e.lead));
+      if (e.ref) { const q = el('p', 'p-tl-ref', e.ref); q.title = e.ref; body.append(q); }
       if (e.text) {
         const p = el('p', 'p-tl-text');
         if (e.tag) p.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' ');
