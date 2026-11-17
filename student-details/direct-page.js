@@ -6,7 +6,7 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   let uni = null; // the university open in the editor
-  let all = []; // the list, for the search box
+  let all = []; // the list
   // ?backup=ID: this is an earlier daily backup, read only (see backup-bar.js): looked at, never changed.
   const BACKUP = new URLSearchParams(location.search).get('backup') || '';
   const API = BACKUP ? '/api/restore/snapshot/' + encodeURIComponent(BACKUP) + '/partners' : '/api/direct';
@@ -71,8 +71,7 @@
   const openOne = (id) => (viewer() ? openView(id) : openEditor(id));
 
   function drawList() {
-    const q = $('search').value.trim().toLowerCase();
-    const shown = q ? all.filter((u) => [u.name, u.via, ...(u.campuses || [])].join(' ').toLowerCase().includes(q)) : all;
+    const shown = all; // no search box (the owner, 17 Nov 2026)
     // The band across the top, as on B2B Partners: the universities, the students and visas through them, and how many are ready to apply to.
     const active = all.filter((u) => u.status !== 'Ended');
     const tot = all.reduce((t, u) => { const x = statOf(u); t.students += x.students; t.visas += x.visas; t.now += x.thisIntake; return t; }, { students: 0, visas: 0, now: 0 });
@@ -84,11 +83,10 @@
       ['Ready to apply', `${num(ready)} of ${num(active.length)}`, 'With a portal or an email'],
     ];
     $('kpis').replaceChildren(...band.map(([label, v, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', v), el('small', '', sub)); return d; }));
-    $('count').textContent = all.length ? (q ? `${shown.length} of ${all.length}` : `${all.length} in the list`) : '';
+    $('count').textContent = all.length ? `${all.length} in the list` : '';
     if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', viewer() ? 'No partner universities yet.' : 'No partner universities yet.')); return; }
     // The busiest first (the most students, then by name). No Sort menu (the owner, 17 Nov 2026).
     const ordered = shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
-    if (!ordered.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
     $('list').replaceChildren(...ordered.map(card));
     if (justSaved) { const hit = $('list').querySelector(`[data-id="${justSaved}"]`); if (hit) hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
     justSaved = '';
@@ -408,7 +406,6 @@
       ? 'Where to apply, contacts, agreements and commission. View only; Admin edits.'
       : 'Where to apply, campuses, contacts and agreements. View only; Admin edits.';
   }
-  $('search').addEventListener('input', drawList);
   $('addForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
