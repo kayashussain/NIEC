@@ -702,10 +702,18 @@
   // One shortlisted or applied course: its name, university, partner and what the Fact File says.
   function optionItem(o, waiting) {
     const item = el('li', 'p-chosen-item');
-    const header = el('header');
-    header.append(el('h3', '', `${o.course || o.university}`));
-    const tools = el('div', 'p-chosen-tools');
     const i = waiting.indexOf(o);
+    // The university first, the course under it (the owner, 17 Nov 2026: long course names looked packed). An application shows the
+    // university's initials in its round badge; the shortlist keeps 1, 2, 3, the order to apply.
+    item.dataset.mono = String(o.university || '').replace(/\b(of|the|and|for|at|in)\b/gi, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+    if (i < 0 && isGoingAhead(o)) item.classList.add('is-priority');
+    const header = el('header');
+    const title = el('div', 'p-chosen-title');
+    title.append(el('h3', '', o.university || o.course));
+    const courseLine = [o.university ? o.course : '', o.intake, o.level].filter(Boolean).join(' · ');
+    if (courseLine) title.append(el('p', 'p-chosen-course', courseLine));
+    header.append(title);
+    const tools = el('div', 'p-chosen-tools');
     if (can() && i >= 0 && waiting.length > 1) {
       const move = (d) => () => { const j = i + d; if (j < 0 || j >= sendOrder.length) return; [sendOrder[i], sendOrder[j]] = [sendOrder[j], sendOrder[i]]; render(); };
       tools.append(h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'), h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === waiting.length - 1, onclick: move(1) }, '↓'));
@@ -722,19 +730,18 @@
     header.append(tools);
     item.append(header);
     const sub = el('div', 'p-chosen-sub');
-    sub.append(el('span', '', [o.university, o.intake, o.level].filter(Boolean).join(' · ')));
+    // The priority university (the one the student goes ahead with, named on All Students): its tag first, chosen above the list.
+    if (i < 0 && isGoingAhead(o)) sub.append(el('span', 'p-applied is-priority', 'Priority'));
     if (o.fromSheet) sub.append(el('span', 'p-chosen-partner', 'On All Students'));
     if (o.partner) sub.append(el('span', 'p-chosen-partner', /^direct$/i.test(o.partner) ? 'Direct' : `Through ${o.partner}`));
     if (o.sent && !o.applied) sub.append(el('span', 'p-applied is-sent', `With the Application Team since ${day(o.sent)}, not submitted yet`));
-    // The priority university (the one the student goes ahead with, named on All Students): a small tag, chosen above the list.
-    if (i < 0 && isGoingAhead(o)) sub.append(el('span', 'p-applied is-offer', 'Priority'));
     if (o.applied) sub.append(el('span', 'p-applied', `Submitted ${day(o.applied)}`));
     if (o.offer) sub.append(el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
     if (o.refused) sub.append(el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
     if (o.withdrawn) sub.append(el('span', 'p-applied is-refused', `Withdrawn ${day(o.withdrawn)}`));
     if (o.skipped) sub.append(el('span', 'p-applied is-refused', `Not submitted (${day(o.skipped)})`));
     if (o.applied && !o.offer && !o.refused && !o.withdrawn) sub.append(el('span', 'p-applied is-sent', 'Waiting for the answer'));
-    item.append(sub);
+    if (sub.children.length) item.append(sub);
     if (o.reason && (o.refused || o.withdrawn || o.skipped)) item.append(el('p', 'p-muted p-small', `Reason: ${o.reason}`));
     // What the Fact File says, read only (the owner, 17 Nov 2026: "I don't want to fill any details").
     const facts = el('dl', 'p-chosen-facts');
@@ -823,7 +830,7 @@
     const box = el('section', 'p-card');
     const head = el('div', 'p-card-head');
     const waiting = waitingOptions();
-    head.append(el('h2', '', `Shortlist (${waiting.length})`));
+    { const t = el('h2', '', 'Shortlist'); t.append(el('span', 'p-tl-count', String(waiting.length))); head.append(t); }
     const acts = el('div', 'p-card-acts');
     // Straight to the Fact File with this student already chosen, so the team shortlists without searching for the student again.
     // target _top: from the half card (an iframe on All Students) the Fact File opens as the whole page, not inside the card.
@@ -856,21 +863,30 @@
     const box = el('section', 'p-card');
     const offers = apps.filter((o) => o.offer).length;
     const submitted = apps.filter((o) => o.applied).length;
-    box.append(el('h2', '', `Universities applied to (${apps.length})`));
+    { const t = el('h2', '', 'Universities Applied To'); t.append(el('span', 'p-tl-count', String(apps.length))); box.append(t); }
     if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses above and press "Assign to the Application Team".')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
-    box.append(el('p', 'p-muted p-small', `${submitted} submitted, ${offers} with an offer${waitingTeam ? `, ${waitingTeam} with the Application Team, not submitted yet` : ''}. Record submission or Update keeps each university's days.`));
+    box.append(el('p', 'p-apps-summary', [`${submitted} submitted`, `${offers} ${offers === 1 ? 'offer' : 'offers'}`, waitingTeam ? `${waitingTeam} with the Application Team` : ''].filter(Boolean).join(' · ')));
     // The priority university (the owner, 17 Nov 2026): chosen here from the applications; it writes the university and course
     // on All Students by itself, and can be changed at any time.
     const live = liveApps();
     if (can() && live.length) {
       const cur = live.find(isGoingAhead);
-      const pick = field('Priority university', { kind: 'select', choices: [...(cur ? [] : [['', 'Choose one']]), ...live.map((o) => [o.id, appName(o)])], value: cur ? cur.id : '' });
-      pick.input.addEventListener('change', () => { const o = live.find((x) => x.id === pick.input.value); if (o) goAhead(o); });
-      const f = el('div', 'p-form'); f.append(pick.wrap); box.append(f);
+      // One quiet row: the words on the left, the choice on the right (long names end in "..." instead of crowding the row).
+      const row = el('label', 'p-priority');
+      const words = el('span', 'p-priority-text');
+      words.append(el('b', '', 'Priority University'), el('small', '', 'Writes the university and course on All Students'));
+      const sel = document.createElement('select');
+      sel.className = 'p-priority-select';
+      [...(cur ? [] : [['', 'Choose one']]), ...live.map((o) => [o.id, appName(o)])].forEach(([v, t]) => { const op = document.createElement('option'); op.value = v; op.textContent = t; sel.append(op); });
+      sel.value = cur ? cur.id : '';
+      if (cur) sel.title = appName(cur);
+      sel.addEventListener('change', () => { const o = live.find((x) => x.id === sel.value); if (o) goAhead(o); });
+      row.append(words, sel);
+      box.append(row);
     }
     const order = (o) => (isGoingAhead(o) ? -1 : o.offer ? 0 : o.applied && !o.refused && !o.withdrawn ? 1 : o.sent && !o.applied && !o.skipped ? 2 : 3);
-    const list = el('ol', 'p-chosen');
+    const list = el('ol', 'p-chosen is-apps');
     apps.slice().sort((a, b) => order(a) - order(b) || Number(a.rank || 99) - Number(b.rank || 99)).forEach((o) => list.append(optionItem(o, [])));
     box.append(list);
     return box;
@@ -879,7 +895,7 @@
   // whole Fact File page with this student chosen, and Assign to the Application Team), then Applications: every university assigned
   // or applied to, with the course, the day it was submitted and the answer (offer, refused or withdrawn with the reason).
   function optionsTab() {
-    const wrap = el('div');
+    const wrap = el('div', 'p-apps');
     wrap.append(chosenOptions(), applicationsList());
     return wrap;
   }
