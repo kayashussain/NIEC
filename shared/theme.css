@@ -2765,3 +2765,15 @@ html body .wk-change.down { color: #a84d00; }
 html body .page .count { color: #515154; }
 html body:has(.p-embed-bar) .p-option h3 { color: var(--ink); font-size: 16px; font-weight: 650; }
 html body h1.p-error-title { margin: 0 0 8px; font-size: 24px; font-weight: 650; }
+
+/* 🔴 CSS CHANGED (2026-11-17): Partners, one section for Partner Universities, B2B Partners and Agents | from: three separate menu entries and three pages with nothing joining them | to: one "Partners" menu entry; at the top of each of the three lists a small grey "PARTNERS" label and an Apple segmented switch (Universities | B2B partners | Agents), the open one as a white pill, each with a soft grey count bubble; on a phone the switch fills the width */
+.pt-bar { display: grid; gap: 8px; margin: 0 0 22px; }
+.pt-eyebrow { margin: 0; color: #5f5f64; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.pt-switch { justify-self: start; }
+.pt-switch a { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 9px; color: #515154; font-size: 15px; font-weight: 500; text-decoration: none; transition: color .25s var(--ease-out, ease); }
+.pt-switch a:hover { color: #1d1d1f; }
+.pt-switch a[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
+.pt-n { min-width: 24px; padding: 1px 8px; border-radius: 999px; background: rgba(0, 0, 0, .06); color: #515154; font-size: 13px; font-weight: 600; text-align: center; }
+.pt-switch a[aria-selected="true"] .pt-n { background: rgba(0, 113, 227, .1); color: #0071e3; }
+@media (max-width: 640px) { .pt-switch { display: flex; justify-self: stretch; } .pt-switch a { flex: 1 1 0; justify-content: center; padding: 0 8px; font-size: 14px; } }
+@media print { .pt-bar { display: none !important; } }

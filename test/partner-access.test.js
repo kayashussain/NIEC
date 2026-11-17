@@ -100,6 +100,10 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   assert.strictEqual((await chitwan('GET', '/b2b-partners')).status, 302);
   assert.strictEqual((await sunita('GET', '/api/direct')).status, 403, 'the Follow-up Team has no Partner Universities');
   assert.strictEqual((await sunita('GET', '/partner-universities')).status, 302);
+  // Partners: one menu entry; it opens the first of the three lists the account may see (the owner, 17 Nov 2026).
+  assert.strictEqual((await chitwan('GET', '/partners')).location, '/partner-universities', 'a branch lands on Partner Universities');
+  assert.strictEqual((await asha('GET', '/partners')).location, '/partner-universities');
+  assert.ok(!String((await sunita('GET', '/partners')).location).startsWith('/partner'), 'the Follow-up Team is sent home');
   assert.strictEqual((await sunita('GET', '/message-templates')).status, 302);
   const mgr = (await chief('GET', `/api/direct/${uni.id}`)).json;
   assert.deepStrictEqual([mgr.slabs[0].commission, mgr.paymentTerms, mgr.applyPassword], ['15%', 'Paid in March', undefined], 'the Manager sees the commission, not the login');
