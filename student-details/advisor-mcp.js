@@ -1,8 +1,10 @@
 // A door for the Claude "Strategy Advisor" project (an MCP connector).
 //
 // It lets Claude READ the live ISR sheet (every tab, row and column), the Dashboard numbers,
-// the Fact File and the Incentive page (commissions, incentives, company earnings; see
-// counselor-incentive/advisor-tools.js). It can NOT change any student, the Fact File or any incentive.
+// the Fact File, the Incentive page (commissions, incentives, company earnings; see
+// counselor-incentive/advisor-tools.js) and the rest of the portal (student cards with tasks, notes and messages, partners,
+// agents, planning, users, settings, the activity record; see advisor-data.js, never passwords, tokens or keys).
+// It can NOT change any student, task, the Fact File or any incentive.
 //
 // The one thing it can write is the Advisor's own notebook ("memory"): short notes about the owner's
 // preferences, how NIEC works, decisions and lessons, kept in advisor-memory/ next to the data. Notes that
@@ -16,6 +18,7 @@
 const { createMcpEndpoint, textResult, errorResult } = require('../shared/mcp-core');
 const { createIncentiveTools } = require('../counselor-incentive/advisor-tools');
 const { syncFromWorkbook } = require('../counselor-incentive/incentive-data');
+const { createPortalData } = require('./advisor-data');
 
 const PREFIX = '/advisor-mcp/';
 const DEFAULT_LIMIT = 200;
@@ -96,7 +99,9 @@ function unknownColumns(sheets, cols) {
 
 // `incentive` (optional) adds the Incentive tools to this same connector: { getCommissions, getAdvances, getRate }, which read the
 // Incentive page's saved figures; the students come from the same workbook as the rest.
-function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, token, memoryDir, log = console.log }) {
+// `dataDir` (optional) adds the rest of the portal (advisor-data.js), read from the stored files in that folder.
+function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir, token, memoryDir, log = console.log }) {
+  const portalData = dataDir ? createPortalData({ dir: dataDir, getWorkbook }) : null;
   const incentiveTools = incentive ? createIncentiveTools({
     getSync: () => { const w = getWorkbook(); return w ? syncFromWorkbook(w) : { ok: false, error: 'The sheet data could not be read right now.' }; },
     getCommissions: incentive.getCommissions,
@@ -106,6 +111,10 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, token, 
 
   function callTool(name, a) {
     if (incentiveTools && incentiveTools.isIncentiveTool(name)) return incentiveTools.callTool(name, a);
+    if (portalData && portalData.isPortalTool(name)) {
+      const out = portalData.callTool(name, a || {});
+      return out.error ? errorResult(out.error) : textResult(out);
+    }
     const workbook = getWorkbook();
     if (!workbook) return errorResult('The sheet data could not be read right now.');
 
@@ -171,8 +180,8 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, token, 
   }
 
   return createMcpEndpoint({
-    prefix: PREFIX, token, tokenName: 'NIEC_ADVISOR_TOKEN', tools: incentiveTools ? [...TOOLS, ...incentiveTools.TOOLS] : TOOLS, callTool, serverName: 'niec-advisor', memoryDir, log,
-    instructions: 'Read-only, live access to the ISR sheet and Fact File' + (incentiveTools ? ', and to the Incentive page (commissions, incentives and company earnings)' : '') + ', plus a notebook you may write to. Call read_memory first in every conversation, then get_overview' + (incentiveTools ? ' (and get_incentive_overview for anything about incentives, commissions or earnings; University Partner is the agent; tuition and university commission are in GBP, incentives, TDS, advances and salary in NPR)' : '') + '. Save durable preferences and lessons with save_memory (never personal data). Prefer count_by for numbers and get_students with "columns" and "where" for rows' + (incentiveTools ? ', and summarize_incentives_by to compare agents and universities' : '') + '. Always say when the data was pulled (pulledAt).',
+    prefix: PREFIX, token, tokenName: 'NIEC_ADVISOR_TOKEN', tools: [...TOOLS, ...(incentiveTools ? incentiveTools.TOOLS : []), ...(portalData ? portalData.TOOLS : [])], callTool, serverName: 'niec-advisor', memoryDir, log,
+    instructions: 'Read-only, live access to the ISR sheet and Fact File' + (incentiveTools ? ', and to the Incentive page (commissions, incentives and company earnings)' : '') + (portalData ? ', and to the rest of the portal (tasks, student cards, partners, agents, planning, users, settings, activity; get_portal_areas lists them, get_tasks and get_student_file are the quick ways in; passwords, tokens and keys are never shown)' : '') + ', plus a notebook you may write to. Call read_memory first in every conversation, then get_overview' + (incentiveTools ? ' (and get_incentive_overview for anything about incentives, commissions or earnings; University Partner is the agent; tuition and university commission are in GBP, incentives, TDS, advances and salary in NPR)' : '') + '. Save durable preferences and lessons with save_memory (never personal data). Prefer count_by for numbers and get_students with "columns" and "where" for rows' + (incentiveTools ? ', and summarize_incentives_by to compare agents and universities' : '') + '. Always say when the data was pulled (pulledAt).',
   });
 }
 

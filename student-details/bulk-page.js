@@ -27,8 +27,19 @@
     } catch (e) { view.replaceChildren(el('div', 'p-card', e.message)); }
   }
 
+  // A step's heading: a blue number, the title and one line of help (the owner, 17 Nov 2026: the look of Apple's apps).
+  const stepHead = (n, title, help, extra) => {
+    const head = el('div', 'bk-step-head');
+    const t = el('div', 'bk-step-title');
+    t.append(el('h2', '', title), el('p', '', help));
+    head.append(el('span', 'bk-num', String(n)), t);
+    if (extra) head.append(extra);
+    return head;
+  };
+  const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+
   function render() {
-    const wrap = el('div');
+    const wrap = el('div', 'bk');
     const head = el('div', 'p-head');
     const title = el('div');
     title.append(el('h1', '', 'Follow-up'), el('p', '', 'One personal message to many students.'));
@@ -36,12 +47,15 @@
     wrap.append(head, setupBox);
 
     // 1. who
-    const who = el('section', 'p-card');
-    who.append(el('h2', '', '1. Choose the students'));
-    const bar = el('div', 'p-form');
+    const who = el('section', 'p-card bk-step');
+    const count = el('span', 'bk-count', '0 chosen');
+    who.append(stepHead(1, 'Choose the students', 'Narrow the list, then tick the students who should get the message.', count));
+    const bar = el('div', 'bk-filters');
     const intake = field('Intake', { kind: 'select', choices: [['', 'All intakes you can see'], ...lists.intakes.map((i) => [i.id, i.name])] });
     const stage = field('Stage (application status)', { kind: 'select', choices: [['', 'Every stage'], ...lists.stages.map((s) => [s, s])] });
-    const search = field('Name', { placeholder: 'Type to narrow the list' });
+    const search = field('Name', { placeholder: 'Search by name' });
+    search.input.type = 'search';
+    search.wrap.classList.add('bk-search');
     // Source: only the students of one source (Visitor, Social Media, a branch ...) or exactly which (a platform, a campaign).
     const NAMES = { Events: 'Events and marketing', Agent: 'Agents', Branch: 'Branches' };
     const groups = new Map();
@@ -54,38 +68,49 @@
       source.input.append(og);
     });
     const fromSource = (s) => { const v = source.input.value; if (!v) return true; if (v.startsWith('g:')) return s.source === v.slice(2); const [g, d] = v.slice(2).split('\u0001'); return s.source === g && s.sourceDetail === d; };
-    bar.append(intake.wrap, stage.wrap, source.wrap, search.wrap);
+    bar.append(search.wrap, intake.wrap, stage.wrap, source.wrap);
     who.append(bar);
-    const info = el('div', 'p-muted p-small');
-    const listBox = el('div', 'p-pick-list');
-    listBox.style.maxHeight = '340px';
-    listBox.style.overflow = 'auto';
-    const tools = el('div', 'p-bar');
+    const info = el('div', 'bk-info');
+    // 🔴 CSS CHANGED (2026-11-17): the student list | from: a 340px box set here, plain checkbox rows | to: its look and height are in theme.css (.bk-list, .bk-row)
+    const listBox = el('div', 'bk-list');
+    const tools = el('div', 'bk-tools');
     const visible = () => students.filter((s) => fromSource(s) && (!intake.input.value || s.sheetId === intake.input.value) && (!stage.input.value || s.stage === stage.input.value) && (!search.input.value || s.name.toLowerCase().includes(search.input.value.toLowerCase())));
+    const counts = (v) => {
+      info.textContent = `${v.length} ${v.length === 1 ? 'student matches' : 'students match'}`;
+      count.textContent = `${chosen.size} chosen`;
+      count.classList.toggle('is-on', chosen.size > 0);
+      if (window.bulkCount) window.bulkCount();
+    };
     const draw = () => {
       const v = visible();
-      info.textContent = `${v.length} students match. ${chosen.size} chosen.`;
+      counts(v);
       listBox.replaceChildren(...(v.length ? v.slice(0, 400).map((s) => {
-        const row = el('label', 'p-check');
+        const row = el('label', 'bk-row');
         const c = el('input'); c.type = 'checkbox'; c.checked = chosen.has(s.id);
-        c.addEventListener('change', () => { if (c.checked) chosen.add(s.id); else chosen.delete(s.id); info.textContent = `${v.length} students match. ${chosen.size} chosen.`; });
-        const t = el('span'); t.append(el('b', '', s.name), el('div', 'p-muted p-small', [s.stage, s.intake, s.email || 'no email', s.whatsapp ? '' : 'no WhatsApp number'].filter(Boolean).join(' · ')));
-        row.append(c, t);
+        row.classList.toggle('is-on', c.checked);
+        c.addEventListener('change', () => { if (c.checked) chosen.add(s.id); else chosen.delete(s.id); row.classList.toggle('is-on', c.checked); counts(v); });
+        const t = el('span', 'bk-who');
+        t.append(el('b', '', s.name), el('span', 'bk-sub', [s.intake, s.email || ''].filter(Boolean).join(' · ')));
+        const tags = el('span', 'bk-tags');
+        if (s.stage) tags.append(el('span', 'bk-tag', s.stage));
+        if (!s.email) tags.append(el('span', 'bk-tag is-warn', 'No email'));
+        if (!s.whatsapp) tags.append(el('span', 'bk-tag is-warn', 'No WhatsApp'));
+        row.append(c, el('span', 'bk-av', initials(s.name)), t, tags);
         return row;
-      }) : [el('div', 'p-empty', 'No student matches.')]));
+      }) : [el('div', 'bk-empty', 'No student matches.')]));
     };
-    tools.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { visible().slice(0, 150).forEach((s) => chosen.add(s.id)); draw(); } }, 'Tick all shown (up to 150)'), h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { chosen.clear(); draw(); } }, 'Clear'));
+    tools.append(info, h('button', { class: 'bk-link', type: 'button', onclick: () => { visible().slice(0, 150).forEach((s) => chosen.add(s.id)); draw(); } }, 'Tick all shown (up to 150)'), h('button', { class: 'bk-link', type: 'button', onclick: () => { chosen.clear(); draw(); } }, 'Clear'));
     const q = new URLSearchParams(location.search);
     if (q.get('stage') && lists.stages.includes(q.get('stage'))) stage.input.value = q.get('stage');
     if (q.get('sheet')) intake.input.value = q.get('sheet');
     [intake, stage, source, search].forEach((x) => { x.input.addEventListener('input', draw); x.input.addEventListener('change', draw); });
-    who.append(info, tools, listBox);
+    who.append(tools, listBox);
     wrap.append(who);
     draw();
 
     // 2. how
-    const how = el('section', 'p-card');
-    how.append(el('h2', '', '2. How to send it'));
+    const how = el('section', 'p-card bk-step');
+    how.append(stepHead(2, 'Write the message', 'Choose email or WhatsApp. The words in {brackets} are filled in for each student.'));
     let channel = 'email';
     const choice = el('div', 'p-tabs');
     choice.setAttribute('role', 'tablist');
@@ -95,16 +120,23 @@
     choice.append(eBtn, wBtn);
     how.append(choice);
     const subject = field('Subject', { wide: true, max: 200 });
+    subject.input.placeholder = 'What is this email about?';
     const body = field('Email text', { kind: 'area', max: 8000, wide: true, value: 'Dear {first_name},\n\n' });
-    body.input.style.minHeight = '200px';
+    // 🔴 CSS CHANGED (2026-11-17): the email text box | from: a style set here (200px tall) | to: its height is in theme.css (.bk-mail textarea)
+
     const wa = field('WhatsApp text', { kind: 'area', max: 2000, wide: true, value: 'Hello {first_name}, ' });
-    const form = el('div', 'p-form');
+    const form = el('div', 'bk-mail');
+    const to = el('div', 'bk-to');
+    const toCount = el('span', 'bk-to-n');
+    to.append(el('span', 'bk-to-label', 'To'), toCount);
+    window.bulkCount = () => { toCount.textContent = chosen.size ? `${chosen.size} ${chosen.size === 1 ? 'student' : 'students'}, each gets their own message` : 'No student chosen yet'; toCount.classList.toggle('is-none', !chosen.size); };
+    window.bulkCount();
     // The words filled in for each student: a click puts one where the cursor is, in the box last typed in.
     let lastBox = body.input;
     [subject.input, body.input, wa.input].forEach((x) => x.addEventListener('focus', () => { lastBox = x; }));
     const chips = el('div', 'tp-chips');
     const chipsWrap = el('div', 'bk-words');
-    chipsWrap.append(el('span', 'tp-label', 'Filled in for each student (click to add)'), chips);
+    chipsWrap.append(el('span', 'tp-label', 'Insert'), chips);
     const SHOWN = ['first_name', 'full_name', 'university', 'course', 'intake', 'stage', 'offer_date', 'sender_name', 'company_name', 'options_table', 'documents_list'];
     window.bulkChips = () => {
       chips.replaceChildren(...fields.filter(([k]) => SHOWN.includes(k)).map(([k, d]) => {
@@ -120,16 +152,16 @@
       }));
     };
     window.bulkChips();
-    form.append(subject.wrap, body.wrap, wa.wrap, chipsWrap);
+    form.append(to, subject.wrap, body.wrap, wa.wrap, chipsWrap);
     how.append(form);
     wrap.append(how);
 
     // 3. send
-    const send = el('section', 'p-card');
-    send.append(el('h2', '', '3. Check and send'));
-    const note = el('div');
-    const out = el('div');
-    const actions = el('div', 'p-bar');
+    const send = el('section', 'p-card bk-step');
+    send.append(stepHead(3, 'Check and send', 'Read the message as each student will get it, then send.'));
+    const note = el('div', 'bk-note');
+    const out = el('div', 'bk-results');
+    const actions = el('div', 'bk-actions');
     const check = h('button', { class: 'btn', type: 'button' }, 'Check the message for each student');
     const sendAll = h('button', { class: 'btn btn-primary', type: 'button' }, 'Send emails now');
     sendAll.disabled = true;
@@ -164,9 +196,9 @@
         const r = await api('/api/bulk/preview', payload());
         items = r.items;
         const ready = items.filter((i) => !i.error && (channel === 'email' ? !i.problem : i.whatsapp && i.whatsapp.number)).length;
-        out.replaceChildren(el('p', '', `${ready} of ${items.length} students are ready for ${channel === 'email' ? 'email' : 'WhatsApp'}.`));
+        out.replaceChildren(el('p', 'bk-ready', `${ready} of ${items.length} students are ready for ${channel === 'email' ? 'email' : 'WhatsApp'}.`));
         items.forEach((i) => {
-          const row = el('div', 'p-sent');
+          const row = el('div', 'p-sent bk-res');
           if (i.error) { row.append(el('b', '', i.id), el('span', 'p-muted', i.error)); out.append(row); return; }
           row.append(el('b', '', i.name));
           if (channel === 'email') {
