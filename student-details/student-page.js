@@ -12,6 +12,7 @@
   let showAllNotes = false;
   let historyFilter = 'all'; // the student's History: everything, the notes only, or the tasks only
   const openNotes = new Set(); // long notes opened with "Read more"
+  let justAdded = ''; // the note just added: it fades in with a soft highlight once
   // Named for what they hold (the owner, 17 Nov 2026): Timeline (every step, day by day) and Applications (shortlist and applications).
   const TABS = [['details', 'Timeline'], ['options', 'Applications']];
   let tab = (location.hash || '#details').slice(1);
@@ -489,6 +490,36 @@
     whatsapp: '<path d="M4 20l1.3-4A8 8 0 1 1 8 18.8z"/>',
   };
   const tlIcon = (name) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = TL_ICON[name]; return s; };
+  let tlRevealFrom = 0; // after Show all, the entries from here on fade in once
+  // The time of an entry as people say it: "Just now", "5 min ago" in the last hour, then the clock time ("3:40 PM"). The words are
+  // kept fresh every minute while the card is open.
+  function tlTime(at) {
+    const t = new Date(at);
+    if (Number.isNaN(t.getTime())) return '';
+    const mins = Math.floor((Date.now() - t.getTime()) / 60000);
+    if (mins >= 0 && mins < 1) return 'Just now';
+    if (mins >= 1 && mins < 60) return `${mins} min ago`;
+    return t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+  setInterval(() => { document.querySelectorAll('.p-tl-time[datetime]').forEach((x) => { const v = tlTime(x.dateTime); if (x.textContent !== v) x.textContent = v; }); }, 60000);
+  // Web addresses, email addresses and phone numbers in what was written open with one click.
+  const LINKABLE = /(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]]|www\.[^\s<>"]+[^\s<>".,;:!?)\]]|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|\+?977[\s-]?9\d{9}|\b9[678]\d{8}\b)/g;
+  function linked(text) {
+    const out = []; const t = String(text || ''); let i = 0; let m;
+    LINKABLE.lastIndex = 0;
+    while ((m = LINKABLE.exec(t))) {
+      if (m.index > i) out.push(t.slice(i, m.index));
+      const v = m[0];
+      const a = el('a', 'p-tl-link', v);
+      if (/@/.test(v) && !/^https?:|^www\./.test(v)) a.href = 'mailto:' + v;
+      else if (/^[+\d]/.test(v)) a.href = 'tel:' + v.replace(/[^\d+]/g, '');
+      else { a.href = /^www\./.test(v) ? 'https://' + v : v; a.target = '_blank'; a.rel = 'noopener'; }
+      out.push(a);
+      i = m.index + v.length;
+    }
+    if (i < t.length) out.push(t.slice(i));
+    return out;
+  }
   function notes() {
     const wrap = el('section', 'p-card p-tl');
     // One timeline (the owner, 17 Nov 2026): every note, task and message, newest first, so how the student moved and every decision
@@ -500,8 +531,11 @@
       // The box to write a note, with its button inside it at the bottom, as in Apple's own apps. "p-note-box" keeps the card's
       // two-column layout (theme.css).
       const box = el('div', 'p-note-box p-tl-compose');
+      // The writer's own round badge beside the box, as in Apple's comments.
+      const me = el('span', 'p-tl-av p-tl-me', initials((data.me || {}).name || '?'));
+      me.setAttribute('aria-hidden', 'true');
       const text = el('textarea', 'p-tl-input');
-      text.placeholder = 'Write a note, e.g. IELTS booked for 6 December';
+      text.placeholder = 'Add a note…';
       text.setAttribute('aria-label', 'Write a note');
       text.maxLength = 4000;
       // What is typed survives a redraw of the card (a tab change, a task ticked) until it is added.
@@ -515,10 +549,16 @@
       add.addEventListener('click', async () => {
         if (!text.value.trim()) { text.focus(); return; }
         add.disabled = true;
-        try { await save('notes', { text: text.value, kind: 'note' }, 'Note added'); noteDraft = ''; render(); } catch (e) { add.disabled = false; }
+        try {
+          const r = await save('notes', { text: text.value, kind: 'note' }, 'Note added');
+          justAdded = (r && r.note && r.note.id) || '';
+          noteDraft = ''; historyFilter = historyFilter === 'all' || historyFilter === 'note' ? historyFilter : 'all'; render();
+        } catch (e) { add.disabled = false; }
       });
       bar.append(add);
-      box.append(text, bar);
+      const field2 = el('div', 'p-tl-compose-field');
+      field2.append(text, bar);
+      box.append(me, field2);
       showAdd();
       wrap.append(box);
     }
@@ -575,7 +615,7 @@
       const body = el('div', 'p-tl-body');
       const line = el('div', 'p-tl-line');
       const t = new Date(e.at);
-      const time = el('time', 'p-tl-time', Number.isNaN(t.getTime()) ? '' : t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }));
+      const time = el('time', 'p-tl-time', tlTime(e.at));
       time.dateTime = e.at; time.title = when(e.at);
       const label = k === 'auto' ? 'Automatic' : k === 'note' ? 'Note' : e.label;
       line.append(el('b', 'p-tl-who', k === 'auto' ? 'ISR' : e.by || 'Someone'), el('span', 'p-tl-kind', label), time);
@@ -585,7 +625,7 @@
       if (e.text) {
         const p = el('p', 'p-tl-text');
         if (e.tag) p.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' ');
-        p.append(e.text);
+        p.append(...linked(e.text));
         body.append(p);
         const long = e.text.length > 420 || e.text.split('\n').length > 6;
         if (long && !(e.note && openNotes.has(e.note.id))) {
@@ -615,6 +655,7 @@
       }
       if (acts.children.length) body.append(acts);
       li.append(av, body);
+      if (e.note && e.note.id === justAdded) { li.classList.add('is-new'); justAdded = ''; }
       return li;
     };
     // Everything, Notes, Tasks or Messages.
@@ -634,26 +675,38 @@
     // The sheet's Remarks, unless it is only the latest progress line ISR wrote there (that is already a note above).
     const remark = data.student.remarks && data.student.remarks !== data.card.autoRemark ? data.student.remarks : '';
     const LIMIT = 8;
+    let revealFrom = tlRevealFrom; tlRevealFrom = 0;
     const days = el('div', 'p-tl-days');
     const moreBtn = h('button', { class: 'p-tl-all', type: 'button' });
     function fill() {
       const all = events.filter((e) => historyFilter === 'all' || kindOfEvent(e) === historyFilter);
       const items = showAllNotes ? all : all.slice(0, LIMIT);
       days.replaceChildren();
-      if (!all.length && !remark) days.append(el('p', 'p-tl-empty', 'Nothing yet. Notes, tasks and messages about this student appear here.'));
+      if (!all.length && !remark) {
+        const empty = el('div', 'p-tl-empty');
+        const ico = el('span', 'p-tl-empty-ico'); ico.append(tlIcon('update'));
+        empty.append(ico, el('b', '', 'No history yet'), el('span', '', 'Notes, tasks and messages about this student will appear here.'));
+        days.append(empty);
+      }
       // Grouped by day, newest first, each day a rounded group under its own heading.
-      let list = null; let lastDay = null;
-      items.forEach((e) => {
+      let list = null; let lastDay = null; let prev = null;
+      items.forEach((e, i) => {
         const d = localDay(e);
         if (d !== lastDay) {
-          lastDay = d;
+          lastDay = d; prev = null;
           const g = el('section', 'p-tl-group');
           list = el('ol', 'p-tl-list');
           g.append(el('h3', 'p-tl-day', dayName(d)), list);
           days.append(g);
         }
-        list.append(entry(e));
+        const li = entry(e);
+        // Notes written one after another by the same person sit together under one name, as in Messages (within half an hour).
+        if (prev && e.kind === 'note' && prev.kind === 'note' && e.by && e.by === prev.by && e.by !== AUTO && Math.abs(Date.parse(prev.at) - Date.parse(e.at)) < 30 * 60000) li.classList.add('is-cont');
+        if (revealFrom && i >= revealFrom) li.classList.add('is-reveal');
+        list.append(li);
+        prev = e;
       });
+      revealFrom = 0;
       if (remark && historyFilter !== 'task' && historyFilter !== 'message' && (showAllNotes || all.length <= LIMIT)) {
         const g = el('section', 'p-tl-group');
         const ol = el('ol', 'p-tl-list');
@@ -669,7 +722,8 @@
       moreBtn.hidden = all.length <= LIMIT;
       moreBtn.textContent = showAllNotes ? 'Show less' : `Show all ${all.length}`;
     }
-    moreBtn.addEventListener('click', () => { showAllNotes = !showAllNotes; render(); });
+    // The rest fade in softly when Show all is pressed.
+    moreBtn.addEventListener('click', () => { showAllNotes = !showAllNotes; tlRevealFrom = showAllNotes ? LIMIT : 0; render(); });
     fill();
     wrap.append(days, moreBtn);
     return wrap;

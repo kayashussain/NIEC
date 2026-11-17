@@ -3393,8 +3393,6 @@ body:has(.p-embed-bar) .p-tl-page.p-editing-origin .p-form, .p-tl-page.p-editing
 .p-tl-side .p-card > h2 { margin-bottom: 12px; }
 body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tasks .p-card-head { margin-bottom: 4px; padding-bottom: 0; border-bottom: 0; }
 .p-tl > .p-tl-title-h { margin-bottom: 16px; }
-.p-tl-compose { margin: 0 0 18px; border: 1px solid #d2d2d7; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
-.p-tl-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
 .p-tl-input { display: block; width: 100%; min-height: 50px; max-height: 320px; padding: 13px 16px; border: 0; outline: none; resize: none; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); field-sizing: content; }
 .p-tl-input::placeholder { color: #86868b; }
 .p-tl-compose-bar { display: none; justify-content: flex-end; padding: 0 10px 10px; }
@@ -3406,13 +3404,11 @@ body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tas
 .p-tl-seg-btn:hover { background: rgba(255, 255, 255, .5); }
 .p-tl-seg-btn[aria-selected="true"] { background: #fbfbfd; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); font-weight: 600; }
 .p-tl-group { margin-top: 20px; }
-.p-tl-day { margin: 0 0 2px; color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .01em; }
 .p-tl-act.is-remove { flex: none; margin-left: auto; color: #86868b; font-size: 13px; opacity: 0; transition: opacity .15s; }
 .p-tl-act.is-remove + .p-tl-time { margin-left: 12px; }
 .p-tl-item:hover .p-tl-act.is-remove, .p-tl-act.is-remove:focus-visible { opacity: 1; }
 .p-tl-act.is-remove:hover { color: #d70015; text-decoration: none; }
 @media (hover: none) { .p-tl-act.is-remove { opacity: 1; } }
-.p-tl-empty { margin: 8px 0 0; padding: 32px 16px; border-radius: 14px; background: #f5f5f7; color: #86868b; font-size: 15px; text-align: center; }
 .p-tl-all { display: block; margin: 16px auto 0; min-height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 500 14px var(--font); cursor: pointer; }
 .p-tl-all:hover { background: #dedee3; }
 .p-tl-all[hidden] { display: none; }
@@ -3425,3 +3421,30 @@ body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tas
 .p-tl-count { margin-left: 8px; color: #86868b; font-weight: 500; }
 .p-tl-page .p-tasks .p-card-head { justify-content: flex-start; gap: 10px; }
 .p-tl-page .p-tasks .p-card-head .td-chip.is-new { margin-left: auto; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the Timeline polished further, in the way Apple's own apps behave | from: the note box a bordered field on its own; each day heading scrolling away with the list; every note with its own badge and name even when the same person wrote several in a row; links in notes as plain text; a new note simply appearing; a grey box with one sentence when there is nothing yet | to: your own round initials badge beside the note box, the box itself the same rounded field with the blue ring when typing; the day heading (Today, Yesterday, ...) stays at the top of the list while scrolling, on a soft frosted strip; notes written one after another by the same person within half an hour sit together under one badge and name, as in Messages, their time showing when the mouse is on them; web addresses, email addresses and phone numbers in blue and clickable; a note you add slides in and glows soft blue for a moment; the rest of the list fades in softly after Show all; the empty Timeline shows a round grey bubble icon, "No history yet" in bold and one grey line under it */
+.p-tl-compose { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; margin: 0 0 18px; }
+.p-tl-me { margin-top: 7px; }
+.p-tl-compose-field { border: 1px solid #d2d2d7; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
+.p-tl-compose-field:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
+.p-tl-day { position: sticky; top: 0; z-index: 2; margin: 0 -8px 2px; padding: 8px; border-radius: 10px; background: color-mix(in srgb, var(--panel) 84%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+@media (max-width: 900px) { body:not(.p-embed) .p-tl-day { top: var(--tl-top, 64px); } }
+.p-tl-item.is-cont { position: relative; }
+.p-tl-item.is-cont > .p-tl-av { visibility: hidden; height: 0; margin-top: 0; }
+.p-tl-item.is-cont > .p-tl-body, .p-tl-item + .p-tl-item.is-cont > .p-tl-body { padding-top: 0; border-top: 0; }
+.p-tl-item:has(+ .p-tl-item.is-cont) > .p-tl-body { padding-bottom: 6px; }
+.p-tl-item.is-cont .p-tl-who, .p-tl-item.is-cont .p-tl-kind { display: none; }
+.p-tl-item.is-cont .p-tl-line { position: absolute; top: 0; right: 0; min-height: 0; padding-left: 12px; background: var(--panel); opacity: 0; transition: opacity .15s; }
+.p-tl-item.is-cont:hover .p-tl-line, .p-tl-item.is-cont:focus-within .p-tl-line { opacity: 1; }
+.p-tl-item.is-cont .p-tl-text { margin-top: 0; }
+.p-tl-link { color: #0066cc; text-decoration: none; overflow-wrap: anywhere; }
+.p-tl-link:hover { text-decoration: underline; }
+@keyframes p-tl-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes p-tl-glow { 0%, 35% { background: rgba(0, 113, 227, .08); } 100% { background: rgba(0, 113, 227, 0); } }
+.p-tl-item.is-new { margin-inline: -8px; padding-inline: 8px; border-radius: 12px; animation: p-tl-in .45s cubic-bezier(.32, .72, 0, 1) both, p-tl-glow 2.6s ease-out both; }
+.p-tl-item.is-reveal { animation: p-tl-in .4s cubic-bezier(.32, .72, 0, 1) both; }
+.p-tl-empty { display: grid; justify-items: center; gap: 4px; margin: 8px 0 0; padding: 36px 16px; border-radius: 14px; background: #f5f5f7; color: #86868b; font-size: 14.5px; text-align: center; }
+.p-tl-empty b { color: #1d1d1f; font-size: 16px; font-weight: 600; }
+.p-tl-empty-ico { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 6px; border-radius: 50%; background: #e8e8ed; color: #86868b; }
+.p-tl-empty-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+@media (prefers-reduced-motion: reduce) { .p-tl-item.is-new, .p-tl-item.is-reveal { animation: none; } .p-tl-compose-field, .p-tl-item.is-cont .p-tl-line { transition: none; } }
