@@ -40,42 +40,13 @@
   });
 })();
 
-// The row under the search box of each Partners list: a Sort menu, kept in this browser for each list. "/" jumps to the search box
-// and Esc clears it. No filter switch (All, Ready to apply, Not ready yet, Ended): the owner asked for it to be taken off (17 Nov 2026).
-//   const tools = window.PartnerList({ key: 'b2b', sorts: [[id, label, compare], ...], onChange })
-//   tools.mount(container)          puts the row in place
-//   tools.apply(items)              the items in the chosen order
+// Each Partners list: "/" jumps to the search box and Esc clears it. No Sort menu and no filter switch: the owner asked for both to be
+// taken off (17 Nov 2026); the busiest are first.
 (function () {
-  window.PartnerList = function ({ key, sorts, onChange }) {
-    const KEY = 'isrPartnerList:' + key;
-    let pick = { sort: sorts[0][0] };
-    try { pick = { sort: JSON.parse(localStorage.getItem(KEY) || '{}').sort || pick.sort }; } catch (e) { /* the first choice */ }
-    if (!sorts.some(([id]) => id === pick.sort)) pick.sort = sorts[0][0];
-    const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(pick)); } catch (e) { /* this page only */ } };
-    const row = document.createElement('div');
-    row.className = 'pl-row no-print';
-    const sortBox = document.createElement('label');
-    sortBox.className = 'pl-sort';
-    sortBox.innerHTML = '<span>Sort</span>';
-    const sel = document.createElement('select');
-    sel.setAttribute('aria-label', 'Sort');
-    sorts.forEach(([id, label]) => sel.append(new Option(label, id)));
-    sel.value = pick.sort;
-    sel.addEventListener('change', () => { pick.sort = sel.value; keep(); onChange(); });
-    sortBox.append(sel);
-    row.append(sortBox);
-    document.addEventListener('keydown', (e) => {
-      const s = document.getElementById('search');
-      if (!s || s.offsetParent === null) return;
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); s.focus(); }
-      else if (e.key === 'Escape' && document.activeElement === s && s.value) { s.value = ''; onChange(); }
-    });
-    return {
-      mount(after) { after.after(row); },
-      apply(items) {
-        const [, , cmp] = sorts.find(([id]) => id === pick.sort);
-        return items.slice().sort(cmp);
-      },
-    };
-  };
+  document.addEventListener('keydown', (e) => {
+    const s = document.getElementById('search');
+    if (!s || s.offsetParent === null) return;
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); s.focus(); }
+    else if (e.key === 'Escape' && document.activeElement === s && s.value) { s.value = ''; s.dispatchEvent(new Event('input')); }
+  });
 })();
