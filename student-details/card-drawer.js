@@ -1,6 +1,8 @@
 // Opens a student's card over the page the person is on (the sheet, the Fact File ...), so they can look
 // at the student and carry on where they were. window.CardDrawer.open(rowId, { onClose }). Escape or the Close button shuts it;
 // onClose (optional) runs then, so a page can show what was changed on the card (a new note, a new stage).
+// `list` (optional): the ids of the students in the order shown on the page (the sheet with its search and filters). The card then
+// has Previous and Next (and the ← → keys) to go through them one by one without closing it (the owner, 17 Nov 2026: less work).
 (function (root) {
   let current = null;
   function close() {
@@ -14,7 +16,7 @@
     current = null;
     if (typeof after === 'function') after();
   }
-  function open(id, { onClose } = {}) {
+  function open(id, { onClose, list } = {}) {
     close();
     const back = document.createElement('div');
     back.className = 'p-drawer-back';
@@ -24,10 +26,36 @@
     drawer.setAttribute('aria-label', 'Student card');
     const frame = document.createElement('iframe');
     frame.title = 'Student card';
-    frame.src = '/student?embed=1&id=' + encodeURIComponent(id);
     drawer.append(frame);
+    const ids = Array.isArray(list) ? list.filter(Boolean) : [];
+    let at = ids.indexOf(id);
+    const nav = document.createElement('div');
+    nav.className = 'p-drawer-nav';
+    const mk = (label, aria) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.setAttribute('aria-label', aria); return b; };
+    const prev = mk('‹', 'Previous student');
+    const next = mk('›', 'Next student');
+    const where = document.createElement('span');
+    nav.append(prev, where, next);
+    const show = (i) => {
+      if (ids.length && (i < 0 || i >= ids.length)) return;
+      if (ids.length) at = i;
+      frame.src = '/student?embed=1&id=' + encodeURIComponent(ids.length ? ids[at] : id);
+      where.textContent = `${at + 1} of ${ids.length}`;
+      prev.disabled = at <= 0;
+      next.disabled = at >= ids.length - 1;
+      frame.focus({ preventScroll: true });
+    };
+    prev.addEventListener('click', () => show(at - 1));
+    next.addEventListener('click', () => show(at + 1));
+    if (at !== -1 && ids.length > 1) drawer.append(nav); else ids.length = 0;
+    show(at);
     const onKey = (e) => { if (e.key === 'Escape' && !(root.NiecUI && root.NiecUI.isOpen())) close(); };
-    const onMessage = (e) => { if (e.origin === location.origin && e.data && e.data.niecCard === 'close') close(); };
+    const onMessage = (e) => {
+      if (e.origin !== location.origin || !e.data) return;
+      if (e.data.niecCard === 'close') close();
+      else if (e.data.niecCard === 'next' && ids.length) show(at + 1);
+      else if (e.data.niecCard === 'prev' && ids.length) show(at - 1);
+    };
     back.addEventListener('mousedown', close);
     document.addEventListener('keydown', onKey);
     window.addEventListener('message', onMessage);

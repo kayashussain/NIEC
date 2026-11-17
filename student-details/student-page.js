@@ -20,6 +20,14 @@
     document.body.classList.add('p-embed');
     document.getElementById('closeEmbed').addEventListener('click', () => parent.postMessage({ niecCard: 'close' }, location.origin));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && !document.querySelector('dialog[open], .p-dialog')) parent.postMessage({ niecCard: 'close' }, location.origin); });
+    // ← and → go to the previous and next student of the list the card was opened from (card-drawer.js), when nothing is being typed.
+    document.addEventListener('keydown', (e) => {
+      if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const a = document.activeElement;
+      if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable || a.closest('[role="tablist"], .p-seg, .p-tabs'))) return;
+      if (document.querySelector('dialog[open], .p-dialog')) return;
+      parent.postMessage({ niecCard: e.key === 'ArrowRight' ? 'next' : 'prev' }, location.origin);
+    });
   }
   const can = () => data.can.edit;
   const profile = () => data.card.profile;
@@ -149,6 +157,14 @@
     fact('Offer received', s.row['OFFER RECEIVED DATE'] ? day(s.row['OFFER RECEIVED DATE']) : '');
     if (pp.nationality && pp.nationality !== 'Nepali') fact('Nationality', pp.nationality);
     mid.append(facts);
+    // What is still missing, named in one line with one button that opens the form (the owner, 17 Nov 2026: less work for the team).
+    const gaps = [['Date of birth', pp.dob], ['Passport number', pp.passportNo], ['Address', pp.address]].filter(([, v]) => !v).map(([k]) => k);
+    if (gaps.length && can()) {
+      const bar = el('div', 'p-gaps');
+      bar.append(el('span', 'p-gaps-dot'), el('span', 'p-gaps-text', `${gaps.length === 1 ? '1 detail' : `${gaps.length} details`} missing: ${gaps.join(', ')}`),
+        h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => { editingHero = true; render(); } }, gaps.length === 1 ? 'Fill it in' : 'Fill them in'));
+      mid.append(bar);
+    }
     if (can()) act.append(h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }, 'Edit details'));
     if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: assignTask }, 'Assign a task'));
     if (!act.childNodes.length) act.remove();
@@ -327,6 +343,7 @@
   // A note is a note (the owner, 14 Nov 2026): no kinds to choose (phone call, office visit, message); notes kept with a kind
   // before still show, all simply as notes. Notes are about the student (IELTS booked, the CAS result, money ready); the talk with
   // a team about a piece of work is in the comments of its task.
+  let noteDraft = '';
   function notes() {
     const wrap = el('section', 'p-card');
     wrap.append(el('h2', '', 'Notes and history'));
@@ -334,16 +351,20 @@
     if (can()) {
       const box = el('div', 'p-note-box');
       const text = el('textarea', 'p-input');
-      text.placeholder = 'e.g. IELTS booked for 6 December. The bank statement will be ready next week.';
+      text.placeholder = 'e.g. IELTS booked for 6 December. The bank statement will be ready next week.  (Ctrl+Enter adds it)';
       text.setAttribute('aria-label', 'Write a note');
       text.maxLength = 4000;
+      // What is typed survives a redraw of the card (a tab change, a task ticked) until it is added.
+      text.value = noteDraft;
+      text.addEventListener('input', () => { noteDraft = text.value; });
+      text.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); add.click(); } });
       const bar = el('div', 'p-bar');
       bar.style.marginTop = '0';
       const add = h('button', { class: 'btn btn-primary', type: 'button' }, 'Add note');
       add.addEventListener('click', async () => {
         if (!text.value.trim()) { text.focus(); return; }
         add.disabled = true;
-        try { await save('notes', { text: text.value, kind: 'note' }, 'Note added'); render(); } catch (e) { add.disabled = false; }
+        try { await save('notes', { text: text.value, kind: 'note' }, 'Note added'); noteDraft = ''; render(); } catch (e) { add.disabled = false; }
       });
       bar.append(add);
       box.append(text, bar);

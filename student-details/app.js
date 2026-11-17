@@ -2435,7 +2435,8 @@
   // The student card of the picked row, or of the row the cursor is on.
   function openCardOfRow(rowIdx) {
     const row = rows[rowIdx];
-    if (row && row._id && window.CardDrawer) window.CardDrawer.open(row._id);
+    // The students as the sheet shows them now (search, filters, sort), so the card can go to the previous and next one.
+    if (row && row._id && window.CardDrawer) window.CardDrawer.open(row._id, { list: viewIndices.map((i) => rows[i] && rows[i]._id).filter(Boolean) });
   }
 
   const bulkBtn = document.getElementById('bulkSend');
