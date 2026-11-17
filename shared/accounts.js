@@ -736,7 +736,9 @@ function createAccounts({
     record(req, req.user, 'Updated person', { changes: [`${me.name} chose their own team: ${DEPARTMENTS[t] || t}`] });
     return { taskTeam: t };
   }
-  return { requireAuth, handleApi, emailConfig, userForSessionKey, people, setOwnTeam };
+  // The enabled account with this username, as the pages see it, or null (the Claude connector sends as this person, NIEC_ADVISOR_SEND_AS).
+  const userByUsername = (name) => { const u = users().find((x) => x.username === String(name || '').trim().toLowerCase() || x.username === String(name || '').trim()); return u && !u.disabled ? publicUser(u) : null; };
+  return { requireAuth, handleApi, emailConfig, userForSessionKey, people, setOwnTeam, userByUsername };
 }
 
 module.exports = {

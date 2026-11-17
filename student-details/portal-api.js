@@ -2538,11 +2538,26 @@ function createPortalApi({
     const whatsappBody = typeof body.whatsapp === 'string' ? body.whatsapp : '';
     // A {word} that is not one of ours (a typing slip such as {frist_name}) would reach every student as typed: refuse it first.
     { const bad = Messages.badPlaceholder(subject, emailBody, whatsappBody); if (bad) { sendJSON(res, 400, { error: bad }); return true; } }
+    const preview = urlPath.endsWith('preview');
+    const out = await followUp(req, { ids, subject, emailBody, whatsappBody, preview });
+    if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
+    const { items, sendOut, signed } = out;
+    // The sender's signature picture once (not in every item), so Check and send shows the email as the student sees it.
+    if (preview) { sendJSON(res, 200, { items, mail: mailInfo(req.user), signature: signatureSrc(true, signed.picture) }); return true; }
+    note(req, [`Bulk email "${subject}": ${sendOut.filter((r) => r.status === 'sent').length} sent, ${sendOut.filter((r) => r.status !== 'sent').length} not sent`], 'Sent message');
+    sendJSON(res, 200, { results: sendOut });
+    return true;
+  }
+
+  // One message to many students by email: how each one looks (preview), or each one sent from the sender's own mailbox with their
+  // signature and logged on the student's card. Used by the Follow-up page and by the Claude connector (advisor-mcp.js, only when
+  // NIEC_ADVISOR_SEND_AS names the sender). `req` needs `user` and `headers` (for the activity record).
+  async function followUp(req, { ids, subject = '', emailBody = '', whatsappBody = '', preview = false }) {
+    { const bad = Messages.badPlaceholder(subject, emailBody, whatsappBody); if (bad) return { error: bad }; }
     const cfg = mailFor(req.user);
     const signed = signatureFor(req.user, cfg);
     const signature = signed.sig;
-    const preview = urlPath.endsWith('preview');
-    if (!preview && !text(subject) && !text(emailBody)) { sendJSON(res, 400, { error: 'Write a subject and a message first.' }); return true; }
+    if (!preview && !text(subject) && !text(emailBody)) return { error: 'Write a subject and a message first.' };
     const items = [];
     const sendOut = [];
     for (const id of ids) {
@@ -2572,11 +2587,7 @@ function createPortalApi({
         sendOut.push({ id, name: item.name, status: 'failed', error: e.message });
       }
     }
-    // The sender's signature picture once (not in every item), so Check and send shows the email as the student sees it.
-    if (preview) { sendJSON(res, 200, { items, mail: mailInfo(req.user), signature: signatureSrc(true, signed.picture) }); return true; }
-    note(req, [`Bulk email "${subject}": ${sendOut.filter((r) => r.status === 'sent').length} sent, ${sendOut.filter((r) => r.status !== 'sent').length} not sent`], 'Sent message');
-    sendJSON(res, 200, { results: sendOut });
-    return true;
+    return { items, sendOut, signed };
   }
 
   async function handle(req, res, urlPath) {
@@ -3060,7 +3071,7 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, canSee, canChange, visibleStudents, courseIndex, brief };
+  return { handle, rowIndex, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };
