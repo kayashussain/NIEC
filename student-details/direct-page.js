@@ -70,17 +70,6 @@
   const PILL = { Active: 'green', Ended: 'red' };
   const openOne = (id) => (viewer() ? openView(id) : openEditor(id));
 
-  // Sort under the search box (partners-switch.js).
-  const ended = (u) => u.status === 'Ended';
-  const byName = (x, y) => x.name.localeCompare(y.name);
-  const tools = window.PartnerList ? window.PartnerList({
-    key: 'direct',
-    sorts: [['students', 'Most students', (x, y) => ended(x) - ended(y) || statOf(y).students - statOf(x).students || byName(x, y)],
-      ['visas', 'Most visas', (x, y) => ended(x) - ended(y) || statOf(y).visas - statOf(x).visas || byName(x, y)], ['az', 'A to Z', byName]],
-    onChange: () => drawList(),
-  }) : null;
-  if (tools) tools.mount(document.querySelector('.bp-tools'));
-
   function drawList() {
     const q = $('search').value.trim().toLowerCase();
     const shown = q ? all.filter((u) => [u.name, u.via, ...(u.campuses || [])].join(' ').toLowerCase().includes(q)) : all;
@@ -97,9 +86,9 @@
     $('kpis').replaceChildren(...band.map(([label, v, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', v), el('small', '', sub)); return d; }));
     $('count').textContent = all.length ? (q ? `${shown.length} of ${all.length}` : `${all.length} in the list`) : '';
     if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', viewer() ? 'No partner universities yet.' : 'No partner universities yet.')); return; }
-    // The busiest first by default (the most students, then by name); the Sort menu changes it.
-    const ordered = tools ? tools.apply(shown) : shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
-    if (!ordered.length) { $('list').replaceChildren(el('div', 'bp-empty', shown.length ? 'None here. Choose "All" above.' : 'Nothing matches that search.')); return; }
+    // The busiest first (the most students, then by name). No Sort menu (the owner, 17 Nov 2026).
+    const ordered = shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
+    if (!ordered.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
     $('list').replaceChildren(...ordered.map(card));
     if (justSaved) { const hit = $('list').querySelector(`[data-id="${justSaved}"]`); if (hit) hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
     justSaved = '';
@@ -131,7 +120,7 @@
       c.append(f);
     }
     const facts = el('dl', 'bp-facts');
-    const row = (label, value) => { const dd = el('dd'); if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'bp-none', 'Not entered yet')); facts.append(el('dt', '', label), dd); };
+    const row = (label, value) => { const dd = el('dd'); if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'bp-none', 'Not entered yet')); const pair = el('div', 'bp-fact'); pair.append(el('dt', '', label), dd); facts.append(pair); };
     if (level !== 'team') row('Commission', u.slabs && u.slabs.length ? (() => { const d = el('div', 'bp-lines'); u.slabs.forEach((x) => d.append(el('span', '', x))); return d; })() : null);
     const p = u.contact || {};
     if (p.name || p.phone || p.email) {
@@ -431,9 +420,5 @@
     } catch (err) { say('addMsg', err.message, true); }
   });
 
-  // Names from the Fact File, to pick from when adding.
-  fetch('/api/facts', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : [])).then((list) => {
-    $('factNames').replaceChildren(...list.map((u) => { const o = el('option'); o.value = u.name; return o; }));
-  }).catch(() => {});
   setLevel().then(loadList);
 })();
