@@ -106,17 +106,6 @@ html:has(body.p-body) { scrollbar-gutter: stable; }
 @media (max-width: 760px) { .p-hero { grid-template-columns: auto minmax(0, 1fr); } .p-hero-actions { grid-column: 1 / -1; justify-content: flex-start; } }
 
 /* notes and messages, newest first */
-.p-timeline { list-style: none; margin: 14px 0 0; padding: 0; }
-.p-timeline li { position: relative; padding: 0 0 16px 22px; border-left: 2px solid var(--border); margin-left: 6px; }
-.p-timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
-.p-timeline li::before { content: ""; position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--niec-blue); box-shadow: 0 0 0 3px var(--panel); }
-.p-timeline li.kind-message::before { background: #b86a00; }
-.p-timeline li.kind-followup::before { background: var(--green-fg); }
-.p-when { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-dim); }
-.p-when b { color: var(--text); font-weight: 600; }
-.p-timeline p { margin: 3px 0 0; white-space: pre-line; overflow-wrap: anywhere; }
-.p-note-box { display: grid; gap: 8px; }
-.p-note-box textarea { min-height: 70px; }
 
 /* the message writer */
 .p-preview { width: 100%; height: 460px; border: 1px solid var(--border); border-radius: var(--r-md); background: #eef1f5; }

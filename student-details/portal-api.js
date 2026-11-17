@@ -1581,9 +1581,6 @@ function createPortalApi({
     } else if (part === 'notes' && sub && del) {
       out = cards.removeNote(rowId, sub, by(req), Teams.isAdmin(req.user));
       if (!out.error) note(req, [`${who}: removed a note`]);
-    } else if (part === 'notes' && sub) {
-      out = cards.editNote(rowId, sub, { ...(body && typeof body.text === 'string' ? { text: body.text } : {}), ...(body && 'pinned' in body ? { pinned: Boolean(body.pinned) } : {}) }, by(req), Teams.isAdmin(req.user));
-      if (!out.error) note(req, [`${who}: ${body && typeof body.text === 'string' ? 'changed a note' : body && body.pinned ? 'pinned a note' : 'unpinned a note'}`]);
     } else if (part === 'notes' && !sub) {
       out = cards.addNote(rowId, body, by(req));
       if (!out.error) note(req, [`${who}: added a note`]);

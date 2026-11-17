@@ -417,7 +417,6 @@ h1 .p-chip, h1 .pill, h1 #adminOnly { font-size: 13px; }
 .p-back,
 .p-hero-line,
 .p-fact dt,
-.p-when,
 .p-wa-preview,
 .p-sent,
 .p-option .p-uni,
@@ -788,11 +787,6 @@ body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn:hover:not(:disabled) { bo
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary { border-color: var(--lux-ink); background: var(--lux-ink); color: var(--brand-ivory); }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary:hover:not(:disabled) { background: var(--lux-ink-2); border-color: var(--lux-ink-2); color: #fff; }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-danger { color: var(--red-fg); }
-body:has(.p-embed-bar) .p-timeline li { border-left-color: color-mix(in srgb, var(--lux-bronze) 30%, var(--lux-line)); }
-body:has(.p-embed-bar) .p-timeline li::before { background: var(--lux-bronze); box-shadow: 0 0 0 3px var(--panel), 0 0 0 4px color-mix(in srgb, var(--lux-bronze) 35%, transparent); }
-body:has(.p-embed-bar) .p-timeline li:last-child { border-left-color: transparent; }
-body:has(.p-embed-bar) .p-timeline .p-link { color: var(--text-dim); text-decoration: underline; text-underline-offset: 3px; }
-body:has(.p-embed-bar) .p-timeline .p-link:hover { color: var(--red-fg); }
 @media (max-width: 520px) {
   body:has(.p-embed-bar) .p-card.p-hero { padding: 22px 18px 20px; }
   body:has(.p-embed-bar) .p-hero h1 { font-size: 27px; }
@@ -823,18 +817,6 @@ body:has(.p-embed-bar) .p-field input:focus, body:has(.p-embed-bar) .p-field sel
 body:has(.p-embed-bar) .p-form { gap: 16px 18px; margin-top: 16px; }
 body:has(.p-embed-bar) .p-card:not(.p-hero) .p-bar { margin-top: 14px; }
 /* Notes */
-body:has(.p-embed-bar) .p-note-box { gap: 12px; margin-top: 16px; }
-body:has(.p-embed-bar) .p-note-box textarea { min-height: 104px; padding: 14px 16px; line-height: 1.55; }
-body:has(.p-embed-bar) .p-note-box .p-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 0; }
-body:has(.p-embed-bar) .p-note-box .p-bar select { width: auto; min-width: 150px; }
-body:has(.p-embed-bar) .p-timeline { margin-top: 22px; }
-body:has(.p-embed-bar) .p-timeline li { padding: 2px 0 20px 24px; }
-body:has(.p-embed-bar) .p-timeline li::before { top: 7px; }
-body:has(.p-embed-bar) .p-when { gap: 10px; font-size: 14px; }
-body:has(.p-embed-bar) .p-when b { color: var(--lux-ink); font-weight: 650; font-size: 15px; }
-body:has(.p-embed-bar) .p-when span:first-of-type { padding: 1px 10px; border: 1px solid color-mix(in srgb, var(--lux-bronze) 45%, transparent); border-radius: 999px; color: #6f5631; font-size: 13.5px; font-weight: 600; }
-body:has(.p-embed-bar) .p-when .p-link { margin-left: auto; }
-body:has(.p-embed-bar) .p-timeline li > p { margin: 6px 0 0; color: var(--ink); font-size: 15px; line-height: 1.6; }
 /* University options */
 body:has(.p-embed-bar) .p-option-results { display: grid; gap: 12px; margin-top: 16px; }
 body:has(.p-embed-bar) .p-option { gap: 6px 16px; padding: 16px 18px; border: 1px solid var(--lux-line); border-radius: 14px; background: var(--panel); box-shadow: none; }
@@ -1201,8 +1183,6 @@ body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary { border: 0; 
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary:hover:not(:disabled) { background: #0077ed; color: #fff; }
 body:has(.p-embed-bar) .p-field input, body:has(.p-embed-bar) .p-field select, body:has(.p-embed-bar) .p-field textarea { border-color: var(--border-strong); border-radius: 10px; background: var(--edit-bg); }
 body:has(.p-embed-bar) .p-field input:focus, body:has(.p-embed-bar) .p-field select:focus, body:has(.p-embed-bar) .p-field textarea:focus { border-color: var(--focus); box-shadow: 0 0 0 3px rgba(0, 113, 227, .18); }
-body:has(.p-embed-bar) .p-timeline li { border-left-color: var(--border); }
-body:has(.p-embed-bar) .p-timeline li::before { background: #0071e3; box-shadow: 0 0 0 3px var(--panel), 0 0 0 4px var(--border); }
 body:has(.p-embed-bar) .td-task { border-color: var(--border); background: var(--edit-bg); }
 
 body .niec-header a, body:has(.p-embed-bar) .p-back, body:has(.p-embed-bar) .p-hero .p-fact dd a { color: inherit; }
@@ -1345,12 +1325,11 @@ button.find-link { border: 0 !important; background: transparent !important; col
 button.find-link:hover { text-decoration: underline; }
 thead th, .p-table th { font-size: 13px !important; }
 /* student card */
-body:has(.p-embed-bar) .p-when span:first-of-type { border: 0; background: #f0f0f3; color: #48484e; }
 .p-chosen-item { border-left: 0 !important; box-shadow: var(--sh-2); }
 .p-chosen-item a, .p-option a { color: #0066cc; text-decoration: none; }
 .p-chosen-item a:hover, .p-option a:hover { text-decoration: underline; }
-button.p-link, body:has(.p-embed-bar) .p-timeline .p-link { color: #0066cc; text-decoration: none; }
-button.p-link:hover, body:has(.p-embed-bar) .p-timeline .p-link:hover { text-decoration: underline; color: #0066cc; }
+button.p-link { color: #0066cc; text-decoration: none; }
+button.p-link:hover { text-decoration: underline; color: #0066cc; }
 body:has(.p-embed-bar) .p-hero .p-fact dt { font-size: 13px; letter-spacing: .04em; }
 /* tasks and Today: no coloured bars, the status pills say it */
 .td-task.is-today { border-left: 1px solid var(--border); }
@@ -2334,14 +2313,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 @media (prefers-reduced-motion: reduce) { .tb-tile { animation: none; transition: none; } .tb-tile:hover { transform: none; } .tb-col-bar i { transition: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-15): the student's Notes become "Notes and history", the Mark as done window, a held-back password | from: Notes listed only the notes typed by hand; ticking a task asked a plain yes or no; a team without access saw no password line at all | to: the notes and every task event in one timeline, newest first; a task event has a small coloured word after the name and time ("Task" in blue, "Update" in grey, "Done" in green), the event in semibold ("Gave Mock Team a task", "Update on ...", "Done: ...") and the task's tag pill; three pills above (Everything, Notes, Tasks) when there are both; the Mark as done window shows the task in a soft grey box, a two-line "What was done? (optional)" box and, for an application, a tick box to write today as Application submitted; on the partner pages a "Password" line with grey dots and a dimmed eye for those who may not see it */
-.p-history-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
-.p-history-chip { padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
-.p-history-chip.is-task { background: #e6f0fc; color: #0058b0; }
-.p-history-chip.is-update { background: #ececf0; color: #515154; }
-.p-history-chip.is-done { background: #e3f5e8; color: #1f7a35; }
-.p-history-title { margin: 2px 0 0; color: #1d1d1f; font-weight: 600; }
-.p-timeline li.p-history-update > p:last-child, .p-timeline li.p-history-task > p:last-child:not(.p-history-title) { color: #3a3a3c; }
-.p-timeline .td-tag { font-size: 12px; }
 .td-done-task { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: #f0f0f3; color: #1d1d1f; font-size: 15px; line-height: 1.45; }
 .td-done-sheet { margin: 4px 0 6px; }
 .bp-value.bp-locked { color: #66666b; letter-spacing: .05em; }
@@ -2555,7 +2526,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .ss-copy { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 12px 16px; border-radius: 14px; background: #eef8f1; color: #1d4d2c; font-size: 14.5px; line-height: 1.5; }
 .ss-copy-ico { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #248a3d; color: #fff; font-size: 12px; font-weight: 700; }
 .bk-words { grid-column: 1 / -1; }
-.p-history-chip.is-message { background: #efe9fb; color: #5b3ea8; }
 @media (max-width: 600px) { .ss-form-box { padding-left: 0; } .ss-row { grid-template-columns: 28px minmax(0, 1fr); } .ss-row .btn { grid-column: 2; justify-self: start; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): the WhatsApp window of a student removed | from: a small window with a QR code, "Open on this computer" and "Copy number" | to: nothing (a click on WhatsApp opens the chat at once, the owner asked for no QR code) */
@@ -3390,38 +3360,66 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 button.md-todo-more { border: 0; background: none; font: inherit; font-size: 13.5px; cursor: pointer; border-radius: 6px; }
 button.md-todo-more:hover, button.md-todo-more:focus-visible { color: #0066cc; text-decoration: underline; }
 
-/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline made more professional | from: one long list with the same blue dot on every line, the full date and time on each line, a plain name, the filter pills without numbers, long notes shown in full | to: a grey line beside the title ("24 entries · last 3 days ago, by Sita"); the filter pills with a count each and a rounded search box beside them (matches marked in soft yellow); pinned notes in a soft amber panel at the top; the list grouped by day under small grey headings (Today, Yesterday, Mon 16 Nov 2026) with only the time on each line; a small round grey badge with the writer's initials before the name; a dot in the colour of each kind (note blue, task orange, done green, update grey, message purple, application teal, automatic light grey); Pin, Change and Remove as small blue words on the right; "edited" in small grey; notes longer than 6 lines fold with "Read more" */
-.p-tl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
-.p-tl-head h2 { margin: 0; }
-.p-tl-sum { color: #6e6e73; font-size: 14px; }
-.p-tl-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 16px 0 4px; }
-.p-tl-tools .p-history-filter { margin: 0; flex: 1 1 auto; }
-.p-tl-search { flex: 0 1 240px; min-width: 160px; min-height: 36px; padding: 6px 14px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--edit-bg); font: inherit; font-size: 15px; }
-.p-tl-search:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
-.p-timeline mark { padding: 0 2px; border-radius: 4px; background: #fff1a8; color: inherit; }
-.p-tl-pins { margin: 16px 0 6px; padding: 12px 16px 4px; border: 1px solid #f1dfb0; border-radius: 14px; background: #fff9ec; }
-.p-tl-pins-title { color: #8a5a00; font-size: 13px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
-.p-tl-pins .p-timeline, body:has(.p-embed-bar) .p-tl-pins .p-timeline { margin-top: 10px; }
-.p-timeline li.p-tl-day, body:has(.p-embed-bar) .p-timeline li.p-tl-day { padding: 6px 0 12px 22px; color: #6e6e73; font-size: 13px; font-weight: 650; letter-spacing: .01em; }
-.p-timeline li.p-tl-day::before, body:has(.p-embed-bar) .p-timeline li.p-tl-day::before { top: 9px; left: -4px; width: 6px; height: 6px; background: #c7c7cc; box-shadow: 0 0 0 3px var(--panel); }
-.p-timeline li.p-tl-empty { color: #6e6e73; }
-.p-timeline li.is-k-task::before, body:has(.p-embed-bar) .p-timeline li.is-k-task::before { background: #ff9f0a; }
-.p-timeline li.is-k-done::before, body:has(.p-embed-bar) .p-timeline li.is-k-done::before { background: #34c759; }
-.p-timeline li.is-k-update::before, body:has(.p-embed-bar) .p-timeline li.is-k-update::before { background: #8e8e93; }
-.p-timeline li.is-k-message::before, body:has(.p-embed-bar) .p-timeline li.is-k-message::before { background: #af52de; }
-.p-timeline li.is-k-app::before, body:has(.p-embed-bar) .p-timeline li.is-k-app::before { background: #30b0c7; }
-.p-timeline li.is-k-auto::before, body:has(.p-embed-bar) .p-timeline li.is-k-auto::before { background: #c7c7cc; }
-.p-tl-av { display: inline-grid; place-items: center; align-self: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #e8e8ed; color: #3a3a3c; font: 650 10.5px/1 var(--font); font-style: normal; letter-spacing: .02em; }
-.p-tl-av.is-auto { background: #f0f0f3; color: #8e8e93; font-size: 8.5px; }
-.p-tl-edited { color: #8e8e93; font-size: 12.5px; font-style: italic; }
-.p-tl-acts { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; margin-left: auto; }
-.p-tl-acts .p-link, body:has(.p-embed-bar) .p-when .p-tl-acts .p-link { margin-left: 0; font-size: 13.5px; }
-.p-tl-acts .p-link.is-on { color: #8a5a00; font-weight: 600; }
-.p-history-chip.is-pin { background: #fff1d6; color: #8a5a00; }
-.p-timeline p.p-tl-fold { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-.p-tl-more { margin-top: 4px; font-size: 13.5px; }
-.p-tl-edit { display: grid; gap: 8px; margin-top: 8px; }
-.p-tl-edit textarea { min-height: 96px; }
-.p-tl-edit .p-bar { margin-top: 0; }
-.p-tl-all { margin-top: 8px; }
-@media (max-width: 640px) { .p-tl-search { flex: 1 1 100%; } }
+/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline redesigned in the style of Apple's own apps | from: a vertical line with coloured dots, the time in a grey pill on every line, Pin, Change and Remove as blue words on every note, a soft amber Pinned panel, grey filter pills, a plain search box, a plain note box with the Add note button under it | to: the note box as one rounded field with "Ctrl + Enter to add" in grey and a small blue Add note pill inside it at the bottom (blue ring when typing in it); a grey segmented control (Everything, Notes, Tasks, Messages with a count each, the chosen one raised on a soft off-white tab) beside a rounded grey search field with a magnifier; the entries grouped by day under a bold heading (Today, Yesterday, Monday 16 November); each entry a row with a 36px round badge (the writer's initials in soft blue on a note, a line symbol for the rest: a checklist in orange for a task, a tick in green for done, a speech bubble in grey for an update, an envelope in purple for an email, a chat bubble in green for WhatsApp, "ISR" in grey for automatic notes), the name in bold, the kind in grey and the time in grey on the right, the words under it, thin hairlines between rows; Reopen and Read email as small blue words; Remove only appears in grey when the mouse is on the note (red on hover; always shown on phones); "Show all" as a grey pill in the middle; no vertical line, no dots, no Pin and no Change */
+.p-tl .p-tl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin: 0 0 16px; }
+.p-tl .p-tl-head h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.015em; color: #1d1d1f; }
+.p-tl-sum { color: #86868b; font-size: 14px; }
+.p-tl-compose { display: block; margin: 0 0 20px; padding: 12px 14px 10px; border: 1px solid #d2d2d7; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
+.p-tl-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
+.p-tl-input { display: block; width: 100%; min-height: 64px; padding: 0; border: 0; outline: none; resize: vertical; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); }
+.p-tl-input::placeholder { color: #86868b; }
+.p-tl-compose-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
+.p-tl-hint { color: #86868b; font-size: 13px; }
+.p-tl-compose-bar .btn { border-radius: 999px; padding-inline: 16px; }
+.p-tl-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; margin: 0 0 8px; }
+.p-tl-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: 10px; background: #e8e8ed; }
+.p-tl-seg-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font: 500 14px/32px var(--font); cursor: pointer; transition: background .2s, box-shadow .2s; }
+.p-tl-seg-btn:hover { background: rgba(255, 255, 255, .5); }
+.p-tl-seg-btn[aria-selected="true"] { background: #fbfbfd; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); font-weight: 600; }
+.p-tl-n { color: #86868b; font-size: 12.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.p-tl-search { display: inline-flex; align-items: center; gap: 6px; flex: 0 1 220px; min-width: 150px; height: 34px; padding: 0 12px; border-radius: 10px; background: #e8e8ed; color: #86868b; cursor: text; transition: box-shadow .2s, background .2s; }
+.p-tl-search:focus-within { background: #fbfbfd; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15), 0 0 0 1px #0071e3; }
+.p-tl-search svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.p-tl-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; background: transparent; color: #1d1d1f; font: 15px var(--font); }
+.p-tl-days { display: block; }
+.p-tl-group { margin: 18px 0 0; }
+.p-tl-day { margin: 0 0 2px; color: #1d1d1f; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+.p-tl-list { margin: 0; padding: 0; list-style: none; }
+.p-tl-item { display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 12px; }
+.p-tl-av { display: grid; place-items: center; width: 36px; height: 36px; margin-top: 12px; border-radius: 50%; background: #e8f0fc; color: #0066cc; font: 600 13px/1 var(--font); letter-spacing: .02em; }
+.p-tl-av svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.p-tl-item.is-task .p-tl-av { background: #fff1e0; color: #c25e00; }
+.p-tl-item.is-done .p-tl-av { background: #e4f6e9; color: #1f8a3b; }
+.p-tl-item.is-done .p-tl-av svg { stroke-width: 2.4; }
+.p-tl-item.is-update .p-tl-av { background: #ececf0; color: #515154; }
+.p-tl-item.is-message .p-tl-av { background: #f1eafb; color: #7d3fc0; }
+.p-tl-item.is-auto .p-tl-av { background: #f0f0f3; color: #8e8e93; font-size: 10px; }
+.p-tl-body { min-width: 0; padding: 12px 0 14px; }
+.p-tl-item + .p-tl-item > .p-tl-body { border-top: 1px solid #e8e8ed; }
+.p-tl-item + .p-tl-item > .p-tl-av { margin-top: 13px; }
+.p-tl-line { display: flex; align-items: baseline; gap: 8px; min-height: 22px; }
+.p-tl-who { overflow: hidden; color: #1d1d1f; font-size: 15px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.p-tl-kind { flex: none; color: #86868b; font-size: 13px; }
+.p-tl-time { flex: none; margin-left: auto; color: #86868b; font-size: 13px; font-variant-numeric: tabular-nums; }
+.p-tl-title { margin: 3px 0 0; color: #1d1d1f; font-size: 15px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.p-tl-text { margin: 3px 0 0; color: #1d1d1f; font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+.p-tl-title + .p-tl-text { color: #515154; }
+.p-tl-text .td-tag { font-size: 12px; vertical-align: 1px; }
+.p-tl-text.is-folded { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.p-tl mark { padding: 0 2px; border-radius: 3px; background: #ffe58f; color: inherit; }
+.p-tl-more, .p-tl-act { padding: 0; border: 0; background: none; color: #0066cc; font: 500 13.5px var(--font); cursor: pointer; }
+.p-tl-more { margin-top: 4px; }
+.p-tl-more:hover, .p-tl-act:hover { text-decoration: underline; }
+.p-tl-acts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; }
+.p-tl-act.is-remove { color: #86868b; opacity: 0; transition: opacity .15s; }
+.p-tl-item:hover .p-tl-act.is-remove, .p-tl-act.is-remove:focus-visible { opacity: 1; }
+.p-tl-act.is-remove:hover { color: #d70015; }
+.p-tl-acts:not(:has(.p-tl-act:not(.is-remove))) { margin-top: 0; height: 0; overflow: visible; }
+.p-tl-item:hover .p-tl-acts:not(:has(.p-tl-act:not(.is-remove))) { height: auto; margin-top: 6px; }
+@media (hover: none) { .p-tl-act.is-remove { opacity: 1; } .p-tl-acts:not(:has(.p-tl-act:not(.is-remove))) { height: auto; margin-top: 6px; } }
+.p-tl-empty { margin: 8px 0 0; padding: 28px 12px; border-radius: 14px; background: #f5f5f7; color: #86868b; font-size: 15px; text-align: center; }
+.p-tl-all { display: block; margin: 14px auto 0; min-height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 500 14px var(--font); cursor: pointer; }
+.p-tl-all:hover { background: #dedee3; }
+.p-tl-all[hidden] { display: none; }
+@media (max-width: 640px) { .p-tl-search { flex: 1 1 100%; } .p-tl-seg { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; } .p-tl-seg-btn { flex: none; } }
+@media (prefers-reduced-motion: reduce) { .p-tl-compose, .p-tl-act.is-remove { transition: none; } }

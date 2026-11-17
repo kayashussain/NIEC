@@ -424,26 +424,6 @@ function createCards(dir, { now = () => new Date() } = {}) {
       });
     },
 
-    // A note changed (the owner, 17 Nov 2026: the Timeline does more): its words, by the person who wrote it or Admin (`force`), kept
-    // with the day it was changed; or pinned to the top of the Timeline (anyone who can change the card), at most 5 pinned at a time.
-    editNote(rowId, noteId, input, by, force = false) {
-      return update(rowId, by, (card, stamp) => {
-        const note = card.notes.find((n) => n.id === noteId);
-        if (!note) return { error: 'No such note.' };
-        if (input && Object.prototype.hasOwnProperty.call(input, 'text')) {
-          if (!force && note.by !== by) return { error: 'Only the person who wrote a note, or Admin, can change it.' };
-          const text = str(input.text, LIMITS.noteText);
-          if (!text) return { error: 'A note cannot be empty. Remove it instead.' };
-          if (text !== note.text) { note.text = text; note.editedAt = stamp; note.editedBy = by || ''; }
-        }
-        if (input && Object.prototype.hasOwnProperty.call(input, 'pinned')) {
-          if (input.pinned && !note.pinned && card.notes.filter((n) => n.pinned).length >= 5) return { error: 'Up to 5 notes can be pinned. Unpin one first.' };
-          if (input.pinned) { note.pinned = true; note.pinnedBy = by || ''; } else { delete note.pinned; delete note.pinnedBy; }
-        }
-        return { note };
-      });
-    },
-
     addOption(rowId, input, by) {
       let option;
       const out = update(rowId, by, (card, stamp) => {
