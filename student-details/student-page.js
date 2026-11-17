@@ -444,14 +444,16 @@
     const head = el('div', 'p-card-head');
     head.append(el('h2', '', `Shortlist (${data.card.options.length})`));
     const waiting = waitingOptions();
+    const acts = el('div', 'p-card-acts');
+    // Straight to the Fact File with this student already chosen, so the team shortlists without searching for the student again.
+    if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id) }, 'Shortlist in the Fact File'));
     if (data.card.options.length) {
-      const acts = el('div', 'p-card-acts');
       acts.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Email these options'));
       if (waiting.length && can()) acts.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => window.OptionActions.assign(studentRef(), waitingOptions()).then((r) => { if (r) { sendOrder = null; refreshCard(); } }) }, 'Assign to the Application Team'));
-      head.append(acts);
     }
+    if (acts.children.length) head.append(acts);
     box.append(head);
-    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No courses yet. Press Shortlist on a course in the Fact File, or search below and press Add.')); return box; }
+    if (!data.card.options.length) { box.append(el('p', 'p-muted', 'No courses yet. Press "Shortlist in the Fact File", or search below and press Add.')); return box; }
     const list = el('ol', 'p-chosen');
     const ordered = [...waiting, ...data.card.options.filter((o) => o.sent || o.applied)];
     ordered.forEach((o) => {

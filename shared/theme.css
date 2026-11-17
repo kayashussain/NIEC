@@ -3281,3 +3281,11 @@ html body nav.toc a.is-on { border-color: #0071e3; background: #0071e3; color: #
 html body .bp-submit:has(> .bp-none:only-child) { padding: 0 !important; background: transparent !important; }
 html body .bp-submit > .bp-none:only-child { padding: 10px 14px; border: 1px dashed #c7c7cc; border-radius: 12px; color: #5f5f64; font-size: 14px; }
 .bp-funnel.is-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 🔴 CSS CHANGED (2026-11-17): the shortlisting flow | from: "+ Shortlist" turning green only after the server answered (about a second), a course already given to the team showing "✓ Sent" in the same green; a newly added tray line looking finished at once; in Assign, an orange edge on an empty partner menu and a button that could not be pressed with no reason given | to: the pill turns green the moment it is pressed, with a soft fade; a course already with the Application Team as a grey "✓ With the team" pill; a tray line still being saved shown at 60% until the server confirms; in Assign, a blue "Use Real Dreams for the other 2" link under the first partner chosen, and the button saying "Choose 2 more partners" until every course has one */
+html body .sl-pick { transition: background-color .18s ease, color .18s ease, transform .1s ease; }
+html body .sl-pick:active { transform: scale(.96); }
+html body .sl-pick.is-sent { background: #ececf0; color: #3a3a3c; cursor: default; }
+.sl-tray-list li.is-pending { opacity: .6; }
+.oa-all { font-size: 13.5px; font-weight: 600; }
+.oa-partner.is-missing { border-color: #ff9f0a; }

@@ -15,9 +15,16 @@
   const { el, h, api, field, dialog } = root.Portal;
   const say = (t, e) => root.NiecUI.toast(t, { type: e ? 'error' : 'success' });
   const KEY = 'isrShortlistFor';
+  const ORDER_KEY = 'isrShortlistOrder';
   const state = { student: null, options: [], listeners: [], order: null, open: false };
   const optKey = (universityId, course, intake) => `${universityId}|${String(course).toLowerCase()}|${String(intake || '').toLowerCase()}`;
-  const changed = () => { state.listeners.forEach((f) => f()); drawTray(); };
+  // A shortlist change only repaints the Shortlist buttons and the tray, at once (the owner, 17 Nov 2026: quick, fast and smooth);
+  // the page itself is redrawn only when the student changes (its "Shortlisting for ..." bars).
+  const changed = () => { syncButtons(); drawTray(); };
+  const studentChanged = () => { state.listeners.forEach((f) => f()); changed(); };
+  // The order chosen in the tray, kept for this student while the tab is open (a reload keeps it).
+  const saveOrder = () => { try { if (state.student) sessionStorage.setItem(ORDER_KEY, JSON.stringify({ id: state.student.id, order: state.order || [] })); } catch (e) { /* this page only */ } };
+  const savedOrder = () => { try { const o = JSON.parse(sessionStorage.getItem(ORDER_KEY) || 'null'); return o && state.student && o.id === state.student.id ? o.order : null; } catch (e) { return null; } };
 
   function remembered() { try { return JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
   function remember(s) { try { if (s) sessionStorage.setItem(KEY, JSON.stringify(s)); else sessionStorage.removeItem(KEY); } catch (e) { /* kept for this page only */ } }
@@ -28,6 +35,7 @@
       const r = await api(`/api/cards/${encodeURIComponent(state.student.id)}`);
       state.options = (r.card && r.card.options) || [];
       state.student.email = (r.student && r.student.row && r.student.row.EMAIL) || '';
+      if (r.student && r.student.name) state.student.name = r.student.name;
     } catch (e) { state.student = null; remember(null); state.options = []; }
   }
   // The courses not yet given to the Application Team, in the order chosen in the tray.
@@ -36,6 +44,7 @@
     const ids = list.map((o) => o.id);
     state.order = (state.order || []).filter((x) => ids.includes(x));
     ids.forEach((x) => { if (!state.order.includes(x)) state.order.push(x); });
+    saveOrder();
     return state.order.map((x) => list.find((o) => o.id === x));
   }
 
@@ -69,11 +78,11 @@
     const s = await pickStudent();
     if (!s) return false;
     state.student = s;
-    state.order = null;
     remember(s);
+    state.order = savedOrder();
     await loadOptions();
     state.open = true;
-    changed();
+    studentChanged();
     return true;
   }
 
@@ -91,27 +100,44 @@
   }
 
   // Shortlist / Shortlisted beside a course. The fee, scholarship, deposit and course page are added by the server from the Fact File.
+  // The button changes the moment it is pressed and the server is told behind it; if the server refuses, the button goes back.
+  const found = (o) => state.options.find((x) => optKey(x.universityId, x.course, x.intake) === optKey(o.universityId, o.course, o.intake));
+  function paint(b) {
+    const on = found(b.slOption);
+    b.classList.toggle('is-on', Boolean(on));
+    b.classList.toggle('is-sent', Boolean(on && (on.sent || on.applied)));
+    b.setAttribute('aria-pressed', String(Boolean(on)));
+    b.textContent = on ? (on.sent || on.applied ? '✓ With the team' : '✓ Shortlisted') : '+ Shortlist';
+    b.title = on ? (on.sent || on.applied ? 'Already given to the Application Team' : 'Press again to take it off the shortlist') : (state.student ? `Shortlist for ${state.student.name}` : 'Choose the student, then shortlist');
+  }
+  function syncButtons() { document.querySelectorAll('.sl-pick').forEach((b) => { if (b.slOption) paint(b); }); }
+  // Adds or removes a course on the student's shortlist, at once on the page.
+  async function toggle(o) {
+    if (!state.student && !(await choose())) return;
+    const now = found(o);
+    const sid = encodeURIComponent(state.student.id);
+    const before = state.options;
+    if (now && (now.sent || now.applied)) { say('Already given to the Application Team: change it on the student card.', true); return; }
+    if (now) state.options = state.options.filter((x) => x !== now);
+    else state.options = [...state.options, { id: 'new-' + Date.now(), universityId: o.universityId, university: o.university, course: o.course, intake: o.intake || '', level: o.level || '', fee: o.fee || '', pending: true }];
+    changed();
+    try {
+      const r = now ? await api(`/api/cards/${sid}/options/${now.id}/delete`, {})
+        : await api(`/api/cards/${sid}/options`, { universityId: o.universityId, university: o.university, course: o.course, level: o.level || '', intake: o.intake || '' });
+      if (r && r.card && Array.isArray(r.card.options)) state.options = r.card.options;
+      else await loadOptions();
+      say(now ? `Taken off ${state.student.name}'s shortlist` : `Shortlisted for ${state.student.name}`);
+    } catch (e) {
+      state.options = before;
+      say(e.message, true);
+    }
+    changed();
+  }
   function button(o) {
-    const found = () => state.options.find((x) => optKey(x.universityId, x.course, x.intake) === optKey(o.universityId, o.course, o.intake));
-    const on = found();
-    const b = h('button', { class: `sl-pick no-print${on ? ' is-on' : ''}`, type: 'button', 'aria-pressed': String(Boolean(on)) }, on ? (on.sent ? '✓ Sent' : '✓ Shortlisted') : '+ Shortlist');
-    b.addEventListener('click', async () => {
-      if (!state.student && !(await choose())) return;
-      b.disabled = true;
-      try {
-        const now = found();
-        if (now) {
-          if (now.sent || now.applied) { say('Already given to the Application Team: change it on the student card.', true); b.disabled = false; return; }
-          await api(`/api/cards/${encodeURIComponent(state.student.id)}/options/${now.id}/delete`, {});
-          say(`Taken off ${state.student.name}'s shortlist`);
-        } else {
-          await api(`/api/cards/${encodeURIComponent(state.student.id)}/options`, { universityId: o.universityId, university: o.university, course: o.course, level: o.level || '', intake: o.intake || '' });
-          say(`Shortlisted for ${state.student.name}`);
-        }
-        await loadOptions();
-        changed();
-      } catch (e) { say(e.message, true); b.disabled = false; }
-    });
+    const b = h('button', { class: 'sl-pick no-print', type: 'button' }, '');
+    b.slOption = o;
+    paint(b);
+    b.addEventListener('click', () => toggle(o));
     return b;
   }
 
@@ -153,12 +179,13 @@
         const li = el('li');
         const t = el('div', 'sl-tray-text');
         t.append(el('b', '', o.course || o.university), el('span', '', [o.course ? o.university : '', o.intake, o.fee].filter(Boolean).join(' · ')));
-        const move = (d) => () => { const j = i + d; if (j < 0 || j >= state.order.length) return; [state.order[i], state.order[j]] = [state.order[j], state.order[i]]; drawTray(); };
+        if (o.pending) li.classList.add('is-pending');
+        const move = (d) => () => { const j = i + d; if (j < 0 || j >= state.order.length) return; [state.order[i], state.order[j]] = [state.order[j], state.order[i]]; saveOrder(); drawTray(); };
         const tools = el('div', 'sl-tray-tools');
         tools.append(
           h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'),
           h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === list.length - 1, onclick: move(1) }, '↓'),
-          h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { try { await api(`/api/cards/${encodeURIComponent(state.student.id)}/options/${o.id}/delete`, {}); await loadOptions(); changed(); } catch (e) { say(e.message, true); } } }, 'Remove'),
+          h('button', { class: 'btn btn-sm', type: 'button', onclick: () => toggle(o) }, 'Remove'),
         );
         li.append(t, tools);
         ol.append(li);
@@ -243,7 +270,13 @@
       note.input.rows = 3;
       const msg = el('div', 'p-msg');
       const go = h('button', { class: 'btn btn-primary', type: 'button', disabled: true }, 'Assign to the Application Team');
-      const ready = () => { go.disabled = picks.some((p) => !p.sel.value); };
+      // The button says how many partners are still to choose, so nobody wonders why it cannot be pressed.
+      const ready = () => {
+        const left = picks.filter((p) => !p.sel.value).length;
+        go.disabled = left > 0;
+        go.textContent = left ? `Choose ${left} more partner${left === 1 ? '' : 's'}` : `Assign ${options.length} course${options.length === 1 ? '' : 's'} to the Application Team`;
+        picks.forEach((p) => p.sel.classList.toggle('is-missing', !p.sel.value));
+      };
       const foot = el('div', 'p-dialog-foot');
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), go);
       body.append(list, note.wrap, msg, foot);
@@ -262,7 +295,17 @@
           p.sel.value = pick;
           p.sel.disabled = false;
           if (info.suggested && !p.o.partner) p.hint.textContent = info.suggested === 'Direct' ? 'Suggested: we apply direct to this university.' : `Suggested: used before for this university.`;
-          p.sel.addEventListener('change', () => { p.hint.textContent = ''; ready(); });
+          p.sel.addEventListener('change', () => {
+            p.hint.replaceChildren();
+            // With several courses, one press gives the same partner to the ones still without one (most go through one partner).
+            const empty = picks.filter((x) => x !== p && !x.sel.value && [...x.sel.options].some((op) => op.value === p.sel.value));
+            if (p.sel.value && empty.length) {
+              const all = h('button', { class: 'p-link oa-all', type: 'button' }, `Use ${p.sel.value === 'Direct' ? 'Direct' : p.sel.value} for the other ${empty.length}`);
+              all.addEventListener('click', () => { empty.forEach((x) => { x.sel.value = p.sel.value === 'Direct' ? 'Direct' : p.sel.value; x.hint.replaceChildren(); }); all.remove(); ready(); });
+              p.hint.append(all);
+            }
+            ready();
+          });
         });
         ready();
       }).catch((e) => { msg.textContent = e.message; msg.className = 'p-msg error'; });
@@ -277,7 +320,13 @@
     }, { wide: true });
   }
 
-  const ready = async () => { state.student = remembered(); await loadOptions(); };
+  // The student comes from the address (?for=ID, from "Shortlist in the Fact File" on the student card), else the one chosen before in this tab.
+  const ready = async () => {
+    const asked = new URLSearchParams(location.search).get('for');
+    state.student = asked && /^[\w-]{1,64}$/.test(asked) ? { id: asked, name: '' } : remembered();
+    await loadOptions();
+    if (state.student) { remember(state.student); state.order = savedOrder(); if (asked) state.open = true; }
+  };
   root.ShortlistFor = { ready, bar, button, tray, onChange: (f) => state.listeners.push(f), current: () => state.student };
   root.OptionActions = { email: emailOptions, assign };
 
