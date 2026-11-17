@@ -235,7 +235,8 @@
       if (r.state === 'arrived' && !arrived) { arrived = true; say(`On your ${(r.got && r.got[0]) || to} now. Tap the notification to open ${what}.`, false, { duration: 12000 }); }
       if (r.state === 'unknown') return;
     }
-    if (!arrived && mine === following) say(`Not on your ${to} yet. Check that the phone is online (Wi-Fi or mobile data), then press again.`, true);
+    // A calm notice, not an error: the phone may have shown it without its answer reaching ISR.
+    if (!arrived && mine === following) say(`ISR has not heard back from your ${to} yet. If nothing shows on it, check that the phone is online (Wi-Fi or mobile data), then press again.`, false, { type: 'info', duration: 9000 });
   }
 
   // Pressed again for the same student while it is still being sent, or just after: nothing more is sent (the owner, 17 Nov 2026:
