@@ -2,7 +2,8 @@
 // encrypted on the server), their signature picture and their WhatsApp number, each one row that says whether it is ready, with the
 // form to set it up right under it. Message templates and the My email page are gone: this is the one place to set up sending.
 //
-//   window.SenderSetup.mount(box, { open, onChange }) draws it into `box`; `onChange(info)` runs after every change.
+//   window.SenderSetup.mount(box, { open, onChange, only }) draws it into `box`; `onChange(info)` runs after every change; `only`
+//   (e.g. ['email', 'signature']) shows just those rows, for the way of sending chosen on Follow-up.
 (function () {
   const { el, h, api, field } = window.Portal;
   const say = (t, bad) => window.NiecUI.toast(t, { type: bad ? 'error' : 'success' });
@@ -101,12 +102,12 @@
     return box;
   }
 
-  async function mount(box, { open = false, onChange } = {}) {
+  async function mount(box, { open = false, onChange, only } = {}) {
     const [d, t] = await Promise.all([api('/api/my-mail'), api('/api/templates')]);
     const ready = { email: Boolean(t.mail.ready), signature: Boolean(d.signature || d.admin), whatsapp: Boolean(d.phone) };
     const openRow = box.dataset.openRow || '';
-    const reload = async (row) => { box.dataset.openRow = row || ''; const info = await mount(box, { open: true, onChange }); if (onChange) onChange(info); };
-    const rows = [
+    const reload = async (row) => { box.dataset.openRow = row || ''; const info = await mount(box, { open: true, onChange, only }); if (onChange) onChange(info); };
+    const allRows = [
       {
         key: 'email', title: 'Your email',
         state: ready.email ? (d.set ? `Emails go from ${d.from}` : `Emails go from the office mailbox (${t.mail.from})`) : 'Not set up: emails cannot be sent yet',
@@ -123,20 +124,23 @@
         action: d.phone ? 'Change' : 'Add', form: () => whatsappForm(d, () => reload('')), soft: !d.phone,
       },
     ];
-    const allReady = ready.email && ready.whatsapp;
+    const rows = only && only.length ? allRows.filter((r) => only.includes(r.key)) : allRows;
+    const okOf = (r) => (r.key === 'signature' ? Boolean(d.admin || d.signature) : ready[r.key]);
+    const firstMissing = (rows.find((r) => !okOf(r) && !r.soft) || rows.find((r) => !okOf(r)) || {}).key;
+    const nReady = rows.filter(okOf).length;
+    const allReady = nReady === rows.length;
     const card = el('section', 'p-card ss-card' + (allReady ? ' is-ready' : ''));
     card.id = 'setup';
     const head = el('div', 'ss-head');
     const words = el('div', 'ss-words');
     words.append(el('h2', '', 'Your setup for sending'), el('p', 'p-muted p-small', allReady ? 'Everything is ready.' : 'Set these up once. They are yours: nobody else sends from them.'));
     // How many of the three are ready, as a pill at the right (the owner, 17 Nov 2026: the look of Apple's apps).
-    const nReady = [ready.email, d.admin || d.signature, ready.whatsapp].filter(Boolean).length;
-    head.append(el('span', 'ss-icon-main'), words, el('span', 'ss-sum' + (nReady === 3 ? ' is-ok' : ''), nReady === 3 ? 'All ready' : `${nReady} of 3 ready`));
+    head.append(el('span', 'ss-icon-main'), words, el('span', 'ss-sum' + (allReady ? ' is-ok' : ''), allReady ? 'All ready' : `${nReady} of ${rows.length} ready`));
     card.append(head);
     const list = el('div', 'ss-rows');
     rows.forEach((r) => {
       const row = el('div', 'ss-row');
-      const ok = r.key === 'signature' ? (d.admin || d.signature) : ready[r.key];
+      const ok = okOf(r);
       // A coloured icon for email, signature or WhatsApp, with a small green tick or orange mark on its corner.
       const icon = el('span', `ss-ico ss-ico-${r.key}`);
       const dot = el('span', 'ss-dot ' + (ok ? 'is-ok' : r.soft ? 'is-soft' : 'is-bad'), ok ? '✓' : '!');
@@ -146,7 +150,7 @@
       text.append(el('b', '', r.title), el('span', '', r.state));
       row.append(icon, text);
       const formBox = el('div', 'ss-form-box');
-      const shown = openRow === r.key || (open && !openRow && !ok && r.key === 'email');
+      const shown = openRow === r.key || (open && !openRow && !ok && r.key === firstMissing);
       if (r.action) {
         const btn = h('button', { class: 'btn btn-sm' + (ok ? '' : ' btn-primary'), type: 'button', 'aria-expanded': String(shown) }, shown ? 'Close' : r.action);
         btn.addEventListener('click', () => {

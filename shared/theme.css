@@ -2862,22 +2862,15 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 @media (max-width: 640px) { .pt-switch { display: flex; justify-self: stretch; } .pt-switch a { flex: 1 1 0; justify-content: center; padding: 0 8px; font-size: 14px; } }
 @media print { .pt-bar { display: none !important; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): Follow-up page redesigned in the look of Apple's apps (the owner: "it looks so bad, make it like Apple") | from: plain cards titled "1. Choose the students", a row of four boxes, a bare list of grey checkboxes with names and grey lines of text, "Tick all"/"Clear" grey pills, the email as two separate boxes with labels above, words to fill in under a long label, results as plain lines | to: each step with a round blue number, a bold title and one grey line of help; a "0 chosen" pill at the right that turns blue once students are ticked; a search field with a magnifier and the three filters in one row; the students as an inset grouped list (white rounded panel, thin dividers) with round iOS tick circles, a grey initials circle, the name in bold, intake and email in grey, the stage as a soft grey pill and "No email"/"No WhatsApp" as soft orange pills; a ticked row turns soft blue with a blue filled tick and blue initials; "Tick all shown" and "Clear" as blue text links; the message as a Mail-style window (To, Subject, then the text with no box around it, thin lines between); "Insert" with the words as soft grey pills; Check and Send as large pills; results as a grouped list */
-.bk .p-head { margin-bottom: 22px; }
-.bk > .p-card.bk-step { margin: 0 0 20px; padding: 26px 28px 28px; border: 0; border-radius: 20px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 18px rgba(0, 0, 0, .05); }
-.bk-step-head { display: flex; align-items: flex-start; gap: 14px; margin: 0 0 20px; }
-.bk-num { flex: none; display: inline-grid; place-items: center; width: 30px; height: 30px; margin-top: 1px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.bk-step-title { flex: 1 1 0; min-width: 0; }
-.bk-step-title h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: #1d1d1f; }
-.bk-step-title p { margin: 3px 0 0; font-size: 15px; line-height: 1.45; color: #5f5f64; }
-.bk-count { flex: none; align-self: center; padding: 6px 14px; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #515154; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; transition: background-color .25s var(--ease-out, ease), color .25s var(--ease-out, ease); }
-.bk-count.is-on { background: #0071e3; color: #fff; }
+/* 🔴 CSS CHANGED (2026-11-17): Follow-up turned into steps, one screen each (the owner: "step by step, each on its own page") | from: one long page with the setup, "1. Choose the students", "2. Write the message" and "3. Check and send" as numbered cards one under another, a "0 chosen" pill, Check and Send buttons at the bottom | to: the shared parts kept here: the search and the filters as soft grey fields, the students as a white grouped list with round iOS ticks, initials circles and stage pills (a ticked row soft blue), "Tick all shown" and "Clear" as blue links, the message as a Mail-style window (To, Subject, the text with no box) with "Insert" and the words as grey pills; the steps themselves are in the next block (.fw) */
 
 /* the filters: search first, then intake, stage and source */
 .bk-filters { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
 .bk-filters .p-field { gap: 6px; }
 .bk-filters .p-label { font-size: 13px; font-weight: 600; color: #515154; }
 .bk-filters input, .bk-filters select { min-height: 44px; border: 0; border-radius: 12px; background: rgba(118, 118, 128, .1); font-size: 15.5px; color: #1d1d1f; box-shadow: none; transition: background-color .2s, box-shadow .2s; }
+/* 🔴 CSS CHANGED (2026-11-17): a long choice in a filter | from: "All intakes you can see" broke onto two lines | to: one line, cut with ... */
+.bk-filters select { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .bk-filters input:focus, .bk-filters select:focus { background: #fff; box-shadow: 0 0 0 4px rgba(0, 113, 227, .22); outline: 0; }
 .bk-search input { padding-left: 38px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5.5'/%3E%3Cpath d='m11.2 11.2 3.3 3.3'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 13px 50%; }
 
@@ -2908,7 +2901,6 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .bk-empty { padding: 34px 16px; color: #5f5f64; font-size: 15px; text-align: center; }
 
 /* step 2: the email as a Mail-style window */
-.bk-step .p-tabs { margin: 0 0 16px; }
 .bk-mail { overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
 .bk-to, .bk-mail > .p-field:not([hidden]) { border-bottom: 1px solid rgba(0, 0, 0, .07); }
 .bk-to { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 18px; font-size: 15.5px; }
@@ -2928,24 +2920,8 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .bk-mail .bk-words { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 18px; background: #f9f9fb; }
 .bk-mail .bk-words .tp-label { margin-right: 4px; color: #5f5f64; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 
-/* step 3 */
-.bk-note > * { margin: 0 0 16px; }
-.bk-note p { margin: 0 0 14px; font-size: 15px; color: #5f5f64; }
-.bk-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.bk-actions .btn { min-height: 46px; padding: 0 24px; border-radius: 980px; font-size: 16px; }
-.bk-results:not(:empty) { margin-top: 20px; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
-.bk-results .bk-ready { margin: 0; padding: 14px 18px; background: #f9f9fb; font-size: 15px; font-weight: 600; color: #1d1d1f; }
-.bk-results > .p-notice { margin: 0; border-radius: 0; }
-.bk-results .p-sent { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0; padding: 12px 18px; border: 0; border-top: 1px solid rgba(0, 0, 0, .07); border-radius: 0; background: transparent; box-shadow: none; }
-.bk-results .p-sent b { font-size: 15.5px; }
-.bk-results .p-sent .p-link, .bk-results .p-sent .btn { margin-left: auto; }
-
 @media (max-width: 900px) { .bk-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bk-filters .bk-search { grid-column: 1 / -1; } }
 @media (max-width: 640px) {
-  .bk > .p-card.bk-step { padding: 20px 16px 22px; border-radius: 18px; }
-  .bk-step-head { flex-wrap: wrap; }
-  .bk-step-title { flex-basis: calc(100% - 44px); }
-  .bk-count { order: 3; margin-left: 44px; }
   .bk-tools { flex-wrap: wrap; gap: 4px 18px; }
   .bk-info { flex-basis: 100%; }
   .bk-filters { grid-template-columns: minmax(0, 1fr); }
@@ -2953,7 +2929,6 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
   .bk-row + .bk-row::before { left: 82px; }
   .bk-av { width: 34px; height: 34px; font-size: 13px; }
   .bk-tags { grid-column: 3; justify-content: flex-start; }
-  .bk-actions .btn { flex: 1 1 100%; }
 }
 
 /* 🔴 CSS CHANGED (2026-11-17): "Your setup for sending" (Follow-up) in the look of Apple's apps, like the steps below it | from: a plain card, three rows with a small coloured circle (✓ or !) on the left, blue or grey "Set up/Upload/Add" pills, the open form with square-edged boxes and a plain numbered list · to: the same rounded panel as the steps (20px corners, soft shadow); a blue rounded paper-plane tile beside the title and a pill at the right ("2 of 3 ready" in orange, "All ready" in green); the three rows as a white grouped list like iPhone Settings, each with its own coloured rounded icon (email blue, signature purple, WhatsApp green) and a small green tick or orange mark on its corner, the title in bold and the state in grey; the buttons as pills (blue when something is missing, grey when ready); an open form sits on a soft grey band inside the list, with soft grey fields, a blue focus ring and the numbered WhatsApp steps in round blue numbers */
@@ -3007,4 +2982,128 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
   .bk .ss-row .btn { grid-column: 2; justify-self: start; }
   .bk .ss-item + .ss-item::before { left: 66px; }
   .bk .ss-form-box { padding: 16px 14px 18px; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-17): Follow-up as steps, one screen each, in the look of Apple's set-up screens (the owner: "step by step, each on its own page") | from: everything on one long page, one card under another | to: the page centred (980px); under the title a row of five steps (How to send, Your setup, Students, Message, Check and send) joined by a thin line, the current one a filled blue circle with its name in bold, the ones done a soft blue circle with a tick (click to go back), the ones still to come grey; one large off-white rounded screen per step with a 28px bold question ("How do you want to send it?") and a grey line of help, sliding in softly; on the first step two big white choice cards (By email with a blue envelope tile, By WhatsApp with a green chat tile) that lift on hover and get a blue ring and tick when chosen; a frosted bar fixed at the bottom of the window with a grey Back pill, a grey line saying where you are ("3 students chosen") and a blue Continue pill (it says "Send 3 emails" or "Open the next chat" on the last step); on the last step four number tiles (chosen, ready, cannot be sent in red, with a word not filled in in orange), the students on the left as a grouped list (the one shown soft blue, a green WhatsApp pill that turns "✓ Opened"), and on the right the message as the student sees it: an email window (subject in bold, To in grey, the text) or a WhatsApp chat (the beige chat background and a green bubble); after sending, a large green tick with "3 emails sent" and a blue "Send another message" pill */
+.fw { max-width: 980px; margin: 0 auto; padding-bottom: 24px; }
+.fw .p-head { margin-bottom: 18px; }
+.fw-steps { display: flex; margin: 0 0 22px; padding: 0; list-style: none; }
+.fw-step { position: relative; flex: 1 1 0; min-width: 0; }
+.fw-step + .fw-step::before { content: ""; position: absolute; top: 17px; left: calc(-50% + 22px); right: calc(50% + 22px); height: 2px; border-radius: 2px; background: #d2d2d7; }
+.fw-step.is-done + .fw-step::before, .fw-step.is-done + .fw-step.is-now::before { background: #0071e3; }
+.fw-step button { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 2px 4px; border: 0; background: none; font: inherit; cursor: pointer; }
+.fw-step button:disabled { cursor: default; opacity: 1; }
+.fw-dot { display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid #d2d2d7; border-radius: 50%; background: var(--panel); color: #6e6e73; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; transition: background-color .25s var(--ease-out, ease), border-color .25s var(--ease-out, ease), transform .2s; }
+.fw-name { font-size: 14px; font-weight: 500; color: #5f5f64; text-align: center; }
+.fw-step.is-now .fw-dot { border-color: #0071e3; background: #0071e3; color: #fff; box-shadow: 0 0 0 5px rgba(0, 113, 227, .15); }
+.fw-step.is-now .fw-name { color: #1d1d1f; font-weight: 700; }
+.fw-step.is-done .fw-dot { border-color: transparent; background: rgba(0, 113, 227, .12); color: #0066cc; }
+.fw-step.is-done .fw-name { color: #1d1d1f; }
+.fw-step.is-done button:hover .fw-dot { transform: scale(1.08); }
+.fw-step button:focus-visible { outline: 0; }
+.fw-step button:focus-visible .fw-dot { box-shadow: 0 0 0 4px rgba(0, 113, 227, .3); }
+
+.fw-screen { min-height: 380px; padding: 32px 34px 34px; border-radius: 22px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 6px 24px rgba(0, 0, 0, .06); animation: fw-in .4s var(--ease-out, ease) both; }
+@keyframes fw-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fw-screen { animation: none; } }
+.fw-head { margin: 0 0 24px; }
+.fw-head h2 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.025em; line-height: 1.2; color: #1d1d1f; }
+.fw-head p { margin: 6px 0 0; font-size: 16.5px; line-height: 1.5; color: #5f5f64; }
+/* the setup step shows the setup panel itself, without a second panel around it */
+.fw-screen:has(> div > .ss-card) { padding: 0; background: transparent; box-shadow: none; }
+.fw .ss-card.p-card { margin: 0; }
+
+/* step 1: two big choices */
+.fw-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.fw-choice { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 220px; padding: 28px; border: 0; border-radius: 20px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 2px 10px rgba(0, 0, 0, .04); font: inherit; text-align: left; cursor: pointer; transition: transform .25s var(--ease-out, ease), box-shadow .25s var(--ease-out, ease); }
+.fw-choice:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 14px 34px -10px rgba(0, 0, 0, .18); }
+.fw-choice:active { transform: scale(.985); }
+.fw-choice:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(0, 113, 227, .3); }
+.fw-choice.is-on { box-shadow: 0 0 0 2.5px #0071e3, 0 10px 30px -12px rgba(0, 113, 227, .45); }
+.fw-choice b { margin-top: 10px; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: #1d1d1f; }
+.fw-choice > span:not([class]) { font-size: 16px; line-height: 1.5; color: #5f5f64; }
+.fw-choice-ico { width: 60px; height: 60px; border-radius: 16px; background-position: center; background-repeat: no-repeat; box-shadow: 0 4px 12px -4px rgba(0, 0, 0, .25); }
+.fw-choice-email .fw-choice-ico { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E"), linear-gradient(180deg, #4ea1ff, #0071e3); }
+.fw-choice-whatsapp .fw-choice-ico { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z'/%3E%3C/svg%3E"), linear-gradient(180deg, #4cd964, #1f9d3c); }
+.fw-choice-tick { position: absolute; top: 20px; right: 20px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 14px; font-weight: 700; opacity: 0; transform: scale(.6); transition: opacity .2s, transform .25s var(--spring, ease); }
+.fw-choice.is-on .fw-choice-tick { opacity: 1; transform: none; }
+
+/* the message window is taller on its own screen */
+.fw .bk-mail textarea { min-height: 300px; }
+
+/* the bar at the bottom: Back, where you are, Continue */
+.fw-foot { position: sticky; bottom: 14px; z-index: 20; display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 12px 14px; border-radius: 20px; background: rgba(251, 251, 253, .82); box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 10px 30px -10px rgba(0, 0, 0, .2); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+.fw-foot[hidden] { display: none; }
+.fw-foot .btn { min-height: 46px; padding: 0 26px; border-radius: 980px; font-size: 16px; }
+.fw-foot .btn-primary { margin-left: auto; }
+.fw-info { flex: 1 1 auto; min-width: 0; font-size: 15px; color: #5f5f64; text-align: center; }
+.fw-foot .btn[hidden] + .fw-info { text-align: left; padding-left: 8px; }
+
+/* step 5: number tiles, the students and the message as the student sees it */
+.fw-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 18px; }
+.fw-tiles:empty { display: none; }
+.fw-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
+.fw-tile b { font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+.fw-tile span { font-size: 14px; color: #5f5f64; }
+.fw-tile.is-ok b { color: #1f7a35; }
+.fw-tile.is-bad b { color: #c4271b; }
+.fw-tile.is-warn b { color: #a84d00; }
+.fw-check { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.fw-list { max-height: 560px; overflow: auto; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); scrollbar-width: thin; }
+.fw-item { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; transition: background-color .15s; }
+.fw-item + .fw-item::before { content: ""; position: absolute; top: 0; left: 64px; right: 0; height: 1px; background: rgba(0, 0, 0, .07); }
+.fw-item:hover { background: rgba(0, 0, 0, .025); }
+.fw-item.is-on { background: rgba(0, 113, 227, .08); }
+.fw-item.is-on .bk-av { background: linear-gradient(180deg, #4ea1ff, #0071e3); color: #fff; }
+.fw-item.is-off .bk-who b { color: #6e6e73; }
+.fw-item > .bk-tag { grid-column: 2 / -1; justify-self: start; white-space: normal; }
+.fw-wa { padding: 6px 14px; border-radius: 980px; background: #25a244; color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.fw-wa:hover { background: #1f8f3b; }
+.fw-wa.is-done { background: #e3f5e8; color: #1f7a35; }
+.fw-preview { min-width: 0; }
+.fw-mailview { overflow: hidden; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 8px 24px -12px rgba(0, 0, 0, .15); }
+.fw-mailtop { display: flex; flex-direction: column; gap: 4px; padding: 18px 22px; border-bottom: 1px solid rgba(0, 0, 0, .07); }
+.fw-mailtop b { font-size: 19px; font-weight: 700; letter-spacing: -.01em; color: #1d1d1f; }
+.fw-mailtop span { font-size: 14.5px; color: #5f5f64; overflow-wrap: anywhere; }
+.fw-mailtext { max-height: 470px; overflow: auto; padding: 20px 22px 24px; font-size: 15.5px; line-height: 1.65; color: #1d1d1f; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fw-waview { overflow: hidden; border-radius: 16px; background: #efeae2; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 8px 24px -12px rgba(0, 0, 0, .15); }
+.fw-watop { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: #f7f7f7; border-bottom: 1px solid rgba(0, 0, 0, .07); }
+.fw-watop b { font-size: 16px; color: #1d1d1f; }
+.fw-bubble { width: fit-content; max-width: 85%; margin: 22px 18px 26px auto; padding: 10px 14px; border-radius: 14px 4px 14px 14px; background: #d9fdd3; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); font-size: 15.5px; line-height: 1.5; color: #111b21; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* after sending */
+.fw-done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 10px; text-align: center; }
+.fw-done-ico { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: #34c759; color: #fff; font-size: 38px; font-weight: 700; box-shadow: 0 10px 30px -8px rgba(52, 199, 89, .6); animation: fw-pop .5s var(--spring, ease) both; }
+@keyframes fw-pop { from { transform: scale(.5); opacity: 0; } to { transform: none; opacity: 1; } }
+.fw-done h2 { margin: 8px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -.025em; color: #1d1d1f; }
+.fw-done p { margin: 0 0 6px; font-size: 16.5px; color: #5f5f64; }
+.fw-done-line { font-size: 15px; color: #c4271b; }
+.fw-done .btn { min-height: 46px; margin-top: 12px; padding: 0 26px; border-radius: 980px; font-size: 16px; }
+
+@media (max-width: 760px) {
+  .fw-check { grid-template-columns: minmax(0, 1fr); }
+  .fw-list { max-height: 320px; }
+}
+@media (max-width: 640px) {
+  .fw-screen { min-height: 0; padding: 22px 16px 24px; border-radius: 18px; }
+  .fw-head h2 { font-size: 23px; }
+  .fw-head p { font-size: 15.5px; }
+  .fw-steps { margin-bottom: 16px; }
+  .fw-dot { width: 30px; height: 30px; font-size: 13.5px; }
+  .fw-step + .fw-step::before { top: 14px; left: calc(-50% + 18px); right: calc(50% + 18px); }
+  .fw-name { display: none; }
+  .fw-step.is-now .fw-name { display: block; position: absolute; top: 40px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 13px; }
+  .fw-steps:has(.is-now) { margin-bottom: 40px; }
+  .fw-step:first-child.is-now .fw-name { left: 0; transform: none; }
+  .fw-step:last-child.is-now .fw-name { left: auto; right: 0; transform: none; }
+  .fw-choices { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .fw-tiles { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+  .fw-tile { padding: 10px 12px; }
+  .fw-tile b { font-size: 22px; }
+  .fw-tile span { font-size: 13px; }
+  .fw-choice { min-height: 0; padding: 20px; }
+  .fw-choice-ico { width: 50px; height: 50px; border-radius: 14px; }
+  .fw-foot { bottom: 8px; flex-wrap: wrap; gap: 8px 10px; padding: 10px; }
+  .fw-info { flex-basis: 100%; order: -1; font-size: 14px; }
+  .fw-foot .btn { flex: 1 1 0; padding: 0 16px; }
 }
