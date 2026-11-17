@@ -23,13 +23,35 @@
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
   // What the person has chosen so far; it lives while the page is open.
-  const state = { channel: '', subject: '', body: 'Dear {first_name},\n\n', wa: 'Hello {first_name}, ', filters: { intake: '', stage: '', source: '', name: '' } };
+  const state = { channel: '', subject: '', body: 'Dear {first_name},\n\n', wa: 'Hello {first_name}, ', filters: { intake: '', stage: '', source: '', name: '' }, onlyChosen: false };
   let students = [];
   let lists = { intakes: [], stages: [] };
   let fields = [];
   let mail = { ready: false };
   let setupDirect = false; // reached through /bulk#setup (from the menu): show all three setup rows
   const chosen = new Set();
+  let ownPhone = ''; // the sender's WhatsApp number, from their setup
+
+  // The draft (how to send, the students ticked, the filters and the message) is kept while this tab is open, so a reload or a look
+  // at another page loses nothing (the owner, 17 Nov 2026: less work for the team). It is cleared once the message has gone.
+  const DRAFT = 'isrFollowupDraft';
+  function saveDraft() {
+    try { sessionStorage.setItem(DRAFT, JSON.stringify({ channel: state.channel, subject: state.subject, body: state.body, wa: state.wa, filters: state.filters, chosen: [...chosen] })); } catch (e) { /* this page only */ }
+  }
+  function loadDraft() {
+    try {
+      const d = JSON.parse(sessionStorage.getItem(DRAFT) || 'null');
+      if (!d) return;
+      ['channel', 'subject', 'body', 'wa'].forEach((k) => { if (typeof d[k] === 'string') state[k] = d[k]; });
+      if (d.filters) Object.assign(state.filters, d.filters);
+      (d.chosen || []).forEach((x) => { if (students.some((st) => st.id === x)) chosen.add(x); });
+    } catch (e) { /* start afresh */ }
+  }
+  const clearDraft = () => { try { sessionStorage.removeItem(DRAFT); } catch (e) { /* nothing kept */ } };
+  // The words to insert, by the names the team uses ({first_name} is still what goes into the text).
+  const LABELS = { first_name: 'First name', full_name: 'Full name', university: 'University', course: 'Course', intake: 'Intake', stage: 'Stage', offer_date: 'Offer date', sender_name: 'Your name', company_name: 'Consultancy name', options_table: 'University options (table)', documents_list: 'Documents to send' };
+  // The setup that way of sending needs is already done, so step 2 can be passed by.
+  const setupReady = (channel) => (channel === 'email' ? Boolean(mail.ready) : Boolean(ownPhone));
 
   const q = new URLSearchParams(location.search);
 
@@ -50,6 +72,7 @@
     if (push && k !== current) history.pushState({ step: k }, '', '#' + k);
     else history.replaceState({ step: k }, '', '#' + k);
     current = k;
+    saveDraft();
     draw();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -61,6 +84,8 @@
       students = l.students; lists = l; mail = l.mail;
       const t = await api('/api/templates');
       fields = t.fields || []; mail = t.mail || mail;
+      try { ownPhone = (await api('/api/my-mail')).phone || ''; } catch (e) { ownPhone = ''; }
+      loadDraft();
       if (q.get('stage') && lists.stages.includes(q.get('stage'))) state.filters.stage = q.get('stage');
       if (q.get('sheet')) state.filters.intake = q.get('sheet');
       const want = (location.hash || '').slice(1);
@@ -98,7 +123,7 @@
     backBtn = h('button', { class: 'btn', type: 'button', onclick: () => go(STEPS[Math.max(0, at - 1)][0]) }, 'Back');
     backBtn.hidden = at === 0;
     footInfo = el('span', 'fw-info');
-    nextBtn = h('button', { class: 'btn btn-primary', type: 'button' }, 'Continue');
+    nextBtn = h('button', { class: 'btn btn-primary', type: 'button', title: 'Ctrl+Enter' }, 'Continue');
     onNext = null;
     nextBtn.addEventListener('click', () => { if (nextBtn.disabled) return; if (onNext) onNext(); else if (at < STEPS.length - 1) go(STEPS[at + 1][0]); });
     foot.append(backBtn, footInfo, nextBtn);
@@ -127,7 +152,8 @@
       ['whatsapp', 'By WhatsApp', 'Each student\'s chat opens with the message written, one after the other.']].forEach(([k, name, help]) => {
       const c = h('button', { type: 'button', class: 'fw-choice fw-choice-' + k + (state.channel === k ? ' is-on' : ''), 'aria-pressed': String(state.channel === k) }, '');
       c.append(el('span', 'fw-choice-ico'), el('b', '', name), el('span', '', help), el('span', 'fw-choice-tick', '✓'));
-      c.addEventListener('click', () => { state.channel = k; setupDirect = false; go('setup'); });
+      // Straight on to the students when this way of sending is already set up; the setup stays one click away in the steps.
+      c.addEventListener('click', () => { state.channel = k; setupDirect = false; go(setupReady(k) ? 'students' : 'setup'); });
       grid.append(c);
     });
     screen.append(grid);
@@ -149,8 +175,8 @@
     // From the menu's setup link: Continue starts the steps at "How to send".
     if (!state.channel) onNext = () => { setupDirect = false; go('how'); };
     update();
-    window.SenderSetup.mount(box, { open: true, only, onChange: (i) => { mail = i.mail; fields = i.fields || fields; phone = i.phone; update(); } })
-      .then((info) => { mail = info.mail; fields = info.fields || fields; phone = info.phone; update(); })
+    window.SenderSetup.mount(box, { open: true, only, onChange: (i) => { mail = i.mail; fields = i.fields || fields; phone = i.phone; ownPhone = i.phone || ''; update(); } })
+      .then((info) => { mail = info.mail; fields = info.fields || fields; phone = info.phone; ownPhone = info.phone || ''; update(); })
       .catch((e) => box.replaceChildren(el('div', 'p-notice bad', e.message)));
   }
 
@@ -178,13 +204,16 @@
     bar.append(search.wrap, intake.wrap, stage.wrap, source.wrap);
 
     const fromSource = (s) => { const v = source.input.value; if (!v) return true; if (v.startsWith('g:')) return s.source === v.slice(2); const [g, d] = v.slice(2).split('\u0001'); return s.source === g && s.sourceDetail === d; };
-    const visible = () => students.filter((s) => fromSource(s) && (!intake.input.value || s.sheetId === intake.input.value) && (!stage.input.value || s.stage === stage.input.value) && (!search.input.value || s.name.toLowerCase().includes(search.input.value.toLowerCase())));
+    const visible = () => students.filter((s) => (!state.onlyChosen || chosen.has(s.id)) && fromSource(s) && (!intake.input.value || s.sheetId === intake.input.value) && (!stage.input.value || s.stage === stage.input.value) && (!search.input.value || s.name.toLowerCase().includes(search.input.value.toLowerCase())));
     const info = el('div', 'bk-info');
     const tools = el('div', 'bk-tools');
     const listBox = el('div', 'bk-list');
     const reach = (s) => (state.channel === 'email' ? Boolean(s.email) : Boolean(s.whatsapp));
     const counts = (v) => {
       info.textContent = plural(v.length, 'student matches', 'students match');
+      only.textContent = state.onlyChosen ? 'Show everyone' : `Show only the chosen (${chosen.size})`;
+      only.hidden = !chosen.size && !state.onlyChosen;
+      saveDraft();
       footer(chosen.size ? `${plural(chosen.size, 'student', 'students')} chosen` : 'Tick at least one student', chosen.size > 0);
     };
     const drawList = () => {
@@ -205,9 +234,16 @@
         return row;
       }) : [el('div', 'bk-empty', 'No student matches.')]));
     };
+    const only = h('button', { class: 'bk-link', type: 'button', onclick: () => { state.onlyChosen = !state.onlyChosen; drawList(); } }, '');
+    // Tick all ticks only the students the message can reach (an email address, or a WhatsApp number), so nobody is skipped at the end.
     tools.append(info,
-      h('button', { class: 'bk-link', type: 'button', onclick: () => { visible().slice(0, 150).forEach((s) => chosen.add(s.id)); drawList(); } }, 'Tick all shown (up to 150)'),
-      h('button', { class: 'bk-link', type: 'button', onclick: () => { chosen.clear(); drawList(); } }, 'Clear'));
+      h('button', { class: 'bk-link', type: 'button', onclick: () => {
+        const v = visible(); const can = v.filter(reach); can.slice(0, 150).forEach((s) => chosen.add(s.id));
+        if (can.length < v.length) say(`${plural(v.length - can.length, 'student was', 'students were')} left out: no ${state.channel === 'email' ? 'email address' : 'WhatsApp number'}.`);
+        drawList();
+      } }, 'Tick all shown (up to 150)'),
+      only,
+      h('button', { class: 'bk-link', type: 'button', onclick: () => { chosen.clear(); state.onlyChosen = false; drawList(); } }, 'Clear'));
     [intake, stage, source, search].forEach((x) => { x.input.addEventListener('input', drawList); x.input.addEventListener('change', drawList); });
     panel.append(bar, tools, listBox);
     screen.append(panel);
@@ -217,7 +253,7 @@
   // ---- 4. The message ----
   function drawMessage(screen) {
     const email = state.channel === 'email';
-    screenHead(screen, 'Write the message', 'The words in {brackets} are filled in for each student. Click one to add it where you are typing.');
+    screenHead(screen, 'Write the message', 'Press a word below (First name, University ...) to add it where you are typing: it is filled in for each student. Ctrl+Enter goes on.');
     const form = el('div', 'bk-mail' + (email ? '' : ' is-wa'));
     const to = el('div', 'bk-to');
     to.append(el('span', 'bk-to-label', 'To'), el('span', 'bk-to-n', `${plural(chosen.size, 'student', 'students')}, each gets their own message`));
@@ -233,13 +269,14 @@
     let lastBox = text.input;
     const check = () => {
       if (email) { state.subject = subject.input.value; state.body = text.input.value; } else state.wa = text.input.value;
+      saveDraft();
       const ok = email ? state.subject.trim() && state.body.trim() : state.wa.trim();
       footer(ok ? 'Next: see it as each student will' : (email ? 'Write the subject and the text' : 'Write the text'), Boolean(ok));
     };
     boxes.forEach((x) => { x.addEventListener('focus', () => { lastBox = x; }); x.addEventListener('input', check); });
     const chips = el('div', 'tp-chips');
     chips.append(...fields.filter(([k]) => SHOWN.includes(k)).map(([k, d]) => {
-      const c = h('button', { class: 'tp-chip', type: 'button', title: d }, `{${k}}`);
+      const c = h('button', { class: 'tp-chip', type: 'button', title: `${d}: adds {${k}}` }, LABELS[k] || `{${k}}`);
       c.addEventListener('mousedown', (e) => e.preventDefault()); // keep the cursor where it is
       c.addEventListener('click', () => {
         const box = lastBox;
@@ -317,6 +354,7 @@
             api(`/api/cards/${i.id}/messages/send`, { channel: 'whatsapp', whatsapp: state.wa }).catch(() => {});
             i.opened = true; opened += 1; wa.textContent = '✓ Opened'; wa.classList.add('is-done');
             footer(`${opened} of ${ready.length} chats opened`, opened < ready.length, opened < ready.length ? 'Open the next chat' : 'All chats opened');
+            if (opened >= ready.length) clearDraft();
           };
           wa.addEventListener('click', open);
           wa.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
@@ -343,7 +381,8 @@
             const done = el('div', 'fw-done');
             done.append(el('span', 'fw-done-ico', '✓'), el('h2', '', `${plural(sent, 'email', 'emails')} sent`), el('p', '', sent === res.results.length ? 'Every chosen student got their own email.' : 'These could not be sent:'));
             res.results.filter((x) => x.status !== 'sent').forEach((x) => done.append(el('div', 'fw-done-line', `${x.name}: ${x.error || x.status}`)));
-            done.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { chosen.clear(); state.subject = ''; go('students'); } }, 'Send another message'));
+            clearDraft();
+            done.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { chosen.clear(); state.subject = ''; state.body = 'Dear {first_name},\n\n'; go('students'); } }, 'Send another message'));
             screen.replaceChildren(done);
             foot.hidden = true;
           } catch (e) { say(e.message, true); nextBtn.disabled = false; }
@@ -354,6 +393,11 @@
       }
     }).catch((e) => { list.replaceChildren(el('div', 'p-notice bad', e.message)); footer('', false); });
   }
+
+  // Ctrl+Enter (or Cmd+Enter on a Mac) presses Continue from anywhere on the step, also while typing the message.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && nextBtn && !nextBtn.disabled && !document.querySelector('.p-dialog, dialog[open]')) { e.preventDefault(); nextBtn.click(); }
+  });
 
   start();
 })();
