@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-17 · student-details/messages.js · emails to students: marketing parts (new) · from: an email was only paragraphs, small headings, bullets and the signature picture · to: optional extras the writer types: a first line "# Title | small line" becomes a navy-to-blue banner across the top with a large white title; "!! words" a soft amber box with an orange left edge in bold; "[[Label | address]]" big rounded buttons side by side (WhatsApp green #25d366, others blue #0071e3, e.g. a Call button) · why: the owner asked for a professional, colourful marketing email with big WhatsApp and Call buttons. Emails without these lines look exactly as before.**
+
 - **2026-11-17 · shared/theme.css · Partners (Universities, B2B partners, Agents): the filter switch taken off · from: under the search box a segmented switch (All, Ready to apply, Not ready yet, Ended; on Agents All, Active, Not set up yet, Ended) with count bubbles, and the Sort menu · to: only the Sort menu; the switch's styles (.pl-seg, .pl-n) removed · why: the owner does not need these filters on any of the three partner lists.**
 
 - **2026-11-17 · student-details/events.html · the Intake picker at the top of Events and marketing (new) · from: nothing, every event and campaign of every intake in one list · to: "Intake" in small grey bold beside a rounded light grey box with the intake's name (the same look as the Intake picker on the Dashboard), left of the blue "+ New event or campaign" pill · why: the owner asked to see Events and marketing intake by intake, with All intakes as a choice.**

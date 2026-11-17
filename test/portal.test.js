@@ -583,6 +583,18 @@ test('the signature picture travels inside the email, shown in the text of the e
   assert.match(rendered.html, /src="cid:niec-signature"/);
 });
 
+test('a marketing email: a banner first line, a highlighted box and big WhatsApp and Call buttons', () => {
+  const body = '# January intake | Final call\nHi {first_name},\n!! Apply this week\n[[WhatsApp me | https://wa.me/9779800000000]] [[Call | tel:+9779800000000]]\n[[Bad | javascript:alert(1)]]';
+  const r = Messages.renderEmail({ subject: 'S', body, values: Messages.valuesFor({ row: { 'FIRST NAME': 'Sita' } }), signature: {} });
+  assert.match(r.html, /linear-gradient[^>]*>\s*<div[^>]*>January intake<\/div><div[^>]*>Final call<\/div>/);
+  assert.match(r.html, /border-left:5px solid #fc6e1f[^>]*>Apply this week/);
+  assert.match(r.html, /href="https:\/\/wa\.me\/9779800000000" style="[^"]*background:#25d366/);
+  assert.match(r.html, /href="tel:\+9779800000000" style="[^"]*background:#0071e3/);
+  assert.ok(!r.html.includes('href="javascript:'), 'an unsafe address never becomes a button or a link');
+  assert.match(r.text, /^JANUARY INTAKE\nFinal call\n\nHi Sita,\nApply this week\nWhatsApp me: https:\/\/wa\.me\/9779800000000\nCall: \+9779800000000/);
+  assert.ok(!/linear-gradient/.test(Messages.renderEmail({ subject: 'S', body: 'Hi\n# Not first', values: {}, signature: {} }).html), 'only the first line can be the banner');
+});
+
 test('the course page is looked up on a university address and the best match is taken', async () => {
   const { parseResults, pickResult, createCourseFinder } = require('../student-details/course-finder');
   const html = '<a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.salford.ac.uk%2Fpostgraduate%2Fmsc-managing-ai-in-business">MSc Managing AI in Business | University of Salford</a>'
