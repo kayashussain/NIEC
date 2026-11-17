@@ -3381,3 +3381,7 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 .df-field .df-input { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--edit-bg); font: inherit; font-size: 15px; }
 .df-field .df-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
 @media (max-width: 760px) { .df-row.df-row-student { grid-template-columns: 1fr; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): the team's Dashboard, Needs attention: "+16 more" | from: grey words "+16 more" that did nothing | to: the same grey words as a button (blue on hover, underlined) that shows every other name in place, as the same grey name pills */
+button.md-todo-more { border: 0; background: none; font: inherit; font-size: 13.5px; cursor: pointer; border-radius: 6px; }
+button.md-todo-more:hover, button.md-todo-more:focus-visible { color: #0066cc; text-decoration: underline; }

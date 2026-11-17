@@ -94,8 +94,24 @@
         const words = el('div', 'md-todo-words');
         words.append(el('b', '', x.title), el('small', '', x.hint));
         const names = el('div', 'md-todo-names');
-        x.students.forEach((r) => { const a = h('a', { class: 'md-todo-name', href: '/student?id=' + encodeURIComponent(r.id), title: r.detail || 'Open the student card' }, r.name); names.append(a); });
-        if (x.count > x.students.length) names.append(el('span', 'md-todo-more', `+${num(x.count - x.students.length)} more`));
+        // The first three names; "+N more" shows the rest in place (the owner, 17 Nov 2026). A name opens the card over the Dashboard,
+        // with ‹ › through every student of this row (card-drawer.js); a Ctrl click still opens it in a new tab.
+        const ids = x.students.map((r) => r.id);
+        const nameLink = (r) => {
+          const a = h('a', { class: 'md-todo-name', href: '/student?id=' + encodeURIComponent(r.id), title: r.detail || 'Open the student card' }, r.name);
+          a.addEventListener('click', (e) => {
+            if (!window.CardDrawer || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            window.CardDrawer.open(r.id, { list: ids });
+          });
+          return a;
+        };
+        x.students.slice(0, 3).forEach((r) => names.append(nameLink(r)));
+        if (x.students.length > 3) {
+          const more = h('button', { class: 'md-todo-more', type: 'button', 'aria-expanded': 'false' }, `+${num(x.students.length - 3)} more`);
+          more.addEventListener('click', () => { more.replaceWith(...x.students.slice(3).map(nameLink)); });
+          names.append(more);
+        } else if (x.count > x.students.length) names.append(el('span', 'md-todo-more', `+${num(x.count - x.students.length)} more`));
         words.append(names);
         row.append(el('span', 'md-todo-n', num(x.count)), words);
         list.append(row);
