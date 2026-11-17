@@ -53,19 +53,12 @@
   let justSaved = '';
 
   // ---- the list ----
-  // Sort under the search box (partners-switch.js). Each entry is a partner set up ({ p }) or a name on the sheet not set up yet ({ x }).
+  // The busiest first (the most visas, then the most students, then by name), the ended ones last. No Sort menu (the owner, 17 Nov 2026).
+  // Each entry is a partner set up ({ p }) or a name on the sheet not set up yet ({ x }).
   const nameOf = (it) => (it.p || it.x).name;
   const isEnded = (it) => Boolean(it.p && it.p.status === 'Ended');
-  const visasOf = (it) => stats(nameOf(it)).visas;
   const studentsOf = (it) => (it.x ? it.x.students : stats(nameOf(it)).students);
-  const byName = (a, b) => nameOf(a).localeCompare(nameOf(b));
-  const tools = window.PartnerList ? window.PartnerList({
-    key: KIND,
-    sorts: [['visas', 'Most visas', (a, b) => isEnded(a) - isEnded(b) || visasOf(b) - visasOf(a) || byName(a, b)],
-      ['students', 'Most students', (a, b) => isEnded(a) - isEnded(b) || studentsOf(b) - studentsOf(a) || byName(a, b)], ['az', 'A to Z', byName]],
-    onChange: () => data && draw(),
-  }) : null;
-  if (tools) tools.mount(document.querySelector('.bp-tools'));
+  const busiest = (a, b) => isEnded(a) - isEnded(b) || stats(nameOf(b)).visas - stats(nameOf(a)).visas || studentsOf(b) - studentsOf(a) || nameOf(a).localeCompare(nameOf(b));
   function draw() {
     const all = data.partners;
     const sheet = data.onSheet || []; // named in the University Partner column, not set up yet
@@ -102,8 +95,7 @@
       lead.push(bar);
     }
     const items = [...shown.map((p) => ({ p })), ...shownSheet.map((x) => ({ x }))];
-    const ordered = tools ? tools.apply(items) : items;
-    if (!ordered.length) { $('list').replaceChildren(...lead, el('div', 'bp-empty', 'None here. Choose "All" above.')); return; }
+    const ordered = items.sort(busiest);
     $('list').replaceChildren(...lead, ...ordered.map((it) => (it.p ? card(it.p) : sheetCard(it.x))));
   }
   // The names marked "Not a partner", each with Show again.
@@ -163,7 +155,7 @@
       c.append(f);
     }
     const facts = el('dl', 'bp-facts');
-    const row = (label, value) => { const dd = el('dd'); if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'bp-none', 'Not entered yet')); facts.append(el('dt', '', label), dd); };
+    const row = (label, value) => { const dd = el('dd'); if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'bp-none', 'Not entered yet')); const pair = el('div', 'bp-fact'); pair.append(el('dt', '', label), dd); facts.append(pair); };
     // The commission of the intake that is running: open it, or a calm note that it is missing.
     const cur = data.currentIntake;
     const found = (p.commissions || []).find((x) => same(x.intake, cur) && (x.fileId || x.link));
@@ -459,24 +451,18 @@
   }
   function closeEditor() { $('editor').hidden = true; $('editor').replaceChildren(); $('listView').hidden = false; window.scrollTo({ top: 0 }); }
 
-  // ---- add one, or add the partners named in the sheet ----
-  function addOne() {
-    window.Portal.dialog(`New ${WORD.one}`, (body, close) => {
-      const n = field('Name', { max: 120 });
-      const msg = el('div', 'p-msg');
-      const foot = el('div', 'p-dialog-foot');
-      foot.append(btn('btn', 'Cancel', () => close()));
-      const ok = btn('btn btn-primary', 'Add', async () => { try { close(await api(API, { name: n.input.value })); } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; } });
-      foot.append(ok);
-      body.append(grid('p-form-2', n.wrap), msg, foot);
-    }).then(async (made) => { if (made) { await load(); edit(made.id); } });
+  // ---- add one: type the name and press Add (no dialog, no list to pick from: the owner, 17 Nov 2026) ----
+  async function addOne(e) {
+    e.preventDefault();
+    const box = $('addName');
+    try { const made = await api(API, { name: box.value }); box.value = ''; await load(); edit(made.id); } catch (err) { say(err.message, true); }
   }
   async function load() {
     data = await api(API);
     if (!viewer()) { const c = document.querySelector('#pageTitle .p-chip'); if (c) c.hidden = true; } // others look at it too now
     if (settingUp()) $('intro').textContent = 'How to apply and who to contact.';
     if (viewer()) {
-      $('add').hidden = true;
+      $('addForm').hidden = true;
       const chip = document.querySelector('#pageTitle .p-chip'); if (chip) chip.textContent = 'View only';
       $('intro').textContent = data.access === 'commission'
         ? 'How to apply, contacts and commission. View only.'
@@ -489,7 +475,7 @@
       justSaved = '';
     }
   }
-  $('add').addEventListener('click', addOne);
+  $('addForm').addEventListener('submit', addOne);
   $('search').addEventListener('input', () => data && draw());
   load().catch((e) => { $('list').replaceChildren(h('div', { class: 'p-notice bad' }, e.message)); });
 })();

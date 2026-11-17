@@ -3237,11 +3237,7 @@ html body .sl-pick.is-sent { background: #ececf0; color: #3a3a3c; cursor: defaul
 /* 🔴 CSS CHANGED (2026-11-17): Follow-up's words to insert | from: grey pills showing the code, such as {first_name} and {offer_date} | to: grey pills with a blue "+" and the plain name ("+ First name", "+ Offer date"); the code still goes into the text */
 .bk .tp-chip::before { content: "+"; margin-right: 5px; color: #0071e3; font-weight: 700; }
 
-/* 🔴 CSS CHANGED (2026-11-17): Partners (Universities, B2B partners, Agents): a filter and sort row (new) | from: only a search box and "N in the list" above the cards | to: under the search box a segmented switch (All, Ready to apply, Not ready yet, Ended on Universities and B2B partners; All, Active, Not set up yet, Ended on Agents), each with a count bubble (blue on the open one), and a grey "Sort" pill menu (Most visas, Most students, A to Z) on the right; on a phone the switch scrolls sideways in one row */
-/* 🔴 CSS CHANGED (2026-11-17): Partners (Universities, B2B partners, Agents): the filter switch taken off | from: under the search box a segmented switch (All, Ready to apply, Not ready yet, Ended; on Agents All, Active, Not set up yet, Ended) with count bubbles, and the Sort menu | to: only the Sort menu; the switch's styles (.pl-seg, .pl-n) removed */
-.pl-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; margin: -4px 0 18px; }
-.pl-sort { display: inline-flex; align-items: center; gap: 8px; color: #515154; font-size: 14px; font-weight: 600; }
-.pl-sort select { width: auto; min-height: 38px; padding: 0 30px 0 14px; border: 0; border-radius: 999px; background-color: #e8e8ed; color: #1d1d1f; font: 500 14.5px var(--font); cursor: pointer; }
+/* 🔴 CSS CHANGED (2026-11-17): Partners: the Sort menu taken off (the owner asked) | from: a grey "Sort" pill menu (Most visas, Most students, A to Z) under the search box | to: nothing; the busiest are first. Its styles (.pl-row, .pl-sort) removed */
 
 /* 🔴 CSS CHANGED (2026-11-17): the student card | from: a card opened from All Students had only Close (to see the next student: close, find the row, double-click again); the missing passport details shown only as orange "Missing" words among the facts | to: a frosted pill at the bottom centre of the card window with ‹ and › round buttons and "12 of 58" between them (the ← → keys do the same); under the facts a soft orange line with an orange dot, "3 details missing: Date of birth, Passport number, Address", and a blue "Fill them in" pill on the right */
 .p-drawer-nav { position: absolute; left: 50%; bottom: 18px; z-index: 2; display: flex; align-items: center; gap: 6px; padding: 5px; border-radius: 999px; background: rgba(250, 250, 252, .86); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 10px 30px -12px rgba(0, 0, 0, .3); transform: translateX(-50%); }
@@ -3494,3 +3490,61 @@ html body .p-apps .p-chosen-facts dd { font-size: 14.5px; font-weight: 600; }
   html body .p-apps ol.p-chosen > li.p-chosen-item + li.p-chosen-item::after { left: 56px; }
 }
 @media (max-width: 400px) { html body .p-apps .p-chosen-item header { flex-direction: column; gap: 10px; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): Partners (Universities, B2B partners, Agents) made more professional, one look on all three (the owner asked) | from: the title with a loose name box and button beside it; the numbers in one long box split by thin lines; a plain round search box with "N in the list" far away on the right; cards with a light border, the numbers bar and the facts in loose rows | to: the title on the left and one joined "name + Add" pill on the right (the same on all three pages, no list dropping down); the numbers as separate soft tiles, each with a thin blue line on top and big figures; a frosted search bar with a magnifier that stays at the top of the screen while scrolling, the count beside it in a small grey pill; cards with a crisper edge, a deeper shadow on hover and a soft blue ring, the name larger, the numbers bar in a soft grey tray, the facts as small grey labels over their values, the Edit or Open button as a blue text link at the bottom right */
+html body .bp-page .p-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px 28px; flex-wrap: wrap; margin-bottom: 26px; }
+html body .bp-page .p-head h1 { margin: 0 0 6px; }
+html body .bp-page .p-head > div > p { margin: 0; color: #5f5f64; font-size: 16px; }
+.pt-add { display: flex; align-items: center; gap: 0; padding: 4px; border-radius: 999px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 6px 18px -12px rgba(0, 0, 0, .25); transition: box-shadow .2s; }
+.pt-add:focus-within { box-shadow: 0 0 0 2px #0071e3, 0 6px 18px -12px rgba(0, 113, 227, .45); }
+.pt-add[hidden] { display: none; }
+html body .pt-add input { width: 300px; max-width: 100%; height: 42px; padding: 0 14px 0 18px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; outline: none; color: #1d1d1f; font: 400 15.5px var(--font); }
+html body .pt-add .btn { min-height: 42px; padding: 0 20px; border-radius: 999px; white-space: nowrap; }
+html body .bp-page .bp-band { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 0 0 22px; padding: 0; border: 0 !important; background: transparent; box-shadow: none; overflow: visible; }
+html body .bp-page .bp-band > div { position: relative; padding: 20px 22px 18px; border: 0; border-radius: 18px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 8px 24px -18px rgba(0, 0, 0, .3); overflow: hidden; }
+html body .bp-page .bp-band > div::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #0071e3, #5ac8fa); }
+html body .bp-page .bp-band > div:nth-child(2)::before { background: linear-gradient(90deg, #34c759, #30d158); }
+html body .bp-page .bp-band > div:nth-child(3)::before { background: linear-gradient(90deg, #5856d6, #af52de); }
+html body .bp-page .bp-band > div:nth-child(4)::before { background: linear-gradient(90deg, #ff9500, #ffcc00); }
+html body .bp-page .bp-band span { color: #5f5f64; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+html body .bp-page .bp-band b { margin-top: 8px; color: #1d1d1f; font-family: var(--font); font-size: 34px; font-weight: 600; letter-spacing: -.025em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+html body .bp-page .bp-band small { margin-top: 6px; color: #66666b; font-size: 13.5px; }
+html body .bp-page .bp-tools { position: sticky; top: 0; z-index: 6; gap: 12px; margin: 0 -8px 18px; padding: 10px 8px; border-radius: 0 0 18px 18px; background: rgba(245, 245, 247, .82); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); }
+html body .bp-page #search.bp-search { width: 440px; height: 46px; padding: 0 18px 0 46px; border: 0; border-radius: 999px; background: #fbfbfd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 17px center / 18px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); font-size: 15.5px; }
+html body .bp-page #search.bp-search:focus { outline: none; box-shadow: 0 0 0 2px #0071e3; }
+html body .bp-page .bp-tools #count:not(:empty) { margin-left: auto; padding: 5px 12px; border-radius: 999px; background: rgba(0, 0, 0, .05); color: #515154; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+html body .bp-page .bp-grid { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 20px; }
+html body .bp-page .bp-card { gap: 18px; padding: 24px 24px 18px; border: 0 !important; border-radius: 22px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04), 0 10px 28px -20px rgba(0, 0, 0, .3); }
+html body .bp-page .bp-card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 113, 227, .28), 0 2px 4px rgba(0, 0, 0, .04), 0 26px 48px -28px rgba(0, 40, 100, .38); }
+html body .bp-page .bp-card-new { background: #f8f8fa; box-shadow: 0 0 0 1px rgba(0, 0, 0, .1) inset; }
+html body .bp-page .bp-avatar { width: 48px; height: 48px; border-radius: 14px; font-size: 16px; box-shadow: 0 6px 14px -8px rgba(0, 60, 140, .6), inset 0 1px 0 rgba(255, 255, 255, .25); }
+html body .bp-page .bp-card .bp-name { font-size: 20px; letter-spacing: -.015em; line-height: 1.25; }
+html body .bp-page .bp-card .bp-sub { margin-top: 3px; color: #66666b; font-size: 14px; }
+html body .bp-page .bp-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; font-size: 13px; font-weight: 600; }
+html body .bp-page .bp-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+html body .bp-page .bp-funnel { gap: 14px; padding: 14px 16px; border-radius: 14px; background: #f2f2f5; }
+html body .bp-page .bp-funnel-step b { font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+html body .bp-page .bp-funnel-step small { font-size: 12.5px; font-weight: 500; }
+html body .bp-page .bp-funnel-step i { height: 4px; background: linear-gradient(90deg, #0071e3 var(--w, 0%), #dcdce1 var(--w, 0%)); }
+html body .bp-page .bp-funnel-step.is-visa i { background: linear-gradient(90deg, #34c759 var(--w, 0%), #dcdce1 var(--w, 0%)); }
+html body .bp-page .bp-card .bp-facts { display: flex; flex-wrap: wrap; gap: 14px 18px; padding-top: 16px; }
+html body .bp-page .bp-card .bp-fact { display: grid; flex: 1 1 140px; gap: 4px; align-content: start; min-width: 0; }
+html body .bp-page .bp-card .bp-fact:has(a[href^="mailto:"]) { flex-grow: 1.8; }
+html body .bp-page .bp-card .bp-facts dt { color: #6e6e73; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+html body .bp-page .bp-foot { justify-content: flex-end; margin-top: auto; padding-top: 4px; }
+html body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.btn-primary) { min-height: 34px; padding: 0 4px; border: 0; background: none; box-shadow: none; color: #0066cc; font-weight: 600; }
+html body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.btn-primary)::after { content: "\203A"; margin-left: 5px; font-size: 18px; line-height: 1; }
+html body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.btn-primary):hover { text-decoration: underline; }
+html body .bp-page .bp-empty { padding: 56px 24px; border: 0; border-radius: 22px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); font-size: 16px; }
+@media (max-width: 700px) {
+  html body .bp-page .p-head { align-items: stretch; }
+  .pt-add { width: 100%; }
+  html body .pt-add input { flex: 1 1 auto; width: auto; min-width: 0; }
+  html body .bp-page #search.bp-search { width: 100%; }
+  html body .bp-page .bp-grid { grid-template-columns: minmax(0, 1fr); }
+  html body .bp-page .bp-band { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  html body .bp-page .bp-band > div { padding: 16px; border: 0; }
+  html body .bp-page .bp-band b { font-size: 26px; }
+  html body .bp-page .bp-funnel { gap: 8px; padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { html body .bp-page .bp-card:hover { transform: none; } }
