@@ -138,6 +138,15 @@
       const show = () => { if (c.link) { a.href = c.link; a.removeAttribute('role'); } };
       show();
       li.append(a);
+      // Checked on the university's own website and not found (course-sitemap.js): a warning for the team to add the link by hand.
+      if (c.notFound && !(window.Shortlist && window.Shortlist.isStudent())) li.append(el('span', 'course-warn', 'Course page not found on the university website'));
+      // Submit an application for this course (finder.js): a student for themselves, the team for a student it chooses.
+      if (window.Finder && !(window.Shortlist && window.Shortlist.isStudent() && !window.Shortlist.isLinked())) {
+        const ap = el('button', 'find-link apply-link no-print', 'Submit application');
+        ap.type = 'button';
+        ap.addEventListener('click', () => window.Finder.applyDialog({ university: { id: uni.id, name: uni.name }, course: c.course, intake: intakeName || '' }));
+        li.append(ap);
+      }
       // A student's own login: "I am interested" beside each course (shortlist.js).
       if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button(uni, c.course, intakeName || ''));
       if (!c.link && courseData.canFind) {
@@ -176,6 +185,23 @@
     const brandName = el('span', 'doc-brand', 'International Student Recruitment');
     top.append(brandName, el('span', 'kind', 'University Fact File'));
     doc.append(top, el('h1', '', uni.name));
+    // The deadlines first (the owner, 17 Nov 2026): each intake with its dates, before anything else on the page.
+    const dated = (uni.intakes || []).filter((i) => has(i.deadline) || has(i.deadlines));
+    if (dated.length) {
+      const band = el('div', 'deadline-band');
+      dated.forEach((i) => {
+        const card = el('div', 'deadline-card');
+        card.append(el('span', 'deadline-intake', i.name), el('b', 'deadline-main', has(i.deadline) ? `Apply by ${i.deadline}` : 'Key dates'));
+        const dates = String(i.deadlines || '').split('\n').map((x) => x.replace(/^[\s•\-]+/, '').trim()).filter(Boolean);
+        if (dates.length > 1 || (dates.length && !has(i.deadline))) {
+          const ul = el('ul', 'deadline-list');
+          dates.slice(0, 8).forEach((d) => ul.append(el('li', '', d)));
+          card.append(ul);
+        }
+        band.append(card);
+      });
+      doc.append(band);
+    }
 
     const glance = el('dl', 'glance');
     const row = (k, v, chips) => {

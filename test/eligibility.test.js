@@ -38,12 +38,12 @@ test('the rules are read into numbers, generously and without a subject line tak
 test('a student is checked with reasons: eligible, to check, or not eligible with what is needed', () => {
   const rules = E.rulesFrom(reading());
   const check = (input) => E.checkLevel(rules, E.studentFrom(input));
-  const ok = check({ level: 'Postgraduate', grade: '62%', gap: '4', test: 'IELTS Academic', score: '6.5' });
+  const ok = check({ level: 'Postgraduate', grade: '62%', gap: '4', test: 'IELTS Academic', score: '6.5', band: '6.0' });
   assert.strictEqual(ok.status, 'yes');
-  assert.deepStrictEqual(ok.reasons.map((r) => r.text), ['62% meets 45%', 'Gap of 4 years is within 10', 'IELTS Academic 6.5 meets 6.0']);
+  assert.deepStrictEqual(ok.reasons.map((r) => r.text), ['62% meets 45%', 'Gap of 4 years is within 10', 'IELTS Academic 6.5 overall meets 6.0', 'Lowest band 6.0 meets 5.5 in each part']);
   const low = check({ level: 'Postgraduate', grade: '62%', gap: '12', test: 'IELTS Academic', score: '5.5' });
   assert.strictEqual(low.status, 'no');
-  assert.ok(low.reasons.some((r) => r.text === 'Needs IELTS Academic 6.0 (has 5.5)'));
+  assert.ok(low.reasons.some((r) => r.text === 'Needs IELTS Academic 6.0 overall (has 5.5)'));
   assert.ok(low.reasons.some((r) => r.text === 'Gap of 12 years is over the 10 allowed'));
   assert.strictEqual(check({ level: 'Postgraduate', grade: '3.0', gap: '1', test: 'MOI or waiver' }).status, 'check', 'a waiver is for a person to decide');
   assert.strictEqual(check({ level: 'Postgraduate', grade: '2.6', gap: '0', test: 'PTE Academic', score: '60' }).reasons[0].text, 'GPA 2.6 (about 55%) meets 45%', 'a GPA against a percentage, by the NEB scale');
@@ -103,11 +103,12 @@ test('on the server: a reading is written into the Fact File at the start, and t
   const page = (await admin('GET', '/api/facts')).json.find((u) => u.name === 'University of Testtown');
   assert.ok(page, 'the portal\'s university is in the Fact File');
   assert.match((await admin('GET', `/api/facts/${page.id}`)).json.intakes[0].deadlines, /27 November 2026/);
-  const find = await admin('POST', '/api/eligibility', { level: 'Postgraduate', grade: '62%', gap: '3', test: 'IELTS Academic', score: '6.5', subject: 'data' });
+  const find = await admin('POST', '/api/eligibility', { level: 'Postgraduate', grade: '62%', gap: '3', test: 'IELTS Academic', score: '6.5', band: '6', subject: 'data' });
   assert.strictEqual(find.status, 200);
   const r = find.json.results.find((x) => x.name === 'University of Testtown');
   assert.deepStrictEqual([r.status, r.courses.map((c) => c.name), r.fee, r.intake.deadline], ['yes', ['MSc Data Science'], '1 Year Fee: £12,000', 'Friday 27 November 2026']);
-  assert.ok(find.json.without > 10, 'the universities with no rules in numbers are counted');
+  const all = await admin('POST', '/api/eligibility', { level: 'Postgraduate', grade: '62%', gap: '3', test: 'IELTS Academic', score: '6.5', band: '6' });
+  assert.ok(all.json.results.length > 10, 'the pages typed by hand are checked too, not only the portal\'s');
   assert.strictEqual((await admin('POST', '/api/eligibility', { grade: '3' })).status, 400, 'the level is needed');
   // A student's own login uses the finder too.
   const sid = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000131' } })).json.id;
@@ -115,4 +116,43 @@ test('on the server: a reading is written into the Fact File at the start, and t
   const stu = person();
   await stu('POST', '/api/login', { username: 'mina', password: made.temporaryPassword }); await stu('POST', '/api/login/new-password', { password: 'Student-Strong-2026' });
   assert.strictEqual((await stu('POST', '/api/eligibility', { level: 'Postgraduate', grade: '40%' })).json.results.find((x) => x.name === 'University of Testtown').status, 'no');
+  // Submit an application: the student for themselves, the team for a student it chooses; the Application Team gets the task.
+  const sent = await stu('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', intake: 'January 2027', note: 'I prefer London.' });
+  assert.strictEqual(sent.status, 200);
+  assert.strictEqual((await stu('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', intake: 'January 2027' })).status, 409, 'once');
+  let card = (await admin('GET', `/api/cards/${sid}`)).json.card;
+  const task = card.tasks.find((x) => x.text === 'Submit the application: MSc Data Science at University of Testtown (January 2027)');
+  assert.ok(task && task.team === 'application' && !task.done);
+  assert.strictEqual(task.comments[0].text, 'I prefer London.', 'the note is on the task');
+  assert.ok(card.options.some((o) => o.course === 'MSc Data Science' && o.byStudent));
+  assert.strictEqual((await admin('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science' })).status, 404, 'the team chooses the student');
+  assert.strictEqual((await admin('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', studentId: sid, note: 'Documents complete.' })).status, 200);
+  card = (await admin('GET', `/api/cards/${sid}`)).json.card;
+  assert.strictEqual(card.tasks.filter((x) => /^Submit the application: MSc Data Science/.test(x.text)).length, 2);
+});
+
+test('English: the overall score and the lowest band; a hand-written page is read too', () => {
+  assert.deepStrictEqual([E.overallOf('6.0 overall (5.5 in each component)'), E.bandOf('6.0 overall (5.5 in each component)')], [6, 5.5]);
+  assert.strictEqual(E.bandOf('6.5 overall with no band less than 6.0'), 6);
+  assert.strictEqual(E.bandOf('105 overall (Reading: 100, Speaking, Writing, Listening: 95)'), 95);
+  assert.strictEqual(E.bandOf('79 overall'), null);
+  const rules = E.rulesFrom({ requirements: [{ level: 'Postgraduate', gap: '10', criteria: ['Bachelor 55%'] }], tests: [{ test: 'PTE', level: 'Postgraduate', score: '59 overall (59 in each component)' }], english: [] });
+  const s = (score, band) => E.checkLevel(rules, E.studentFrom({ level: 'Postgraduate', grade: '60%', gap: '1', test: 'PTE Academic', score, band }));
+  assert.strictEqual(s('60', '57').status, 'no', '60 overall with a 57 where 59 in each part is asked');
+  assert.ok(s('60', '57').reasons.some((r) => r.text === 'Needs 59 in each part (lowest band is 57)'));
+  assert.strictEqual(s('60', '59').status, 'yes');
+  assert.strictEqual(s('60', '').status, 'check', 'without the lowest band, a person checks');
+  // A page typed by hand: its table of requirements is read the same way.
+  const page = E.rulesFromPage({ programs: [{ name: 'Postgraduate (MBA, MSc)', academic: 'Bachelor degree with 50% or above\nStudy gap: up to 5 years', english: 'IELTS 6.0 (5.5 in each band)\nMOI accepted from TU' }] });
+  assert.deepStrictEqual([page[0].level, page[0].minPercent, page[0].gap, page[0].tests.IELTS, page[0].bands.IELTS, page[0].waiver], ['Postgraduate', 50, 5, 6, 5.5, true]);
+});
+
+test('a course page is matched on the university\'s own website by its words and its degree', () => {
+  const { matchCourse, urlKey } = require('../student-details/course-sitemap');
+  const pages = ['https://www.example.ac.uk/courses/postgraduate/msc-data-science', 'https://www.example.ac.uk/courses/postgraduate/msc-data-science-with-artificial-intelligence-and-robotics',
+    'https://www.example.ac.uk/courses/undergraduate/bsc-hons-computer-science', 'https://www.example.ac.uk/courses/postgraduate/ma-marketing'].map((url) => ({ url, key: urlKey(url) }));
+  assert.strictEqual(matchCourse('MSc Data Science (London)', pages), 'https://www.example.ac.uk/courses/postgraduate/msc-data-science');
+  assert.strictEqual(matchCourse('BSc (Hons) Computer Science', pages), 'https://www.example.ac.uk/courses/undergraduate/bsc-hons-computer-science');
+  assert.strictEqual(matchCourse('MSc Marketing', pages), '', 'an MA page is not an MSc course');
+  assert.strictEqual(matchCourse('MSc Cyber Security', pages), '', 'no page: left for a person');
 });

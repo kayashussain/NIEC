@@ -36,7 +36,9 @@ const { createPortalApi } = require('./portal-api');
 const { createPush } = require('./push');
 const { createRoute2Uni } = require('./route2uni');
 const { syncFacts } = require('./fact-sync');
-const { studentFrom, checkLevel, ourLevel: eligLevel } = require('./eligibility');
+const { createCourseSitemaps } = require('./course-sitemap');
+const { studentFrom, checkLevel, rulesFromPage, ourLevel: eligLevel } = require('./eligibility');
+const { parseCourses: parseFactCourses } = require('./course-index');
 const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
 const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
@@ -851,12 +853,16 @@ const courseWatch = createCourseWatch({ dir: DATA_DIR, getIndex: () => (portalRe
 const userMail = createUserMail(DATA_DIR);
 // A person's connected phones, for "WhatsApp opens on my phone" (see push.js). ISR_PUSH_LOCAL is for the tests' own push service only.
 const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
+// The page of every course on the university's own website (course-sitemap.js), twice a week, at least 100 courses each time.
+const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks });
 // The Route2Uni partner portal, read twice a week into the Fact File (see route2uni.js). Off until ROUTE2UNI_EMAIL and
 // ROUTE2UNI_PASSWORD are set on the server.
 // Every reading is written into the Fact File itself (fact-sync.js): one Fact File, kept up to date twice a week.
 const route2uni = createRoute2Uni({ dir: DATA_DIR, email: process.env.ROUTE2UNI_EMAIL || '', password: process.env.ROUTE2UNI_PASSWORD || '', onRead: (reading) => {
   const out = syncFacts(facts, reading);
   console.log(`[route2uni] Fact File: ${out.updated} universities updated, ${out.added} added, ${out.unchanged} unchanged`);
+  // Then the next course pages, from the universities' own websites (course-sitemap.js): at least 100 courses each time.
+  setTimeout(() => courseSitemaps.run().then((r) => console.log(`[course links] ${r.checked} courses checked, ${r.linked} links added`)).catch(() => {}), 1000).unref();
   return out;
 } });
 // A reading not yet in the Fact File (the first start after this update, or a restored data folder) is written in at the start.
@@ -871,7 +877,7 @@ const portal = createPortalApi({
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
   insights: servedInsights, calculated: CALCULATED_COLUMNS,
-  userMail, push, officeMailSettings: () => require('../shared/mailer').loadConfig(DATA_DIR),
+  userMail, push, courseSitemaps, officeMailSettings: () => require('../shared/mailer').loadConfig(DATA_DIR),
   safetyCopy: () => backups.create('manual'),
 });
 
@@ -1020,6 +1026,7 @@ async function studentGate(req, res, urlPath) {
     return true;
   }
   if (urlPath === '/api/eligibility' && req.method === 'POST') return false; // the finder: which universities the student can go to
+  if (urlPath === '/api/apply' && req.method === 'POST') return false; // "Submit my application" on a course (portal-api.js)
   if ((get && urlPath === '/api/fact-courses') || urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) return false; // portal-api.js answers for a student
   if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for the Fact File only.' }); return true; }
   send(res, 302, '', { Location: '/fact-file' });
@@ -1178,19 +1185,25 @@ const server = http.createServer(async (req, res) => {
       const words = s.subject.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !['and', 'the', 'with', 'hons', 'bsc', 'msc'].includes(w));
       const results = []; const without = [];
       for (const u of facts.all()) {
-        if (!u.rules || !u.rules.length) { without.push(u.name); continue; }
-        const r = checkLevel(u.rules, s);
+        // Every university: its rules kept from the partner portal, or read from its own table (typed by hand), so none is missed.
+        const rules = u.rules && u.rules.length ? u.rules : rulesFromPage(u);
+        if (!rules.length) { without.push(u.name); continue; }
+        const r = checkLevel(rules, s);
         if (!r) continue;
         const reading = u.source && u.source.route2uni ? route2uni.byId(u.source.route2uni.id) : null;
-        // Only the courses of the intakes open now (a closed intake's courses would only repeat them).
+        // Only the courses of the intakes open now (a closed intake's courses would only repeat them); a page typed by hand gives its
+        // own course lists.
         const openNow = new Set((reading ? reading.intakes : []).filter((i) => i.open).map((i) => i.name));
-        const all = (reading ? reading.courses : []).filter((c) => (eligLevel(c.level) || eligLevel(c.name)) === s.level && (!openNow.size || !c.intake || openNow.has(c.intake)));
+        const pageCourses = () => [...parseFactCourses(u.courses).map((c) => ({ name: c.course, level: c.group || '', campus: '', intake: '' })), ...(u.intakes || []).flatMap((i) => parseFactCourses(i.courses).map((c) => ({ name: c.course, level: c.group || '', campus: '', intake: i.name })))];
+        const all = (reading ? reading.courses : pageCourses()).filter((c) => (eligLevel(c.level) || eligLevel(c.name)) === s.level && (!openNow.size || !c.intake || openNow.has(c.intake)));
         const courses = words.length ? all.filter((c) => words.every((w) => c.name.toLowerCase().includes(w))) : all;
         if (words.length && !courses.length) continue; // nothing in that subject here
         const seen = new Set();
         const list = courses.filter((c) => { const k = `${c.name}|${c.intake}`.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
         const row = (u.programs || []).find((p) => eligLevel(p.name) === s.level) || {};
         const open = (u.intakes || []).find((i) => i.deadlines || i.deadline) || (u.intakes || [])[0] || null;
+        const links = courseLinks.all(facts.all());
+        list.forEach((c) => { c.link = links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || ''; });
         results.push({ id: u.id, name: u.name, city: u.city, status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit: row.deposit || '',
           intake: open ? { name: open.name, deadline: open.deadline || '' } : null, courses: list.slice(0, 40), more: Math.max(0, list.length - 40), total: list.length });
       }
@@ -1201,7 +1214,13 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 200, { results, counts, without: without.length, readAt: (route2uni.reading() || {}).fetchedAt || '' });
     }
     // Route2Uni: the line on the Fact File list (the team) and a reading now (Admin).
-    if (urlPath === '/api/route2uni' && req.method === 'GET') return sendJSON(res, 200, { ...route2uni.summary(), admin: isAdmin(req.user) });
+    if (urlPath === '/api/route2uni' && req.method === 'GET') {
+      // With the course links: when the last batch ran, and how many courses are waiting for a link by hand.
+      const st = courseSitemaps.status();
+      const unis = Object.values(st.universities || {});
+      const links = { lastRun: (st.runs || [])[0] || null, notFound: unis.reduce((n, u) => n + (u.missing || []).length, 0), unreadable: unis.filter((u) => u.error).map((u) => u.name) };
+      return sendJSON(res, 200, { ...route2uni.summary(), links, admin: isAdmin(req.user) });
+    }
     if (urlPath === '/api/route2uni/run' && req.method === 'POST') {
       if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
       if (!route2uni.configured()) return sendJSON(res, 400, { error: 'Set ROUTE2UNI_EMAIL and ROUTE2UNI_PASSWORD on the server first (cPanel, Setup Node.js App, Environment variables), then Restart.' });
@@ -1266,6 +1285,8 @@ if (route2uni.configured()) {
   setTimeout(() => route2uni.tick(), 2 * 60 * 1000).unref();
   setInterval(() => route2uni.tick(), 30 * 60 * 1000).unref();
 }
+// Without Route2Uni (or if a reading fails for days), the course links still go on: whenever 4 days have passed since the last batch.
+if (process.env.COURSE_WATCH !== 'off') setInterval(() => { if (courseSitemaps.due() && !route2uni.isRunning()) courseSitemaps.run().catch(() => {}); }, 6 * 60 * 60 * 1000).unref();
 if (process.env.COURSE_WATCH !== 'off') {
   const tick = () => courseWatch.run().then((r) => { if (r && r.checked) console.log(`Course pages checked: ${r.checked}`); }).catch((e) => console.log(`Course page check stopped: ${e.message}`));
   setTimeout(tick, 10 * 60 * 1000).unref();

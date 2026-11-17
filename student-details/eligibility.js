@@ -51,6 +51,19 @@ function gapFrom(accepted, text) {
 const TESTS = { IELTS: /ielts/i, PTE: /pte/i, DUOLINGO: /duolingo|\bdet\b/i, TOEFL: /toefl/i, OET: /\boet\b/i, LANGUAGECERT: /languagecert|language cert/i, OXFORD: /oxford/i, SELT: /\bselt\b/i };
 const testOf = (name) => Object.keys(TESTS).find((k) => TESTS[k].test(String(name || ''))) || '';
 // The overall score asked for: the first number of the line ("6.0 overall (5.5 in each)" is 6.0).
+// The lowest band (every part, component or element) a test asks for: "6.0 overall (5.5 in each component)" is 5.5, "no band less
+// than 6.0" is 6.0, "59 overall (59 in each)" is 59; null when it is not said.
+function bandOf(score) {
+  const t = String(score || '');
+  const m = /(\d{1,3}(?:\.\d)?)\s*(?:in|for)?\s*(?:each|every|all)\b|(?:no|without)\s+(?:band|element|component|skill|section|part|sub-?score)s?\s+(?:score\s+)?(?:less|lower|below)\s+than\s+(\d{1,3}(?:\.\d)?)|(?:minimum|min\.?|at least)\s+(\d{1,3}(?:\.\d)?)\s+(?:in|for)\s+(?:each|every|all)|(?:each|every|all)\s+(?:band|element|component|skill|section|part)s?\s*(?:of|at|:|-)?\s*(?:at least|minimum|min\.?)?\s*(\d{1,3}(?:\.\d)?)/i.exec(t);
+  let v = m ? num(m[1] || m[2] || m[3] || m[4]) : null;
+  // The parts named one by one ("Reading: 100, Speaking, Writing, Listening: 95"): the lowest of them.
+  if (v === null && /reading|writing|speaking|listening/i.test(t)) {
+    const parts = [...t.replace(/^[^(]*?\d{1,3}(?:\.\d)?/, '').matchAll(/(?:reading|writing|speaking|listening|literacy|comprehension|conversation|production)[^\d]{0,40}?(\d{1,3}(?:\.\d)?)/gi)].map((x) => num(x[1])).filter((x) => x !== null);
+    if (parts.length) v = Math.min(...parts);
+  }
+  return v !== null && v >= 4 ? v : null;
+}
 // A CEFR level ("B2") is not a score; a number under 4 is not an overall score of any test.
 const overallOf = (score) => { const t = String(score || ''); if (/^\s*[A-C][12]\b/i.test(t)) return null; const m = /(\d{1,3}(?:\.\d)?)/.exec(t); const v = m ? num(m[1]) : null; return v !== null && v >= 4 ? v : null; };
 
@@ -59,7 +72,7 @@ function rulesFrom(r) {
   const levels = new Map();
   const at = (name) => {
     const key = ourLevel(name) || name;
-    if (!levels.has(key)) levels.set(key, { level: key, names: new Set(), minGpa: null, minPercent: null, gap: null, gapText: '', tests: {}, waiver: false, waiverRules: [] });
+    if (!levels.has(key)) levels.set(key, { level: key, names: new Set(), minGpa: null, minPercent: null, gap: null, gapText: '', tests: {}, bands: {}, waiver: false, waiverRules: [] });
     const L = levels.get(key); L.names.add(name); return L;
   };
   (r.requirements || []).forEach((q) => {
@@ -71,9 +84,29 @@ function rulesFrom(r) {
     if (gap !== null) L.gap = L.gap === null ? gap : Math.max(L.gap, gap);
     L.gapText = q.gap;
   });
-  (r.tests || []).forEach((t) => { const k = testOf(t.test); const v = overallOf(t.score); if (!k || v === null) return; const L = at(t.level); L.tests[k] = L.tests[k] === undefined ? v : Math.min(L.tests[k], v); });
+  (r.tests || []).forEach((t) => {
+    const k = testOf(t.test); const v = overallOf(t.score); if (!k || v === null) return;
+    const L = at(t.level);
+    if (L.tests[k] === undefined || v < L.tests[k]) { L.tests[k] = v; const b = bandOf(t.score); if (b !== null && b <= v) L.bands[k] = b; else delete L.bands[k]; }
+  });
   (r.english || []).forEach((e) => { const L = at(e.level); if (e.waiver) { L.waiver = true; L.waiverRules.push(...e.criteria); } });
   return [...levels.values()].map((L) => ({ ...L, names: [...L.names] }));
+}
+
+// The rules of a university typed by hand (no partner portal): from its table of entry requirements, English, fees (one row per
+// course level), so the finder misses no university of the Fact File.
+function rulesFromPage(u) {
+  const lines = (t) => String(t || '').split('\n').map((x) => x.replace(/^[\s•*-]+/, '').trim()).filter(Boolean);
+  return rulesFrom({
+    requirements: (u.programs || []).map((p) => {
+      const all = lines(p.academic);
+      const gapLine = all.find((x) => /gap/i.test(x)) || '';
+      const years = /(\d{1,2})\s*(?:years?|yrs?)/i.exec(gapLine);
+      return { level: p.name, criteria: all.filter((x) => !/gap/i.test(x)), gap: years ? years[1] : (/not accepted|no gap/i.test(gapLine) ? 'Not accepted' : '') };
+    }),
+    tests: (u.programs || []).flatMap((p) => lines(p.english).map((x) => ({ level: p.name, test: testOf(x), score: x.replace(/^[^\d]*?(?=\d)/, '') })).filter((t) => t.test)),
+    english: (u.programs || []).map((p) => ({ level: p.name, waiver: /waiver|\bmoi\b|medium of instruction/i.test(p.english || ''), criteria: lines(p.english).filter((x) => /waiver|\bmoi\b|medium/i.test(x)) })),
+  });
 }
 
 // The student, from what was typed or from the student card: a grade as a GPA ("3.2") or a percentage ("72%", or a number above 4.5).
@@ -90,6 +123,7 @@ function studentFrom(input = {}) {
     test: /moi|waiver/i.test(testName) ? 'WAIVER' : /not taken/i.test(testName) ? 'NONE' : testOf(testName),
     testLabel: testName,
     score: overallOf(input.score),
+    band: overallOf(input.band),
     scoreText: String(input.score || '').trim(),
     subject: String(input.subject || '').trim(),
   };
@@ -131,7 +165,13 @@ function checkLevel(rules, s) {
     else {
       // "6.0" stays "6.0" (an IELTS band is written with its decimal).
       const shown = (v) => (s.test === 'IELTS' && Number.isInteger(v) ? v.toFixed(1) : String(v));
-      say(s.score >= need, s.score >= need ? `${s.testLabel || s.test} ${shown(s.score)} meets ${shown(need)}` : `Needs ${s.testLabel || s.test} ${shown(need)} (has ${shown(s.score)})`);
+      say(s.score >= need, s.score >= need ? `${s.testLabel || s.test} ${shown(s.score)} overall meets ${shown(need)}` : `Needs ${s.testLabel || s.test} ${shown(need)} overall (has ${shown(s.score)})`);
+      // The lowest band (the owner, 17 Nov 2026: "60 overall with a 57 is not eligible where 59 in each is asked").
+      const min = (L.bands || {})[s.test];
+      if (min !== undefined) {
+        if (s.band === null) say(null, `Also needs ${shown(min)} in each part: enter the lowest band`);
+        else say(s.band >= min, s.band >= min ? `Lowest band ${shown(s.band)} meets ${shown(min)} in each part` : `Needs ${shown(min)} in each part (lowest band is ${shown(s.band)})`);
+      }
     }
   } else if (s.test === 'NONE') {
     const needs = Object.entries(L.tests).map(([k, v]) => `${k} ${v}`).slice(0, 3).join(', ');
@@ -141,4 +181,4 @@ function checkLevel(rules, s) {
   return { status, reasons };
 }
 
-module.exports = { rulesFrom, studentFrom, checkLevel, ourLevel, gradeFrom, overallOf, testOf };
+module.exports = { rulesFrom, rulesFromPage, studentFrom, checkLevel, ourLevel, gradeFrom, overallOf, bandOf, testOf };

@@ -32,7 +32,7 @@ const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER
 
 function createPortalApi({
   getWorkbook, writeWorkbook, recordChanges, teamSave, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
-  insights = null, calculated = [], userMail = null, push = null, officeMailSettings = () => ({}), safetyCopy = () => null,
+  insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
   // Names compared ignoring case, spaces, punctuation and a part in brackets ("Ulster University (QA)" is "Ulster University").
@@ -2824,6 +2824,36 @@ function createPortalApi({
       sendJSON(res, 200, { started: Boolean(w && !w.isRunning()) });
       return true;
     }
+    // "Submit my application" on a course of the Fact File (the owner, 17 Nov 2026): a student's own login for themselves, anyone of
+    // the team for a student they choose. The course goes into the student's University options, a note says who asked and why, and
+    // the Application Team gets the task "Submit the application", with the note written on it as its first update.
+    if (urlPath === '/api/apply' && req.method === 'POST') {
+      const body = await bodyOf(req, res, 8 * 1024);
+      if (!body) return true;
+      const student = Teams.isStudent(req.user);
+      if (!student && Teams.isReadOnly(req.user) && !Teams.isManager(req.user)) { sendJSON(res, 403, { error: 'Your account can only view students.' }); return true; }
+      const found = rowIndex().get(text(student ? req.user.studentRow : body.studentId));
+      if (!found || (!student && !canSee(req.user, found))) { sendJSON(res, student ? 400 : 404, { error: student ? 'Your login is not linked to your file yet. Please ask the office.' : 'Choose the student first.' }); return true; }
+      const uni = facts.all().find((u) => u.id === text(body.universityId));
+      const course = text(body.course).slice(0, 240);
+      const intake = text(body.intake).slice(0, 80);
+      const words = text(body.note).slice(0, 1500);
+      if (!uni || !course) { sendJSON(res, 400, { error: 'Choose a course from the Fact File.' }); return true; }
+      const rowId = found.row._id;
+      const who = nameOf(found.row) || 'The student';
+      const taskText = `Submit the application: ${course} at ${uni.name}${intake ? ` (${intake})` : ''}`.slice(0, 500);
+      if ((cards.get(rowId).tasks || []).some((x) => !x.done && x.text === taskText)) { sendJSON(res, 409, { error: 'This application has already been asked for: the Application Team has it.' }); return true; }
+      const asker = student ? `${req.user.name} (the student)` : by(req);
+      const opt = cards.addOption(rowId, { universityId: uni.id, university: uni.name, course, intake, byStudent: student, note: student ? 'The student asked to apply (Fact File)' : 'Asked to apply from the Fact File' }, asker);
+      if (opt.error && !opt.duplicate) { sendJSON(res, 400, { error: opt.error }); return true; }
+      const made = cards.addTask(rowId, { team: 'application', text: taskText, tag: 'application', priority: 'high' }, asker);
+      if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
+      if (words) cards.commentTask(rowId, made.task.id, words, asker);
+      cards.addNote(rowId, { kind: 'note', text: `${student ? 'The student' : req.user.name} asked to apply to ${course} at ${uni.name}${intake ? ` (${intake})` : ''}.${words ? ` Note: ${words}` : ''}` }, asker);
+      activity.record(req, req.user, 'Task', { app: 'Fact File', changes: [`${student ? 'The student' : req.user.name} asked the Application Team to apply: ${who}, ${course} at ${uni.name}`] });
+      sendJSON(res, 200, { ok: true, student: who });
+      return true;
+    }
     // A student's own shortlist (the owner, 17 Nov 2026): a student with their own login reads the Fact File and presses "I am
     // interested" on a course; it goes into University options on their card (marked as chosen by the student) and the Application
     // Team gets one task to look at the shortlist and advise. Only for a student's login, only their own card.
@@ -2873,7 +2903,10 @@ function createPortalApi({
       const uni = facts.all().find((u) => u.id === uid);
       if (!uni) { sendJSON(res, 404, { error: 'No such university.' }); return true; }
       const links = courseLinks.all(facts.all());
-      const shape = (block) => parseCourses(block).map((c) => ({ course: c.course, group: c.group, link: links[linkKey(uid, c.course)] || '' }));
+      // A course checked on the university's website and not found there carries a warning, for a person to add the link by hand.
+      const miss = courseSitemaps ? courseSitemaps.missingFor(uid) : null;
+      const linkOf = (c) => links[linkKey(uid, c)] || links[linkKey(uid, c.replace(/\s*\([^)]*\)\s*$/, '').trim())] || '';
+      const shape = (block) => parseCourses(block).map((c) => { const link = linkOf(c.course); return { course: c.course, group: c.group, link, notFound: !link && Boolean(miss && miss.courses.has(c.course.toLowerCase())) }; });
       sendJSON(res, 200, { id: uid, general: shape(uni.courses), intakes: Object.fromEntries((uni.intakes || []).map((i) => [i.name, shape(i.courses)])), canFind: !Teams.isReadOnly(req.user) });
       return true;
     }

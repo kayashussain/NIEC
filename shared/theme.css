@@ -2676,7 +2676,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .fd-card { margin: 0 0 18px; }
 .fd-head h2 { margin: 0 0 2px; }
 .fd-head p { margin: 0 0 12px; }
-.fd-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 12px; align-items: end; }
+.fd-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; }
 .fd-form .p-field { margin: 0; }
 .fd-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
 .fd-out { margin-top: 8px; }
@@ -2710,5 +2710,27 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .fd-courses li .btn, .fd-courses li .sl-pick { margin-left: auto; }
 .fd-foot { margin-top: 8px; }
 .key-dates { color: var(--text); font-size: 15px; line-height: 1.6; white-space: pre-line; }
-@media (max-width: 1100px) { .fd-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .fd-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+/* 🔴 CSS CHANGED (2026-11-17): deadlines at the top of a university's page, course link warnings, "Submit application" (new) | from: the deadlines were down under Intakes; a course without a link showed only "Find the course page"; no way to ask for an application from a course | to: under the university's name, one soft card per intake (the intake in small grey capitals, "Apply by ..." in bold, the other key dates as a short list) on a pale blue-grey band; beside a course whose page was not found on the university's website, a small amber "Course page not found on the university website" tag; a blue "Submit application" pill beside each course (finder and university page) opening a window with the course, the student, a note and a blue send button; the finder's fields wrap evenly (seven of them now, with "Lowest band") */
+.doc .deadline-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 6px 0 22px; padding: 14px; border-radius: 18px; background: linear-gradient(180deg, #eef4fb, #f4f7fb); }
+.deadline-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .04); }
+.deadline-intake { color: #0058b0; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.deadline-main { color: var(--ink); font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.deadline-list { margin: 4px 0 0; padding-left: 18px; color: var(--text-dim); font-size: 14px; line-height: 1.55; }
+.course-warn { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #fff4e0; color: #9a5b00; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.find-link.apply-link { margin-left: 8px; padding: 1px 10px; border: 0; border-radius: 999px; background: #e6f0fc; color: #0058b0; font: 600 12.5px/22px var(--font); cursor: pointer; }
+.find-link.apply-link:hover { background: #d6e7fb; }
+.fd-courses li .fd-apply { margin-left: 6px; }
+.fd-courses li .btn:not(.fd-apply), .fd-courses li .sl-pick { margin-left: auto; }
+a.fd-course { color: var(--link); text-decoration: none; }
+a.fd-course:hover { text-decoration: underline; }
+.ap-what { display: flex; flex-direction: column; gap: 2px; margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: #f2f2f5; }
+.ap-what b { color: var(--ink); font-size: 16px; }
+.ap-what span { color: var(--text-dim); font-size: 14px; }
+.ap-results { display: grid; gap: 4px; margin: 6px 0 10px; }
+.ap-result { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; border: 0; border-radius: 10px; background: #f5f5f7; font: inherit; text-align: left; cursor: pointer; }
+.ap-result:hover { background: #e8f2fd; }
+.ap-result small { color: var(--text-dim); }
+.ap-chosen { margin: 0 0 10px; color: #1f7a35; font-weight: 600; }
+@media print { .deadline-band { background: none; padding: 0; } .course-warn, .apply-link { display: none; } }

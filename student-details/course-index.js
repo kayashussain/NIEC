@@ -231,6 +231,25 @@ function createCourseLinks(dir) {
   }
   return {
     all,
+    // Many links at once (the sitemaps, course-sitemap.js): [[universityId, course, link]], written in one go; a link already kept
+    // for a course is never replaced. Returns how many were added.
+    rememberMany(list) {
+      const data = load();
+      const next = { ...data };
+      let n = 0;
+      (list || []).forEach(([universityId, course, link]) => {
+        if (!/^[a-f0-9]{12}$/.test(String(universityId || '')) || !text(course) || !/^https?:\/\/[^\s<>"']+$/i.test(text(link))) return;
+        const key = linkKey(universityId, course);
+        if (next[key] || Object.keys(next).length >= 20000) return;
+        next[key] = text(link).slice(0, 500); n += 1;
+      });
+      if (!n) return 0;
+      fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+      writeFileAtomic(file, JSON.stringify(next, null, 1));
+      const stat = fs.statSync(file);
+      cache = { mtimeMs: stat.mtimeMs, size: stat.size, data: next };
+      return n;
+    },
     remember(universityId, course, link) {
       if (!/^[a-f0-9]{12}$/.test(String(universityId || '')) || !text(course) || !/^https?:\/\/[^\s<>"']+$/i.test(text(link))) return false;
       const data = load();

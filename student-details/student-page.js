@@ -507,13 +507,15 @@
       window.Finder.mount(fbox, {
         title: 'Universities this student can go to',
         intro: 'Filled in from the student card. Change anything and press Find; save it on the card when it is right.',
-        prefill: { level: F.OLDER_STUDY_LEVELS[p.studyLevel] || p.studyLevel || '', grade: p.grade || '', gap: p.gapYears || '', test: p.englishTest || '', score: p.englishScore || '', subject: p.subject || '' },
+        prefill: { level: F.OLDER_STUDY_LEVELS[p.studyLevel] || p.studyLevel || '', grade: p.grade || '', gap: p.gapYears || '', test: p.englishTest || '', score: p.englishScore || '', band: p.englishBand || '', subject: p.subject || '' },
         addLabel: 'Add to options',
+        applyFor: { id, name: data.student.name },
+        canApply: !lock,
         onAdd: lock ? null : async (r, co) => {
           await save('options', { universityId: r.id, university: r.name, course: co.name, level: profile().studyLevel || '', intake: co.intake, fee: (r.fee || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0], scholarship: (r.scholarship || '').split('\n')[0] }, `Added: ${co.name}`);
           const next = chosenOptions(); chosen.replaceWith(next); chosen = next;
         },
-        onSave: lock ? null : (v) => save('profile', { studyLevel: v.level, grade: v.grade, gapYears: v.gap, englishTest: v.test, englishScore: v.score, subject: v.subject }, ''),
+        onSave: lock ? null : (v) => save('profile', { studyLevel: v.level, grade: v.grade, gapYears: v.gap, englishTest: v.test, englishScore: v.score, englishBand: v.band, subject: v.subject }, ''),
       });
     }
     const box = el('section', 'p-card');

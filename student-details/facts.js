@@ -140,6 +140,7 @@ function cleanRules(list) {
     level: str(L && L.level, LIMITS.short).trim(),
     minGpa: n(L && L.minGpa), minPercent: n(L && L.minPercent), gap: n(L && L.gap), gapText: str(L && L.gapText, LIMITS.short),
     tests: Object.fromEntries(Object.entries((L && L.tests) || {}).filter(([k, v]) => /^[A-Z]{2,15}$/.test(k) && n(v) !== null).slice(0, 12).map(([k, v]) => [k, n(v)])),
+    bands: Object.fromEntries(Object.entries((L && L.bands) || {}).filter(([k, v]) => /^[A-Z]{2,15}$/.test(k) && n(v) !== null).slice(0, 12).map(([k, v]) => [k, n(v)])),
     waiver: Boolean(L && L.waiver), waiverRules: (Array.isArray(L && L.waiverRules) ? L.waiverRules : []).slice(0, 20).map((x) => str(x, 400)).filter(Boolean),
   })).filter((L) => L.level);
 }

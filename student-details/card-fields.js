@@ -104,6 +104,7 @@
     { key: 'gapYears', label: 'Study gap (years)', max: 4 },
     { key: 'englishTest', label: 'English test', list: 'ENGLISH_TESTS' },
     { key: 'englishScore', label: 'English score', max: 60 },
+    { key: 'englishBand', label: 'Lowest English band', max: 10 }, // the lowest of the four parts (the eligibility finder)
     { key: 'budget', label: 'Budget for the first year (GBP)', max: 60 },
     { key: 'location', label: 'Where in the UK', max: 120 },
     { key: 'subject', label: 'Subject or course wanted', max: 160 },

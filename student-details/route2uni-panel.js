@@ -27,6 +27,8 @@
         : d.running ? 'Reading the portal now (a few minutes)...'
           : d.fetchedAt ? `Fees, entry requirements, English, intakes with their key dates and courses of ${d.universities} universities, last read ${when(d.fetchedAt)}. Read again by itself every Monday and Thursday.` : 'Not read yet.'));
     if (d.lastRun && !d.lastRun.ok) words.append(el('div', 'p-notice warn', `The last try did not work: ${d.lastRun.error}`));
+    // The course pages (course-sitemap.js): when the last batch ran, and how many courses need their link added by hand.
+    if (d.links && d.links.lastRun) words.append(el('p', 'p-muted p-small', `Course pages from the universities' own websites: last checked ${when(d.links.lastRun.at)}.${d.links.notFound ? ` ${d.links.notFound} course${d.links.notFound === 1 ? '' : 's'} not found on the website (marked on each university's page, to add by hand).` : ''}${d.links.unreadable.length ? ` Website not readable: ${d.links.unreadable.slice(0, 6).join(', ')}${d.links.unreadable.length > 6 ? ' ...' : ''}.` : ''}`));
     head.append(words);
     if (d.admin && d.configured) {
       const go = h('button', { class: 'btn btn-sm', type: 'button', disabled: d.running }, d.running ? 'Reading...' : 'Check now');
