@@ -80,12 +80,10 @@ The owner does not want old versions, copies or rewrites lying around, because a
 - The product is called **International Student Recruitment**, short name **ISR** (titles, emails and tabs say ISR; the login page and the big logo say the full name). It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
 - There is **one look only: a light theme, no dark mode and no alternative themes** (the owner asked). It must be easy on older eyes: no pure white panels (soft off-white on a soft grey canvas), strong dark text, larger type and larger buttons.
 - The login page must not mention incentives or commissions. Incentive is Admin-only and behind its own password.
-- **No front-end additions the owner did not ask for (the owner, 17 Nov 2026, said this very strictly).** Do not add new buttons,
-  rows, panels, counts or summaries to a page on your own idea of an "improvement", above all things that repeat what is already
-  there. Example of the mistake: a row of stage buttons with counts (All, Inquiry, Application, Mock Test, Payment, Defer, Hold,
-  Return) was added above the All Students sheet, although the **Show numbers** button already shows or hides every count; the
-  owner had it removed. Never add that row, or anything like it, to All Students again. When asked to "improve" a page, change
-  only what the owner named; if an addition seems useful, ask first and do not build it.
+- **Never add something that is already on the page (the owner, 17 Nov 2026, strictly).** Improving, changing and making a page
+  much better is welcome. What is not allowed is a copy: if a page already has a button or a feature that does something, never
+  add a second button or feature that does the same thing. Example of the mistake: a row of stage buttons with counts was added
+  above the All Students sheet, although the **Show numbers** button already shows every count; it was removed.
 - Do not change colours, fonts or layout the owner did not ask about. When a change is needed for a bug fix, say so (Rule 1).
 - One font everywhere (`--font` in `shared/theme.css`): the system font (SF Pro on Apple devices), Inter (in `shared/fonts`) elsewhere; no serif (the owner, 14 Nov 2026).
 - The look (the owner, 14 Nov 2026): the design language of Apple's website and apps: light grey canvas (#f5f5f7), off-white rounded panels with soft shadows, near-black text, blue pill buttons (#0071e3) and grey pills for the rest, segmented tabs. Only the consultancy's logo at the top of the menu and on the login page (no name or "UK" beside it). The logo is `brand-logo.png` in the data folder, else the starting one in `shared/`.
