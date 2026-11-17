@@ -142,6 +142,7 @@ function normalizeUser(raw) {
 // What a person can do, in words: "Admin", "Manager", or their teams joined with a plus.
 function accessLabel(u) {
   if (u.role === 'admin') return 'Admin';
+  if (u.role === 'student') return 'Student (Fact File only)';
   const teams = (u.departments || []).map((d) => DEPARTMENTS[d]);
   if (u.role === 'manager') return ['Manager', ...teams].join(' + ');
   return teams.join(' + ') || 'No team';
@@ -168,6 +169,8 @@ function publicUser(u) {
     // On the account menu: their own team when they have one ("Application Team"), else every team they are in.
     roleLabel: cleanTaskTeam(u.taskTeam, u.departments || []) && u.role !== 'manager' ? DEPARTMENTS[u.taskTeam] : accessLabel(u),
     label: `${u.name} (${accessLabel(u)})`,
+    // A student's own login (the owner, 17 Nov 2026): which student on the sheet it belongs to, for the shortlist.
+    ...(u.role === 'student' ? { studentRow: typeof u.studentRow === 'string' ? u.studentRow : '' } : {}),
   };
 }
 
@@ -179,6 +182,12 @@ function parseAccess(body) {
   let departments = Array.isArray(body.departments) ? body.departments.map(String) : [];
   if (DEPARTMENTS[role]) { departments = [role]; role = 'staff'; } // the older single-team form
   if (role === 'admin') return { error: "Admin access can't be given to anyone. The Admin account belongs to the owner only." };
+  // A student's own login: the Fact File only, nothing else (the owner, 17 Nov 2026). It belongs to one student on the sheet.
+  if (role === 'student') {
+    const studentRow = String(body.studentRow || '');
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(studentRow)) return { error: 'Choose which student this login is for.' };
+    return { role: 'student', departments: [], studentRow };
+  }
   const manager = body.manager === true || role === 'manager';
   departments = [...new Set(departments)];
   if (departments.some((d) => !DEPARTMENTS[d])) return { error: 'That team does not exist.' };
@@ -214,6 +223,7 @@ function cleanEmail(s) {
 function createAccounts({
   dir, homePath = (req) => req.url, activity = null, writable = true, now = Date.now, mailer = defaultMailer,
   maxFailures = 20, maxUserFailures = 8, windowMs = 15 * 60 * 1000,
+  studentName = () => '', // the name of the student a student's own login is for (the server knows the sheet)
 }) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const usersStore = createStore(path.join(dir, 'users.json'), () => ({ users: [] }),
@@ -445,6 +455,7 @@ function createAccounts({
     const devices = Object.values(map).filter((s) => s.userId === u.id && s.stage === 'full' && s.expires > now());
     return {
       ...publicUser(u),
+      ...(u.role === 'student' ? { studentName: studentName(u.studentRow) || '(student not found on the sheet)' } : {}),
       accessLabel: accessLabel(u),
       disabled: Boolean(u.disabled),
       mustChangePassword: Boolean(u.mustChangePassword),
@@ -580,7 +591,7 @@ function createAccounts({
       const temp = temporaryPassword();
       const user = {
         id: crypto.randomBytes(8).toString('hex'), username, name, email, role: access.role, departments: access.departments,
-        taskTeam: cleanTaskTeam(body.taskTeam, access.departments),
+        taskTeam: cleanTaskTeam(body.taskTeam, access.departments), ...(access.studentRow ? { studentRow: access.studentRow } : {}),
         passwordHash: hashPassword(temp), mustChangePassword: true,
         disabled: false, createdAt: new Date(now()).toISOString(),
       };
@@ -650,6 +661,8 @@ function createAccounts({
           if (access.error) { bad(res, 400, access.error); return true; }
           const next = { ...target, ...access };
           if (accessLabel(next) !== accessLabel(target)) { Object.assign(change, access); notes.push(`access from ${accessLabel(target)} to ${accessLabel(next)}`); }
+          else if (access.studentRow && access.studentRow !== target.studentRow) { change.studentRow = access.studentRow; notes.push('the student this login is for'); }
+          if (access.role !== 'student' && target.studentRow) change.studentRow = '';
         }
         if (body.taskTeam !== undefined || change.departments) {
           // Whose tasks they get: kept only while it is one of their teams and they are in more than one.

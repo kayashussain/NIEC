@@ -227,17 +227,20 @@ async function sendMail(cfg, { to, subject, text, html, bcc = [], auto = true, a
 // kind 'new' for a new person, 'reset' when Admin gave an existing person a new temporary password.
 function setupEmail({ name, username, temporaryPassword, access, siteUrl, kind = 'new' }) {
   const link = siteUrl.replace(/\/+$/, '') + '/login';
+  // A student's own login (Fact File only) is told what it is for, in a student's words.
+  const student = /^Student\b/.test(String(access || ''));
   const intro = kind === 'reset'
     ? 'Your password for the ISR system has been reset. Use the temporary password below to log in and choose a new one.'
-    : `An account has been created for you on the ISR system (${access}).`;
+    : student ? 'We have made you a login to our university Fact File: look through the universities and their courses, and press "I am interested" on the ones you like. We see your choices and advise you.'
+      : `An account has been created for you on the ISR system (${access}).`;
   const steps = [
     'Open the website and log in with the username and temporary password above.',
     'Choose your own password (at least 10 characters).',
   ];
   const safety = 'From then on you log in with your username and your own password. '
     + 'The temporary password stops working once you have chosen your own, so please do this soon. '
-    + 'Never share your password with anyone, including colleagues and managers.';
-  const ignore = 'If you were not expecting this email, please ignore it and tell your manager.';
+    + (student ? 'Never share your password with anyone.' : 'Never share your password with anyone, including colleagues and managers.');
+  const ignore = student ? 'If you were not expecting this email, please ignore it.' : 'If you were not expecting this email, please ignore it and tell your manager.';
 
   const text = [
     `Hello ${name},`, '', intro, '',

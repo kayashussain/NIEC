@@ -9,7 +9,7 @@ const {
 const { createAccounts } = require('../shared/accounts');
 const { makePatch, applyPatch } = require('../shared/patch');
 const {
-  isAdmin, isManager, isReadOnly, kindOf, teamOf, viewKey, viewFor, teamChanges, canEdit, canColor, canDelete, checkMove, newestSheet, STATUS,
+  isAdmin, isManager, isStudent, isReadOnly, kindOf, teamOf, viewKey, viewFor, teamChanges, canEdit, canColor, canDelete, checkMove, newestSheet, STATUS,
 } = require('../shared/teams');
 const { buildDashboard } = require('./dashboard-stats');
 const { createFacts, viewFacts } = require('./facts');
@@ -52,7 +52,7 @@ const MAX_BODY_BYTES = 20 * 1024 * 1024;
 fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 }); // the students' data is private to the account running the server
 
 // Only these files are served. data.json, its backups and this server's own code stay private.
-const serveStatic = createStaticServer(ROOT, {
+const STATIC_FILES = {
   '/index.html': 'text/html; charset=utf-8',
   '/app.js': 'text/javascript; charset=utf-8',
   '/users.html': 'text/html; charset=utf-8',
@@ -88,6 +88,7 @@ const serveStatic = createStaticServer(ROOT, {
   // The portal pages around the sheet: the student card, Follow-up, B2B partners, the decision pages.
   '/sender-setup.js': 'text/javascript; charset=utf-8',
   '/phone-link.js': 'text/javascript; charset=utf-8',
+  '/shortlist.js': 'text/javascript; charset=utf-8',
   '/wa.html': 'text/html; charset=utf-8',
   '/wa-page.js': 'text/javascript; charset=utf-8',
   '/sw.js': 'text/javascript; charset=utf-8',
@@ -112,7 +113,8 @@ const serveStatic = createStaticServer(ROOT, {
   '/style.css': 'text/css; charset=utf-8',
   '/favicon.png': 'image/png',
   '/apple-touch-icon.png': 'image/png',
-});
+};
+const serveStatic = createStaticServer(ROOT, STATIC_FILES);
 
 // Files shared with the other app (header, login page, logo, ...). This app answers /login for both,
 // as it sits at the site's root.
@@ -124,7 +126,10 @@ const activity = createActivityLog(DATA_DIR);
 
 // One account per person (see shared/accounts.js). Everything except the login page needs a login.
 // The account files live next to the data.
-const accounts = createAccounts({ dir: DATA_DIR, activity });
+const accounts = createAccounts({ dir: DATA_DIR, activity, studentName: (rowId) => {
+  for (const sh of (current && current.sheets) || []) { const r = sh.rows.find((x) => x._id === rowId); if (r) return [r['FIRST NAME'], r['LAST NAME']].filter(Boolean).join(' ') || 'A student without a name'; }
+  return '';
+} });
 const { requireAuth } = accounts;
 const facts = createFacts(DATA_DIR);
 // Partner Universities: Admin only, kept out of the Advisor connector and every other account's reach.
@@ -967,6 +972,34 @@ async function handleRestore(req, res, urlPath) {
   return sendJSON(res, 200, { ok: true, restored: done, safety });
 }
 
+// What a student's own login may open: the Fact File's two pages, the files those pages are made of (code, styles, pictures:
+// nothing private), the Fact File itself without its internal notes, and their own shortlist. Answers every other request with
+// "not for a student" (a page goes to the Fact File). Returns true when it answered.
+const STUDENT_PAGES = new Set(['/fact-file.html', '/fact-university.html']);
+async function studentGate(req, res, urlPath) {
+  const get = req.method === 'GET';
+  if (get && (urlPath === '/' || PAGE_PATHS.has(urlPath) || urlPath === '/incentive' || urlPath.startsWith('/incentive/'))) {
+    if (urlPath !== '/fact-file') { send(res, 302, '', { Location: '/fact-file' }); return true; }
+    return false; // the Fact File page itself, served below as for everyone
+  }
+  if (get && (STUDENT_PAGES.has(urlPath) || (STATIC_FILES[urlPath] && !/html/.test(STATIC_FILES[urlPath])) || (SHARED_FILES[urlPath] && !/html/.test(SHARED_FILES[urlPath])))) return false;
+  if (get && urlPath === '/api/demo') return false;
+  if (get && (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}$/.test(urlPath))) {
+    const id = (urlPath.match(/^\/api\/facts\/([a-f0-9]{12})$/) || [])[1];
+    if (!id) { sendJSON(res, 200, facts.list((new URL(req.url, 'http://x').searchParams.get('q') || '').slice(0, 100))); return true; }
+    const uni = facts.get(id);
+    if (!uni) { sendJSON(res, 404, { error: 'No such university.' }); return true; }
+    // The page as a student sees it: no internal notes (contacts at the university, checks), no application steps, no editor.
+    // The fields stay (empty), so the page reads the same shape as everyone's.
+    sendJSON(res, 200, { ...uni, notes: '', process: [], updatedBy: '', intakes: (uni.intakes || []).map((i) => ({ ...i, notes: '' })) });
+    return true;
+  }
+  if ((get && urlPath === '/api/fact-courses') || urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) return false; // portal-api.js answers for a student
+  if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for the Fact File only.' }); return true; }
+  send(res, 302, '', { Location: '/fact-file' });
+  return true;
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const urlPath = req.url.split('?')[0];
@@ -1006,6 +1039,9 @@ const server = http.createServer(async (req, res) => {
     // Logging in, the login steps, /api/me, and Admin's people/devices/settings.
     if (await accounts.handleApi(req, res, urlPath)) return;
     if (!requireAuth(req, res)) return;
+    // A student's own login (the owner, 17 Nov 2026) reads the Fact File and keeps a shortlist, and nothing else: every other page
+    // and every other piece of data is refused here, before any of it is looked at (see studentGate).
+    if (isStudent(req.user) && await studentGate(req, res, urlPath)) return;
 
     // Going to any other page of the site locks Incentive again, so its password is asked every time.
     if (req.method === 'GET' && PAGE_PATHS.has(urlPath)) incentiveLock.lock(req.sessionId);

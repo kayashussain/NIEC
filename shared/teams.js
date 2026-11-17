@@ -120,6 +120,8 @@
     let role = typeof x === 'string' ? x : x.role;
     if (role === 'ceo') role = 'manager'; // the Manager role was first called CEO
     if (role === 'admin') return { role, departments: [] };
+    // A student's own login sees no student and changes nothing (it reads the Fact File only, see server.js).
+    if (role === 'student') return { role, departments: [] };
     const listed = typeof x === 'object' && Array.isArray(x.departments) ? x.departments : (DEPARTMENTS[role] ? [role] : []);
     // A Manager can also work in teams (then they can change those teams' students in the current intake).
     return { role: role === 'manager' ? 'manager' : 'staff', departments: [...new Set(listed.filter((d) => DEPARTMENTS[d]))] };
@@ -130,6 +132,7 @@
   function kindOf(x) {
     const w = who(x);
     if (w.role === 'admin') return 'admin';
+    if (w.role === 'student') return 'student';
     if (!w.departments.length) return 'manager';
     if (w.departments.some((d) => DEPARTMENTS[d].source)) return 'branch';
     return w.departments.length === 1 ? w.departments[0] : 'team';
@@ -137,12 +140,14 @@
   const isAdmin = (x) => who(x).role === 'admin';
   const isManager = (x) => who(x).role === 'manager';
   // A Manager who works in no team can only view.
-  const isReadOnly = (x) => isManager(x) && !who(x).departments.length;
+  const isStudent = (x) => who(x).role === 'student';
+  const isReadOnly = (x) => (isManager(x) && !who(x).departments.length) || isStudent(x);
 
   // null for Admin (no limits); otherwise what this account may see and do.
   function teamOf(x) {
     const w = who(x);
     if (w.role === 'admin') return null;
+    if (w.role === 'student') return { role: 'student', manager: false, readOnly: true, departments: [], statuses: new Set(), editable: new Set(), sources: new Set() };
     if (w.role === 'manager' && !w.departments.length) return { role: 'manager', manager: true, readOnly: true, departments: [], statuses: null, editable: new Set(), sources: new Set() };
     const depts = w.departments.map((d) => DEPARTMENTS[d]);
     return {
@@ -375,7 +380,7 @@
 
   return {
     DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS,
-    who, kindOf, canDelete, canColor, isAdmin, isManager, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
+    who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };
 });

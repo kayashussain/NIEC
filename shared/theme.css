@@ -2631,3 +2631,28 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .wa-num { margin: 0 0 22px; color: var(--text-dim); font-size: 17px; font-variant-numeric: tabular-nums; }
 .wa-box .wa-go { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 54px; margin: 0 0 12px; border-radius: 999px; background: #25d366; border-color: #25d366; color: #fff; font-size: 17px; font-weight: 600; }
 .wa-box .wa-go:hover { background: #1fbe5a; }
+
+/* 🔴 CSS CHANGED (2026-11-17): a student's own login on the Fact File (new), and the Student choice on Users (new) | from: nothing (only the team had logins) | to: on the Fact File, an off-white "Welcome, <name>" panel with one line of help and "Your shortlist" (each course in bold with its university as a blue link and a grey "Take off" pill); beside each course of a university a small grey pill "I am interested" that turns soft green "✓ On your shortlist" when chosen; on Users, a "Student (Fact File only)" box under Manager and, when ticked, a soft grey box asking which student the login is for, with a search and the found students as rows; a soft violet "Student, Fact File only" chip in the list */
+.sl-card { margin: 0 0 18px; }
+.sl-head h2 { margin: 0 0 4px; }
+.sl-head p { margin: 0 0 6px; }
+.sl-title { margin: 14px 0 8px; font-size: 16px; font-weight: 650; color: var(--ink); }
+.sl-list { margin: 0; padding: 0; list-style: none; }
+.sl-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.sl-list li:first-child { border-top: 0; }
+.sl-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sl-text b { color: var(--ink); overflow-wrap: anywhere; }
+.sl-uni { color: var(--link); font-size: 14px; text-decoration: none; }
+.sl-pick { margin-left: 8px; min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: #ececf0; color: #1d1d1f; font: 500 13px/30px var(--font); cursor: pointer; white-space: nowrap; }
+.sl-pick:hover { background: #e2e2e8; }
+.sl-pick.is-on { background: #e3f5e8; color: #1f7a35; }
+.check-student { border-top: 1px dashed var(--border-strong); padding-top: 10px; }
+.student-pick { display: grid; gap: 8px; margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: #f2f2f5; }
+.student-pick > span { display: flex; flex-direction: column; gap: 2px; }
+.student-pick small { color: var(--text-dim); }
+.student-results { display: grid; gap: 4px; }
+.student-result { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; border: 0; border-radius: 10px; background: var(--panel); font: inherit; text-align: left; cursor: pointer; }
+.student-result:hover { background: #e8f2fd; }
+.student-result small { color: var(--text-dim); }
+.chip-student { background: #efe9fb; color: #5b3ea8; }
+@media print { .sl-card, .sl-pick { display: none !important; } }

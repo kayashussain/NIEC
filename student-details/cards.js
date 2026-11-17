@@ -76,6 +76,8 @@ function cleanOption(input, old = {}) {
     offerType: (() => { const v = pick('offerType', 20); return ['Conditional', 'Unconditional'].includes(v) ? v : ''; })(),
     refused: (() => { const v = pick('refused', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     withdrawn: (() => { const v = pick('withdrawn', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    // Chosen by the student themselves on the Fact File (their own login, the owner, 17 Nov 2026).
+    byStudent: input && Object.prototype.hasOwnProperty.call(input, 'byStudent') ? input.byStudent === true : Boolean(old.byStudent),
     addedAt: old.addedAt, addedBy: old.addedBy,
   };
 }

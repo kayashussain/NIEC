@@ -53,7 +53,7 @@
       const q = input.value.trim().toLowerCase();
       const pages = links.filter(([, , label]) => !q || label.toLowerCase().includes(q)).map(([, href, label]) => ({ kind: 'Page', title: label, href }));
       let people = [];
-      if (q.length >= 2) {
+      if (q.length >= 2 && !studentLogin) {
         try { const r = await (await fetch('/api/students/search?q=' + encodeURIComponent(q), { cache: 'no-store' })).json(); people = (r.students || []).slice(0, 8).map((s) => ({ kind: 'Student', title: s.name, sub: [s.stage, s.intake, s.university].filter(Boolean).join(' · '), card: s.id, href: '/student?id=' + encodeURIComponent(s.id) })); } catch (e) { /* only the pages are shown */ }
       }
       items = [...people, ...pages].slice(0, 12); at = 0; draw();
@@ -105,10 +105,13 @@
     manager: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Fact File']],
     staff: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['factfile', '/fact-file', 'Fact File']],
     followup: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
+    // A student's own login: the Fact File only (the owner, 17 Nov 2026).
+    student: [['factfile', '/fact-file', 'Fact File']],
     branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['bulkadd', '/bulk-add', 'Add many students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
   };
   // The menu of an account: Admin and Manager have their own; a team gets the pages its work needs (a branch adds students, the Follow-up Team follows up).
   const kindOf = (me) => {
+    if (me.role === 'student') return 'student';
     const deps = me.departments || [];
     if (me.role === 'admin' || me.role === 'manager') return me.role === 'manager' && deps.length ? (deps.some((d) => !['application', 'mock', 'followup'].includes(d)) ? 'branch' : 'staff') : me.role;
     if (deps.some((d) => !['application', 'mock', 'followup'].includes(d))) return 'branch';
@@ -125,7 +128,7 @@
   // The partner pages a person may open besides their own (the same rules as student-details/partner-access.js): the Manager all of
   // them; the Application and Mock Teams Partner Universities, B2B Partners and Agents; a branch Partner Universities. Admin has them.
   function sharedLinks(me) {
-    if (me.role === 'admin') return { before: [], after: [] };
+    if (me.role === 'admin' || me.role === 'student') return { before: [], after: [] };
     const deps = me.departments || [];
     const manager = me.role === 'manager';
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
@@ -136,6 +139,7 @@
     return { before, after: [] };
   }
 
+  let studentLogin = false; // a student's own login: no tasks, no student search
   let bound = false; // the menu's own buttons are wired once, however often the menu is drawn
   function render(me) {
     const own = LINKS[kindOf(me)] || [];
@@ -168,7 +172,8 @@
     const here = nav.querySelector('[aria-current="page"]');
     if (here) nav.scrollLeft = Math.max(0, here.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft - (nav.clientWidth - here.offsetWidth) / 2);
     // The logo goes home: the dashboard for the Manager, All Students for everyone else.
-    header.querySelector('#niecHome').setAttribute('href', '/today');
+    header.querySelector('#niecHome').setAttribute('href', me.role === 'student' ? '/fact-file' : '/today');
+    studentLogin = me.role === 'student';
     const initials = String(me.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
     const account = header.querySelector('.niec-account');
     account.innerHTML = `
@@ -179,7 +184,7 @@
       </button>
       <div class="niec-menu" role="menu" hidden>
         <div class="niec-menu-head"><b>${esc(me.name)}</b><span>${esc(me.username)} · ${esc(me.roleLabel)}</span></div>
-        <button type="button" role="menuitem" class="niec-phone">Connect my phone</button>
+        ${me.role === 'student' ? '' : '<button type="button" role="menuitem" class="niec-phone">Connect my phone</button>'}
         <button type="button" role="menuitem" class="niec-logout">Log out</button>
       </div>`;
     const btn = account.querySelector('.niec-account-btn');
@@ -190,7 +195,7 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); } });
     account.querySelector('.niec-logout').addEventListener('click', () => window.NiecSession.logout());
     // WhatsApp chats on the person's own phone (see student-details/phone-link.js).
-    account.querySelector('.niec-phone').addEventListener('click', () => { setOpen(false); if (window.PhoneLink) window.PhoneLink.dialog(); });
+    if (account.querySelector('.niec-phone')) account.querySelector('.niec-phone').addEventListener('click', () => { setOpen(false); if (window.PhoneLink) window.PhoneLink.dialog(); });
   }
 
   // Every page: what a phone needs to keep ISR on its Home Screen (an iPhone gets notifications only from there), and the WhatsApp
@@ -249,14 +254,14 @@
     b.setAttribute('aria-label', `${unread} new on your tasks`);
     link.title = `Today: ${unread} new on your tasks`;
   };
-  const askUnread = () => fetch('/api/tasks/unread', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+  const askUnread = () => (studentLogin ? Promise.resolve() : fetch('/api/tasks/unread', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
     if (!d) return;
     const was = unread;
     unread = Number(d.count) || 0;
     try { sessionStorage.setItem('isrUnread', String(unread)); } catch (e) { /* asked again next page */ }
     showUnread();
     if (unread > was) { const b = header.querySelector('.niec-badge'); if (b) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); } }
-  }).catch(() => { /* asked again in a minute */ });
+  }).catch(() => { /* asked again in a minute */ }));
   showUnread();
   window.addEventListener('isr-tasks-read', () => setTimeout(askUnread, 300));
   setInterval(() => { if (!document.hidden) askUnread(); }, 60000);

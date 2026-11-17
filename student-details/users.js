@@ -47,6 +47,14 @@
         <div class="check-group">
           ${boxes}
           <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Sees every student and the Dashboard, exports to Excel. View only unless a team is ticked.</small></span></label>
+          <label class="check check-student"><input type="checkbox" name="${name}-student"><span><b>Student (Fact File only)</b><small>For a student: reads the Fact File and marks the courses they like. Sees nothing else, no other student.</small></span></label>
+        </div>
+        <div class="student-pick" hidden>
+          <span><b>Which student is this login for?</b><small>Their choices go to this student's University options, and the Application Team gets a task.</small></span>
+          <input type="search" name="${name}-student-q" placeholder="Type the student's name, email or phone" autocomplete="off" aria-label="Find the student" />
+          <div class="student-results" role="listbox"></div>
+          <input type="hidden" name="${name}-student-row" />
+          <div class="student-chosen"></div>
         </div>
         <label class="task-team" hidden>
           <span><b>Their own team</b><small>Their tasks, Today and Dashboard come from this team. Other ticked teams are extra access.</small></span>
@@ -83,19 +91,53 @@
     return true;
   };
 
+  // A student's own login (the owner, 17 Nov 2026): ticking Student clears the teams and Manager, and asks which student it is for.
+  function drawStudent(container, name) {
+    const on = container.querySelector(`input[name="${name}-student"]`).checked;
+    container.querySelectorAll(`input[name="${name}-dept"], input[name="${name}-manager"]`).forEach((c) => { if (on) c.checked = false; c.disabled = on; });
+    container.querySelector('.student-pick').hidden = !on;
+    if (on) drawTaskTeam(container, name, '');
+  }
+  function chooseStudent(container, name, s) {
+    container.querySelector(`input[name="${name}-student-row"]`).value = s ? s.id : '';
+    container.querySelector('.student-chosen').innerHTML = s ? `For: <b>${esc(s.name)}</b>${s.sub ? ` <span class="muted">${esc(s.sub)}</span>` : ''}` : '';
+    container.querySelector('.student-results').innerHTML = '';
+  }
   function wireAccess(container, name) {
     container.innerHTML = accessFields(name);
     container.querySelectorAll(`input[name="${name}-dept"]`).forEach((c) => c.addEventListener('change', () => drawTaskTeam(container, name)));
+    container.querySelector(`input[name="${name}-student"]`).addEventListener('change', () => drawStudent(container, name));
+    const q = container.querySelector(`input[name="${name}-student-q"]`);
+    const results = container.querySelector('.student-results');
+    let timer;
+    q.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (q.value.trim().length < 2) { results.innerHTML = ''; return; }
+        try {
+          const r = await api('/api/students/search?q=' + encodeURIComponent(q.value.trim()));
+          const list = (r.students || []).slice(0, 8).map((x) => ({ id: x.id, name: x.name, sub: [x.stage, x.intake, x.email].filter(Boolean).join(' · ') }));
+          results.innerHTML = list.length ? list.map((x, i) => `<button type="button" class="student-result" data-i="${i}"><b>${esc(x.name)}</b><small>${esc(x.sub)}</small></button>`).join('') : '<div class="muted">No student found.</div>';
+          results.querySelectorAll('.student-result').forEach((b) => b.addEventListener('click', () => { chooseStudent(container, name, list[Number(b.dataset.i)]); q.value = ''; }));
+        } catch (e) { results.innerHTML = `<div class="msg error">${esc(e.message)}</div>`; }
+      }, 200);
+    });
     drawTaskTeam(container, name, '');
   }
 
-  const readAccess = (container, name) => ({
-    manager: container.querySelector(`input[name="${name}-manager"]`).checked,
-    departments: [...container.querySelectorAll(`input[name="${name}-dept"]:checked`)].map((c) => c.value),
-    taskTeam: container.querySelector(`select[name="${name}-task-team"]`).value,
-  });
+  const readAccess = (container, name) => (container.querySelector(`input[name="${name}-student"]`).checked
+    ? { role: 'student', studentRow: container.querySelector(`input[name="${name}-student-row"]`).value, departments: [] }
+    : {
+      role: '',
+      manager: container.querySelector(`input[name="${name}-manager"]`).checked,
+      departments: [...container.querySelectorAll(`input[name="${name}-dept"]:checked`)].map((c) => c.value),
+      taskTeam: container.querySelector(`select[name="${name}-task-team"]`).value,
+    });
 
   function setAccess(container, name, person) {
+    container.querySelector(`input[name="${name}-student"]`).checked = person.role === 'student';
+    drawStudent(container, name);
+    chooseStudent(container, name, person.role === 'student' && person.studentRow ? { id: person.studentRow, name: person.studentName || 'the linked student', sub: '' } : null);
     container.querySelector(`input[name="${name}-manager"]`).checked = person.role === 'manager';
     container.querySelectorAll(`input[name="${name}-dept"]`).forEach((c) => { c.checked = (person.departments || []).includes(c.value); });
     drawTaskTeam(container, name, person.taskTeam || '');
@@ -149,6 +191,7 @@
   // own team chosen yet shows an orange "Own team not chosen", so it is noticed and set.
   function accessChips(u) {
     if (u.role === 'admin') return '<span class="chip chip-admin">Admin</span>';
+    if (u.role === 'student') return `<span class="chip chip-student">Student, Fact File only</span>${u.studentName ? ` <span class="muted">${esc(u.studentName)}</span>` : ''}`;
     const depts = u.departments || [];
     const label = (d) => esc((DEPARTMENTS[d] || { label: d }).label);
     const own = u.taskTeam && depts.includes(u.taskTeam) ? u.taskTeam : (depts.length === 1 ? depts[0] : '');

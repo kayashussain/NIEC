@@ -2815,6 +2815,47 @@ function createPortalApi({
       sendJSON(res, 200, { started: Boolean(w && !w.isRunning()) });
       return true;
     }
+    // A student's own shortlist (the owner, 17 Nov 2026): a student with their own login reads the Fact File and presses "I am
+    // interested" on a course; it goes into University options on their card (marked as chosen by the student) and the Application
+    // Team gets one task to look at the shortlist and advise. Only for a student's login, only their own card.
+    if (urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) {
+      if (!Teams.isStudent(req.user)) { sendJSON(res, 403, { error: 'This is for a student\'s own login.' }); return true; }
+      const found = rowIndex().get(text(req.user.studentRow));
+      if (!found) { sendJSON(res, req.method === 'GET' ? 200 : 400, req.method === 'GET' ? { linked: false, items: [] } : { error: 'Your login is not linked to your file yet. Please ask the office.' }); return true; }
+      const rowId = found.row._id;
+      const mine = () => (cards.get(rowId).options || []).filter((o) => o.byStudent).map((o) => ({ id: o.id, university: o.university, universityId: o.universityId, course: o.course, intake: o.intake, at: o.addedAt }));
+      const by = `${req.user.name} (the student)`;
+      if (req.method === 'GET') { sendJSON(res, 200, { linked: true, name: text(found.row['FIRST NAME']), items: mine() }); return true; }
+      if (req.method !== 'POST') { send(res, 405, 'Method not allowed'); return true; }
+      const body = await bodyOf(req, res, 8 * 1024);
+      if (!body) return true;
+      if (urlPath.endsWith('/delete')) {
+        const optId = urlPath.split('/')[3];
+        const o = (cards.get(rowId).options || []).find((x) => x.id === optId);
+        if (!o || !o.byStudent) { sendJSON(res, 404, { error: 'That course is not on your shortlist.' }); return true; }
+        if (o.applied || o.offer) { sendJSON(res, 400, { error: 'We have already applied for this course. Please talk to the office.' }); return true; }
+        cards.removeOption(rowId, optId, by);
+        cards.addNote(rowId, { kind: 'note', text: `The student took ${o.course || 'a course'} at ${o.university} off their shortlist on the Fact File.` }, by);
+        activity.record(req, req.user, 'Edited student card', { app: 'Fact File', changes: [`${nameOf(found.row)} took ${o.course} at ${o.university} off their shortlist`] });
+        sendJSON(res, 200, { ok: true, items: mine() });
+        return true;
+      }
+      const uni = facts.all().find((u) => u.id === text(body.universityId));
+      const course = text(body.course).slice(0, 240);
+      if (!uni || !course) { sendJSON(res, 400, { error: 'Choose a course from the Fact File.' }); return true; }
+      if (mine().length >= 10) { sendJSON(res, 400, { error: 'Your shortlist is full (10 courses). Take one off first.' }); return true; }
+      const made = cards.addOption(rowId, { universityId: uni.id, university: uni.name, course, intake: text(body.intake).slice(0, 80), byStudent: true, note: 'Chosen by the student on the Fact File' }, by);
+      if (made.error) { sendJSON(res, made.duplicate ? 409 : 400, { error: made.duplicate ? 'That course is already on your list.' : made.error }); return true; }
+      cards.addNote(rowId, { kind: 'note', text: `The student chose ${course} at ${uni.name}${text(body.intake) ? ` (${text(body.intake)})` : ''} on the Fact File.` }, by);
+      // One open task for the Application Team about the shortlist; a later choice is added to it as an update.
+      const WORDS = 'chose courses on the Fact File: look at the shortlist';
+      const open = (cards.get(rowId).tasks || []).find((x) => !x.done && x.team === 'application' && x.text.includes(WORDS));
+      if (open) cards.commentTask(rowId, open.id, `Also chose ${course} at ${uni.name}.`, by);
+      else cards.addTask(rowId, { team: 'application', text: `${nameOf(found.row) || 'The student'} ${WORDS} (University options) and advise`, tag: 'application', priority: 'high' }, by);
+      activity.record(req, req.user, 'Edited student card', { app: 'Fact File', changes: [`${nameOf(found.row)} chose ${course} at ${uni.name} on the Fact File`] });
+      sendJSON(res, 200, { ok: true, items: mine() });
+      return true;
+    }
     // The page of a course on the university's website (course-finder.js), remembered once found.
     // The courses of one university as the Fact File lists them (the general list and each intake), each with the page of the course
     // when it is known, so a course in the Fact File opens its own page.

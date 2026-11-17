@@ -138,6 +138,8 @@
       const show = () => { if (c.link) { a.href = c.link; a.removeAttribute('role'); } };
       show();
       li.append(a);
+      // A student's own login: "I am interested" beside each course (shortlist.js).
+      if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button(uni, c.course, intakeName || ''));
       if (!c.link && courseData.canFind) {
         const find = el('button', 'find-link no-print', 'Find the course page');
         find.type = 'button';
@@ -255,7 +257,7 @@
     copy.title = 'Copy a short summary';
     copy.addEventListener('click', copySummary);
     bar.append(copy);
-    if (!BACKUP && window.SendToStudent) {
+    if (!BACKUP && window.SendToStudent && !(window.Shortlist && window.Shortlist.isStudent())) {
       const send = el('button', 'btn btn-primary', 'Add to a student');
       send.type = 'button';
       send.title = "Choose courses and a student: they are added to the student's University options";
@@ -484,9 +486,10 @@
       say('Could not load this page. Please reload.', true);
       return;
     }
+    if (window.Shortlist) await window.Shortlist.ready;
     if (!BACKUP) { try { const r = await fetch('/api/fact-courses?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) courseData = await r.json(); } catch (e) { courseData = null; } }
     if (isAdmin && new URLSearchParams(location.search).get('edit')) renderEdit(); else renderView();
-    if (!BACKUP) courseWarnings();
+    if (!BACKUP && !(window.Shortlist && window.Shortlist.isStudent())) courseWarnings();
   }
 
   // Warnings from the weekly check of this university's course pages (course-watch.js): what was found, for a person to confirm.
