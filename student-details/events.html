@@ -116,6 +116,86 @@
   .ev-cur button.on { background: #fff; color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 2px 6px -3px rgba(0, 0, 0, .15); }
   .ev-conv { display: block; margin-top: 6px; color: #6e6e73; font-size: 13px; }
   .ev-choice-label { display: block; margin-bottom: 8px; color: var(--brand-navy, #1d2f52); font-size: 14px; font-weight: 600; }
+
+  /* 🔴 CSS CHANGED (2026-11-17): Events and marketing made more polished, in the same Apple look | from: rows that began with the name only; column headings in plain grey words; "None yet" and "-" in bold like a figure; a bare "No events or campaigns yet." line; on a phone the summary tiles in pairs with Cost per visa alone at the bottom; on an event, the title on its own, the browser's plain "Choose File" button with "No file chosen", "Remove the inquiries this list added" as a big button under the upload, a square search box, phone numbers as plain text, all the inquiries in one list | to: each row starts with a small calendar leaf (the month in blue small capitals over the day in large near-black figures, on a soft off-white rounded square; orange month for a marketing campaign); column headings in small spaced capitals like the other tables; "None yet" and "-" in light grey; a "Search events and campaigns" pill box with a magnifier beside the "N of N" count; an empty list shows a soft round icon, a bold line, a grey line and the blue "+ New event or campaign"; on a phone Total cost fills the top row and the four others sit two by two; on an event, a larger calendar leaf beside the title; a new "From inquiry to visa" panel with three rounded bars (Inquiries in light blue, Applied in blue, Visas in green) that grow in from the left, with the figure and the share of inquiries; the upload as a dashed rounded drop area with a round blue arrow ("Drop the Excel or CSV file here, or click to choose one", turning soft blue while a file is held over it, then showing the file's name); "Remove the inquiries this list added" as a small grey pill at the top right of that panel; the search as a grey pill with a magnifier; stage pills with a count above the inquiries (All, Inquiry, Visa Issued ...), the open one dark; phone numbers in blue that call on a phone */
+  .ev-lwho { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .ev-lwords { min-width: 0; }
+  .ev-leaf { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 52px; height: 54px; border-radius: 14px; background: #fdfdfe; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 2px 6px -2px rgba(0, 0, 0, .1); line-height: 1; }
+  .ev-leaf span { color: #0071e3; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .ev-leaf b { margin-top: 3px; color: #1d1d1f; font-size: 22px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .ev-leaf.mk span { color: #c25e00; }
+  .ev-leaf.big { width: 68px; height: 72px; border-radius: 18px; }
+  .ev-leaf.big span { font-size: 13px; }
+  .ev-leaf.big b { margin-top: 4px; font-size: 30px; }
+  .ev-lrow.item:hover .ev-leaf { box-shadow: 0 0 0 1px rgba(0, 113, 227, .25), 0 4px 12px -4px rgba(0, 113, 227, .3); }
+  .ev-leaf { transition: box-shadow .25s ease; }
+  html body .ev-lrow.head { background: #f7f7f9; color: #5f5f64; font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  html body .ev-lrow.head > :first-child { padding-left: 66px; }
+  html body .ev-lrow.item .num.none { color: #a1a1a6; font-weight: 500; }
+  .ev-bar-end { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  html body .ev-search { width: 300px; max-width: 100%; height: 40px; padding: 0 16px 0 38px; border: 0; border-radius: 980px; background: #e8e8ed url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 14px center; color: #1d1d1f; font: inherit; font-size: 15px; transition: background-color .2s, box-shadow .2s; }
+  html body .ev-search:focus { background-color: #fdfdfe; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18), 0 0 0 1px #0071e3 inset !important; outline: none; }
+  .ev-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 56px 24px; }
+  .ev-empty b { color: #1d1d1f; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+  .ev-empty p { margin: 0 0 10px; color: var(--text-dim); font-size: 15px; }
+  .ev-empty-icon { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 8px; border-radius: 50%; background: rgba(0, 113, 227, .1); color: #0071e3; font-size: 24px; }
+  .ev-empty.small { padding: 28px; }
+  /* one event */
+  .ev-title { display: flex; align-items: center; gap: 18px; }
+  .ev-about { max-width: 760px; margin: 14px 0 0; color: #424245; font-size: 15.5px; line-height: 1.55; }
+  .ev-flow h3 { margin-bottom: 14px !important; }
+  .ev-flow-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 64px 48px; gap: 14px; align-items: center; padding: 7px 0; }
+  .ev-flow-label { color: #424245; font-size: 15px; font-weight: 500; }
+  .ev-flow-bar { height: 12px; border-radius: 980px; background: #ececf0; overflow: hidden; }
+  .ev-flow-bar i { display: block; width: var(--w, 0%); height: 100%; border-radius: inherit; background: #7ab8f5; animation: ev-grow .9s cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--i, 0) * 90ms + 120ms); }
+  .ev-flow-bar i.two { background: #0071e3; }
+  .ev-flow-bar i.three { background: #28a745; }
+  @keyframes ev-grow { from { width: 0; } }
+  .ev-flow-row b { text-align: right; color: #1d1d1f; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ev-flow-pc { color: #6e6e73; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .ev-flow-none { margin: 8px 0 0 !important; color: var(--text-dim); font-size: 14px; }
+  @media (prefers-reduced-motion: reduce) { .ev-flow-bar i { animation: none; } }
+  .ev-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+  .ev-panel-head > div > p { margin: 0 0 16px; color: var(--text-dim); font-size: 15px; line-height: 1.55; }
+  .ev-panel-head h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+  .ev-upload { align-items: stretch; }
+  .ev-upload label.ev-drop { position: relative; flex: 1 1 320px; flex-direction: row; align-items: center; gap: 14px; min-height: 76px; padding: 14px 20px; border: 1.5px dashed #c7c7cc; border-radius: 16px; background: #fbfbfd; color: #1d1d1f; cursor: pointer; transition: border-color .2s, background-color .2s, transform .2s cubic-bezier(.16, 1, .3, 1); }
+  .ev-upload label.ev-drop:hover { border-color: #0071e3; background: #f5f9ff; }
+  .ev-upload label.ev-drop.over { border-color: #0071e3; background: rgba(0, 113, 227, .08); transform: scale(1.01); }
+  .ev-upload label.ev-drop:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18); }
+  .ev-drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .ev-drop-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 19px; font-weight: 600; }
+  .ev-drop-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .ev-drop-words b { font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .ev-drop-words span { color: #0066cc; font-size: 14px; font-weight: 500; }
+  .ev-upload > label:first-child { justify-content: flex-end; }
+  .ev-find-row { margin: 0 0 12px; }
+  .ev-stages { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .ev-stages button { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 8px 0 14px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color .2s, color .2s, transform .15s; }
+  .ev-stages button:hover { background: #dcdce2; }
+  .ev-stages button:active { transform: scale(.96); }
+  .ev-stages button span { min-width: 22px; padding: 1px 7px; border-radius: 980px; background: rgba(255, 255, 255, .8); color: #515154; font-size: 12.5px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+  .ev-stages button.on { background: #1d1d1f; color: #fff; }
+  .ev-stages button.on span { background: rgba(255, 255, 255, .2); color: #fff; }
+  .ev-person .tel a { color: #0066cc; text-decoration: none; font-variant-numeric: tabular-nums; }
+  .ev-person .tel a:hover { text-decoration: underline; }
+  html body .ev-person.head { background: #f7f7f9; color: #5f5f64; font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .ev-person:not(.head) { transition: background-color .2s; }
+  .ev-person:not(.head):hover { background: rgba(0, 0, 0, .02); }
+  @media (max-width: 1000px) {
+    html body .ev-lrow.head > :first-child { padding-left: 0; }
+    .ev-bar-end { width: 100%; }
+    html body .ev-search { flex: 1; width: auto; }
+  }
+  @media (max-width: 700px) {
+    html body .ev-band > div:first-child { grid-column: 1 / -1; }
+    .ev-title { align-items: flex-start; gap: 14px; }
+    .ev-leaf.big { width: 56px; height: 60px; border-radius: 15px; }
+    .ev-leaf.big b { font-size: 24px; }
+    .ev-head h2 { font-size: 27px !important; }
+    .ev-flow-row { grid-template-columns: 80px minmax(0, 1fr) 40px 40px; gap: 10px; }
+    .ev-panel-head .btn { margin-bottom: 14px; }
+  }
 </style>
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />
@@ -139,7 +219,10 @@
           <button type="button" data-f="Marketing" aria-pressed="false">Campaigns</button>
           <button type="button" data-f="Event" aria-pressed="false">Events</button>
         </div>
-        <span class="p-muted" id="count"></span>
+        <div class="ev-bar-end">
+          <input class="ev-search" id="find" type="search" placeholder="Search events and campaigns" aria-label="Search events and campaigns" hidden />
+          <span class="p-muted" id="count"></span>
+        </div>
       </div>
       <div class="ev-ledger" id="list"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>
     </div>
