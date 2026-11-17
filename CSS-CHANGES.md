@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-17 · student-details/events.html · the Intake picker at the top of Events and marketing (new) · from: nothing, every event and campaign of every intake in one list · to: "Intake" in small grey bold beside a rounded light grey box with the intake's name (the same look as the Intake picker on the Dashboard), left of the blue "+ New event or campaign" pill · why: the owner asked to see Events and marketing intake by intake, with All intakes as a choice.**
+
 - **2026-11-17 · shared/theme.css · the team's Dashboard, Needs attention: "+16 more" · from: grey words "+16 more" that did nothing · to: the same grey words as a button (blue and underlined on hover) that shows every other name in place, as the same grey name pills · why: the owner asked to keep improving the system; the team could reach only the first three students of each list.**
 
 - **2026-11-17 · shared/theme.css · Data to fix: By gap | By student · from: the gap pills alone above the lists; a student missing three details listed three times, one box each · to: the pills on the left and a segmented switch "By gap | By student" on the right of the same row; By student shows one panel "Students with gaps" with each student once: the name, stage and intake on the left, a small grey label above each box they are missing (Date of birth, Passport number, Address) side by side, rounded like the boxes of By gap, and one blue Save on the right · why: the owner asked to keep improving the system, so the team fills a student's gaps in one go.**

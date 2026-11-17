@@ -1304,18 +1304,20 @@ function createPortalApi({
     const wb = getWorkbook();
     const plan = planning.all();
     const all = cards.all();
-    const list = plan.events.map((e) => ({ ...e, leads: 0, applied: 0, visas: 0, students: [], follow: { new: 0, due: 0, ok: 0, inactive: 0 } }));
+    const list = plan.events.map((e) => ({ ...e, leads: 0, applied: 0, visas: 0, students: [], perIntake: {}, follow: { new: 0, due: 0, ok: 0, inactive: 0 } }));
     const todayNo = todayNumber();
     const byName = (detail) => eventFor(list, detail);
     // Students from social media not tagged with any campaign, so in no campaign's cost per inquiry. Those marked Organic (they came
     // by themselves, not from an advert) are left out: they belong to no campaign (the owner, 17 Nov 2026).
     let unlinkedSocial = 0;
+    const unlinkedByIntake = {}; // the same, per intake (the id of its tab)
     if (wb) wb.sheets.forEach((sheet) => sheet.rows.forEach((row) => {
       if (!isStudent(row)) return;
       const card = all[row._id];
       const e = card && byName(card.profile.sourceDetail);
-      if (!e) { if (text(row['STUDENT SOURCE']) === 'Social Media' && !(card && card.profile && card.profile.sourceWay === 'Organic')) unlinkedSocial += 1; return; }
+      if (!e) { if (text(row['STUDENT SOURCE']) === 'Social Media' && !(card && card.profile && card.profile.sourceWay === 'Organic')) { unlinkedSocial += 1; unlinkedByIntake[sheet.id] = (unlinkedByIntake[sheet.id] || 0) + 1; } return; }
       e.leads += 1;
+      e.perIntake[sheet.id] = (e.perIntake[sheet.id] || 0) + 1;
       const stage = text(row[STATUS]);
       if (!['', 'Inquiry', 'Defer', 'Hold', 'Withdrawn'].includes(stage) || text(row['APPLICATION SUBMISSION DATE'])) e.applied += 1;
       if (stage === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) e.visas += 1;
@@ -1324,13 +1326,26 @@ function createPortalApi({
       if (e.students.length < 60) e.students.push({ id: row._id, name: nameOf(row), stage, intake: sheet.name });
     }));
     const day = (iso) => Math.round(Date.parse(iso + 'T00:00:00Z') / 86400000);
+    // The intake each event belongs to (the owner, 17 Nov 2026: Events and marketing intake by intake): the one Admin chose for it, else
+    // the intake most of its students are in (the newer intake when two have as many), else none. Each event is under one intake only,
+    // so its cost is never counted twice. A chosen intake that was since deleted counts as not chosen.
+    const sheets = wb ? wb.sheets : [];
+    const order = new Map(sheets.map((sh, i) => [sh.id, i]));
+    const intakeOf = (e) => {
+      if (e.intake && order.has(e.intake)) return { id: e.intake, how: 'chosen' };
+      const best = Object.entries(e.perIntake).sort((x, y) => y[1] - x[1] || (order.get(y[0]) || 0) - (order.get(x[0]) || 0))[0];
+      return best ? { id: best[0], how: 'students' } : { id: '', how: 'none' };
+    };
+    const nameOfSheet = (id) => (sheets.find((sh) => sh.id === id) || {}).name || '';
     const shaped = list.sort((a, b) => b.date.localeCompare(a.date)).map((e) => ({
       id: e.id, name: e.name, kind: e.kind || 'Event', type: e.type, channel: channelOf(e), place: e.place, date: e.date, endDate: e.endDate || '',
       days: e.date ? (e.endDate ? day(e.endDate) - day(e.date) + 1 : 1) : 0, note: e.note, cost: e.cost, costCurrency: e.costCurrency || 'NPR', costAmount: e.costAmount === undefined ? e.cost : e.costAmount, costRate: e.costRate || 0, leads: e.leads, applied: e.applied, visas: e.visas,
       costPerLead: e.cost > 0 && e.leads > 0 ? Math.round(e.cost / e.leads) : null, costPerVisa: e.cost > 0 && e.visas > 0 ? Math.round(e.cost / e.visas) : null,
       students: e.students, registered: e.registered, attended: e.attended, follow: e.follow,
+      ...(() => { const i = intakeOf(e); return { intake: i.id, intakeName: nameOfSheet(i.id), intakeHow: i.how, chosenIntake: e.intake && order.has(e.intake) ? e.intake : '' }; })(),
+      perIntake: Object.entries(e.perIntake).map(([id, n]) => ({ id, name: nameOfSheet(id), students: n })).sort((x, y) => y.students - x.students),
     }));
-    return { list: shaped, unlinkedSocial };
+    return { list: shaped, unlinkedSocial, unlinkedByIntake };
   }
 
   // ---- one student's card ----
@@ -2450,6 +2465,11 @@ function createPortalApi({
         }
         Object.assign(body, { costCurrency: cur, costAmount: typed, costRate: rate, cost: String(Math.round(amt * rate)) });
       } else Object.assign(body, { costCurrency: 'NPR', costAmount: typed, costRate: 0, cost: typed });
+      // The intake it was run for: an intake tab that exists, or blank. A save that does not send it (an older page) keeps the one set.
+      const before = body.id ? (planning.all().events || []).find((e) => e.id === body.id) : null;
+      if (body.intake === undefined) body.intake = (before && before.intake) || '';
+      const wbI = getWorkbook();
+      if (text(body.intake) && !(wbI && wbI.sheets.some((sh) => sh.id === text(body.intake)))) { sendJSON(res, 400, { error: 'That intake is no longer there. Choose another.' }); return true; }
     }
     const out = planning.save(m[1], body, req.user.label);
     if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
@@ -2703,11 +2723,11 @@ function createPortalApi({
     if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user) }); return true; }
     if (urlPath === '/api/activities' && req.method === 'GET') {
       if (!managers(req, res, 'Events and marketing')) return true;
-      const { list, unlinkedSocial } = activities(req.user);
+      const { list, unlinkedSocial, unlinkedByIntake } = activities(req.user);
       // The intakes new students from an uploaded list can go into: the current one first.
       const wbNow = getWorkbook(); const cur = currentIntake();
       const intakes = wbNow ? Teams.viewFor(req.user, wbNow).sheets.map((sh) => ({ id: sh.id, name: sh.name })).sort((x, y) => (cur && x.id === cur.id ? -1 : cur && y.id === cur.id ? 1 : 0)) : [];
-      sendJSON(res, 200, { activities: list, unlinkedSocial, intakes, channels: CHANNELS, types: EVENT_TYPES, marketingTypes: MARKETING_TYPES, canEdit: Teams.isAdmin(req.user) });
+      sendJSON(res, 200, { activities: list, unlinkedSocial, unlinkedByIntake, intakes, currentIntake: cur ? cur.id : '', channels: CHANNELS, types: EVENT_TYPES, marketingTypes: MARKETING_TYPES, canEdit: Teams.isAdmin(req.user) });
       return true;
     }
     // The choices of the University Partner column: the Partner Universities and the B2B Partners (names only, no terms), for every

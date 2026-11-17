@@ -68,4 +68,35 @@ test('an event: the same inquiries everywhere, and a list upload is not a contac
   await api('POST', `/api/cards/${one.id}/notes`, { kind: 'note', text: 'Called, interested in January' });
   const after = await api('GET', `/api/activities/${id}/students`);
   assert.strictEqual(after.students.find((s) => s.id === one.id).follow, 'ok');
+
+  // Intake by intake (the owner, 17 Nov 2026). A second intake tab, made-up.
+  const wb = await api('GET', '/api/data');
+  const first = wb.sheets[0];
+  const second = { id: 'sheet-demo-two', name: 'Demo Intake Two', columns: first.columns, rows: [], createdAt: new Date().toISOString() };
+  const savedWb = await api('POST', '/api/data', { sheets: [...wb.sheets, second], activeSheetId: wb.activeSheetId, baseRevision: wb.revision });
+  assert.ok(savedWb && !savedWb.error, 'the second intake is saved');
+  let got = await api('GET', '/api/activities');
+  assert.ok(got.intakes.some((x) => x.id === second.id) && got.currentIntake, 'the intakes and the current one are sent');
+  let ev = got.activities.find((x) => x.id === id);
+  assert.deepStrictEqual([ev.intake, ev.intakeHow, ev.chosenIntake], [first.id, 'students', ''], 'not chosen: the intake of its students');
+  // An event with no students and no intake belongs to no intake.
+  await api('POST', '/api/planning/events', { name: 'Empty fair', channel: 'Our office', date: '2026-12-01' });
+  ev = (await api('GET', '/api/activities')).activities.find((x) => x.name === 'Empty fair');
+  assert.deepStrictEqual([ev.intake, ev.intakeHow], ['', 'none']);
+  // Chosen: it moves to that intake, whatever its students; the figures stay the whole event's.
+  const camp = (await api('GET', '/api/activities')).activities.find((x) => x.id === id);
+  assert.ok((await api('POST', '/api/planning/events', { id, name: camp.name, channel: camp.channel, date: camp.date, cost: '30000', intake: second.id })).ok);
+  ev = (await api('GET', '/api/activities')).activities.find((x) => x.id === id);
+  assert.deepStrictEqual([ev.intake, ev.intakeHow, ev.chosenIntake, ev.leads], [second.id, 'chosen', second.id, 30]);
+  // A save from a page that does not send the intake keeps it.
+  await api('POST', '/api/planning/events', { id, name: camp.name, channel: camp.channel, date: camp.date, cost: '30000' });
+  assert.strictEqual((await api('GET', '/api/activities')).activities.find((x) => x.id === id).intake, second.id, 'kept');
+  // An intake that does not exist is refused, nothing changes.
+  const bad = await api('POST', '/api/planning/events', { id, name: camp.name, channel: camp.channel, date: camp.date, cost: '30000', intake: 'sheet-not-there' });
+  assert.match(bad.error, /intake/);
+  // The intake tab deleted: the event goes back to the intake of its students.
+  const wb2 = await api('GET', '/api/data');
+  await api('POST', '/api/data', { sheets: wb2.sheets.filter((x) => x.id !== second.id), activeSheetId: wb2.activeSheetId, baseRevision: wb2.revision });
+  ev = (await api('GET', '/api/activities')).activities.find((x) => x.id === id);
+  assert.deepStrictEqual([ev.intake, ev.intakeHow], [first.id, 'students']);
 });

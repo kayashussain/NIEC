@@ -63,6 +63,9 @@ const LISTS = {
       // only `cost`, in rupees.
       cost: amount(x.cost), costCurrency: CURRENCIES.includes(x.costCurrency) ? x.costCurrency : 'NPR', costAmount: money(x.costAmount === undefined ? x.cost : x.costAmount), costRate: rateOf(x.costRate),
       registered: amount(x.registered, 1e6), attended: amount(x.attended, 1e6), universities: str(x.universities, 300), note: str(x.note, 600),
+      // The intake it was run for (the id of an intake tab, the owner, 17 Nov 2026), optional: left blank, Events and marketing places it
+      // under the intake most of its students are in. Entries saved before have none.
+      intake: str(x.intake, 80),
     }),
     check: (x) => {
       if (x.endDate && x.date && isoDay(x.endDate) && isoDay(x.endDate) < isoDay(x.date)) return 'The end date is before the start date.';

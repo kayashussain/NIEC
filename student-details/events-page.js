@@ -12,6 +12,20 @@
   let show = 'all';
   let open = null; // the event open in its own view
   let find = ''; // the words typed in the search box of the list
+  // The intake shown (the owner, 17 Nov 2026: Events and marketing intake by intake, All as a choice): the id of an intake tab, or
+  // 'all'. It opens on the intake chosen last on this computer, else the current intake.
+  const INTAKE_KEY = 'isrEventsIntake';
+  let intake = '';
+  try { intake = localStorage.getItem(INTAKE_KEY) || ''; } catch (e) { /* the current intake, as usual */ }
+  const intakeName = (id) => ((data && data.intakes) || []).find((x) => x.id === id)?.name || '';
+  // The intake picker, filled from the server's list: each intake (the current one first) and All intakes last.
+  function picker() {
+    const sel = $('intake');
+    const ids = (data.intakes || []).map((x) => x.id);
+    if (intake !== 'all' && !ids.includes(intake)) intake = data.currentIntake && ids.includes(data.currentIntake) ? data.currentIntake : (ids[0] || 'all');
+    sel.replaceChildren(...(data.intakes || []).map((x) => h('option', { value: x.id }, x.name)), h('option', { value: 'all' }, 'All intakes'));
+    sel.value = intake;
+  }
 
   // "5 Nov to 20 Nov 2026" when both days are in the same year, so the dates stay short.
   const ran = (a) => {
@@ -44,10 +58,12 @@
 
   // ---- the list ----
   function draw() {
-    const acts = data.activities;
+    const every = data.activities;
+    const acts = intake === 'all' ? every : every.filter((a) => a.intake === intake);
+    const scopeName = intake === 'all' ? 'all intakes' : intakeName(intake);
     const t = acts.reduce((s, a) => ({ cost: s.cost + (a.cost || 0), leads: s.leads + a.leads, visas: s.visas + a.visas }), { cost: 0, leads: 0, visas: 0 });
     $('band').replaceWith(Object.assign(band([
-      ['Total cost', rupees(t.cost) || 'Rs 0', `${acts.length === 1 ? '1 event or campaign' : `${acts.length} events and campaigns`}, in rupees`],
+      ['Total cost', rupees(t.cost) || 'Rs 0', `${acts.length === 1 ? '1 event or campaign' : `${acts.length} events and campaigns`}, ${scopeName}`],
       ['Inquiries', number(t.leads)],
       ['Visas', number(t.visas)],
       ['Cost per inquiry', per(t.cost, t.leads), '', true],
@@ -56,13 +72,17 @@
     $('note').replaceChildren();
     const waitingAll = acts.reduce((n, a) => n + ((a.follow && a.follow.new) || 0) + ((a.follow && a.follow.due) || 0), 0);
     if (waitingAll > 0) $('note').append(el('div', 'ev-note due', `${number(waitingAll)} ${waitingAll === 1 ? 'inquiry from an event waits' : 'inquiries from events wait'} for a follow-up. Open an event to see who.`));
-    if (data.unlinkedSocial > 0) $('note').append(el('div', 'ev-note', `${number(data.unlinkedSocial)} social media ${data.unlinkedSocial === 1 ? 'inquiry is' : 'inquiries are'} not linked to a campaign (and not marked Organic), so ${data.unlinkedSocial === 1 ? 'it is' : 'they are'} in no campaign's cost per inquiry.`));
+    const unlinked = intake === 'all' ? data.unlinkedSocial : ((data.unlinkedByIntake || {})[intake] || 0);
+    if (unlinked > 0) $('note').append(el('div', 'ev-note', `${number(unlinked)} social media ${unlinked === 1 ? 'inquiry' : 'inquiries'}${intake === 'all' ? '' : ` in ${scopeName}`} ${unlinked === 1 ? 'is' : 'are'} not linked to a campaign (and not marked Organic), so ${unlinked === 1 ? 'it is' : 'they are'} in no campaign's cost per inquiry.`));
+    // An event with no intake chosen and no students yet belongs to no intake: it is only under All intakes, so say so.
+    const loose = intake === 'all' ? 0 : every.filter((a) => !a.intake).length;
+    if (loose > 0) $('note').append(el('div', 'ev-note', `${number(loose)} ${loose === 1 ? 'event or campaign has' : 'events and campaigns have'} no intake yet (none chosen and no students yet), so ${loose === 1 ? 'it is' : 'they are'} only under All intakes. Choose the intake with Edit.`));
     $('add').hidden = !data.canEdit;
     const q = find.trim().toLowerCase();
     const shown = (show === 'all' ? acts : acts.filter((a) => (show === 'Marketing' ? a.kind === 'Marketing' : a.kind !== 'Marketing')))
       .filter((a) => !q || `${a.name} ${a.channel || ''} ${a.place || ''}`.toLowerCase().includes(q));
     $('count').textContent = acts.length ? `${shown.length} of ${acts.length}` : '';
-    $('find').hidden = !acts.length;
+    $('find').hidden = !every.length;
     const list = $('list');
     const empty = (title, line, withAdd) => {
       const e = el('div', 'ev-empty');
@@ -70,7 +90,8 @@
       if (withAdd && data.canEdit) e.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => form(null) }, '+ New event or campaign'));
       return e;
     };
-    if (!acts.length) { list.replaceChildren(empty('No events or campaigns yet', 'Add the first one to see its cost, inquiries and visas here.', true)); return; }
+    if (!every.length) { list.replaceChildren(empty('No events or campaigns yet', 'Add the first one to see its cost, inquiries and visas here.', true)); return; }
+    if (!acts.length) { list.replaceChildren(empty(`No events or campaigns for ${scopeName} yet`, 'Choose another intake at the top, or All intakes.', true)); return; }
     if (!shown.length) { list.replaceChildren(empty(q ? `Nothing matches \u201c${find.trim()}\u201d` : 'Nothing here yet', q ? 'Try another word, or clear the search.' : 'Choose All to see every event and campaign.')); return; }
     const head = el('div', 'ev-lrow head');
     ['Event or campaign', 'Cost', 'Inquiries', 'Visas', 'Per inquiry', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
@@ -79,7 +100,7 @@
       r.style.setProperty('--i', String(Math.min(shown.indexOf(a), 12)));
       r.tabIndex = 0; r.setAttribute('role', 'button'); r.setAttribute('aria-label', `Open ${a.name}`);
       const who = el('div');
-      const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', `${ran(a)} · ${a.days} day${a.days === 1 ? '' : 's'}`));
+      const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', [`${ran(a)} · ${a.days} day${a.days === 1 ? '' : 's'}`, intake === 'all' ? (a.intakeName || 'No intake yet') : ''].filter(Boolean).join(' · ')));
       const words = el('div', 'ev-lwords'); words.append(el('div', 'ev-lname', a.name), meta);
       // The follow-up of the event at a glance: who still waits for a call, and how many have applied.
       const fo = a.follow || {};
@@ -113,11 +134,13 @@
     const back = h('button', { class: 'ev-back', type: 'button', onclick: () => window.NiecUI.swap(closeEvent) }, '← Events and campaigns');
     const head = el('div', 'ev-head');
     const left = el('div');
-    const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', [ran(a), `${a.days} day${a.days === 1 ? '' : 's'}`, a.place].filter(Boolean).join(' \u00b7 ')));
+    const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', [ran(a), `${a.days} day${a.days === 1 ? '' : 's'}`, a.place, a.intakeName ? `${a.intakeName}${a.intakeHow === 'students' ? ' (from its students)' : ''}` : 'No intake yet'].filter(Boolean).join(' \u00b7 ')));
     const title = el('div', 'ev-title'); const words = el('div'); words.append(el('h2', '', a.name), meta);
     title.append(leaf(a, true), words);
     left.append(title);
     if (a.note) left.append(el('p', 'ev-about', a.note));
+    // Its students in more than one intake: where they are, so the figures below (every intake) are read right.
+    if ((a.perIntake || []).length > 1) left.append(el('p', 'ev-about', `Its students: ${a.perIntake.map((x) => `${number(x.students)} in ${x.name}`).join(', ')}. The figures below count all of them.`));
     head.append(left);
     if (data.canEdit) head.append(h('button', { class: 'btn', type: 'button', onclick: () => form(a) }, 'Edit'));
     const figs = band([
@@ -287,6 +310,8 @@
     p.append(ph);
     const intake = h('select', {});
     (data.intakes || []).forEach((s) => intake.append(h('option', { value: s.id }, s.name)));
+    // New inquiries go into the event's own intake unless another is chosen.
+    if (a.intake && (data.intakes || []).some((s) => s.id === a.intake)) intake.value = a.intake;
     const file = h('input', { type: 'file', accept: '.xlsx,.csv' });
     const row = el('div', 'ev-upload');
     const l1 = el('label'); l1.append('Intake for new inquiries', intake);
@@ -414,6 +439,8 @@
         date: field('Starts', { kind: 'date', value: a && a.date }),
         endDate: field('Ends (optional)', { kind: 'date', value: a && a.endDate }),
         note: field('Note (optional)', { kind: 'area', value: a && a.note, max: 600, wide: true }),
+        // The intake it was run for; a new one starts on the intake being looked at.
+        intake: field('Intake', { kind: 'select', value: a ? a.chosenIntake : (intake !== 'all' ? intake : ''), choices: [['', 'Not chosen (from its students)'], ...(data.intakes || []).map((x) => [x.id, x.name])], hint: 'Which intake it was run for. Not chosen: the intake most of its students are in.' }),
       };
       let channel = (a && a.channel) || '';
       const choices = el('div', 'ev-choices');
@@ -447,7 +474,7 @@
       f.cost.wrap.append(conv);
       money.append(f.cost.wrap);
       const grid = el('div', 'p-form p-form-2');
-      grid.append(f.name.wrap, where, f.place.wrap, money, f.date.wrap, f.endDate.wrap, f.note.wrap);
+      grid.append(f.name.wrap, where, f.place.wrap, money, f.date.wrap, f.endDate.wrap, f.intake.wrap, f.note.wrap);
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'));
@@ -476,10 +503,16 @@
 
   async function refresh() {
     data = await api('/api/activities');
+    picker();
     draw();
     if (open) { const still = data.activities.find((x) => x.id === open.id); if (still) openEvent(still.id); else closeEvent(); }
   }
   $('add').addEventListener('click', () => form(null));
+  $('intake').addEventListener('change', () => {
+    intake = $('intake').value;
+    try { localStorage.setItem(INTAKE_KEY, intake); } catch (e) { /* remembered for this visit only */ }
+    if (data) window.NiecUI.swap(draw, { soft: true });
+  });
   $('find').addEventListener('input', () => { find = $('find').value; if (data) draw(); });
   // "/" jumps to the search box and Esc clears it, as on the Partners page.
   document.addEventListener('keydown', (e) => {
