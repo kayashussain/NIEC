@@ -11,6 +11,7 @@
   let data = null;
   let show = 'all';
   let open = null; // the event open in its own view
+  let find = ''; // the words typed in the search box of the list
 
   // "5 Nov to 20 Nov 2026" when both days are in the same year, so the dates stay short.
   const ran = (a) => {
@@ -26,6 +27,15 @@
   const paidIn = (a) => (a.costCurrency && a.costCurrency !== 'NPR' && a.costAmount ? `${SIGN[a.costCurrency]}${Number(a.costAmount).toLocaleString('en-US', { maximumFractionDigits: 2 })} at Rs ${Number(a.costRate).toFixed(2)} a ${UNIT[a.costCurrency]}` : '');
   const per = (cost, n) => (cost > 0 && n > 0 ? rupees(Math.round(cost / n)) : 'None yet');
   const tag = (a) => el('span', 'ev-tag' + (a.kind === 'Marketing' ? ' mk' : ''), a.channel || 'Other');
+  // A small calendar leaf with the month and the day it started, so the list reads like a calendar at a glance.
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function leaf(a, big) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(a.date || '');
+    const d = el('div', 'ev-leaf' + (big ? ' big' : '') + (a.kind === 'Marketing' ? ' mk' : ''));
+    d.setAttribute('aria-hidden', 'true');
+    d.append(el('span', '', m ? MONTHS[Number(m[2]) - 1] : '-'), el('b', '', m ? String(Number(m[3])) : '?'));
+    return d;
+  }
   function band(items) {
     const b = el('div', 'ev-band');
     items.forEach(([label, value, sub, gold]) => { const d = el('div', gold ? 'gold' : ''); d.append(el('span', '', label), el('b', '', value), el('small', '', sub || '')); b.append(d); });
@@ -46,11 +56,20 @@
     $('note').replaceChildren();
     if (data.unlinkedSocial > 0) $('note').append(el('div', 'ev-note', `${number(data.unlinkedSocial)} social media ${data.unlinkedSocial === 1 ? 'inquiry is' : 'inquiries are'} not linked to a campaign.`));
     $('add').hidden = !data.canEdit;
-    const shown = show === 'all' ? acts : acts.filter((a) => (show === 'Marketing' ? a.kind === 'Marketing' : a.kind !== 'Marketing'));
-    $('count').textContent = acts.length ? `${shown.length} shown` : '';
+    const q = find.trim().toLowerCase();
+    const shown = (show === 'all' ? acts : acts.filter((a) => (show === 'Marketing' ? a.kind === 'Marketing' : a.kind !== 'Marketing')))
+      .filter((a) => !q || `${a.name} ${a.channel || ''} ${a.place || ''}`.toLowerCase().includes(q));
+    $('count').textContent = acts.length ? `${shown.length} of ${acts.length}` : '';
+    $('find').hidden = !acts.length;
     const list = $('list');
-    if (!acts.length) { list.replaceChildren(el('div', 'ev-empty', 'No events or campaigns yet.')); return; }
-    if (!shown.length) { list.replaceChildren(el('div', 'ev-empty', 'Nothing here yet.')); return; }
+    const empty = (title, line, withAdd) => {
+      const e = el('div', 'ev-empty');
+      e.append(el('div', 'ev-empty-icon', '\u2726'), el('b', '', title), el('p', '', line));
+      if (withAdd && data.canEdit) e.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => form(null) }, '+ New event or campaign'));
+      return e;
+    };
+    if (!acts.length) { list.replaceChildren(empty('No events or campaigns yet', 'Add the first one to see its cost, inquiries and visas here.', true)); return; }
+    if (!shown.length) { list.replaceChildren(empty(q ? `Nothing matches \u201c${find.trim()}\u201d` : 'Nothing here yet', q ? 'Try another word, or clear the search.' : 'Choose All to see every event and campaign.')); return; }
     const head = el('div', 'ev-lrow head');
     ['Event or campaign', 'Cost', 'Inquiries', 'Visas', 'Per inquiry', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
     list.replaceChildren(head, ...shown.map((a) => {
@@ -59,8 +78,9 @@
       r.tabIndex = 0; r.setAttribute('role', 'button'); r.setAttribute('aria-label', `Open ${a.name}`);
       const who = el('div');
       const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', `${ran(a)} · ${a.days} day${a.days === 1 ? '' : 's'}`));
-      who.append(el('div', 'ev-lname', a.name), meta);
-      const num = (label, v, gold) => { const d = el('div', 'num' + (gold ? ' gold' : ''), v); d.dataset.label = label; return d; };
+      const words = el('div', 'ev-lwords'); words.append(el('div', 'ev-lname', a.name), meta);
+      who.className = 'ev-lwho'; who.append(leaf(a), words);
+      const num = (label, v, gold) => { const d = el('div', 'num' + (gold ? ' gold' : '') + (v === 'None yet' || v === '-' ? ' none' : ''), v); d.dataset.label = label; return d; };
       r.append(who, num('Cost', a.cost ? rupees(a.cost) : '-'), num('Inquiries', number(a.leads)), num('Visas', number(a.visas)), num('Per inquiry', per(a.cost, a.leads), a.cost > 0 && a.leads > 0), num('Per visa', per(a.cost, a.visas), a.cost > 0 && a.visas > 0), el('div', 'ev-go', '→'));
       const go = () => window.NiecUI.swap(() => { openEvent(a.id); window.scrollTo({ top: 0 }); });
       r.addEventListener('click', go);
@@ -80,8 +100,10 @@
     const head = el('div', 'ev-head');
     const left = el('div');
     const meta = el('div', 'ev-lmeta'); meta.append(tag(a), el('span', '', [ran(a), `${a.days} day${a.days === 1 ? '' : 's'}`, a.place].filter(Boolean).join(' \u00b7 ')));
-    left.append(el('h2', '', a.name), meta);
-    if (a.note) left.append(el('p', 'p-muted', a.note));
+    const title = el('div', 'ev-title'); const words = el('div'); words.append(el('h2', '', a.name), meta);
+    title.append(leaf(a, true), words);
+    left.append(title);
+    if (a.note) left.append(el('p', 'ev-about', a.note));
     head.append(left);
     if (data.canEdit) head.append(h('button', { class: 'btn', type: 'button', onclick: () => form(a) }, 'Edit'));
     const figs = band([
@@ -92,13 +114,29 @@
       ['Cost per visa', per(a.cost, a.visas), '', true],
     ]);
     figs.style.marginTop = '20px';
+    const flow = funnel(a);
     const upload = data.canEdit ? uploadPanel(a) : null;
     const people = el('section', 'ev-panel');
     people.append(el('h3', '', 'Inquiries'), el('p', '', 'Everyone from this event, in every intake.'));
     const listBox = el('div'); listBox.innerHTML = '<div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     people.append(listBox);
-    v.replaceChildren(back, head, figs, ...(upload ? [upload] : []), people);
+    v.replaceChildren(back, head, figs, flow, ...(upload ? [upload] : []), people);
     loadPeople(a, listBox);
+  }
+  // From inquiry to visa: how many of the inquiries went on to apply and to a visa, as bars against the inquiries.
+  function funnel(a) {
+    const p = el('section', 'ev-panel ev-flow');
+    p.append(el('h3', '', 'From inquiry to visa'));
+    const top = Math.max(a.leads || 0, 1);
+    [['Inquiries', a.leads || 0, 'one'], ['Applied', a.applied || 0, 'two'], ['Visas', a.visas || 0, 'three']].forEach(([label, n, k], i) => {
+      const r = el('div', 'ev-flow-row');
+      const bar = el('div', 'ev-flow-bar'); const fill = el('i', k); fill.style.setProperty('--w', `${Math.max(n ? 2 : 0, Math.round((n / top) * 100))}%`); fill.style.setProperty('--i', String(i)); bar.append(fill);
+      const pc = i && a.leads ? `${Math.round((n / a.leads) * 100)}%` : '';
+      r.append(el('span', 'ev-flow-label', label), bar, el('b', '', number(n)), el('span', 'ev-flow-pc', pc));
+      p.append(r);
+    });
+    if (!a.leads) p.append(el('p', 'ev-flow-none', 'The bars fill once the inquiry list is uploaded.'));
+    return p;
   }
   function closeEvent() { open = null; $('eventView').hidden = true; $('eventView').replaceChildren(); $('listView').hidden = false; window.scrollTo({ top: 0 }); }
 
@@ -108,36 +146,69 @@
     if (!list.length) { box.replaceChildren(el('div', 'ev-empty', data.canEdit ? 'No inquiries yet.' : 'No inquiries yet.')); return; }
     const search = h('input', { class: 'ev-search', type: 'search', placeholder: 'Search a name or phone', 'aria-label': 'Search the inquiries' });
     const rows = el('div', 'ev-people');
+    // The stages these inquiries are at, each with how many, to see one group at a time.
+    let stage = '';
+    const stages = [...list.reduce((m, s) => m.set(s.stage || 'No stage', (m.get(s.stage || 'No stage') || 0) + 1), new Map())];
+    const chips = el('div', 'ev-stages');
+    chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Show a stage');
+    const chip = (key, label, n) => {
+      const b = h('button', { type: 'button', class: key === stage ? 'on' : '' }, label);
+      b.append(el('span', '', String(n)));
+      b.setAttribute('aria-pressed', String(key === stage));
+      b.addEventListener('click', () => { stage = key; chips.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); drawPeople(); });
+      return b;
+    };
+    if (stages.length > 1) chips.append(chip('', 'All', list.length), ...stages.map(([k, n]) => chip(k, k, n)));
     const drawPeople = () => {
       const q = search.value.trim().toLowerCase();
-      const shown = q ? list.filter((s) => `${s.name} ${s.phone} ${s.email}`.toLowerCase().includes(q)) : list;
+      const shown = list.filter((s) => (!stage || (s.stage || 'No stage') === stage) && (!q || `${s.name} ${s.phone} ${s.email}`.toLowerCase().includes(q)));
+      if (!shown.length) { rows.replaceChildren(el('div', 'ev-empty small', 'No inquiry matches.')); return; }
       const hd = el('div', 'ev-person head'); ['Name', 'Phone', 'Stage', 'Intake', 'Latest note'].forEach((x) => hd.append(el('div', '', x)));
       rows.replaceChildren(hd, ...shown.map((s) => {
         const r = el('div', 'ev-person');
         const who = h('button', { class: 'who', type: 'button', onclick: () => window.CardDrawer.open(s.id, { onClose: () => refresh() }) }, s.name);
         const last = el('div', 'last');
         if (s.lastNote) last.append(el('b', '', `${localDay(s.lastNote.at)}${s.lastNote.by ? ', ' + s.lastNote.by : ''}: `), s.lastNote.text); else last.textContent = 'No note yet';
-        const stage = el('div'); stage.append(window.Portal.stagePill(s.stage));
-        r.append(who, el('div', '', s.phone || '-'), stage, el('div', '', s.intake), last);
+        const stageCell = el('div'); stageCell.append(window.Portal.stagePill(s.stage));
+        const phone = el('div', 'tel');
+        if (s.phone) phone.append(h('a', { href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone)); else phone.textContent = '-';
+        r.append(who, phone, stageCell, el('div', '', s.intake), last);
         return r;
       }));
     };
     search.addEventListener('input', drawPeople);
     drawPeople();
-    const top = el('div', 'ev-actions'); top.style.margin = '0 0 12px'; top.append(search, el('span', 'p-muted', `${list.length} ${list.length === 1 ? 'inquiry' : 'inquiries'}`));
-    box.replaceChildren(top, rows);
+    const top = el('div', 'ev-actions ev-find-row'); top.append(search, el('span', 'p-muted', `${list.length} ${list.length === 1 ? 'inquiry' : 'inquiries'}`));
+    box.replaceChildren(top, ...(stages.length > 1 ? [chips] : []), rows);
   }
 
   function uploadPanel(a) {
     const p = el('section', 'ev-panel');
-    p.append(el('h3', '', 'Upload the inquiry list'), el('p', '', 'Excel or CSV, one student per row. Checked before saving.'));
+    const intro = el('div'); intro.append(el('h3', '', 'Upload the inquiry list'), el('p', '', 'Excel or CSV, one student per row. Checked before saving.'));
+    const ph = el('div', 'ev-panel-head'); ph.append(intro);
+    p.append(ph);
     const intake = h('select', {});
     (data.intakes || []).forEach((s) => intake.append(h('option', { value: s.id }, s.name)));
     const file = h('input', { type: 'file', accept: '.xlsx,.csv' });
     const row = el('div', 'ev-upload');
     const l1 = el('label'); l1.append('Intake for new inquiries', intake);
-    const l2 = el('label'); l2.append('File (Excel or CSV)', file);
-    row.append(l1, l2);
+    // The file is dropped on a soft area or chosen with a click on it, instead of the browser's plain "Choose File" button.
+    const drop = el('label', 'ev-drop');
+    const dropText = el('span', 'ev-drop-words');
+    const sayFile = (name) => { dropText.replaceChildren(el('b', '', name || 'Drop the Excel or CSV file here'), el('span', '', name ? 'Choose another file' : 'or click to choose one')); };
+    sayFile('');
+    drop.append(el('span', 'ev-drop-icon', '\u2191'), dropText, file);
+    ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, () => drop.classList.remove('over')));
+    drop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      if (!/\.(xlsx|csv)$/i.test(f.name)) { say('Choose an Excel (.xlsx) or CSV file.', true); return; }
+      try { const dt = new DataTransfer(); dt.items.add(f); file.files = dt.files; } catch { /* an older browser: the click still works */ }
+      useFile(f);
+    });
+    row.append(l1, drop);
     const out = el('div');
     // Take the list back (the owner, 14 Nov 2026): remove the enquiries this list added, to upload a better one, without deleting
     // the event. Only those nobody has worked on go; the review says who stays and why, and a copy of everything is saved first.
@@ -147,12 +218,12 @@
       try { out.replaceChildren(removal(a, await api(`/api/activities/${a.id}/students/remove`, { preview: true }), () => out.replaceChildren())); } catch (e) { say(e.message, true); }
       takeBack.disabled = false;
     });
-    const more = el('div', 'ev-actions'); more.style.marginTop = '10px';
-    more.append(takeBack);
-    p.append(row, more, out);
-    file.addEventListener('change', async () => {
-      const f = file.files && file.files[0];
-      if (!f) return;
+    takeBack.classList.add('btn-sm');
+    ph.append(takeBack);
+    p.append(row, out);
+    file.addEventListener('change', () => { const f = file.files && file.files[0]; if (f) useFile(f); });
+    async function useFile(f) {
+      sayFile(f.name);
       out.replaceChildren(el('p', 'p-muted', 'Reading the file…'));
       let lines;
       try { lines = await window.StudentFile.readFile(f, 1000); } catch (e) { out.replaceChildren(el('div', 'p-notice bad', 'Could not read the file: ' + e.message)); return; }
@@ -163,11 +234,11 @@
       out.replaceChildren(review(pre, async () => {
         const done = await api(`/api/activities/${a.id}/students`, { rows, sheetId: intake.value });
         say(`${done.added} added, ${done.linked} linked${done.updated ? `, ${done.updated} given the new details` : ''}`);
-        file.value = '';
+        file.value = ''; sayFile('');
         await refresh();
         if (done.failed.length) window.NiecUI.toast('Not done: ' + done.failed.join(' | '), { type: 'error' });
-      }, () => { out.replaceChildren(); file.value = ''; }));
-    });
+      }, () => { out.replaceChildren(); file.value = ''; sayFile(''); }));
+    }
     return p;
   }
 
@@ -311,6 +382,13 @@
     if (open) { const still = data.activities.find((x) => x.id === open.id); if (still) openEvent(still.id); else closeEvent(); }
   }
   $('add').addEventListener('click', () => form(null));
+  $('find').addEventListener('input', () => { find = $('find').value; if (data) draw(); });
+  // "/" jumps to the search box and Esc clears it, as on the Partners page.
+  document.addEventListener('keydown', (e) => {
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '') || (e.target && e.target.isContentEditable);
+    if (e.key === '/' && !typing && !$('listView').hidden && !$('find').hidden) { e.preventDefault(); $('find').focus(); }
+    else if (e.key === 'Escape' && e.target === $('find') && $('find').value) { $('find').value = ''; find = ''; draw(); }
+  });
   document.querySelectorAll('#filter button').forEach((b) => b.addEventListener('click', () => {
     show = b.dataset.f;
     document.querySelectorAll('#filter button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
