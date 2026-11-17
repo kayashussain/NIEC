@@ -69,7 +69,7 @@ Add this to the **student-details** app's Environment Variables, then **Restart*
 
 How Incentive works now:
 
-- Only the **Admin** account can open it (menu, Admin only → **Incentive**). Nobody else can, whatever they know.
+- Only the **Admin** account can open it (click your name at the bottom of the menu → **Incentive**). Nobody else can, whatever they know.
 - Admin types **only that password** (no username). It is asked **every time**: going to any other page (Student Details,
   Dashboard ...), reloading Incentive or closing it locks it again, and an Incentive page left untouched for 20 minutes
   locks itself. Five wrong tries in a row make the person wait 15 minutes. Changing `INCENTIVE_PASSWORD` and restarting
