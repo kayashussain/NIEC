@@ -710,7 +710,7 @@
 
   // ---- University options ----
   // The shortlist (the owner, 17 Nov 2026): the courses shortlisted from the Fact File or added here, numbered 1, 2, 3 in the order to
-  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Email" (emails these
+  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Share options" (emails these
   // options, a short word so the row stays tidy) and "Assign to the Application Team" open the same windows as on the Fact File (fact-finder.js): the second asks, for every course,
   // through which partner it goes, and for notes. Up and Down change the order before assigning.
   const refreshCard = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
@@ -860,14 +860,14 @@
     const acts = el('div', 'p-card-acts');
     // Straight to the Fact File with this student already chosen, so the team shortlists without searching for the student again.
     // target _top: from the half card (an iframe on All Students) the Fact File opens as the whole page, not inside the card.
-    if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id), target: '_top' }, 'Shortlist course'));
+    if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id), target: '_top' }, 'Find course'));
     if (data.card.options.length) {
-      acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Email'));
+      acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Share options'));
       if (waiting.length && can()) acts.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => window.OptionActions.assign(studentRef(), waitingOptions()).then((r) => { if (r) { sendOrder = null; refreshCard(); } }) }, 'Assign to the Application Team'));
     }
     if (acts.children.length) head.append(acts);
     box.append(head);
-    if (!waiting.length) box.append(el('p', 'p-muted', 'No course waiting to be assigned. Press "Shortlist course" to open the Fact File with this student chosen.'));
+    if (!waiting.length) box.append(el('p', 'p-muted', 'No course waiting to be assigned. Press "Find course" to open the Fact File with this student chosen.'));
     else { const list = el('ol', 'p-chosen'); waiting.forEach((o) => list.append(optionItem(o, waiting))); box.append(list); }
     return box;
   }
@@ -890,7 +890,7 @@
     const offers = apps.filter((o) => o.offer).length;
     const submitted = apps.filter((o) => o.applied).length;
     box.append(el('h2', '', `Universities applied to (${apps.length})`));
-    if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Shortlist courses above and press "Assign to the Application Team".')); return box; }
+    if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses above and press "Assign to the Application Team".')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
     box.append(el('p', 'p-muted p-small', `${submitted} submitted, ${offers} with an offer${waitingTeam ? `, ${waitingTeam} with the Application Team, not submitted yet` : ''}. Record submission or Update keeps each university's days.`));
     // The priority university (the owner, 17 Nov 2026): chosen here from the applications; it writes the university and course
@@ -908,7 +908,7 @@
     box.append(list);
     return box;
   }
-  // University options (the owner, 17 Nov 2026): the Shortlist (courses waiting to be assigned, with Shortlist course, which opens the
+  // University options (the owner, 17 Nov 2026): the Shortlist (courses waiting to be assigned, with Find course, which opens the
   // whole Fact File page with this student chosen, and Assign to the Application Team), then Applications: every university assigned
   // or applied to, with the course, the day it was submitted and the answer (offer, refused or withdrawn with the reason).
   function optionsTab() {

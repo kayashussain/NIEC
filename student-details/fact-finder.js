@@ -3,7 +3,7 @@
 // course of every university) and in "Find universities for a student". Nobody leaves the Fact File: a tray at the bottom of the page
 // holds the student's shortlist, numbered 1, 2, 3 in the order to apply, with
 //
-//   Email (these options)           the student gets the courses in one email (fee, scholarship, deposit and course page by themselves)
+//   Share options (by email)         the student gets the courses in one email (fee, scholarship, deposit and course page by themselves)
 //   Assign to the Application Team  asks, for every course, through which partner it goes (Direct or a B2B partner) and for notes,
 //                                   then gives the Application Team one task with the numbered list
 //   Open the card                   the student card in a new tab, so the Fact File stays where it was
@@ -206,7 +206,7 @@
     );
     if (list.length) {
       acts.append(
-        h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => emailOptions(state.student, list).then((r) => { if (r) loadOptions().then(changed); }) }, 'Email'),
+        h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => emailOptions(state.student, list).then((r) => { if (r) loadOptions().then(changed); }) }, 'Share options'),
         h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => assign(state.student, list).then((r) => { if (r) { state.order = null; loadOptions().then(changed); } }) }, 'Assign to the Application Team'),
       );
     }
@@ -360,7 +360,7 @@
     }, { wide: true });
   }
 
-  // The student comes from the address (?for=ID, from "Shortlist course" on the student card), else the one chosen before in this tab.
+  // The student comes from the address (?for=ID, from "Find course" on the student card), else the one chosen before in this tab.
   // A refresh starts clean: the student chosen before is forgotten (moving to another Fact File page keeps it).
   const refreshed = () => { try { const n = performance.getEntriesByType('navigation')[0]; return Boolean(n && n.type === 'reload'); } catch (e) { return false; } };
   const ready = async () => {
