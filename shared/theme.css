@@ -2615,3 +2615,19 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-next { margin-top: 4px; padding: 14px 16px; border-radius: 14px; background: #f2f2f5; }
 .td-next .td-next-why { margin: 2px 0 10px; }
 .td-next .p-field { margin-top: 10px; }
+
+/* 🔴 CSS CHANGED (2026-11-17): "Connect my phone" (new) and the page a tap on the WhatsApp notification opens on the phone (new) | from: nothing (WhatsApp opened only on the device that was clicked) | to: a window listing the connected phones (a green tick, the phone's name, when it was connected, a grey Disconnect pill) with one blue "Connect this phone" pill on a phone, or three numbered steps on a computer; on the phone, a calm centred page with "WhatsApp" in small green capitals, the student's name large, the number, and one big green "Open the chat in WhatsApp" button */
+.pl-dialog { max-width: 560px; }
+.pl-ready { margin: 14px 0 6px; color: #1f7a35; font-weight: 600; }
+.pl-devices { margin: 0 0 10px; padding: 0; list-style: none; }
+.pl-devices li { display: grid; grid-template-columns: 26px auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+.pl-devices li:first-child { border-top: 0; }
+.pl-ok { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #e3f5e8; color: #1f7a35; font-size: 13px; font-weight: 700; }
+.pl-steps { margin: 6px 0 14px; padding-left: 22px; color: var(--text-dim); font-size: 15px; line-height: 1.6; }
+.wa-open { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; margin: 0; padding: 24px; background: var(--bg); }
+.wa-box { width: 100%; max-width: 420px; padding: 32px 24px; border-radius: 22px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 0 0 .5px rgba(0, 0, 0, .06); text-align: center; }
+.wa-kicker { margin: 0 0 6px; color: #1f7a35; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.wa-box h1 { margin: 0 0 4px; color: var(--ink); font-size: 28px; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.wa-num { margin: 0 0 22px; color: var(--text-dim); font-size: 17px; font-variant-numeric: tabular-nums; }
+.wa-box .wa-go { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 54px; margin: 0 0 12px; border-radius: 999px; background: #25d366; border-color: #25d366; color: #fff; font-size: 17px; font-weight: 600; }
+.wa-box .wa-go:hover { background: #1fbe5a; }

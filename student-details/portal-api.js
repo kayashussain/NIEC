@@ -32,7 +32,7 @@ const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER
 
 function createPortalApi({
   getWorkbook, writeWorkbook, recordChanges, teamSave, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
-  insights = null, calculated = [], userMail = null, officeMailSettings = () => ({}), safetyCopy = () => null,
+  insights = null, calculated = [], userMail = null, push = null, officeMailSettings = () => ({}), safetyCopy = () => null,
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
   // Names compared ignoring case, spaces, punctuation and a part in brackets ("Ulster University (QA)" is "Ulster University").
@@ -2485,6 +2485,52 @@ function createPortalApi({
       const gone = userMail ? userMail.remove(req.user.id) : false;
       if (gone) activity.record(req, req.user, 'Changed settings', { app: 'My email', changes: ['Removed their own mailbox'] });
       sendJSON(res, 200, { ok: true, set: false });
+      return true;
+    }
+    // Their phone, connected once, so a click on WhatsApp opens the student's chat on it (see push.js and phone-link.js).
+    if (urlPath === '/api/push' && req.method === 'GET') {
+      if (!push) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
+      sendJSON(res, 200, { key: push.publicKey(), devices: push.devices(req.user.id) });
+      return true;
+    }
+    if (/^\/api\/push\/(connect|disconnect|whatsapp)$/.test(urlPath) && req.method === 'POST') {
+      if (!push) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
+      const body = await bodyOf(req, res, 8 * 1024);
+      if (!body) return true;
+      if (urlPath === '/api/push/connect') {
+        const out = push.connect(req.user.id, body.subscription, text(body.name));
+        if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
+        activity.record(req, req.user, 'Changed settings', { app: 'My phone', changes: [`Connected their phone (${out.device.name}) for WhatsApp`] });
+        sendJSON(res, 200, { ok: true, devices: push.devices(req.user.id) });
+        return true;
+      }
+      if (urlPath === '/api/push/disconnect') {
+        const out = push.disconnect(req.user.id, text(body.id));
+        if (out.removed) activity.record(req, req.user, 'Changed settings', { app: 'My phone', changes: ['Disconnected their phone'] });
+        sendJSON(res, 200, { ok: true, devices: push.devices(req.user.id) });
+        return true;
+      }
+      const site = `https://${String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '')}`;
+      if (body.test === true) {
+        // A test, from the Connect my phone window.
+        if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
+        const t = await push.send(req.user.id, { title: 'ISR is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site);
+        sendJSON(res, t.sent ? 200 : 502, t.sent ? { ok: true, sent: t.sent } : { error: 'Your phone could not be reached. Check that it is online.' });
+        return true;
+      }
+      // A student's chat, sent to the person's own phone: only a student this account may see, only that student's number.
+      const found = rowIndex().get(text(body.id));
+      if (!found || !canSee(req.user, found)) { sendJSON(res, 404, { error: 'No such student.' }); return true; }
+      const number = Fields.whatsappNumber(found.row['CONTACT NUMBER']);
+      if (!number) { sendJSON(res, 400, { error: 'This student has no WhatsApp number on the sheet.' }); return true; }
+      if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
+      if (tooManySends(req.user.id)) { sendJSON(res, 429, { error: 'Too many in a short time. Please wait a few minutes.' }); return true; }
+      const who = nameOf(found.row) || 'the student';
+      const words = text(body.text).slice(0, 1500);
+      const url = `/wa?n=${number}&name=${encodeURIComponent(who)}${words ? `&text=${encodeURIComponent(words)}` : ''}`;
+      const out = await push.send(req.user.id, { title: `WhatsApp ${who}`, body: `Tap to open the chat with ${who} (+${number})`, url, tag: `wa-${number}` }, site);
+      if (!out.sent) { sendJSON(res, 502, { error: out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.' }); return true; }
+      sendJSON(res, 200, { ok: true, sent: out.sent });
       return true;
     }
     // Their own WhatsApp number (the owner, 17 Nov 2026: Follow-up asks for it), for the signature of their emails and to know which

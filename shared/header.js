@@ -116,7 +116,7 @@
   };
 
   // Admin's own pages (people, the record of what happened, Incentive), under their own heading in the menu. The account menu holds
-// only Log out (the owner, 14 Nov 2026); a person's own email, signature and WhatsApp number are set up on Follow-up, where
+// Connect my phone (WhatsApp chats open on the person's phone, the owner, 17 Nov 2026) and Log out; a person's own email, signature and WhatsApp number are set up on Follow-up, where
 // messages to students are sent from (the owner, 17 Nov 2026).
   const MENU_LINKS = {
     admin: [['users', '/users', 'Users'], ['activity', '/activity', 'Activity'], ['incentive', '/incentive/', 'Incentive']],
@@ -179,6 +179,7 @@
       </button>
       <div class="niec-menu" role="menu" hidden>
         <div class="niec-menu-head"><b>${esc(me.name)}</b><span>${esc(me.username)} · ${esc(me.roleLabel)}</span></div>
+        <button type="button" role="menuitem" class="niec-phone">Connect my phone</button>
         <button type="button" role="menuitem" class="niec-logout">Log out</button>
       </div>`;
     const btn = account.querySelector('.niec-account-btn');
@@ -188,7 +189,22 @@
     document.addEventListener('click', (e) => { if (!account.contains(e.target)) setOpen(false); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); } });
     account.querySelector('.niec-logout').addEventListener('click', () => window.NiecSession.logout());
+    // WhatsApp chats on the person's own phone (see student-details/phone-link.js).
+    account.querySelector('.niec-phone').addEventListener('click', () => { setOpen(false); if (window.PhoneLink) window.PhoneLink.dialog(); });
   }
+
+  // Every page: what a phone needs to keep ISR on its Home Screen (an iPhone gets notifications only from there), and the WhatsApp
+  // link to the person's phone (phone-link.js).
+  (function phoneReady() {
+    const add = (tag, attrs) => { const e = document.createElement(tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); document.head.append(e); };
+    if (!document.querySelector('link[rel="manifest"]')) {
+      add('link', { rel: 'manifest', href: '/manifest.webmanifest' });
+      add('link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' });
+      add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+      add('meta', { name: 'apple-mobile-web-app-title', content: 'ISR' });
+    }
+    if (!window.PhoneLink && !document.querySelector('script[src^="/phone-link.js"]')) add('script', { src: '/phone-link.js', defer: '' });
+  })();
 
   // The menu is drawn at once from what this browser tab remembers from the last page (who is logged in), so moving from page
   // to page never shows an empty menu; the server's answer then confirms it and redraws only if something changed. The memory is

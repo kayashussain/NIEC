@@ -33,6 +33,7 @@ const { createSourceOptions } = require('./source-options');
 const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createPortalApi } = require('./portal-api');
+const { createPush } = require('./push');
 const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
 const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
@@ -86,6 +87,10 @@ const serveStatic = createStaticServer(ROOT, {
   '/suggest.js': 'text/javascript; charset=utf-8',
   // The portal pages around the sheet: the student card, Follow-up, B2B partners, the decision pages.
   '/sender-setup.js': 'text/javascript; charset=utf-8',
+  '/phone-link.js': 'text/javascript; charset=utf-8',
+  '/wa.html': 'text/html; charset=utf-8',
+  '/wa-page.js': 'text/javascript; charset=utf-8',
+  '/sw.js': 'text/javascript; charset=utf-8',
   '/card-fields.js': 'text/javascript; charset=utf-8',
   '/portal.css': 'text/css; charset=utf-8',
   '/portal-ui.js': 'text/javascript; charset=utf-8',
@@ -172,7 +177,7 @@ const advisor = createAdvisorMcp({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/b2b-partners', '/agents', '/events', '/data-to-fix', '/weekly']);
+  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/events', '/data-to-fix', '/weekly']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -830,11 +835,13 @@ let portalRef = null;
 const courseWatch = createCourseWatch({ dir: DATA_DIR, getIndex: () => (portalRef ? portalRef.courseIndex() : []), facts, finder: courseFinder, courseLinks });
 // Each person's own mailbox for emailing students (Follow-up, Your setup for sending); the office mailbox stays Admin's (see user-mail.js).
 const userMail = createUserMail(DATA_DIR);
+// A person's connected phones, for "WhatsApp opens on my phone" (see push.js). ISR_PUSH_LOCAL is for the tests' own push service only.
+const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
 const portal = createPortalApi({
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
   insights: servedInsights, calculated: CALCULATED_COLUMNS,
-  userMail, officeMailSettings: () => require('../shared/mailer').loadConfig(DATA_DIR),
+  userMail, push, officeMailSettings: () => require('../shared/mailer').loadConfig(DATA_DIR),
   safetyCopy: () => backups.create('manual'),
 });
 
@@ -982,7 +989,17 @@ const server = http.createServer(async (req, res) => {
       for (const f of [path.join(DATA_DIR, 'brand-logo.png'), path.join(ROOT, '..', 'shared', 'brand-logo.png')]) { try { logo = fs.readFileSync(f); break; } catch (e) { /* the next one */ } }
       return logo ? send(res, 200, logo, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' }) : send(res, 404, 'Not found');
     }
-    if (urlPath === '/favicon.png') return serveStatic(req, res);
+    if (urlPath === '/favicon.png' || urlPath === '/apple-touch-icon.png') return serveStatic(req, res);
+    // What a phone needs to keep ISR on its Home Screen (the name, the icon, the first page): nothing private, so before the login
+    // (a browser asks for it without the login cookie).
+    if (urlPath === '/manifest.webmanifest' && req.method === 'GET') {
+      const sig = messages.signature();
+      return send(res, 200, JSON.stringify({ name: `ISR · ${sig.short || 'International Student Recruitment'}`, short_name: 'ISR', start_url: '/today', scope: '/', display: 'standalone', background_color: '#f5f5f7', theme_color: '#f5f5f7',
+        icons: [{ src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }, { src: '/favicon.png', sizes: '128x128', type: 'image/png' }] }), { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache' });
+    }
+    // The service worker shows the notification on the phone and opens the chat when it is tapped (see push.js). It must be at the
+    // top of the site to work for every page.
+    if (urlPath === '/sw.js' && req.method === 'GET') { req.url = '/sw.js'; return serveStatic(req, res); }
     if (PUBLIC_SHARED.has(urlPath)) return serveShared(req, res); // the logo, for the login page
     // The Advisor connector checks its own secret in the address, so it answers before the login.
     if (await advisor.handle(req, res, urlPath)) return;
@@ -1000,7 +1017,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       const page = {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
-        '/student': 'student.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/events': 'events.html',
+        '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/events': 'events.html',
         '/data-to-fix': 'data-fix.html', '/weekly': 'weekly.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
@@ -1023,7 +1040,7 @@ const server = http.createServer(async (req, res) => {
         // Admin and the Manager; the partner pages as partner-access.js says; the rest is Admin's.
         const access = partnerAccess(req.user);
         const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents }[urlPath];
-        const allowed = Boolean(shared) || ['/students', '/student', '/today', '/my-dashboard', '/data-to-fix'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events', '/weekly'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
+        const allowed = Boolean(shared) || ['/students', '/student', '/wa', '/today', '/my-dashboard', '/data-to-fix'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events', '/weekly'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
         if (!allowed) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
         req.url = '/' + page;
         return serveStatic(req, res);

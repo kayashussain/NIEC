@@ -875,10 +875,11 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  // WhatsApp a student: one click opens the chat (the owner, 17 Nov 2026: no QR code, no extra window). On a phone the WhatsApp app
-  // opens; on a computer the WhatsApp Desktop app opens when it is installed, otherwise WhatsApp Web. `number`: digits with the
-  // country code, as card-fields.js whatsappNumber gives it; `text`: the message to start with (Follow-up), or nothing.
-  function whatsapp(number, name, text) {
+  // WhatsApp a student (the owner, 17 Nov 2026): on a computer with the person's phone connected, the phone gets a notification and
+  // one tap opens the chat there; otherwise WhatsApp opens on this device (see phone-link.js). `number`: digits with the country
+  // code, as card-fields.js whatsappNumber gives it; `text`: the message to start with (Follow-up); `id`: the student's row.
+  function whatsapp(number, name, text, id) {
+    if (root.PhoneLink) { root.PhoneLink.openChat({ id, number, name, text }); return; }
     window.open(`https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`, '_blank', 'noopener');
   }
   root.Portal = { whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };

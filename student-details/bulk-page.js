@@ -174,7 +174,7 @@
           } else if (i.whatsapp && i.whatsapp.number) {
             row.append(el('span', 'p-muted p-small', '+' + i.whatsapp.number));
             row.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: (e) => {
-              window.Portal.whatsapp(i.whatsapp.number, i.name, i.whatsapp.text); // on a computer: open here, or scan to open on the phone
+              window.Portal.whatsapp(i.whatsapp.number, i.name, i.whatsapp.text, i.id); // on the connected phone, or WhatsApp here
               api(`/api/cards/${i.id}/messages/send`, { channel: 'whatsapp', whatsapp: wa.input.value }).catch(() => {});
               e.target.textContent = 'WhatsApp opened'; e.target.disabled = true;
             } }, 'WhatsApp'));

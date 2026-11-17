@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-17 · shared/theme.css (phone-link.js, wa.html) · "Connect my phone" (new) and the page a tap on the WhatsApp notification opens on the phone (new) · from: nothing; WhatsApp opened only on the device that was clicked · to: a window listing the connected phones (green tick, name, when connected, a grey Disconnect pill) with a blue "Connect this phone" pill on a phone or three numbered steps on a computer; on the phone, a calm centred page with "WhatsApp" in small green capitals, the student's name large, the number, and one big green "Open the chat in WhatsApp" button · why: the owner asked that a click on WhatsApp opens the student's chat on their phone.**
+
 - **2026-11-17 · shared/theme.css (portal-ui.js) · the WhatsApp window of a student removed · from: a click on WhatsApp showed a small window with a QR code, "Open on this computer" and "Copy number" · to: no window; the click opens the student's chat at once · why: the owner does not want a QR code.**
 
 - **2026-11-17 · shared/theme.css (portal-ui.js) · "Mark as done?", the follow-up day (new) · from: nothing was asked about what comes next · to: under "What was done?", a soft grey rounded panel with the question in bold, one grey line of why, and the grey answer pills (Tomorrow, In 3 days, In a week, Choose a day, Not needed; the chosen one blue), with a date box or a "What to do then" line under them when needed · why: the owner asked that finishing a task asks only what is needed so no student is forgotten.**
