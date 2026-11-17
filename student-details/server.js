@@ -120,6 +120,7 @@ const STATIC_FILES = {
   '/b2b.html': 'text/html; charset=utf-8',
   '/agents.html': 'text/html; charset=utf-8',
   '/b2b-page.js': 'text/javascript; charset=utf-8',
+  '/partners-switch.js': 'text/javascript; charset=utf-8',
   '/dashboard-insights.js': 'text/javascript; charset=utf-8',
   '/fact-finder.js': 'text/javascript; charset=utf-8',
   '/style.css': 'text/css; charset=utf-8',
@@ -194,7 +195,7 @@ const advisor = createAdvisorMcp({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/events', '/data-to-fix', '/weekly']);
+  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/events', '/data-to-fix', '/weekly']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -1102,6 +1103,13 @@ const server = http.createServer(async (req, res) => {
         '/data-to-fix': 'data-fix.html', '/weekly': 'weekly.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
+      // Partners: one place for Partner Universities, B2B Partners and Agents (the owner, 17 Nov 2026). It opens the first of the three
+      // this account may see; a switch at the top of each moves between them (partners-switch.js).
+      if (urlPath === '/partners') {
+        const a = partnerAccess(req.user);
+        const first = a.direct ? '/partner-universities' : a.b2b ? '/b2b-partners' : a.agents ? '/agents' : null;
+        return send(res, 302, '', { Location: first || home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
+      }
       if (urlPath === '/fact-file') { // the list, or one university's page (?u=...); every account may read
         req.url = new URL(req.url, 'http://x').searchParams.get('u') ? '/fact-university.html' : '/fact-file.html';
         return serveStatic(req, res);

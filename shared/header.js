@@ -89,6 +89,7 @@
     sheet: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>'),
     direct: svg('<path d="M3 9l9-5 9 5-9 5-9-5z"/><path d="M7 11.5V16c0 1.4 2.2 3 5 3s5-1.6 5-3v-4.5"/>'),
     b2b: svg('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
+    partners: svg('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2.5 19c.4-3 2.6-5 5.5-5 1.6 0 3 .6 4 1.7 1-1.1 2.4-1.7 4-1.7 2.9 0 5.1 2 5.5 5"/>'),
     agents: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3.2-5.5 6.5-5.5s6 2 6.5 5.5"/><path d="M16 5a3.5 3.5 0 0 1 0 7M18.5 15c1.8.8 3 2.4 3.3 5"/>'),
     bulk: svg('<path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12h5"/>'),
     bulkadd: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3.2-5.5 6.5-5.5 1.4 0 2.6.3 3.6.9"/><path d="M18 13v6M15 16h6"/>'),
@@ -101,7 +102,7 @@
   };
   const LINKS = {
     admin: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'],
-      ['direct', '/partner-universities', 'Partner Universities'], ['events', '/events', 'Events and marketing'], ['b2b', '/b2b-partners', 'B2B Partners'], ['agents', '/agents', 'Agents'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
+      ['partners', '/partners', 'Partners'], ['events', '/events', 'Events and marketing'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
     manager: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Fact File']],
     staff: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['factfile', '/fact-file', 'Fact File']],
     followup: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['datafix', '/data-to-fix', 'Data to fix'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Fact File']],
@@ -127,6 +128,7 @@
 
   // The partner pages a person may open besides their own (the same rules as student-details/partner-access.js): the Manager all of
   // them; the Application and Mock Teams Partner Universities, B2B Partners and Agents; a branch Partner Universities. Admin has them.
+  // All three are one menu entry, Partners.
   function sharedLinks(me) {
     if (me.role === 'admin' || me.role === 'student') return { before: [], after: [] };
     const deps = me.departments || [];
@@ -134,8 +136,8 @@
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
     const branch = deps.some((d) => !['application', 'mock', 'followup'].includes(d));
     const before = [];
-    if (manager || appMock || branch) before.push(['direct', '/partner-universities', 'Partner Universities']);
-    if (manager || appMock) before.push(['b2b', '/b2b-partners', 'B2B Partners'], ['agents', '/agents', 'Agents']);
+    // One "Partners" link for all three lists (the owner, 17 Nov 2026); the page itself shows only the lists this person may open.
+    if (manager || appMock || branch) before.push(['partners', '/partners', 'Partners']);
     return { before, after: [] };
   }
 
@@ -148,7 +150,8 @@
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || [])];
     // Follow-up and Add many students belong to All Students in a menu that has no link of their own.
-    const page = links.some(([id]) => id === header.dataset.page) || !['bulk', 'bulkadd'].includes(header.dataset.page) ? header.dataset.page : 'sheet';
+    const menuPage = ['direct', 'b2b', 'agents'].includes(header.dataset.page) ? 'partners' : header.dataset.page;
+    const page = links.some(([id]) => id === menuPage) || !['bulk', 'bulkadd'].includes(menuPage) ? menuPage : 'sheet';
     header.querySelector('.niec-nav').innerHTML = links
       .map(([id, href, label]) => `<a href="${href}" title="${label}"${id === page ? ' aria-current="page"' : ''}><span class="niec-ico" aria-hidden="true">${ICONS[id] || ''}</span><span class="niec-lbl">${label}</span></a>`).join('')
       // Admin's own pages are in the menu too, under their own heading (Users, Activity, Incentive).
