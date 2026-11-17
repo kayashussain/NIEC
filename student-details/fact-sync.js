@@ -101,7 +101,7 @@ function syncFacts(facts, reading, by = 'Route2Uni (automatic)') {
       city: page.city || fresh.city,
       website: page.website || fresh.website,
       rules: fresh.rules,
-      source: { route2uni: { id: r.id, at } },
+      source: { ...(page.source || {}), route2uni: { id: r.id, at } },
     };
     // Saved only when something the portal gives is different (the page's date then says when it last changed).
     const FIELDS = ['programs', 'entryRequirements', 'languageTests', 'courses', 'intakes', 'city', 'website', 'rules'];

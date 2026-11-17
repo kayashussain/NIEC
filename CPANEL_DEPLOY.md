@@ -219,6 +219,22 @@ figures, deadlines, notices and webinars in the Fact File. It needs the portal's
 If the portal password is changed, change `ROUTE2UNI_PASSWORD` the same way and Restart. To switch it off, remove the two
 variables and Restart (the last reading stays on the pages).
 
+## The Navitas product toolkit in the Fact File
+
+ISR reads the Navitas product toolkit (the public Google Sheet "Nepal UK/Europe Navitas product toolkit") twice a week, Monday and
+Thursday from 2 a.m. office time and after every Route2Uni reading, and gives each UK Navitas college its own Fact File page: fees,
+scholarships, entry requirements, English, study gap, courses, the January intake with its deadlines and courses, interview
+questions, Flywire payment and refund links, accommodation, the application steps and tips. German and Dutch colleges are left out,
+and so is Manchester Metropolitan University International College (closed). Nothing needs to be set up: the sheet must stay shared
+as "Anyone with the link can view". The first reading is three minutes after a Restart. Admin can press **Read Navitas toolkit** on
+the Fact File at any time.
+
+- To read another copy of the toolkit, add the variable `NAVITAS_SHEET_ID` = the long id in the sheet's link (between `/d/` and
+  `/edit`), then Restart.
+- To switch it off, add `NAVITAS_TOOLKIT` = `off` and Restart (the pages keep what they have).
+- The figures on these pages always follow the sheet. Overview, Location, Interview, Notes and Application process follow it too until
+  someone edits them on the page; from then on the edited text is kept.
+
 ## Updating the code later
 
 Use these commands, not `git pull`. The code on GitHub is sometimes rebuilt from the start (as on 14 Nov 2026), and `git pull`

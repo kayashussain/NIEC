@@ -129,10 +129,14 @@ function clean(input, old = {}) {
     rules: input.rules !== undefined ? cleanRules(input.rules) : (old.rules || []),
   };
 }
+// Where the page's figures come from: the Route2Uni portal (fact-sync.js) and/or the Navitas product toolkit (navitas-toolkit.js).
 function cleanSource(v) {
-  if (!v || typeof v !== 'object' || !v.route2uni) return null;
-  const r = v.route2uni;
-  return { route2uni: { id: Number(r.id) || 0, at: /^\d{4}-\d{2}-\d{2}T/.test(String(r.at)) ? String(r.at) : '' } };
+  if (!v || typeof v !== 'object' || !(v.route2uni || v.navitas)) return null;
+  const at = (x) => (/^\d{4}-\d{2}-\d{2}T/.test(String(x)) ? String(x) : '');
+  const out = {};
+  if (v.route2uni) out.route2uni = { id: Number(v.route2uni.id) || 0, at: at(v.route2uni.at) };
+  if (v.navitas) out.navitas = { at: at(v.navitas.at) };
+  return out;
 }
 function cleanRules(list) {
   const n = (x) => (Number.isFinite(Number(x)) && x !== null && x !== '' ? Number(x) : null);

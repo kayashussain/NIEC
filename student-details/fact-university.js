@@ -261,7 +261,9 @@
     }
     section(doc, 'Notes', uni.notes);
     const synced = uni.source && uni.source.route2uni && uni.source.route2uni.at;
+    const navitas = uni.source && uni.source.navitas && uni.source.navitas.at;
     doc.append(el('div', 'foot', [synced ? `The fees, entry requirements, English, intakes, key dates and courses are kept up to date from the Route2Uni partner portal twice a week (last read ${when(synced)}).` : '',
+      navitas ? `The fees, scholarships, entry requirements, English, courses, January deadlines, interview questions and payment links are kept up to date from the Navitas product toolkit twice a week (last changed there ${when(navitas)}).` : '',
       has(uni.updatedBy) ? `Last changed ${when(uni.updatedAt)} by ${uni.updatedBy}.` : ''].filter(Boolean).join(' ')));
     // A bar to jump between the sections of a long page (hidden when printing).
     const heads = [...doc.querySelectorAll('section > h2')];

@@ -1,5 +1,6 @@
 // One quiet line on the Fact File's list of universities (the owner, 17 Nov 2026: one Fact File, no separate lists): the Fact File is
-// kept up to date from the Route2Uni partner portal twice a week (route2uni.js, fact-sync.js), when it was last read, what changed
+// kept up to date from the Route2Uni partner portal twice a week (route2uni.js, fact-sync.js) and from the Navitas product toolkit
+// (navitas-toolkit.js), when it was last read, what changed
 // since the reading before, any notice or webinar of the portal's Information Hub, and "Check now" for Admin. The deadlines are on
 // each university's page, under its intakes. Not for a student's login.
 (function () {
@@ -11,7 +12,8 @@
   async function draw() {
     let d;
     try { d = await api('/api/route2uni'); } catch (e) { return; } // a student's login, or not available: no panel
-    if (!d.configured && !d.universities && !d.admin) return;
+    const nav = d.navitas || {};
+    if (!d.configured && !d.universities && !d.admin && !nav.fetchedAt) return;
     let box = document.getElementById('r2uPanel');
     if (!box) {
       box = el('section', 'p-card r2u-panel no-print');
@@ -29,7 +31,18 @@
     if (d.lastRun && !d.lastRun.ok) words.append(el('div', 'p-notice warn', `The last try did not work: ${d.lastRun.error}`));
     // The course pages (course-sitemap.js): when the last batch ran, and how many courses need their link added by hand.
     if (d.links && d.links.lastRun) words.append(el('p', 'p-muted p-small', `Course pages from the universities' own websites: last checked ${when(d.links.lastRun.at)}.${d.links.notFound ? ` ${d.links.notFound} course${d.links.notFound === 1 ? '' : 's'} not found on the website (marked on each university's page, to add by hand).` : ''}${d.links.unreadable.length ? ` Website not readable: ${d.links.unreadable.slice(0, 6).join(', ')}${d.links.unreadable.length > 6 ? ' ...' : ''}.` : ''}`));
+    // The Navitas product toolkit (navitas-toolkit.js): its UK colleges, each on its own page, read twice a week.
+    if (nav.enabled) {
+      words.append(el('p', 'p-muted p-small', nav.running ? 'Reading the Navitas product toolkit now...'
+        : nav.fetchedAt ? `Navitas product toolkit: ${nav.colleges} UK colleges (fees, scholarships, entry requirements, courses, January deadlines, interview questions, payment links), last read ${when(nav.fetchedAt)}. Read again by itself every Monday and Thursday.` : 'Navitas product toolkit: not read yet.'));
+      if (nav.lastRun && !nav.lastRun.ok) words.append(el('div', 'p-notice warn', `The last Navitas toolkit reading did not work: ${nav.lastRun.error}`));
+    }
     head.append(words);
+    if (d.admin && nav.enabled) {
+      const go = h('button', { class: 'btn btn-sm', type: 'button', disabled: nav.running }, nav.running ? 'Reading...' : 'Read Navitas toolkit');
+      go.addEventListener('click', async () => { go.disabled = true; try { await api('/api/navitas-toolkit/run', {}); say('Reading the Navitas toolkit. This takes about a minute.'); setTimeout(draw, 20000); } catch (e) { say(e.message, true); go.disabled = false; } });
+      head.append(go);
+    }
     if (d.admin && d.configured) {
       const go = h('button', { class: 'btn btn-sm', type: 'button', disabled: d.running }, d.running ? 'Reading...' : 'Check now');
       go.addEventListener('click', async () => { go.disabled = true; try { await api('/api/route2uni/run', {}); say('Reading Route2Uni. This takes a few minutes.'); setTimeout(draw, 1500); } catch (e) { say(e.message, true); go.disabled = false; } });
@@ -55,7 +68,7 @@
       d.changes.forEach((c) => { const li = el('li'); li.append(el('b', '', c.university), el('span', 'r2u-meta', when(c.at))); c.lines.forEach((l) => li.append(el('span', 'r2u-line', l))); ul.append(li); });
       return ul;
     }]);
-    if (!tabs.length) { box.append(el('span', 'r2u-meta', 'Nothing has changed since the reading before.')); return; }
+    if (!tabs.length) { if (d.configured) box.append(el('span', 'r2u-meta', 'Nothing has changed since the reading before.')); return; }
     const bar = el('div', 'p-tabs r2u-tabs');
     bar.setAttribute('role', 'tablist');
     const body = el('div', 'r2u-body');

@@ -12,7 +12,7 @@ const {
   isAdmin, isManager, isStudent, isReadOnly, kindOf, teamOf, viewKey, viewFor, teamChanges, canEdit, canColor, canDelete, checkMove, newestSheet, STATUS,
 } = require('../shared/teams');
 const { buildDashboard } = require('./dashboard-stats');
-const { createFacts, viewFacts } = require('./facts');
+const { createFacts, viewFacts, clean: cleanFact, STARTER_STEPS } = require('./facts');
 const { createDirect, viewDirect, MAX_FILE_BYTES } = require('./direct');
 const { createBackups, ID: BACKUP_ID, HOUR: BACKUP_HOUR, KEEP_DAYS } = require('./backups');
 const { createAdvisorMcp } = require('./advisor-mcp');
@@ -37,6 +37,7 @@ const { createPush } = require('./push');
 const { createRoute2Uni } = require('./route2uni');
 const { syncFacts } = require('./fact-sync');
 const { createCourseSitemaps } = require('./course-sitemap');
+const { createNavitasToolkit } = require('./navitas-toolkit');
 const { studentFrom, checkLevel, rulesFromPage, ourLevel: eligLevel } = require('./eligibility');
 const { parseCourses: parseFactCourses } = require('./course-index');
 const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
@@ -858,9 +859,14 @@ const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks 
 // The Route2Uni partner portal, read twice a week into the Fact File (see route2uni.js). Off until ROUTE2UNI_EMAIL and
 // ROUTE2UNI_PASSWORD are set on the server.
 // Every reading is written into the Fact File itself (fact-sync.js): one Fact File, kept up to date twice a week.
+// The Navitas product toolkit (a public Google Sheet), read twice a week into the Fact File: one page per UK Navitas college (see
+// navitas-toolkit.js). NAVITAS_SHEET_ID is the sheet's id (else the one the owner gave); NAVITAS_TOOLKIT=off switches it off.
+const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.env.NAVITAS_SHEET_ID || undefined, enabled: process.env.NAVITAS_TOOLKIT !== 'off', starterSteps: STARTER_STEPS, clean: cleanFact });
 const route2uni = createRoute2Uni({ dir: DATA_DIR, email: process.env.ROUTE2UNI_EMAIL || '', password: process.env.ROUTE2UNI_PASSWORD || '', onRead: (reading) => {
   const out = syncFacts(facts, reading);
   console.log(`[route2uni] Fact File: ${out.updated} universities updated, ${out.added} added, ${out.unchanged} unchanged`);
+  // The Navitas toolkit with every Route2Uni reading too (it is also read on its own, below, when Route2Uni is not set up).
+  if (navitas.enabled() && !navitas.isRunning()) navitas.run('with Route2Uni').catch(() => {});
   // Then the next course pages, from the universities' own websites (course-sitemap.js): at least 100 courses each time.
   setTimeout(() => courseSitemaps.run().then((r) => console.log(`[course links] ${r.checked} courses checked, ${r.linked} links added`)).catch(() => {}), 1000).unref();
   return out;
@@ -1219,7 +1225,14 @@ const server = http.createServer(async (req, res) => {
       const st = courseSitemaps.status();
       const unis = Object.values(st.universities || {});
       const links = { lastRun: (st.runs || [])[0] || null, notFound: unis.reduce((n, u) => n + (u.missing || []).length, 0), unreadable: unis.filter((u) => u.error).map((u) => u.name) };
-      return sendJSON(res, 200, { ...route2uni.summary(), links, admin: isAdmin(req.user) });
+      return sendJSON(res, 200, { ...route2uni.summary(), links, navitas: navitas.summary(), admin: isAdmin(req.user) });
+    }
+    // The Navitas product toolkit read now (Admin).
+    if (urlPath === '/api/navitas-toolkit/run' && req.method === 'POST') {
+      if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
+      if (!navitas.enabled()) return sendJSON(res, 400, { error: 'The Navitas toolkit reading is switched off on the server (NAVITAS_TOOLKIT=off).' });
+      navitas.run(req.user.name).then((r) => activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [r.error ? `Navitas toolkit reading failed: ${r.error}` : `Read the Navitas toolkit: ${r.colleges} UK colleges; the Fact File: ${r.updated} updated, ${r.added} added`] })).catch(() => {});
+      return sendJSON(res, 200, { started: true });
     }
     if (urlPath === '/api/route2uni/run' && req.method === 'POST') {
       if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can do this.' });
@@ -1284,6 +1297,12 @@ portalRef = portal;
 if (route2uni.configured()) {
   setTimeout(() => route2uni.tick(), 2 * 60 * 1000).unref();
   setInterval(() => route2uni.tick(), 30 * 60 * 1000).unref();
+}
+// The Navitas toolkit: looked at every half hour whether a reading is due (Monday and Thursday from 2 a.m.), the first look three
+// minutes after the server starts (so a new installation fills in the Navitas colleges at once).
+if (navitas.enabled()) {
+  setTimeout(() => navitas.tick(), 3 * 60 * 1000).unref();
+  setInterval(() => navitas.tick(), 30 * 60 * 1000).unref();
 }
 // Without Route2Uni (or if a reading fails for days), the course links still go on: whenever 4 days have passed since the last batch.
 if (process.env.COURSE_WATCH !== 'off') setInterval(() => { if (courseSitemaps.due() && !route2uni.isRunning()) courseSitemaps.run().catch(() => {}); }, 6 * 60 * 60 * 1000).unref();
