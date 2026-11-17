@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-17 · shared/theme.css (portal-ui.js) · the WhatsApp window of a student removed · from: a click on WhatsApp showed a small window with a QR code, "Open on this computer" and "Copy number" · to: no window; the click opens the student's chat at once · why: the owner does not want a QR code.**
+
 - **2026-11-17 · shared/theme.css (portal-ui.js) · "Mark as done?", the follow-up day (new) · from: nothing was asked about what comes next · to: under "What was done?", a soft grey rounded panel with the question in bold, one grey line of why, and the grey answer pills (Tomorrow, In 3 days, In a week, Choose a day, Not needed; the chosen one blue), with a date box or a "What to do then" line under them when needed · why: the owner asked that finishing a task asks only what is needed so no student is forgotten.**
 
 - **2026-11-17 · shared/theme.css (portal-ui.js, student-page.js, bulk-page.js) · the WhatsApp window of a student (new) · from: the WhatsApp button went straight to WhatsApp Web, which asked for a login · to: a small window with a QR code on white (rounded, a faint shadow) beside "Open it on your phone", one line of help, the number, a blue "Open on this computer" pill and a grey "Copy number" pill; on a narrow screen the code sits above the words · why: the owner asked that WhatsApp opens the student's chat on the phone.**

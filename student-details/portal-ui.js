@@ -875,41 +875,11 @@
     document.body.append(box);
     setTimeout(() => box.remove(), 900);
   }
-  // WhatsApp a student (the owner, 17 Nov 2026: the chat should open on the phone, not ask for a WhatsApp Web login). On a phone or
-  // tablet the WhatsApp app opens at once. On a computer a small window shows a QR code: scanned with the phone's camera, the
-  // student's chat opens in the phone's own WhatsApp; "Open on this computer" opens the WhatsApp Desktop app if it is installed
-  // (WhatsApp Web otherwise). `number`: digits with the country code, as card-fields.js whatsappNumber gives it.
-  function loadQr() {
-    if (root.IsrQr) return Promise.resolve(root.IsrQr);
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = '/qr.js'; s.onload = () => resolve(root.IsrQr); s.onerror = () => reject(new Error('The QR code could not be drawn.'));
-      document.head.append(s);
-    });
-  }
-  async function whatsapp(number, name, text) {
-    const link = `https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
-    const touch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-    if (touch) { window.open(link, '_blank', 'noopener'); return; }
-    let qr = null;
-    try { qr = await loadQr(); } catch (e) { window.open(link, '_blank', 'noopener'); return; }
-    dialog(`WhatsApp ${name || ''}`.trim(), (body, close) => {
-      const wrap = el('div', 'p-wa');
-      const code = el('div', 'p-wa-qr');
-      code.innerHTML = qr.svg(link, { size: 220 });
-      code.firstChild.setAttribute('aria-label', `QR code: WhatsApp chat with ${name || 'the student'}`);
-      const words = el('div', 'p-wa-words');
-      words.append(el('b', '', 'Open it on your phone'),
-        el('p', '', 'Point your phone\'s camera at the code and tap the link: the chat with this student opens in WhatsApp on your phone.'),
-        el('p', 'p-wa-number', '+' + number));
-      const bar = el('div', 'p-wa-bar');
-      bar.append(
-        h('a', { class: 'btn btn-primary', href: link, target: '_blank', rel: 'noopener', onclick: () => setTimeout(() => close(), 50) }, 'Open on this computer'),
-        h('button', { class: 'btn', type: 'button', onclick: async () => { const ok = await copy('+' + number); window.NiecUI.toast(ok ? 'Number copied' : 'Could not copy', { type: ok ? 'success' : 'error' }); } }, 'Copy number'));
-      words.append(bar, el('p', 'p-muted p-small', 'On this computer, WhatsApp opens in the WhatsApp Desktop app if it is installed, or else in WhatsApp Web.'));
-      wrap.append(code, words);
-      body.append(wrap);
-    });
+  // WhatsApp a student: one click opens the chat (the owner, 17 Nov 2026: no QR code, no extra window). On a phone the WhatsApp app
+  // opens; on a computer the WhatsApp Desktop app opens when it is installed, otherwise WhatsApp Web. `number`: digits with the
+  // country code, as card-fields.js whatsappNumber gives it; `text`: the message to start with (Follow-up), or nothing.
+  function whatsapp(number, name, text) {
+    window.open(`https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`, '_blank', 'noopener');
   }
   root.Portal = { whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

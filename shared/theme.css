@@ -2609,15 +2609,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-history-chip.is-message { background: #efe9fb; color: #5b3ea8; }
 @media (max-width: 600px) { .ss-form-box { padding-left: 0; } .ss-row { grid-template-columns: 28px minmax(0, 1fr); } .ss-row .btn { grid-column: 2; justify-self: start; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): the WhatsApp window of a student (new) | from: the WhatsApp button went straight to WhatsApp Web, which asked for a login | to: a small window with a QR code on white (rounded, a faint shadow) on the left and, on the right, "Open it on your phone" in bold, one line of help, the number, a blue "Open on this computer" pill and a grey "Copy number" pill; on a narrow screen the code sits above the words */
-.p-wa { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; }
-.p-wa-qr { padding: 10px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 2px 10px rgba(0, 0, 0, .06); line-height: 0; }
-.p-wa-qr svg { display: block; width: 220px; height: 220px; }
-.p-wa-words b { display: block; margin: 0 0 6px; color: var(--ink); font-size: 18px; font-weight: 650; }
-.p-wa-words p { margin: 0 0 10px; color: var(--text-dim); font-size: 15px; line-height: 1.5; }
-.p-wa-words .p-wa-number { color: var(--ink); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.p-wa-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 10px; }
-@media (max-width: 640px) { .p-wa { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; } .p-wa-bar { justify-content: center; } }
+/* 🔴 CSS CHANGED (2026-11-17): the WhatsApp window of a student removed | from: a small window with a QR code, "Open on this computer" and "Copy number" | to: nothing (a click on WhatsApp opens the chat at once, the owner asked for no QR code) */
 
 /* 🔴 CSS CHANGED (2026-11-17): "Mark as done?", the follow-up day (new) | from: nothing asked about what comes next | to: under "What was done?", a soft grey panel with rounded corners: the question in bold, one grey line of why, then the grey answer pills (Tomorrow, In 3 days, In a week, Choose a day, Not needed; the chosen one blue), a date box or a "What to do then" line under them when needed */
 .td-next { margin-top: 4px; padding: 14px 16px; border-radius: 14px; background: #f2f2f5; }

@@ -86,7 +86,6 @@ const serveStatic = createStaticServer(ROOT, {
   '/suggest.js': 'text/javascript; charset=utf-8',
   // The portal pages around the sheet: the student card, Follow-up, B2B partners, the decision pages.
   '/sender-setup.js': 'text/javascript; charset=utf-8',
-  '/qr.js': 'text/javascript; charset=utf-8',
   '/card-fields.js': 'text/javascript; charset=utf-8',
   '/portal.css': 'text/css; charset=utf-8',
   '/portal-ui.js': 'text/javascript; charset=utf-8',
