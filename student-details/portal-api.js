@@ -260,8 +260,9 @@ function createPortalApi({
     const box = userMail ? userMail.info(user.id) : {};
     return { sig: { ...sig, name: user.name, title: team, email: cfg ? cfg.from : '', ...(box.phone ? { phone: box.phone, whatsapp: box.phone } : {}) }, picture: own };
   }
-  // Who gets a copy: the sender's own mailbox (their sent copy) and, for a team member, the office mailbox, unless Admin switched copies off.
-  const copiesFor = (cfg) => { const office = accounts.emailConfig(); return messages.signature().copyToOffice ? [...new Set([cfg.from, ...(cfg.personal && office ? [office.from] : [])])] : []; };
+  // Who gets a copy of every email, always (the owner, 17 Nov 2026: no switch): the sender's own mailbox (Outlook, Gmail or whichever
+  // they use, so the sent email is found there with the student's reply) and, for a team member, the office mailbox too.
+  const copiesFor = (cfg) => { const office = accounts.emailConfig(); return [...new Set([cfg.from, ...(cfg.personal && office ? [office.from] : [])])]; };
   function messageContext(req, found, card, optionIds) {
     const picked = Array.isArray(optionIds) && optionIds.length ? card.options.filter((o) => optionIds.includes(o.id)) : card.options;
     return {
@@ -2402,7 +2403,7 @@ function createPortalApi({
 
   // ---- the words a message can use, and the office's email settings ----
   // There are no saved message templates any more (the owner, 17 Nov 2026). What is left: the {words} Follow-up offers, and Admin's
-  // office settings (the consultancy's name, a copy of every email to the office mailbox), kept at the same address as before.
+  // office settings (the consultancy's name), kept at the same address as before.
   async function handleTemplates(req, res, urlPath) {
     if (req.method === 'GET' && urlPath === '/api/templates') {
       sendJSON(res, 200, { fields: Messages.FIELDS, signature: messages.signature(), canEdit: Teams.isAdmin(req.user), mail: mailInfo(req.user) });
@@ -2487,7 +2488,8 @@ function createPortalApi({
         sendOut.push({ id, name: item.name, status: 'failed', error: e.message });
       }
     }
-    if (preview) { sendJSON(res, 200, { items, mail: mailInfo(req.user) }); return true; }
+    // The sender's signature picture once (not in every item), so Check and send shows the email as the student sees it.
+    if (preview) { sendJSON(res, 200, { items, mail: mailInfo(req.user), signature: signatureSrc(true, signed.picture) }); return true; }
     note(req, [`Bulk email "${subject}": ${sendOut.filter((r) => r.status === 'sent').length} sent, ${sendOut.filter((r) => r.status !== 'sent').length} not sent`], 'Sent message');
     sendJSON(res, 200, { results: sendOut });
     return true;

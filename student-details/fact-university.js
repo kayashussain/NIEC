@@ -388,6 +388,18 @@
         toc.append(a);
       });
       view$.append(toc);
+      // The section being read is lit in the index, so the team always sees where they are on a long page.
+      if ('IntersectionObserver' in window) {
+        const links = [...toc.querySelectorAll('a')];
+        const seen = new Map();
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => seen.set(e.target.id, e.isIntersecting));
+          const first = heads.map((h) => h.closest('section').id).find((id) => seen.get(id));
+          if (!first) return;
+          links.forEach((a) => { const on = a.getAttribute('href') === '#' + first; a.classList.toggle('is-on', on); if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+        }, { rootMargin: '-70px 0px -55% 0px' });
+        heads.forEach((h) => io.observe(h.closest('section')));
+      }
     }
     view$.append(doc);
     document.title = `${view.name} · Fact File · ISR`;

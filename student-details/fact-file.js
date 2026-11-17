@@ -12,7 +12,12 @@
   let searchSeq = 0; // answers arriving out of order: only the latest search is shown
   // The filters above the cards (the owner, 17 Nov 2026: find the right university in seconds), kept in this browser.
   const FKEY = 'isrFactFilters';
-  const filters = (() => { try { return { kind: 'all', intake: '', sort: 'az', ...JSON.parse(localStorage.getItem(FKEY) || '{}') }; } catch (e) { return { kind: 'all', intake: '', sort: 'az' }; } })();
+  // Two lists only, Universities and Pathway colleges, never both mixed (the owner, 17 Nov 2026: "remove All"). A choice of "all"
+  // kept in a browser from before becomes Universities.
+  const KINDS = ['university', 'pathway'];
+  const filters = (() => { try { return { kind: 'university', intake: '', sort: 'az', ...JSON.parse(localStorage.getItem(FKEY) || '{}') }; } catch (e) { return { kind: 'university', intake: '', sort: 'az' }; } })();
+  if (!KINDS.includes(filters.kind)) filters.kind = 'university';
+  const kindOf = (u) => (u.kind === 'pathway' ? 'pathway' : 'university');
   const saveFilters = () => { try { localStorage.setItem(FKEY, JSON.stringify(filters)); } catch (e) { /* kept for this page only */ } };
   const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
   const intakeOrder = (n) => { const m = /([A-Za-z]{3,9})\s+(\d{4})/.exec(n || ''); return m ? +m[2] * 12 + Math.max(0, MONTHS.indexOf(m[1].slice(0, 3).toLowerCase())) : 1e9; };
@@ -21,37 +26,45 @@
   // The next deadline, on a card: "Apply by 4 Dec 2026 · January 2027" and the days left.
   function nextLine(u) {
     const n = el('div', 'uc-next');
-    if (!u.next) { n.classList.add('is-none'); n.append(el('span', 'uc-next-text', 'No open deadline listed')); return n; }
+    if (!u.next) return null;
     const t = el('span', 'uc-next-text');
     t.append('Apply by ', el('b', '', u.next.when), el('span', 'uc-next-intake', u.next.intake));
     n.append(t, el('span', `uc-days ${urgency(u.next.days)}`.trim(), left(u.next.days)));
     return n;
   }
   function shown() {
-    let out = list.filter((u) => (filters.kind === 'all' || u.kind === filters.kind) && (!filters.intake || (u.intakes || []).includes(filters.intake)));
+    let out = list.filter((u) => kindOf(u) === filters.kind && (!filters.intake || (u.intakes || []).includes(filters.intake)));
     if (filters.sort === 'soon') out = out.slice().sort((a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name));
     return out;
   }
   function drawBar() {
     const bar = $('ffBar');
     bar.hidden = !loadedOnce || !all.length;
-    bar.querySelectorAll('#ffKind button').forEach((b) => { const on = b.dataset.k === filters.kind; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    // Each side of the switch says how many it holds (of the search, while searching), so a match on the other side is never missed.
+    bar.querySelectorAll('#ffKind button').forEach((b) => {
+      const on = b.dataset.k === filters.kind;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+      const n = list.filter((u) => kindOf(u) === b.dataset.k).length;
+      b.replaceChildren(el('span', '', b.dataset.k === 'pathway' ? 'Pathway colleges' : 'Universities'), el('span', 'ff-n', String(n)));
+    });
     const sel = $('ffIntake');
     const names = [...new Set(all.flatMap((u) => u.intakes || []))].sort((a, b) => intakeOrder(a) - intakeOrder(b) || a.localeCompare(b));
     if (filters.intake && !names.includes(filters.intake)) names.push(filters.intake);
     sel.replaceChildren(new Option('Any intake', ''), ...names.map((n) => new Option(n, n)));
     sel.value = filters.intake;
     $('ffSort').value = filters.sort;
-    $('ffClear').hidden = filters.kind === 'all' && !filters.intake && filters.sort === 'az';
-    // How many deadlines close in the next two weeks, with one click to see them first.
-    const soon = all.filter((u) => u.next && u.next.days <= 14);
+    $('ffClear').hidden = !filters.intake && filters.sort === 'az';
+    // How many deadlines of this list close in the next two weeks, with one click to see them first.
+    const soon = all.filter((u) => kindOf(u) === filters.kind && u.next && u.next.days <= 14);
+    const word = filters.kind === 'pathway' ? ['pathway college closes', 'pathway colleges close'] : ['university closes', 'universities close'];
     const box = $('ffSoon');
     box.hidden = !soon.length || query !== '' || filters.sort === 'soon';
     if (!box.hidden) {
       const go = el('button', 'p-link', 'Show them first');
       go.type = 'button';
       go.addEventListener('click', () => { filters.sort = 'soon'; saveFilters(); render(); });
-      box.replaceChildren(el('span', 'ff-soon-dot'), el('span', '', `${soon.length} universit${soon.length === 1 ? 'y closes' : 'ies close'} applications in the next 14 days.`), go);
+      box.replaceChildren(el('span', 'ff-soon-dot'), el('span', '', `${soon.length} ${word[soon.length === 1 ? 0 : 1]} applications in the next 14 days.`), go);
     }
   }
   let all = []; // every university (the list without a search), for the intake menu and the closing-soon line
@@ -81,27 +94,30 @@
   function card(u) {
     const courses = query && u.courses && u.courses.length ? u.courses : null;
     if (courses) return boardCard(u, courses);
-    const a = el('a', 'uni-card');
+    // A card: the badge and the name with the city, the intakes, the next deadline when one is open, then how many courses.
+    const a = el('a', 'uni-card uc-card' + (kindOf(u) === 'pathway' ? ' is-pathway' : ''));
     a.href = uniHref(u);
-    a.append(el('span', 'uni-mono', monogram(u.name)));
-    a.append(el('h2', '', u.name));
-    if (u.city) a.append(el('div', 'city', u.city));
+    const head = el('div', 'uc-head');
+    const title = el('div', 'uc-title');
+    title.append(el('h2', '', u.name), el('div', 'city', u.city || 'Details not added yet'));
+    head.append(el('span', 'uni-mono', monogram(u.name)), title);
+    a.append(head);
     if (u.intakes.length) {
       const chips = el('div', 'chips');
       u.intakes.forEach((n) => chips.append(el('span', 'chip', n)));
       a.append(chips);
     }
-    if (!u.city && !u.intakes.length) a.append(el('div', 'city', 'Details not added yet'));
-    a.append(nextLine(u));
+    const next = nextLine(u);
+    if (next) a.append(next);
     const foot = el('div', 'uc-foot');
-    if (u.courseCount) foot.append(el('span', '', `${u.courseCount} course${u.courseCount === 1 ? '' : 's'}`));
-    if (u.kind === 'pathway') foot.append(el('span', 'uc-kind', 'Pathway college'));
-    if (foot.children.length) a.append(foot);
-    a.append(el('div', 'updated', u.updatedAt && (Date.now() - new Date(u.updatedAt).getTime()) > 90 * 86400000 ? 'Last updated ' + when(u.updatedAt) + ', check it' : ''));
+    foot.append(el('span', 'uc-count', u.courseCount ? `${u.courseCount} course${u.courseCount === 1 ? '' : 's'}` : 'Courses not listed yet'));
+    if (!u.next) foot.append(el('span', 'uc-nodate', 'No open deadline'));
+    a.append(foot);
+    if (u.updatedAt && (Date.now() - new Date(u.updatedAt).getTime()) > 90 * 86400000) a.append(el('div', 'updated', 'Last updated ' + when(u.updatedAt) + ', check it'));
     return a;
   }
   function boardCard(u, courses) {
-    const c = el('article', 'uni-card is-board');
+    const c = el('article', 'uni-card is-board' + (kindOf(u) === 'pathway' ? ' is-pathway' : ''));
     const top = el('div', 'ub-top');
     const name = el('a', 'ub-name', u.name);
     name.href = uniHref(u);
@@ -112,7 +128,8 @@
     open.href = uniHref(u);
     top.append(open);
     c.append(top);
-    if (u.next) c.append(nextLine(u));
+    const next = nextLine(u);
+    if (next) c.append(next);
     c.append(el('div', 'ub-count', `${courses.length} matching course${courses.length === 1 ? '' : 's'}`));
     const ul = el('ul', 'ub-courses');
     const SHOW = 6;
@@ -152,13 +169,14 @@
     const box = $('cards');
     drawBar();
     const rows = shown();
-    const filtered = rows.length !== list.length;
-    $('count').textContent = loadedOnce && list.length ? (filtered ? `${rows.length} of the ${list.length} ${query ? 'matching ' : ''}universities` : query ? `${list.length} universit${list.length === 1 ? 'y matches' : 'ies match'}` : `${list.length} universities`) : '';
+    const filtered = Boolean(filters.intake) || rows.length !== list.length;
+    const noun = (n) => (filters.kind === 'pathway' ? (n === 1 ? 'pathway college' : 'pathway colleges') : (n === 1 ? 'university' : 'universities'));
+    $('count').textContent = loadedOnce && list.length ? `${rows.length} ${noun(rows.length)}${query ? (rows.length === 1 ? ' matches' : ' match') : ''}${filters.intake ? ' with a ' + filters.intake + ' intake' : ''}` : '';
     if (!rows.length) {
       const empty = el('div', 'ui-empty');
       const why = filtered && list.length;
-      empty.append(el('span', 'ui-empty-icon', query || why ? '🔍' : '🎓'), el('strong', '', why ? 'No university with these filters' : query ? 'No university matches' : 'No universities yet'),
-        el('span', '', why ? 'Choose "All" or "Any intake" above, or press Clear filters.' : query ? 'Try a university name, a city or a course such as "data science".' : 'The universities appear here after the first automatic reading.'));
+      empty.append(el('span', 'ui-empty-icon', query || why ? '🔍' : '🎓'), el('strong', '', why ? `No ${noun(1)} with these filters` : query ? 'No university matches' : 'No universities yet'),
+        el('span', '', why ? `Try ${filters.kind === 'pathway' ? 'Universities' : 'Pathway colleges'} above, choose "Any intake", or press Clear filters.` : query ? 'Try a university name, a city or a course such as "data science".' : 'The universities appear here after the first automatic reading.'));
       box.replaceChildren(empty);
       return;
     }
@@ -198,7 +216,7 @@
   $('ffKind').addEventListener('click', (e) => { const b = e.target.closest('button[data-k]'); if (!b) return; filters.kind = b.dataset.k; saveFilters(); render(); });
   $('ffIntake').addEventListener('change', () => { filters.intake = $('ffIntake').value; saveFilters(); render(); });
   $('ffSort').addEventListener('change', () => { filters.sort = $('ffSort').value; saveFilters(); render(); });
-  $('ffClear').addEventListener('click', () => { Object.assign(filters, { kind: 'all', intake: '', sort: 'az' }); saveFilters(); render(); });
+  $('ffClear').addEventListener('click', () => { Object.assign(filters, { intake: '', sort: 'az' }); saveFilters(); render(); });
   // Esc in the search box clears it.
   $('search').addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('search').value) { $('search').value = ''; query = ''; load(); } });
   // "/" jumps to the search box, like on most sites.

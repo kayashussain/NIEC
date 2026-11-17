@@ -280,6 +280,8 @@
         const top = el('div', 'fw-mailtop');
         top.append(el('b', '', i.subject || state.subject), el('span', '', 'To: ' + (i.to || i.problem || '')));
         m.append(top, el('div', 'fw-mailtext', i.text || ''));
+        // The signature picture that ends the email (the sender's own, or the office one for Admin).
+        if (sigPicture) { const img = el('img', 'fw-mailsig'); img.src = sigPicture; img.alt = 'Your signature'; m.append(img); }
         show.replaceChildren(m);
       } else {
         const p = el('div', 'fw-waview');
@@ -290,8 +292,10 @@
       }
     };
 
+    let sigPicture = '';
     api('/api/bulk/preview', payload()).then((r) => {
       const items = r.items;
+      sigPicture = r.signature || '';
       const isReady = (i) => !i.error && (email ? !i.problem : Boolean(i.whatsapp && i.whatsapp.number));
       const ready = items.filter(isReady);
       const missing = items.filter((i) => !i.error && i.missing && i.missing.length).length;

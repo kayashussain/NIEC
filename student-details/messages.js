@@ -208,7 +208,11 @@ function renderEmail({ subject, body, values, signature, options = [], documents
   });
   closeList();
   const sig = signatureLines(signature);
-  const plain = `${textOut.join('\n').replace(/\n{3,}/g, '\n\n').trim()}\n\nKind regards,\n${sig.join('\n')}\n`;
+  // No automatic "Kind regards" line (the owner, 17 Nov 2026: the sender's own signature picture already ends the email, and the
+  // sender writes their own closing). With a signature picture the email ends with that picture only; without one, with the
+  // sender's name, team and contact lines as text.
+  const message = textOut.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const plain = signatureSrc ? `${message}\n` : `${message}\n\n${sig.join('\n')}\n`;
   const logo = ''; // a student's email carries the consultancy's own signature picture, not the product logo
   const sigHtml = sig.map((l, i) => (i === 0 && text(signature && signature.name)
     ? `<div style="font-weight:700;color:#17324d;font-size:15px">${esc(l)}</div>` : `<div>${linkify(esc(l))}</div>`)).join('');
@@ -217,7 +221,7 @@ function renderEmail({ subject, body, values, signature, options = [], documents
 <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#ffffff;border-radius:12px;border-top:4px solid #00adef">
 ${logo}<tr><td style="padding:${logo ? '12px' : '26px'} 28px 6px;font-size:15px;line-height:1.6">
 ${html.join('\n')}
-${signatureSrc ? `<p style="margin:22px 0 0"><img src="${esc(signatureSrc)}" alt="${esc(text(signature && signature.name) || COMPANY)}" width="600" style="display:block;border:0;max-width:100%;height:auto"></p>` : `<p style="margin:18px 0 4px">Kind regards,</p><div style="margin:0 0 18px;padding:12px 0 0 14px;border-left:3px solid #fc6e1f;font-size:13px;line-height:1.55;color:#4f5b69">${sigHtml}</div>`}
+${signatureSrc ? `<p style="margin:22px 0 0"><img src="${esc(signatureSrc)}" alt="${esc(text(signature && signature.name) || COMPANY)}" width="600" style="display:block;border:0;max-width:100%;height:auto"></p>` : `<div style="margin:18px 0 18px;padding:12px 0 0 14px;border-left:3px solid #fc6e1f;font-size:13px;line-height:1.55;color:#4f5b69">${sigHtml}</div>`}
 </td></tr>
 </table></td></tr></table></body></html>`;
   return { subject: subj, text: plain, html: page, missing: [...missing].map((k) => FIELD_LABEL[k] || k) };
@@ -242,8 +246,6 @@ function cleanSignature(input, old = {}) {
   return {
     name: pick('name'), title: pick('title'), company: pick('company') || COMPANY, short: pick('short') || initialsOf(pick('company') || COMPANY), phone: pick('phone'), whatsapp: pick('whatsapp'),
     email: pick('email'), website: pick('website'), address: pick('address'),
-    // A copy of every email also goes to the office mailbox (so it is found there with the student's replies) unless switched off.
-    copyToOffice: input && Object.prototype.hasOwnProperty.call(input, 'copyToOffice') ? Boolean(input.copyToOffice) : (old.copyToOffice !== false),
   };
 }
 

@@ -2551,7 +2551,9 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .ss-more { margin: 8px 0 0; }
 .ss-more summary { cursor: pointer; color: var(--link); font-size: 14px; }
 .ss-steps { margin: 14px 0 10px; padding-left: 20px; color: var(--text-dim); font-size: 14.5px; line-height: 1.55; }
-.ss-office { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+/* 🔴 CSS CHANGED (2026-11-17): the copy to the office mailbox | from: a tick box "Send a copy of every email to the office mailbox" (Admin only) | to: a fixed line with a green tick, always on, for everyone */
+.ss-copy { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 12px 16px; border-radius: 14px; background: #eef8f1; color: #1d4d2c; font-size: 14.5px; line-height: 1.5; }
+.ss-copy-ico { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #248a3d; color: #fff; font-size: 12px; font-weight: 700; }
 .bk-words { grid-column: 1 / -1; }
 .p-history-chip.is-message { background: #efe9fb; color: #5b3ea8; }
 @media (max-width: 600px) { .ss-form-box { padding-left: 0; } .ss-row { grid-template-columns: 28px minmax(0, 1fr); } .ss-row .btn { grid-column: 2; justify-self: start; } }
@@ -2972,7 +2974,6 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .bk .ss-steps li::before { content: counter(ss); position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(0, 113, 227, .1); color: #0066cc; font-size: 12.5px; font-weight: 700; }
 .bk .ss-form .btn-sm { border-radius: 980px; }
 .bk .p-sig { border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
-.bk .ss-office { margin-top: 16px; padding: 14px 18px; border: 0; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); font-size: 15px; }
 @media (max-width: 640px) {
   .bk .ss-card.p-card { padding: 20px 16px 22px; border-radius: 18px; }
   .bk .ss-head { flex-wrap: wrap; }
@@ -3067,6 +3068,8 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .fw-mailtop b { font-size: 19px; font-weight: 700; letter-spacing: -.01em; color: #1d1d1f; }
 .fw-mailtop span { font-size: 14.5px; color: #5f5f64; overflow-wrap: anywhere; }
 .fw-mailtext { max-height: 470px; overflow: auto; padding: 20px 22px 24px; font-size: 15.5px; line-height: 1.65; color: #1d1d1f; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* 🔴 CSS CHANGED (2026-11-17): the signature picture in Check and send | from: the email preview ended with a typed "Kind regards," and the company name | to: the email text, then the sender's own signature picture (as the student gets it), at most 520px wide */
+.fw-mailsig { display: block; max-width: min(520px, calc(100% - 44px)); height: auto; margin: 0 22px 22px; }
 .fw-waview { overflow: hidden; border-radius: 16px; background: #efeae2; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 8px 24px -12px rgba(0, 0, 0, .15); }
 .fw-watop { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: #f7f7f7; border-bottom: 1px solid rgba(0, 0, 0, .07); }
 .fw-watop b { font-size: 16px; color: #1d1d1f; }
@@ -3239,17 +3242,42 @@ html body .p-chosen-item h3 { margin: 0; font-size: 16px; }
 .ff-soon { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 8px 0 0; padding: 10px 14px; border-radius: 12px; background: #fff7e8; color: #5c3b00; font-size: 14.5px; }
 .ff-soon-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff9f0a; }
 .ff-soon .p-link { font-weight: 600; }
-.uc-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: #f5f5f7; font-size: 14px; color: #1d1d1f; }
+/* 🔴 CSS CHANGED (2026-11-17): the Fact File list cards and the Universities | Pathway colleges switch | from: a three-way switch (All, Universities, Pathway colleges) in 14.5px; cards with a small grey round badge at the top right, every card with a grey box (even "No open deadline listed"), the course count as loose grey text | to: a larger two-way switch (44px, 16px type) with a count bubble on each side (blue on the open one); each card with a 44px rounded-square badge on the left of the name (soft blue for a university, soft violet for a pathway college), the city under the name, the intakes as blue pills, the next deadline in a soft grey box only when one is open, and a footer under a hairline: the course count in bold on the left, "No open deadline" in grey on the right */
+.ff-kind.p-seg { padding: 4px; border-radius: 14px; }
+.ff-kind.p-seg > button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 11px; font-size: 16px; }
+.ff-n { min-width: 24px; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); color: #3a3a3c; font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; }
+.ff-kind.p-seg > button.on .ff-n { background: #0071e3; color: #fff; }
+html body a.uni-card.uc-card { display: flex; flex-direction: column; gap: 12px; padding: 20px 22px 16px; }
+.uc-head { display: flex; align-items: flex-start; gap: 14px; }
+html body .uc-card .uni-mono, html body .uni-card.is-board .uni-mono { position: static; flex: none; width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(160deg, #e6f0fd, #d6e6fb); color: #0058b9; font-size: 14px !important; font-weight: 700; box-shadow: none; }
+html body .uc-card.is-pathway .uni-mono, html body .uni-card.is-board.is-pathway .uni-mono { background: linear-gradient(160deg, #f1ecfc, #e5dcf8); color: #5b3ea8; }
+html body .uc-card:hover .uni-mono { background: #0071e3; color: #fff; }
+html body .uc-card.is-pathway:hover .uni-mono { background: #7a52c7; color: #fff; }
+.uc-title { min-width: 0; }
+html body .uc-card h2 { margin: 1px 0 3px; padding: 0; font-size: 17.5px; line-height: 1.3; font-weight: 650; color: #1d1d1f; }
+html body .uc-card .city { color: #5f5f64; font-size: 14px; line-height: 1.35; }
+.uc-card .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.uc-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding: 10px 12px; border-radius: 12px; background: #f5f5f7; font-size: 14.5px; color: #1d1d1f; }
 .uc-next b { font-weight: 650; }
-.uc-next-intake { display: block; color: #6e6e73; font-size: 13px; }
-.uc-next.is-none { color: #6e6e73; }
-.uc-days { flex: none; padding: 1px 9px; border-radius: 999px; background: #e8e8ed; color: #3a3a3c; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.uc-next-intake { display: block; color: #5f5f64; font-size: 13px; }
+.uc-days { flex: none; padding: 2px 10px; border-radius: 999px; background: #e8e8ed; color: #3a3a3c; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .uc-days.is-soon { background: #ffefd0; color: #8a4b00; }
 .uc-days.is-urgent { background: #ffe3e0; color: #b42318; }
-.uc-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: #515154; font-size: 13.5px; }
-.uc-kind { padding: 1px 9px; border-radius: 999px; background: #ececf0; color: #3a3a3c; font-size: 12.5px; font-weight: 600; }
+.uc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(0, 0, 0, .07); color: #515154; font-size: 14px; }
+.uc-count { color: #1d1d1f; font-weight: 600; }
+.uc-nodate { color: #66666b; font-size: 13.5px; }
+html body .uc-card .updated { margin: 0; padding: 0; color: #a84d00; font-size: 13px; }
 .uni-card.is-board .uc-next { margin: 0 0 4px; }
 html body .doc .course-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 10px; }
 html body .doc .course-filter .search { flex: 1 1 260px; max-width: 420px; min-height: 40px; border: 0; border-radius: 999px; padding: 0 16px; background: #f0f0f3; }
 html body .doc .course-filter .search:focus { outline: 2px solid #0071e3; outline-offset: 1px; background: #fff; }
 .course-filter-info { color: #515154; font-size: 14px; font-weight: 600; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the index of a university's Fact File page | from: a row of white pills that scrolled with the page background behind it, every pill alike | to: the same row kept at the top on a frosted, see-through band while scrolling, the section being read as a filled blue pill */
+html body nav.toc { top: 0; z-index: 6; margin: 0 -8px 14px; padding: 10px 8px; border-radius: 16px; background: rgba(245, 245, 247, .82); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); }
+html body nav.toc a.is-on { border-color: #0071e3; background: #0071e3; color: #fff; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the Partners cards | from: a tall grey box "How to apply is not entered yet" on every partner without a portal; B2B partner cards without any figures | to: that note as one quiet line with a dashed edge (no big grey box); each B2B partner card shows Students, Visas and Visa rate with small bars (blue, then green), the same look as the Partner Universities cards */
+html body .bp-submit:has(> .bp-none:only-child) { padding: 0 !important; background: transparent !important; }
+html body .bp-submit > .bp-none:only-child { padding: 10px 14px; border: 1px dashed #c7c7cc; border-radius: 12px; color: #5f5f64; font-size: 14px; }
+.bp-funnel.is-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -113,7 +113,13 @@ test('a template is filled in from the student, and an empty detail is named ins
   const mail = Messages.renderEmail({ subject: t.subject, body: t.body, values, signature: { name: 'Asha Demo', title: 'Counselor', phone: '+977 1 5550000' } });
   assert.strictEqual(mail.subject, 'Your application to Bangor University has been submitted');
   assert.match(mail.text, /your application for MSc Finance at Bangor University has been submitted on 2 November 2026\./);
-  assert.match(mail.text, /Kind regards,\nAsha Demo\nCounselor\nNepal International Educational Consultancy\nPhone: \+977 1 5550000/);
+  // With a signature picture, the text ends with the message: no automatic "Kind regards" (the owner, 17 Nov 2026).
+  assert.doesNotMatch(mail.text, /Kind regards/);
+  assert.doesNotMatch(mail.html, /Kind regards/);
+  // Without a picture, the sender's name and contact lines end it, still with no "Kind regards".
+  const plainSig = Messages.renderEmail({ subject: t.subject, body: t.body, values, signature: { name: 'Asha Demo', title: 'Counselor', phone: '+977 1 5550000' }, signatureSrc: '' });
+  assert.match(plainSig.text, /\.\n\nAsha Demo\nCounselor\nNepal International Educational Consultancy\nPhone: \+977 1 5550000/);
+  assert.doesNotMatch(plainSig.text + plainSig.html, /Kind regards/);
   assert.deepStrictEqual(mail.missing, []);
   assert.match(mail.html, /<li style="margin:4px 0">Keep your phone and email active/);
   const empty = Messages.renderEmail({ subject: t.subject, body: t.body, values: Messages.valuesFor({ row: { 'FIRST NAME': 'Ram' } }), signature: {} });
@@ -148,7 +154,7 @@ test('the office settings are kept, and a file from an earlier version with temp
   const m = createMessages(dir);
   assert.strictEqual(m.signature().company, 'Other Consultancy');
   m.saveSignature({ name: 'Head of UK Recruitment', phone: '+977 1 5550000', copyToOffice: false });
-  assert.strictEqual(createMessages(dir).signature().copyToOffice, false);
+  assert.strictEqual(createMessages(dir).signature().copyToOffice, undefined, 'the copy to the office is always on: there is no switch to keep');
   assert.strictEqual(createMessages(dir).signature().company, 'Other Consultancy');
   assert.strictEqual(createMessages(dir).stored().templates.length, 1, 'what an earlier version saved is left as it was');
   assert.strictEqual(createMessages(tmp()).signature().company, 'Nepal International Educational Consultancy');
@@ -449,7 +455,9 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual((await app('POST', '/api/templates/signature', { copyToOffice: false })).status, 403, 'only Admin changes the office settings');
   assert.strictEqual((await admin('POST', '/api/templates/signature', { name: 'Head of UK Recruitment', phone: '+977 1 5550000' })).status, 200);
   const OFFER = { subject: 'Your offer', body: 'Dear {first_name},\n\nWell done on your offer.', whatsapp: 'Well done {first_name}' };
-  assert.match((await admin('POST', `/api/cards/${sitaId}/messages/preview`, OFFER)).json.text, /Head of UK Recruitment\n/, 'Admin signs with the office signature');
+  const adminPreview = (await admin('POST', `/api/cards/${sitaId}/messages/preview`, OFFER)).json;
+  assert.match(adminPreview.html, /data:image\/png;base64,/, 'Admin signs with the office signature picture');
+  assert.doesNotMatch(adminPreview.text + adminPreview.html, /Kind regards/, 'and no automatic "Kind regards" line (the owner, 17 Nov 2026)');
   // A team member signs as themselves, also before their own mailbox is set up, never with Admin's signature (the owner, 15 Nov 2026).
   const teamPreview = (await app('POST', `/api/cards/${sitaId}/messages/preview`, OFFER)).json;
   assert.doesNotMatch(teamPreview.text, /Head of UK Recruitment/);

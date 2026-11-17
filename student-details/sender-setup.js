@@ -91,15 +91,12 @@
     return wrap;
   }
 
-  // Admin's office settings: a copy of every email to the office mailbox (was on Message templates).
-  function officeRow(t) {
-    const box = el('label', 'p-check ss-office');
-    const c = el('input'); c.type = 'checkbox'; c.checked = t.signature.copyToOffice !== false;
-    box.append(c, el('span', '', 'Send a copy of every email to the office mailbox, so the replies and the sent emails are found in one place'));
-    c.addEventListener('change', async () => {
-      try { await api('/api/templates/signature', { copyToOffice: c.checked }); say('Saved'); } catch (e) { c.checked = !c.checked; say(e.message, true); }
-    });
-    return box;
+  // A copy of every email always goes to the sender's own mailbox and, for a team member, to the office mailbox as well, so the sent
+  // email and the student's reply are found in one place (the owner, 17 Nov 2026: always on, no switch). Said once, as a fact.
+  function copyLine() {
+    const line = el('div', 'ss-copy');
+    line.append(el('span', 'ss-copy-ico', '✓'), el('span', '', 'Always on: a copy of every email you send goes to the mailbox it is sent from (Outlook, Gmail or whichever you use) and to the office mailbox, so the sent emails and the replies are in one place.'));
+    return line;
   }
 
   async function mount(box, { open = false, onChange, only } = {}) {
@@ -168,7 +165,7 @@
       list.append(item);
     });
     card.append(list);
-    if (t.canEdit) card.append(officeRow(t));
+    if (!only || only.includes('email')) card.append(copyLine());
     box.replaceChildren(card);
     box.dataset.openRow = '';
     return { ready, mail: t.mail, fields: t.fields, phone: d.phone || '' };

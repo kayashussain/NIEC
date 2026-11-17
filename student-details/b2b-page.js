@@ -135,6 +135,17 @@
     head.append(who, el('span', `bp-status ${PILL[p.status] || 'amber'}`, p.status));
     c.append(head);
     if (KIND === 'b2b') c.append(submitBox(p));
+    // The partner's results at a glance, as on Partner Universities: students sent, visas, and how many of them got their visa.
+    if (st.students) {
+      const f = el('div', 'bp-funnel is-three');
+      const rate = Math.round((st.visas / st.students) * 100);
+      [['Students', number(st.students), 100], ['Visas', number(st.visas), rate], ['Visa rate', rate + '%', rate]].forEach(([k, n, w], i) => {
+        const d = el('div', 'bp-funnel-step'); const bar = el('i'); bar.style.setProperty('--w', `${Math.max(6, w)}%`);
+        if (i > 0) d.classList.add('is-visa');
+        d.append(el('b', '', n), el('small', '', k), bar); f.append(d);
+      });
+      c.append(f);
+    }
     const facts = el('dl', 'bp-facts');
     const row = (label, value) => { const dd = el('dd'); if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'bp-none', 'Not entered yet')); facts.append(el('dt', '', label), dd); };
     // The commission of the intake that is running: open it, or a calm note that it is missing.
