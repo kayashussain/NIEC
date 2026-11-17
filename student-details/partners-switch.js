@@ -39,14 +39,3 @@
     main.prepend(bar);
   });
 })();
-
-// Each Partners list: "/" jumps to the search box and Esc clears it. No Sort menu and no filter switch: the owner asked for both to be
-// taken off (17 Nov 2026); the busiest are first.
-(function () {
-  document.addEventListener('keydown', (e) => {
-    const s = document.getElementById('search');
-    if (!s || s.offsetParent === null) return;
-    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); s.focus(); }
-    else if (e.key === 'Escape' && document.activeElement === s && s.value) { s.value = ''; s.dispatchEvent(new Event('input')); }
-  });
-})();

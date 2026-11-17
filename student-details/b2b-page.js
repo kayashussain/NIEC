@@ -67,19 +67,16 @@
     const band = [[`Active ${WORD.one}s`, number(active.length + sheet.length), sheet.length ? `${number(sheet.length)} named on the sheet, not set up yet` : ''], ['Visas', number(visas), 'Every intake on the sheet']];
     if (KIND === 'b2b') band.splice(2, 0, ['Ready to apply', `${number(active.filter((p) => p.applyPortal || p.applyEmail).length)} of ${number(active.length + sheet.length)}`, 'With a portal or an email']);
     $('kpis').replaceChildren(...band.map(([label, v, sub, warn]) => { const d = el('div', warn ? 'warn' : ''); d.append(el('span', '', label), el('b', '', v), el('small', '', sub || '')); return d; }));
-    const q = $('search').value.trim().toLowerCase();
-    const hit = (name, city) => !q || `${name} ${city || ''}`.toLowerCase().includes(q);
-    const shown = all.filter((p) => hit(p.name, p.city));
-    const shownSheet = sheet.filter((x) => hit(x.name));
+    const shown = all; // no search box (the owner, 17 Nov 2026)
+    const shownSheet = sheet;
     const total = all.length + sheet.length;
-    $('count').textContent = total ? (q ? `${shown.length + shownSheet.length} of ${total}` : `${total} in the list`) : '';
+    $('count').textContent = total ? `${total} in the list` : '';
     // Names marked "Not a partner" stay out of the list (the owner, 15 Nov 2026); a small "N hidden" beside the count brings one back.
     const hidden = (data.notPartners || []);
     const hiddenBtn = $('hiddenBtn') || (() => { const b = btn('bp-hidden-btn', '', showHidden); b.id = 'hiddenBtn'; $('count').after(b); return b; })();
     hiddenBtn.textContent = `${hidden.length} hidden`;
     hiddenBtn.hidden = !hidden.length || viewer();
     if (!total) { $('list').replaceChildren(el('div', 'bp-empty', `No ${WORD.one}s yet.`)); return; }
-    if (!shown.length && !shownSheet.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
     // Every name on the sheet not set up yet, set up at once (Admin, and the Application Team on B2B Partners): each gets its own card
     // now and its details are filled in later.
     const lead = [];
@@ -476,6 +473,5 @@
     }
   }
   $('addForm').addEventListener('submit', addOne);
-  $('search').addEventListener('input', () => data && draw());
   load().catch((e) => { $('list').replaceChildren(h('div', { class: 'p-notice bad' }, e.message)); });
 })();
