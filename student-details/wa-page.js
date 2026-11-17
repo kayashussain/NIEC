@@ -2,6 +2,8 @@
 // the student's chat (whatsapp://, no "Continue to chat" page), with one big button in case the phone asks for a tap first.
 // With call=1 (the "Call" notification, the owner, 17 Nov 2026) it rings the student instead (tel:).
 (function () {
+  // A quiet check-in with ISR's service worker, so this phone's push address stays current (sw.js heal). It never delays the chat.
+  try { if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage('heal'); } catch (e) { /* fine */ }
   const q = new URLSearchParams(location.search);
   const n = String(q.get('n') || '').replace(/\D/g, '').slice(0, 15);
   const name = String(q.get('name') || '').slice(0, 80);

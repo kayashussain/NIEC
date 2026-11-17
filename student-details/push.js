@@ -10,6 +10,15 @@
 // Kept in the data folder (never in git, never in a backup): push-keys.json (this server's VAPID key pair, made once) and
 // push-devices.json (each person's connected phones: the push address and its keys, the name of the device, when connected).
 // The notification carries only the student's name and number, encrypted for that phone.
+//
+// Made strong (the owner, 17 Nov 2026: the phone dropped off and had to be connected again, a notification came late, nothing showed
+// that a click had worked, and two clicks sent two notifications):
+//   - Each phone gets its own secret when it connects (only its hash is kept here). Phones change their push address from time to
+//     time; with the secret the phone hands over its new address by itself (renew), so it never has to be connected again. A phone
+//     whose address stops working is marked "not answering", never forgotten, and comes back the next time it opens ISR.
+//   - All phones are sent to at the same time, each with a time limit, so a slow or switched-off phone never holds up a click.
+//   - Each message has an id; the phone says "arrived" and "opened" (ack), so the computer can show it.
+//   - The push service is given a Topic, so a message still waiting for a phone is replaced, never doubled.
 
 const fs = require('fs');
 const path = require('path');
@@ -76,7 +85,37 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
     return `${head}.${body}.${b64u(sig)}`;
   }
 
+  // The signed VAPID token, made once an hour for each push service rather than for every message.
+  const tokens = new Map();
+  function jwtFor(audience, subject) {
+    const k = `${audience} ${subject}`;
+    const hit = tokens.get(k);
+    if (hit && hit.until > Date.now()) return hit.t;
+    const t = jwt(audience, subject);
+    tokens.set(k, { t, until: Date.now() + 3600 * 1000 });
+    return t;
+  }
+
   const pairs = new Map(); // pairing code -> { userId, user, until }
+  const receipts = new Map(); // message id -> { userId, at, got: [names], opened: name }
+  const hash = (secret) => crypto.createHash('sha256').update(String(secret || '')).digest('hex');
+  const sameHash = (a, b) => { const x = Buffer.from(String(a || '')); const y = Buffer.from(String(b || '')); return x.length === y.length && x.length > 0 && crypto.timingSafeEqual(x, y); };
+  // A phone, found by its id and its secret (the phone is not logged in: the secret says it is that phone).
+  function deviceBy(id, secret) {
+    const d = readDevices();
+    for (const [userId, list] of Object.entries(d.people)) {
+      const dev = (list || []).find((x) => x.id === String(id || ''));
+      if (dev) return dev.secretHash && sameHash(dev.secretHash, hash(secret)) ? { userId, dev } : null;
+    }
+    return null;
+  }
+  const checkSub = (sub) => {
+    const endpoint = String(sub && sub.endpoint || '');
+    const k = (sub && sub.keys) || {};
+    if (!allowedEndpoint(endpoint, allowLocal)) return { error: 'This browser cannot get notifications from ISR. Use Chrome on Android, or Safari on iPhone with ISR added to the Home Screen.' };
+    if (unb64u(k.p256dh).length !== 65 || unb64u(k.auth).length !== 16) return { error: 'The phone sent keys that do not look right.' };
+    return { endpoint, p256dh: String(k.p256dh), auth: String(k.auth) };
+  };
   const readDevices = () => { try { const d = JSON.parse(fs.readFileSync(devFile, 'utf8')); return d && typeof d.people === 'object' && d.people ? d : { people: {} }; } catch (e) { return { people: {} }; } };
   const devicesOf = (userId) => readDevices().people[userId] || [];
   const saveDevices = (userId, list) => { const d = readDevices(); if (list.length) d.people[userId] = list; else delete d.people[userId]; write(devFile, d); };
@@ -84,16 +123,48 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
   return {
     publicKey: () => vapid().publicKey,
     // What a page may know: how many phones, their names and when they were connected (never the push addresses).
-    devices: (userId) => devicesOf(userId).map((x) => ({ id: x.id, name: x.name, at: x.at, ...(x.usedAt ? { usedAt: x.usedAt } : {}) })),
-    connect(userId, sub, name) {
-      const endpoint = String(sub && sub.endpoint || '');
-      const k = (sub && sub.keys) || {};
-      if (!allowedEndpoint(endpoint, allowLocal)) return { error: 'This browser cannot get notifications from ISR. Use Chrome on Android, or Safari on iPhone with ISR added to the Home Screen.' };
-      if (unb64u(k.p256dh).length !== 65 || unb64u(k.auth).length !== 16) return { error: 'The phone sent keys that do not look right.' };
-      const list = devicesOf(userId).filter((x) => x.endpoint !== endpoint);
-      const device = { id: crypto.randomBytes(6).toString('hex'), endpoint, p256dh: String(k.p256dh), auth: String(k.auth), name: String(name || 'Phone').slice(0, 60), at: new Date().toISOString() };
+    // "lost": the phone stopped answering; it comes back by itself the next time ISR is opened on it.
+    devices: (userId) => devicesOf(userId).map((x) => ({ id: x.id, name: x.name, at: x.at, ...(x.usedAt ? { usedAt: x.usedAt } : {}), ...(x.lostAt ? { lost: true } : {}) })),
+    // Connects a phone. `secret` (returned once, to that phone only) lets it hand over a new push address later by itself. The same
+    // phone connected again (same address, or the old secret it still has) replaces its old entry, never adds a second one.
+    connect(userId, sub, name, old) {
+      const s = checkSub(sub);
+      if (s.error) return s;
+      const before = old && old.id ? deviceBy(old.id, old.secret) : null;
+      const list = devicesOf(userId).filter((x) => x.endpoint !== s.endpoint && !(before && before.userId === userId && x.id === before.dev.id));
+      const secret = crypto.randomBytes(24).toString('base64url');
+      const device = { id: crypto.randomBytes(6).toString('hex'), ...s, secretHash: hash(secret), name: String(name || 'Phone').slice(0, 60), at: new Date().toISOString() };
       saveDevices(userId, [...list, device].slice(-5)); // up to five phones or tablets a person
-      return { device: { id: device.id, name: device.name, at: device.at } };
+      return { device: { id: device.id, name: device.name, at: device.at }, secret };
+    },
+    // The phone's new push address, handed over by the phone itself (its service worker), with its secret. Clears "not answering".
+    renew(id, secret, sub) {
+      const found = deviceBy(id, secret);
+      if (!found) return { error: 'This phone is not connected any more. Connect it again from the computer.', gone: true };
+      const s = checkSub(sub);
+      if (s.error) return s;
+      const list = devicesOf(found.userId).filter((x) => x.id === found.dev.id || x.endpoint !== s.endpoint)
+        .map((x) => (x.id === found.dev.id ? { ...x, ...s, lostAt: undefined, renewedAt: new Date().toISOString() } : x));
+      saveDevices(found.userId, list);
+      return { ok: true, wasLost: Boolean(found.dev.lostAt) };
+    },
+    // The phone says a message arrived ("got") or was tapped ("opened"); the computer that sent it can then show it (receipt).
+    ack(id, secret, m, ev) {
+      const found = deviceBy(id, secret);
+      if (!found) return { error: 'Unknown phone.', gone: true };
+      const r = receipts.get(String(m || ''));
+      if (r && r.userId === found.userId) {
+        if (ev === 'opened') r.opened = found.dev.name;
+        else if (!r.got.includes(found.dev.name)) r.got.push(found.dev.name);
+      }
+      // A phone that answers is plainly reachable again.
+      if (found.dev.lostAt) saveDevices(found.userId, devicesOf(found.userId).map((x) => (x.id === found.dev.id ? { ...x, lostAt: undefined } : x)));
+      return { ok: true };
+    },
+    receipt(userId, m) {
+      const r = receipts.get(String(m || ''));
+      if (!r || r.userId !== userId) return { state: 'unknown' };
+      return { state: r.opened ? 'opened' : r.got.length ? 'arrived' : 'sent', got: r.got, opened: r.opened || '' };
     },
     // Pairing (the owner, 17 Nov 2026: connecting must be simple): the computer shows a code; the phone's camera opens it, and one
     // tap turns the notifications on, without logging the phone in. A code is random, belongs to one person, works for 30 minutes
@@ -122,10 +193,10 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
       if (p.until <= Date.now()) return { state: 'expired' };
       return { state: p.seenAt ? 'opened' : 'waiting', until: new Date(p.until).toISOString() };
     },
-    pairWith(token, sub, name) {
+    pairWith(token, sub, name, old) {
       const p = this.pairOf(token);
       if (!p) return { error: 'This code has expired or was already used. Press "Connect my phone" on the computer again for a new one.' };
-      const out = this.connect(p.userId, sub, name);
+      const out = this.connect(p.userId, sub, name, old);
       if (out.error) return out;
       p.doneAt = Date.now();
       p.device = out.device;
@@ -137,32 +208,44 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
       saveDevices(userId, left);
       return { removed: list.length - left.length };
     },
-    // Sends `message` (an object, kept small) to every phone of the person. A phone whose push address has gone (the person
-    // removed ISR or blocked notifications) is forgotten. Resolves { sent, failed }.
-    async send(userId, message, subject) {
-      const list = devicesOf(userId);
-      let sent = 0; let failed = 0; const gone = []; const reached = [];
-      const payload = JSON.stringify(message);
-      for (const d of list) {
+    // Sends `message` (an object, kept small) to every phone of the person, all at the same time, each with a time limit (a phone
+    // that is off never holds up the click). Every message gets an id (m) for the receipt. A phone whose push address has gone is
+    // marked "not answering" (it renews itself the next time ISR opens on it); an old phone with no secret is forgotten as before.
+    // `topic`: the push service keeps only the newest waiting message with the same topic. Resolves { sent, failed, forgotten,
+    // lost, names, m, track } (track: at least one phone reached can say "arrived").
+    async send(userId, message, subject, topic) {
+      const list = devicesOf(userId).filter((x) => !x.lostAt);
+      const m = crypto.randomBytes(9).toString('base64url');
+      const payload = JSON.stringify({ ...message, m, at: Date.now() });
+      const outcome = await Promise.all(list.map(async (d) => {
         try {
           const aud = new URL(d.endpoint).origin;
-          const res = await fetchImpl(d.endpoint, {
-            method: 'POST',
-            headers: { 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '120', Urgency: 'high', Authorization: `vapid t=${jwt(aud, subject)}, k=${vapid().publicKey}` },
-            body: encrypt(payload, d.p256dh, d.auth),
-            redirect: 'error',
-          });
-          if (res.status === 404 || res.status === 410) gone.push(d.id);
-          if (res.ok) { sent += 1; reached.push(d.id); } else failed += 1;
-        } catch (e) { failed += 1; }
-      }
-      // Each phone remembers when it was last reached ("Last used today" in the window); a phone that has gone is forgotten.
+          const headers = { 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '120', Urgency: 'high', Authorization: `vapid t=${jwtFor(aud, subject)}, k=${vapid().publicKey}` };
+          if (topic) headers.Topic = crypto.createHash('sha256').update(String(topic)).digest('base64url').slice(0, 32);
+          const res = await fetchImpl(d.endpoint, { method: 'POST', headers, body: encrypt(payload, d.p256dh, d.auth), redirect: 'error', signal: AbortSignal.timeout(8000) });
+          if (res.status === 404 || res.status === 410) return 'gone';
+          return res.ok ? 'ok' : 'failed';
+        } catch (e) { return 'failed'; }
+      }));
+      const reached = list.filter((d, i) => outcome[i] === 'ok');
+      const gone = list.filter((d, i) => outcome[i] === 'gone');
       if (gone.length || reached.length) {
         const now = new Date().toISOString();
-        saveDevices(userId, devicesOf(userId).filter((x) => !gone.includes(x.id)).map((x) => (reached.includes(x.id) ? { ...x, usedAt: now } : x)));
+        const goneIds = new Set(gone.map((x) => x.id));
+        const okIds = new Set(reached.map((x) => x.id));
+        saveDevices(userId, devicesOf(userId)
+          .filter((x) => !(goneIds.has(x.id) && !x.secretHash))
+          .map((x) => (okIds.has(x.id) ? { ...x, usedAt: now } : goneIds.has(x.id) ? { ...x, lostAt: now } : x)));
       }
-      const names = list.filter((x) => reached.includes(x.id)).map((x) => x.name);
-      return { sent, failed, forgotten: gone.length, names };
+      if (reached.length) {
+        const cut = Date.now() - 10 * 60 * 1000;
+        for (const [k, v] of receipts) if (v.at < cut) receipts.delete(k);
+        receipts.set(m, { userId, at: Date.now(), got: [], opened: '' });
+      }
+      return {
+        sent: reached.length, failed: list.length - reached.length - gone.length, forgotten: gone.filter((x) => !x.secretHash).length,
+        lost: gone.filter((x) => x.secretHash).map((x) => x.name), names: reached.map((x) => x.name), m, track: reached.some((x) => x.secretHash),
+      };
     },
   };
 }

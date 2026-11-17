@@ -325,6 +325,7 @@ function createPortalApi({
 
   // The newest sends of each account, so a slip of the finger (or a script) cannot send hundreds of emails.
   const sends = new Map(); // account id -> [times]
+  const recentPushes = new Map(); // "<user> <wa|call> <number> <text>" -> { at, code, json }: one notification per click, never two
   function tooManySends(userId) {
     const now = Date.now();
     const recent = (sends.get(userId) || []).filter((t) => now - t < 10 * 60 * 1000);
@@ -2720,15 +2721,22 @@ function createPortalApi({
       sendJSON(res, 200, push.pairStatus(req.user.id, new URL(req.url, 'http://x').searchParams.get('t')));
       return true;
     }
+    // Whether a WhatsApp or Call just sent has arrived on the phone, and whether it was tapped (the computer shows it).
+    if (urlPath === '/api/push/receipt' && req.method === 'GET') {
+      if (!push) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
+      sendJSON(res, 200, push.receipt(req.user.id, new URL(req.url, 'http://x').searchParams.get('m')));
+      return true;
+    }
     if (/^\/api\/push\/(connect|disconnect|whatsapp)$/.test(urlPath) && req.method === 'POST') {
       if (!push) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
       const body = await bodyOf(req, res, 8 * 1024);
       if (!body) return true;
       if (urlPath === '/api/push/connect') {
-        const out = push.connect(req.user.id, body.subscription, text(body.name));
+        const out = push.connect(req.user.id, body.subscription, text(body.name), body.old);
         if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
         activity.record(req, req.user, 'Changed settings', { app: 'My phone', changes: [`Connected their phone (${out.device.name}) for WhatsApp`] });
-        sendJSON(res, 200, { ok: true, devices: push.devices(req.user.id) });
+        // The id and secret go to this phone only, so it can hand over a new push address by itself later (see push.js renew).
+        sendJSON(res, 200, { ok: true, devices: push.devices(req.user.id), device: { id: out.device.id, secret: out.secret } });
         return true;
       }
       if (urlPath === '/api/push/disconnect') {
@@ -2738,11 +2746,21 @@ function createPortalApi({
         return true;
       }
       const site = `https://${String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '')}`;
+      // What the computer is told when nothing reached a phone: which phone, and the one thing to do.
+      const notReached = (out) => {
+        const devs = push.devices(req.user.id);
+        if (!devs.length) return [409, 'Your phone is no longer connected. Connect it again.'];
+        if (devs.every((x) => x.lost)) { const n = devs.length === 1 ? `Your ${devs[0].name}` : 'Your phone'; return [409, `${n} is not answering. Open ISR on it once (from the Home Screen or Chrome) and it reconnects by itself.`]; }
+        return [502, out && out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.'];
+      };
+      const reply = (out) => {
+        if (!out.sent) { const [code, error] = notReached(out); sendJSON(res, code, { error }); return; }
+        sendJSON(res, 200, { ok: true, sent: out.sent, to: out.names, m: out.track ? out.m : '' });
+      };
       if (body.test === true) {
         // A test, from the Connect my phone window.
         if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
-        const t = await push.send(req.user.id, { title: 'ISR is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site);
-        sendJSON(res, t.sent ? 200 : 502, t.sent ? { ok: true, sent: t.sent, to: t.names } : { error: 'Your phone could not be reached. Check that it is online.' });
+        reply(await push.send(req.user.id, { title: 'ISR is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site, 'isr-test'));
         return true;
       }
       // A student's chat, sent to the person's own phone: only a student this account may see, only that student's number.
@@ -2751,20 +2769,27 @@ function createPortalApi({
       const number = Fields.whatsappNumber(found.row['CONTACT NUMBER']);
       if (!number) { sendJSON(res, 400, { error: 'This student has no WhatsApp number on the sheet.' }); return true; }
       if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
-      if (tooManySends(req.user.id)) { sendJSON(res, 429, { error: 'Too many in a short time. Please wait a few minutes.' }); return true; }
       const who = nameOf(found.row) || 'the student';
-      // Call (the owner, 17 Nov 2026): the same way, and a tap on the notification rings the student from the phone.
-      if (body.call === true) {
-        const out = await push.send(req.user.id, { title: `Call ${who}`, body: `Tap to call · +${number}`, url: `/wa?call=1&n=${number}&name=${encodeURIComponent(who)}`, tag: `call-${number}` }, site);
-        if (!out.sent) { sendJSON(res, 502, { error: out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.' }); return true; }
-        sendJSON(res, 200, { ok: true, sent: out.sent, to: out.names });
-        return true;
-      }
       const words = text(body.text).slice(0, 1500);
-      const url = `/wa?n=${number}&name=${encodeURIComponent(who)}${words ? `&text=${encodeURIComponent(words)}` : ''}`;
-      const out = await push.send(req.user.id, { title: `WhatsApp ${who}`, body: `Tap to open the chat · +${number}`, url, tag: `wa-${number}` }, site);
-      if (!out.sent) { sendJSON(res, 502, { error: out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.' }); return true; }
-      sendJSON(res, 200, { ok: true, sent: out.sent, to: out.names });
+      const kind = body.call === true ? 'call' : 'wa';
+      // Pressed twice (or three times) for the same student: the phone gets one notification, never two (the owner, 17 Nov 2026).
+      // The same click within 15 seconds is answered with the first one's result, and nothing more is sent.
+      const key = `${req.user.id} ${kind} ${number} ${words}`;
+      const now = Date.now();
+      for (const [k, v] of recentPushes) if (now - v.at > 15000) recentPushes.delete(k);
+      const prior = recentPushes.get(key);
+      if (prior) { sendJSON(res, prior.code, { ...prior.json, again: true, secondsAgo: Math.round((now - prior.at) / 1000) }); return true; }
+      if (tooManySends(req.user.id)) { sendJSON(res, 429, { error: 'Too many in a short time. Please wait a few minutes.' }); return true; }
+      // Held while it is being sent, so a second click during the send waits for the same answer instead of sending again.
+      const entry = { at: now, code: 202, json: { ok: true, pending: true } };
+      recentPushes.set(key, entry);
+      // Call (the owner, 17 Nov 2026): the same way, and a tap on the notification rings the student from the phone.
+      const message = kind === 'call'
+        ? { title: `Call ${who}`, body: `Tap to call · +${number}`, url: `/wa?call=1&n=${number}&name=${encodeURIComponent(who)}`, tag: `call-${number}` }
+        : { title: `WhatsApp ${who}`, body: `Tap to open the chat · +${number}`, url: `/wa?n=${number}&name=${encodeURIComponent(who)}${words ? `&text=${encodeURIComponent(words)}` : ''}`, tag: `wa-${number}` };
+      const out = await push.send(req.user.id, message, site, `${kind}-${number}`);
+      if (out.sent) { entry.code = 200; entry.json = { ok: true, sent: out.sent, to: out.names, m: out.track ? out.m : '' }; } else recentPushes.delete(key);
+      reply(out);
       return true;
     }
     // Their own WhatsApp number (the owner, 17 Nov 2026: Follow-up asks for it), for the signature of their emails and to know which

@@ -86,6 +86,9 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   const connected = await fu('POST', '/api/push/connect', { subscription: sub, name: 'Android phone' });
   assert.strictEqual(connected.status, 200);
   assert.deepStrictEqual(connected.json.devices.map((d) => d.name), ['Android phone']);
+  const me = connected.json.device;
+  assert.ok(me && me.id && me.secret, 'the phone is given its own id and secret, to renew by itself');
+  assert.ok(!fs.readFileSync(path.join(dir, 'push-devices.json'), 'utf8').includes(me.secret), 'only a hash of the secret is kept');
   assert.ok(!JSON.stringify((await fu('GET', '/api/push')).json).includes('/push/abc'), 'the push address is never sent back to a page');
 
   const sent = await fu('POST', '/api/push/whatsapp', { id: sita });
@@ -94,6 +97,23 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   assert.ok((await fu('GET', '/api/push')).json.devices[0].usedAt, 'the phone remembers when it was last used');
   const msg = got[got.length - 1];
   assert.strictEqual(msg.headers['content-encoding'], 'aes128gcm');
+  assert.ok(/^[\w-]{1,32}$/.test(msg.headers.topic), 'a Topic, so a waiting message is replaced, never doubled');
+  // Pressed again at once: answered with the first send, and nothing more goes to the phone (the owner, 17 Nov 2026).
+  const before = got.length;
+  const again = await fu('POST', '/api/push/whatsapp', { id: sita });
+  assert.deepStrictEqual([again.status, again.json.again], [200, true]);
+  assert.strictEqual(got.length, before, 'two clicks, one notification');
+  // The phone says it arrived, then that it was tapped; the computer sees both. Only with the phone's own secret.
+  const m = sent.json.m;
+  assert.ok(m, 'a message id for the receipt');
+  assert.strictEqual((await fu('GET', '/api/push/receipt?m=' + m)).json.state, 'sent');
+  const phonePost = (u, b2) => fetch(base + u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b2) });
+  assert.strictEqual((await phonePost('/api/push/ack', { d: me.id, k: 'wrong', m, ev: 'got' })).status, 410);
+  assert.strictEqual((await phonePost('/api/push/ack', { d: me.id, k: me.secret, m, ev: 'got' })).status, 200);
+  assert.deepStrictEqual((await fu('GET', '/api/push/receipt?m=' + m)).json.state, 'arrived');
+  await phonePost('/api/push/ack', { d: me.id, k: me.secret, m, ev: 'opened' });
+  assert.deepStrictEqual((await fu('GET', '/api/push/receipt?m=' + m)).json.state, 'opened');
+  assert.strictEqual((await admin('GET', '/api/push/receipt?m=' + m)).json.state, 'unknown', 'only the sender sees the receipt');
   assert.ok(!msg.body.includes(Buffer.from('9800000091')), 'the number is not readable on the way');
   const payload = decrypt(msg.body, ua, auth);
   assert.strictEqual(payload.title, 'WhatsApp Sita Demo');
@@ -111,9 +131,25 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: far })).status, 404);
   assert.strictEqual((await fu('POST', '/api/push/whatsapp', { test: true })).status, 200);
   assert.strictEqual(decrypt(got[got.length - 1].body, ua, auth).title, 'ISR is connected');
+  // A phone whose push address stopped working is marked "not answering", never forgotten, and renews itself with its secret.
   answer = 410;
-  assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: sita })).status, 502);
-  assert.strictEqual((await fu('GET', '/api/push')).json.devices.length, 0, 'the phone that has gone is forgotten');
+  const lost = await fu('POST', '/api/push/whatsapp', { id: sita, text: 'Hello' });
+  assert.strictEqual(lost.status, 409, 'the computer is told at once');
+  assert.deepStrictEqual((await fu('GET', '/api/push')).json.devices.map((x) => x.lost), [true], 'kept, marked not answering');
+  const told = await fu('POST', '/api/push/whatsapp', { id: sita, text: 'Hello again' });
+  assert.strictEqual(told.status, 409);
+  assert.match(told.json.error, /not answering.*reconnects by itself/);
+  answer = 201;
+  const ua3 = crypto.createECDH('prime256v1'); ua3.generateKeys(); const auth3 = crypto.randomBytes(16);
+  const sub3 = { endpoint: `http://127.0.0.1:${pushPort}/push/new`, keys: { p256dh: b64u(ua3.getPublicKey()), auth: b64u(auth3) } };
+  assert.strictEqual((await phonePost('/api/push/renew', { d: me.id, k: 'wrong', subscription: sub3 })).status, 410);
+  const renewed = await (await phonePost('/api/push/renew', { d: me.id, k: me.secret, subscription: sub3 })).json();
+  assert.deepStrictEqual([renewed.ok, renewed.wasLost], [true, true]);
+  assert.deepStrictEqual((await fu('GET', '/api/push')).json.devices.map((x) => [x.name, Boolean(x.lost)]), [['Android phone', false]], 'back, without connecting again');
+  assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: sita, text: 'Back' })).status, 200);
+  assert.strictEqual(got[got.length - 1].url, '/push/new', 'sent to the new address');
+  assert.strictEqual((await fu('POST', '/api/push/disconnect', { id: me.id })).status, 200);
+  assert.strictEqual((await phonePost('/api/push/renew', { d: me.id, k: me.secret, subscription: sub3 })).status, 410, 'a disconnected phone cannot come back by itself');
   // Pairing, the simple way (the owner, 17 Nov 2026): the computer shows a code; the phone, not logged in, opens it and connects.
   const pc = (await fu('POST', '/api/push/pair-code', {})).json;
   const token = new URL(pc.url).searchParams.get('t');
@@ -138,13 +174,14 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   assert.strictEqual((await pairPost({ token: 'wrong-wrong-wrong-wrong-wrong', subscription: sub2 })).status, 400);
   const paired = await pairPost({ token, subscription: sub2, name: 'iPhone' });
   assert.strictEqual(paired.status, 200);
+  assert.ok((await paired.json()).device.secret, 'the paired phone gets its secret');
   const doneSt = await pairStatus(token);
   assert.deepStrictEqual([doneSt.state, doneSt.device.name], ['done', 'iPhone'], 'the computer sees the phone connected, by name');
   assert.deepStrictEqual((await fu('GET', '/api/push')).json.devices.map((x) => x.name), ['iPhone'], 'the phone belongs to the person who showed the code');
   assert.strictEqual((await pairPost({ token, subscription: sub2, name: 'Again' })).status, 400, 'a code works once');
   await wait(300);
   assert.strictEqual(decrypt(got[got.length - 1].body, ua2, auth2).title, 'WhatsApp is on', 'the phone is told it worked');
-  assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: sita })).status, 200);
+  assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: sita, text: 'From the new phone' })).status, 200);
   assert.strictEqual(decrypt(got[got.length - 1].body, ua2, auth2).title, 'WhatsApp Sita Demo');
   assert.strictEqual((await phoneGet('/api/push/pair-code')).status === 200, false, 'only a logged-in person makes a code');
 
