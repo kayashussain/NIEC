@@ -3388,13 +3388,11 @@ body:has(.p-embed-bar) .p-tl-page.p-editing-origin .p-form, .p-tl-page.p-editing
 .p-tl-side .p-card > h2, .p-tl-side .p-card-head h2 { margin: 0; color: #1d1d1f; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
 .p-tl-side .p-card > h2 { margin-bottom: 12px; }
 body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tasks .p-card-head { margin-bottom: 4px; padding-bottom: 0; border-bottom: 0; }
-.p-tl > .p-tl-title-h { margin-bottom: 16px; }
 .p-tl-input { display: block; width: 100%; min-height: 50px; max-height: 320px; padding: 13px 16px; border: 0; outline: none; resize: none; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); field-sizing: content; }
 .p-tl-input::placeholder { color: #86868b; }
 .p-tl-compose-bar { display: none; justify-content: flex-end; padding: 0 10px 10px; }
 .p-tl-compose.has-text .p-tl-compose-bar { display: flex; }
 .p-tl-compose-bar .btn { border-radius: 999px; padding-inline: 16px; }
-.p-tl-tools { margin: 0 0 4px; }
 .p-tl-seg { display: inline-flex; gap: 2px; max-width: 100%; padding: 2px; overflow-x: auto; border-radius: 9px; background: #e8e8ed; scrollbar-width: none; }
 .p-tl-seg-btn { flex: none; min-height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: #1d1d1f; font: 500 14px/30px var(--font); cursor: pointer; transition: background .2s, box-shadow .2s; }
 .p-tl-seg-btn:hover { background: rgba(255, 255, 255, .5); }
@@ -3423,7 +3421,7 @@ body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tas
 .p-tl-me { margin-top: 7px; }
 .p-tl-compose-field { border: 1px solid #d2d2d7; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
 .p-tl-compose-field:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
-.p-tl-day { position: sticky; top: 0; z-index: 2; margin: 0 -8px 2px; padding: 8px; border-radius: 10px; background: color-mix(in srgb, var(--panel) 84%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+.p-tl-day { position: sticky; top: 0; z-index: 2; margin: 0 -8px 2px; padding: 8px; border-radius: 10px; background: color-mix(in srgb, var(--panel) 92%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .01em; }
 @media (max-width: 900px) { body:not(.p-embed) .p-tl-day { top: var(--tl-top, 64px); } }
 .p-tl-item.is-cont { position: relative; }
 .p-tl-item.is-cont > .p-tl-av { visibility: hidden; height: 0; margin-top: 0; }
@@ -3490,6 +3488,26 @@ html body .p-apps .p-chosen-facts dd { font-size: 14.5px; font-weight: 600; }
   html body .p-apps ol.p-chosen > li.p-chosen-item + li.p-chosen-item::after { left: 56px; }
 }
 @media (max-width: 400px) { html body .p-apps .p-chosen-item header { flex-direction: column; gap: 10px; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): the Timeline tab finished | from: the title "Timeline" on its own row with the switch (All, Notes, Tasks, Messages) under the note box; nothing to show what is new; each task in the Tasks card turning light grey under the mouse, its update box pure white with a square blue Post button; Source with a solid blue circle on a grey bar and "Not recorded" in black; the frosted day strip a little darker than the card | to: the title on the left and the switch on the right of the same row; a small blue dot left of each entry someone else added since you last opened the student (as unread mail in Apple's Mail); the tasks staying calm under the mouse, their update box the same soft off-white rounded field as the note box with a blue ring when typing and a round blue Post pill; Source as a soft blue circle with the initial and the name beside it (no grey bar), "Not recorded" in grey; the day strip the same colour as the card; one blue ring only around the note box and the update box while typing (a second ring inside them removed, a bug fix); the first task no longer on a pale box */
+.p-tl-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 0 0 16px; }
+.p-tl-top h2 { margin: 0; }
+.p-tl-item { position: relative; }
+.p-tl-item.is-unseen::before { content: ""; position: absolute; top: 25px; left: -16px; width: 8px; height: 8px; border-radius: 50%; background: #0071e3; }
+.p-tl-item.is-unseen.is-cont::before { top: 8px; }
+.p-tl-page .p-tasks .td-list > .td-task, .p-tl-page .p-tasks .td-list > .td-task:hover { background: transparent; }
+html body .p-tl-compose textarea.p-tl-input:focus, html body .p-tl-compose textarea.p-tl-input:focus-visible, html body .p-tl-page .tk-compose textarea.tk-input:focus, html body .p-tl-page .tk-compose textarea.tk-input:focus-visible { border: 0 !important; outline: none !important; box-shadow: none !important; }
+.p-tl-page .p-tasks .tk-compose { align-items: center; padding: 4px 4px 4px 6px; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
+.p-tl-page .p-tasks .tk-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
+html body .p-tl-page .p-tasks .tk-compose textarea.tk-input { background: transparent; }
+.p-tl-page .p-tasks .tk-compose .tk-send { min-height: 32px; padding: 0 16px; border-radius: 999px; }
+.p-tl-side .p-origin-main { padding: 2px 0; background: none; }
+.p-tl-side .p-origin-ico { width: 36px; height: 36px; background: #e8f0fc; color: #0066cc; font-size: 15px; }
+.p-tl-side .p-origin-main.is-empty .p-origin-ico { background: #f0f0f3; color: #86868b; }
+.p-tl-side .p-origin-main b { font-size: 16px; }
+.p-tl-side .p-origin-rows { margin-top: 8px; }
+.p-origin-row dd.is-empty { color: #86868b; font-weight: 400; }
+@media (max-width: 640px) { .p-tl-item.is-unseen::before { left: -12px; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): Partners (Universities, B2B partners, Agents) made more professional, one look on all three (the owner asked) | from: the title with a loose name box and button beside it; the numbers in one long box split by thin lines; a plain round search box with "N in the list" far away on the right; cards with a light border, the numbers bar and the facts in loose rows | to: the title on the left and one joined "name + Add" pill on the right (the same on all three pages, no list dropping down); the numbers as separate soft tiles, each with a thin blue line on top and big figures; a frosted search bar with a magnifier that stays at the top of the screen while scrolling, the count beside it in a small grey pill; cards with a crisper edge, a deeper shadow on hover and a soft blue ring, the name larger, the numbers bar in a soft grey tray, the facts as small grey labels over their values, the Edit or Open button as a blue text link at the bottom right */
 html body .bp-page .p-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px 28px; flex-wrap: wrap; margin-bottom: 26px; }
