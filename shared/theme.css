@@ -830,17 +830,7 @@ body:has(.p-embed-bar) .p-option .p-link, body:has(.p-embed-bar) .p-card:not(.p-
 /* Send a message */
 /* the wide card: two columns where there is room */
 @media (min-width: 761px) {
-  body:has(.p-embed-bar) .p-tabs + div:has(.p-note-box) { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
-  body:has(.p-embed-bar) .p-tabs + div:has(.p-note-box) > .p-card { grid-column: 1; margin: 0; }
-  body:has(.p-embed-bar) .p-tabs + div:has(.p-note-box) > .p-card:has(.p-note-box) { grid-column: 2; grid-row: span 4; }
-  body:has(.p-embed-bar) .p-tabs + div:has(.p-note-box) > .p-card:not(:has(.p-note-box)) .p-facts { grid-template-columns: minmax(0, 1fr); }
   body:has(.p-embed-bar) .p-card:not(.p-hero) .p-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  /* 🔴 CSS CHANGED (2026-11-15): "Where the student came from", Edit (a bug fix) | from: the form was squeezed into the 300px left column in three columns, so labels and choices broke onto many lines ("Social / Media", "Other / (type / its / name)") and the Organic / Advert switch spilled over the notes | to: while editing, the card takes the full width above the notes, its fields in rows of up to three, each at least 220px wide; any other form in the left column (Why the student did not go on) is one column */
-  body:has(.p-embed-bar) .p-tabs + div.p-editing-origin:has(.p-note-box) { display: flex; flex-direction: column; align-items: stretch; gap: 20px; }
-  .p-editing-origin .p-seg { justify-self: start; width: max-content; }
-  body:has(.p-embed-bar) .p-tabs + div.p-editing-origin > .p-card { margin: 0; }
-  body:has(.p-embed-bar) .p-tabs + div.p-editing-origin .p-form { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; }
-  body:has(.p-embed-bar) .p-tabs + div:has(.p-note-box):not(.p-editing-origin) > .p-card:not(:has(.p-note-box)) .p-form { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* 🔴 CSS CHANGED (2026-11-13): "Application link" on the student card | from: nothing | to: a full-width line under the student's details with "Open portal" as a small navy-outlined button with an arrow (opens in a new tab) and the application email as a link beside it, taken from the student's university on Partner Universities */
@@ -962,7 +952,6 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 
 /* 🔴 CSS CHANGED (2026-11-13): tasks | from: nothing | to: on Today a soft panel "Today's tasks" (a team) or "Assigned tasks" (Admin, Manager) above the work lists, one row per task with a round tick (navy with a white tick when done), the student's name in navy with the stage tag, the task, and a small line (team, by when, from whom, done by; amber when overdue); done tasks greyed; "Show done"; on the student card a "Tasks" panel with the same rows and "Assign a task"; a small "Needs attention" / "Your work lists" heading above the work lists */
 
-body:has(.p-embed-bar) .p-tabs + div > .p-card.p-tasks { grid-column: 1 / -1 !important; grid-row: auto !important; }
 
 /* 🔴 CSS CHANGED (2026-11-14): Message templates rebuilt calm and premium | from: two plain columns (a list of template boxes with the email signature form under it, and one long editor with a grid of stage tick boxes and a "Words you can use" fold-out), and a long yellow notice | to: a short soft notice; two underline tabs (Templates, Email signature); a slim list on the left with a search, each template a quiet row (name in navy, its stages under it, an "Edited" or "Yours" tag) and the open one marked with a bronze line; the editor in calm panels (Name and stages with the stages as pills, Email with the subject, the message and the fill-in words as chips, WhatsApp) and a Save bar that stays at the bottom; the signature on its own tab in three panels */
 @media (max-width: 900px) { .tp-layout { grid-template-columns: minmax(0, 1fr); } }
@@ -3361,29 +3350,6 @@ button.md-todo-more { border: 0; background: none; font: inherit; font-size: 13.
 button.md-todo-more:hover, button.md-todo-more:focus-visible { color: #0066cc; text-decoration: underline; }
 
 /* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline redesigned in the style of Apple's own apps | from: a vertical line with coloured dots, the time in a grey pill on every line, Pin, Change and Remove as blue words on every note, a soft amber Pinned panel, grey filter pills, a plain search box, a plain note box with the Add note button under it | to: the note box as one rounded field with "Ctrl + Enter to add" in grey and a small blue Add note pill inside it at the bottom (blue ring when typing in it); a grey segmented control (Everything, Notes, Tasks, Messages with a count each, the chosen one raised on a soft off-white tab) beside a rounded grey search field with a magnifier; the entries grouped by day under a bold heading (Today, Yesterday, Monday 16 November); each entry a row with a 36px round badge (the writer's initials in soft blue on a note, a line symbol for the rest: a checklist in orange for a task, a tick in green for done, a speech bubble in grey for an update, an envelope in purple for an email, a chat bubble in green for WhatsApp, "ISR" in grey for automatic notes), the name in bold, the kind in grey and the time in grey on the right, the words under it, thin hairlines between rows; Reopen and Read email as small blue words; Remove only appears in grey when the mouse is on the note (red on hover; always shown on phones); "Show all" as a grey pill in the middle; no vertical line, no dots, no Pin and no Change */
-.p-tl .p-tl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin: 0 0 16px; }
-.p-tl .p-tl-head h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.015em; color: #1d1d1f; }
-.p-tl-sum { color: #86868b; font-size: 14px; }
-.p-tl-compose { display: block; margin: 0 0 20px; padding: 12px 14px 10px; border: 1px solid #d2d2d7; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
-.p-tl-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
-.p-tl-input { display: block; width: 100%; min-height: 64px; padding: 0; border: 0; outline: none; resize: vertical; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); }
-.p-tl-input::placeholder { color: #86868b; }
-.p-tl-compose-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
-.p-tl-hint { color: #86868b; font-size: 13px; }
-.p-tl-compose-bar .btn { border-radius: 999px; padding-inline: 16px; }
-.p-tl-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; margin: 0 0 8px; }
-.p-tl-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: 10px; background: #e8e8ed; }
-.p-tl-seg-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font: 500 14px/32px var(--font); cursor: pointer; transition: background .2s, box-shadow .2s; }
-.p-tl-seg-btn:hover { background: rgba(255, 255, 255, .5); }
-.p-tl-seg-btn[aria-selected="true"] { background: #fbfbfd; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); font-weight: 600; }
-.p-tl-n { color: #86868b; font-size: 12.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.p-tl-search { display: inline-flex; align-items: center; gap: 6px; flex: 0 1 220px; min-width: 150px; height: 34px; padding: 0 12px; border-radius: 10px; background: #e8e8ed; color: #86868b; cursor: text; transition: box-shadow .2s, background .2s; }
-.p-tl-search:focus-within { background: #fbfbfd; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15), 0 0 0 1px #0071e3; }
-.p-tl-search svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.p-tl-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; background: transparent; color: #1d1d1f; font: 15px var(--font); }
-.p-tl-days { display: block; }
-.p-tl-group { margin: 18px 0 0; }
-.p-tl-day { margin: 0 0 2px; color: #1d1d1f; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
 .p-tl-list { margin: 0; padding: 0; list-style: none; }
 .p-tl-item { display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 12px; }
 .p-tl-av { display: grid; place-items: center; width: 36px; height: 36px; margin-top: 12px; border-radius: 50%; background: #e8f0fc; color: #0066cc; font: 600 13px/1 var(--font); letter-spacing: .02em; }
@@ -3406,20 +3372,51 @@ button.md-todo-more:hover, button.md-todo-more:focus-visible { color: #0066cc; t
 .p-tl-title + .p-tl-text { color: #515154; }
 .p-tl-text .td-tag { font-size: 12px; vertical-align: 1px; }
 .p-tl-text.is-folded { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-.p-tl mark { padding: 0 2px; border-radius: 3px; background: #ffe58f; color: inherit; }
 .p-tl-more, .p-tl-act { padding: 0; border: 0; background: none; color: #0066cc; font: 500 13.5px var(--font); cursor: pointer; }
 .p-tl-more { margin-top: 4px; }
 .p-tl-more:hover, .p-tl-act:hover { text-decoration: underline; }
 .p-tl-acts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; }
-.p-tl-act.is-remove { color: #86868b; opacity: 0; transition: opacity .15s; }
+
+/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline tab made calmer, in the style of Apple's own apps | from: Tasks across the whole width, then a narrow Source card (and "Why the student did not go on") on the left beside the Timeline, with an empty space under them; the Timeline with a count line beside the title, a grey hint and an always-visible Add note button in the note box, counts in the switch, a search field, Remove under each note on hover | to: two columns: the work on the left (Tasks, then the Timeline, one under the other, the same width) and a slim 300px column on the right with Source (and the reason, when there is one) that stays in view while scrolling; on a phone or a narrow card one column (Tasks, Timeline, then Source); every title the same size (20px, the right column 17px); the Tasks title without the line under it; the note box one quiet rounded field that grows as you type, the blue Add note pill appears only once something is typed; a plain switch All, Notes, Tasks, Messages without numbers; no search; day headings in small grey; Remove in grey beside the time, shown only when the mouse is on the note (red on hover, always shown on phones); while Source is being changed, its form goes across the whole width above the rest */
+.p-tl-page { display: grid; gap: 20px; }
+.p-tl-main, .p-tl-side { display: grid; gap: 20px; align-content: start; min-width: 0; }
+.p-tl-page .p-card, body:has(.p-embed-bar) .p-tl-page .p-card { margin: 0; }
+@media (min-width: 900px) {
+  .p-tl-page { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+  .p-tl-side { position: sticky; top: 16px; }
+  .p-tl-page.p-editing-origin { grid-template-columns: minmax(0, 1fr); }
+  .p-tl-page.p-editing-origin .p-tl-side { order: -1; position: static; }
+}
+body:has(.p-embed-bar) .p-tl-page:not(.p-editing-origin) .p-tl-side .p-form, .p-tl-page:not(.p-editing-origin) .p-tl-side .p-form { grid-template-columns: minmax(0, 1fr); }
+body:has(.p-embed-bar) .p-tl-page.p-editing-origin .p-form, .p-tl-page.p-editing-origin .p-form { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; }
+.p-editing-origin .p-seg { justify-self: start; width: max-content; }
+.p-tl-main .p-card > h2, .p-tl-main .p-card-head h2 { margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 650; letter-spacing: -.015em; }
+.p-tl-side .p-card > h2, .p-tl-side .p-card-head h2 { margin: 0; color: #1d1d1f; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.p-tl-side .p-card > h2 { margin-bottom: 12px; }
+.p-tl-why .p-bar { margin-top: 12px; }
+body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tasks .p-card-head { margin-bottom: 4px; padding-bottom: 0; border-bottom: 0; }
+.p-tl > .p-tl-title-h { margin-bottom: 16px; }
+.p-tl-compose { margin: 0 0 18px; border: 1px solid #d2d2d7; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
+.p-tl-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
+.p-tl-input { display: block; width: 100%; min-height: 50px; max-height: 320px; padding: 13px 16px; border: 0; outline: none; resize: none; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); field-sizing: content; }
+.p-tl-input::placeholder { color: #86868b; }
+.p-tl-compose-bar { display: none; justify-content: flex-end; padding: 0 10px 10px; }
+.p-tl-compose.has-text .p-tl-compose-bar { display: flex; }
+.p-tl-compose-bar .btn { border-radius: 999px; padding-inline: 16px; }
+.p-tl-tools { margin: 0 0 4px; }
+.p-tl-seg { display: inline-flex; gap: 2px; max-width: 100%; padding: 2px; overflow-x: auto; border-radius: 9px; background: #e8e8ed; scrollbar-width: none; }
+.p-tl-seg-btn { flex: none; min-height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: #1d1d1f; font: 500 14px/30px var(--font); cursor: pointer; transition: background .2s, box-shadow .2s; }
+.p-tl-seg-btn:hover { background: rgba(255, 255, 255, .5); }
+.p-tl-seg-btn[aria-selected="true"] { background: #fbfbfd; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); font-weight: 600; }
+.p-tl-group { margin-top: 20px; }
+.p-tl-day { margin: 0 0 2px; color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+.p-tl-act.is-remove { flex: none; margin-left: auto; color: #86868b; font-size: 13px; opacity: 0; transition: opacity .15s; }
+.p-tl-act.is-remove + .p-tl-time { margin-left: 12px; }
 .p-tl-item:hover .p-tl-act.is-remove, .p-tl-act.is-remove:focus-visible { opacity: 1; }
-.p-tl-act.is-remove:hover { color: #d70015; }
-.p-tl-acts:not(:has(.p-tl-act:not(.is-remove))) { margin-top: 0; height: 0; overflow: visible; }
-.p-tl-item:hover .p-tl-acts:not(:has(.p-tl-act:not(.is-remove))) { height: auto; margin-top: 6px; }
-@media (hover: none) { .p-tl-act.is-remove { opacity: 1; } .p-tl-acts:not(:has(.p-tl-act:not(.is-remove))) { height: auto; margin-top: 6px; } }
-.p-tl-empty { margin: 8px 0 0; padding: 28px 12px; border-radius: 14px; background: #f5f5f7; color: #86868b; font-size: 15px; text-align: center; }
-.p-tl-all { display: block; margin: 14px auto 0; min-height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 500 14px var(--font); cursor: pointer; }
+.p-tl-act.is-remove:hover { color: #d70015; text-decoration: none; }
+@media (hover: none) { .p-tl-act.is-remove { opacity: 1; } }
+.p-tl-empty { margin: 8px 0 0; padding: 32px 16px; border-radius: 14px; background: #f5f5f7; color: #86868b; font-size: 15px; text-align: center; }
+.p-tl-all { display: block; margin: 16px auto 0; min-height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 500 14px var(--font); cursor: pointer; }
 .p-tl-all:hover { background: #dedee3; }
 .p-tl-all[hidden] { display: none; }
-@media (max-width: 640px) { .p-tl-search { flex: 1 1 100%; } .p-tl-seg { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; } .p-tl-seg-btn { flex: none; } }
 @media (prefers-reduced-motion: reduce) { .p-tl-compose, .p-tl-act.is-remove { transition: none; } }
