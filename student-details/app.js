@@ -1396,6 +1396,7 @@
     const hadGridFocus = !ae || ae === document.body || body.contains(ae);
     viewIndices = getFilteredSortedIndices();
     renderFilterBar();
+    renderStageChips();
     viewPos = new Map(viewIndices.map((rowIdx, p) => [rowIdx, p]));
     viewDupPhones = duplicatePhones(rows, WHATSAPP_COL); // across the whole sheet, not just the filtered rows
     body.textContent = '';
@@ -1440,6 +1441,41 @@
   $('#clearAllFilters').addEventListener('click', clearAllFilters);
   // A bar that says when a search or a filter is hiding students, with a button to clear them all. The filters are remembered
   // after a refresh, so this is how to get every student back.
+  // One row of stage buttons above the sheet (the owner, 17 Nov 2026: one click instead of the column menu): All, then each stage
+  // that has students on this tab, with how many. A press shows only that stage (the same filter as the Application Status menu,
+  // kept in the same way); a second press, or All, shows everyone again. A team sees its own stages only, so it gets no row.
+  const stageChipsEl = $('#stageChips');
+  function renderStageChips() {
+    const COL = 'APPLICATION STATUS';
+    const stages = SELECT_COLS[COL] || [];
+    if (!stageChipsEl || !columns.includes(COL) || isTeam() || !stages.length) { if (stageChipsEl) stageChipsEl.hidden = true; return; }
+    const named = (r) => String(r['FIRST NAME'] || '').trim() || String(r['LAST NAME'] || '').trim();
+    const counts = new Map();
+    let total = 0;
+    rows.forEach((r) => { if (!named(r) || (cameFrom && !sourceMatches(r))) return; total += 1; const v = (r[COL] || '').trim(); counts.set(v, (counts.get(v) || 0) + 1); });
+    const shown = stages.filter((st) => counts.get(st));
+    if (shown.length < 2) { stageChipsEl.hidden = true; return; }
+    const on = columnFilters[COL] && columnFilters[COL].size === 1 ? [...columnFilters[COL]][0] : (columnFilters[COL] ? '\u0000' : '');
+    const chip = (label, n, value) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'stage-chip' + ((value === on) ? ' on' : '');
+      b.setAttribute('aria-pressed', String(value === on));
+      const t = document.createElement('span'); t.textContent = label;
+      const c = document.createElement('span'); c.className = 'stage-chip-n'; c.textContent = String(n);
+      b.append(t, c);
+      b.addEventListener('click', () => {
+        if (!value || value === on) delete columnFilters[COL]; else columnFilters[COL] = new Set([value]);
+        saveFilters();
+        renderHeader();
+        renderBody();
+      });
+      return b;
+    };
+    stageChipsEl.replaceChildren(chip('All', total, ''), ...shown.map((st) => chip(st, counts.get(st), st)));
+    stageChipsEl.hidden = false;
+  }
+
   function renderFilterBar() {
     const bar = $('#filterBar');
     const cols = Object.keys(columnFilters);
