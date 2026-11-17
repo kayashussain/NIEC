@@ -8,13 +8,24 @@
 // window.PhoneLink = { openChat({ id, number, name, text }), call({ id, number, name }), dialog() }. Loaded on every page by header.js.
 (function () {
   if (window.PhoneLink) return;
-  const say = (t, bad) => (window.NiecUI && window.NiecUI.toast ? window.NiecUI.toast(t, { type: bad ? 'error' : 'success' }) : alert(t));
+  // One notice at a time for a click (the owner, 17 Nov 2026: a click must show at once that it worked): each new notice replaces
+  // the one before, so "Sending...", "Sent" and "On your phone" follow each other in the same place.
+  let lastNotice = null;
+  const say = (t, bad, opts) => {
+    if (lastNotice) { try { lastNotice(); } catch (e) { /* gone already */ } lastNotice = null; }
+    if (!(window.NiecUI && window.NiecUI.toast)) { if (bad) alert(t); return; }
+    lastNotice = window.NiecUI.toast(t, { type: bad ? 'error' : (opts && opts.type) || 'success', ...(opts && opts.duration ? { duration: opts.duration } : {}) });
+  };
   const isPhone = () => window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   const canPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  // Every call has a time limit, so a click is never left without an answer.
   async function api(url, body) {
-    const r = await fetch(url, body === undefined ? { credentials: 'same-origin' } : { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const opts = body === undefined ? { credentials: 'same-origin' } : { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+    if (window.AbortSignal && AbortSignal.timeout) opts.signal = AbortSignal.timeout(15000);
+    let r;
+    try { r = await fetch(url, opts); } catch (e) { const err = new Error(e && e.name === 'TimeoutError' ? 'ISR did not answer in time. Check the internet and try again.' : 'No connection to ISR. Check the internet and try again.'); err.status = 0; throw err; }
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error(j.error || 'Something went wrong.'); e.status = r.status; throw e; }
     return j;
@@ -28,6 +39,13 @@
   let status = null; // { key, devices }
   const load = async (fresh) => { if (!status || fresh) status = await api('/api/push'); return status; };
 
+  // This phone's id and secret, kept on the phone for ISR's service worker (sw.js), so it renews its push address by itself.
+  const STORE = 'isr-device'; const ME = '/__isr-device';
+  const mine = async () => { try { const r = await (await caches.open(STORE)).match(ME); return r ? await r.json() : null; } catch (e) { return null; } };
+  const keepMine = async (me) => { try { await (await caches.open(STORE)).put(ME, new Response(JSON.stringify(me), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { /* still works */ } };
+  // Any page of ISR opened on a connected phone checks in quietly, so the phone stays connected (sw.js heal).
+  try { if (isPhone() && navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage('heal'); } catch (e) { /* fine */ }
+
   async function connectHere() {
     if (!canPush()) throw new Error(isIos() && !standalone() ? 'On an iPhone, first add ISR to the Home Screen (the Share button, then Add to Home Screen), open ISR from there, and press Connect again.' : 'This browser cannot get notifications. Use Chrome on Android, or Safari on iPhone with ISR on the Home Screen.');
     const allowed = await Notification.requestPermission();
@@ -37,7 +55,10 @@
     const s = await load(true);
     let sub = await reg.pushManager.getSubscription();
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(s.key) });
-    status = await api('/api/push/connect', { subscription: sub.toJSON(), name: deviceName() });
+    const old = await mine();
+    const out = await api('/api/push/connect', { subscription: sub.toJSON(), name: deviceName(), old: old ? { id: old.d, secret: old.k } : undefined });
+    if (out.device) await keepMine({ d: out.device.id, k: out.device.secret, key: s.key, endpoint: sub.endpoint, checkedAt: Date.now() });
+    status = out;
     return status;
   }
 
@@ -174,7 +195,7 @@
       s.devices.forEach((x) => {
         const li = el('li');
         const t = el('div', 'pc-dev-text');
-        t.append(el('b', '', x.name), el('span', '', `Connected ${day(x.at)}${x.usedAt ? ` · Last used ${day(x.usedAt)}` : ''}`));
+        t.append(el('b', '', x.name), el('span', '', x.lost ? 'Not answering. Open ISR on it once and it reconnects by itself.' : `Connected ${day(x.at)}${x.usedAt ? ` · Last used ${day(x.usedAt)}` : ''}`));
         let sure = null;
         const off = btn('btn btn-sm pc-off', 'Disconnect', async () => {
           if (!sure) { off.textContent = 'Disconnect?'; off.classList.add('is-sure'); sure = setTimeout(() => { sure = null; off.textContent = 'Disconnect'; off.classList.remove('is-sure'); }, 3500); return; }
@@ -187,7 +208,8 @@
       body.replaceChildren(done, list);
       const test = btn('btn', 'Send a test', async () => {
         test.disabled = true;
-        try { const r = await api('/api/push/whatsapp', { test: true }); say(`Sent. Look at your ${(r.to && r.to[0]) || 'phone'}.`); } catch (e) { say(e.message, true); }
+        say('Sending a test to your phone...', false, { type: 'info', duration: 15000 });
+        try { const r = await api('/api/push/whatsapp', { test: true }); const to = (r.to && r.to[0]) || 'phone'; say(`Sent. Look at your ${to}.`); follow(r.m, to, 'the test'); } catch (e) { say(e.message, true); }
         test.disabled = false;
       });
       foot(test, btn('btn', 'Connect another phone', () => showCode(true)), btn('btn btn-primary', 'Done', () => d.close()));
@@ -196,25 +218,64 @@
     draw();
   }
 
+  // After a send: ISR's service worker on the phone says when the notification has arrived and when it was tapped, so the person
+  // knows their click worked (the owner, 17 Nov 2026). Asked every second for up to 25 seconds; a phone connected before this
+  // (no receipt) simply keeps the "Sent" notice.
+  let following = 0;
+  async function follow(m, to, what) {
+    if (!m) return;
+    const mine = ++following;
+    let arrived = false;
+    for (let i = 0; i < 25 && mine === following; i += 1) {
+      await new Promise((r) => setTimeout(r, i < 5 ? 600 : 1000));
+      if (mine !== following) return;
+      let r;
+      try { r = await api('/api/push/receipt?m=' + encodeURIComponent(m)); } catch (e) { continue; }
+      if (r.state === 'opened') { say(`Opened on your ${r.opened || to}.`); return; }
+      if (r.state === 'arrived' && !arrived) { arrived = true; say(`On your ${(r.got && r.got[0]) || to} now. Tap the notification to open ${what}.`, false, { duration: 12000 }); }
+      if (r.state === 'unknown') return;
+    }
+    if (!arrived && mine === following) say(`Not on your ${to} yet. Check that the phone is online (Wi-Fi or mobile data), then press again.`, true);
+  }
+
+  // Pressed again for the same student while it is still being sent, or just after: nothing more is sent (the owner, 17 Nov 2026:
+  // two clicks sent two notifications). The server says the same (15 seconds).
+  const busy = new Map(); // "wa|call number" -> time pressed
+  function once(key) {
+    const t = busy.get(key);
+    if (t && Date.now() - t < 15000) return false;
+    busy.set(key, Date.now());
+    return true;
+  }
+
+  // Sends a WhatsApp chat or a call to the person's phone. Shows "Sending..." at once, then "Sent", then "On your phone".
+  async function toPhone(kind, { id, number, name, text }, fallback) {
+    const key = `${kind} ${number} ${text || ''}`;
+    const who = name || 'the student';
+    if (!once(key)) { say(`Already sent to your phone. Look for "${kind === 'call' ? 'Call' : 'WhatsApp'} ${who}".`, false, { type: 'info' }); return; }
+    say('Sending to your phone...', false, { type: 'info', duration: 15000 });
+    try {
+      const r = await api('/api/push/whatsapp', kind === 'call' ? { id, call: true } : { id, text: text || '' });
+      if (r.pending) { say(`Already being sent to your phone. Look for "${kind === 'call' ? 'Call' : 'WhatsApp'} ${who}".`, false, { type: 'info' }); return; }
+      const to = r.to && r.to.length === 1 ? r.to[0] : 'phone';
+      const what = kind === 'call' ? `the call to ${who}` : `the chat with ${who}`;
+      say(r.again ? `Already sent to your ${to} ${r.secondsAgo || 0}s ago. Tap the notification to open ${what}.` : `Sent to your ${to}. Tap the notification to open ${what}.`, false, { duration: 12000 });
+      if (!r.again) follow(r.m, to, what);
+    } catch (e) {
+      busy.delete(key);
+      // The phone was removed, or is not answering: show how to connect it, with this computer for this once.
+      if (e.status === 409) { status = null; say(e.message, true); dialog({ href: fallback }); return; }
+      if (kind === 'wa') { say(`${e.message} Opening WhatsApp here instead.`, true); window.open(fallback, '_blank', 'noopener'); return; }
+      say(e.message, true);
+    }
+  }
+
   // The WhatsApp button of a student: the phone when one is connected, else WhatsApp on this device.
   async function openChat({ id, number, name, text }) {
     if (isPhone()) { (window.top || window).location.href = `/wa?n=${number}&name=${encodeURIComponent(name || '')}${text ? `&text=${encodeURIComponent(text)}` : ''}`; return; }
     let s = null;
     try { s = await load(); } catch (e) { s = null; }
-    if (s && s.devices.length && id) {
-      try {
-        const r = await api('/api/push/whatsapp', { id, text: text || '' });
-        const to = r.to && r.to.length === 1 ? `your ${r.to[0]}` : 'your phone';
-        say(`Sent to ${to}. Tap the notification to chat with ${name || 'the student'}.`);
-        return;
-      } catch (e) {
-        // The phone was removed (or notifications blocked on it): show how to connect it again, with this computer for this once.
-        if (e.status === 409 || /no longer connected/.test(e.message)) { status = null; dialog({ href: web(number, text) }); return; }
-        say(`${e.message} Opening WhatsApp here instead.`, true);
-      }
-      window.open(web(number, text), '_blank', 'noopener');
-      return;
-    }
+    if (s && s.devices.length && id) { toPhone('wa', { id, number, name, text }, web(number, text)); return; }
     // No phone connected yet: how to connect one, and the chat on this computer this once.
     dialog({ href: web(number, text) });
   }
@@ -227,18 +288,7 @@
     if (isPhone()) { (window.top || window).location.href = tel; return; }
     let s = null;
     try { s = await load(); } catch (e) { s = null; }
-    if (s && s.devices.length && id) {
-      try {
-        const r = await api('/api/push/whatsapp', { id, call: true });
-        const to = r.to && r.to.length === 1 ? `your ${r.to[0]}` : 'your phone';
-        say(`Sent to ${to}. Tap the notification to call ${name || 'the student'}.`);
-        return;
-      } catch (e) {
-        if (e.status === 409 || /no longer connected/.test(e.message)) { status = null; dialog({ href: tel }); return; }
-        say(e.message, true);
-        return;
-      }
-    }
+    if (s && s.devices.length && id) { toPhone('call', { id, number, name }, tel); return; }
     dialog({ href: tel });
   }
 

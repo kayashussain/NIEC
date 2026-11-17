@@ -36,6 +36,12 @@
   // On an iPhone the Home Screen icon must come back to this same page (with its code) to finish.
   const m = document.createElement('link'); m.rel = 'manifest'; m.href = '/manifest.webmanifest' + (/^[\w-]{20,40}$/.test(token) ? '?pair=' + token : ''); document.head.append(m);
 
+  // This phone's id and secret, kept on the phone for ISR's service worker (sw.js), so the phone hands over a new push address by
+  // itself and never has to be connected again.
+  const STORE = 'isr-device'; const ME = '/__isr-device';
+  const mine = async () => { try { const r = await (await caches.open(STORE)).match(ME); return r ? await r.json() : null; } catch (e) { return null; } };
+  const keepMine = async (me) => { try { await (await caches.open(STORE)).put(ME, new Response(JSON.stringify(me), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { /* the phone still works; it only cannot renew by itself */ } };
+
   async function start() {
     let state;
     try { state = await (await fetch('/api/push/pair-state?t=' + encodeURIComponent(token), { cache: 'no-store' })).json(); } catch (e) { state = { valid: false }; }
@@ -72,9 +78,11 @@
         await navigator.serviceWorker.ready;
         let sub = await reg.pushManager.getSubscription();
         if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(state.key) });
-        const r = await fetch('/api/push/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, subscription: sub.toJSON(), name: deviceName() }) });
+        const old = await mine();
+        const r = await fetch('/api/push/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, subscription: sub.toJSON(), name: deviceName(), old: old ? { id: old.d, secret: old.k } : undefined }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(j.error || 'It did not work. Please try again.');
+        if (j.device) await keepMine({ d: j.device.id, k: j.device.secret, key: state.key, endpoint: sub.endpoint, checkedAt: Date.now() });
         go.hidden = true;
         steps([]);
         $('note').hidden = true;

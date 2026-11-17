@@ -1049,12 +1049,22 @@ const server = http.createServer(async (req, res) => {
     if (urlPath === '/api/push/pair' && req.method === 'POST') {
       let body;
       try { body = await readJSONBody(req, 8 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
-      const out = push.pairWith(body && body.token, body && body.subscription, String((body && body.name) || '').slice(0, 60));
+      const out = push.pairWith(body && body.token, body && body.subscription, String((body && body.name) || '').slice(0, 60), body && body.old);
       if (out.error) return sendJSON(res, 400, { error: out.error });
       activity.record(req, out.user, 'Changed settings', { app: 'My phone', changes: [`Connected their phone (${out.device.name}) for WhatsApp, with the code from the computer`] });
       const site = `https://${String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '')}`;
-      push.send(out.user.id, { title: 'WhatsApp is on', body: 'From now on, WhatsApp on the computer opens the chat here.', url: '/today', tag: 'isr-test' }, site).catch(() => {});
-      return sendJSON(res, 200, { ok: true, name: String(out.user.name || '').split(/\s+/)[0] });
+      push.send(out.user.id, { title: 'WhatsApp is on', body: 'From now on, WhatsApp on the computer opens the chat here.', url: '/today', tag: 'isr-test' }, site, 'isr-test').catch(() => {});
+      // The id and secret go to this phone only, so it can hand over a new push address by itself later (push.js renew).
+      return sendJSON(res, 200, { ok: true, name: String(out.user.name || '').split(/\s+/)[0], device: { id: out.device.id, secret: out.secret } });
+    }
+    // The phone's own service worker (no login on the phone; its secret says which phone it is): a new push address when the phone
+    // changed it (so it never has to be connected again), and "arrived" / "opened" for a notification (the computer shows it).
+    if ((urlPath === '/api/push/renew' || urlPath === '/api/push/ack') && req.method === 'POST') {
+      let body;
+      try { body = await readJSONBody(req, 8 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
+      const b = body || {};
+      const out = urlPath === '/api/push/renew' ? push.renew(b.d, b.k, b.subscription) : push.ack(b.d, b.k, b.m, b.ev === 'opened' ? 'opened' : 'got');
+      return sendJSON(res, out.error ? (out.gone ? 410 : 400) : 200, out);
     }
     if (PUBLIC_SHARED.has(urlPath)) return serveShared(req, res); // the logo, for the login page
     // The Advisor connector checks its own secret in the address, so it answers before the login.
