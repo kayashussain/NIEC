@@ -3301,3 +3301,15 @@ html body .sl-pick.is-sent { background: #ececf0; color: #3a3a3c; cursor: defaul
 .pl-sort { display: inline-flex; align-items: center; gap: 8px; color: #515154; font-size: 14px; font-weight: 600; }
 .pl-sort select { width: auto; min-height: 38px; padding: 0 30px 0 14px; border: 0; border-radius: 999px; background-color: #e8e8ed; color: #1d1d1f; font: 500 14.5px var(--font); cursor: pointer; }
 @media (max-width: 640px) { .pl-seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): the student card | from: a card opened from All Students had only Close (to see the next student: close, find the row, double-click again); the missing passport details shown only as orange "Missing" words among the facts | to: a frosted pill at the bottom centre of the card window with ‹ and › round buttons and "12 of 58" between them (the ← → keys do the same); under the facts a soft orange line with an orange dot, "3 details missing: Date of birth, Passport number, Address", and a blue "Fill them in" pill on the right */
+.p-drawer-nav { position: absolute; left: 50%; bottom: 18px; z-index: 2; display: flex; align-items: center; gap: 6px; padding: 5px; border-radius: 999px; background: rgba(250, 250, 252, .86); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 10px 30px -12px rgba(0, 0, 0, .3); transform: translateX(-50%); }
+.p-drawer-nav button { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font: 600 22px/1 var(--font); cursor: pointer; transition: background-color .15s ease; }
+.p-drawer-nav button:hover:not(:disabled) { background: #0071e3; color: #fff; }
+.p-drawer-nav button:disabled { opacity: .35; cursor: default; }
+.p-drawer-nav span { min-width: 74px; padding: 0 6px; color: #1d1d1f; font-size: 14px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+.p-gaps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 14px; padding: 10px 12px 10px 14px; border-radius: 12px; background: #fff4e5; color: #6b3a00; font-size: 14.5px; }
+.p-gaps-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ff9f0a; }
+.p-gaps-text { flex: 1 1 220px; }
+/* (the same change) room at the bottom of a card opened over a page, so the ‹ › pill never covers its last line */
+body.p-embed { padding-bottom: 76px; }
