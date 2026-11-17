@@ -12,251 +12,132 @@
 <link rel="stylesheet" href="portal.css" />
 <link rel="stylesheet" href="theme.css" />
 <style>
-  /* 🔴 CSS CHANGED (2026-11-13): Events and marketing, rebuilt as a ledger with an event page | from: four separate number tiles and a grid of big cards (each with its own figures), with the students of one in a small window | to: one calm summary band (Total investment, Enquiries, Visas, Cost per enquiry, Cost per visa) divided by fine lines with serif figures; filter pills (All, Campaigns, Events); every event as one row of a clean ledger (name in navy with its "where it ran" tag and dates, then Investment, Enquiries, Visas, Per enquiry and Per visa lined up in columns, and an arrow); a click opens the event as its own view: the name in a large navy serif, its figures in the same kind of band, a soft "Upload the enquiry list" panel with a review of every line in coloured groups (New, Match, Linked, Other event, Skipped) before anything is saved, and its enquiries (name, phone, stage tag, intake, the latest note) where a click opens the student card; the form keeps the "Where it ran" pills */
-  .ev-page { max-width: 1480px; }
-  .ev-band { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 8px 0 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 18px 36px -32px rgba(29, 47, 82, .55); overflow: hidden; }
+  /* 🔴 CSS CHANGED (2026-11-17): Events and marketing made clean and calm, in the Apple look, with only what the team needs | from: gold and navy figures, a calendar leaf in blue or orange on every row, red, amber and green follow-up pills on every row, a funnel panel with coloured bars, three coloured meters, seven coloured status tiles, a "Followed up by" bar, the list with five columns and a coloured status pill | to: near-black figures with small grey labels on one off-white band; each row the name in bold with a grey line under it (where it ran, dates, intake) and plain figures (Cost, Inquiries, To follow up, Visas, Per visa), "To follow up" with a small orange dot only when someone waits; on an event, the title, one band (Cost, Inquiries, Applied, Visas, Cost per visa), then one Students panel with a grey segmented switch (All, To follow up, Followed up, Applying, Visa, Inactive, each with its count) and a search pill, and a clean table: Student (name, phone in blue under it), Stage, Last contact (when and who, the words in grey, "Never contacted" or "Follow-up due" in orange), Remarks, and a grey "Note" pill; the upload panel under it in the same calm style | the old leaf, funnel, meter, tile, team and pill styles deleted */
+  .ev-page { max-width: 1320px; }
+  .ev-band { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); margin: 8px 0 22px; border-radius: 18px; background: var(--panel, #fbfbfd); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); overflow: hidden; }
   .ev-band > div { padding: 18px 22px; min-width: 0; }
-  .ev-band > div + div { border-left: 1px solid var(--border); }
-  .ev-band span { display: block; color: var(--text-dim); font-size: 14px; font-weight: 600; }
-  .ev-band b { display: block; margin-top: 6px; font-family: var(--serif); font-size: 28px; font-weight: 600; line-height: 1.1; color: var(--brand-navy, #1d2f52); overflow-wrap: anywhere; }
-  .ev-band small { display: block; margin-top: 4px; color: var(--text-dim); font-size: 14px; }
-  .ev-band .gold b { color: #6f5631; }
-  @media (max-width: 1000px) { .ev-band { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ev-band > div + div { border-left: 0; } .ev-band > div { border-top: 1px solid var(--border); } }
-  .ev-note { display: flex; align-items: baseline; gap: 10px; margin: 0 0 18px; padding: 14px 18px; border: 0; border-radius: 14px; background: var(--panel, #fbfbfd); color: #1d1d1f; font-size: 15px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
-  .ev-note::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ff9500; transform: translateY(-1px); }
-  .ev-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 4px 0 12px; }
-  /* 🔴 CSS CHANGED (2026-11-14): the Events and marketing page brought to the same Apple look as the other pages | from: the All, Campaigns and Events switch with a black pill on the chosen one; a yellow bordered warning box; navy names; names of enquiries underlined; the columns of the enquiry list not lined up from row to row; a bronze arrow; the event title in a serif | to: the same grey segmented switch as everywhere, with a white pill that slides to the chosen one; a soft off-white notice with an orange dot; near-black names; enquiry names in near-black that turn blue on hover; columns that line up on every row; a grey arrow that moves right on hover; marketing campaigns tagged in soft orange instead of a bronze outline; the chosen place in the new event form in Apple blue instead of navy; rows that rise in one after another when the list opens; the title in the system font */
-  .ev-pills { display: inline-flex; gap: 2px; padding: 3px; border: 0; border-radius: 12px; background: #e8e8ed; }
-  .ev-pills button { min-height: 34px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 14.5px; font-weight: 500; color: #515154; cursor: pointer; transition: color .25s ease; }
-  .ev-pills button.on { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
-  /* the ledger */
-  .ev-ledger { border: 1px solid var(--border); border-radius: 18px; background: var(--panel); overflow: hidden; box-shadow: 0 1px 2px rgba(20, 27, 41, .04); }
-  .ev-lrow { display: grid; grid-template-columns: minmax(260px, 2.4fr) repeat(5, minmax(96px, 1fr)) 28px; gap: 12px; align-items: center; padding: 16px 22px; border-top: 1px solid var(--border); }
-  .ev-lrow.head { border-top: 0; padding-top: 12px; padding-bottom: 12px; background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 45%, var(--panel)); color: var(--text-dim); font-size: 14px; font-weight: 650; }
-  .ev-lrow.item { cursor: pointer; transition: background-color .2s ease; animation: isr-row-in .45s cubic-bezier(.32, .72, 0, 1) backwards; animation-delay: calc(var(--i, 0) * 35ms); }
+  .ev-band > div + div { border-left: 1px solid rgba(0, 0, 0, .06); }
+  .ev-band span { display: block; color: #6e6e73; font-size: 13.5px; font-weight: 500; }
+  .ev-band b { display: block; margin-top: 4px; color: #1d1d1f; font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .ev-band small { display: block; margin-top: 3px; color: #86868b; font-size: 13px; }
+  @media (max-width: 900px) { .ev-band { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ev-band > div + div { border-left: 0; } .ev-band > div { border-top: 1px solid rgba(0, 0, 0, .06); } .ev-band > div:first-child { grid-column: 1 / -1; border-top: 0; } }
+  .ev-note { margin: -8px 0 16px; color: #6e6e73; font-size: 14px; line-height: 1.5; }
+  .ev-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+  .ev-bar-end { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ev-pills { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 11px; background: #e8e8ed; }
+  .ev-pills button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 14px; font-weight: 500; color: #515154; cursor: pointer; transition: color .2s, background-color .2s; }
+  .ev-pills button.on { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 6px -3px rgba(0, 0, 0, .12); }
+  .ev-pills button i { margin-left: 6px; color: #86868b; font-style: normal; font-weight: 500; font-variant-numeric: tabular-nums; }
+  html body .ev-search { width: 280px; max-width: 100%; height: 38px; padding: 0 14px 0 36px; border: 0; border-radius: 980px; background: #e8e8ed url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 13px center; color: #1d1d1f; font: inherit; font-size: 15px; }
+  html body .ev-search:focus { background-color: #fdfdfe; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18), 0 0 0 1px #0071e3 inset !important; outline: none; }
+  .ev-intake { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #515154; }
+  .ev-intake select { min-height: 38px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 10px; background: #f5f5f7; color: #1d1d1f; font: inherit; font-size: 15px; font-weight: 500; max-width: 260px; cursor: pointer; }
+  /* the list */
+  .ev-ledger, .ev-people { border-radius: 18px; background: var(--panel, #fbfbfd); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); overflow: hidden; }
+  .ev-lrow { display: grid; grid-template-columns: minmax(240px, 2.6fr) repeat(5, minmax(84px, 1fr)) 20px; gap: 12px; align-items: center; padding: 15px 22px; border-top: 1px solid rgba(0, 0, 0, .06); }
+  .ev-lrow.head, .ev-person.head { border-top: 0; padding-top: 11px; padding-bottom: 11px; color: #6e6e73; font-size: 13px; font-weight: 500; }
+  .ev-lrow.item { cursor: pointer; transition: background-color .15s; }
   .ev-lrow.item:hover, .ev-lrow.item:focus-visible { background: rgba(0, 0, 0, .025); outline: none; }
-  .ev-lrow.item:active { background: rgba(0, 0, 0, .05); }
-  .ev-lrow.item:hover .ev-go { color: #0071e3; transform: translateX(3px); }
-  @keyframes isr-row-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) { .ev-lrow.item { animation: none; } }
+  .ev-lrow.item:hover .ev-go { color: #0071e3; transform: translateX(2px); }
   .ev-lrow .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .ev-lrow.item .num { font-size: 15.5px; font-weight: 600; color: var(--brand-navy, #1d2f52); }
-  .ev-lrow.item .num.gold { color: #6f5631; }
-  .ev-lname { font-size: 16.5px; font-weight: 600; color: #1d1d1f; }
-  .ev-lmeta { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; margin-top: 4px; color: var(--text-dim); font-size: 14px; }
-  .ev-go { color: #86868b; font-size: 18px; text-align: right; transition: transform .25s cubic-bezier(.32, .72, 0, 1), color .2s; }
+  .ev-lrow.item .num { color: #1d1d1f; font-size: 15.5px; font-weight: 500; }
+  .ev-lrow.item .num.none { color: #a1a1a6; }
+  .ev-lrow.item .num.wait::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #ff9500; transform: translateY(-2px); }
+  .ev-lname { color: #1d1d1f; font-size: 16px; font-weight: 600; }
+  .ev-lmeta { margin-top: 3px; color: #6e6e73; font-size: 14px; }
+  .ev-go { color: #c7c7cc; font-size: 17px; text-align: right; transition: transform .2s, color .2s; }
   @media (max-width: 1000px) {
     .ev-lrow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .ev-lrow.head { display: none; }
     .ev-lrow > :first-child { grid-column: 1 / -1; }
     .ev-lrow .num { text-align: left; }
-    .ev-lrow .num::before { content: attr(data-label); display: block; color: var(--text-dim); font-size: 13px; font-weight: 500; }
+    .ev-lrow .num::after { content: attr(data-label); display: block; color: #86868b; font-size: 12.5px; font-weight: 400; }
     .ev-go { display: none; }
-  }
-  .ev-tag { display: inline-block; padding: 2px 11px; border-radius: 999px; background: var(--gold-soft, #e2e7f0); color: var(--brand-navy, #1d2f52); font-size: 13.5px; font-weight: 650; }
-  .ev-tag.mk { background: rgba(255, 149, 0, .12); border: 0; color: #b25000; }
-  .ev-empty { padding: 40px; text-align: center; color: var(--text-dim); }
-  /* one event */
-  .ev-back { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 500; color: #0066cc; cursor: pointer; }
-  .ev-back:hover { text-decoration: underline; }
-  .ev-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .ev-head h2 { margin: 0; font-family: var(--font); font-size: 34px; font-weight: 650; letter-spacing: -.025em; line-height: 1.15; color: #1d1d1f; }
-  .ev-head .ev-lmeta { margin-top: 10px; font-size: 15px; }
-  .ev-panel { margin: 0 0 18px; padding: 24px 26px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04); }
-  .ev-panel h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--brand-navy, #1d2f52); }
-  .ev-panel > p { margin: 0 0 16px; color: var(--text-dim); font-size: 15px; line-height: 1.55; }
-  .ev-upload { display: flex; align-items: flex-end; gap: 12px 16px; flex-wrap: wrap; }
-  .ev-upload label { display: flex; flex-direction: column; gap: 6px; color: var(--brand-navy, #1d2f52); font-size: 14px; font-weight: 600; }
-  .ev-upload select { min-height: 46px; min-width: 220px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--edit-bg, #fbfcfd); font: inherit; font-size: 15px; }
-  .ev-counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 12px; }
-  .ev-count { padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 650; border: 1px solid transparent; }
-  .ev-count.new { background: var(--green-bg); color: var(--green-fg); }
-  .ev-count.link { background: var(--gold-soft, #e2e7f0); color: var(--brand-navy, #1d2f52); }
-  .ev-count.already { background: var(--soft); color: var(--text-dim); }
-  .ev-count.other { background: var(--amber-bg); color: var(--amber-fg); }
-  .ev-count.problem { background: var(--red-bg); color: var(--red-fg); }
-  .ev-review { max-height: 420px; overflow: auto; border: 1px solid var(--border); border-radius: 14px; }
-  .ev-rline { display: grid; grid-template-columns: 110px minmax(160px, 1.2fr) minmax(120px, 1fr) minmax(0, 2fr); gap: 12px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--border); font-size: 14.5px; }
-  .ev-rline:first-child { border-top: 0; }
-  .ev-rline .what { padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; text-align: center; }
-  .ev-rline .what.new { background: var(--green-bg); color: var(--green-fg); }
-  .ev-rline .what.link { background: var(--gold-soft, #e2e7f0); color: var(--brand-navy, #1d2f52); }
-  .ev-rline .what.already { background: var(--soft); color: var(--text-dim); }
-  .ev-rline .what.other { background: var(--amber-bg); color: var(--amber-fg); }
-  .ev-rline .what.problem { background: var(--red-bg); color: var(--red-fg); }
-  .ev-rline .why { color: var(--text-dim); }
-  /* 🔴 CSS CHANGED (2026-11-14): students on an earlier list but not on the one being uploaded | from: not shown at all | to: a soft panel with an orange dot above the review list, saying how many and that nothing changes for them, with their names as small grey pills that open the student's card */
-  .ev-missing { margin: 0 0 12px; }
-  .ev-missing-names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .ev-missing-name { padding: 4px 11px; border: 0; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #1d1d1f; font: inherit; font-size: 13.5px; cursor: pointer; transition: background-color .15s; }
-  .ev-missing-name:hover { background: rgba(0, 113, 227, .12); color: #0066cc; }
-  @media (max-width: 800px) { .ev-rline { grid-template-columns: minmax(0, 1fr); } }
-  .ev-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-  .ev-people { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-  .ev-person { display: grid; grid-template-columns: minmax(170px, 1.3fr) 130px 180px 140px minmax(0, 2.2fr); gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); font-size: 15px; }
-  .ev-person.head { border-top: 0; background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 45%, var(--panel)); color: var(--text-dim); font-size: 14px; font-weight: 650; }
-  .ev-person .who { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: #1d1d1f; text-align: left; cursor: pointer; transition: color .2s; }
-  .ev-person .who:hover { color: #0066cc; }
-  .ev-person .last { color: var(--text-dim); font-size: 14px; overflow-wrap: anywhere; }
-  .ev-person .last b { color: var(--text); font-weight: 600; }
-  @media (max-width: 900px) { .ev-person { grid-template-columns: minmax(0, 1fr); } .ev-person.head { display: none; } }
-  .ev-search { width: 320px; max-width: 100%; height: 44px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font: inherit; font-size: 15px; }
-  /* the form */
-  .ev-choices { display: flex; flex-wrap: wrap; gap: 8px; }
-  .ev-choices button { min-height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font: inherit; font-size: 14.5px; font-weight: 600; color: var(--text); cursor: pointer; }
-  .ev-choices button { transition: background-color .2s, color .2s, border-color .2s, transform .15s; }
-  .ev-choices button:active { transform: scale(.96); }
-  .ev-choices button.on, .ev-choices button.on:hover { border-color: #0071e3; background: #0071e3; color: #fff; }
-  .ev-where { grid-column: 1 / -1; }
-  /* 🔴 CSS CHANGED (2026-11-14): the investment of an event or campaign can be typed in rupees, dollars or pounds | from: one box "Investment (Rs)" | to: the amount box with a small segmented Rs, $ and £ switch on its right, and a grey line under it saying how it is counted */
-  .ev-money-row { display: flex; align-items: center; gap: 8px; }
-  .ev-money-row input { flex: 1; min-width: 0; }
-  .ev-cur { flex: none; display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: #e8e8ed; }
-  .ev-cur button { min-width: 36px; height: 30px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: #515154; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color .2s, color .2s, box-shadow .2s; }
-  .ev-cur button.on { background: #fff; color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 2px 6px -3px rgba(0, 0, 0, .15); }
-  .ev-conv { display: block; margin-top: 6px; color: #6e6e73; font-size: 13px; }
-  .ev-choice-label { display: block; margin-bottom: 8px; color: var(--brand-navy, #1d2f52); font-size: 14px; font-weight: 600; }
-
-  /* 🔴 CSS CHANGED (2026-11-17): Events and marketing made more polished, in the same Apple look | from: rows that began with the name only; column headings in plain grey words; "None yet" and "-" in bold like a figure; a bare "No events or campaigns yet." line; on a phone the summary tiles in pairs with Cost per visa alone at the bottom; on an event, the title on its own, the browser's plain "Choose File" button with "No file chosen", "Remove the inquiries this list added" as a big button under the upload, a square search box, phone numbers as plain text, all the inquiries in one list | to: each row starts with a small calendar leaf (the month in blue small capitals over the day in large near-black figures, on a soft off-white rounded square; orange month for a marketing campaign); column headings in small spaced capitals like the other tables; "None yet" and "-" in light grey; a "Search events and campaigns" pill box with a magnifier beside the "N of N" count; an empty list shows a soft round icon, a bold line, a grey line and the blue "+ New event or campaign"; on a phone Total cost fills the top row and the four others sit two by two; on an event, a larger calendar leaf beside the title; a new "From inquiry to visa" panel with three rounded bars (Inquiries in light blue, Applied in blue, Visas in green) that grow in from the left, with the figure and the share of inquiries; the upload as a dashed rounded drop area with a round blue arrow ("Drop the Excel or CSV file here, or click to choose one", turning soft blue while a file is held over it, then showing the file's name); "Remove the inquiries this list added" as a small grey pill at the top right of that panel; the search as a grey pill with a magnifier; stage pills with a count above the inquiries (All, Inquiry, Visa Issued ...), the open one dark; phone numbers in blue that call on a phone */
-  .ev-lwho { display: flex; align-items: center; gap: 14px; min-width: 0; }
-  .ev-lwords { min-width: 0; }
-  .ev-leaf { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 52px; height: 54px; border-radius: 14px; background: #fdfdfe; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 2px 6px -2px rgba(0, 0, 0, .1); line-height: 1; }
-  .ev-leaf span { color: #0071e3; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-  .ev-leaf b { margin-top: 3px; color: #1d1d1f; font-size: 22px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .ev-leaf.mk span { color: #c25e00; }
-  .ev-leaf.big { width: 68px; height: 72px; border-radius: 18px; }
-  .ev-leaf.big span { font-size: 13px; }
-  .ev-leaf.big b { margin-top: 4px; font-size: 30px; }
-  .ev-lrow.item:hover .ev-leaf { box-shadow: 0 0 0 1px rgba(0, 113, 227, .25), 0 4px 12px -4px rgba(0, 113, 227, .3); }
-  .ev-leaf { transition: box-shadow .25s ease; }
-  html body .ev-lrow.head { background: #f7f7f9; color: #5f5f64; font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  html body .ev-lrow.head > :first-child { padding-left: 66px; }
-  html body .ev-lrow.item .num.none { color: #a1a1a6; font-weight: 500; }
-  .ev-bar-end { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  /* 🔴 CSS CHANGED (2026-11-17): the Intake picker at the top of Events and marketing (new) | from: nothing; every event and campaign of every intake in one list | to: "Intake" in small grey bold beside a rounded grey box with the intake's name (the same look as the Intake picker on the Dashboard), left of the blue "+ New event or campaign" pill */
-  .ev-intake { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #515154; }
-  .ev-intake select { min-height: 38px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 10px; background: #f5f5f7; color: #1d1d1f; font: inherit; font-size: 15px; font-weight: 500; max-width: 260px; cursor: pointer; }
-  .ev-intake select:focus-visible { outline: 2px solid #0071e3; outline-offset: 1px; }
-  html body .ev-search { width: 300px; max-width: 100%; height: 40px; padding: 0 16px 0 38px; border: 0; border-radius: 980px; background: #e8e8ed url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 14px center; color: #1d1d1f; font: inherit; font-size: 15px; transition: background-color .2s, box-shadow .2s; }
-  html body .ev-search:focus { background-color: #fdfdfe; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18), 0 0 0 1px #0071e3 inset !important; outline: none; }
-  .ev-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 56px 24px; }
-  .ev-empty b { color: #1d1d1f; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
-  .ev-empty p { margin: 0 0 10px; color: var(--text-dim); font-size: 15px; }
-  .ev-empty-icon { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 8px; border-radius: 50%; background: rgba(0, 113, 227, .1); color: #0071e3; font-size: 24px; }
-  .ev-empty.small { padding: 28px; }
-  /* one event */
-  .ev-title { display: flex; align-items: center; gap: 18px; }
-  .ev-about { max-width: 760px; margin: 14px 0 0; color: #424245; font-size: 15.5px; line-height: 1.55; }
-  .ev-flow h3 { margin-bottom: 14px !important; }
-  .ev-flow-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 64px 48px; gap: 14px; align-items: center; padding: 7px 0; }
-  .ev-flow-label { color: #424245; font-size: 15px; font-weight: 500; }
-  .ev-flow-bar { height: 12px; border-radius: 980px; background: #ececf0; overflow: hidden; }
-  .ev-flow-bar i { display: block; width: var(--w, 0%); height: 100%; border-radius: inherit; background: #7ab8f5; animation: ev-grow .9s cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--i, 0) * 90ms + 120ms); }
-  .ev-flow-bar i.two { background: #0071e3; }
-  .ev-flow-bar i.three { background: #28a745; }
-  @keyframes ev-grow { from { width: 0; } }
-  .ev-flow-row b { text-align: right; color: #1d1d1f; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .ev-flow-pc { color: #6e6e73; font-size: 14px; font-variant-numeric: tabular-nums; }
-  .ev-flow-none { margin: 8px 0 0 !important; color: var(--text-dim); font-size: 14px; }
-  @media (prefers-reduced-motion: reduce) { .ev-flow-bar i { animation: none; } }
-  .ev-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
-  .ev-panel-head > div > p { margin: 0 0 16px; color: var(--text-dim); font-size: 15px; line-height: 1.55; }
-  .ev-panel-head h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
-  .ev-upload { align-items: stretch; }
-  .ev-upload label.ev-drop { position: relative; flex: 1 1 320px; flex-direction: row; align-items: center; gap: 14px; min-height: 76px; padding: 14px 20px; border: 1.5px dashed #c7c7cc; border-radius: 16px; background: #fbfbfd; color: #1d1d1f; cursor: pointer; transition: border-color .2s, background-color .2s, transform .2s cubic-bezier(.16, 1, .3, 1); }
-  .ev-upload label.ev-drop:hover { border-color: #0071e3; background: #f5f9ff; }
-  .ev-upload label.ev-drop.over { border-color: #0071e3; background: rgba(0, 113, 227, .08); transform: scale(1.01); }
-  .ev-upload label.ev-drop:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18); }
-  .ev-drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-  .ev-drop-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 19px; font-weight: 600; }
-  .ev-drop-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .ev-drop-words b { font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
-  .ev-drop-words span { color: #0066cc; font-size: 14px; font-weight: 500; }
-  .ev-upload > label:first-child { justify-content: flex-end; }
-  .ev-find-row { margin: 0 0 12px; }
-  html body .ev-person.head { background: #f7f7f9; color: #5f5f64; font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  .ev-person:not(.head) { transition: background-color .2s; }
-  .ev-person:not(.head):hover { background: rgba(0, 0, 0, .02); }
-  @media (max-width: 1000px) {
-    html body .ev-lrow.head > :first-child { padding-left: 0; }
     .ev-bar-end { width: 100%; }
     html body .ev-search { flex: 1; width: auto; }
   }
-  @media (max-width: 700px) {
-    html body .ev-band > div:first-child { grid-column: 1 / -1; }
-    .ev-title { align-items: flex-start; gap: 14px; }
-    .ev-leaf.big { width: 56px; height: 60px; border-radius: 15px; }
-    .ev-leaf.big b { font-size: 24px; }
-    .ev-head h2 { font-size: 27px !important; }
-    .ev-flow-row { grid-template-columns: 80px minmax(0, 1fr) 40px 40px; gap: 10px; }
-    .ev-panel-head .btn { margin-bottom: 14px; }
-  }
-
-  /* 🔴 CSS CHANGED (2026-11-17): Follow-up on Events and marketing (new) | from: an "Inquiries" list under the upload, with name, phone, stage, intake and the latest note, and grey stage pills with counts above it; event rows with no word on the follow-up | to: on each event row, small pills under the dates ("2 not contacted" in soft red, "3 follow-up due" in soft amber, or "✓ All followed up" in soft green) and "67% converted" in grey; a soft notice with an amber dot above the list ("12 inquiries from events wait for a follow-up"); on an event, a "Follow-up" panel just under the funnel (the upload moves below it) with three meters (Contacted at least once in blue, Converted (applying or visa) in green, Still waiting for a follow-up in amber: the share in large figures, "4 of 6" in grey and a thin bar); a row of seven status tiles that filter the list (Everyone, Not contacted, Follow-up due, Followed up, Applying, Visa, Inactive: the number large, the word under it, a coloured dot, the chosen tile with a blue ring); "Followed up by" with a grey round badge per person, the name in bold and "5 students · 9 contacts · last 13 Nov 2026"; the list with the student (name, then the phone in blue and the intake in grey), a status pill in its colour with "3 contacts, last 2 days ago", the stage pill, the last contact and the remark ("Remark: ..." and, for an inactive student, "Why: ..." in grey) and a small grey "+ Note" pill that opens a two-line box under the row with a blue "Save note" | the old stage pills and phone column styles are deleted */
-  .ev-person { grid-template-columns: minmax(180px, 1.2fr) 190px 170px minmax(0, 2.4fr) 84px; align-items: start; }
-  .ev-person.head { align-items: center; }
-  .ev-pname .who { font-size: 15.5px; }
-  .ev-psub { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; color: #6e6e73; font-size: 13.5px; }
+  .ev-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 52px 24px; text-align: center; color: #6e6e73; }
+  .ev-empty b { color: #1d1d1f; font-size: 18px; font-weight: 600; }
+  .ev-empty p { margin: 0 0 10px; font-size: 15px; }
+  .ev-empty.small { padding: 32px; }
+  /* one event */
+  .ev-back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; color: #0066cc; cursor: pointer; }
+  .ev-back:hover { text-decoration: underline; }
+  .ev-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .ev-head h2 { margin: 0; font-size: 32px; font-weight: 650; letter-spacing: -.025em; line-height: 1.15; color: #1d1d1f; }
+  .ev-head .ev-lmeta { margin-top: 8px; font-size: 15px; }
+  .ev-about { max-width: 760px; margin: 12px 0 0; color: #424245; font-size: 15px; line-height: 1.55; }
+  .ev-section { margin: 0 0 28px; }
+  .ev-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+  .ev-section-head h3 { margin: 0; color: #1d1d1f; font-size: 21px; font-weight: 650; letter-spacing: -.015em; }
+  .ev-section-head p { margin: 2px 0 0; color: #6e6e73; font-size: 14.5px; }
+  .ev-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px 12px; flex-wrap: wrap; margin: 0 0 12px; }
+  .ev-person { display: grid; grid-template-columns: minmax(170px, 1.2fr) 150px minmax(0, 2fr) minmax(0, 1.6fr) 74px; gap: 14px; align-items: start; padding: 13px 20px; border-top: 1px solid rgba(0, 0, 0, .06); font-size: 15px; }
+  .ev-person:not(.head):hover { background: rgba(0, 0, 0, .018); }
+  .ev-person .who { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: #1d1d1f; text-align: left; cursor: pointer; }
+  .ev-person .who:hover { color: #0066cc; }
+  .ev-psub { margin-top: 2px; font-size: 13.5px; }
   .ev-psub a { color: #0066cc; text-decoration: none; font-variant-numeric: tabular-nums; }
-  .ev-psub a:hover { text-decoration: underline; }
-  .ev-fcell small { display: block; margin-top: 5px; color: #6e6e73; font-size: 13px; }
-  .ev-fpill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 980px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
-  .ev-fpill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
-  .ev-fpill.new { background: var(--red-bg, #fdeceb); color: var(--red-fg, #c9271d); }
-  .ev-fpill.due { background: var(--amber-bg, #fff4e0); color: var(--amber-fg, #9a5b00); }
-  .ev-fpill.ok { background: rgba(52, 199, 89, .13); color: #1e7d34; }
-  .ev-fpill.applied { background: rgba(0, 113, 227, .1); color: #0066cc; }
-  .ev-fpill.visa { background: #28a745; color: #fff; }
-  .ev-fpill.inactive { background: #e8e8ed; color: #6e6e73; }
-  .ev-lfollow .ev-fpill.ok::before { display: none; }
-  .ev-person .last { font-size: 14.5px; line-height: 1.45; }
-  .ev-remark { margin-top: 4px; color: #6e6e73; font-size: 13.5px; }
+  .ev-when { color: #1d1d1f; font-size: 14.5px; font-weight: 500; }
+  .ev-when.wait { color: #c25e00; }
+  .ev-words { margin-top: 2px; color: #6e6e73; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ev-remark { color: #424245; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
   .ev-none { color: #a1a1a6; }
   .ev-pact { text-align: right; }
-  .ev-qnote { padding: 12px 16px 14px; border-top: 1px solid var(--border); background: #f5f9ff; animation: isr-row-in .3s cubic-bezier(.32, .72, 0, 1); }
-  .ev-qnote textarea { width: 100%; min-height: 64px; padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: 12px; background: #fdfdfe; font: inherit; font-size: 15px; resize: vertical; }
+  .ev-pact .btn { min-height: 32px; padding: 0 14px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font-size: 14px; }
+  .ev-qnote { padding: 12px 20px 14px; border-top: 1px solid rgba(0, 0, 0, .06); background: #f5f5f7; }
+  .ev-qnote textarea { width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 12px; background: #fdfdfe; font: inherit; font-size: 15px; resize: vertical; }
   .ev-qnote-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-  .ev-lfollow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 8px; }
-  .ev-lfollow .ev-fpill { padding: 2px 10px; font-size: 13px; }
-  .ev-lconv { color: #6e6e73; font-size: 13.5px; font-weight: 500; }
-  html body .ev-note.due::before { background: #ff9500; }
-  .ev-fsum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 4px 0 16px; }
-  .ev-fmeter { padding: 14px 18px; border-radius: 16px; background: #f5f5f7; }
-  .ev-fmeter span { display: block; color: #515154; font-size: 14px; font-weight: 500; }
-  .ev-fmeter b { display: inline-block; margin-top: 4px; color: #1d1d1f; font-size: 28px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .ev-fmeter small { margin-left: 8px; color: #6e6e73; font-size: 14px; }
-  .ev-fmeter-bar { height: 6px; margin-top: 10px; border-radius: 980px; background: #e3e3e8; overflow: hidden; }
-  .ev-fmeter-bar i { display: block; width: var(--w, 0%); height: 100%; border-radius: inherit; background: #0071e3; animation: ev-grow .9s cubic-bezier(.16, 1, .3, 1) backwards; }
-  .ev-fmeter.conv .ev-fmeter-bar i { background: #28a745; }
-  .ev-fmeter.wait .ev-fmeter-bar i { background: #ff9500; }
-  .ev-ftiles { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; }
-  .ev-ftile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border: 0; border-radius: 14px; background: #fdfdfe; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07); font: inherit; text-align: left; cursor: pointer; transition: box-shadow .2s, background-color .2s, transform .15s; }
-  .ev-ftile:hover { background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .12), 0 4px 14px -6px rgba(0, 0, 0, .18); }
-  .ev-ftile:active { transform: scale(.97); }
-  .ev-ftile.on { box-shadow: 0 0 0 2px #0071e3, 0 4px 14px -6px rgba(0, 113, 227, .35); }
-  .ev-ftile b { color: #1d1d1f; font-size: 24px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .ev-ftile span { color: #515154; font-size: 13.5px; font-weight: 500; }
-  .ev-ftile::after { content: ""; position: absolute; top: 14px; right: 14px; width: 8px; height: 8px; border-radius: 50%; background: #c7c7cc; }
-  .ev-ftile.new::after { background: #ff3b30; }
-  .ev-ftile.due::after { background: #ff9500; }
-  .ev-ftile.ok::after { background: #34c759; }
-  .ev-ftile.applied::after { background: #0071e3; }
-  .ev-ftile.visa::after { background: #28a745; }
-  .ev-ftile.all::after { display: none; }
-  .ev-team { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; margin: 0 0 16px; padding: 12px 16px; border-radius: 16px; background: #f5f5f7; }
-  .ev-team-title { color: #515154; font-size: 14px; font-weight: 600; margin-right: 4px; }
-  .ev-team-person { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 980px; background: #fdfdfe; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
-  .ev-team-av { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font-size: 12.5px; font-weight: 700; }
-  .ev-team-person b { display: block; font-size: 14px; font-weight: 600; }
-  .ev-team-person small { display: block; color: #6e6e73; font-size: 12.5px; }
-  @media (max-width: 1100px) { .ev-ftiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  @media (max-width: 900px) { .ev-person { grid-template-columns: minmax(0, 1fr); } .ev-pact { text-align: left; } }
-  @media (max-width: 700px) {
-    .ev-fsum { grid-template-columns: minmax(0, 1fr); }
-    .ev-ftiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .ev-fmeter b { font-size: 24px; }
-  }
-  @media (prefers-reduced-motion: reduce) { .ev-fmeter-bar i, .ev-qnote { animation: none; } }
+  @media (max-width: 900px) { .ev-person { grid-template-columns: minmax(0, 1fr); gap: 6px; } .ev-person.head { display: none; } .ev-pact { text-align: left; } .ev-remark:has(.ev-none) { display: none; } .ev-panel-head .btn { margin-bottom: 14px; } }
+  /* the upload */
+  .ev-panel { margin: 0 0 18px; padding: 22px 24px; border-radius: 18px; background: var(--panel, #fbfbfd); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); }
+  .ev-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+  .ev-panel-head h3 { margin: 0 0 2px; color: #1d1d1f; font-size: 17px; font-weight: 650; }
+  .ev-panel-head p { margin: 0 0 14px; color: #6e6e73; font-size: 14.5px; }
+  .ev-upload { display: flex; align-items: stretch; gap: 12px 16px; flex-wrap: wrap; }
+  .ev-upload > label:first-child { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; color: #515154; font-size: 14px; font-weight: 600; }
+  .ev-upload select { min-height: 44px; min-width: 220px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 10px; background: #f5f5f7; font: inherit; font-size: 15px; }
+  .ev-upload label.ev-drop { position: relative; flex: 1 1 320px; display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 12px 18px; border: 1.5px dashed #c7c7cc; border-radius: 14px; background: transparent; color: #1d1d1f; cursor: pointer; transition: border-color .2s, background-color .2s; }
+  .ev-upload label.ev-drop:hover, .ev-upload label.ev-drop.over { border-color: #0071e3; background: rgba(0, 113, 227, .04); }
+  .ev-drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .ev-drop-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font-size: 16px; }
+  .ev-drop-words { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .ev-drop-words b { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+  .ev-drop-words span { color: #0066cc; font-size: 14px; }
+  .ev-counts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 18px 0 10px; }
+  .ev-count { color: #424245; font-size: 14px; font-weight: 500; }
+  .ev-count::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #c7c7cc; transform: translateY(-1px); }
+  .ev-count.new::before { background: #34c759; }
+  .ev-count.link::before { background: #0071e3; }
+  .ev-count.other::before { background: #ff9500; }
+  .ev-count.problem::before { background: #ff3b30; }
+  .ev-review { max-height: 420px; overflow: auto; border-radius: 12px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07); }
+  .ev-rline { display: grid; grid-template-columns: 110px minmax(160px, 1.2fr) minmax(120px, 1fr) minmax(0, 2fr); gap: 12px; align-items: center; padding: 9px 14px; border-top: 1px solid rgba(0, 0, 0, .06); font-size: 14.5px; }
+  .ev-rline:first-child { border-top: 0; }
+  .ev-rline .what { color: #424245; font-size: 13.5px; font-weight: 600; }
+  .ev-rline .what.new { color: #1e7d34; }
+  .ev-rline .what.link { color: #0066cc; }
+  .ev-rline .what.other { color: #c25e00; }
+  .ev-rline .what.problem { color: #d70015; }
+  .ev-rline .why { color: #6e6e73; }
+  @media (max-width: 800px) { .ev-rline { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+  .ev-missing { margin: 0 0 12px; }
+  .ev-missing-names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .ev-missing-name { padding: 4px 11px; border: 0; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #1d1d1f; font: inherit; font-size: 13.5px; cursor: pointer; }
+  .ev-missing-name:hover { background: rgba(0, 113, 227, .12); color: #0066cc; }
+  .ev-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  /* the form */
+  .ev-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ev-choices button { min-height: 38px; padding: 0 16px; border: 0; border-radius: 980px; background: #e8e8ed; font: inherit; font-size: 14.5px; font-weight: 500; color: #1d1d1f; cursor: pointer; transition: background-color .2s, color .2s; }
+  .ev-choices button.on, .ev-choices button.on:hover { background: #0071e3; color: #fff; }
+  .ev-where { grid-column: 1 / -1; }
+  .ev-choice-label { display: block; margin-bottom: 8px; color: #515154; font-size: 14px; font-weight: 600; }
+  .ev-money-row { display: flex; align-items: center; gap: 8px; }
+  .ev-money-row input { flex: 1; min-width: 0; }
+  .ev-cur { flex: none; display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: #e8e8ed; }
+  .ev-cur button { min-width: 36px; height: 30px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: #515154; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .ev-cur button.on { background: #fff; color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .1); }
+  .ev-conv { display: block; margin-top: 6px; color: #6e6e73; font-size: 13px; }
 </style>
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />
@@ -268,7 +149,7 @@
       <div class="p-head">
         <div>
           <h1>Events and marketing</h1>
-          <p>Each event and campaign: cost, inquiries and visas.</p>
+          <p>What each event and campaign cost, and the students it brought.</p>
         </div>
         <div class="p-actions">
           <!-- The intake shown (the owner, 17 Nov 2026): each intake, the current one first, and All intakes. -->
