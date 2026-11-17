@@ -3452,7 +3452,7 @@ body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tas
 html body .p-apps { display: grid; gap: 16px; }
 html body .p-apps .p-card { margin: 0; padding: 22px 24px; }
 body:has(.p-embed-bar) #view .p-apps .p-card:not(.p-hero) .p-card-head, html body .p-apps .p-card-head { margin: 0 0 14px; padding: 0; border-bottom: 0; gap: 12px; }
-html body .p-apps .p-card > h2, html body .p-apps .p-card-head h2 { margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 650; letter-spacing: -.015em; }
+html body #view .p-apps .p-card > h2, html body #view .p-apps .p-card-head h2, html body .p-apps .p-card > h2, html body .p-apps .p-card-head h2 { margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 650; letter-spacing: -.015em; }
 html body .p-apps .p-card > h2 + .p-apps-summary { margin: 4px 0 16px; color: #6e6e73; font-size: 14px; }
 html body .p-apps .p-card > .p-muted { margin: 0; color: #6e6e73; font-size: 15px; line-height: 1.5; }
 html body .p-apps .p-card-acts { gap: 8px; }
@@ -3494,3 +3494,39 @@ html body .p-apps .p-chosen-facts dd { font-size: 14.5px; font-weight: 600; }
   html body .p-apps ol.p-chosen > li.p-chosen-item + li.p-chosen-item::after { left: 56px; }
 }
 @media (max-width: 400px) { html body .p-apps .p-chosen-item header { flex-direction: column; gap: 10px; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline tab in one column, Source as a slim bar | from: two columns, the Tasks and the Timeline squeezed on the left and a 300px Source column on the right with a large "Events" panel and empty space under it | to: one column across the whole width (Source, Tasks, Timeline); Source one slim row at the top: the word Source, a small round initial and the source name, its details (platform, first inquiry, remarks) as small grey label and value pairs on the same line, Edit on the right; more room inside each task; on a narrow card the ... menu of a task no longer sits on its words, and the tag, who gave it to whom and the day wrap as one tidy line */
+@media (min-width: 0px) { html body .p-tl-page.is-single { grid-template-columns: minmax(0, 1fr); } }
+html body .p-tl-page.is-single .p-tl-main { gap: 16px; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 14px 20px; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head { display: contents; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head > div { flex: none; }
+html body #view .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head h2, html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head h2 { color: #86868b; font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head .btn { order: 3; margin-left: auto; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main { order: 1; gap: 10px; padding: 0; background: none; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-ico { width: 30px; height: 30px; font-size: 13.5px; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main b { font-size: 16px; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main small { display: inline; margin: 0 0 0 8px; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main > div { display: flex; align-items: baseline; flex-wrap: wrap; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-rows { order: 2; display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-row { gap: 6px; padding: 0; border: 0; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-row dt { color: #86868b; font-size: 13.5px; }
+html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-row dd { font-size: 14px; text-align: left; }
+html body .p-tl-page.is-single .p-tasks .td-task { padding-top: 16px; padding-bottom: 16px; }
+html body #view .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head h2 { min-width: 0; }
+html body .p-tl-page.is-single .p-tasks .td-task-top { display: flex; align-items: flex-start; gap: 10px; }
+html body .p-tl-page.is-single .p-tasks .td-head-main { flex: 1 1 auto; min-width: 0; }
+html body #view .p-tl-page.is-single .p-tasks .td-side { position: static; flex: none; }
+html body #view .p-tl-page.is-single .p-tasks .td-head-main { padding-right: 0; }
+html body .p-tl-page.is-single .p-tasks .td-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+html body #view .p-tl-page.is-single .p-tasks .td-meta .td-route { flex: 1 1 auto; min-width: 0; max-width: none; margin-top: 0; }
+@media (max-width: 560px) { html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin { padding: 12px 16px; } }
+
+/* 🔴 CSS CHANGED (2026-11-17): the Assign a task window | from: "Who should do it?" and "For which university?" squeezed side by side, a long university name broken over two lines inside its box, the boxes at uneven widths | to: one clean column: each question on its own row across the whole window, every box the same full width and 44px tall with rounded corners, a long university and course on one line ending in "..." */
+html body .p-dialog .p-form.p-assign { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+html body .p-dialog .p-form.p-assign .p-field { min-width: 0; }
+html body .p-dialog .p-form.p-assign select { width: 100%; max-width: 100%; height: 44px; padding-top: 0; padding-bottom: 0; overflow: hidden; border-radius: 10px; white-space: nowrap; text-overflow: ellipsis; }
+html body .p-dialog .p-form.p-assign select::picker-icon { flex: none; }
+html body .p-dialog .p-form.p-assign select > button, html body .p-dialog .p-form.p-assign select selectedcontent { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+html body .p-dialog .p-form.p-assign textarea { width: 100%; min-height: 96px; border-radius: 10px; }
+html body .p-dialog .p-form.p-assign .p-goes { margin-top: 6px; color: #86868b; font-size: 13px; }

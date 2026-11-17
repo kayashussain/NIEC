@@ -219,7 +219,7 @@
         try { await save('tasks', { team: team.input.value, text: (uni ? `${appName(uni)}: ` : '') + text.input.value, tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(team.wrap, ...(uniF ? [uniF.wrap] : []), text.wrap, tagWrap);
+      const g = el('div', 'p-form p-assign'); g.append(team.wrap, ...(uniF ? [uniF.wrap] : []), text.wrap, tagWrap);
       body.append(g, msg, foot);
       setTimeout(() => text.input.focus(), 0);
     }).then((done) => { if (done) render(); });
@@ -269,20 +269,18 @@
     return c;
   }
 
-  // The Timeline tab (the owner, 17 Nov 2026: calm and professional, as Apple would make it): the work on the left (the open tasks,
-  // then the Timeline) and a slim column on the right with where the student came from. There is no box for why a student did not go
-  // on (the owner, 17 Nov 2026): a withdrawn student is explained in a note.
+  // The Timeline tab (the owner, 17 Nov 2026: calm and professional, as Apple would make it): one column across the whole width, so
+  // the tasks and the notes have room. Where the student came from is one slim bar at the top (the owner, 17 Nov 2026: the Source
+  // column on the right was small and took the space). There is no box for why a student did not go on: it is explained in a note.
   function details() {
-    const page = el('div', 'p-tl-page');
+    const page = el('div', 'p-tl-page is-single');
     const main = el('div', 'p-tl-main');
-    const side = el('aside', 'p-tl-side');
+    main.append(origin());
     const tc = tasksCard();
     if (tc) main.append(tc);
     main.append(notes());
-    side.append(origin());
-    // While the source is being changed its form gets the whole width, above the rest.
     if (editingOrigin) page.classList.add('p-editing-origin');
-    page.append(main, side);
+    page.append(main);
     return page;
   }
 
