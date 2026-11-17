@@ -6,6 +6,10 @@
 // agents, planning, users, settings, the activity record; see advisor-data.js, never passwords, tokens or keys).
 // It can NOT change any student, task, the Fact File or any incentive.
 //
+// One thing more, only when NIEC_ADVISOR_SEND_AS is set (the username of a portal account): send_followup_email sends one email to
+// chosen students exactly as the Follow-up page does, from that person's own mailbox with their signature, each email logged on the
+// student's card and in Activity. At most 150 students a call; without confirm: true it only shows how the emails will look.
+//
 // The one thing it can write is the Advisor's own notebook ("memory"): short notes about the owner's
 // preferences, how NIEC works, decisions and lessons, kept in advisor-memory/ next to the data. Notes that
 // look like personal data (emails, phone numbers) are refused, every save keeps a backup, and the notebook
@@ -100,7 +104,23 @@ function unknownColumns(sheets, cols) {
 // `incentive` (optional) adds the Incentive tools to this same connector: { getCommissions, getAdvances, getRate }, which read the
 // Incentive page's saved figures; the students come from the same workbook as the rest.
 // `dataDir` (optional) adds the rest of the portal (advisor-data.js), read from the stored files in that folder.
-function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir, token, memoryDir, log = console.log }) {
+const SEND_TOOL = {
+  name: 'send_followup_email',
+  description: 'Emails students, exactly as the Follow-up page does: from the sender\'s own mailbox, ending with their signature picture, each email logged on the student\'s card. Give the students by their row ids ("_id" from get_students), at most 150 a call. The body is plain text: a line starting with "## " is a heading, "- " a bullet, a web address becomes a link, {first_name} and the other Follow-up words are filled in. Without confirm: true nothing is sent: you get how many are ready, who would be skipped and why, and one sample email. Always show the person the sample first and send (confirm: true) only after they say yes.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      ids: { type: 'array', items: { type: 'string' }, maxItems: 150, description: 'Student row ids (_id), at most 150.' },
+      subject: { type: 'string' },
+      body: { type: 'string' },
+      confirm: { type: 'boolean', description: 'true sends the emails. Leave out to see the sample only.' },
+    },
+    required: ['ids', 'subject', 'body'],
+    additionalProperties: false,
+  },
+};
+
+function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir, token, memoryDir, sendFollowUp = null, log = console.log }) {
   const portalData = dataDir ? createPortalData({ dir: dataDir, getWorkbook }) : null;
   const incentiveTools = incentive ? createIncentiveTools({
     getSync: () => { const w = getWorkbook(); return w ? syncFromWorkbook(w) : { ok: false, error: 'The sheet data could not be read right now.' }; },
@@ -109,7 +129,32 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir
     getRate: incentive.getRate,
   }) : null;
 
+  async function sendEmails(a) {
+    const ids = Array.isArray(a.ids) ? [...new Set(a.ids.map(String))] : [];
+    if (!ids.length) return errorResult('Give at least one student row id (_id from get_students).');
+    if (ids.length > 150) return errorResult('At most 150 students a call: send the rest in a second call.');
+    const subject = typeof a.subject === 'string' ? a.subject : '';
+    const body = typeof a.body === 'string' ? a.body : '';
+    if (!subject.trim() || !body.trim()) return errorResult('Write a subject and a message.');
+    const preview = a.confirm !== true;
+    const out = await sendFollowUp({ ids, subject, emailBody: body, preview });
+    if (out.error) return errorResult(out.error);
+    if (preview) {
+      const ready = out.items.filter((i) => !i.error && !i.problem);
+      const sample = ready[0];
+      return textResult({
+        sent: 0, note: 'Nothing was sent. Show the sample to the person; send with confirm: true only after they say yes.',
+        sender: out.sender, mailboxReady: Boolean(out.mail && out.mail.ready), from: out.mail ? out.mail.from : '',
+        ready: ready.length, skipped: out.items.filter((i) => i.error || i.problem).map((i) => ({ id: i.id, name: i.name || '', reason: i.error || i.problem })),
+        sample: sample ? { to: sample.to, subject: sample.subject, text: sample.text, endsWith: 'the sender\'s signature picture' } : null,
+      });
+    }
+    const count = (st) => out.sendOut.filter((r) => r.status === st).length;
+    return textResult({ sentAt: new Date().toISOString(), sender: out.sender, sent: count('sent'), failed: count('failed'), notConfigured: count('not-configured'), skipped: count('skipped'), problems: out.sendOut.filter((r) => r.status !== 'sent') });
+  }
+
   function callTool(name, a) {
+    if (name === SEND_TOOL.name && sendFollowUp) return sendEmails(a || {});
     if (incentiveTools && incentiveTools.isIncentiveTool(name)) return incentiveTools.callTool(name, a);
     if (portalData && portalData.isPortalTool(name)) {
       const out = portalData.callTool(name, a || {});
@@ -180,8 +225,8 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir
   }
 
   return createMcpEndpoint({
-    prefix: PREFIX, token, tokenName: 'NIEC_ADVISOR_TOKEN', tools: [...TOOLS, ...(incentiveTools ? incentiveTools.TOOLS : []), ...(portalData ? portalData.TOOLS : [])], callTool, serverName: 'niec-advisor', memoryDir, log,
-    instructions: 'Read-only, live access to the ISR sheet and Fact File' + (incentiveTools ? ', and to the Incentive page (commissions, incentives and company earnings)' : '') + (portalData ? ', and to the rest of the portal (tasks, student cards, partners, agents, planning, users, settings, activity; get_portal_areas lists them, get_tasks and get_student_file are the quick ways in; passwords, tokens and keys are never shown)' : '') + ', plus a notebook you may write to. Call read_memory first in every conversation, then get_overview' + (incentiveTools ? ' (and get_incentive_overview for anything about incentives, commissions or earnings; University Partner is the agent; tuition and university commission are in GBP, incentives, TDS, advances and salary in NPR)' : '') + '. Save durable preferences and lessons with save_memory (never personal data). Prefer count_by for numbers and get_students with "columns" and "where" for rows' + (incentiveTools ? ', and summarize_incentives_by to compare agents and universities' : '') + '. Always say when the data was pulled (pulledAt).',
+    prefix: PREFIX, token, tokenName: 'NIEC_ADVISOR_TOKEN', tools: [...TOOLS, ...(incentiveTools ? incentiveTools.TOOLS : []), ...(portalData ? portalData.TOOLS : []), ...(sendFollowUp ? [SEND_TOOL] : [])], callTool, serverName: 'niec-advisor', memoryDir, log,
+    instructions: (sendFollowUp ? 'Can email students with send_followup_email (show the sample and get a yes before confirm: true). Otherwise read-only: ' : '') + 'Read-only, live access to the ISR sheet and Fact File' + (incentiveTools ? ', and to the Incentive page (commissions, incentives and company earnings)' : '') + (portalData ? ', and to the rest of the portal (tasks, student cards, partners, agents, planning, users, settings, activity; get_portal_areas lists them, get_tasks and get_student_file are the quick ways in; passwords, tokens and keys are never shown)' : '') + ', plus a notebook you may write to. Call read_memory first in every conversation, then get_overview' + (incentiveTools ? ' (and get_incentive_overview for anything about incentives, commissions or earnings; University Partner is the agent; tuition and university commission are in GBP, incentives, TDS, advances and salary in NPR)' : '') + '. Save durable preferences and lessons with save_memory (never personal data). Prefer count_by for numbers and get_students with "columns" and "where" for rows' + (incentiveTools ? ', and summarize_incentives_by to compare agents and universities' : '') + '. Always say when the data was pulled (pulledAt).',
   });
 }
 

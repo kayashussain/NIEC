@@ -182,7 +182,12 @@ function createMcpEndpoint({ prefix, token, tokenName, tools, callTool, serverNa
         const params = msg.params || {};
         if (!TOOLS.some((t) => t.name === params.name)) return fail(-32602, `Unknown tool "${params.name}"`);
         try {
-          return ok(run(params.name, params.arguments));
+          const result = run(params.name, params.arguments);
+          // A tool that has to wait (sending email) answers later: the reply follows when it is done.
+          if (result && typeof result.then === 'function') {
+            return result.then(ok, (e) => { log(`[advisor-mcp] ${params.name} failed: ${e.message}`); return ok(errorResult('That request failed. Try asking for less.')); });
+          }
+          return ok(result);
         } catch (e) {
           log(`[advisor-mcp] ${params.name} failed: ${e.message}`);
           return ok(errorResult('That request failed. Try asking for less.'));
@@ -239,11 +244,11 @@ function createMcpEndpoint({ prefix, token, tokenName, tools, callTool, serverNa
         reply(200, { jsonrpc: '2.0', id: null, error: { code: -32600, message: payload.length ? `At most ${MAX_BATCH} requests in one batch.` : 'Invalid request: empty batch' } });
         return true;
       }
-      const out = payload.map(rpc).filter(Boolean);
+      const out = (await Promise.all(payload.map(rpc))).filter(Boolean);
       if (!out.length) { res.writeHead(202); res.end(); } else reply(200, out);
       return true;
     }
-    const answer = rpc(payload);
+    const answer = await rpc(payload);
     if (!answer) { res.writeHead(202); res.end(); } else reply(200, answer);
     return true;
   }

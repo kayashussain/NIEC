@@ -86,6 +86,11 @@ https://<your-site>/advisor-mcp/<NIEC_ADVISOR_TOKEN>
 Anyone with that address can read all students, so keep it private. To cut access off, remove or change the variable and restart.
 Make a secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
+Emailing students from Claude (optional, off by default): set `NIEC_ADVISOR_SEND_AS` to the portal username the emails come from
+and restart. Claude then gets one more tool, `send_followup_email`, that works exactly like the Follow-up page: from that person's
+own mailbox, with their signature picture, each email logged on the student's card and in Activity, at most 150 students a call.
+It shows a sample first and sends only when told to confirm. Remove the setting and restart to switch it off again.
+
 ### The rest of the portal through the same connector
 
 The same connector also reads **everything else the portal stores** (the owner, 17 Nov 2026), read-only and live:

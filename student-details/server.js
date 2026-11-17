@@ -189,6 +189,19 @@ const advisor = createAdvisorMcp({
   // The rest of the portal (tasks, cards, partners, users and so on), read-only and never passwords (advisor-data.js).
   dataDir: DATA_DIR,
   memoryDir: path.join(DATA_DIR, 'advisor-memory'),
+  // Emailing students from Claude (send_followup_email): off unless NIEC_ADVISOR_SEND_AS is the username of the person the emails
+  // come from (their own mailbox and signature, as on Follow-up). `portal` is made further down; it is only used when a tool runs.
+  sendFollowUp: process.env.NIEC_ADVISOR_SEND_AS ? async (args) => {
+    const user = accounts.userByUsername(process.env.NIEC_ADVISOR_SEND_AS);
+    if (!user) return { error: `NIEC_ADVISOR_SEND_AS names no active account ("${process.env.NIEC_ADVISOR_SEND_AS}").` };
+    const req = { user, headers: { 'user-agent': 'Claude connector' }, socket: {} };
+    const out = await portal.followUp(req, args);
+    if (!out.error && !args.preview) {
+      const sent = out.sendOut.filter((r) => r.status === 'sent').length;
+      portal.note(req, [`Bulk email from Claude "${args.subject}": ${sent} sent, ${out.sendOut.length - sent} not sent`], 'Sent message');
+    }
+    return { ...out, sender: user.name };
+  } : null,
 });
 
 // The Incentive page lives here, at /incentive: Admin only, and behind its own password (INCENTIVE_PASSWORD) on top of the
