@@ -17,7 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { writeFileAtomic, TIME_ZONE } = require('../shared/server-utils');
+const { writeFileAtomic, twiceAWeekDue } = require('../shared/server-utils');
 const { rulesFrom } = require('./eligibility');
 
 const DEFAULT_SHEET_ID = '1P6XGHSG5svD-WG0CowbwoXlcF_-PrxFw';
@@ -86,7 +86,8 @@ const isClosed = (name) => CLOSED.some((re) => re.test(name)) || /\bhold\b/i.tes
 
 // Never copied onto a page (the owner: incentives are Admin's only, behind their own password).
 const PRIVATE = /incentive|commission/i;
-const keep = (text) => String(text || '').split('\n').filter((l) => !PRIVATE.test(l)).join('\n').trim();
+// Notes meant for the agents only ("(Please confirm with <name> for this)") are taken out of a line too.
+const keep = (text) => String(text || '').split('\n').filter((l) => !PRIVATE.test(l)).map((l) => l.replace(/\s*\((?:please\s+)?(?:confirm|check)\s+with\b[^)]*\)/gi, '')).join('\n').trim();
 const tidyLines = (text) => keep(text).split('\n').map((l) => l.replace(/^[\s•●▪\-*]+/, '').replace(/\s+/g, ' ').trim());
 const bullets = (text) => tidyLines(text).filter(Boolean).map((l) => `- ${l}`).join('\n');
 const oneLine = (t) => String(t || '').replace(/\s+/g, ' ').trim();
@@ -290,7 +291,13 @@ function scholarshipFor(text, level) {
     });
   }).join('\n');
 }
-const deadlinesOf = (text) => paragraphs(text).flatMap((p) => p.filter(isDateLine));
+// The January intake's dates: a date in March to October belongs to another intake (a September enrolment date), and a heading
+// left with no date under it goes too.
+const OTHER_MONTH = /\b(mar|apr|may|jun|jul|aug|sep|oct)[a-z]*\b/i;
+const deadlinesOf = (text) => paragraphs(text).flatMap((p) => {
+  const lines = p.filter(isDateLine).filter((l) => !(/\d/.test(l) && OTHER_MONTH.test(l)));
+  return lines.filter((l, i) => /\d/.test(l) || /open for/i.test(l) || lines.slice(i + 1).some((x) => /\d/.test(x)));
+});
 const firstDate = (lines) => {
   for (const l of lines) {
     const m = /\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}(?:,?\s+\d{4})?|[A-Za-z]{3,9}\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/.exec(l);
@@ -382,15 +389,17 @@ function syncToolkit(facts, reading, written = {}, { starterSteps = [], clean = 
   if (!reading || !Array.isArray(reading.pages)) return out;
   reading.pages.forEach((fresh) => {
     const key = squash(fresh.name);
-    let page = facts.all().find((u) => squash(u.name) === key);
+    // The college's page by its name, else the toolkit's page of the same college under its old name (the sheet renamed it).
+    let page = facts.all().find((u) => squash(u.name) === key)
+      || facts.all().find((u) => u.source && u.source.navitas && sameCollege(fresh.name, u.name) && sameCollege(u.name, fresh.name));
     if (!page) {
       const made = facts.create(fresh.name, BY);
       if (made.error) return;
       page = made.university;
       out.added += 1;
     }
-    const before = written[key] || {};
-    const next = { ...page };
+    const before = written[key] || written[squash(page.name)] || {};
+    const next = { ...page, name: fresh.name };
     DATA_FIELDS.filter((k) => k !== 'intakes').forEach((k) => { if (k === 'website' || k === 'city' ? fresh[k] : true) next[k] = fresh[k]; });
     // The sheet's intake (its dates and courses, the team's requirements and notes kept), then the page's other intakes.
     const mine = page.intakes || [];
@@ -409,7 +418,7 @@ function syncToolkit(facts, reading, written = {}, { starterSteps = [], clean = 
     // What the toolkit offered (not what the page kept), so a text the team changed stays theirs at every later reading.
     const offered = clean({ ...page, ...Object.fromEntries(TEAM_FIELDS.map((k) => [k, fresh[k]])) }, page);
     out.written[key] = Object.fromEntries(TEAM_FIELDS.map((k) => [k, offered[k] !== undefined ? offered[k] : fresh[k]]));
-    const pick = (u) => JSON.stringify([...DATA_FIELDS, ...TEAM_FIELDS].map((k) => (k === 'intakes' ? (u.intakes || []).map(({ id, ...i }) => i) : u[k] ?? null)));
+    const pick = (u) => JSON.stringify(['name', ...DATA_FIELDS, ...TEAM_FIELDS].map((k) => (k === 'intakes' ? (u.intakes || []).map(({ id, ...i }) => i) : u[k] ?? null)));
     if (pick(cleaned) === pick(page)) { out.unchanged += 1; return; }
     const saved = facts.update(page.id, next, BY);
     if (!saved.error) out.updated += 1;
@@ -421,8 +430,9 @@ function syncToolkit(facts, reading, written = {}, { starterSteps = [], clean = 
 
 function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImpl = (...a) => fetch(...a), now = () => new Date(), enabled = true, starterSteps = [], clean } = {}) {
   const file = path.join(dir, 'navitas-toolkit.json');
-  const read = () => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return {}; } };
-  const write = (d) => { fs.mkdirSync(dir, { recursive: true }); writeFileAtomic(file, JSON.stringify(d, null, 2)); };
+  let cache = null; // the file, read once (only this server writes it)
+  const read = () => { if (!cache) { try { cache = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { cache = {}; } } return cache; };
+  const write = (d) => { cache = d; fs.mkdirSync(dir, { recursive: true }); writeFileAtomic(file, JSON.stringify(d, null, 2)); };
   const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}`;
   async function get(url) {
     const res = await fetchImpl(url, { headers: { 'User-Agent': 'ISR Fact File' }, signal: AbortSignal.timeout(60000) });
@@ -458,22 +468,8 @@ function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImp
     return running;
   }
 
-  // Twice a week, like Route2Uni: on a Monday or a Thursday from 2 a.m. office time, once that day; never more than 4 days without one.
-  const dayOf = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(date);
-  const isSlotDay = (date) => {
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, weekday: 'short', hour: '2-digit', hourCycle: 'h23' }).formatToParts(date).map((x) => [x.type, x.value]));
-    return ['Mon', 'Thu'].includes(p.weekday) && Number(p.hour) >= 2;
-  };
-  function due(date = now()) {
-    if (!enabled || running) return false;
-    const runs = read().runs || [];
-    const lastGood = (runs.find((r) => r.ok) || {}).at;
-    const lastTry = (runs[0] || {}).at;
-    if (lastTry && date.getTime() - Date.parse(lastTry) < 3 * 3600000) return false; // a failed try is not repeated within 3 hours
-    if (!lastGood) return true;
-    if (date.getTime() - Date.parse(lastGood) > 4 * 86400000) return true;
-    return isSlotDay(date) && dayOf(new Date(lastGood)) !== dayOf(date);
-  }
+  // Twice a week, like Route2Uni: Monday and Thursday from 2 a.m. office time (see twiceAWeekDue in shared/server-utils.js).
+  const due = (date = now()) => enabled && !running && twiceAWeekDue(read().runs, date);
   const tick = () => { if (due()) run('schedule').catch(() => {}); };
   return {
     enabled: () => enabled, run, due, tick, isRunning: () => Boolean(running),

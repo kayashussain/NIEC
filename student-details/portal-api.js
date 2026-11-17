@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { sendJSON, send, readJSONBody, localDate } = require('../shared/server-utils');
+const { sendJSON, send, readJSONBody, readRawBody: readRaw, localDate } = require('../shared/server-utils');
 const { isoDate } = require('./dashboard-stats');
 const Teams = require('../shared/teams');
 const mailer = require('../shared/mailer');
@@ -2047,21 +2047,6 @@ function createPortalApi({
   }
 
   // ---- B2B partners and agents (Admin changes them, others look as partner-access.js allows): the list, one partner, its files ----
-  function readRaw(req, maxBytes) {
-    return new Promise((resolve, reject) => {
-      const chunks = [];
-      let size = 0;
-      let failed = false;
-      req.on('data', (chunk) => {
-        if (failed) return;
-        size += chunk.length;
-        if (size > maxBytes) { failed = true; const err = new Error('Payload too large'); err.statusCode = 413; reject(err); return; }
-        chunks.push(chunk);
-      });
-      req.on('end', () => { if (!failed) resolve(Buffer.concat(chunks)); });
-      req.on('error', reject);
-    });
-  }
   // What each partner has brought: the students of a B2B partner (Student Source Agent, and the partner named on the card) and the
   // students applied for through a B2B platform (the sheet's University Partner column). Matched by name, ignoring capitals.
   // What each partner has brought, by intake: visas first (that is what pays), and the students. B2B partners are the businesses you send

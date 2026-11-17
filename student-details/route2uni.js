@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { writeFileAtomic, TIME_ZONE } = require('../shared/server-utils');
+const { writeFileAtomic, twiceAWeekDue } = require('../shared/server-utils');
 
 const BASE = 'https://portal.route2unigroup.com/api';
 const text = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
@@ -144,22 +144,8 @@ function createRoute2Uni({ dir, email = '', password = '', fetchImpl = (...a) =>
     return running;
   }
 
-  // Twice a week: on a Monday or a Thursday from 2 a.m. office time, once that day; and never more than 4 days without a reading.
-  const dayOf = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(date);
-  const isSlotDay = (date) => {
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, weekday: 'short', hour: '2-digit', hourCycle: 'h23' }).formatToParts(date).map((x) => [x.type, x.value]));
-    return ['Mon', 'Thu'].includes(p.weekday) && Number(p.hour) >= 2;
-  };
-  function due(date = now()) {
-    if (!configured() || running) return false;
-    const runs = read().runs || [];
-    const lastGood = (runs.find((r) => r.ok) || {}).at;
-    const lastTry = (runs[0] || {}).at;
-    if (lastTry && date.getTime() - Date.parse(lastTry) < 3 * 3600000) return false; // a failed try is not repeated within 3 hours
-    if (!lastGood) return true;
-    if (date.getTime() - Date.parse(lastGood) > 4 * 86400000) return true;
-    return isSlotDay(date) && dayOf(new Date(lastGood)) !== dayOf(date);
-  }
+  // Twice a week: on a Monday or a Thursday from 2 a.m. office time (see twiceAWeekDue in shared/server-utils.js).
+  const due = (date = now()) => configured() && !running && twiceAWeekDue(read().runs, date);
   const tick = () => { if (due()) run('schedule').catch(() => {}); };
 
   return {

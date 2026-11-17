@@ -40,7 +40,7 @@ function sheet(feeTestford = 'Starts from 15000* GBP<br><br>PLEASE REFER TO <br>
       tr(td('College Name (SCROLL)'), td('Scholarship Details'), td('Fees Range'), td('Fees Link')),
       tr(td(''), td('All Foundation courses: 2,000 discount<br><br>Progression Scholarship for Pre Masters:<br>70% and above - 3,000 GBP<br><br>OPEN FOR JAN 2027 INTAKE<br>Application Deadline: 20th Nov 2026<br>CAS deadline: 1st Dec<br>Agent incentive 300 GBP', ' rowspan="2"'), td(feeTestford, ' rowspan="2"'), td('https://tuic.example.org/admission/fees/', ' rowspan="2"')),
       tr(td('TESTFORD UNIVERSITY INTERNATIONAL COLLEGE (TUIC)')),
-      tr(td('SAMPLETON UNIVERSITY PATHWAY COLLEGE (SPC)'), td('1000 GBP for UG'), td('Starts from 17000* GBP'), td('https://spc.example.org/fees/')),
+      tr(td('SAMPLETON UNIVERSITY PATHWAY COLLEGE (SPC)'), td('1000 GBP for UG (Please confirm with Someone for this)<br><br>OPEN FOR JAN 2027<br>Latest Enrolment Dates<br>Undergraduate: 12 October 2026'), td('Starts from 17000* GBP'), td('https://spc.example.org/fees/')),
     ),
     44: page(
       tr(td(''), td('UK/NETHERLAND')),
@@ -139,6 +139,24 @@ test('each UK college gets its own Fact File page, the closed and non-UK ones no
   facts.all().forEach((u) => assert.doesNotMatch(JSON.stringify(u), /incentive/i));
   const s = facts.all().find((u) => u.name.startsWith('Sampleton'));
   assert.ok(!Object.keys(s.rules.find((L) => L.level === 'International Year 1').tests).includes('DUOLINGO'));
+  // An agents' note is taken out, and a September enrolment date is not shown as a January date.
+  assert.strictEqual(s.programs[0].scholarship, '1000 GBP for UG');
+  assert.strictEqual(s.intakes[0].deadlines, 'OPEN FOR JAN 2027');
+});
+
+test('a college the sheet renames keeps its one page', async () => {
+  const dir = tmp();
+  const facts = createFacts(dir);
+  let tabs = sheet();
+  const kit = createNavitasToolkit({ dir, facts, fetchImpl: (...a) => fakeGoogle(tabs).fetchImpl(...a), starterSteps: STARTER_STEPS, clean });
+  await kit.run('test');
+  const before = facts.all().find((u) => u.name.startsWith('Testford'));
+  tabs = { ...sheet(), 11: sheet()[11].replace('Testford University International College (TUIC) - UK', 'Testford University International College of London (TUIC) - UK') };
+  await kit.run('test');
+  const pages = facts.all().filter((u) => /testford/i.test(u.name));
+  assert.strictEqual(pages.length, 1);
+  assert.strictEqual(pages[0].id, before.id);
+  assert.strictEqual(pages[0].name, 'Testford University International College of London (TUIC)');
 });
 
 test('the figures follow the sheet, and a text the team changed is kept', async () => {

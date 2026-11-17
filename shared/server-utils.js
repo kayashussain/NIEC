@@ -307,7 +307,8 @@ function createStaticServer(root, publicFiles) {
 }
 
 // Reads a JSON request body, rejecting with statusCode 413 past maxBytes and 400 for bad JSON.
-function readJSONBody(req, maxBytes) {
+// The request body as it is (an uploaded file), refused past maxBytes with a 413.
+function readRawBody(req, maxBytes) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
@@ -315,31 +316,38 @@ function readJSONBody(req, maxBytes) {
     req.on('data', (chunk) => {
       if (failed) return;
       size += chunk.length;
-      if (size > maxBytes) {
-        failed = true;
-        const err = new Error('Payload too large');
-        err.statusCode = 413;
-        reject(err);
-        return;
-      }
+      if (size > maxBytes) { failed = true; const err = new Error('Payload too large'); err.statusCode = 413; reject(err); return; }
       chunks.push(chunk);
     });
-    req.on('end', () => {
-      if (failed) return;
-      const body = Buffer.concat(chunks).toString('utf8');
-      try {
-        // Every request here sends an object. Anything else that is valid JSON (null, a list, a number) counts as
-        // empty, so no handler has to guard against it (a null body once stopped the whole server).
-        const parsed = body ? JSON.parse(body) : {};
-        resolve(parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {});
-      } catch (e) {
-        e.statusCode = 400;
-        e.message = 'invalid JSON';
-        reject(e);
-      }
-    });
+    req.on('end', () => { if (!failed) resolve(Buffer.concat(chunks)); });
     req.on('error', reject);
   });
+}
+
+// The request body as JSON. Every request here sends an object: anything else that is valid JSON (null, a list, a number)
+// counts as empty, so no handler has to guard against it (a null body once stopped the whole server).
+async function readJSONBody(req, maxBytes) {
+  const body = (await readRawBody(req, maxBytes)).toString('utf8');
+  try {
+    const parsed = body ? JSON.parse(body) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    const err = new Error('invalid JSON');
+    err.statusCode = 400;
+    throw err;
+  }
+}
+
+// The twice-a-week readings (Route2Uni, the Navitas toolkit): due on a Monday or a Thursday from 2 a.m. office time, once that
+// day; never more than 4 days without a good reading; a failed try is not repeated within 3 hours. `runs` is newest first.
+function twiceAWeekDue(runs, date = new Date()) {
+  const lastGood = ((runs || []).find((r) => r.ok) || {}).at;
+  const lastTry = ((runs || [])[0] || {}).at;
+  if (lastTry && date.getTime() - Date.parse(lastTry) < 3 * 3600000) return false;
+  if (!lastGood) return true;
+  if (date.getTime() - Date.parse(lastGood) > 4 * 86400000) return true;
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, weekday: 'short', hour: '2-digit', hourCycle: 'h23' }).formatToParts(date).map((x) => [x.type, x.value]));
+  return ['Mon', 'Thu'].includes(p.weekday) && Number(p.hour) >= 2 && localDate(new Date(lastGood)) !== localDate(date);
 }
 
 // Writes to a temporary file and renames it into place, so a crash mid-write, or another process
@@ -388,6 +396,8 @@ function snapshotDaily(file, dataDir, prefix) {
 }
 
 module.exports = {
+  readRawBody,
+  twiceAWeekDue,
   SECURITY_HEADERS,
   TIME_ZONE,
   localDate,

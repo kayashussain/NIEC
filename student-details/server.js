@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const {
-  sendJSON, send, SECURITY_HEADERS, createActivityLog, createStaticServer, SHARED_FILES, PUBLIC_SHARED, readJSONBody,
+  sendJSON, send, SECURITY_HEADERS, createActivityLog, createStaticServer, SHARED_FILES, PUBLIC_SHARED, readJSONBody, readRawBody,
   writeFileAtomic, snapshotDaily, localDate,
 } = require('../shared/server-utils');
 const { createAccounts } = require('../shared/accounts');
@@ -735,23 +735,6 @@ async function handleFacts(req, res, urlPath) {
   return sendJSON(res, 200, saved.university);
 }
 
-// The request body as it is (an uploaded file), refused past maxBytes.
-function readRawBody(req, maxBytes) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    let failed = false;
-    req.on('data', (chunk) => {
-      if (failed) return;
-      size += chunk.length;
-      if (size > maxBytes) { failed = true; const err = new Error('Payload too large'); err.statusCode = 413; reject(err); return; }
-      chunks.push(chunk);
-    });
-    req.on('end', () => { if (!failed) resolve(Buffer.concat(chunks)); });
-    req.on('error', reject);
-  });
-}
-
 // Partner Universities (campuses, commission slabs, agreement details): Admin only, for reading as well as changing.
 async function handleDirect(req, res, urlPath) {
   // Admin changes the list; the Manager, the Application and Mock Teams and the branches look at it, each seeing only what
@@ -1028,7 +1011,8 @@ async function studentGate(req, res, urlPath) {
     if (!uni) { sendJSON(res, 404, { error: 'No such university.' }); return true; }
     // The page as a student sees it: no internal notes (contacts at the university, checks), no application steps, no editor.
     // The fields stay (empty), so the page reads the same shape as everyone's.
-    sendJSON(res, 200, { ...uni, notes: '', process: [], updatedBy: '', intakes: (uni.intakes || []).map((i) => ({ ...i, notes: '' })) });
+    // A Navitas college's page (navitas-toolkit.js): its interview section is the agents' preparation guide, not for students.
+    sendJSON(res, 200, { ...uni, notes: '', process: [], updatedBy: '', interview: uni.source && uni.source.navitas ? '' : uni.interview, intakes: (uni.intakes || []).map((i) => ({ ...i, notes: '' })) });
     return true;
   }
   if (urlPath === '/api/eligibility' && req.method === 'POST') return false; // the finder: which universities the student can go to
@@ -1209,9 +1193,10 @@ const server = http.createServer(async (req, res) => {
         const row = (u.programs || []).find((p) => eligLevel(p.name) === s.level) || {};
         const open = (u.intakes || []).find((i) => i.deadlines || i.deadline) || (u.intakes || [])[0] || null;
         const links = courseLinks.all(facts.all());
-        list.forEach((c) => { c.link = links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || ''; });
+        // Copies with their link: the courses may be the Route2Uni reading's own (kept in memory and saved again), never changed here.
+        const linked = list.map((c) => ({ ...c, link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
         results.push({ id: u.id, name: u.name, city: u.city, status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit: row.deposit || '',
-          intake: open ? { name: open.name, deadline: open.deadline || '' } : null, courses: list.slice(0, 40), more: Math.max(0, list.length - 40), total: list.length });
+          intake: open ? { name: open.name, deadline: open.deadline || '' } : null, courses: linked.slice(0, 40), more: Math.max(0, linked.length - 40), total: linked.length });
       }
       const order = { yes: 0, check: 1, no: 2 };
       const feeOf = (x) => { const m = /£\s?([\d,]+)/.exec(x.fee); return m ? Number(m[1].replace(/,/g, '')) : 1e9; };
@@ -1283,7 +1268,9 @@ process.on('uncaughtException', (err) => console.error('[uncaught]', err));
 
 // A connection that sends its request very slowly is closed instead of being held for minutes.
 server.headersTimeout = 15000;
-server.requestTimeout = 60000;
+// The whole request may take up to 5 minutes, so a 10 MB agreement file still goes through on a slow connection (the headers
+// must still come within 15 seconds).
+server.requestTimeout = 5 * 60 * 1000;
 
 server.listen(PORT, () => {
   console.log(`ISR running at http://localhost:${PORT}`);
