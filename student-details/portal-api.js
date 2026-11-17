@@ -2615,7 +2615,13 @@ function createPortalApi({
       const made = push.pairCode(req.user);
       const host = String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '');
       const proto = (req.socket && req.socket.encrypted) || /^https/.test(String(req.headers['x-forwarded-proto'] || '')) ? 'https' : 'http';
-      sendJSON(res, 200, { url: `${proto}://${host}/pair?t=${made.token}`, until: made.until });
+      sendJSON(res, 200, { url: `${proto}://${host}/pair?t=${made.token}`, token: made.token, until: made.until });
+      return true;
+    }
+    // How the code on the computer is doing: waiting, opened on the phone, done (and on which phone), or run out.
+    if (urlPath === '/api/push/pair-status' && req.method === 'GET') {
+      if (!push) { sendJSON(res, 500, { error: 'Not available.' }); return true; }
+      sendJSON(res, 200, push.pairStatus(req.user.id, new URL(req.url, 'http://x').searchParams.get('t')));
       return true;
     }
     if (/^\/api\/push\/(connect|disconnect|whatsapp)$/.test(urlPath) && req.method === 'POST') {
@@ -2640,7 +2646,7 @@ function createPortalApi({
         // A test, from the Connect my phone window.
         if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
         const t = await push.send(req.user.id, { title: 'ISR is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site);
-        sendJSON(res, t.sent ? 200 : 502, t.sent ? { ok: true, sent: t.sent } : { error: 'Your phone could not be reached. Check that it is online.' });
+        sendJSON(res, t.sent ? 200 : 502, t.sent ? { ok: true, sent: t.sent, to: t.names } : { error: 'Your phone could not be reached. Check that it is online.' });
         return true;
       }
       // A student's chat, sent to the person's own phone: only a student this account may see, only that student's number.
@@ -2653,9 +2659,9 @@ function createPortalApi({
       const who = nameOf(found.row) || 'the student';
       const words = text(body.text).slice(0, 1500);
       const url = `/wa?n=${number}&name=${encodeURIComponent(who)}${words ? `&text=${encodeURIComponent(words)}` : ''}`;
-      const out = await push.send(req.user.id, { title: `WhatsApp ${who}`, body: `Tap to open the chat with ${who} (+${number})`, url, tag: `wa-${number}` }, site);
+      const out = await push.send(req.user.id, { title: `WhatsApp ${who}`, body: `Tap to open the chat · +${number}`, url, tag: `wa-${number}` }, site);
       if (!out.sent) { sendJSON(res, 502, { error: out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.' }); return true; }
-      sendJSON(res, 200, { ok: true, sent: out.sent });
+      sendJSON(res, 200, { ok: true, sent: out.sent, to: out.names });
       return true;
     }
     // Their own WhatsApp number (the owner, 17 Nov 2026: Follow-up asks for it), for the signature of their emails and to know which

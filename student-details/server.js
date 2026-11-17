@@ -1030,7 +1030,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && (urlPath === '/pair' || urlPath === '/wa')) { req.url = urlPath + '.html'; return serveStatic(req, res); }
     if (req.method === 'GET' && ['/pair-page.js', '/wa-page.js', '/phone.css'].includes(urlPath)) return serveStatic(req, res);
     if (urlPath === '/api/push/pair-state' && req.method === 'GET') {
-      const p = push.pairOf(new URL(req.url, 'http://x').searchParams.get('t'));
+      const p = push.pairOf(new URL(req.url, 'http://x').searchParams.get('t'), true);
       return sendJSON(res, 200, p ? { valid: true, name: String(p.user.name || '').split(/\s+/)[0], key: push.publicKey() } : { valid: false });
     }
     if (urlPath === '/api/push/pair' && req.method === 'POST') {

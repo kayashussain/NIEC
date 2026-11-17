@@ -2565,13 +2565,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-next .td-next-why { margin: 2px 0 10px; }
 .td-next .p-field { margin-top: 10px; }
 
-/* 🔴 CSS CHANGED (2026-11-17): "Connect my phone" (new; the phone's own pages, the WhatsApp page and the pairing page, now have their styles in student-details/phone.css) | from: nothing (WhatsApp opened only on the device that was clicked) | to: a window listing the connected phones (a green tick, the phone's name, when it was connected, a grey Disconnect pill) with one blue "Connect this phone" pill on a phone, or three numbered steps on a computer; on the phone, a calm centred page with "WhatsApp" in small green capitals, the student's name large, the number, and one big green "Open the chat in WhatsApp" button */
-.pl-dialog { max-width: 560px; }
-.pl-ready { margin: 14px 0 6px; color: #1f7a35; font-weight: 600; }
-.pl-devices { margin: 0 0 10px; padding: 0; list-style: none; }
-.pl-devices li { display: grid; grid-template-columns: 26px auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
-.pl-devices li:first-child { border-top: 0; }
-.pl-ok { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #e3f5e8; color: #1f7a35; font-size: 13px; font-weight: 700; }
+/* 🔴 CSS CHANGED (2026-11-17): the old "Connect my phone" window styles (.pl-dialog, .pl-ready, .pl-devices, .pl-ok) deleted | from: a narrow window, a green line and a plain list of phones | to: replaced by the new window, see ".pc-" at the end of this file */
 
 /* 🔴 CSS CHANGED (2026-11-17): a student's own login on the Fact File (new), and the Student choice on Users (new) | from: nothing (only the team had logins) | to: on the Fact File, an off-white "Welcome, <name>" panel with one line of help and "Your shortlist" (each course in bold with its university as a blue link and a grey "Take off" pill); beside each course of a university a small grey pill "I am interested" that turns soft green "✓ On your shortlist" when chosen; on Users, a "Student (Fact File only)" box under Manager and, when ticked, a soft grey box asking which student the login is for, with a search and the found students as rows; a soft violet "Student, Fact File only" chip in the list */
 .sl-card { margin: 0 0 18px; }
@@ -2598,16 +2592,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .chip-student { background: #efe9fb; color: #5b3ea8; }
 @media print { .sl-card, .sl-pick { display: none !important; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): "WhatsApp on your phone" made simple | from: three written steps to follow on the phone (open the website, log in, find the menu) | to: the code to scan on the left (white, rounded, a faint shadow) and two numbered steps on the right in large type ("Point your phone's camera at this code", "On your phone, tap Turn on"), a quiet line "Waiting for your phone..." that turns into a green "✓ Done" by itself */
-.pl-pair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin: 8px 0 4px; }
-.pl-qr { padding: 10px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 2px 10px rgba(0, 0, 0, .06); line-height: 0; }
-.pl-qr svg { display: block; width: 240px; height: 240px; }
-.pl-two { margin: 0 0 10px; padding-left: 26px; font-size: 17px; line-height: 1.4; }
-.pl-two li { margin: 0 0 14px; }
-.pl-two b { display: block; color: var(--ink); }
-.pl-two span { color: var(--text-dim); font-size: 15px; }
-.pl-wait { margin: 6px 0 0; color: #0058b0; font-size: 14px; font-weight: 500; }
-@media (max-width: 640px) { .pl-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } }
+/* 🔴 CSS CHANGED (2026-11-17): the old code-and-two-steps styles (.pl-pair, .pl-qr, .pl-two, .pl-wait) deleted | from: the code on the left and two numbered steps in large type | to: replaced by the new window, see ".pc-" at the end of this file */
 
 /* 🔴 CSS CHANGED (2026-11-17): the Route2Uni panel removed (the owner) | from: an off-white panel above the Fact File list, "Kept up to date by itself, every Monday and Thursday", with when Route2Uni, Navitas and the course pages were last read and grey tabs Information Hub and What changed | to: no panel; its styles (.r2u-*) deleted */
 
@@ -3331,3 +3316,55 @@ button.ov-kpi:hover .ov-kpi-hint::after, button.ov-kpi:focus-visible .ov-kpi-hin
 .ov-person-text b { font-weight: 600; color: #1d1d1f; }
 .ov-person-text small { color: #5f5f64; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ov-person-stage { flex: none; padding: 2px 10px; border-radius: 999px; background: #ececf0; color: #3a3a3c; font-size: 13px; font-weight: 600; }
+/* 🔴 CSS CHANGED (2026-11-17): "WhatsApp on your phone" window redesigned in the style of Apple's set-up screens (the owner asked for it to be the best and most professional) | from: a 560px window with a sentence on top, the code with two plain numbered steps beside it and a small blue "Waiting for your phone..." line; when connected, a green line and a plain list of phones with a grey Disconnect | to: a 760px window: at the top a 56px rounded tile with a phone and a green chat bubble beside a bold title and one grey line of what it does; below, the code on a white card with a soft shadow and "Works for 29:41 more, once" counting down under it (the code fades when it has run out); on the right a grey segmented switch Android | iPhone (the chosen side a white pill) and the steps as rows with blue numbered circles; under them a soft grey status pill with a pulsing grey dot ("Waiting for your phone..."), blue with a pulsing blue dot once the phone has opened the code, red when the code ran out, with a blue "Make a new code" pill under it. Connected: a large green circle with a white tick that springs in, "iPhone is connected" in bold, and each phone as a soft grey rounded row with a phone icon, its name in bold, "Connected today · Last used today" in grey and a grey Disconnect pill that turns red "Disconnect?" to confirm. On a narrow screen the code and steps stack */
+dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
+.pc-dialog .p-dialog-body { padding-top: 4px; }
+.pc-loading { margin: 24px 0; color: var(--text-dim); text-align: center; }
+.pc-hero { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 16px; align-items: center; margin: 0 0 22px; }
+.pc-hero-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(180deg, #ffffff, #f0f0f3); box-shadow: 0 0 0 .5px rgba(0, 0, 0, .08), 0 2px 8px rgba(0, 0, 0, .06); color: #1d1d1f; }
+.pc-hero-icon svg { width: 40px; height: 40px; }
+.pc-hero-text h3 { margin: 0 0 3px; font-size: 19px; font-weight: 650; letter-spacing: -.015em; color: #1d1d1f; }
+.pc-hero-text p { margin: 0; color: #515154; font-size: 15px; line-height: 1.45; }
+.pc-pair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+.pc-qr-card { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.pc-qr { padding: 12px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 6px 22px -8px rgba(0, 0, 0, .18); line-height: 0; transition: opacity .3s ease, filter .3s ease, box-shadow .3s ease; }
+.pc-qr svg { display: block; width: 232px; height: 232px; }
+.pc-qr-card.is-seen .pc-qr { box-shadow: 0 0 0 2px #0071e3, 0 6px 22px -8px rgba(0, 113, 227, .35); }
+.pc-qr-card.is-old .pc-qr { opacity: .25; filter: blur(2px); }
+.pc-timer { margin: 0; color: #6e6e73; font-size: 13px; font-variant-numeric: tabular-nums; }
+.pc-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pc-os { display: inline-flex; align-self: flex-start; padding: 2px; border-radius: 9px; background: #e8e8ed; }
+.pc-os > button { min-width: 96px; min-height: 32px; padding: 0 16px; border: 0; border-radius: 7px; background: transparent; color: #1d1d1f; font: 500 14.5px var(--font); cursor: pointer; transition: background .2s ease, box-shadow .2s ease; }
+.pc-os > button.on { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); font-weight: 600; }
+.pc-steps { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.pc-steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; }
+.pc-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 14px; font-weight: 650; }
+.pc-steps b { display: block; color: #1d1d1f; font-size: 16.5px; font-weight: 600; line-height: 1.35; }
+.pc-steps span:not(.pc-n) { display: block; margin-top: 2px; color: #6e6e73; font-size: 14px; line-height: 1.4; }
+.pc-status { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; align-self: flex-start; padding: 9px 16px; border-radius: 18px; background: #f0f0f3; color: #515154; font-size: 14.5px; font-weight: 500; }
+.pc-status > span:last-child { min-width: 0; }
+.pc-side > .btn { align-self: flex-start; }
+.pc-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #8e8e93; animation: pc-pulse 1.6s ease-in-out infinite; }
+.pc-status.is-seen { background: #e8f2fd; color: #0058b0; }
+.pc-status.is-seen .pc-dot { background: #0071e3; }
+.pc-status.is-bad { background: #fdecea; color: #b42318; }
+.pc-status.is-bad .pc-dot { background: #d92d20; animation: none; }
+@keyframes pc-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.8); } }
+.pc-done { display: flex; flex-direction: column; align-items: center; margin: 6px 0 22px; text-align: center; }
+.pc-check { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 0 14px; border-radius: 50%; background: #34c759; color: #fff; font-size: 32px; font-weight: 700; box-shadow: 0 8px 22px -10px rgba(52, 199, 89, .7); }
+.pc-done.is-new .pc-check { animation: pc-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes pc-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.pc-done h3 { margin: 0 0 4px; font-size: 21px; font-weight: 650; letter-spacing: -.015em; color: #1d1d1f; }
+.pc-done p { max-width: 460px; margin: 0; color: #515154; font-size: 15px; line-height: 1.45; }
+.pc-devices { display: flex; flex-direction: column; gap: 8px; margin: 0 0 6px; padding: 0; list-style: none; }
+.pc-devices li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 14px; background: #f2f2f5; }
+.pc-dev-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: #fff; color: #1d1d1f; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .06); }
+.pc-dev-icon svg { width: 24px; height: 24px; }
+.pc-dev-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pc-dev-text b { color: #1d1d1f; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.pc-dev-text span { color: #6e6e73; font-size: 13.5px; }
+.pc-off.is-sure { background: #d92d20; color: #fff; }
+.pc-big { width: 100%; min-height: 52px; font-size: 17px; }
+.pc-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+@media (max-width: 640px) { .pc-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } .pc-side { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .pc-dot, .pc-done.is-new .pc-check { animation: none; } }

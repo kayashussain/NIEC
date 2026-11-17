@@ -11,7 +11,27 @@
   const b64 = (s) => { const p = '='.repeat((4 - (s.length % 4)) % 4); const raw = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(raw, (c) => c.charCodeAt(0)); };
   const deviceName = () => { const u = navigator.userAgent; return /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? ((/;\s*([^;)]+?)\s+Build\//.exec(u) || [])[1] || 'Android phone') : 'Phone'; };
   const show = (title, words) => { $('title').textContent = title; $('words').textContent = words || ''; };
-  const steps = (list) => { $('steps').replaceChildren(...list.map((t) => { const li = document.createElement('li'); li.textContent = t; return li; })); $('steps').hidden = !list.length; };
+  // The Share button of Safari, drawn small inside the step, so the person knows exactly what to look for.
+  const SHARE = '<svg class="ph-share" viewBox="0 0 24 24" aria-label="Share button"><path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  // Steps: [bold words, smaller words, share icon?]
+  const steps = (list) => {
+    $('steps').replaceChildren(...list.map(([b, small, share], i) => {
+      const li = document.createElement('li');
+      const n = document.createElement('span'); n.className = 'ph-n'; n.textContent = String(i + 1);
+      const t = document.createElement('div');
+      const bb = document.createElement('b'); bb.textContent = b;
+      if (share) { const ic = document.createElement('span'); ic.innerHTML = SHARE; bb.append(' ', ic.firstChild); }
+      t.append(bb);
+      if (small) { const sm = document.createElement('span'); sm.textContent = small; t.append(sm); }
+      li.append(n, t);
+      return li;
+    }));
+    $('steps').hidden = !list.length;
+  };
+  // When the phone said no to notifications: exactly where to turn them back on, for this kind of phone.
+  const blockedHelp = () => (isIos
+    ? [['Open the Settings app', 'Then Notifications, then ISR.'], ['Turn on "Allow Notifications"', ''], ['Come back here and tap "Turn on" again', '']]
+    : [['Tap the icon left of the address at the top', 'A small lock or settings icon in Chrome.'], ['Tap Permissions (or Notifications), then Allow', ''], ['Tap "Turn on" again', '']]);
 
   // On an iPhone the Home Screen icon must come back to this same page (with its code) to finish.
   const m = document.createElement('link'); m.rel = 'manifest'; m.href = '/manifest.webmanifest' + (/^[\w-]{20,40}$/.test(token) ? '?pair=' + token : ''); document.head.append(m);
@@ -20,28 +40,34 @@
     let state;
     try { state = await (await fetch('/api/push/pair-state?t=' + encodeURIComponent(token), { cache: 'no-store' })).json(); } catch (e) { state = { valid: false }; }
     if (!state.valid) {
-      show('This code has run out', 'On the computer, press "Connect my phone" again and scan the new code. (If this phone is already connected, there is nothing more to do.)');
+      document.body.classList.add('is-old');
+      show('This code has run out', 'On the computer, open the menu (your name), press "Connect my phone" and scan the new code. If this phone is already connected, there is nothing more to do.');
       return;
     }
     const hello = state.name ? `Hello ${state.name}` : 'Hello';
     if (isIos && !standalone) {
-      show(hello, 'On an iPhone there is one more step, then it is done:');
-      steps(['Tap the Share button at the bottom of Safari (the square with an arrow).', 'Tap "Add to Home Screen", then "Add".', 'Open ISR from the new icon on your Home Screen, and tap "Turn on".']);
+      show(hello, 'On an iPhone, Apple asks for one extra step. It takes ten seconds, once:');
+      steps([['Tap the Share button', 'At the bottom of Safari (at the top on an iPad).', true], ['Tap "Add to Home Screen", then "Add"', 'Scroll down the list if you do not see it.'], ['Open ISR from your Home Screen', 'Then tap "Turn on" and "Allow". That is all.']]);
+      $('note').hidden = false;
       return;
     }
     if (!canPush) {
-      show(hello, 'This browser cannot do it. Open this page in Chrome (Android) or Safari (iPhone).');
+      show(hello, isIos ? 'Please open this page in Safari: scan the code again with the Camera app.' : 'This browser cannot get notifications. Please open this page in Chrome: scan the code again, or copy the link into Chrome.');
       return;
     }
-    show(hello, 'Tap "Turn on". When you press WhatsApp on a student on the computer, the chat will open here, on this phone.');
+    show(hello, 'Tap "Turn on", then "Allow". After that, when you press WhatsApp on a student on the computer, this phone shows a notification: one tap opens the chat.');
     const go = $('go');
     go.hidden = false;
+    $('note').hidden = false;
+    // Notifications blocked on this phone before: show where to turn them back on, before the tap.
+    if (Notification.permission === 'denied') { $('words').textContent = 'Notifications are turned off for ISR on this phone. Turn them on, then tap "Turn on":'; steps(blockedHelp()); }
     go.addEventListener('click', async () => {
       go.disabled = true;
+      go.textContent = 'Turning on...';
       $('msg').textContent = '';
       try {
         const allowed = await Notification.requestPermission();
-        if (allowed !== 'granted') throw new Error('Please tap "Allow" when the phone asks. If it did not ask, allow notifications for this website in the phone\'s settings, then tap Turn on again.');
+        if (allowed !== 'granted') { steps(blockedHelp()); throw new Error('The phone did not allow notifications. Turn them on as shown, then tap "Turn on" again.'); }
         const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         await navigator.serviceWorker.ready;
         let sub = await reg.pushManager.getSubscription();
@@ -51,10 +77,12 @@
         if (!r.ok) throw new Error(j.error || 'It did not work. Please try again.');
         go.hidden = true;
         steps([]);
+        $('note').hidden = true;
         document.body.classList.add('is-done');
-        show('Done ✓', 'WhatsApp is on for this phone. You can close this page. When you press WhatsApp on the computer, tap the notification here to open the chat.');
+        show('You are all set', 'This phone is connected. The computer knows it already. From now on, press WhatsApp on any student on the computer and tap the notification here. You can close this page.');
       } catch (e) {
         $('msg').textContent = e.message;
+        go.textContent = 'Turn on';
         go.disabled = false;
       }
     });
