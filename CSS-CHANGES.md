@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-17 · shared/theme.css · Partners (Universities, B2B partners, Agents): the filter switch taken off · from: under the search box a segmented switch (All, Ready to apply, Not ready yet, Ended; on Agents All, Active, Not set up yet, Ended) with count bubbles, and the Sort menu · to: only the Sort menu; the switch's styles (.pl-seg, .pl-n) removed · why: the owner does not need these filters on any of the three partner lists.**
+
 - **2026-11-17 · student-details/events.html · the Intake picker at the top of Events and marketing (new) · from: nothing, every event and campaign of every intake in one list · to: "Intake" in small grey bold beside a rounded light grey box with the intake's name (the same look as the Intake picker on the Dashboard), left of the blue "+ New event or campaign" pill · why: the owner asked to see Events and marketing intake by intake, with All intakes as a choice.**
 
 - **2026-11-17 · shared/theme.css · the team's Dashboard, Needs attention: "+16 more" · from: grey words "+16 more" that did nothing · to: the same grey words as a button (blue and underlined on hover) that shows every other name in place, as the same grey name pills · why: the owner asked to keep improving the system; the team could reach only the first three students of each list.**

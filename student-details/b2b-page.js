@@ -53,18 +53,14 @@
   let justSaved = '';
 
   // ---- the list ----
-  // Filter and sort under the search box (partners-switch.js). Each entry is a partner set up ({ p }) or a name on the sheet not set up yet ({ x }).
+  // Sort under the search box (partners-switch.js). Each entry is a partner set up ({ p }) or a name on the sheet not set up yet ({ x }).
   const nameOf = (it) => (it.p || it.x).name;
   const isEnded = (it) => Boolean(it.p && it.p.status === 'Ended');
-  const canApply = (it) => Boolean(it.p && (it.p.applyPortal || it.p.applyEmail));
   const visasOf = (it) => stats(nameOf(it)).visas;
   const studentsOf = (it) => (it.x ? it.x.students : stats(nameOf(it)).students);
   const byName = (a, b) => nameOf(a).localeCompare(nameOf(b));
   const tools = window.PartnerList ? window.PartnerList({
     key: KIND,
-    filters: KIND === 'b2b'
-      ? [['all', 'All', () => true], ['ready', 'Ready to apply', (it) => !isEnded(it) && canApply(it)], ['todo', 'Not ready yet', (it) => !isEnded(it) && !canApply(it)], ['ended', 'Ended', isEnded]]
-      : [['all', 'All', () => true], ['active', 'Active', (it) => Boolean(it.p && it.p.status === 'Active')], ['todo', 'Not set up yet', (it) => Boolean(it.x)], ['ended', 'Ended', isEnded]],
     sorts: [['visas', 'Most visas', (a, b) => isEnded(a) - isEnded(b) || visasOf(b) - visasOf(a) || byName(a, b)],
       ['students', 'Most students', (a, b) => isEnded(a) - isEnded(b) || studentsOf(b) - studentsOf(a) || byName(a, b)], ['az', 'A to Z', byName]],
     onChange: () => data && draw(),

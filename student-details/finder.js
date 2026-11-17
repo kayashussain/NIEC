@@ -24,7 +24,7 @@
     const grade = field('GPA or percentage', { value: prefill.grade || '', placeholder: 'e.g. 3.1 or 68%', max: 20 });
     const gap = field('Study gap (years)', { value: prefill.gap || '', placeholder: 'e.g. 2', max: 3 });
     gap.input.inputMode = 'numeric';
-    const test = field('English', { kind: 'select', choices: [['', 'Any'], ...F.ENGLISH_TESTS.map((x) => [x, x])], value: prefill.test || '' });
+    const test = field('English', { kind: 'select', choices: [['', 'Any'], ...F.ENGLISH_TESTS.map((x) => [x, x])], value: F.ENGLISH_TESTS.find((x) => x.toLowerCase() === String(prefill.test || '').toLowerCase()) || prefill.test || '' });
     const score = field('Overall score', { value: prefill.score || '', placeholder: 'e.g. 6.5', max: 10 });
     // The lowest band of the four parts (the owner, 17 Nov 2026): a university asking 59 in each part refuses a 57 in one.
     const band = field('Lowest band', { value: prefill.band || '', placeholder: 'e.g. 6.0', max: 10 });

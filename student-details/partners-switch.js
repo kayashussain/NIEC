@@ -40,36 +40,20 @@
   });
 })();
 
-// The row under the search box of each Partners list (the owner, 17 Nov 2026: find the partner and what still needs doing at once):
-// a segmented filter with a count on each choice, and a Sort menu, both kept in this browser for each list. "/" jumps to the search
-// box and Esc clears it.
-//   const tools = window.PartnerList({ key: 'b2b', filters: [[id, label, (item) => bool], ...], sorts: [[id, label, compare], ...], onChange })
+// The row under the search box of each Partners list: a Sort menu, kept in this browser for each list. "/" jumps to the search box
+// and Esc clears it. No filter switch (All, Ready to apply, Not ready yet, Ended): the owner asked for it to be taken off (17 Nov 2026).
+//   const tools = window.PartnerList({ key: 'b2b', sorts: [[id, label, compare], ...], onChange })
 //   tools.mount(container)          puts the row in place
-//   tools.apply(items)              the items of the chosen filter, in the chosen order (and draws the counts)
+//   tools.apply(items)              the items in the chosen order
 (function () {
-  window.PartnerList = function ({ key, filters, sorts, onChange }) {
+  window.PartnerList = function ({ key, sorts, onChange }) {
     const KEY = 'isrPartnerList:' + key;
-    let pick = { filter: filters[0][0], sort: sorts[0][0] };
-    try { pick = { ...pick, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* the first choices */ }
-    if (!filters.some(([id]) => id === pick.filter)) pick.filter = filters[0][0];
+    let pick = { sort: sorts[0][0] };
+    try { pick = { sort: JSON.parse(localStorage.getItem(KEY) || '{}').sort || pick.sort }; } catch (e) { /* the first choice */ }
     if (!sorts.some(([id]) => id === pick.sort)) pick.sort = sorts[0][0];
     const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(pick)); } catch (e) { /* this page only */ } };
     const row = document.createElement('div');
     row.className = 'pl-row no-print';
-    const seg = document.createElement('div');
-    seg.className = 'p-seg pl-seg';
-    seg.setAttribute('role', 'group');
-    seg.setAttribute('aria-label', 'Show');
-    const buttons = filters.map(([id, label]) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.dataset.f = id;
-      b.innerHTML = '<span></span><span class="pl-n"></span>';
-      b.firstChild.textContent = label;
-      b.addEventListener('click', () => { pick.filter = id; keep(); onChange(); });
-      seg.append(b);
-      return b;
-    });
     const sortBox = document.createElement('label');
     sortBox.className = 'pl-sort';
     sortBox.innerHTML = '<span>Sort</span>';
@@ -79,7 +63,7 @@
     sel.value = pick.sort;
     sel.addEventListener('change', () => { pick.sort = sel.value; keep(); onChange(); });
     sortBox.append(sel);
-    row.append(seg, sortBox);
+    row.append(sortBox);
     document.addEventListener('keydown', (e) => {
       const s = document.getElementById('search');
       if (!s || s.offsetParent === null) return;
@@ -89,17 +73,9 @@
     return {
       mount(after) { after.after(row); },
       apply(items) {
-        filters.forEach(([id, , test], i) => {
-          const on = id === pick.filter;
-          buttons[i].classList.toggle('on', on);
-          buttons[i].setAttribute('aria-pressed', String(on));
-          buttons[i].lastChild.textContent = String(items.filter(test).length);
-        });
-        const [, , test] = filters.find(([id]) => id === pick.filter);
         const [, , cmp] = sorts.find(([id]) => id === pick.sort);
-        return items.filter(test).sort(cmp);
+        return items.slice().sort(cmp);
       },
-      get filter() { return pick.filter; },
     };
   };
 })();

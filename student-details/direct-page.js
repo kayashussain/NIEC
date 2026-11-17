@@ -70,13 +70,11 @@
   const PILL = { Active: 'green', Ended: 'red' };
   const openOne = (id) => (viewer() ? openView(id) : openEditor(id));
 
-  // Filter and sort under the search box (partners-switch.js): what still needs doing is one click away.
+  // Sort under the search box (partners-switch.js).
   const ended = (u) => u.status === 'Ended';
-  const canApply = (u) => Boolean(u.applyPortal || u.applyEmail);
   const byName = (x, y) => x.name.localeCompare(y.name);
   const tools = window.PartnerList ? window.PartnerList({
     key: 'direct',
-    filters: [['all', 'All', () => true], ['ready', 'Ready to apply', (u) => !ended(u) && canApply(u)], ['todo', 'Not ready yet', (u) => !ended(u) && !canApply(u)], ['ended', 'Ended', ended]],
     sorts: [['students', 'Most students', (x, y) => ended(x) - ended(y) || statOf(y).students - statOf(x).students || byName(x, y)],
       ['visas', 'Most visas', (x, y) => ended(x) - ended(y) || statOf(y).visas - statOf(x).visas || byName(x, y)], ['az', 'A to Z', byName]],
     onChange: () => drawList(),

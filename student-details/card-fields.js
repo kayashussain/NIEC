@@ -59,7 +59,7 @@
   const STUDY_LEVELS = ['Foundation', 'International Year 1', 'Top-up (final year)', 'Undergraduate', 'Pre-Masters', 'Postgraduate', 'Masters by Research or PhD'];
   const OLDER_STUDY_LEVELS = { MBA: 'Postgraduate', 'MRes or PhD': 'Masters by Research or PhD' };
   const QUALIFICATIONS = ['SEE (Grade 10)', '+2 or Grade 12', 'A Levels', 'Diploma or PCL', 'Bachelor (3 years)', 'Bachelor (4 years)', 'Masters'];
-  const ENGLISH_TESTS = ['IELTS Academic', 'IELTS UKVI', 'PTE Academic', 'PTE UKVI', 'Duolingo', 'TOEFL iBT', 'OET', 'University Internal Test', 'MOI or Waiver', 'Not taken yet'];
+  const ENGLISH_TESTS = ['IELTS Academic', 'IELTS UKVI', 'PTE Academic', 'PTE UKVI', 'Duolingo', 'TOEFL iBT', 'OET', 'University Internal Test', 'MOI or Waiver', 'Not Taken Yet'];
   // Why a student did not go on. Fixed choices, so the Dashboard can count them (free typing would give ten spellings of one reason).
   const LOST_REASONS = [
     'Chose another consultancy', 'Applied by themselves', 'Chose another country', 'Fees or deposit too high',
