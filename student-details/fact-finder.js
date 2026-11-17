@@ -7,6 +7,11 @@
 //   Assign to the Application Team  asks, for every course, through which partner it goes (Direct or a B2B partner) and for notes,
 //                                   then gives the Application Team one task with the numbered list
 //   Open the card                   the student card in a new tab, so the Fact File stays where it was
+//   ✕ Stop                          ends the shortlisting: the bar and the tray go away; courses not yet given to the Application
+//                                   Team can be kept on the student card or discarded (the owner, 17 Nov 2026)
+//
+// The chosen student is kept while moving between Fact File pages, but a refresh of the page starts clean, with no student chosen
+// (the owner, 17 Nov 2026: the bar kept coming back after every refresh).
 //
 // The same two windows are used on the student card (student-page.js) through window.OptionActions.
 //
@@ -86,6 +91,40 @@
     return true;
   }
 
+  // Ends the shortlisting for this student. Courses still waiting (not yet with the Application Team) can stay on the card or be discarded.
+  async function stop() {
+    if (!state.student) return;
+    const who = state.student;
+    const left = waiting();
+    let discard = false;
+    if (left.length) {
+      const answer = await dialog(`Stop shortlisting for ${who.name}?`, (body, close) => {
+        const foot = el('div', 'p-dialog-foot');
+        body.append(el('p', '', `${left.length} course${left.length === 1 ? ' is' : 's are'} shortlisted and not yet given to the Application Team.`), foot);
+        foot.append(
+          h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'),
+          h('button', { class: 'btn', type: 'button', onclick: () => close('keep') }, 'Keep them on the card'),
+          h('button', { class: 'btn btn-danger', type: 'button', onclick: () => close('discard') }, 'Discard them'),
+        );
+      });
+      if (!answer) return;
+      discard = answer === 'discard';
+    }
+    const sid = encodeURIComponent(who.id);
+    if (discard) {
+      let failed = 0;
+      for (const o of left) { if (String(o.id).startsWith('new-')) continue; try { await api(`/api/cards/${sid}/options/${o.id}/delete`, {}); } catch (e) { failed += 1; } }
+      say(failed ? `${failed} course${failed === 1 ? '' : 's'} could not be taken off: see the student card.` : `Discarded ${left.length} course${left.length === 1 ? '' : 's'} for ${who.name}`, Boolean(failed));
+    } else say(left.length ? `Stopped. The shortlist stays on ${who.name}'s card.` : 'Stopped shortlisting.');
+    state.student = null; state.options = []; state.order = null; state.open = false;
+    remember(null);
+    try { sessionStorage.removeItem(ORDER_KEY); } catch (e) { /* nothing kept */ }
+    // "?for=" in the address would bring the student back; it is taken off.
+    try { const u = new URL(location.href); if (u.searchParams.has('for')) { u.searchParams.delete('for'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) { /* the address stays */ }
+    studentChanged();
+  }
+  const stopButton = () => h('button', { class: 'btn btn-sm', type: 'button', title: 'Stop shortlisting for this student', 'aria-label': 'Stop shortlisting for this student', onclick: () => stop() }, '✕ Stop');
+
   // "Shortlisting for Ram Sharma · Change", or the button to choose the student (above the courses).
   function bar() {
     const box = el('div', 'sl-for no-print');
@@ -95,7 +134,7 @@
     }
     const t = el('span', 'sl-for-text');
     t.append('Shortlisting for ', el('b', '', state.student.name));
-    box.append(t, h('button', { class: 'btn btn-sm', type: 'button', onclick: () => choose() }, 'Change student'));
+    box.append(t, h('button', { class: 'btn btn-sm', type: 'button', onclick: () => choose() }, 'Change student'), stopButton());
     return box;
   }
 
@@ -171,6 +210,7 @@
         h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => assign(state.student, list).then((r) => { if (r) { state.order = null; loadOptions().then(changed); } }) }, 'Assign to the Application Team'),
       );
     }
+    acts.append(stopButton());
     head.append(who, acts);
     trayBox.append(head);
     if (state.open && list.length) {
@@ -321,7 +361,13 @@
   }
 
   // The student comes from the address (?for=ID, from "Shortlist in the Fact File" on the student card), else the one chosen before in this tab.
+  // A refresh starts clean: the student chosen before is forgotten (moving to another Fact File page keeps it).
+  const refreshed = () => { try { const n = performance.getEntriesByType('navigation')[0]; return Boolean(n && n.type === 'reload'); } catch (e) { return false; } };
   const ready = async () => {
+    if (refreshed()) {
+      remember(null);
+      try { sessionStorage.removeItem(ORDER_KEY); const u = new URL(location.href); if (u.searchParams.has('for')) { u.searchParams.delete('for'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) { /* nothing kept */ }
+    }
     const asked = new URLSearchParams(location.search).get('for');
     state.student = asked && /^[\w-]{1,64}$/.test(asked) ? { id: asked, name: '' } : remembered();
     await loadOptions();
