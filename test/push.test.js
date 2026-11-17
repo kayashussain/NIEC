@@ -90,6 +90,8 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
 
   const sent = await fu('POST', '/api/push/whatsapp', { id: sita });
   assert.strictEqual(sent.status, 200, JSON.stringify(sent.json));
+  assert.deepStrictEqual(sent.json.to, ['Android phone'], 'the computer is told which phone got it');
+  assert.ok((await fu('GET', '/api/push')).json.devices[0].usedAt, 'the phone remembers when it was last used');
   const msg = got[got.length - 1];
   assert.strictEqual(msg.headers['content-encoding'], 'aes128gcm');
   assert.ok(!msg.body.includes(Buffer.from('9800000091')), 'the number is not readable on the way');
@@ -116,11 +118,18 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   const pc = (await fu('POST', '/api/push/pair-code', {})).json;
   const token = new URL(pc.url).searchParams.get('t');
   assert.ok(/^[\w-]{20,40}$/.test(token));
+  assert.strictEqual(pc.token, token);
+  // The window on the computer follows the code: waiting, opened on the phone, then done (and on which phone).
+  const pairStatus = async (t) => (await fu('GET', '/api/push/pair-status?t=' + encodeURIComponent(t))).json;
+  assert.strictEqual((await pairStatus(token)).state, 'waiting');
+  assert.strictEqual((await pairStatus('nope-nope-nope-nope-nope')).state, 'expired');
   const phoneGet = (u) => fetch(base + u, { redirect: 'manual' });
   assert.strictEqual((await phoneGet('/pair?t=' + token)).status, 200, 'the pairing page needs no login');
   const st = await (await phoneGet('/api/push/pair-state?t=' + token)).json();
   assert.deepStrictEqual([st.valid, st.name, st.key], [true, 'Sunita', key]);
   assert.strictEqual((await (await phoneGet('/api/push/pair-state?t=nope-nope-nope-nope-nope')).json()).valid, false);
+  assert.strictEqual((await pairStatus(token)).state, 'opened', 'the computer sees that the phone opened the code');
+  assert.strictEqual((await phoneGet('/api/push/pair-status?t=' + token)).status === 200, false, 'only the logged-in person sees how their code is doing');
   assert.strictEqual(JSON.parse(await (await phoneGet('/manifest.webmanifest?pair=' + token)).text()).start_url, '/pair?t=' + token, 'an iPhone Home Screen icon comes back to finish');
   const ua2 = crypto.createECDH('prime256v1'); ua2.generateKeys(); const auth2 = crypto.randomBytes(16);
   const sub2 = { endpoint: `http://127.0.0.1:${pushPort}/push/def`, keys: { p256dh: b64u(ua2.getPublicKey()), auth: b64u(auth2) } };
@@ -129,6 +138,8 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   assert.strictEqual((await pairPost({ token: 'wrong-wrong-wrong-wrong-wrong', subscription: sub2 })).status, 400);
   const paired = await pairPost({ token, subscription: sub2, name: 'iPhone' });
   assert.strictEqual(paired.status, 200);
+  const doneSt = await pairStatus(token);
+  assert.deepStrictEqual([doneSt.state, doneSt.device.name], ['done', 'iPhone'], 'the computer sees the phone connected, by name');
   assert.deepStrictEqual((await fu('GET', '/api/push')).json.devices.map((x) => x.name), ['iPhone'], 'the phone belongs to the person who showed the code');
   assert.strictEqual((await pairPost({ token, subscription: sub2, name: 'Again' })).status, 400, 'a code works once');
   await wait(300);

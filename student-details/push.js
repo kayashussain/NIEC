@@ -84,7 +84,7 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
   return {
     publicKey: () => vapid().publicKey,
     // What a page may know: how many phones, their names and when they were connected (never the push addresses).
-    devices: (userId) => devicesOf(userId).map((x) => ({ id: x.id, name: x.name, at: x.at })),
+    devices: (userId) => devicesOf(userId).map((x) => ({ id: x.id, name: x.name, at: x.at, ...(x.usedAt ? { usedAt: x.usedAt } : {}) })),
     connect(userId, sub, name) {
       const endpoint = String(sub && sub.endpoint || '');
       const k = (sub && sub.keys) || {};
@@ -105,13 +105,30 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
       pairs.set(token, { userId: user.id, user: { id: user.id, name: user.name, username: user.username, label: user.label }, until: now + 30 * 60 * 1000 });
       return { token, until: new Date(now + 30 * 60 * 1000).toISOString() };
     },
-    pairOf(token) { const p = pairs.get(String(token || '')); return p && p.until > Date.now() ? p : null; },
+    // A code the phone has opened is marked, so the window on the computer can say "Your phone opened the code" (the owner,
+    // 17 Nov 2026: the best, clearest way). A used code is kept, marked done, until it would have run out, so the computer sees it
+    // finish; it can never be used again.
+    pairOf(token, seen) {
+      const p = pairs.get(String(token || ''));
+      if (!p || p.until <= Date.now() || p.doneAt) return null;
+      if (seen && !p.seenAt) p.seenAt = Date.now();
+      return p;
+    },
+    // What the computer that made the code may know about it: only its own person's code.
+    pairStatus(userId, token) {
+      const p = pairs.get(String(token || ''));
+      if (!p || p.userId !== userId) return { state: 'expired' };
+      if (p.doneAt) return { state: 'done', device: p.device };
+      if (p.until <= Date.now()) return { state: 'expired' };
+      return { state: p.seenAt ? 'opened' : 'waiting', until: new Date(p.until).toISOString() };
+    },
     pairWith(token, sub, name) {
       const p = this.pairOf(token);
       if (!p) return { error: 'This code has expired or was already used. Press "Connect my phone" on the computer again for a new one.' };
       const out = this.connect(p.userId, sub, name);
       if (out.error) return out;
-      pairs.delete(String(token));
+      p.doneAt = Date.now();
+      p.device = out.device;
       return { ...out, user: p.user };
     },
     disconnect(userId, id) {
@@ -124,7 +141,7 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
     // removed ISR or blocked notifications) is forgotten. Resolves { sent, failed }.
     async send(userId, message, subject) {
       const list = devicesOf(userId);
-      let sent = 0; let failed = 0; const gone = [];
+      let sent = 0; let failed = 0; const gone = []; const reached = [];
       const payload = JSON.stringify(message);
       for (const d of list) {
         try {
@@ -136,11 +153,16 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
             redirect: 'error',
           });
           if (res.status === 404 || res.status === 410) gone.push(d.id);
-          if (res.ok) sent += 1; else failed += 1;
+          if (res.ok) { sent += 1; reached.push(d.id); } else failed += 1;
         } catch (e) { failed += 1; }
       }
-      if (gone.length) saveDevices(userId, devicesOf(userId).filter((x) => !gone.includes(x.id)));
-      return { sent, failed, forgotten: gone.length };
+      // Each phone remembers when it was last reached ("Last used today" in the window); a phone that has gone is forgotten.
+      if (gone.length || reached.length) {
+        const now = new Date().toISOString();
+        saveDevices(userId, devicesOf(userId).filter((x) => !gone.includes(x.id)).map((x) => (reached.includes(x.id) ? { ...x, usedAt: now } : x)));
+      }
+      const names = list.filter((x) => reached.includes(x.id)).map((x) => x.name);
+      return { sent, failed, forgotten: gone.length, names };
     },
   };
 }

@@ -45,80 +45,151 @@
     return new Promise((resolve, reject) => { const sc = document.createElement('script'); sc.src = '/qr.js'; sc.onload = () => resolve(window.IsrQr); sc.onerror = reject; document.head.append(sc); });
   }
 
-  // The window to connect a phone (the owner, 17 Nov 2026: simple enough to explain in one sentence). On a computer: a code and two
-  // steps ("point your phone's camera at the code, tap Turn on"); the window notices by itself when the phone is connected. On a
-  // phone that is logged in: one button. With a phone connected: its name, Disconnect, and a test. `once`: opened from a WhatsApp
-  // click with no phone connected yet, with "Open it on this computer this time".
+  // Small line icons, drawn here (nothing to download): a phone, and a phone with a chat bubble.
+  const ICON_PHONE = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 18.6h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  const ICON_CHAT = '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="13" y="5" width="22" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M21 38.5h6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M24.5 13.5h9.5a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4h-4.2l-4.3 3.6v-3.6h-1a4 4 0 0 1-4-4v-5a4 4 0 0 1 4-4z" fill="#25d366"/><circle cx="26" cy="20" r="1.2" fill="#fff"/><circle cx="29.8" cy="20" r="1.2" fill="#fff"/><circle cx="33.6" cy="20" r="1.2" fill="#fff"/></svg>';
+  const icon = (cls, svg) => { const s = el('span', cls); s.innerHTML = svg; return s; };
+  const day = (iso) => { const t = new Date(iso); if (Number.isNaN(t.getTime())) return ''; const n = new Date(); const d0 = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); const diff = Math.round((d0(n) - d0(t)) / 864e5); return diff === 0 ? 'today' : diff === 1 ? 'yesterday' : t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+  const OS_KEY = 'isr-phone-kind';
+  const STEPS = {
+    android: [['Open the camera', 'Point it at the code and tap the link that appears. (If the camera shows no link, open Chrome and tap the camera icon in the search bar.)'], ['Tap "Turn on", then "Allow"', 'That is all. No login on the phone.']],
+    iphone: [['Open the Camera', 'Point it at the code and tap the link that appears.'], ['Add ISR to the Home Screen', 'Tap the Share button, then "Add to Home Screen". Apple asks for this once.'], ['Open ISR from the Home Screen', 'Tap "Turn on", then "Allow". That is all.']],
+  };
+
+  // The window to connect a phone (the owner, 17 Nov 2026: simple enough to explain in one sentence, and as clear and professional
+  // as Apple's own set-up screens). On a computer: the code, the steps for Android or iPhone, and a live line that follows the phone
+  // (waiting, opened on the phone, connected), with how long the code still works. On a phone that is logged in: one button. With a
+  // phone connected: a tick, the phones (when connected, when last used), Disconnect (asked twice), a test and another phone. `once`:
+  // opened from a WhatsApp click with no phone connected yet, with "Open it on this computer this time".
   function dialog(once) {
-    const d = el('dialog', 'p-dialog pl-dialog');
+    const d = el('dialog', 'p-dialog pc-dialog');
     const head = el('div', 'p-dialog-head');
     head.append(el('h2', '', 'WhatsApp on your phone'), btn('p-x', '×', () => d.close()));
     head.lastChild.setAttribute('aria-label', 'Close');
     const body = el('div', 'p-dialog-body');
     d.append(head, body);
-    let poll = null;
-    d.addEventListener('close', () => { clearInterval(poll); d.remove(); });
+    let poll = null; let tick = null;
+    const stop = () => { clearInterval(poll); clearInterval(tick); poll = null; tick = null; };
+    d.addEventListener('close', () => { stop(); d.remove(); });
     d.addEventListener('mousedown', (e) => { if (e.target === d) d.close(); });
     document.body.append(d);
-    const foot = (...buttons) => { const f = el('div', 'p-dialog-foot'); f.append(...buttons); body.append(f); };
+    const foot = (...buttons) => { const f = el('div', 'p-dialog-foot pc-foot'); f.append(...buttons.filter(Boolean)); body.append(f); };
     const hereOnce = () => { if (!once) return null; const a = el('a', 'btn', 'Open it on this computer this time'); a.href = once.href; a.target = '_blank'; a.rel = 'noopener'; a.addEventListener('click', () => setTimeout(() => d.close(), 50)); return a; };
+    const hero = (svg, title, words) => { const h = el('div', 'pc-hero'); const t = el('div', 'pc-hero-text'); t.append(el('h3', '', title), el('p', '', words)); h.append(icon('pc-hero-icon', svg), t); return h; };
 
     async function showCode(again) {
-      body.replaceChildren(el('p', 'p-muted', 'Making your code...'));
+      stop();
+      body.replaceChildren(el('p', 'pc-loading', 'Making your code...'));
       let made; let qr;
       try { [made, qr] = await Promise.all([api('/api/push/pair-code', {}), loadQr()]); } catch (e) { body.replaceChildren(el('div', 'p-notice bad', e.message || 'Something went wrong.')); return; }
-      const before = (status && status.devices.length) || 0;
-      const wrap = el('div', 'pl-pair');
-      const code = el('div', 'pl-qr');
-      code.innerHTML = qr.svg(made.url, { size: 240 });
+      const top = again
+        ? hero(ICON_CHAT, 'Connect another phone', 'Do the same on the other phone. Both will get the WhatsApp chats you open here.')
+        : hero(ICON_CHAT, 'Open student chats on your own phone', 'Set it up once. Then press WhatsApp on any student here, tap the notification on your phone, and the chat opens. Nothing is saved on your phone, and your WhatsApp never touches this computer.');
+
+      const card = el('div', 'pc-qr-card');
+      const code = el('div', 'pc-qr');
+      code.innerHTML = qr.svg(made.url, { size: 232 });
       code.firstChild.setAttribute('aria-label', 'The code to scan with your phone');
-      const steps = el('ol', 'pl-two');
-      [['Point your phone\'s camera at this code', 'and tap the link that appears.'], ['On your phone, tap "Turn on"', 'and "Allow". That is all.']].forEach(([b, small]) => { const li = el('li'); li.append(el('b', '', b), el('span', '', small)); steps.append(li); });
-      const side = el('div', 'pl-side');
-      side.append(steps, el('p', 'p-muted p-small', 'On an iPhone, the phone shows one extra step (Add to Home Screen). The code works for 30 minutes, once.'));
-      const waiting = el('p', 'pl-wait', 'Waiting for your phone...');
-      side.append(waiting);
-      wrap.append(code, side);
-      body.replaceChildren(el('p', '', again ? 'Connect another phone:' : 'Connect your phone once. After that, WhatsApp on the computer opens the chat on your phone.'), wrap);
-      const h = hereOnce(); if (h) foot(h);
-      clearInterval(poll);
+      code.firstChild.setAttribute('role', 'img');
+      const timer = el('p', 'pc-timer');
+      card.append(code, timer);
+
+      const side = el('div', 'pc-side');
+      const seg = el('div', 'pc-os');
+      seg.setAttribute('role', 'tablist');
+      seg.setAttribute('aria-label', 'Your phone');
+      const steps = el('ol', 'pc-steps');
+      let kind = 'android';
+      try { if (localStorage.getItem(OS_KEY) === 'iphone') kind = 'iphone'; } catch (e) { /* private window */ }
+      const drawSteps = () => {
+        steps.replaceChildren(...STEPS[kind].map(([b, small], i) => { const li = el('li'); li.append(el('span', 'pc-n', String(i + 1))); const t = el('div'); t.append(el('b', '', b), el('span', '', small)); li.append(t); return li; }));
+        [...seg.children].forEach((x) => { const on = x.dataset.kind === kind; x.classList.toggle('on', on); x.setAttribute('aria-selected', String(on)); });
+      };
+      [['android', 'Android'], ['iphone', 'iPhone']].forEach(([k, label]) => {
+        const b = btn('', label, () => { kind = k; try { localStorage.setItem(OS_KEY, k); } catch (e) { /* fine */ } drawSteps(); });
+        b.dataset.kind = k; b.setAttribute('role', 'tab'); seg.append(b);
+      });
+      drawSteps();
+      const state = el('div', 'pc-status');
+      state.setAttribute('role', 'status');
+      const setState = (cls, text) => { state.className = `pc-status ${cls}`; state.replaceChildren(el('span', 'pc-dot'), el('span', '', text)); };
+      setState('is-waiting', 'Waiting for your phone...');
+      side.append(seg, steps, state);
+
+      const pair = el('div', 'pc-pair');
+      pair.append(card, side);
+      body.replaceChildren(top, pair);
+      foot(hereOnce(), again ? btn('btn', 'Back', () => draw()) : null);
+
+      const until = new Date(made.until).getTime();
+      let over = false;
+      const expired = () => {
+        stop();
+        if (over) return;
+        over = true;
+        card.classList.add('is-old');
+        timer.textContent = 'This code has run out';
+        setState('is-bad', 'The code has run out.');
+        state.after(btn('btn btn-primary', 'Make a new code', () => showCode(again)));
+      };
+      const showTime = () => {
+        const left = Math.max(0, Math.round((until - Date.now()) / 1000));
+        if (!left) { expired(); return; }
+        timer.textContent = `Works for ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} more, once`;
+      };
+      showTime();
+      tick = setInterval(showTime, 1000);
+      let seen = false;
       poll = setInterval(async () => {
-        try {
-          const s2 = await load(true);
-          if (s2.devices.length > before) { clearInterval(poll); say('Your phone is connected.'); draw(true); }
-        } catch (e) { /* asked again in a moment */ }
-      }, 3000);
+        let st;
+        try { st = await api('/api/push/pair-status?t=' + encodeURIComponent(made.token)); } catch (e) { return; } // asked again in a moment
+        if (st.state === 'opened' && !seen) { seen = true; card.classList.add('is-seen'); setState('is-seen', kind === 'iphone' ? 'Your phone has the code. Finish the steps on the phone.' : 'Your phone has the code. Tap "Turn on", then "Allow".'); }
+        if (st.state === 'done') { stop(); status = null; draw(st.device ? st.device.name : 'Your phone'); }
+        if (st.state === 'expired') expired();
+      }, 2000);
     }
 
     async function draw(justConnected) {
-      body.replaceChildren(el('p', 'p-muted', 'Loading...'));
+      stop();
+      body.replaceChildren(el('p', 'pc-loading', 'Loading...'));
       let s;
       try { s = await load(true); } catch (e) { body.replaceChildren(el('div', 'p-notice bad', e.message)); return; }
       if (isPhone()) {
         // A phone that is logged in: one button.
-        body.replaceChildren(el('p', '', s.devices.length ? 'WhatsApp opens on your phone. To turn it on for this phone too:' : 'Tap "Turn on": when you press WhatsApp on a student on the computer, the chat opens here.'));
+        body.replaceChildren(hero(ICON_CHAT, s.devices.length ? 'Turn it on for this phone too' : 'Open student chats on this phone', 'When you press WhatsApp on a student on the computer, this phone shows a notification. Tap it and the chat opens. Nothing is saved on the phone.'));
         const msg = el('div', 'p-msg');
-        const go = btn('btn btn-primary', 'Turn on', async () => {
+        const go = btn('btn btn-primary pc-big', 'Turn on', async () => {
           go.disabled = true;
-          try { await connectHere(); say('Done. WhatsApp chats will open on this phone.'); draw(true); } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; go.disabled = false; }
+          try { await connectHere(); say('Done. WhatsApp chats will open on this phone.'); draw(deviceName()); } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; go.disabled = false; }
         });
-        const bar = el('div', 'p-bar'); bar.append(go);
-        body.append(bar, msg);
+        body.append(go, msg);
         return;
       }
       if (!s.devices.length) { showCode(false); return; }
-      body.replaceChildren();
-      body.append(el('p', 'pl-ready', justConnected ? '✓ Done. Press WhatsApp on any student: your phone shows a notification, one tap opens the chat.' : '✓ WhatsApp opens on your phone.'));
-      const list = el('ul', 'pl-devices');
+      const done = el('div', 'pc-done' + (justConnected ? ' is-new' : ''));
+      done.append(el('span', 'pc-check', '✓'), el('h3', '', justConnected ? `${justConnected} is connected` : 'WhatsApp opens on your phone'),
+        el('p', '', 'Press WhatsApp on any student. Your phone shows a notification: tap it and the chat opens.'));
+      const list = el('ul', 'pc-devices');
       s.devices.forEach((x) => {
         const li = el('li');
-        li.append(el('span', 'pl-ok', '✓'), el('b', '', x.name), el('span', 'p-muted p-small', `since ${new Date(x.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`));
-        li.append(btn('btn btn-sm', 'Disconnect', async () => { await api('/api/push/disconnect', { id: x.id }); say('Disconnected'); draw(); }));
+        const t = el('div', 'pc-dev-text');
+        t.append(el('b', '', x.name), el('span', '', `Connected ${day(x.at)}${x.usedAt ? ` · Last used ${day(x.usedAt)}` : ''}`));
+        let sure = null;
+        const off = btn('btn btn-sm pc-off', 'Disconnect', async () => {
+          if (!sure) { off.textContent = 'Disconnect?'; off.classList.add('is-sure'); sure = setTimeout(() => { sure = null; off.textContent = 'Disconnect'; off.classList.remove('is-sure'); }, 3500); return; }
+          clearTimeout(sure); off.disabled = true;
+          try { await api('/api/push/disconnect', { id: x.id }); status = null; say(`${x.name} is disconnected`); draw(); } catch (e) { say(e.message, true); off.disabled = false; }
+        });
+        li.append(icon('pc-dev-icon', ICON_PHONE), t, off);
         list.append(li);
       });
-      body.append(list);
-      foot(btn('btn', 'Send a test to my phone', async () => { try { await api('/api/push/whatsapp', { test: true }); say('Sent. Look at your phone.'); } catch (e) { say(e.message, true); } }),
-        btn('btn', 'Connect another phone', () => showCode(true)), btn('btn btn-primary', 'Done', () => d.close()));
+      body.replaceChildren(done, list);
+      const test = btn('btn', 'Send a test', async () => {
+        test.disabled = true;
+        try { const r = await api('/api/push/whatsapp', { test: true }); say(`Sent. Look at your ${(r.to && r.to[0]) || 'phone'}.`); } catch (e) { say(e.message, true); }
+        test.disabled = false;
+      });
+      foot(test, btn('btn', 'Connect another phone', () => showCode(true)), btn('btn btn-primary', 'Done', () => d.close()));
     }
     d.showModal();
     draw();
@@ -131,11 +202,13 @@
     try { s = await load(); } catch (e) { s = null; }
     if (s && s.devices.length && id) {
       try {
-        await api('/api/push/whatsapp', { id, text: text || '' });
-        say(`Sent to your phone. Tap the notification to chat with ${name || 'the student'}.`);
+        const r = await api('/api/push/whatsapp', { id, text: text || '' });
+        const to = r.to && r.to.length === 1 ? `your ${r.to[0]}` : 'your phone';
+        say(`Sent to ${to}. Tap the notification to chat with ${name || 'the student'}.`);
         return;
       } catch (e) {
-        if (e.status === 409 || /no longer connected/.test(e.message)) status = null;
+        // The phone was removed (or notifications blocked on it): show how to connect it again, with this computer for this once.
+        if (e.status === 409 || /no longer connected/.test(e.message)) { status = null; dialog({ href: web(number, text) }); return; }
         say(`${e.message} Opening WhatsApp here instead.`, true);
       }
       window.open(web(number, text), '_blank', 'noopener');
