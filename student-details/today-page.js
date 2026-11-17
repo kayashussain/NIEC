@@ -230,7 +230,7 @@
     if (t.tasks.length) {
       const sb = el('div', 'td-search');
       const q = el('input', 'td-search-input');
-      q.type = 'search'; q.placeholder = 'Search tasks by student name or word'; q.value = searchQ;
+      q.type = 'search'; q.placeholder = 'Search tasks by student name or word   ( / )'; q.value = searchQ;
       q.setAttribute('aria-label', 'Search tasks by student name or word');
       let timer = null;
       q.addEventListener('input', () => {
@@ -561,5 +561,30 @@
     // The day at a glance, then the tasks, then Needs attention, for everyone (the owner, 15 Nov 2026).
     page.append(head, top, slot, attention(d.sections));
     view.replaceChildren(page);
+
+    // A student's name opens their card over Today (card-drawer.js), with ‹ › to go through every student on the page in order, so
+    // nobody leaves Today and comes back (the owner, 17 Nov 2026: less work). Closing it brings the tasks up to date. A Ctrl or
+    // middle click still opens the card in a new tab.
+    const busy = () => Boolean(document.querySelector('.p-drawer, .p-dialog, dialog[open]')) || popOpen;
+    page.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href^="/student?id="]');
+      if (!a || !window.CardDrawer || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      const idOf = (x) => new URL(x.href, location.origin).searchParams.get('id');
+      const ids = [...new Set([...page.querySelectorAll('a[href^="/student?id="]')].map(idOf).filter(Boolean))];
+      e.preventDefault();
+      window.CardDrawer.open(idOf(a), { list: ids, onClose: () => refresh(true) });
+    });
+    // Today stays open all day: the tasks are read again every minute while the page is in view, and at once when it comes back
+    // into view, but never while someone is in a box (an update, the search) or has a card or a window open.
+    const typing = () => { const x = document.activeElement; return Boolean(x && /^(INPUT|TEXTAREA|SELECT)$/.test(x.tagName)); };
+    const quiet = () => { if (!document.hidden && !busy() && !typing()) refresh(true); };
+    setInterval(quiet, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) quiet(); });
+    // "/" jumps to the task search, as on the Fact File.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) || busy()) return;
+      const q = page.querySelector('.td-search-input');
+      if (q) { e.preventDefault(); q.focus(); }
+    });
   }).catch((e) => view.replaceChildren(el('div', 'p-card', e.message)));
 })();
