@@ -39,3 +39,67 @@
     main.prepend(bar);
   });
 })();
+
+// The row under the search box of each Partners list (the owner, 17 Nov 2026: find the partner and what still needs doing at once):
+// a segmented filter with a count on each choice, and a Sort menu, both kept in this browser for each list. "/" jumps to the search
+// box and Esc clears it.
+//   const tools = window.PartnerList({ key: 'b2b', filters: [[id, label, (item) => bool], ...], sorts: [[id, label, compare], ...], onChange })
+//   tools.mount(container)          puts the row in place
+//   tools.apply(items)              the items of the chosen filter, in the chosen order (and draws the counts)
+(function () {
+  window.PartnerList = function ({ key, filters, sorts, onChange }) {
+    const KEY = 'isrPartnerList:' + key;
+    let pick = { filter: filters[0][0], sort: sorts[0][0] };
+    try { pick = { ...pick, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* the first choices */ }
+    if (!filters.some(([id]) => id === pick.filter)) pick.filter = filters[0][0];
+    if (!sorts.some(([id]) => id === pick.sort)) pick.sort = sorts[0][0];
+    const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(pick)); } catch (e) { /* this page only */ } };
+    const row = document.createElement('div');
+    row.className = 'pl-row no-print';
+    const seg = document.createElement('div');
+    seg.className = 'p-seg pl-seg';
+    seg.setAttribute('role', 'group');
+    seg.setAttribute('aria-label', 'Show');
+    const buttons = filters.map(([id, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.f = id;
+      b.innerHTML = '<span></span><span class="pl-n"></span>';
+      b.firstChild.textContent = label;
+      b.addEventListener('click', () => { pick.filter = id; keep(); onChange(); });
+      seg.append(b);
+      return b;
+    });
+    const sortBox = document.createElement('label');
+    sortBox.className = 'pl-sort';
+    sortBox.innerHTML = '<span>Sort</span>';
+    const sel = document.createElement('select');
+    sel.setAttribute('aria-label', 'Sort');
+    sorts.forEach(([id, label]) => sel.append(new Option(label, id)));
+    sel.value = pick.sort;
+    sel.addEventListener('change', () => { pick.sort = sel.value; keep(); onChange(); });
+    sortBox.append(sel);
+    row.append(seg, sortBox);
+    document.addEventListener('keydown', (e) => {
+      const s = document.getElementById('search');
+      if (!s || s.offsetParent === null) return;
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); s.focus(); }
+      else if (e.key === 'Escape' && document.activeElement === s && s.value) { s.value = ''; onChange(); }
+    });
+    return {
+      mount(after) { after.after(row); },
+      apply(items) {
+        filters.forEach(([id, , test], i) => {
+          const on = id === pick.filter;
+          buttons[i].classList.toggle('on', on);
+          buttons[i].setAttribute('aria-pressed', String(on));
+          buttons[i].lastChild.textContent = String(items.filter(test).length);
+        });
+        const [, , test] = filters.find(([id]) => id === pick.filter);
+        const [, , cmp] = sorts.find(([id]) => id === pick.sort);
+        return items.filter(test).sort(cmp);
+      },
+      get filter() { return pick.filter; },
+    };
+  };
+})();

@@ -53,6 +53,23 @@
   let justSaved = '';
 
   // ---- the list ----
+  // Filter and sort under the search box (partners-switch.js). Each entry is a partner set up ({ p }) or a name on the sheet not set up yet ({ x }).
+  const nameOf = (it) => (it.p || it.x).name;
+  const isEnded = (it) => Boolean(it.p && it.p.status === 'Ended');
+  const canApply = (it) => Boolean(it.p && (it.p.applyPortal || it.p.applyEmail));
+  const visasOf = (it) => stats(nameOf(it)).visas;
+  const studentsOf = (it) => (it.x ? it.x.students : stats(nameOf(it)).students);
+  const byName = (a, b) => nameOf(a).localeCompare(nameOf(b));
+  const tools = window.PartnerList ? window.PartnerList({
+    key: KIND,
+    filters: KIND === 'b2b'
+      ? [['all', 'All', () => true], ['ready', 'Ready to apply', (it) => !isEnded(it) && canApply(it)], ['todo', 'Not ready yet', (it) => !isEnded(it) && !canApply(it)], ['ended', 'Ended', isEnded]]
+      : [['all', 'All', () => true], ['active', 'Active', (it) => Boolean(it.p && it.p.status === 'Active')], ['todo', 'Not set up yet', (it) => Boolean(it.x)], ['ended', 'Ended', isEnded]],
+    sorts: [['visas', 'Most visas', (a, b) => isEnded(a) - isEnded(b) || visasOf(b) - visasOf(a) || byName(a, b)],
+      ['students', 'Most students', (a, b) => isEnded(a) - isEnded(b) || studentsOf(b) - studentsOf(a) || byName(a, b)], ['az', 'A to Z', byName]],
+    onChange: () => data && draw(),
+  }) : null;
+  if (tools) tools.mount(document.querySelector('.bp-tools'));
   function draw() {
     const all = data.partners;
     const sheet = data.onSheet || []; // named in the University Partner column, not set up yet
@@ -88,7 +105,10 @@
       bar.append(words, go);
       lead.push(bar);
     }
-    $('list').replaceChildren(...lead, ...shown.map(card), ...shownSheet.map(sheetCard));
+    const items = [...shown.map((p) => ({ p })), ...shownSheet.map((x) => ({ x }))];
+    const ordered = tools ? tools.apply(items) : items;
+    if (!ordered.length) { $('list').replaceChildren(...lead, el('div', 'bp-empty', 'None here. Choose "All" above.')); return; }
+    $('list').replaceChildren(...lead, ...ordered.map((it) => (it.p ? card(it.p) : sheetCard(it.x))));
   }
   // The names marked "Not a partner", each with Show again.
   function showHidden() {

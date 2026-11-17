@@ -70,6 +70,19 @@
   const PILL = { Active: 'green', Ended: 'red' };
   const openOne = (id) => (viewer() ? openView(id) : openEditor(id));
 
+  // Filter and sort under the search box (partners-switch.js): what still needs doing is one click away.
+  const ended = (u) => u.status === 'Ended';
+  const canApply = (u) => Boolean(u.applyPortal || u.applyEmail);
+  const byName = (x, y) => x.name.localeCompare(y.name);
+  const tools = window.PartnerList ? window.PartnerList({
+    key: 'direct',
+    filters: [['all', 'All', () => true], ['ready', 'Ready to apply', (u) => !ended(u) && canApply(u)], ['todo', 'Not ready yet', (u) => !ended(u) && !canApply(u)], ['ended', 'Ended', ended]],
+    sorts: [['students', 'Most students', (x, y) => ended(x) - ended(y) || statOf(y).students - statOf(x).students || byName(x, y)],
+      ['visas', 'Most visas', (x, y) => ended(x) - ended(y) || statOf(y).visas - statOf(x).visas || byName(x, y)], ['az', 'A to Z', byName]],
+    onChange: () => drawList(),
+  }) : null;
+  if (tools) tools.mount(document.querySelector('.bp-tools'));
+
   function drawList() {
     const q = $('search').value.trim().toLowerCase();
     const shown = q ? all.filter((u) => [u.name, u.via, ...(u.campuses || [])].join(' ').toLowerCase().includes(q)) : all;
@@ -86,9 +99,9 @@
     $('kpis').replaceChildren(...band.map(([label, v, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', v), el('small', '', sub)); return d; }));
     $('count').textContent = all.length ? (q ? `${shown.length} of ${all.length}` : `${all.length} in the list`) : '';
     if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', viewer() ? 'No partner universities yet.' : 'No partner universities yet.')); return; }
-    if (!shown.length) { $('list').replaceChildren(el('div', 'bp-empty', 'Nothing matches that search.')); return; }
-    // The busiest first: the most students, then by name.
-    const ordered = shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
+    // The busiest first by default (the most students, then by name); the Sort menu changes it.
+    const ordered = tools ? tools.apply(shown) : shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
+    if (!ordered.length) { $('list').replaceChildren(el('div', 'bp-empty', shown.length ? 'None here. Choose "All" above.' : 'Nothing matches that search.')); return; }
     $('list').replaceChildren(...ordered.map(card));
     if (justSaved) { const hit = $('list').querySelector(`[data-id="${justSaved}"]`); if (hit) hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
     justSaved = '';
