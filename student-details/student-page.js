@@ -157,7 +157,7 @@
     fact('WhatsApp', s.phone, F.whatsappNumber(s.phone) ? 'https://wa.me/' + F.whatsappNumber(s.phone) : '');
     { const a = facts.lastChild && facts.lastChild.querySelector('a[href^="https://wa.me/"]'); if (a) a.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(F.whatsappNumber(s.phone), s.name, '', id); }); }
     // No University and Course here (the owner, 17 Nov 2026): the student applies to many, so the one going ahead is chosen under
-    // Applications ("Go ahead with this one"), which writes it on All Students by itself.
+    // Applications (the Priority university picker), which writes it on All Students by itself.
     // How many universities were applied to and how many offers, from Applications (one student applies to many).
     { const ap = appStats(); if (ap.submitted || ap.offers) fact('Applications', `${ap.submitted} submitted · ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}`); }
     if (pp.nationality && pp.nationality !== 'Nepali') fact('Nationality', pp.nationality);
@@ -171,7 +171,7 @@
       mid.append(bar);
     }
     if (can()) act.append(h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }, 'Edit details'));
-    if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: () => assignTask() }, 'Assign a task'));
+    if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: assignTask }, 'Assign a task'));
     if (!act.childNodes.length) act.remove();
     c.append(mid);
     return c;
@@ -179,15 +179,13 @@
 
   // ---- Details: only the notes, and why a student did not go on ----
   // ---- tasks given to a team about this student ----
-  // preset (from an application, the owner, 17 Nov 2026): { team, text, tag } filled in for NOC, Medical or Mock for that university.
-  function assignTask(preset) {
-    const pre = preset && preset.text ? preset : {};
-    dialog(pre.title || 'Assign a task', (body, close) => {
+  function assignTask() {
+    dialog('Assign a task', (body, close) => {
       // Which team and what to do: no date to do it by (the owner, 14 Nov 2026). The team asks for anything it needs in the
       // task's comments, and ticks it when it is done.
       // A team, or Admin (named with their title): the teams and branches can give Admin a task too.
       const targets = (data.assignTeams || data.taskTeams || []).map((t) => [t.id, t.label]);
-      const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : targets.some(([k]) => k === pre.team) ? pre.team : '' });
+      const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : '' });
       // Exactly who gets it (the owner, 15 Nov 2026): the people whose own team it is.
       const goes = el('div', 'p-goes');
       const showGoes = () => {
@@ -201,10 +199,14 @@
       team.wrap.append(goes);
       team.input.addEventListener('change', showGoes);
       showGoes();
-      const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, value: pre.text || '', placeholder: 'e.g. Submit the application to Coventry University.' });
+      const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submit the application to Coventry University.' });
       // How important it is, and what it is about: the tag is chosen by hand by whoever gives the task (NOC, Medical, Application,
       // Documents and the rest), never set by the system (the owner, 15 Nov 2026).
-      const tag = window.Portal.tagPicker(pre.tag || '');
+      // Which university it is for (the owner, 17 Nov 2026): one of the student's applications, the priority one first; its name and
+      // course go in front of the task, so a NOC, a medical or a mock is given for that university.
+      const apps = liveApps();
+      const uniF = apps.length ? field('For which university?', { kind: 'select', choices: [['', 'Not about one university'], ...apps.map((o) => [o.id, appName(o)])], value: (apps.find(isGoingAhead) || {}).id || '' }) : null;
+      const tag = window.Portal.tagPicker('');
       const tagWrap = el('div', 'p-field p-wide');
       tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
       const msg = el('div', 'p-msg');
@@ -215,10 +217,11 @@
         if (!text.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
         if (!tag.value()) { msg.textContent = 'Choose what the task is about.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        try { await save('tasks', { team: team.input.value, text: text.input.value, tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        const uni = uniF && apps.find((o) => o.id === uniF.input.value);
+        try { await save('tasks', { team: team.input.value, text: (uni ? `${appName(uni)}: ` : '') + text.input.value, tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form'); g.append(team.wrap, text.wrap, tagWrap);
+      const g = el('div', 'p-form'); g.append(team.wrap, ...(uniF ? [uniF.wrap] : []), text.wrap, tagWrap);
       body.append(g, msg, foot);
       setTimeout(() => text.input.focus(), 0);
     }).then((done) => { if (done) render(); });
@@ -766,6 +769,8 @@
     if (o.fromSheet) sub.append(el('span', 'p-chosen-partner', 'On All Students'));
     if (o.partner) sub.append(el('span', 'p-chosen-partner', /^direct$/i.test(o.partner) ? 'Direct' : `Through ${o.partner}`));
     if (o.sent && !o.applied) sub.append(el('span', 'p-applied is-sent', `With the Application Team since ${day(o.sent)}, not submitted yet`));
+    // The priority university (the one the student goes ahead with, named on All Students): a small tag, chosen above the list.
+    if (i < 0 && isGoingAhead(o)) sub.append(el('span', 'p-applied is-offer', 'Priority'));
     if (o.applied) sub.append(el('span', 'p-applied', `Submitted ${day(o.applied)}`));
     if (o.offer) sub.append(el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
     if (o.refused) sub.append(el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
@@ -773,20 +778,6 @@
     if (o.skipped) sub.append(el('span', 'p-applied is-refused', `Not submitted (${day(o.skipped)})`));
     if (o.applied && !o.offer && !o.refused && !o.withdrawn) sub.append(el('span', 'p-applied is-sent', 'Waiting for the answer'));
     item.append(sub);
-    // The university the student goes ahead with (the owner, 17 Nov 2026): one press writes it and its course on All Students, and it
-    // can be changed at any time to another application. NOC, Medical and Mock are then assigned for that university from here.
-    const live = i < 0 && !o.refused && !o.withdrawn && !o.skipped;
-    if (live && (can() || data.can.assign)) {
-      const row2 = el('div', 'p-card-acts');
-      if (isGoingAhead(o)) row2.append(el('span', 'p-applied is-offer', 'Going ahead with this one'));
-      else if (can()) row2.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => goAhead(o) }, 'Go ahead with this one'));
-      if (data.can.assign) {
-        const where = [o.university, o.course].filter(Boolean).join(', ');
-        [['NOC', 'application', 'noc', `Fill in the NOC for ${where}.`], ['Medical', 'application', 'medical', `Book the medical for ${where}.`], ['Mock interview', 'mock', 'mock', `Start the mock interview for ${where}.`]]
-          .forEach(([label, team, tag, text]) => row2.append(h('button', { class: 'btn btn-sm', type: 'button', title: `Assign the ${label} for ${o.university}`, onclick: () => assignTask({ title: `${label}: ${o.university}`, team, tag, text }) }, label)));
-      }
-      item.append(row2);
-    }
     if (o.reason && (o.refused || o.withdrawn || o.skipped)) item.append(el('p', 'p-muted p-small', `Reason: ${o.reason}`));
     // What the Fact File says, read only (the owner, 17 Nov 2026: "I don't want to fill any details").
     const facts = el('dl', 'p-chosen-facts');
@@ -860,10 +851,13 @@
     const u = squashName(row['UNIVERSITY NAME']); const c = squashName(row['COURSE NAME']);
     return Boolean(u) && squashName(o.university) === u && (!c || !o.course || squashName(o.course) === c);
   }
+  // The applications still going (not refused, withdrawn or left unsubmitted), and how one is named.
+  const liveApps = () => data.card.options.filter((o) => o.id && (o.sent || o.applied || o.offer) && !o.refused && !o.withdrawn && !o.skipped);
+  const appName = (o) => [o.university, o.course].filter(Boolean).join(', ');
   async function goAhead(o) {
     try {
       await api(`/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': o.university || '', 'COURSE NAME': o.course || '' } });
-      say(`Going ahead with ${o.university}. All Students is updated.`);
+      say(`Priority: ${o.university}. All Students is updated.`);
       refreshCard();
     } catch (e) { say(e.message, true); }
   }
@@ -909,6 +903,15 @@
     if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Shortlist courses above and press "Assign to the Application Team".')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
     box.append(el('p', 'p-muted p-small', `${submitted} submitted, ${offers} with an offer${waitingTeam ? `, ${waitingTeam} with the Application Team, not submitted yet` : ''}. Record submission or Update keeps each university's days.`));
+    // The priority university (the owner, 17 Nov 2026): chosen here from the applications; it writes the university and course
+    // on All Students by itself, and can be changed at any time.
+    const live = liveApps();
+    if (can() && live.length) {
+      const cur = live.find(isGoingAhead);
+      const pick = field('Priority university', { kind: 'select', choices: [...(cur ? [] : [['', 'Choose one']]), ...live.map((o) => [o.id, appName(o)])], value: cur ? cur.id : '' });
+      pick.input.addEventListener('change', () => { const o = live.find((x) => x.id === pick.input.value); if (o) goAhead(o); });
+      const f = el('div', 'p-form'); f.append(pick.wrap); box.append(f);
+    }
     const order = (o) => (isGoingAhead(o) ? -1 : o.offer ? 0 : o.applied && !o.refused && !o.withdrawn ? 1 : o.sent && !o.applied && !o.skipped ? 2 : 3);
     const list = el('ol', 'p-chosen');
     apps.slice().sort((a, b) => order(a) - order(b) || Number(a.rank || 99) - Number(b.rank || 99)).forEach((o) => list.append(optionItem(o, [])));
