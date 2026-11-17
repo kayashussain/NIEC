@@ -436,7 +436,7 @@
     data.card.options.forEach((o) => {
       const item = el('div', 'p-chosen-item');
       const header = el('header');
-      header.append(el('h4', '', `${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
+      header.append(el('h3', '', `${o.university}${o.course ? ': ' + o.course : ''}${o.intake ? ' (' + o.intake + ')' : ''}`));
       if (o.applied) header.firstChild.append(' ', el('span', 'p-applied', `Applied ${day(o.applied)}`));
       if (o.offer) header.firstChild.append(' ', el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
       if (o.refused) header.firstChild.append(' ', el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
@@ -475,7 +475,7 @@
   function optionCard(o) {
     const c = el('div', `p-option${o.closed ? ' closed' : ''}`);
     const left = el('div');
-    left.append(el('h4', '', o.course), el('div', 'p-uni', `${o.university}${o.intake ? ' · ' + o.intake : ''}${o.level ? ' · ' + o.level : ''}`));
+    left.append(el('h3', '', o.course), el('div', 'p-uni', `${o.university}${o.intake ? ' · ' + o.intake : ''}${o.level ? ' · ' + o.level : ''}`));
     c.append(left);
     const act = el('div', 'p-option-act');
     if (can()) act.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => addOption(o) }, 'Add'));
@@ -719,7 +719,7 @@
       if (!TABS.some(([k]) => k === tab)) tab = 'details';
       render();
     } catch (e) {
-      view.replaceChildren(h('div', { class: 'p-card' }, el('h2', '', 'This student cannot be opened'), el('p', '', e.message), h('a', { class: 'btn', href: '/students' }, 'Back to All Students')));
+      view.replaceChildren(h('div', { class: 'p-card' }, el('h1', 'p-error-title', 'This student cannot be opened'), el('p', '', e.message), h('a', { class: 'btn', href: '/students' }, 'Back to All Students')));
     }
   }
   window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (data && t !== tab && TABS.some(([k]) => k === t)) { tab = t; render(); } });

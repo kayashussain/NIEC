@@ -88,6 +88,8 @@
     how.append(el('h2', '', '2. How to send it'));
     let channel = 'email';
     const choice = el('div', 'p-tabs');
+    choice.setAttribute('role', 'tablist');
+    choice.setAttribute('aria-label', 'How to send it');
     const eBtn = h('button', { type: 'button', role: 'tab', 'aria-selected': 'true' }, 'By email');
     const wBtn = h('button', { type: 'button', role: 'tab', 'aria-selected': 'false' }, 'By WhatsApp');
     choice.append(eBtn, wBtn);

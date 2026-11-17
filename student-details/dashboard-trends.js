@@ -184,10 +184,11 @@
     keys.append(...keyEls);
     const src = el('label', 'tr-source');
     const sel = el('select');
+    sel.setAttribute('aria-label', 'Which students the chart counts, by where they came from');
     SOURCES.forEach(([k, n]) => sel.append(new Option(k ? `Students from ${n}` : 'Students from every source', k)));
     // The second filter: which event, campaign, platform, branch or agent within the source, with how many students each.
     let detail = '';
-    const which = el('label', 'tr-source'); const sel2 = el('select'); which.append(sel2); which.hidden = true;
+    const which = el('label', 'tr-source'); const sel2 = el('select'); sel2.setAttribute('aria-label', 'Which event, campaign, platform, branch or agent'); which.append(sel2); which.hidden = true;
     const fillWhich = () => {
       const counts = new Map();
       (data.students || []).filter((r) => r[0] === source && r[7]).forEach((r) => counts.set(r[7], (counts.get(r[7]) || 0) + 1));

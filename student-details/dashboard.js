@@ -239,7 +239,7 @@
   // A card with a path (All › Social Media › TikTok) and the level shown under it.
   function drillCard(cls, title, sub, levels) {
     const c = card(cls, title, sub);
-    const path = el('nav', 'dd-path'); path.setAttribute('aria-label', 'Where you are');
+    const path = el('nav', 'dd-path'); path.setAttribute('aria-label', `Where you are in ${title}`); // each card's own name: two cards never share one label (accessibility)
     const body = el('div', 'dd-body');
     c.append(path, body);
     const show = (stack) => {
