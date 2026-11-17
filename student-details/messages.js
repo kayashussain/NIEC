@@ -1,6 +1,6 @@
 // The messages sent to many students at once from Follow-up: the words the sender writes, filled in with each student's own
 // details, sent by email from the sender's mailbox with their signature, or opened in WhatsApp. There are no saved templates any
-// more (the owner, 17 Nov 2026: the student card has Call, WhatsApp, Email and Copy number, and Follow-up is written each time).
+// more (the owner, 17 Nov 2026: the student card has Call, WhatsApp and Email, and Follow-up is written each time).
 //
 // The system only sends. A student's reply goes to the sender's mailbox (or WhatsApp) like any other message; nothing here reads
 // replies.

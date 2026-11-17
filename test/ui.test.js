@@ -103,7 +103,7 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
   await t.test('a date cell looks the same before it is touched, while the mouse is over it and after it is clicked', async () => {
     const page = await open(admin, '/students');
     await page.waitForSelector('#body tr:not(.pad-row)');
-    const col = await page.$$eval('#headerRow th', (ths) => ths.findIndex((th) => th.dataset.col === 'APPLICATION SUBMISSION DATE'));
+    const col = await page.$$eval('#headerRow th', (ths) => ths.findIndex((th) => th.dataset.col === 'CAS REQUESTED DATE'));
     const td = page.locator('#body tr:not(.pad-row)').first().locator('td').nth(col);
     const look = () => td.evaluate((el) => ({ icon: getComputedStyle(el).backgroundImage.startsWith('url('), height: Math.round(el.getBoundingClientRect().height), padding: getComputedStyle(el).padding }));
     const before = await look();
@@ -156,7 +156,8 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await frame.locator('.p-hero h1').waitFor();
     assert.match(await frame.locator('.p-hero h1').textContent(), /Student/);
     assert.ok(await frame.locator('.p-tabs button').count() === 2, 'two tabs only: Notes and University options (no Send a message, the owner, 17 Nov 2026)');
-    assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp, Email and Copy number are under the name');
+    assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp and Email are under the name')
+    assert.strictEqual(await frame.getByRole('button', { name: 'Copy number' }).count(), 0, 'no Copy number (the owner, 17 Nov 2026)');
     // No source recorded: the card asks for it every time it opens (the owner, 17 Nov 2026), and from Application Stage on also the
     // missing details (phone, email, date of birth, passport); never the application or offer day. Not now closes it.
     await frame.locator('dialog.p-dialog h2', { hasText: /Where did this student come from\?|Details missing for this student/ }).waitFor();
@@ -715,12 +716,13 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     const rowsShown = () => page.locator('#body tr:not(.pad-row)').count();
 
     // A date picked from the calendar is on the cell as soon as it is confirmed (it used to stay blank until a refresh).
-    const dateIdx = await colIndex('APPLICATION SUBMISSION DATE');
+    // (Application submitted and Offer received are not on the sheet any more: they are kept per university on the card.)
+    const dateIdx = await colIndex('MOCK SCHEDULE 1');
     const cell = page.locator('#body tr:not(.pad-row)').first().locator('td').nth(dateIdx);
     await cell.click({ position: { x: 20, y: 12 } });
     await cell.locator('input').evaluate((el) => { el.value = '2026-11-12'; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); });
     await page.waitForSelector('.eg-box');
-    await page.click('.eg-ok');
+    await page.locator('.eg-ok').evaluate((b) => b.click()); // the column sits further right: the box can be out of view
     await page.waitForFunction(() => /12 Nov 2026/.test(document.querySelector('#body tr:not(.pad-row) td.date').textContent === '' ? '' : [...document.querySelectorAll('#body tr:not(.pad-row)')][0].innerText), null, { timeout: 5000 });
 
     // Filter on Application Stage, then refresh: the filter is still on.

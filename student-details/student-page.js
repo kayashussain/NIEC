@@ -1,5 +1,5 @@
 // One student's card (student.html), kept short: Notes (where the student came from, the notes and the history) and University
-// options. Call, WhatsApp, Email and Copy number are one tap under the name; messages to many students go from Follow-up. The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
+// options. Call, WhatsApp and Email are one tap under the name; messages to many students go from Follow-up. The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
 // which is chosen here (it is no longer a column of the sheet).
 (function () {
   const { el, h, api, day, when, stagePill, initials, field, dialog } = window.Portal;
@@ -11,7 +11,8 @@
   let lists = { sourceOptions: {}, partners: [] };
   let showAllNotes = false;
   let historyFilter = 'all'; // the student's History: everything, the notes only, or the tasks only
-  const TABS = [['details', 'Notes'], ['options', 'University options']];
+  // Named for what they hold (the owner, 17 Nov 2026): Timeline (every step, day by day) and Applications (shortlist and applications).
+  const TABS = [['details', 'Timeline'], ['options', 'Applications']];
   let tab = (location.hash || '#details').slice(1);
   const view = document.getElementById('view');
   const say = (text, error) => window.NiecUI.toast(text, { type: error ? 'error' : 'success' });
@@ -42,7 +43,8 @@
 
   // ---- the details of the sheet (name, email, number, university, course, dates): shown, and changed only after pressing Edit ----
   let editingHero = false;
-  const HERO_FIELDS = [['FIRST NAME', 'First name'], ['LAST NAME', 'Last name'], ['EMAIL', 'Email'], ['CONTACT NUMBER', 'Contact number'], ['UNIVERSITY NAME', 'University'], ['COURSE NAME', 'Course'], ['APPLICATION SUBMISSION DATE', 'Application submitted', 'date'], ['OFFER RECEIVED DATE', 'Offer received', 'date']];
+  const HERO_FIELDS = [['FIRST NAME', 'First name'], ['LAST NAME', 'Last name'], ['EMAIL', 'Email'], ['CONTACT NUMBER', 'Contact number'], ['UNIVERSITY NAME', 'University'], ['COURSE NAME', 'Course']];
+  // The application and offer days are not here (the owner, 17 Nov 2026): they are kept per university under Applications.
   function heroEdit() {
     const c = el('section', 'p-card');
     c.append(el('h2', '', 'Change the details'));
@@ -153,8 +155,8 @@
     { const a = facts.lastChild && facts.lastChild.querySelector('a[href^="https://wa.me/"]'); if (a) a.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(F.whatsappNumber(s.phone), s.name, '', id); }); }
     fact('University', s.university);
     fact('Course', s.course);
-    fact('Application submitted', s.row['APPLICATION SUBMISSION DATE'] ? day(s.row['APPLICATION SUBMISSION DATE']) : '');
-    fact('Offer received', s.row['OFFER RECEIVED DATE'] ? day(s.row['OFFER RECEIVED DATE']) : '');
+    // How many universities were applied to and how many offers, from Applications (one student applies to many).
+    { const ap = appStats(); if (ap.submitted || ap.offers) fact('Applications', `${ap.submitted} submitted · ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}`); }
     if (pp.nationality && pp.nationality !== 'Nepali') fact('Nationality', pp.nationality);
     mid.append(facts);
     // What is still missing, named in one line with one button that opens the form (the owner, 17 Nov 2026: less work for the team).
@@ -365,8 +367,9 @@
   // Asked every time the card opens (the owner, 17 Nov 2026): what is still missing from the student. At Inquiry only the Student
   // Source (and how exactly the student reached us) is asked. From Application Stage on (Mock, Payment, CAS, visa ...) the details
   // needed to apply are asked too: phone, email, date of birth, passport number and the address in the passport. The application
-  // and offer days are never asked here (an application may not be submitted yet): they are kept per university under University
-  // options. "Not now" closes it and the card is used as before; the next time the card opens it asks again, until nothing is
+  // and offer days are not asked at Application Stage (an application may not be submitted yet); past it, when no university has an
+  // application day, the pop-up asks which university and the day, and from Payment Stage on the same for the offer (kept under
+  // Applications). "Not now" closes it and the card is used as before; the next time the card opens it asks again, until nothing is
   // missing. Only for those who can change the card, and only what they may change.
   const ASK_STAGES = ['Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
   function missingDetails() {
@@ -374,20 +377,54 @@
     const out = [];
     const sourceMissing = Boolean(sourceGap(storedSourceValue())) && (data.can.source || F.sourceGroup(s.source));
     if (!ASK_STAGES.includes(s.stage || '')) return { sourceMissing, fields: out };
+    // Past Application Stage the student has applied, and from Payment Stage on holds an offer: when no university says so yet, the
+    // pop-up asks which one and the day (the owner, 17 Nov 2026: the days must always be there). At Application Stage it never asks.
+    const st = appStats();
+    const askApp = s.stage !== 'Application Stage' && !st.submitted;
+    const askOffer = ['Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'].includes(s.stage) && !st.offers;
     const blank = (v) => !String(v || '').trim();
     if (blank(row['CONTACT NUMBER'])) out.push({ on: 'sheet', key: 'CONTACT NUMBER', label: 'Phone number', max: 40 });
     if (blank(row.EMAIL)) out.push({ on: 'sheet', key: 'EMAIL', label: 'Email', max: 120 });
     if (blank(p.dob)) out.push({ on: 'profile', key: 'dob', label: 'Date of birth', kind: 'date' });
     if (blank(p.passportNo)) out.push({ on: 'profile', key: 'passportNo', label: 'Passport number', max: 20, upper: true });
     if (blank(p.address)) out.push({ on: 'profile', key: 'address', label: 'Address (as in the passport)', max: 200 });
-    return { sourceMissing, fields: out };
+    return { sourceMissing, fields: out, askApp, askOffer };
+  }
+  // A university to choose (the student's shortlisted or applied ones) or another one typed, with its course and a day.
+  function uniQuestion(form, title, choices, dayLabel, withType) {
+    form.append(el('h3', 'p-wide', title));
+    const NEW = '__new';
+    const pick = field('University', { kind: 'select', choices: [...choices.map((o) => [o.id, [o.university, o.course].filter(Boolean).join(': ')]), [NEW, 'Another university (type it)']], value: choices.length ? '' : NEW });
+    const row = data.student.row || {};
+    const uni = field('University name', { max: 160, value: String(row['UNIVERSITY NAME'] || '') });
+    const course = field('Course', { max: 240, value: String(row['COURSE NAME'] || '') });
+    const when2 = field(dayLabel, { kind: 'date' });
+    when2.input.max = data.today || '';
+    const type = withType ? field('Offer', { kind: 'select', choices: [['', 'Type not known'], ['Conditional', 'Conditional'], ['Unconditional', 'Unconditional']] }) : null;
+    const showNew = () => { const n = pick.input.value === NEW; uni.wrap.hidden = !n; course.wrap.hidden = !n; };
+    pick.input.addEventListener('change', showNew); showNew();
+    form.append(pick.wrap, uni.wrap, course.wrap, when2.wrap, ...(type ? [type.wrap] : []));
+    return {
+      filled: () => Boolean(when2.input.value),
+      check: () => (!when2.input.value ? '' : !pick.input.value ? 'Choose the university.' : pick.input.value === NEW && !uni.input.value.trim() ? 'Type the name of the university.' : ''),
+      async save(key) {
+        const extra = key === 'offer' ? { offer: when2.input.value, offerType: type ? type.input.value : '' } : { applied: when2.input.value };
+        if (pick.input.value !== NEW) { await api(`/api/cards/${id}/options/${pick.input.value}`, extra); return; }
+        // The same university typed for the application and the offer is one line: the second answer goes on the first.
+        const u = uni.input.value.trim(); const c = course.input.value.trim(); const low = (v) => String(v || '').trim().toLowerCase();
+        const now = (await api('/api/cards/' + encodeURIComponent(id))).card.options;
+        const same = now.find((o) => low(o.university) === low(u) && (!c || !o.course || low(o.course) === low(c)));
+        if (same) await api(`/api/cards/${id}/options/${same.id}`, extra);
+        else await api(`/api/cards/${id}/options`, { university: u, course: c, ...extra });
+      },
+    };
   }
   async function askMissing() {
     if (!can()) return;
-    const { sourceMissing, fields } = missingDetails();
-    if (!sourceMissing && !fields.length) return;
+    const { sourceMissing, fields, askApp, askOffer } = missingDetails();
+    if (!sourceMissing && !fields.length && !askApp && !askOffer) return;
     const s = data.student; const p = profile();
-    const saved = await dialog(sourceMissing && !fields.length ? 'Where did this student come from?' : 'Details missing for this student', (body, close) => {
+    const saved = await dialog(sourceMissing && !fields.length && !askApp && !askOffer ? 'Where did this student come from?' : 'Details missing for this student', (body, close) => {
       body.append(el('p', 'p-muted', `Some details of ${s.name || 'this student'} are missing. Fill in what you have now and press Save; what is left is asked again next time.`));
       const form = el('div', 'p-form');
       let picker = null;
@@ -401,6 +438,9 @@
         form.append(x.wrap);
         return { f, input: x.input };
       });
+      const opts = data.card.options;
+      const appQ = askApp ? uniQuestion(form, 'Application submitted', opts.filter((o) => !o.applied && !o.skipped), 'Submitted on', false) : null;
+      const offerQ = askOffer ? uniQuestion(form, 'Offer received', opts.filter((o) => !o.offer && !o.refused && !o.skipped), 'Offer received on', true) : null;
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
@@ -408,8 +448,11 @@
         const v = picker ? picker.value() : null;
         const sourceChosen = Boolean(v && v.group);
         if (sourceChosen) { const gap = picker.check() || sourceGap(v); if (gap) { msg.textContent = gap; msg.className = 'p-msg error'; return; } }
+        const qs = [appQ, offerQ].filter(Boolean);
+        const qGap = qs.map((q) => q.check()).find(Boolean);
+        if (qGap) { msg.textContent = qGap; msg.className = 'p-msg error'; return; }
         const filled = inputs.filter((x) => x.input.value.trim());
-        if (!sourceChosen && !filled.length) { msg.textContent = 'Fill in at least one detail, or press Not now.'; msg.className = 'p-msg error'; return; }
+        if (!sourceChosen && !filled.length && !qs.some((q) => q.filled())) { msg.textContent = 'Fill in at least one detail, or press Not now.'; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
         try {
           if (sourceChosen) await saveSource(v);
@@ -418,6 +461,8 @@
           const sheet = Object.fromEntries(filled.filter((x) => x.f.on === 'sheet').map((x) => [x.f.key, value(x)]));
           if (Object.keys(prof).length) await api(`/api/cards/${id}/profile`, prof);
           if (Object.keys(sheet).length) await api(`/api/cards/${id}/sheet`, { fields: sheet });
+          if (appQ && appQ.filled()) await appQ.save('applied');
+          if (offerQ && offerQ.filled()) await offerQ.save('offer');
           close(true);
         } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.disabled = false; }
       });
@@ -435,7 +480,9 @@
   let noteDraft = '';
   function notes() {
     const wrap = el('section', 'p-card');
-    wrap.append(el('h2', '', 'Notes and history'));
+    // One timeline (the owner, 17 Nov 2026): every note, task, message and application step, newest first, so how the student moved
+    // and every decision can be read day by day. The pills only narrow it for a moment; Everything is where it starts.
+    wrap.append(el('h2', '', 'Timeline'));
     // No sentence under the title (the owner, 15 Nov 2026: only what is needed).
     if (can()) {
       const box = el('div', 'p-note-box');
@@ -480,13 +527,19 @@
       const how = m.channel === 'whatsapp' ? 'WhatsApp opened' : m.status === 'sent' ? 'Email sent' : m.status === 'failed' ? 'Email not sent' : 'Email prepared';
       events.push({ kind: 'message', at: m.at, by: m.by, title: `${how}${m.subject ? `: “${short(m.subject)}”` : ''}`, text: '', message: m });
     });
+    // Each course shortlisted and given to the Application Team (the answers are notes, written when they are recorded).
+    data.card.options.forEach((o) => {
+      const name = [o.university, o.course].filter(Boolean).join(', ');
+      if (o.addedAt) events.push({ kind: 'app', at: o.addedAt, by: o.byStudent ? 'The student' : o.addedBy, title: `Shortlisted ${name}`, text: '' });
+      if (o.sent) events.push({ kind: 'app', at: o.sent, dayOnly: true, by: '', title: `Given to the Application Team: ${name}${o.partner ? (/^direct$/i.test(o.partner) ? ', direct' : `, through ${o.partner}`) : ''}`, text: '' });
+    });
     events.sort((x, y) => String(y.at).localeCompare(String(x.at)));
-    const kindOfEvent = (e) => (e.kind === 'note' ? 'note' : e.kind === 'message' ? 'message' : 'task');
+    const kindOfEvent = (e) => (e.kind === 'note' ? 'note' : e.kind === 'message' ? 'message' : e.kind === 'app' ? 'app' : 'task');
     const present = new Set(events.map(kindOfEvent));
     if (present.size > 1) {
       const seg = el('div', 'p-history-filter');
       seg.setAttribute('role', 'tablist');
-      [['all', 'Everything'], ['note', 'Notes'], ['task', 'Tasks'], ['message', 'Messages']].filter(([k]) => k === 'all' || present.has(k)).forEach(([k, label]) => {
+      [['all', 'Everything'], ['note', 'Notes'], ['task', 'Tasks'], ['app', 'Applications'], ['message', 'Messages']].filter(([k]) => k === 'all' || present.has(k)).forEach(([k, label]) => {
         const b = h('button', { class: 'td-filter-pill', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label);
         b.addEventListener('click', () => { historyFilter = k; render(); });
         seg.append(b);
@@ -502,13 +555,13 @@
     items.forEach((e) => {
       const li = el('li', e.kind === 'note' ? '' : `p-history-${e.kind}`);
       const head = el('div', 'p-when');
-      head.append(el('b', '', e.by || 'Someone'), el('span', '', when(e.at)));
+      head.append(el('b', '', e.by || (e.kind === 'app' ? 'Applications' : 'Someone')), el('span', '', e.dayOnly ? day(e.at) : when(e.at)));
       if (e.kind === 'note') {
         const n = e.note;
         if (can() && (n.by === data.me.name || data.can.removeAnyNote)) head.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'));
         li.append(head, el('p', '', e.text));
       } else {
-        head.append(el('span', `p-history-chip is-${e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : e.kind === 'message' ? 'Message' : 'Task'));
+        head.append(el('span', `p-history-chip is-${e.kind === 'app' ? 'task' : e.kind}`, e.kind === 'done' ? 'Done' : e.kind === 'update' ? 'Update' : e.kind === 'message' ? 'Message' : e.kind === 'app' ? 'Application' : 'Task'));
         if (e.message && e.message.channel === 'email') head.append(h('button', { class: 'p-link', type: 'button', onclick: () => readMessage(e.message) }, 'Read'));
         // A done task can be reopened (the team it is for, Admin and the Manager), and what it recorded put back (the owner, 16 Nov
         // 2026: a wrong answer is corrected in one step).
@@ -542,8 +595,17 @@
   const refreshCard = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
   let sendOrder = null; // option ids not yet sent, in the order chosen on this page
   const studentRef = () => ({ id, name: (data.student && data.student.name) || 'the student', email: (data.student && data.student.row && data.student.row.EMAIL) || '' });
+  // Applied to and offers, from Applications, or All Students' own days for a student recorded before (one application).
+  function appStats() {
+    const o = data.card.options;
+    const row = data.student.row || {};
+    let submitted = o.filter((x) => x.applied).length; let offers = o.filter((x) => x.offer).length;
+    if (!submitted && String(row['APPLICATION SUBMISSION DATE'] || '').trim()) submitted = 1;
+    if (!offers && String(row['OFFER RECEIVED DATE'] || '').trim()) offers = 1;
+    return { submitted, offers };
+  }
   function waitingOptions() {
-    const waiting = data.card.options.filter((o) => !o.sent && !o.applied);
+    const waiting = data.card.options.filter((o) => !o.sent && !o.applied && !o.skipped);
     const ids = waiting.map((o) => o.id);
     sendOrder = (sendOrder || []).filter((x) => ids.includes(x));
     ids.forEach((x) => { if (!sendOrder.includes(x)) sendOrder.push(x); });
@@ -560,8 +622,15 @@
       const move = (d) => () => { const j = i + d; if (j < 0 || j >= sendOrder.length) return; [sendOrder[i], sendOrder[j]] = [sendOrder[j], sendOrder[i]]; render(); };
       tools.append(h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'), h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === waiting.length - 1, onclick: move(1) }, '↓'));
     }
-    if (can() && i >= 0) tools.append(h('button', { class: 'p-link', type: 'button', onclick: async () => { await save('options/' + o.id + '/delete', {}); render(); } }, 'Remove'));
-    if (can() && i < 0) tools.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => updateApplication(o) }, o.applied ? 'Update' : 'Record submission'));
+    // Taken off the shortlist right here (the owner, 17 Nov 2026: no going back to the Fact File), until an application is recorded.
+    const answered = o.applied || o.offer || o.refused || o.withdrawn || o.skipped;
+    if (can() && o.id && !answered) {
+      tools.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => {
+        if (o.sent && !(await window.NiecUI.confirm(`Take ${o.university}${o.course ? ` (${o.course})` : ''} off? It was given to the Application Team on ${day(o.sent)}; tell them too.`, { danger: true, confirmText: 'Take it off' }))) return;
+        await save('options/' + o.id + '/delete', {}, 'Taken off the shortlist'); render();
+      } }, 'Remove from shortlist'));
+    }
+    if (can() && i < 0) tools.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => updateApplication(o) }, answered ? 'Update' : 'Record submission'));
     header.append(tools);
     item.append(header);
     const sub = el('div', 'p-chosen-sub');
@@ -573,9 +642,10 @@
     if (o.offer) sub.append(el('span', 'p-applied is-offer', `${o.offerType ? o.offerType + ' offer' : 'Offer'} ${day(o.offer)}`));
     if (o.refused) sub.append(el('span', 'p-applied is-refused', `Refused ${day(o.refused)}`));
     if (o.withdrawn) sub.append(el('span', 'p-applied is-refused', `Withdrawn ${day(o.withdrawn)}`));
+    if (o.skipped) sub.append(el('span', 'p-applied is-refused', `Not submitted (${day(o.skipped)})`));
     if (o.applied && !o.offer && !o.refused && !o.withdrawn) sub.append(el('span', 'p-applied is-sent', 'Waiting for the answer'));
     item.append(sub);
-    if (o.reason && (o.refused || o.withdrawn)) item.append(el('p', 'p-muted p-small', `Reason: ${o.reason}`));
+    if (o.reason && (o.refused || o.withdrawn || o.skipped)) item.append(el('p', 'p-muted p-small', `Reason: ${o.reason}`));
     // What the Fact File says, read only (the owner, 17 Nov 2026: "I don't want to fill any details").
     const facts = el('dl', 'p-chosen-facts');
     [['Tuition fee', o.fee], ['Scholarship', o.scholarship], ['Deposit', o.deposit]].forEach(([k, v]) => { if (v) { const d = el('div'); d.append(el('dt', '', k), el('dd', '', v)); facts.append(d); } });
@@ -593,8 +663,10 @@
 
   // The Application Team records each application here (the owner, 17 Nov 2026): the day it was submitted, then the answer (an offer
   // with its day, or refused or withdrawn with the reason). The same days an Application task records when it is marked done.
-  // The first submission and the first offer also fill All Students' own columns when those are still empty.
-  const RESULTS = [['', 'Waiting for the answer'], ['offer', 'Offer (type not known)'], ['Conditional', 'Conditional offer'], ['Unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn']];
+  // A course given to the team but not submitted (not eligible ...) is marked Not submitted, with the reason. Each change is also a
+  // line in the Timeline, and the first submission and first offer are kept in All Students' own (hidden) columns by the server.
+  const RESULTS = [['', 'Waiting for the answer'], ['offer', 'Offer (type not known)'], ['Conditional', 'Conditional offer'], ['Unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['skipped', 'Not submitted (for example not eligible)']];
+  const WITH_REASON = ['refused', 'withdrawn', 'skipped'];
   async function updateApplication(o) {
     if (o.fromSheet) {
       // Kept in University options first (with the days All Students has), then updated like any other.
@@ -606,12 +678,12 @@
     const saved = await dialog(`${o.university}${o.course ? ': ' + o.course : ''}`, (body, close) => {
       const form = el('div', 'p-form');
       const applied = field('Application submitted on', { kind: 'date', value: o.applied || '' });
-      const now = o.refused ? 'refused' : o.withdrawn ? 'withdrawn' : o.offer ? (o.offerType || 'offer') : '';
+      const now = o.skipped ? 'skipped' : o.refused ? 'refused' : o.withdrawn ? 'withdrawn' : o.offer ? (o.offerType || 'offer') : '';
       const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: now });
-      const when2 = field('Day of the answer', { kind: 'date', value: o.refused || o.withdrawn || o.offer || '' });
+      const when2 = field('Day of the answer', { kind: 'date', value: o.skipped || o.refused || o.withdrawn || o.offer || '' });
       const reason = field('Reason', { max: 300, value: o.reason || '', placeholder: 'e.g. Grades below the entry requirement, course full' });
       [applied, when2].forEach((f) => { f.input.max = todayIso; });
-      const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !['refused', 'withdrawn'].includes(r); };
+      const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; when2.wrap.querySelector('.p-label').textContent = r === 'skipped' ? 'Decided on' : 'Day of the answer'; };
       result.input.addEventListener('change', show);
       show();
       form.append(applied.wrap, result.wrap, when2.wrap, reason.wrap);
@@ -621,33 +693,22 @@
       ok.addEventListener('click', async () => {
         const r = result.input.value; const d = when2.input.value; const a = applied.input.value;
         const fail = (t) => { msg.textContent = t; msg.className = 'p-msg error'; };
-        if (r && !a && r !== 'withdrawn') return fail('Fill in the day the application was submitted.');
+        if (r && !a && !['withdrawn', 'skipped'].includes(r)) return fail('Fill in the day the application was submitted.');
         if (r && !d) return fail('Fill in the day of the answer.');
         if (a && d && d < a) return fail('The answer cannot come before the application was submitted.');
-        if (['refused', 'withdrawn'].includes(r) && !reason.input.value.trim()) return fail('Write the reason in a few words.');
+        if (WITH_REASON.includes(r) && !reason.input.value.trim()) return fail('Write the reason in a few words.');
         ok.disabled = true;
         const offer = ['offer', 'Conditional', 'Unconditional'].includes(r);
         try {
-          await save('options/' + o.id, { applied: a, offer: offer ? d : '', offerType: offer && r !== 'offer' ? r : '', refused: r === 'refused' ? d : '', withdrawn: r === 'withdrawn' ? d : '', reason: ['refused', 'withdrawn'].includes(r) ? reason.input.value.trim() : '' }, 'Saved');
+          await save('options/' + o.id, { applied: r === 'skipped' ? '' : a, offer: offer ? d : '', offerType: offer && r !== 'offer' ? r : '', refused: r === 'refused' ? d : '', withdrawn: r === 'withdrawn' ? d : '', skipped: r === 'skipped' ? d : '', reason: WITH_REASON.includes(r) ? reason.input.value.trim() : '' }, 'Saved');
           close({ a, offer: offer ? d : '' });
         } catch (e) { fail(e.message); ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       body.append(form, msg, foot);
     });
-    if (!saved) return;
-    // All Students' own columns, only when they are still empty (a day or university typed there is never changed).
-    const row = data.student.row || {};
-    const blank = (c) => !String(row[c] || '').trim();
-    const fields = {};
-    if (saved.a && blank('APPLICATION SUBMISSION DATE')) {
-      fields['APPLICATION SUBMISSION DATE'] = saved.a;
-      if (blank('UNIVERSITY NAME')) fields['UNIVERSITY NAME'] = o.university;
-      if (blank('COURSE NAME') && o.course) fields['COURSE NAME'] = o.course;
-    }
-    if (saved.offer && blank('OFFER RECEIVED DATE')) fields['OFFER RECEIVED DATE'] = saved.offer;
-    if (Object.keys(fields).length) { try { await api(`/api/cards/${id}/sheet`, { fields }); } catch (e) { /* the option is saved; the sheet keeps its own */ } }
-    refreshCard();
+    // All Students' own two columns follow by themselves on the server (the first application and the first offer).
+    if (saved) refreshCard();
   }
 
   function chosenOptions() {
@@ -673,7 +734,7 @@
   // Applications (the owner, 17 Nov 2026): every university the student was assigned to or applied to, with the course, the day it
   // was submitted and the answer, so one look shows where the student has applied and holds an offer. A student can apply to many.
   function applicationsList() {
-    const apps = data.card.options.filter((o) => o.sent || o.applied || o.offer || o.refused || o.withdrawn);
+    const apps = data.card.options.filter((o) => o.sent || o.applied || o.offer || o.refused || o.withdrawn || o.skipped);
     // The application on All Students (its university, course and days) when University options does not have it yet: shown too, and
     // its Update keeps it in University options from then on.
     const row = data.student.row || {};
@@ -687,10 +748,11 @@
     const box = el('section', 'p-card');
     const offers = apps.filter((o) => o.offer).length;
     const submitted = apps.filter((o) => o.applied).length;
-    box.append(el('h2', '', `Applications (${apps.length})`));
+    box.append(el('h2', '', `Universities applied to (${apps.length})`));
     if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Shortlist courses above and press "Assign to the Application Team".')); return box; }
-    box.append(el('p', 'p-muted p-small', `${submitted} submitted, ${offers} with an offer. The Application Team records the submission day and the answer with Record submission or Update.`));
-    const order = (o) => (o.offer ? 0 : o.applied && !o.refused && !o.withdrawn ? 1 : o.sent && !o.applied ? 2 : 3);
+    const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
+    box.append(el('p', 'p-muted p-small', `${submitted} submitted, ${offers} with an offer${waitingTeam ? `, ${waitingTeam} with the Application Team, not submitted yet` : ''}. Record submission or Update keeps each university's days.`));
+    const order = (o) => (o.offer ? 0 : o.applied && !o.refused && !o.withdrawn ? 1 : o.sent && !o.applied && !o.skipped ? 2 : 3);
     const list = el('ol', 'p-chosen');
     apps.slice().sort((a, b) => order(a) - order(b) || Number(a.rank || 99) - Number(b.rank || 99)).forEach((o) => list.append(optionItem(o, [])));
     box.append(list);
@@ -771,16 +833,16 @@
     }
     return bar;
   }
-  // One tap to reach the student: call, WhatsApp, email, or copy the number.
+  // One tap to reach the student: call, WhatsApp or email (no Copy number, the owner, 17 Nov 2026).
   function contactBar() {
     const s = data.student;
     const wa = F.whatsappNumber(s.phone);
     if (!s.phone && !s.email) return null;
     const bar = el('div', 'p-reach');
-    if (s.phone) bar.append(h('a', { class: 'p-reach-btn', href: 'tel:' + String(s.phone).replace(/[^\d+]/g, '') }, el('span', 'p-reach-ico', '☎'), 'Call'));
+    // Call rings the student from the person's own phone, as WhatsApp does (phone-link.js); with no phone connected it says how.
+    if (s.phone) bar.append(h('a', { class: 'p-reach-btn', href: 'tel:' + String(s.phone).replace(/[^\d+]/g, ''), onclick: (e) => { if (!window.PhoneLink || !wa) return; e.preventDefault(); window.PhoneLink.call({ id, number: wa, name: s.name }); } }, el('span', 'p-reach-ico', '☎'), 'Call'));
     if (wa) bar.append(h('a', { class: 'p-reach-btn is-wa', href: 'https://wa.me/' + wa, target: '_blank', rel: 'noopener', onclick: (e) => { e.preventDefault(); window.Portal.whatsapp(wa, s.name, '', id); } }, el('span', 'p-reach-ico', '●'), 'WhatsApp'));
     if (s.email) bar.append(h('a', { class: 'p-reach-btn', href: 'mailto:' + s.email }, el('span', 'p-reach-ico', '@'), 'Email'));
-    if (s.phone) bar.append(h('button', { class: 'p-reach-btn', type: 'button', onclick: async () => say(await window.Portal.copy(s.phone) ? `Copied ${s.phone}` : 'Could not copy', false) }, el('span', 'p-reach-ico', '⎘'), 'Copy number'));
     return bar;
   }
   // The next thing the sheet needs for this student, done right here: one day to pick and Save, or the passport details to add.
@@ -793,10 +855,11 @@
     const pp = profile();
     let step = null;
     if (String(row['LANGUAGE TEST DATE'] || '').trim() === 'Test Date') step = { title: 'Pick the language test day', why: 'The test is chosen as "Test Date", but no day is on the sheet.', col: 'LANGUAGE TEST DATE', label: 'Test date' };
-    else if (s.stage === 'Application Stage' && !applied) step = { title: 'Record the application', why: 'When the application is submitted, pick the day: All Students is updated.', col: 'APPLICATION SUBMISSION DATE', label: 'Submitted on' };
+    // The application and the offer are recorded per university, under Applications (the owner, 17 Nov 2026).
+    else if (s.stage === 'Application Stage' && !applied && data.card.options.some((o) => o.sent && !o.applied && !o.skipped)) step = { title: 'Record the applications', why: 'When the Application Team submits, record the day for each university.', apps: true };
     else if (applied && !iso(row['OFFER RECEIVED DATE']) && ['Application Stage', 'Mock Stage'].includes(s.stage)) {
       const waited = Math.max(0, Math.round((Date.parse(data.today || new Date().toISOString().slice(0, 10)) - Date.parse(applied)) / 86400000));
-      step = { title: 'Record the offer', why: `Applied ${day(applied)}, ${waited} ${waited === 1 ? 'day' : 'days'} ago. When the offer comes, pick the day.`, col: 'OFFER RECEIVED DATE', label: 'Offer received on', min: applied };
+      step = { title: 'Record the offer', why: `First application ${day(applied)}, ${waited} ${waited === 1 ? 'day' : 'days'} ago. When an offer comes, record it on that university.`, apps: true };
     } else if (s.stage && !['Inquiry', 'Visa Issued', ...F.LOST_STAGES].includes(s.stage) && (!pp.dob || !pp.passportNo || !pp.address)) {
       const gone = [['date of birth', pp.dob], ['passport number', pp.passportNo], ['address', pp.address]].filter(([, v]) => !v).map(([k]) => k);
       step = { title: 'Add the passport details', why: `Still missing: ${gone.join(', ')}.`, edit: true };
@@ -806,7 +869,8 @@
     const words = el('div', 'p-next-words');
     words.append(el('span', 'p-next-eyebrow', 'Next step'), el('b', '', step.title), el('span', 'p-next-why', step.why));
     const act = el('div', 'p-next-act');
-    if (step.edit) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { editingHero = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 'Add them'));
+    if (step.apps) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('options') }, 'Open Applications'));
+    else if (step.edit) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { editingHero = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 'Add them'));
     else {
       const input = h('input', { type: 'date', 'aria-label': step.label });
       input.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -830,7 +894,19 @@
     return box;
   }
 
+  // A student recorded before the days were kept per university: All Students' own application and offer days belong to the
+  // university named there, so its line under Applications shows them (Update then keeps them on that university).
+  function sheetDaysOnOptions() {
+    const row = data.student.row || {};
+    const squash = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const o = data.card.options.find((x) => squash(x.university) && squash(x.university) === squash(row['UNIVERSITY NAME']));
+    if (!o) return;
+    const iso = (v) => { const t = String(v || '').trim(); return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : ''; };
+    if (!o.applied && !o.skipped && iso(row['APPLICATION SUBMISSION DATE'])) o.applied = iso(row['APPLICATION SUBMISSION DATE']);
+    if (!o.offer && !o.refused && iso(row['OFFER RECEIVED DATE'])) o.offer = iso(row['OFFER RECEIVED DATE']);
+  }
   function render() {
+    sheetDaysOnOptions();
     document.title = `${data.student.name} · Student · ISR`;
     const frag = document.createDocumentFragment();
     const q = queueBar(); if (q) frag.append(q);

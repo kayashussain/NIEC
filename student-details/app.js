@@ -101,7 +101,9 @@
   // The sheet starts at Application Status. Where the student came from (Student Source and the exact platform, event or partner)
   // and the notes (what Remarks held) are on the student's card, which opens with a double-click on the student's name. The data of
   // these two columns stays in the file and keeps working (branch students, the Dashboard, Incentive): the sheet just does not show them.
-  const CARD_COLUMNS = new Set(['REMARKS', 'STUDENT SOURCE']);
+  // The application and offer days too (the owner, 17 Nov 2026): a student applies to many universities, so the days are kept per
+  // university on the card (Applications); the two columns stay in the file, filled by ISR with the first application and offer.
+  const CARD_COLUMNS = new Set(['REMARKS', 'STUDENT SOURCE', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE']);
   // Only columns whose values are a short list of choices get a filter. Dates, numbers, ids, names, emails and feedback do not.
   // The name, email and phone columns have one too (the owner, 14 Nov 2026): its search box finds a student among the values.
   const FILTER_COLUMNS = new Set(['APPLICATION STATUS', 'FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'UNIVERSITY NAME', 'COURSE NAME', 'RECEIVING PARTNER', 'UNIVERSITY PARTNER', 'NOC', 'MEDICAL REPORT', 'E-VISA']);
@@ -2436,7 +2438,11 @@
   function openCardOfRow(rowIdx) {
     const row = rows[rowIdx];
     // The students as the sheet shows them now (search, filters, sort), so the card can go to the previous and next one.
-    if (row && row._id && window.CardDrawer) window.CardDrawer.open(row._id, { list: viewIndices.map((i) => rows[i] && rows[i]._id).filter(Boolean) });
+    // With the names, so the card's bar says who comes next.
+    if (row && row._id && window.CardDrawer) {
+      const shown = viewIndices.map((i) => rows[i]).filter((r) => r && r._id);
+      window.CardDrawer.open(row._id, { list: shown.map((r) => r._id), names: Object.fromEntries(shown.map((r) => [r._id, [r['FIRST NAME'], r['LAST NAME']].map((x) => String(x || '').trim()).filter(Boolean).join(' ')])) });
+    }
   }
 
   const bulkBtn = document.getElementById('bulkSend');

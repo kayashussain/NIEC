@@ -3,6 +3,8 @@
 // onClose (optional) runs then, so a page can show what was changed on the card (a new note, a new stage).
 // `list` (optional): the ids of the students in the order shown on the page (the sheet with its search and filters). The card then
 // has Previous and Next (and the ← → keys) to go through them one by one without closing it (the owner, 17 Nov 2026: less work).
+// `names` (optional, { id: name }): the bar then says who comes next ("Next: Sita KC") and, while the mouse is on ‹, who came before.
+// A press on "4 of 345" lets the person type a number and go straight there (the owner, 17 Nov 2026: the arrows taken a level up).
 (function (root) {
   let current = null;
   function close() {
@@ -16,7 +18,7 @@
     current = null;
     if (typeof after === 'function') after();
   }
-  function open(id, { onClose, list } = {}) {
+  function open(id, { onClose, list, names } = {}) {
     close();
     const back = document.createElement('div');
     back.className = 'p-drawer-back';
@@ -34,22 +36,49 @@
     const mk = (label, aria) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.setAttribute('aria-label', aria); return b; };
     const prev = mk('‹', 'Previous student');
     const next = mk('›', 'Next student');
-    const where = document.createElement('span');
-    nav.append(prev, where, next);
+    const nameOf = (i) => (names && ids[i] && names[ids[i]]) || '';
+    // The middle: "4 of 345" and, under it, who is next; a press turns it into a box to type the number to go to.
+    const where = document.createElement('button');
+    where.type = 'button';
+    where.className = 'p-drawer-where';
+    where.title = 'Go to a number';
+    const count = document.createElement('b');
+    const who = document.createElement('small');
+    where.append(count, who);
+    const jump = document.createElement('input');
+    jump.type = 'number'; jump.min = '1'; jump.className = 'p-drawer-jump'; jump.hidden = true;
+    jump.setAttribute('aria-label', 'Go to student number');
+    nav.append(prev, where, jump, next);
+    const say = (text) => { who.textContent = text; who.hidden = !text; };
+    const nextWords = () => (at < ids.length - 1 && nameOf(at + 1) ? `Next: ${nameOf(at + 1)}` : at >= ids.length - 1 ? 'The last one' : '');
+    prev.addEventListener('mouseenter', () => { if (at > 0 && nameOf(at - 1)) say(`Before: ${nameOf(at - 1)}`); });
+    prev.addEventListener('mouseleave', () => say(nextWords()));
+    where.addEventListener('click', () => { where.hidden = true; jump.hidden = false; jump.max = String(ids.length); jump.value = String(at + 1); jump.focus(); jump.select(); });
+    const endJump = (go) => {
+      if (jump.hidden) return;
+      const n = Number.parseInt(jump.value, 10);
+      jump.hidden = true; where.hidden = false;
+      if (go && n >= 1 && n <= ids.length && n - 1 !== at) show(n - 1); else frame.focus({ preventScroll: true });
+    };
+    jump.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); endJump(true); } if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endJump(false); } });
+    jump.addEventListener('blur', () => endJump(true));
     const show = (i) => {
       if (ids.length && (i < 0 || i >= ids.length)) return;
       if (ids.length) at = i;
       frame.src = '/student?embed=1&id=' + encodeURIComponent(ids.length ? ids[at] : id);
-      where.textContent = `${at + 1} of ${ids.length}`;
+      count.textContent = `${at + 1} of ${ids.length}`;
+      say(nextWords());
       prev.disabled = at <= 0;
       next.disabled = at >= ids.length - 1;
+      prev.title = at > 0 && nameOf(at - 1) ? `Previous: ${nameOf(at - 1)} (←)` : 'Previous student (←)';
+      next.title = at < ids.length - 1 && nameOf(at + 1) ? `Next: ${nameOf(at + 1)} (→)` : 'Next student (→)';
       frame.focus({ preventScroll: true });
     };
     prev.addEventListener('click', () => show(at - 1));
     next.addEventListener('click', () => show(at + 1));
     if (at !== -1 && ids.length > 1) drawer.append(nav); else ids.length = 0;
     show(at);
-    const onKey = (e) => { if (e.key === 'Escape' && !(root.NiecUI && root.NiecUI.isOpen())) close(); };
+    const onKey = (e) => { if (e.key === 'Escape' && jump.hidden && !(root.NiecUI && root.NiecUI.isOpen())) close(); };
     const onMessage = (e) => {
       if (e.origin !== location.origin || !e.data) return;
       if (e.data.niecCard === 'close') close();

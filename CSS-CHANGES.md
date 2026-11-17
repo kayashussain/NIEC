@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-17 · shared/theme.css · the student card's ‹ › bar at the bottom of the half card · from: "4 of 345" as plain bold text between the two round arrows · to: "4 of 345" in bold with the next student's name in small grey under it ("Next: Sita KC"; "Before: ..." while the mouse is on ‹); the middle is a soft pill that turns light grey on hover and, when pressed, becomes a small rounded number box to type the student number to go to (new .p-drawer-where, .p-drawer-jump) · why: the owner asked to take the arrows to the next level.**
+
 - **2026-11-17 · shared/theme.css · Partners (Universities, B2B partners, Agents): the filter switch taken off · from: under the search box a segmented switch (All, Ready to apply, Not ready yet, Ended; on Agents All, Active, Not set up yet, Ended) with count bubbles, and the Sort menu · to: only the Sort menu; the switch's styles (.pl-seg, .pl-n) removed · why: the owner does not need these filters on any of the three partner lists.**
 
 - **2026-11-17 · student-details/events.html · the Intake picker at the top of Events and marketing (new) · from: nothing, every event and campaign of every intake in one list · to: "Intake" in small grey bold beside a rounded light grey box with the intake's name (the same look as the Intake picker on the Dashboard), left of the blue "+ New event or campaign" pill · why: the owner asked to see Events and marketing intake by intake, with All intakes as a choice.**

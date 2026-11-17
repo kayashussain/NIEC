@@ -456,6 +456,7 @@
             if (a.offer) pills.append(el('span', 'p-applied is-offer', `${a.offerType ? a.offerType + ' offer' : 'Offer'} ${day(a.offer)}`));
             if (a.refused) pills.append(el('span', 'p-applied is-refused', `Refused ${day(a.refused)}`));
             if (a.withdrawn) pills.append(el('span', 'p-applied is-refused', `Withdrawn ${day(a.withdrawn)}`));
+            if (a.skipped) pills.append(el('span', 'p-applied is-refused', `Not submitted ${day(a.skipped)}`));
             if (a.onSheet) pills.append(el('span', 'td-sofar-sheet', 'On All Students'));
             line.append(pills);
             line.addEventListener('click', () => { const r = rows.find((x) => !x.uf.input.value.trim()) || addRow(); r.uf.input.value = a.university; r.cf.input.value = a.course || ''; r.what.input.focus(); });
@@ -466,7 +467,7 @@
           const box = el('div', 'p-wide td-unis');
           box.append(el('span', 'p-label', 'What happened? One line per university'));
           const rows = [];
-          const WHAT = [['submitted', 'Applied'], ['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn']];
+          const WHAT = [['submitted', 'Applied'], ['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['notsubmitted', 'Not submitted (say why in the note)']];
           const more = h('button', { class: 'btn btn-sm td-uni-more', type: 'button', onclick: () => addRow().uf.input.focus() }, '+ Another university');
           function addRow(u = '', c = '') {
             const r = el('div', 'td-uni-row td-uni-row-3');
@@ -478,7 +479,7 @@
             uf.input.addEventListener('change', () => { const k = apps.find((a) => a.university.toLowerCase() === uf.input.value.trim().toLowerCase()); if (k && !cf.input.value.trim()) cf.input.value = k.course || ''; });
             r.append(uf.wrap, cf.wrap, what.wrap);
             const x = { r, uf, cf, what };
-            if (rows.length) r.append(h('button', { class: 'td-uni-x', type: 'button', 'aria-label': 'Remove this line', onclick: () => { r.remove(); rows.splice(rows.indexOf(x), 1); } }, '×'));
+            if (rows.length || (state.assigned || []).length) r.append(h('button', { class: 'td-uni-x', type: 'button', 'aria-label': 'Remove this line', onclick: () => { r.remove(); rows.splice(rows.indexOf(x), 1); } }, '×'));
             rows.push(x);
             more.before(r);
             return x;
@@ -486,9 +487,13 @@
           box.append(more);
           form.append(box);
           // A first application starts with the sheet's university written in; what happened is always chosen by the person.
-          if (!apps.length) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); else addRow();
+          // The courses given to the Application Team start with a line each (the owner, 17 Nov 2026): the team chooses Applied, or
+          // Not submitted (for example not eligible) and says why in the note.
+          const assigned = state.assigned || [];
+          if (assigned.length) assigned.forEach((a) => addRow(a.university, a.course || ''));
+          else if (!apps.length) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); else addRow();
           const on = dateField('On (the day it happened)', today);
-          form.append(el('p', 'p-muted p-small p-wide', 'Leave the lines empty if there is nothing to record: only the note is saved.'));
+          form.append(el('p', 'p-muted p-small p-wide', (state.assigned || []).length ? 'Choose what happened on each line (× takes a line off). Not submitted: say why in the note.' : 'Leave the lines empty if there is nothing to record: only the note is saved.'));
           const filled = () => rows.map((x) => ({ university: x.uf.input.value.trim(), course: x.cf.input.value.trim(), what: x.what.input.value })).filter((x) => x.university || x.what);
           read = () => (filled().length ? { app: 'record', date: on.input.value, unis: filled() } : {});
           check = () => {

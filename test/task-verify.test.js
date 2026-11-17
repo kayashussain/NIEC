@@ -86,13 +86,13 @@ test('answers are checked and confirmed before they are written, and can be put 
   assert.match(back2.json.undone.concat(back2.json.left).join('\n'), /Offer received was changed since/);
   assert.strictEqual((await a.row())['OFFER RECEIVED DATE'], add(-1));
 
-  // 3. One task, many universities, each with its own outcome; an offer for another university never touches the sheet.
+  // 3. One task, many universities, each with its own outcome; the first offer from any university is the student's Offer received
+  // (the owner, 17 Nov 2026: the days are kept per university, the hidden column holds the first offer).
   const b = await student('Bina', 'Application Stage', { 'UNIVERSITY NAME': 'Beta University', 'COURSE NAME': 'BSc Business', 'APPLICATION SUBMISSION DATE': add(-30) });
   const t2 = await b.give('Record the news', 'application');
   const mixed = { app: 'record', date: add(-1), unis: [{ university: 'Gamma University', course: 'BSc Business', what: 'submitted' }, { university: 'Delta University', course: 'BSc Business', what: 'refused' }, { university: 'Epsilon University', what: 'unconditional' }] };
   const pv2 = (await b.call(t2, { done: true, finish: mixed, preview: true })).json.preview;
-  assert.ok(!pv2.changes.some((c) => c.column === 'OFFER RECEIVED DATE'), 'another university\'s offer stays off the sheet');
-  assert.match(pv2.kept.join('\n'), /Offer received on All Students is for Beta University/);
+  assert.ok(pv2.changes.some((c) => c.column === 'OFFER RECEIVED DATE'), 'the first offer, whichever university gave it');
   assert.match(pv2.warnings.join('\n'), /No application to Epsilon University is recorded/);
   assert.match(pv2.warnings.join('\n'), /No application to Delta University is recorded/);
   assert.strictEqual((await b.call(t2, { done: true, finish: { ...mixed, confirmed: true } })).status, 200);
@@ -101,7 +101,7 @@ test('answers are checked and confirmed before they are written, and can be put 
   assert.strictEqual(opts['Delta University'].refused, add(-1));
   assert.deepStrictEqual([opts['Epsilon University'].offer, opts['Epsilon University'].offerType], [add(-1), 'Unconditional']);
   assert.strictEqual(opts['Beta University'].applied, add(-30), 'the first application joins University options');
-  assert.strictEqual((await b.row())['OFFER RECEIVED DATE'], '');
+  assert.strictEqual((await b.row())['OFFER RECEIVED DATE'], add(-1));
   assert.match((await b.card()).card.notes.map((n) => n.text).join('\n'), /applied to Gamma University \(BSc Business\); |applied to Gamma University \(BSc Business\), unconditional|applied to Gamma University/);
 
   // 4. Dates out of order are refused; a step already recorded is not overwritten.
@@ -135,4 +135,23 @@ test('answers are checked and confirmed before they are written, and can be put 
   assert.strictEqual((await admin('POST', `/api/cards/${d.sid}/checks`, { key: checks[0].key })).status, 200);
   assert.deepStrictEqual((await d.card()).checks, [], 'checked and correct: off the list');
   assert.match((await d.card()).card.notes.map((n) => n.text).join('\n'), /Checked and correct: Offer received/);
+
+  // 6. Days kept per university on the card (the owner, 17 Nov 2026): each one is a note in the Timeline, All Students' hidden
+  // columns hold the first application and the first offer, and the sheet's own earlier application joins the card first.
+  const e = await student('Esha', 'Application Stage', { 'UNIVERSITY NAME': 'Old University', 'APPLICATION SUBMISSION DATE': add(-50) });
+  const o1 = (await admin('POST', `/api/cards/${e.sid}/options`, { university: 'New University', course: 'MSc Data' })).json.option;
+  assert.strictEqual((await app('POST', `/api/cards/${e.sid}/options/${o1.id}`, { applied: add(-20) })).status, 200);
+  assert.strictEqual((await app('POST', `/api/cards/${e.sid}/options/${o1.id}`, { applied: add(-20), offer: add(-5), offerType: 'Conditional' })).status, 200);
+  const ec = await e.card();
+  assert.deepStrictEqual(ec.card.options.map((o) => o.university).sort(), ['New University', 'Old University'], 'the earlier application is kept');
+  assert.strictEqual(ec.student.row['APPLICATION SUBMISSION DATE'], add(-50), 'the first application');
+  assert.strictEqual(ec.student.row['OFFER RECEIVED DATE'], add(-5), 'the first offer');
+  assert.match(ec.card.notes.map((n) => n.text).join('\n'), /Application submitted to New University, MSc Data on .*Conditional offer received from New University/s);
+  // Assigned but not submitted, with the reason; and taken off the shortlist even after it was given to the team.
+  const o2 = (await admin('POST', `/api/cards/${e.sid}/options`, { university: 'Third University', course: 'MSc AI' })).json.option;
+  assert.strictEqual((await app('POST', `/api/cards/${e.sid}/options/${o2.id}`, { skipped: add(-1), reason: 'Not eligible: grades' })).status, 200);
+  assert.match((await e.card()).card.notes.map((n) => n.text).join('\n'), /Not submitted to Third University, MSc AI: Not eligible: grades/);
+  const o3 = (await admin('POST', `/api/cards/${e.sid}/options`, { university: 'Fourth University', course: 'MSc AI' })).json.option;
+  assert.strictEqual((await admin('POST', `/api/cards/${e.sid}/options/send`, { ids: [o3.id], partners: { [o3.id]: 'Direct' } })).status, 200);
+  assert.strictEqual((await admin('POST', `/api/cards/${e.sid}/options/${o3.id}/delete`, {})).status, 200);
 });

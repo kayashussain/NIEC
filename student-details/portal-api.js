@@ -467,16 +467,55 @@ function createPortalApi({
     writeWorkbook(next);
     recordChanges(req, wb, next);
   }
+  // The application and offer days live per university on the card (the owner, 17 Nov 2026: a student applies to many). All
+  // Students no longer shows the two columns; they stay in the file and ISR keeps them as the first application and the first offer,
+  // so the Dashboard, the weekly summary and Incentive count as before. A student with no day on the card keeps what the columns hold;
+  // the columns' own university joins the card first, so nothing recorded before is lost.
+  function syncApplicationDays(req, rowId) {
+    const found = rowIndex().get(rowId);
+    if (!found) return;
+    const row = found.row;
+    let opts = cards.get(rowId).options || [];
+    if (!opts.some((o) => o.applied || o.offer)) return;
+    const uni = text(row['UNIVERSITY NAME']);
+    const a0 = isoDate(row['APPLICATION SUBMISSION DATE']) || ''; const o0 = isoDate(row['OFFER RECEIVED DATE']) || '';
+    if (uni && (a0 || o0) && !opts.some((o) => squash(o.university) === squash(uni))) {
+      cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students' }, 'ISR');
+      opts = cards.get(rowId).options || [];
+    }
+    const first = (k) => opts.filter((o) => o[k]).sort((x, y) => x[k].localeCompare(y[k]))[0] || null;
+    const fa = first('applied'); const fo = first('offer');
+    const changes = {};
+    if (fa && fa.applied !== a0) changes['APPLICATION SUBMISSION DATE'] = fa.applied;
+    if (fo && fo.offer !== o0) changes['OFFER RECEIVED DATE'] = fo.offer;
+    // An empty university or course on All Students takes the first offer's (else the first application's); a typed one stays.
+    const pick = fo || fa;
+    if (pick && !uni) { changes['UNIVERSITY NAME'] = pick.university; if (!text(row['COURSE NAME']) && pick.course) changes['COURSE NAME'] = pick.course; }
+    if (Object.keys(changes).length) writeColumnsFor(req, rowId, changes);
+  }
+  // One plain line for the timeline when an application's days change on the card ('' when nothing to say).
+  function applicationNote(before, after) {
+    if (!after) return '';
+    const name = [after.university, after.course].filter(Boolean).join(', ');
+    const lines = [];
+    if (after.applied && after.applied !== before.applied) lines.push(`Application submitted to ${name} on ${niceDay(after.applied)}.`);
+    if (after.offer && (after.offer !== before.offer || after.offerType !== before.offerType)) lines.push(`${after.offerType ? after.offerType + ' offer' : 'Offer'} received from ${after.university} on ${niceDay(after.offer)}.`);
+    if (after.refused && after.refused !== before.refused) lines.push(`Refused by ${after.university} on ${niceDay(after.refused)}${after.reason ? `: ${after.reason}` : ''}.`);
+    if (after.withdrawn && after.withdrawn !== before.withdrawn) lines.push(`Withdrawn from ${after.university} on ${niceDay(after.withdrawn)}${after.reason ? `: ${after.reason}` : ''}.`);
+    if (after.skipped && after.skipped !== before.skipped) lines.push(`Not submitted to ${name}${after.reason ? `: ${after.reason}` : ''}.`);
+    if (!lines.length && after.reason && after.reason !== before.reason) lines.push(`${after.university}: ${after.reason}.`);
+    return lines.join(' ').replace(/\.\./g, '.');
+  }
   const niceDay = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
   const sentence = (t) => { const x = text(t).trim(); return x ? (/[.!?]$/.test(x) ? x : x + '.') : ''; };
   // A sheet value as people read it: a date as "16 Nov 2026", anything else as it is, "(empty)" for nothing.
   const shown = (v) => { const t = text(v); if (!t) return '(empty)'; const d = isoDate(t); return d && /^\d{4}-\d{2}-\d{2}$/.test(t) ? niceDay(d) : t; };
-  const APP_WHAT = { submitted: 'Applied', conditional: 'Conditional offer', unconditional: 'Unconditional offer', offer: 'Offer', refused: 'Refused', withdrawn: 'Withdrawn' };
+  const APP_WHAT = { submitted: 'Applied', conditional: 'Conditional offer', unconditional: 'Unconditional offer', offer: 'Offer', refused: 'Refused', withdrawn: 'Withdrawn', notsubmitted: 'Not submitted' };
   const OFFERS = ['conditional', 'unconditional', 'offer'];
   // Every application ISR knows for a student: University options with a day, and the sheet's own university when it has a date.
   function applicationsOf(row, card) {
-    const out = (card.options || []).filter((o) => o.applied || o.offer || o.refused || o.withdrawn)
-      .map((o) => ({ id: o.id, university: o.university, course: o.course, applied: o.applied || '', offer: o.offer || '', offerType: o.offerType || '', refused: o.refused || '', withdrawn: o.withdrawn || '', reason: o.reason || '' }));
+    const out = (card.options || []).filter((o) => o.applied || o.offer || o.refused || o.withdrawn || o.skipped)
+      .map((o) => ({ id: o.id, university: o.university, course: o.course, applied: o.applied || '', offer: o.offer || '', offerType: o.offerType || '', refused: o.refused || '', withdrawn: o.withdrawn || '', skipped: o.skipped || '', reason: o.reason || '' }));
     const uni = text(row['UNIVERSITY NAME']);
     const applied = isoDate(row['APPLICATION SUBMISSION DATE']) || '';
     const offer = isoDate(row['OFFER RECEIVED DATE']) || '';
@@ -531,6 +570,8 @@ function createPortalApi({
     const unis = [...new Set([...applicationsOf(row, card).map((a) => a.university), ...(card.options || []).map((o) => o.university), ...(facts ? facts.all() : []).map((u) => u.name), ...(direct ? direct.all() : []).map((u) => u.name)].filter(Boolean))].slice(0, 400);
     return {
       kind, today: cards.today(), applications: applicationsOf(row, card), universities: unis,
+      // The courses given to the Application Team and not answered yet: the "Mark as done?" window starts with one line for each.
+      assigned: (card.options || []).filter((o) => o.sent && !o.applied && !o.offer && !o.refused && !o.withdrawn && !o.skipped).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
@@ -606,7 +647,7 @@ function createPortalApi({
             if (isSheet(u)) {
               fill('OFFER RECEIVED DATE', d, 'for the first offer');
               if (u.university && !sheetUni) { plan.columns['UNIVERSITY NAME'] = u.university; if (u.course && !text(row['COURSE NAME'])) plan.columns['COURSE NAME'] = u.course; }
-            } else plan.kept.push(`Offer received on All Students is for ${sheetUni}, so it stays as it is. ${name}'s offer is kept in University options.`);
+            } else fill('OFFER RECEIVED DATE', d, 'for the first offer'); // the first offer from any university (the owner, 17 Nov 2026)
           } else if (u.what === 'refused') {
             if (prior.refused && prior.refused !== d) plan.kept.push(`${name} is already recorded as refused on ${niceDay(prior.refused)}: that day stays.`);
             if (!prior.refused) opt.refused = d;
@@ -614,6 +655,10 @@ function createPortalApi({
             if (!prior.applied && !(isSheet(u) && sheetApplied)) plan.warnings.push(`No application to ${name} is recorded. Check the name of the university.`);
           } else if (u.what === 'withdrawn') {
             if (!prior.withdrawn) opt.withdrawn = d;
+          } else if (u.what === 'notsubmitted') {
+            // Assigned but not submitted (the owner, 17 Nov 2026: for example the student is not eligible there); the note says why.
+            if (prior.applied) return { error: `${name} is recorded as applied on ${niceDay(prior.applied)}: it cannot be "Not submitted".` };
+            opt.skipped = d; if (text(note)) opt.reason = text(note).slice(0, 300);
           }
           plan.options.push(opt);
           (groups[u.what] = groups[u.what] || []).push({ name, course: u.course });
@@ -633,7 +678,7 @@ function createPortalApi({
         };
         const parts = [groups.submitted && `applied to ${names(groups.submitted)}`, groups.conditional && `conditional offer from ${names(groups.conditional)}`,
           groups.unconditional && `unconditional offer from ${names(groups.unconditional)}`, groups.offer && `offer from ${names(groups.offer)}`,
-          groups.refused && `refused by ${names(groups.refused)}`, groups.withdrawn && `withdrawn from ${names(groups.withdrawn)}`].filter(Boolean);
+          groups.refused && `refused by ${names(groups.refused)}`, groups.withdrawn && `withdrawn from ${names(groups.withdrawn)}`, groups.notsubmitted && `not submitted to ${names(groups.notsubmitted)}`].filter(Boolean);
         plan.note = `On ${niceDay(d)}: ${join(parts)}. ${sentence(note)}`.trim();
       }
     } else if (kind === 'noc' && f.noc) {
@@ -780,9 +825,9 @@ function createPortalApi({
     plan.options.forEach((o) => {
       const opts = cards.get(rowId).options || [];
       const same = opts.find((x) => squash(x.university) === squash(o.university) && (!o.course || !x.course || squash(x.course) === squash(o.course)));
-      const dates = Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn'].filter((k) => o[k]).map((k) => [k, o[k]]));
+      const dates = Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason'].filter((k) => o[k]).map((k) => [k, o[k]]));
       if (same) {
-        wrote.options.push({ id: same.id, before: Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'course'].map((k) => [k, same[k] || ''])) });
+        wrote.options.push({ id: same.id, before: Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason', 'course'].map((k) => [k, same[k] || ''])) });
         cards.updateOption(rowId, same.id, { ...dates, ...(o.course && !same.course ? { course: o.course } : {}) }, by(req));
       } else {
         const made = cards.addOption(rowId, { university: o.university, course: o.course, ...dates }, by(req));
@@ -794,6 +839,7 @@ function createPortalApi({
       const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: plan.remind.tag, priority: 'high' }, by(req));
       if (!made.error) { wrote.remind = made.task.id; if (plan.remind.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: plan.remind.day, reason: plan.remind.tag === 'medical' ? 'On the day of the medical test' : 'On the day of the mock interview' }, by(req), cards.today()); }
     }
+    if (wrote.options.length) syncApplicationDays(req, rowId);
     if (Object.keys(wrote.columns).length || wrote.options.length || plan.medical !== undefined || wrote.remind) cards.setTaskWrote(rowId, task.id, wrote, by(req));
     return wrote;
   }
@@ -984,8 +1030,9 @@ function createPortalApi({
   const FIX_GROUPS = [
     { key: 'check', title: 'Details that do not add up', hint: 'Dates out of order, or filled in before answers were checked. Open the card to correct or confirm.' },
     { key: 'langDate', title: 'Language test date missing', hint: 'The test is chosen as "Test Date", but no day is picked.', fix: { kind: 'date', on: 'sheet', field: 'LANGUAGE TEST DATE', label: 'Test date' } },
-    { key: 'appDate', title: 'Application date missing', hint: 'Past Application Stage, but no submission day on the sheet.', fix: { kind: 'date', on: 'sheet', field: 'APPLICATION SUBMISSION DATE', label: 'Submitted on' } },
-    { key: 'offerDate', title: 'Offer date missing', hint: 'At Payment Stage or later, but no offer day on the sheet.', fix: { kind: 'date', on: 'sheet', field: 'OFFER RECEIVED DATE', label: 'Offer received on' } },
+    // Recorded per university on the card's Applications (the owner, 17 Nov 2026), so these open the card.
+    { key: 'appDate', title: 'Application date missing', hint: 'Past Application Stage, but no university has a submission day. Open the card: Applications.' },
+    { key: 'offerDate', title: 'Offer date missing', hint: 'At Payment Stage or later, but no university has an offer day. Open the card: Applications.' },
     { key: 'noUni', title: 'University or course missing', hint: 'Applied, but the university or the course is empty.' },
     { key: 'dob', title: 'Date of birth missing', hint: 'Needed from Application Stage on.', fix: { kind: 'date', on: 'profile', field: 'dob', label: 'Date of birth' } },
     { key: 'passportNo', title: 'Passport number missing', hint: 'Needed from Application Stage on.', fix: { kind: 'text', on: 'profile', field: 'passportNo', label: 'Passport number', max: 20, upper: true } },
@@ -1350,7 +1397,7 @@ function createPortalApi({
 
   // ---- one student's card ----
   async function handleCard(req, res, urlPath) {
-    const m = /^\/api\/cards\/([\w-]{1,64})(?:\/(profile|notes|options|messages|source|sheet|tasks|checks)(?:\/([a-f0-9]{12}|preview|send))?(\/delete)?)?$/.exec(urlPath);
+    const m = /^\/api\/cards\/([\w-]{1,64})(?:\/(profile|notes|options|messages|source|sheet|tasks|checks)(?:\/([a-z0-9]{6,32}|preview|send))?(\/delete)?)?$/.exec(urlPath);
     if (!m) return false;
     const [, rowId, part, sub, del] = m;
     const found = rowIndex().get(rowId);
@@ -1587,18 +1634,24 @@ function createPortalApi({
     } else if (part === 'options' && sub && del) {
       out = cards.removeOption(rowId, sub, by(req));
     } else if (part === 'options' && sub) {
+      const before = (card.options || []).find((o) => o.id === sub) || null;
       out = cards.updateOption(rowId, sub, body, by(req));
+      // What the Application Team records on the card (the day submitted, the answer) is also a note, so the student's timeline shows
+      // every step day by day (the owner, 17 Nov 2026).
+      if (!out.error && before) { const after = (cards.get(rowId).options || []).find((o) => o.id === sub); const line = applicationNote(before, after); if (line) cards.addNote(rowId, { kind: 'note', text: line }, by(req)); out = { ...out, card: cards.get(rowId) }; }
     } else if (part === 'options') {
       // The fee, scholarship, deposit and course page come from the Fact File by themselves (nobody types them).
       const auto = factsForOption({ universityId: text(body.universityId), course: text(body.course), level: text(body.level) });
       out = cards.addOption(rowId, { ...body, fee: text(body.fee) || auto.fee || '', scholarship: text(body.scholarship) || auto.scholarship || '', deposit: text(body.deposit) || auto.deposit || '', link: text(body.link) || auto.link || '' }, by(req));
       if (!out.error) note(req, [`${who}: added the option ${[out.option.university, out.option.course].filter(Boolean).join(', ')}`]);
+      if (!out.error) { const line = applicationNote({}, out.option); if (line) cards.addNote(rowId, { kind: 'note', text: line }, by(req)); }
     } else {
       send(res, 404, 'Not found');
       return true;
     }
+    if (!out.error && part === 'options') syncApplicationDays(req, rowId);
     if (out.error) sendJSON(res, out.duplicate ? 409 : 400, { error: out.error });
-    else sendJSON(res, 200, { ok: true, card: out.card, ...(out.note ? { note: out.note } : {}), ...(out.option ? { option: out.option } : {}) });
+    else sendJSON(res, 200, { ok: true, card: part === 'options' ? cards.get(rowId) : out.card, ...(out.note ? { note: out.note } : {}), ...(out.option ? { option: out.option } : {}) });
     return true;
   }
 
@@ -2689,6 +2742,13 @@ function createPortalApi({
       if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
       if (tooManySends(req.user.id)) { sendJSON(res, 429, { error: 'Too many in a short time. Please wait a few minutes.' }); return true; }
       const who = nameOf(found.row) || 'the student';
+      // Call (the owner, 17 Nov 2026): the same way, and a tap on the notification rings the student from the phone.
+      if (body.call === true) {
+        const out = await push.send(req.user.id, { title: `Call ${who}`, body: `Tap to call · +${number}`, url: `/wa?call=1&n=${number}&name=${encodeURIComponent(who)}`, tag: `call-${number}` }, site);
+        if (!out.sent) { sendJSON(res, 502, { error: out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.' }); return true; }
+        sendJSON(res, 200, { ok: true, sent: out.sent, to: out.names });
+        return true;
+      }
       const words = text(body.text).slice(0, 1500);
       const url = `/wa?n=${number}&name=${encodeURIComponent(who)}${words ? `&text=${encodeURIComponent(words)}` : ''}`;
       const out = await push.send(req.user.id, { title: `WhatsApp ${who}`, body: `Tap to open the chat · +${number}`, url, tag: `wa-${number}` }, site);

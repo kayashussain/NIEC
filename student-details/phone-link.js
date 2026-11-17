@@ -2,9 +2,10 @@
 //   - Connect my phone: done once. The computer shows a code; the phone's camera opens it and one tap ("Turn on") connects the
 //     phone (pair.html, no login on the phone). A phone that is logged in can also press Turn on in the same window.
 //   - Then a click on WhatsApp on the computer sends that phone a notification; one tap on it opens the student's chat in WhatsApp on
-//     the phone. On a phone the click opens WhatsApp at once. With no phone connected, the computer shows how to connect one, with
+//     the phone. Call works the same way (the owner, 17 Nov 2026): a click on Call sends a notification and one tap on it rings the
+//     student from the phone (a phone always asks for that one tap: a web page may not start a call by itself). On a phone the click opens WhatsApp at once. With no phone connected, the computer shows how to connect one, with
 //     "Open it on this computer this time".
-// window.PhoneLink = { openChat({ id, number, name, text }), dialog() }. Loaded on every page by header.js.
+// window.PhoneLink = { openChat({ id, number, name, text }), call({ id, number, name }), dialog() }. Loaded on every page by header.js.
 (function () {
   if (window.PhoneLink) return;
   const say = (t, bad) => (window.NiecUI && window.NiecUI.toast ? window.NiecUI.toast(t, { type: bad ? 'error' : 'success' }) : alert(t));
@@ -218,5 +219,28 @@
     dialog({ href: web(number, text) });
   }
 
-  window.PhoneLink = { openChat, dialog, connectHere };
+  // Call a student: on a phone the call starts at once; on a computer with a phone connected, the phone gets "Call <name>" and one tap
+  // rings the student; with no phone connected, how to connect one, with "Open it on this computer this time" (a computer's own
+  // calling program, if it has one).
+  async function call({ id, number, name }) {
+    const tel = 'tel:+' + String(number || '').replace(/\D/g, '');
+    if (isPhone()) { (window.top || window).location.href = tel; return; }
+    let s = null;
+    try { s = await load(); } catch (e) { s = null; }
+    if (s && s.devices.length && id) {
+      try {
+        const r = await api('/api/push/whatsapp', { id, call: true });
+        const to = r.to && r.to.length === 1 ? `your ${r.to[0]}` : 'your phone';
+        say(`Sent to ${to}. Tap the notification to call ${name || 'the student'}.`);
+        return;
+      } catch (e) {
+        if (e.status === 409 || /no longer connected/.test(e.message)) { status = null; dialog({ href: tel }); return; }
+        say(e.message, true);
+        return;
+      }
+    }
+    dialog({ href: tel });
+  }
+
+  window.PhoneLink = { openChat, call, dialog, connectHere };
 })();
