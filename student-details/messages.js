@@ -13,7 +13,7 @@
 // "## " is a small heading. {curly} words are filled in from the student (see FIELDS).
 // For a marketing email (the owner, 17 Nov 2026) three more kinds of line: "# Title | small line under it" as the very first line
 // is a coloured banner across the top of the email; "!! words" is a highlighted box; "[[Label | address]]" is a big button
-// (several on one line sit side by side). A button to wa.me or WhatsApp is green, every other one blue; the address may be
+// (several on one line sit side by side). The banner carries the consultancy's name and colours. A button to wa.me or WhatsApp is green, every other one orange; the address may be
 // https, http, tel: (a phone call) or mailto:.
 
 const fs = require('fs');
@@ -169,15 +169,17 @@ function buttonsOf(line) {
 }
 const isWhatsApp = (href) => /^https?:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?whatsapp\.com)\//i.test(href);
 /* 🔴 CSS CHANGED (2026-11-17): marketing email parts (new): banner, highlighted box, big buttons | from: none, an email was plain paragraphs, small headings and bullets | to: a navy-to-blue banner with a large white title, a soft amber box with an orange left edge, and big rounded buttons (WhatsApp green #25d366, others blue #0071e3) */
-function bannerHtml(title, sub) {
-  return `<tr><td style="background:#0b2e59;background-image:linear-gradient(135deg,#0b2e59 0%,#0071e3 100%);border-radius:12px 12px 0 0;padding:38px 28px 34px;text-align:center;color:#ffffff">`
+/* 🔴 CSS CHANGED (2026-11-17): the banner and buttons in the consultancy's own colours | from: a navy-to-Apple-blue banner with only the title, other buttons blue #0071e3 | to: a banner in the logo's blue (#00adef to #0a6fb5) with the consultancy's name in small spaced white capitals above the title and an orange (#fc6e1f) band along its bottom edge; buttons other than WhatsApp in the logo's orange #fc6e1f */
+function bannerHtml(title, sub, company) {
+  return `<tr><td style="background:#0a8fd6;background-image:linear-gradient(135deg,#00adef 0%,#0a6fb5 100%);border-radius:12px 12px 0 0;border-bottom:6px solid #fc6e1f;padding:30px 28px 32px;text-align:center;color:#ffffff">`
+    + (company ? `<div style="font-size:12px;line-height:1.4;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#e6f6fd;margin-bottom:14px">${esc(company)}</div>` : '')
     + `<div style="font-size:28px;line-height:1.25;font-weight:800;color:#ffffff">${esc(title)}</div>`
-    + (sub ? `<div style="margin-top:10px;font-size:16px;line-height:1.5;color:#dbe9ff">${esc(sub)}</div>` : '')
+    + (sub ? `<div style="margin-top:10px;font-size:16px;line-height:1.5;color:#ffffff">${esc(sub)}</div>` : '')
     + '</td></tr>';
 }
 const calloutHtml = (t) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 18px"><tr><td style="background:#fff6e5;border-left:5px solid #fc6e1f;border-radius:8px;padding:14px 18px;font-size:16px;line-height:1.55;font-weight:600;color:#5a3300">${linkify(esc(t))}</td></tr></table>`;
 function buttonsHtml(buttons) {
-  const cell = (b) => `<td align="center" style="padding:6px"><a href="${esc(b.href)}" style="display:block;background:${isWhatsApp(b.href) ? '#25d366' : '#0071e3'};color:#ffffff;text-decoration:none;font-weight:700;font-size:18px;line-height:1.2;padding:18px 22px;border-radius:40px;text-align:center">${esc(b.label)}</a></td>`;
+  const cell = (b) => `<td align="center" style="padding:6px"><a href="${esc(b.href)}" style="display:block;background:${isWhatsApp(b.href) ? '#25d366' : '#fc6e1f'};color:#ffffff;text-decoration:none;font-weight:700;font-size:18px;line-height:1.2;padding:18px 22px;border-radius:40px;text-align:center">${esc(b.label)}</a></td>`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 18px"><tr>${buttons.map(cell).join('')}</tr></table>`;
 }
 
@@ -215,7 +217,7 @@ function renderEmail({ subject, body, values, signature, options = [], documents
       const [t, ...rest] = fill(top[1], values, missing).split('|');
       const sub = rest.join('|').trim();
       textOut.push(t.trim().toUpperCase(), ...(sub ? [sub] : []), '');
-      banner = bannerHtml(t.trim(), sub);
+      banner = bannerHtml(t.trim(), sub, text(values && values.company_name));
       return;
     }
     const buttons = buttonsOf(line);

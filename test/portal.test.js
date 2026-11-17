@@ -589,7 +589,7 @@ test('a marketing email: a banner first line, a highlighted box and big WhatsApp
   assert.match(r.html, /linear-gradient[^>]*>\s*<div[^>]*>January intake<\/div><div[^>]*>Final call<\/div>/);
   assert.match(r.html, /border-left:5px solid #fc6e1f[^>]*>Apply this week/);
   assert.match(r.html, /href="https:\/\/wa\.me\/9779800000000" style="[^"]*background:#25d366/);
-  assert.match(r.html, /href="tel:\+9779800000000" style="[^"]*background:#0071e3/);
+  assert.match(r.html, /href="tel:\+9779800000000" style="[^"]*background:#fc6e1f/);
   assert.ok(!r.html.includes('href="javascript:'), 'an unsafe address never becomes a button or a link');
   assert.match(r.text, /^JANUARY INTAKE\nFinal call\n\nHi Sita,\nApply this week\nWhatsApp me: https:\/\/wa\.me\/9779800000000\nCall: \+9779800000000/);
   assert.ok(!/linear-gradient/.test(Messages.renderEmail({ subject: 'S', body: 'Hi\n# Not first', values: {}, signature: {} }).html), 'only the first line can be the banner');
