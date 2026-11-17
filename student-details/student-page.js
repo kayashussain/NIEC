@@ -720,7 +720,7 @@
 
   // ---- University options ----
   // The shortlist (the owner, 17 Nov 2026): the courses shortlisted from the Fact File or added here, numbered 1, 2, 3 in the order to
-  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Email" (emails these
+  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Share options" (emails these
   // options, a short word so the row stays tidy) and "Assign to the Application Team" open the same windows as on the Fact File (fact-finder.js): the second asks, for every course,
   // through which partner it goes, and for notes. Up and Down change the order before assigning.
   const refreshCard = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
@@ -872,7 +872,7 @@
     // target _top: from the half card (an iframe on All Students) the Fact File opens as the whole page, not inside the card.
     if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id), target: '_top' }, 'Find course'));
     if (data.card.options.length) {
-      acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Email'));
+      acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Share options'));
       if (waiting.length && can()) acts.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => window.OptionActions.assign(studentRef(), waitingOptions()).then((r) => { if (r) { sendOrder = null; refreshCard(); } }) }, 'Assign to the Application Team'));
     }
     if (acts.children.length) head.append(acts);
