@@ -767,20 +767,25 @@
     updateUndoRedoButtons();
   }
 
-  // The filters stay when the page is refreshed: kept in this browser, for each sheet, until they are cleared.
+  // The filters stay when the page is refreshed: kept for each sheet, until they are cleared. Each browser tab keeps its own (the owner,
+  // 18 Nov 2026: two tabs of the same account, one on Application Stage and one on Mock Stage, must stay different after a refresh), so a
+  // tab remembers in sessionStorage; a duplicated tab starts from the filters of the tab it was copied from and then goes its own way.
+  // localStorage only holds the last filters used, to start a brand new tab (or a new visit) from where the person left off.
   const filtersKey = () => 'niec-sheet-filters-v1:' + ((me && (me.username || me.id)) || 'anyone');
   function readSavedFilters() {
-    try { return JSON.parse(localStorage.getItem(filtersKey()) || '{}') || {}; } catch (e) { return {}; }
+    let own = null;
+    try { own = sessionStorage.getItem(filtersKey()); } catch (e) { /* no tab storage: the last used ones below */ }
+    try { return JSON.parse(own !== null ? own : (localStorage.getItem(filtersKey()) || '{}')) || {}; } catch (e) { return {}; }
   }
   function saveFilters() {
     if (BACKUP) return;
-    try {
-      const all = readSavedFilters();
-      const mine = {};
-      Object.entries(columnFilters).forEach(([col, set]) => { mine[col] = [...set]; });
-      if (Object.keys(mine).length) all[activeSheetId] = mine; else delete all[activeSheetId];
-      localStorage.setItem(filtersKey(), JSON.stringify(all));
-    } catch (e) { /* storage unavailable: the filter simply is not remembered */ }
+    const all = readSavedFilters();
+    const mine = {};
+    Object.entries(columnFilters).forEach(([col, set]) => { mine[col] = [...set]; });
+    if (Object.keys(mine).length) all[activeSheetId] = mine; else delete all[activeSheetId];
+    const json = JSON.stringify(all);
+    try { sessionStorage.setItem(filtersKey(), json); } catch (e) { /* this tab simply is not remembered */ }
+    try { localStorage.setItem(filtersKey(), json); } catch (e) { /* a new tab starts without a filter */ }
   }
   function restoreFilters() {
     const saved = readSavedFilters()[activeSheetId] || {};
