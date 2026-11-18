@@ -10,7 +10,9 @@
     let lists = { sourceOptions: {}, sourceLabels: F.SOURCE_DETAIL_LABEL, sourceCanAdd: F.SOURCE_CAN_ADD, partners: [], stages: [], departments: [] };
     try { lists = { ...lists, ...(await api('/api/card-lists')) }; } catch (e) { /* the form still works with the starting choices */ }
     const admin = me && me.role === 'admin';
-    return dialog(sheetName ? `New student for ${sheetName}` : 'New student', (body, close) => {
+    // An Admin adds to the sheet on screen; any other account's students always go into the current intake.
+    const where = admin ? sheetName : (lists.currentIntakeName || '');
+    return dialog(where ? `New student for ${where}` : 'New student', (body, close) => {
       const inputs = {};
       const form = el('div');
       // Many students at once (from an Excel or CSV file) is its own page: offered here, at the top of Add student.
@@ -39,7 +41,7 @@
       // Where the student came from: the source, then exactly which (the branch, the agent, the event ...). The choices are shared: a missing one is added once.
       // A branch account adds its own students, so the source is not asked: the server tags them with the branch.
       const branchOnly = !admin && lists.departments.length > 0 && lists.departments.every((d) => d.source);
-      const picker = branchOnly ? null : root.SourcePicker.create({ lists });
+      const picker = branchOnly ? null : root.SourcePicker.create({ lists, hideBranch: !admin });
       if (picker) { form.append(el('h3', '', 'Where the student came from')); const g = el('div', 'p-form p-form-2'); picker.nodes.forEach((n) => g.append(n)); form.append(g); }
 
       const note = make('note', 'Note on the student card (optional)', { kind: 'area', wide: true, max: 2000, placeholder: 'What was discussed at the first contact.' });
@@ -78,7 +80,7 @@
           if (!dup) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.focus(); return; }
           // Already in ISR: never a second copy. Open them, or fill in only what is blank on them (nothing already there is replaced).
           msg.className = 'p-msg ns-dup';
-          if (dup.name) msg.replaceChildren(el('b', '', `${dup.name} is already in ISR`), el('span', '', ` (${dup.intake}, ${dup.stage || 'no stage'}${dup.source ? ', ' + dup.source : ''}), with this ${dup.maybeOther ? 'phone number, under another name' : 'email or phone number'}.`));
+          if (dup.name) msg.replaceChildren(el('b', '', `${dup.name} is already in ISR`), el('span', '', ` (${dup.intake}, ${dup.stage || 'no stage'}${dup.source ? ', ' + dup.source : ''}), ${dup.sameName ? 'with exactly the same name.' : `with this ${dup.maybeOther ? 'phone number, under another name' : 'email or phone number'}.`}`));
           else msg.replaceChildren(el('b', '', 'A student is already in ISR with this phone number, under another name.'));
           const row = el('div', 'p-bar');
           if (dup.id) row.append(h('button', { class: 'btn', type: 'button', onclick: () => { close(); location.href = '/student?id=' + encodeURIComponent(dup.id); } }, 'Open their card'));

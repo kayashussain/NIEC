@@ -7,7 +7,7 @@
   const SNOOZE_KEY = 'niec-edit-guard-snooze-until';
 
   function snoozedUntil() {
-    try { return Number(localStorage.getItem(SNOOZE_KEY)) || 0; } catch (e) { return memorySnooze; }
+    try { return Math.max(Number(localStorage.getItem(SNOOZE_KEY)) || 0, memorySnooze); } catch (e) { return memorySnooze; }
   }
   let memorySnooze = 0; // used when the browser blocks storage (e.g. a private window)
   function snooze() {

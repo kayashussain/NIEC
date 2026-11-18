@@ -13,8 +13,9 @@
   const WITH_REMARKS = { 'Social Media': 'What they saw (optional)' };
   const REMARK_HELP = { 'Social Media': 'For example: the post or video they saw.', Reference: 'Who referred them' };
 
-  function create({ lists, initial = {}, onChange = () => {}, disabled = false }) {
-    const groups = Object.keys(F.SOURCE_DETAILS);
+  function create({ lists, initial = {}, onChange = () => {}, disabled = false, hideBranch = false }) {
+    // Only a branch (or Admin) may tag a student with a branch, so everybody else is not offered it (the server would refuse it).
+    const groups = Object.keys(F.SOURCE_DETAILS).filter((g) => !(hideBranch && g === 'Branch' && F.sourceGroup(initial.source) !== 'Branch'));
     const options = (g) => (g === 'Agent' ? lists.partners : (lists.sourceOptions[g] || F.SOURCE_DETAILS[g] || []));
     const startGroup = F.sourceGroup(initial.source) || '';
     const source = field('Student source', { kind: 'select', choices: groups, value: groups.includes(startGroup) ? startGroup : '', disabled });

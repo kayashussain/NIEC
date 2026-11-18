@@ -320,6 +320,8 @@
       const baseRows = new Map(base.rows.map((r) => [r._id, r]));
       const mineRowIds = new Set();
       sheet.rows.forEach((row) => {
+        // An id is always text: an array or object would be turned into the text of a real student's id and could delete or overwrite them.
+        if (typeof row._id !== 'string') { errors.push('A row has an id that is not valid.'); return; }
         mineRowIds.add(row._id);
         const before = baseRows.get(row._id);
         if (!before) {

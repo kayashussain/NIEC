@@ -219,6 +219,8 @@ function createPortalApi({
     const campaigns = newest.filter((e) => channelOf(e) === 'Social media').map((e) => eventLabel(e.name, e.date));
     return {
       sourceOptions: options, campaigns,
+      // The intake a non-Admin account's new students go into (Admin adds to the sheet on screen).
+      currentIntakeName: (() => { const c = currentIntake(); return c ? c.name : ''; })(),
       sourceLabels: Fields.SOURCE_DETAIL_LABEL, sourceCanAdd: Fields.SOURCE_CAN_ADD,
       // Only the names: the terms agreed with a partner stay on the Admin-only page.
       partners: [...new Set([...agents.list().filter((p) => p.status !== 'Ended').map((p) => p.name), ...sheetAgents().map((p) => p.name)])],
@@ -1508,8 +1510,9 @@ function createPortalApi({
           }
           if (!out.error) note(req, [`${who2}: changed the task for ${teamLabel(task.team)}${before !== out.task.text ? ` from "${before.slice(0, 80)}" to "${out.task.text.slice(0, 80)}"` : ''}`], 'Task');
         } else if (body.tag !== undefined || body.priority !== undefined) {
-          // What the task is about and how important it is: whoever gave it, the team it is with, Admin or the Manager.
-          if (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
+          // What the task is about and how important it is: whoever gave it, Admin or the Manager. The team that has to do the task cannot
+          // retag it: the tag decides which columns and stage finishing it writes (review fix, 18 Nov 2026).
+          if (!canAssign(req.user) && !gaveIt(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
           const change = {};
           if (body.tag !== undefined) change.tag = text(body.tag);
           if (body.priority !== undefined) change.priority = text(body.priority);
@@ -1688,19 +1691,26 @@ function createPortalApi({
     if (fields.EMAIL && !mailer.isAddress(fields.EMAIL)) { return { status: 400, json: { error: 'That email address does not look right.' } }; }
     if (fields['CONTACT NUMBER'] && !phoneOk(fields['CONTACT NUMBER'])) { return { status: 400, json: { error: 'That phone number does not look right. Use digits, for example 9800000001 or +977 9800000001.' } }; }
     {
-      const dup = existingStudent(fields.EMAIL, fields['CONTACT NUMBER']);
+      let dup = existingStudent(fields.EMAIL, fields['CONTACT NUMBER']);
+      // Added with a name only (no email, no usable phone): the same full name already on the sheet is checked by a person, never merged.
+      let sameName = false;
+      if (!dup && !fields.EMAIL && !phoneKey(fields['CONTACT NUMBER'])) {
+        const key = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const want = key(nameOf(fields));
+        if (want) for (const { row } of rowIndex().values()) { if (key(nameOf(row)) === want) { dup = row; sameName = true; break; } }
+      }
       // Only the same phone, and a clearly different first name: maybe a brother or sister on the family phone. Once the person says
       // it is someone else ("Add anyway"), they are added. The same email is always the same student.
       const sameEmail = Boolean(dup && fields.EMAIL && text(dup.EMAIL).toLowerCase() === fields.EMAIL);
-      const maybeOther = Boolean(dup && !sameEmail && otherPerson([fields['FIRST NAME'], fields['LAST NAME']].join(' '), nameOf(dup)));
+      const maybeOther = Boolean(dup && (sameName || (!sameEmail && otherPerson([fields['FIRST NAME'], fields['LAST NAME']].join(' '), nameOf(dup)))));
       if (dup && !(body.allowDuplicate && maybeOther)) {
         // The student is already in ISR: nobody is added twice. Someone who may see that student is told who it is, and can fill in
         // what is missing on them instead (see /api/students/merge).
         const found = rowIndex().get(dup._id);
         const seen = found && canSee(req.user, found);
         return { status: 409, json: {
-          error: maybeOther ? `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this phone number, under another name. If this is a different person, add them anyway.` : `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this email or phone number, so nobody was added.`,
-          duplicate: seen ? { id: dup._id, name: nameOf(dup), intake: found.sheet.name, stage: text(dup[STATUS]), source: text(dup['STUDENT SOURCE']), canFill: canChange(req.user, found), maybeOther } : (maybeOther ? { maybeOther } : null),
+          error: sameName ? `${(seen && nameOf(dup)) || 'A student'} with this exact name is already in ISR. If this is a different person, add them anyway.` : maybeOther ? `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this phone number, under another name. If this is a different person, add them anyway.` : `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this email or phone number, so nobody was added.`,
+          duplicate: seen ? { id: dup._id, name: nameOf(dup), intake: found.sheet.name, stage: text(dup[STATUS]), source: text(dup['STUDENT SOURCE']), canFill: canChange(req.user, found), maybeOther, sameName } : (maybeOther ? { maybeOther, sameName } : null),
         } };
       }
     }
@@ -1815,10 +1825,9 @@ function createPortalApi({
     for (const r of lines) {
       const em = text(r.email).toLowerCase(); const ph = phoneKey(r.phone);
       if (existingStudent(r.email, r.phone) || (em && existing.has('e:' + em)) || (ph && existing.has('p:' + ph))) { results.push({ ok: false, name: [r.first, r.last].filter(Boolean).join(' '), error: 'Already on the sheet (same email or phone), not added again.' }); continue; }
-      if (em) existing.add('e:' + em);
-      if (ph) existing.add('p:' + ph);
       const fields = { 'FIRST NAME': text(r.first), 'LAST NAME': text(r.last), EMAIL: text(r.email), 'CONTACT NUMBER': text(r.phone), 'STUDENT SOURCE': text(body.source) };
       const out = addStudent(req, { fields, profile: { sourceDetail: text(body.sourceDetail), sourceRemarks: text(body.sourceRemarks), sourcePlatform: text(body.sourcePlatform), sourceWay: text(body.sourceWay) }, stage: body.stage, sheetId: body.sheetId, dept: body.dept });
+      if (out.status === 200) { if (em) existing.add('e:' + em); if (ph) existing.add('p:' + ph); } // only a line that was added blocks a later copy of it
       results.push(out.status === 200 ? { ok: true, id: out.json.id, name: [r.first, r.last].filter(Boolean).join(' ') } : { ok: false, name: [r.first, r.last].filter(Boolean).join(' '), error: out.json.error || 'Could not add.' });
     }
     note(req, [`Added ${results.filter((x) => x.ok).length} students at once${text(body.sourceDetail) ? ` (${text(body.sourceDetail)})` : ''}`], 'Added students');

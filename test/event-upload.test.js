@@ -218,6 +218,13 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   const future = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Futura', 'LAST NAME': 'Dob' }, profile: { dob: '2999-01-01' } })).json;
   assert.strictEqual((await admin('GET', `/api/cards/${future.id}`)).json.card.profile.dob || '', '', 'a date of birth in the future is not stored');
 
+  // A student added with a name only: the same full name is checked by a person (and can be added anyway), never added silently twice.
+  const nameOnly = { stage: 'Inquiry', fields: { 'FIRST NAME': 'Solo', 'LAST NAME': 'Namesake' } };
+  assert.strictEqual((await admin('POST', '/api/students/new', nameOnly)).status, 200);
+  const nameAgain = await admin('POST', '/api/students/new', nameOnly);
+  assert.deepStrictEqual([nameAgain.status, nameAgain.json.duplicate.sameName], [409, true]);
+  assert.strictEqual((await admin('POST', '/api/students/new', { ...nameOnly, allowDuplicate: true })).status, 200, 'added anyway when it is another person');
+
   // The Dashboard's figures over time: every intake side by side, and the days of each step.
   const tr = (await admin('GET', '/api/trends')).json;
   assert.ok(Array.isArray(tr.intakes) && tr.intakes.length >= 1 && 'visas' in tr.intakes[0], 'every intake, as quarters');

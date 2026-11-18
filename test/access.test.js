@@ -687,3 +687,13 @@ test('Changes today counts every change to the data: the sheet, cards, tasks and
   assert.strictEqual(all.summary.today.changes, 6);
   assert.strictEqual(log.query({ category: 'changes' }).total, 6, 'the same as the Changes filter');
 });
+
+test('a row id that is not text (an array) is refused, so it cannot stand in for another student', () => {
+  const both = { role: 'staff', departments: ['application', 'followup'] };
+  const base = Teams.viewFor(both, book());
+  const mine = JSON.parse(JSON.stringify(base));
+  mine.sheets[0].rows.push({ _id: [base.sheets[0].rows[0]._id], [S]: 'Inquiry', _addedByTeam: 'followup', 'FIRST NAME': 'Dup' });
+  const out = Teams.teamChanges(both, base, mine);
+  assert.ok(out.errors.length && /not valid/.test(out.errors.join(' ')));
+  assert.strictEqual(out.adds.length, 0);
+});

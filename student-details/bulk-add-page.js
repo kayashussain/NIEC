@@ -25,7 +25,7 @@
     const stage = field('Stage', { kind: 'select', choices: lists.stages, value: 'Inquiry' });
     const dept = lists.departments.length > 1 ? field('Team', { kind: 'select', choices: lists.departments.map((d) => [d.id, d.label]), value: lists.departments[0].id }) : null;
     const branchOnly = lists.departments.length > 0 && lists.departments.every((d) => d.source);
-    const picker = branchOnly ? null : window.SourcePicker.create({ lists });
+    const picker = branchOnly ? null : window.SourcePicker.create({ lists, hideBranch: lists.departments.length > 0 });
     const isTeamUser = lists.departments.length > 0;
     if (isTeamUser) { stage.wrap.hidden = true; }
     form.append(intake.wrap, stage.wrap);
@@ -58,7 +58,7 @@
       const checks = checkRows(rows);
       const ready = checks.filter((c) => !c.skip).length;
       const skipped = checks.length - ready;
-      out.replaceChildren(el('p', '', `${rows.length} ${rows.length === 1 ? 'line' : 'lines'} found: ${ready} will be added${skipped ? `, ${skipped} will be skipped` : ''}.`));
+      out.replaceChildren(el('p', '', `${rows.length} ${rows.length === 1 ? 'line' : 'lines'} found: ${ready} will be added${skipped ? `, ${skipped} will be skipped` : ''}.`), ...(rows.length > 200 ? [el('p', 'p-notice warn', 'Only the first 200 lines are added in one go. Add the rest afterwards.')] : []));
       const t = el('table', 'p-table');
       t.append(h('thead', {}, h('tr', {}, ...['Name', 'Email', 'Phone', 'Check'].map((x) => el('th', '', x)))));
       const tb = el('tbody');

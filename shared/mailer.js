@@ -22,7 +22,9 @@ const base64Lines = (text) => (Buffer.from(text, 'utf8').toString('base64').matc
 // The full message text (CRLF line endings): plain text and HTML versions of the same email.
 // `auto: false` leaves out the header that marks a message as written by a machine (used for the messages a counselor
 // sends to a student, which are personal letters and should be answered like one).
-function buildMessage({ from, fromName, to, subject, text, html, now = new Date(), auto = true, attachments = [], inline = [] }) {
+function buildMessage({ from, fromName, to, subject, text, html: htmlGiven, now = new Date(), auto = true, attachments = [], inline = [] }) {
+  // A plain-text message gets its HTML part from the text (an email with no html used to fail before it was sent).
+  const html = htmlGiven !== undefined ? htmlGiven : `<div style="white-space:pre-wrap">${String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
   const boundary = '=_niec_' + crypto.randomBytes(12).toString('hex');
   const domain = from.split('@')[1];
   const sender = fromName ? `${quoteName(oneLine(fromName).replace(/["\\]/g, ''))} <${from}>` : from;

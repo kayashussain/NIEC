@@ -1000,6 +1000,7 @@
     input.className = 'sheet-tab-input';
     input.value = sheet.name;
     tab.innerHTML = '';
+    input.addEventListener('mousedown', (e) => e.stopPropagation()); input.addEventListener('click', (e) => e.stopPropagation()); input.addEventListener('dblclick', (e) => e.stopPropagation()); // a click in the box must not switch the sheet and close it
     tab.appendChild(input);
     input.focus();
     input.select();
@@ -2894,6 +2895,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (!activeCell || openFilterMenu || openSheetMenu || e.defaultPrevented) return;
+    if (document.querySelector('.p-drawer')) return; // the student card is open: keys belong to it, never to the sheet behind (review fix, 18 Nov 2026)
     const ae = document.activeElement;
     if (!(ae === document.body || body.contains(ae))) return; // search box, rename box, buttons: not ours
 

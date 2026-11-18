@@ -503,7 +503,7 @@ function teamSave(req, parsed) {
   const added = new Map(); // sheet id -> [rows]
   for (const a of adds) {
     const sheet = current.sheets.find((s) => s.id === a.sheetId);
-    if (!sheet || sheet.hidden || allIds.has(a.row._id) || !/^[\w-]{1,64}$/.test(a.row._id || '')) {
+    if (!sheet || sheet.hidden || typeof a.row._id !== 'string' || allIds.has(a.row._id) || !/^[\w-]{1,64}$/.test(a.row._id)) {
       return { status: 409, body: { error: 'conflict', revision: current.revision } };
     }
     allIds.add(a.row._id);
