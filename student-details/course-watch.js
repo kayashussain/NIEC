@@ -77,7 +77,20 @@ function createCourseWatch({ dir, getIndex, facts, finder, courseLinks, fetchFn 
     if (before && !sameList(before.fees, read1.fees)) changes.push(`Fees written on the page were ${before.fees.map((n) => '£' + n.toLocaleString('en-GB')).join(', ') || 'none'} and are now ${read1.fees.map((n) => '£' + n.toLocaleString('en-GB')).join(', ') || 'none'}.`);
     if (before && !sameList(before.intakes, read1.intakes)) changes.push(`Intakes written on the page were ${before.intakes.join(', ') || 'none'} and are now ${read1.intakes.join(', ') || 'none'}.`);
     if (changes.length) return { ...rec, status: 'changed', confirmed: false, changedAt: at, note: changes.join(' ') };
+    // A change nobody has confirmed yet stays a warning: the new fees are now the page's, so a later look finds no difference, but
+    // the Fact File was never updated by a person.
+    if (old && old.status === 'changed' && !old.confirmed) return { ...rec, status: 'changed', confirmed: false, changedAt: old.changedAt, note: old.note };
     return { ...rec, status: 'active', confirmed: false, note: '' };
+  }
+
+  // A person may press Confirm while a round is running: that file is read again before each write, and a confirmation made meanwhile
+  // (for the same finding) is kept.
+  function keepNewConfirmations(data) {
+    const latest = read();
+    Object.keys(latest.checks).forEach((k) => {
+      const a = latest.checks[k]; const b = data.checks[k];
+      if (a && b && a.confirmed && !b.confirmed && a.status === b.status && a.note === b.note) b.confirmed = true;
+    });
   }
 
   // One round: the courses that are due (never looked at, or looked at more than `everyDays` ago), oldest first, up to `perRun`.
@@ -101,9 +114,10 @@ function createCourseWatch({ dir, getIndex, facts, finder, courseLinks, fetchFn 
         if (prev && prev.confirmed && (result.status === prev.status) && result.note === prev.note) result.confirmed = true;
         data.checks[key] = result;
         n += 1;
-        if (n % 20 === 0) write({ ...data, lastRun: new Date(now()).toISOString() });
+        if (n % 20 === 0) { keepNewConfirmations(data); write({ ...data, lastRun: new Date(now()).toISOString() }); }
         await new Promise((r) => setTimeout(r, pauseMs));
       }
+      keepNewConfirmations(data);
       write({ ...data, lastRun: new Date(now()).toISOString() });
       return { checked: n, left: Math.max(0, getIndex().length - n) };
     } finally { running = false; }

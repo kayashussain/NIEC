@@ -5,8 +5,9 @@
 // sheets: [{ id, name }] from Student Details. Returns { [intakeName]: entry } for the page.
 function advancesByName(stored, sheets) {
   const out = {};
+  const own = (k) => Object.prototype.hasOwnProperty.call(stored, k) ? stored[k] : undefined; // "constructor" is not a saved entry
   sheets.forEach((s) => {
-    const entry = stored[s.id] || stored[s.name];
+    const entry = own(s.id) || own(s.name);
     if (entry) out[s.name] = entry;
   });
   return out;
@@ -20,7 +21,7 @@ function setAdvance(stored, sheets, intake, entry) {
   if (sheet) {
     next[sheet.id] = entry;
     delete next[sheet.name];
-  } else {
+  } else if (intake !== '__proto__') {
     next[intake] = entry;
   }
   return next;

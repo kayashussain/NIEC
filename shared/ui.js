@@ -224,7 +224,7 @@
   function choose(value) {
     const { input } = open;
     // The earliest and latest day the box allows (a date of birth is never in the future): the keyboard obeys them as the mouse does.
-    if ((input.min && value < input.min) || (input.max && value > input.max)) return;
+    if (value && ((input.min && value < input.min) || (input.max && value > input.max))) return; // Clear ('') is always allowed
     close(true);
     if (input.value === value) return;
     input.value = value;

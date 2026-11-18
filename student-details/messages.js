@@ -189,7 +189,12 @@ function buttonsHtml(buttons) {
 }
 
 // Web addresses in a paragraph become links (only http and https ones).
-const linkify = (escaped) => escaped.replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a href="${url}" style="color:#066a97">${url}</a>`);
+const linkify = (escaped) => escaped.replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (found) => {
+  // The text is already escaped: the address ends where an escaped quote or bracket (&quot; &#39; &lt; &gt;) begins.
+  const cut = found.search(/&(?:quot|#39|lt|gt);/);
+  const url = cut === -1 ? found : found.slice(0, cut);
+  return `<a href="${url}" style="color:#066a97">${url}</a>${found.slice(url.length)}`;
+});
 
 // The signature block as lines of text: name, title, company, then the ways to reach the office.
 function signatureLines(sig) {
