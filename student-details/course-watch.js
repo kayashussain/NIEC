@@ -51,7 +51,6 @@ function createCourseWatch({ dir, getIndex, facts, finder, courseLinks, fetchFn 
 
   // Checks one course; returns its new record.
   async function checkOne(entry, old, hosts) {
-    const key = linkKey(entry.universityId, entry.course);
     const at = new Date(now()).toISOString();
     const rec = { ...(old || {}), checkedAt: at, university: entry.university, course: entry.course };
     let link = entry.linkIsCourse ? entry.link : '';

@@ -147,10 +147,9 @@
     if (last) b.append(el('div', 'tb-last', `${last.by === me ? 'You' : String(last.by || '').split(/\s+/)[0]}: ${last.text}`));
     b.append(meta);
     b.addEventListener('click', () => {
-      let changed = false;
       window.Portal.dialog(window.Portal.niceName ? window.Portal.niceName(x.student) : x.student, (body, close) => {
         body.classList.add('tb-dialog-body');
-        body.append(taskRow(x, () => { changed = true; close(); }));
+        body.append(taskRow(x, () => close()));
         const foot = el('div', 'p-dialog-foot');
         const open = h('a', { class: 'btn', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'Open the student card');
         foot.append(open, h('button', { class: 'btn btn-primary', type: 'button', onclick: () => close() }, 'Close'));

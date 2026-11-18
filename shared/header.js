@@ -8,7 +8,6 @@
 (function () {
   const header = document.querySelector('.niec-header');
   if (!header) return;
-  const page = header.dataset.page;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   header.innerHTML = `

@@ -583,7 +583,6 @@
     }
     // The student's History (the owner, 15 Nov 2026): the notes and, without anyone typing them again, every task about the student:
     // who gave it to which team, each update, a reassignment or a move to another day, and who marked it done. Newest first.
-    const short = (t) => (t.length > 70 ? t.slice(0, 67) + '...' : t);
     const teamName = (id) => (((data.taskTeams || []).find((x) => x.id === id) || {}).label || id).replace(/\s*\(.*\)$/, '');
     const events = data.card.notes.map((n) => ({ kind: 'note', at: n.at, by: n.by, text: n.text, note: n }));
     // Each entry says what it is in a few grey words beside the name ("Task for Application Team", "Update", "Reassigned"), and the
@@ -633,7 +632,6 @@
       else av.append(tlIcon(k === 'message' ? (e.message.channel === 'whatsapp' ? 'whatsapp' : 'email') : k));
       const body = el('div', 'p-tl-body');
       const line = el('div', 'p-tl-line');
-      const t = new Date(e.at);
       const time = el('time', 'p-tl-time', tlTime(e.at));
       time.dateTime = e.at; time.title = when(e.at);
       const label = k === 'auto' ? 'Automatic' : k === 'note' ? 'Note' : e.label;

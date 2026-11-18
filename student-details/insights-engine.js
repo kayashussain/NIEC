@@ -28,7 +28,6 @@ const isStudent = (row) => text(row['FIRST NAME']) !== '' || text(row['LAST NAME
 const addDays = (iso, days) => new Date(Date.parse(iso + 'T00:00:00Z') + days * DAY).toISOString().slice(0, 10);
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 // "Jan Intake 2027" or "September 2026" -> { month: 0..11, year }, else null.
 function intakeSeason(name) {
   const m = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[^\d]*(\d{4})/i.exec(String(name || ''));

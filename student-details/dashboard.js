@@ -3,7 +3,7 @@
 // (/api/dashboard and /api/insights, from the sheet, the student cards and the records): this page only draws it.
 // Names and labels come from student records, so they are only ever put in with textContent.
 (function () {
-  const { el, api, number, rupees } = window.Portal;
+  const { el, api, number } = window.Portal;
   const SVG = 'http://www.w3.org/2000/svg';
   const root = document.getElementById('panel-overview');
   const picker = document.getElementById('intake');

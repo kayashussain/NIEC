@@ -13,7 +13,6 @@
   let plan = null;
   let timer = null;
   const say = (t, e) => window.NiecUI.toast(t, { type: e ? 'error' : 'success' });
-  const star = (g) => (g.low ? el('span', 'p-star', ' *') : '');
   const lowNote = () => el('p', 'p-muted p-small', '* Fewer than 10 students: a rate from so few is a hint, not evidence.');
 
   function table(headers, rows, { numCols = [] } = {}) {
@@ -33,7 +32,6 @@
     return wrap;
   }
   const card = (title, sub, ...children) => { const c = el('section', 'p-card'); c.append(el('h2', '', title)); if (sub) c.append(el('p', '', sub)); children.forEach((x) => x && c.append(x)); return c; };
-  const kpi = (label, value, sub, cls) => { const t = el('div', `p-kpi ${cls || ''}`); t.append(el('b', '', String(value)), el('span', '', label), el('small', '', sub || '')); return t; };
   function bars(items, { quiet = false } = {}) {
     const max = Math.max(1, ...items.map((i) => i.value));
     const box = el('div', 'p-bars');
@@ -79,7 +77,6 @@
       body.append(f, msg, foot);
     }, { wide: true }).then((saved) => { if (saved) { say('Saved'); load(); } });
   }
-  const todayIso = () => data.today;
 
   // ---- Channels and events ----
   function renderChannels() {

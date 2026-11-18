@@ -2,7 +2,6 @@
 // "Name, email, phone" (a tab between the parts works too, so a copy from Excel can be pasted as it is), or upload an Excel (.xlsx) or CSV file.
 (function () {
   const { el, h, api, field } = window.Portal;
-  const F = window.CardFields;
   const view = document.getElementById('view');
   const say = (t, e) => window.NiecUI.toast(t, { type: e ? 'error' : 'success' });
   let lists = null;

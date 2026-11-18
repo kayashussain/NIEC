@@ -10,7 +10,6 @@
     let lists = { sourceOptions: {}, sourceLabels: F.SOURCE_DETAIL_LABEL, sourceCanAdd: F.SOURCE_CAN_ADD, partners: [], stages: [], departments: [] };
     try { lists = { ...lists, ...(await api('/api/card-lists')) }; } catch (e) { /* the form still works with the starting choices */ }
     const admin = me && me.role === 'admin';
-    const options = (src) => (src === 'Agent' ? lists.partners : (lists.sourceOptions[src] || F.SOURCE_DETAILS[src] || []));
     return dialog(sheetName ? `Add a student to ${sheetName}` : 'Add a student', (body, close) => {
       const inputs = {};
       const form = el('div');

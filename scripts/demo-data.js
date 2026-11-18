@@ -19,7 +19,6 @@ const FIRST = ['Aarav', 'Sita', 'Ram', 'Gita', 'Hari', 'Maya', 'Bikash', 'Anju',
   'Prakash', 'Sabina', 'Anil', 'Kabita', 'Rajan', 'Sunita', 'Manoj', 'Laxmi', 'Sandip', 'Pramila', 'Ujjwal', 'Srijana', 'Bishal', 'Alisha', 'Niraj', 'Samjhana', 'Pawan', 'Karuna', 'Sujan', 'Rekha'];
 const LAST = ['Sharma', 'Thapa', 'Gurung', 'Shrestha', 'Adhikari', 'Karki', 'Rai', 'Tamang', 'Poudel', 'Bhandari', 'KC', 'Magar', 'Lama', 'Neupane', 'Basnet', 'Khadka', 'Acharya', 'Subedi', 'Maharjan', 'Pandey'];
 const COUNSELORS = ['Asha Demo', 'Bikram Demo', 'Sunita Demo'];
-const DISTRICTS = ['Kathmandu', 'Lalitpur', 'Bhaktapur', 'Chitwan', 'Kaski', 'Rupandehi', 'Morang', 'Jhapa', 'Sunsari', 'Dang', 'Kailali', 'Makwanpur'];
 const UNIVERSITIES = [
   [['University of West London', 'Official Rep'], 0.42], [['Ulster University', 'QA'], 0.15], [['University of Roehampton', 'OIEG'], 0.11], [['Bangor University', 'Official Rep'], 0.1],
   [['York St John University', 'Adventus'], 0.09], [['Middlesex University', 'Official Rep'], 0.07], [['University of East London', 'Adventus'], 0.06],

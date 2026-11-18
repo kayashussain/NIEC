@@ -19,7 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const {
-  send, sendJSON, createStaticServer, SHARED_FILES, readJSONBody, writeFileAtomic, snapshotDaily,
+  sendJSON, createStaticServer, SHARED_FILES, readJSONBody, writeFileAtomic, snapshotDaily,
   localDate,
 } = require('../shared/server-utils');
 const { advancesByName, setAdvance } = require('./advances');
