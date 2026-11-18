@@ -77,7 +77,7 @@ const incentivePassword = process.env.INCENTIVE_PASSWORD || crypto.randomBytes(6
 console.log('\nLoaded your real data into live-data/ :', JSON.stringify(counts));
 
 const startServer = (serverPort) => {
-  const env = { ...process.env, PORT: String(serverPort), STUDENT_DETAILS_DATA_DIR: studentsDir, COUNSELOR_DATA_DIR: path.join(dir, 'counselor-incentive'), INCENTIVE_PASSWORD: incentivePassword };
+  const env = { ...process.env, HOST: '127.0.0.1', PORT: String(serverPort), STUDENT_DETAILS_DATA_DIR: studentsDir, COUNSELOR_DATA_DIR: path.join(dir, 'counselor-incentive'), INCENTIVE_PASSWORD: incentivePassword };
   const child = spawn(process.execPath, [path.join(root, 'student-details', 'server.js')], { env, stdio: 'inherit' });
   child.on('exit', (code) => process.exit(code || 0));
   process.on('SIGINT', () => child.kill('SIGINT'));
@@ -116,6 +116,10 @@ if (withLogin) {
     await logIn(inner);
     const front = http.createServer((req, res) => {
       // The login page and logging out have no meaning here: both go straight back into the portal.
+      // Only this computer's own address may come in: a web page on another name (one that points at 127.0.0.1) is refused, so it
+      // cannot borrow the owner's automatic login.
+      const host = String(req.headers.host || '').toLowerCase();
+      if (host !== `localhost:${port}` && host !== `127.0.0.1:${port}`) { req.resume(); res.writeHead(403); return res.end('Open http://localhost:' + port); }
       const urlPath = req.url.split('?')[0];
       if (req.method === 'GET' && (urlPath === '/login' || urlPath === '/login.html')) { res.writeHead(302, { Location: '/today' }); return res.end(); }
       if (urlPath === '/api/logout') { req.resume(); res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end('{"ok":true}'); }

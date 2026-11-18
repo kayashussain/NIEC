@@ -368,7 +368,7 @@
       // An older day typed by hand that the calendar cannot read is kept until a day is chosen.
       if (!body.agreementStart && uni.agreementStart && !isoDay(uni.agreementStart)) body.agreementStart = uni.agreementStart;
       // What the page no longer asks is sent back as it was, so nothing stored is lost; a partner is always Active.
-      Object.assign(body, { status: 'Active', type: uni.type || 'Direct', via: uni.via || '', agreementEnd: uni.agreementEnd || '', notes: uni.notes || '' });
+      Object.assign(body, { status: uni.status || 'Active', type: uni.type || 'Direct', via: uni.via || '', agreementEnd: uni.agreementEnd || '', notes: uni.notes || '' });
       say('editMsg', 'Saving...');
       try {
         uni = await api('/api/direct/' + uni.id, body);

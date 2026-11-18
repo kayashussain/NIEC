@@ -140,7 +140,7 @@ const activity = createActivityLog(DATA_DIR);
 const accounts = createAccounts({ dir: DATA_DIR, activity, studentName: (rowId) => {
   for (const sh of (current && current.sheets) || []) { const r = sh.rows.find((x) => x._id === rowId); if (r) return [r['FIRST NAME'], r['LAST NAME']].filter(Boolean).join(' ') || 'A student without a name'; }
   return '';
-} });
+}, companyName: () => messages.signature().company });
 const { requireAuth } = accounts;
 const facts = createFacts(DATA_DIR);
 // Partner Universities: Admin only, kept out of the Advisor connector and every other account's reach.
@@ -773,6 +773,7 @@ async function handleDirect(req, res, urlPath) {
       activity.record(req, req.user, 'Edited partner universities', { app: 'Student Details', changes: [`Uploaded the agreement ${added.agreement.name} for ${added.university.name}`] });
       return sendJSON(res, 200, added.university);
     }
+    if (!fileMatch[2]) return send(res, 405, 'Method not allowed'); // only .../delete removes a file, never a stray POST
     const gone = direct.removeAgreement(id, fid, req.user.label);
     if (gone.error) return sendJSON(res, 404, { error: gone.error });
     activity.record(req, req.user, 'Edited partner universities', { app: 'Student Details', changes: [`Removed the agreement ${gone.removed.name} from ${gone.university.name}`] });
@@ -1246,7 +1247,9 @@ server.headersTimeout = 15000;
 // must still come within 15 seconds).
 server.requestTimeout = 5 * 60 * 1000;
 
-server.listen(PORT, () => {
+// HOST=127.0.0.1 keeps a copy on the owner's own computer (scripts/start-local.js, scripts/local-live.js) closed to the office
+// network. Unset on the live server, which answers on every address as before.
+server.listen(PORT, process.env.HOST || undefined, () => {
   console.log(`ISR running at http://localhost:${PORT}`);
 });
 

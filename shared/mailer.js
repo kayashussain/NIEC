@@ -227,7 +227,9 @@ async function sendMail(cfg, { to, subject, text, html, bcc = [], auto = true, a
 
 // "Set up your account": the link, username and temporary password, and the steps to follow.
 // kind 'new' for a new person, 'reset' when Admin gave an existing person a new temporary password.
-function setupEmail({ name, username, temporaryPassword, access, siteUrl, kind = 'new' }) {
+// company: the consultancy's stored name (the email signature); the line is left out when none is set.
+function setupEmail({ name, username, temporaryPassword, access, siteUrl, kind = 'new', company = '' }) {
+  company = String(company || '').replace(/[\r\n]+/g, ' ').trim();
   const link = siteUrl.replace(/\/+$/, '') + '/login';
   // A student's own login (Fact File only) is told what it is for, in a student's words.
   const student = /^Student\b/.test(String(access || ''));
@@ -252,8 +254,8 @@ function setupEmail({ name, username, temporaryPassword, access, siteUrl, kind =
     `Temporary password: ${temporaryPassword}`, '',
     'To finish setting up',
     ...steps.map((s, i) => `${i + 1}. ${s}`), '',
-    safety, '', ignore, '',
-    'Nepal International Educational Consultancy',
+    safety, '', ignore,
+    ...(company ? ['', company] : []),
   ].join('\n');
 
   const row = (label, value, mono = false) => `<tr><td style="padding:6px 14px 6px 0;color:#6b7280;white-space:nowrap">${label}</td>`
@@ -275,7 +277,7 @@ ${row('Temporary password', escapeHtml(temporaryPassword), true)}
 <p style="margin:0 0 12px;color:#4b5563;font-size:14px">${escapeHtml(safety)}</p>
 <p style="margin:0 0 20px;color:#6b7280;font-size:13px">${escapeHtml(ignore)}</p>
 </td></tr>
-<tr><td style="padding:14px 28px 22px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px">Nepal International Educational Consultancy</td></tr>
+${company ? `<tr><td style="padding:14px 28px 22px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px">${escapeHtml(company)}</td></tr>` : ''}
 </table></td></tr></table></body></html>`;
 
   return { subject: kind === 'reset' ? 'Your ISR password was reset' : 'Set up your ISR account', text, html };
@@ -297,7 +299,8 @@ function loadConfig(dir, env = process.env) {
   let file = {};
   try { file = JSON.parse(require('fs').readFileSync(require('path').join(dir, 'mail.json'), 'utf8')); } catch (e) { /* none yet */ }
   return {
-    host: env.MAIL_HOST || file.host || 'mail.niecedu.com.np',
+    // No server named: the usual one for the mailbox's own domain (kayas@example.org -> mail.example.org).
+    host: env.MAIL_HOST || file.host || ((/@([A-Za-z0-9.-]+\.[A-Za-z]{2,})$/.exec(String(env.MAIL_USER || file.user || '')) || [])[1] ? 'mail.' + /@([A-Za-z0-9.-]+)$/.exec(String(env.MAIL_USER || file.user))[1].toLowerCase() : ''),
     port: Number(env.MAIL_PORT || file.port || 465),
     security: env.MAIL_SECURITY || file.security || 'ssl',
     user: env.MAIL_USER || file.user || '',

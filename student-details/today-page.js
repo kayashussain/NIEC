@@ -126,7 +126,7 @@
   // ---- the Board (Admin and the Manager) ----
   // A column per team, the team's open tasks as small tiles (the student, the task, its tag, how long it has waited, its updates), the
   // oldest first and the newest last. A press opens the whole task (tick, updates, Edit, Reassign) in a window.
-  const daysOpen = (x) => Math.max(0, Math.floor((Date.now() - Date.parse(x.at || 0)) / 86400000));
+  const daysOpen = (x) => { const t = Date.parse(x.at); return Number.isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / 86400000)) : 0; };
   function tile(x, refresh) {
     const later = x.doOn && todayIso && x.doOn > todayIso;
     const n = (x.comments || []).filter((c) => c.text).length;

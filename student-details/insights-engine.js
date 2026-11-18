@@ -31,7 +31,7 @@ const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', '
 // "Jan Intake 2027" or "September 2026" -> { month: 0..11, year }, else null.
 function intakeSeason(name) {
   const m = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[^\d]*(\d{4})/i.exec(String(name || ''));
-  return m ? { month: MONTHS.indexOf(m[1].toLowerCase()), year: Number(m[2]) } : null;
+  return m ? { month: MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()), year: Number(m[2]) } : null;
 }
 // The day teaching usually starts for an intake, when Admin has not typed one: late in the intake's month.
 function guessStart(name) {
@@ -123,7 +123,7 @@ function spendTotals(lines) {
     leads += l.leads || 0;
     const add = (map, key) => { const e = map.get(key) || map.set(key, { amount: 0, leads: 0 }).get(key); e.amount += l.amount; e.leads += l.leads || 0; };
     add(bySource, l.source || NONE);
-    if (l.detail) add(byDetail, `${l.source}\u0000${l.detail}`);
+    if (l.detail) add(byDetail, `${l.source || NONE}\u0000${l.detail}`);
   });
   return { total, leads, bySource, byDetail };
 }

@@ -216,7 +216,10 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
     async send(userId, message, subject, topic) {
       const list = devicesOf(userId).filter((x) => !x.lostAt);
       const m = crypto.randomBytes(9).toString('base64url');
-      const payload = JSON.stringify({ ...message, m, at: Date.now() });
+      let payload = JSON.stringify({ ...message, m, at: Date.now() });
+      // A push service takes about 4 KB: a long text in the address would be refused (413) and never reach the phone, so the
+      // notification then opens the page without the text.
+      if (Buffer.byteLength(payload) > 3500 && message && message.url) payload = JSON.stringify({ ...message, url: String(message.url).split('?')[0], m, at: Date.now() });
       const outcome = await Promise.all(list.map(async (d) => {
         try {
           const aud = new URL(d.endpoint).origin;

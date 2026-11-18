@@ -115,7 +115,7 @@
     if (t.status === 'missed') return `The target of ${t.visas} visas was not reached: ${t.visasNow} visas were issued.`;
     if (t.expectedTotal === null || t.expectedTotal === undefined) return `${t.visasNow} of ${t.visas} visas issued. Not enough history yet for a forecast.`;
     const end = Math.round(t.expectedTotal);
-    const range = t.forecast ? ` (${t.forecast.low} to ${t.forecast.high})` : '';
+    const range = t.forecast ? ` (${t.visasNow + t.forecast.low} to ${t.visasNow + t.forecast.high})` : ''; // the forecast counts only the visas still to come
     // The forecast follows how students moved forward in the earlier intakes.
     return `Forecast: about ${end} visas${range}. ${t.status === 'behind' ? `About ${Math.max(1, t.visas - end)} short of the target.` : `Meets the target of ${t.visas}.`}`;
   };

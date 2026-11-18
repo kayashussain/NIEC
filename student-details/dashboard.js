@@ -143,7 +143,7 @@
       const row = el('div', 'ov-target-set');
       const input = el('input'); input.type = 'number'; input.min = '1'; input.max = '9999'; input.placeholder = 'Visas aimed for'; input.value = t && t.visas ? t.visas : '';
       const save = el('button', 'btn btn-sm', t && t.visas ? 'Change' : 'Set the target'); save.type = 'button';
-      save.addEventListener('click', async () => { try { await api('/api/planning/targets/' + ins.selected, { visas: input.value, byDate: (t && t.byDate) || '', startDate: (t && t.startDate) || '', note: (t && t.note) || '' }); window.NiecUI.toast('Target saved', { type: 'success' }); load(); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } });
+      save.addEventListener('click', async () => { try { await api('/api/planning/targets/' + ins.selected, { visas: input.value, byDate: (t && t.byDate) || '', startDate: (t && !t.startGuessed && t.startDate) || '', note: (t && t.note) || '' }); window.NiecUI.toast('Target saved', { type: 'success' }); load(); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } });
       row.append(input, save);
       return row;
     };
@@ -360,9 +360,14 @@
       const [d, i] = await Promise.all([api('/api/dashboard?intake=' + encodeURIComponent(selected)), api('/api/insights?intake=' + encodeURIComponent(selected))]);
       if (my !== seq) return;
       dash = d; ins = i; selected = i.selected || d.selected;
-      try { apps = await api('/api/applicants?intake=' + encodeURIComponent(selected)); } catch (e) { apps = null; }
-      try { trends = await api('/api/trends?intake=' + encodeURIComponent(selected)); } catch (e) { trends = null; }
-      try { isAdmin = (await api('/api/me')).role === 'admin'; } catch (e) { isAdmin = false; }
+      // A newer load (another intake chosen meanwhile) wins: an older one stops after each answer.
+      let a = null; try { a = await api('/api/applicants?intake=' + encodeURIComponent(selected)); } catch (e) { /* none */ }
+      if (my !== seq) return;
+      let tr = null; try { tr = await api('/api/trends?intake=' + encodeURIComponent(selected)); } catch (e) { /* none */ }
+      if (my !== seq) return;
+      let adm = false; try { adm = (await api('/api/me')).role === 'admin'; } catch (e) { /* not Admin */ }
+      if (my !== seq) return;
+      apps = a; trends = tr; isAdmin = adm;
       picker.replaceChildren(...i.intakes.map((x) => { const o = el('option', '', x.name); o.value = x.id; return o; }));
       picker.value = selected;
       updated.textContent = `As of ${window.Portal.day(ins.today)}.`;
@@ -371,9 +376,16 @@
     } catch (e) {
       if (my === seq) root.replaceChildren(el('div', 'p-notice bad', e.message));
     }
-    timer = setTimeout(() => { if (!document.hidden && !root.hidden) load(); }, REFRESH_MS);
+    if (my !== seq) return;
+    timer = setTimeout(refresh, REFRESH_MS);
+  }
+  // Every 45 seconds the figures are fetched again, but never while someone is typing in the panel (the visa target), and a
+  // hidden tab waits for the next turn instead of stopping for good.
+  function refresh() {
+    if (document.hidden || root.hidden || (document.activeElement && root.contains(document.activeElement) && document.activeElement.matches('input, textarea, select'))) { timer = setTimeout(refresh, REFRESH_MS); return; }
+    load();
   }
   picker.addEventListener('change', () => { selected = picker.value; history.replaceState(null, '', location.pathname); load(); });
   window.DashboardOverview = { load };
-  if (!(location.hash.match(/tab=(\w+)/) || [])[1]) load();
+  load(); // an old link to another tab opens the overview too
 })();

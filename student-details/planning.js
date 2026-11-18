@@ -136,6 +136,9 @@ function createPlanning(dir, { now = () => new Date() } = {}) {
             .map((x) => ({ ...LISTS[k].clean(x), id: x.id, updatedAt: str(x.updatedAt, 40), updatedBy: str(x.updatedBy, 80) }));
         });
         Object.keys(raw.targets && typeof raw.targets === 'object' ? raw.targets : {}).forEach((sheetId) => {
+          const t = raw.targets[sheetId];
+          // A broken entry (null, a list) is skipped, so one bad target cannot make the whole file look damaged.
+          if (!t || typeof t !== 'object' || Array.isArray(t) || ['__proto__', 'constructor', 'prototype'].includes(sheetId)) return;
           if (/^[\w-]{1,80}$/.test(sheetId)) data.targets[sheetId] = { ...cleanTarget(raw.targets[sheetId]), updatedAt: str(raw.targets[sheetId].updatedAt, 40), updatedBy: str(raw.targets[sheetId].updatedBy, 80) };
         });
         data.settings = cleanSettings(raw.settings || {}, cleanSettings({}));

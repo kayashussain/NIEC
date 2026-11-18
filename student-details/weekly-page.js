@@ -59,7 +59,7 @@
       el('p', 'wk-lead', `${day(d.from)} to ${day(d.to)}, every intake, compared with ${short(d.prevFrom)} to ${short(d.prevTo)}.`));
     const nav = el('div', 'wk-nav no-print');
     const go = (n) => { ago = n; history.replaceState(null, '', n ? `?ago=${n}` : location.pathname); load(); };
-    nav.append(h('button', { class: 'btn', type: 'button', onclick: () => go(ago + 1) }, '‹ Earlier week'),
+    nav.append(h('button', { class: 'btn', type: 'button', onclick: () => go(Math.min(104, ago + 1)) }, '‹ Earlier week'),
       h('button', { class: 'btn', type: 'button', disabled: ago === 0, onclick: () => go(ago - 1) }, 'Later week ›'),
       h('button', { class: 'btn btn-primary', type: 'button', onclick: () => window.print() }, 'Print'));
     top.append(titles, nav);

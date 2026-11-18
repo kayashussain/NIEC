@@ -51,8 +51,10 @@ function hashPassword(password) {
 function verifyPassword(password, stored) {
   const [kind, saltHex, hashHex] = String(stored || '').split('$');
   if (kind !== 'scrypt' || !saltHex || !hashHex) return false;
+  const expected = Buffer.from(hashHex, 'hex');
+  if (expected.length !== 32) return false; // a damaged stored hash is a wrong password, not an error
   const given = crypto.scryptSync(String(password), Buffer.from(saltHex, 'hex'), 32);
-  return crypto.timingSafeEqual(given, Buffer.from(hashHex, 'hex'));
+  return crypto.timingSafeEqual(given, expected);
 }
 
 // The same check off the main thread (Node's worker pool), so a burst of login attempts doesn't hold up everyone
@@ -63,8 +65,10 @@ const scryptAsync = (password, salt) => new Promise((resolve, reject) => {
 async function verifyPasswordAsync(password, stored) {
   const [kind, saltHex, hashHex] = String(stored || '').split('$');
   if (kind !== 'scrypt' || !saltHex || !hashHex) return false;
+  const expected = Buffer.from(hashHex, 'hex');
+  if (expected.length !== 32) return false;
   const given = await scryptAsync(String(password), Buffer.from(saltHex, 'hex'));
-  return crypto.timingSafeEqual(given, Buffer.from(hashHex, 'hex'));
+  return crypto.timingSafeEqual(given, expected);
 }
 
 // Checked for a username that doesn't exist, so a wrong username takes as long as a wrong password.
@@ -209,7 +213,7 @@ function plainBody(body) {
 }
 
 const USERNAME_RULE = /^[a-z0-9._@-]{3,60}$/;
-const USERNAME_HELP = 'Usernames use 3 to 60 letters, numbers, dots, dashes or @. Capital letters are fine; they are not case sensitive.';
+const USERNAME_HELP = 'Usernames use 3 to 60 letters, numbers, dots, dashes, underscores or @. Capital letters are fine; they are not case sensitive.';
 const cleanUsername = (s) => String(s || '').trim().toLowerCase();
 // '' for no email, null when it isn't an email address, else the address in lower case.
 function cleanEmail(s) {
@@ -224,6 +228,7 @@ function createAccounts({
   dir, homePath = (req) => req.url, activity = null, writable = true, now = Date.now, mailer = defaultMailer,
   maxFailures = 20, maxUserFailures = 8, windowMs = 15 * 60 * 1000,
   studentName = () => '', // the name of the student a student's own login is for (the server knows the sheet)
+  companyName = () => '', // the consultancy's own name, a stored setting (the email signature); never written into code
 }) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const usersStore = createStore(path.join(dir, 'users.json'), () => ({ users: [] }),
@@ -400,6 +405,7 @@ function createAccounts({
     if (!cfg) return { status: 'not-configured', to: user.email };
     const message = mailer.setupEmail({
       name: user.name, username: user.username, temporaryPassword: temp, access: accessLabel(user), siteUrl: siteUrlFor(req), kind,
+      company: (() => { try { return String(companyName() || ''); } catch (e) { return ''; } })(),
     });
     try {
       await mailer.sendMail(cfg, { to: user.email, ...message });
