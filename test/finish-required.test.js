@@ -46,21 +46,20 @@ test('a done task says what was done and what comes next; the setup and the word
   const t1 = await give('Call about the scholarship');
   assert.strictEqual((await tick(t1)).status, 400, 'nothing said: refused');
   assert.match((await tick(t1, { note: 'ok', next: 'none' })).json.error, /few words/, 'a word or two is not enough');
-  // 2. What next: the last open task of a student still on the way.
+  // 2. No follow-up question is asked (the owner, 18 Nov 2026: removed from every task): words are enough, even as the last open task of a
+  // student still on the way. A next day given on purpose through the API still makes a task for the same team.
   const state = (await fu('POST', `/api/cards/${id}/tasks/${t1}`, { finishState: true })).json.state;
-  assert.strictEqual(state.needsNext, true);
-  assert.match((await tick(t1, { note: 'Called, she will decide by Friday.' })).json.error, /follow up next/);
-  assert.match((await tick(t1, { note: 'Called, she will decide by Friday.', next: add(-1) })).json.error, /past/);
-  assert.strictEqual((await tick(t1, { note: 'Called, she will decide by Friday.', next: add(3), nextText: 'Ask for her decision' })).status, 200);
-  const after = await tasks();
-  const follow = after.find((x) => x.text === 'Ask for her decision');
-  assert.ok(follow && !follow.done && follow.team === 'followup', 'the follow-up is a task for the same team');
-  assert.strictEqual(follow.doOn, add(3), 'waiting for the day chosen');
+  assert.ok(!state.needsNext, 'nothing about a follow-up is asked');
+  assert.strictEqual((await tick(t1, { note: 'Called, she will decide by Friday.' })).status, 200);
+  assert.strictEqual((await tasks()).filter((x) => !x.done).length, 0, 'no follow-up task was made by itself');
   assert.ok((await admin('GET', `/api/cards/${id}`)).json.card.notes.some((n) => /decide by Friday/.test(n.text)), 'what was done is a note');
+  const t1b = await give('Call about the intake');
+  assert.strictEqual((await tick(t1b, { note: 'Called, she will decide by Friday.', next: add(3), nextText: 'Ask for her decision' })).status, 200);
+  const follow = (await tasks()).find((x) => x.text === 'Ask for her decision');
+  assert.ok(follow && !follow.done && follow.team === 'followup' && follow.doOn === add(3), 'a day given on purpose: a task for the same team, waiting for that day');
   // With another task still open, nothing more is asked.
   const t2 = await give('Send the fee list');
-  assert.strictEqual((await fu('POST', `/api/cards/${id}/tasks/${t2}`, { finishState: true })).json.state.needsNext, false);
-  assert.strictEqual((await tick(t2, { note: 'Sent the fee list on WhatsApp.' })).status, 200);
+    assert.strictEqual((await tick(t2, { note: 'Sent the fee list on WhatsApp.' })).status, 200);
   // "Not needed" is an answer too; a student who has left is never asked.
   assert.strictEqual((await tick(follow.id, { note: 'She chose to study in Australia.', next: 'none' })).status, 200);
   const wb = (await admin('GET', '/api/data')).json;

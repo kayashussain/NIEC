@@ -563,13 +563,7 @@ function createPortalApi({
   //      day) or says no follow-up is needed. A task that already makes its own next task (a mock set for a day, a medical booked) does
   //      not ask.
   const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
-  const TRACK_TAGS = ['application', 'offer', 'mock', 'payment', 'noc', 'medical', 'visa'];
   const MIN_NOTE = 8; // characters: "Called." is not enough, "Sent the checklist." is
-  function needsNextStep(found, task) {
-    const stage = text(found.row[STATUS]);
-    if (stage === 'Visa Issued' || Fields.LOST_STAGES.includes(stage)) return false;
-    return !(cards.get(found.row._id).tasks || []).some((x) => !x.done && x.id !== task.id);
-  }
   // The next step as chosen: null (not needed), { day, text }, or { error }.
   function nextStepOf(f, task) {
     const v = text(f && f.next);
@@ -610,9 +604,7 @@ function createPortalApi({
       courseTask: own ? { id: own.id, university: own.university, course: own.course, partner: own.partner || '', answered: !assignedOf(card).some((a) => a.id === own.id) } : null,
       offerTask: offerFor,
       // Mock tasks ask no follow-up day either (the owner, 18 Nov 2026): a mock set makes its own feedback task, and the rest is the team's work.
-      needsNext: !own && !offerFor && kind !== 'mock' && needsNextStep(found, task), stage: text(row[STATUS]), minNote: MIN_NOTE,
-      // A task that tracks the student's journey cannot be closed with a note alone and no next step (unless the student's journey has ended).
-      trackTag: task.team !== HEAD && kind !== 'mock' && needsNextStep(found, task) && TRACK_TAGS.includes(kind) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(row[STATUS])),
+      stage: text(row[STATUS]), minNote: MIN_NOTE, // (no follow-up question when a task is done: the owner, 18 Nov 2026)
     };
   }
   // Works out what finishing `task` with the answers `f` changes, without writing anything. Returns { error } or
@@ -1651,7 +1643,7 @@ function createPortalApi({
           const f = body.finish && typeof body.finish === 'object' ? body.finish : null;
           // What the "Mark as done?" window shows before it asks (see finishState).
           if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task) }); return true; }
-          // Done needs what happened, and the next step when the student would be left without one (see needsNextStep).
+          // Done needs what happened (an answer, or a few words).
           if (body.done && !task.done && !f) { sendJSON(res, 400, { error: 'Say what was done first.' }); return true; }
           const hasKeys = Boolean(f) && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText', 'generic', 'waiting'].includes(k) && f[k] !== undefined && f[k] !== '');
           // An answer counts only when it records something: an extra word in the request is not an answer (the few words are then needed).
@@ -1669,12 +1661,10 @@ function createPortalApi({
             }
             // An answer to the task's question says what happened by itself; without one, a few words are needed.
             if (!answered && text(f.note).length < MIN_NOTE) { sendJSON(res, 400, { error: 'Write in a few words what was done, so the next person knows.' }); return true; }
-            // A tracking task closed with a note alone records nothing: the student must then have a next step with a real day.
-            const skipNext = Boolean(courseOf(cards.get(found.row._id), task)) || Fields.taskTag(task, text(found.row[STATUS])) === 'mock' || (Fields.taskTag(task, text(found.row[STATUS])) === 'offer' && answered);
-            const trackOnly = !skipNext && !answered && f.generic !== true && f.waiting !== true && task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
-            if (trackOnly && (f.next === undefined || f.next === '' || f.next === 'none')) { sendJSON(res, 400, { error: 'This was the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return true; }
-            if (((!skipNext && needsNextStep(found, task)) || trackOnly || f.waiting === true) && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
-              if (f.next === undefined || f.next === '') { sendJSON(res, 400, { error: 'This was the last open task for this student: choose the day to follow up next, or "Not needed".' }); return true; }
+            // No follow-up question is asked when a task is done (the owner, 18 Nov 2026: it is removed from every kind of task). A next day is
+            // made only when one is given on purpose: the Offer request that is not answered yet ("ask the university again on ...").
+            const wantsStep = f.waiting === true || (f.next !== undefined && f.next !== '' && f.next !== 'none');
+            if (wantsStep && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
               step = nextStepOf(f, task);
               if (step && step.error) { sendJSON(res, 400, { error: step.error }); return true; }
               if (f.waiting === true && !step) { sendJSON(res, 400, { error: 'Choose the day to check for the offer letter again.' }); return true; }

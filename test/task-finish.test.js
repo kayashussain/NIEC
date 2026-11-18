@@ -251,16 +251,15 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     // With other tasks still open for the student, words alone are enough (nobody is left without a next step).
     const g = await giveT('Check on the NOC', 'noc');
     assert.strictEqual((await finishT(g, { note: 'Spoke to the student, ok' })).status, 200, 'other tasks are still open: words only are enough');
-    // The student's last open task closed with words only needs a real next day, never "Not needed".
+    // No follow-up question for any task (the owner, 18 Nov 2026): even the student's last open task closes with words only.
     const solo = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Solo', 'LAST NAME': 'Task', 'CONTACT NUMBER': '9800000099' } })).json.id;
     const soloTask = (await admin('POST', `/api/cards/${solo}/tasks`, { team: 'application', text: 'Check on the NOC', tag: 'noc' })).json.card.tasks[0].id;
     const soloFinish = (f) => app('POST', `/api/cards/${solo}/tasks/${soloTask}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
-    assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok' })).status, 400, 'the last open task, words only, no next day');
-    assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok', next: add(3) })).status, 200, 'with a next day');
+    assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok' })).status, 200, 'the last open task, words only, no next day asked');
     // A Mock task asks no follow-up day: words are enough, even as the last open task, and none is made.
     const solo4 = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Mock', 'LAST NAME': 'Only', 'CONTACT NUMBER': '9800000096' } })).json.id;
     const mockT = (await admin('POST', `/api/cards/${solo4}/tasks`, { team: 'application', text: 'Ask the university for the mock feedback', tag: 'mock' })).json.card.tasks[0].id;
-    assert.strictEqual((await app('POST', `/api/cards/${solo4}/tasks/${mockT}`, { finishState: true })).json.state.needsNext, false, 'no follow-up question for a Mock task');
+    assert.strictEqual((await app('POST', `/api/cards/${solo4}/tasks/${mockT}`, { finishState: true })).json.state.needsNext, undefined, 'no follow-up question is asked');
     assert.strictEqual((await app('POST', `/api/cards/${solo4}/tasks/${mockT}`, { done: true, finish: { note: 'Asked for the feedback.', confirmed: true } })).status, 200);
     assert.strictEqual((await admin('GET', `/api/cards/${solo4}`)).json.card.tasks.filter((x) => !x.done).length, 0, 'no follow-up task was made');
     // A task tagged Application that is not about an application ("ask the university for the mock feedback"): the person says so, and words are
@@ -268,7 +267,6 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     const solo2 = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Feedback', 'LAST NAME': 'Task', 'CONTACT NUMBER': '9800000098' } })).json.id;
     const fbTask = (await admin('POST', `/api/cards/${solo2}/tasks`, { team: 'application', text: 'Mock interview given for Roehampton to TOR. Ask for the feedback.', tag: 'application' })).json.card.tasks[0].id;
     const fbFinish = (f) => app('POST', `/api/cards/${solo2}/tasks/${fbTask}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
-    assert.strictEqual((await fbFinish({ note: 'Asked TOR for the feedback.' })).status, 400, 'tagged Application, last task, words only, no day');
     assert.strictEqual((await fbFinish({ note: 'Asked TOR for the feedback.', generic: true })).status, 200, 'said not to be about an application: words are enough');
   }
   // A student who has withdrawn gets no new applications from a team; removing the "Apply for" task puts its courses back on the Shortlist.
@@ -297,7 +295,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     assert.strictEqual(applyTasks.length, 3, 'three courses, three tasks');
     const fin3 = (tid, f) => app('POST', `/api/cards/${solo3}/tasks/${tid}`, { done: true, finish: { ...f, confirmed: true } });
     const st = (await app('POST', `/api/cards/${solo3}/tasks/${applyTasks[0].id}`, { finishState: true })).json.state;
-    assert.deepStrictEqual([st.courseTask.university, st.courseTask.course, st.needsNext], ['Alpha Course University', 'BSc A', false], 'the course comes with the task, and no follow-up is asked');
+    assert.deepStrictEqual([st.courseTask.university, st.courseTask.course, st.needsNext], ['Alpha Course University', 'BSc A', undefined], 'the course comes with the task, and no follow-up is asked');
     const alpha = applyTasks.find((x) => /Alpha/.test(x.text)); const beta = applyTasks.find((x) => /Beta/.test(x.text)); const gamma = applyTasks.find((x) => /Gamma/.test(x.text));
     // Applied: only the day; the other two courses are not asked about in this task.
     assert.strictEqual((await fin3(alpha.id, { app: 'record', date: today, unis: [{ university: 'Alpha Course University', course: 'BSc A', what: 'submitted', date: today }] })).status, 200);

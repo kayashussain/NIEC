@@ -659,38 +659,7 @@
         words.input.rows = 2; words.input.dataset.words = '1'; words.input.dataset.was = words.input.placeholder;
         form.append(words.wrap);
         if (state && (state.courseTask || state.offerTask)) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren('Notes (optional)'); words.input.placeholder = 'e.g. Application ID 12345.'; }
-        // What next: when this is the student's last open task and the student is still on the way, the team picks the day someone
-        // gets back to them, or says it is not needed. One tap for the usual days.
-        let nextValue = '';
-        const nextBox = el('div', 'p-field p-wide td-next');
-        let nextText = null;
-        if (state && (state.needsNext || state.trackTag)) {
-          const plus = (n) => { const d = new Date(Date.parse(today + 'T12:00:00Z') + n * 86400000); return d.toISOString().slice(0, 10); };
-          nextBox.append(el('span', 'p-label', 'When should someone get back to this student? (required)'));
-          nextBox.append(el('p', 'p-muted p-small td-next-why', state.needsNext ? 'This is the last open task for this student. Pick a day (or "Not needed" if you recorded something above), so nobody is forgotten.' : 'Needed only if you record nothing above: pick the day someone gets back to the student.'));
-          const custom = field('', { kind: 'date', value: '' });
-          custom.input.min = today;
-          custom.input.setAttribute('aria-label', 'Follow-up day');
-          custom.wrap.hidden = true;
-          const pick = picker([['1', 'Tomorrow'], ['3', 'In 3 days'], ['7', 'In a week'], ['day', 'Choose a day'], ['none', 'Not needed']], '', (k) => `td-prio td-answer ans-${k}`, 'When to follow up');
-          pick.node.addEventListener('click', () => setTimeout(() => {
-            const k = pick.value();
-            nextValue = k === 'none' ? 'none' : k === 'day' ? custom.input.value : plus(Number(k));
-            custom.wrap.hidden = k !== 'day';
-            nextText.wrap.hidden = !k || k === 'none';
-            if (k === 'day') custom.input.focus();
-          }, 0));
-          custom.input.addEventListener('change', () => { if (pick.value() === 'day') nextValue = custom.input.value; });
-          nextText = field('', { max: 300, placeholder: 'What to do then (optional), e.g. Ask if the bank statement is ready' });
-          nextText.input.setAttribute('aria-label', 'What to do then');
-          nextText.wrap.hidden = true;
-          nextBox.append(pick.node, custom.wrap, nextText.wrap);
-          form.append(nextBox);
-        }
-        const makesOwnNext = () => { const a = read(); return a.mock === 'set' || a.medical === 'booked'; };
-        // A mock set for a day or a medical booked already gives the team its next task on that day: no need to ask.
-        const syncNext = () => setTimeout(() => { nextBox.hidden = makesOwnNext(); }, 0);
-        form.addEventListener('click', syncNext); form.addEventListener('change', syncNext);
+        // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
         ask.append(msg, el('p', 'p-muted p-small', asks ? 'Nothing is saved until you check it on the next step.' : "Saved in the student's notes."));
         const foot = el('div', 'p-dialog-foot');
         const next = h('button', { class: 'btn btn-primary', type: 'button' }, asks ? 'Next: check' : 'Yes, it is done');
@@ -699,12 +668,7 @@
           if (problem) { fail({ message: problem }); return; }
           const recorded = Object.keys(read()).length > 0;
           if (!recorded && words.input.value.trim().length < minNote) { fail({ message: 'Write in a few words what was done, so the next person knows.' }); words.input.focus(); return; }
-          // A tracking task closed with words only records nothing: the student then needs a next step with a real day, never "Not needed".
-          const wordsOnly = !recorded && state && state.trackTag;
-          const wantsNext = state && (state.needsNext || wordsOnly) && !makesOwnNext() && (state.needsNext || !recorded);
-          if (wordsOnly && !notAbout() && !makesOwnNext() && nextValue === 'none') { fail({ message: 'This is the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return; }
-          if (wantsNext && !nextValue) { fail({ message: 'Choose when someone should get back to this student, or "Not needed".' }); return; }
-          const answers = { ...read(), ...(notAbout() ? { generic: true } : {}), note: words.input.value.trim() || fallbackNote(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
+          const answers = { ...read(), ...(notAbout() ? { generic: true } : {}), note: words.input.value.trim() || fallbackNote() };
           if (!asks) { answer = answers; close(true); return; }
           next.disabled = true;
           try { const r = await api(url, { done: true, finish: answers, preview: true }); msg.textContent = ''; msg.className = 'p-msg'; review(r.preview, answers); } catch (e) { fail(e); }
