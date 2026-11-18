@@ -186,6 +186,9 @@
     return 'other';
   }
   const taskTag = (task, stage) => (TASK_TAG_IDS.includes(task && task.tag) ? task.tag : guessTaskTag(task && task.text, task && task.team, stage));
+  // The task ISR gives by itself on the day of a medical test ("Medical test of 19 Nov 2026 at Norvic: is the report received?").
+  // It is about the report, not about booking, so finishing it never asks for a booking again (see finishPlan in portal-api.js).
+  const isReportCheck = (task) => /^Medical test of .+: is the report received\?$/i.test(String((task && task.text) || '').trim());
   // How important a task is, chosen by whoever gives it (the owner, 15 Nov 2026): every task is Priority unless it is marked Super
   // priority or Medium. Older tasks with nothing chosen count as Priority.
   const TASK_PRIORITIES = [['super', 'Super priority'], ['high', 'Priority'], ['medium', 'Medium']];
@@ -193,7 +196,7 @@
   const taskPriorityOf = (task) => (TASK_PRIORITY_IDS.includes(task && task.priority) ? task.priority : 'high');
 
   return {
-    TASK_TAGS, TASK_TAG_IDS, guessTaskTag, taskTag, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
+    TASK_TAGS, TASK_TAG_IDS, guessTaskTag, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
     OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, SHEET_SECTIONS, columnLabel, whatsappNumber,
   };

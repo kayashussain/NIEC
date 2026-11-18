@@ -532,7 +532,11 @@
           check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'set' && !date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !slot.input.value ? 'Choose which mock.' : q.value() === 'feedback' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !result.value() ? 'Choose Passed or Fail.' : '');
         } else if (tag === 'medical') {
           nowLine(['MEDICAL REPORT']);
-          const q = question('The medical test', [['booked', 'Booked'], ['received', 'Report received'], ['notBooked', 'Not booked yet'], ['none', 'Nothing to record']], (v) => { show(date.wrap, v === 'booked'); show(place.wrap, v === 'booked' || v === 'received'); show(hint, v === 'booked'); });
+          // The task ISR gives on the day of the test asks about the report, so "Booked" is not the first answer there (the team 18 Nov
+          // 2026: ticking it made the same task again). Not received yet closes it; the next step below says when to look again.
+          const isCheck = Boolean(F().isReportCheck && F().isReportCheck(t));
+          const answers = isCheck ? [['received', 'Report received'], ['waiting', 'Not received yet'], ['booked', 'Booked again for another day'], ['none', 'Nothing to record']] : [['booked', 'Booked'], ['received', 'Report received'], ['notBooked', 'Not booked yet'], ['none', 'Nothing to record']];
+          const q = question('The medical test', answers, (v) => { show(date.wrap, v === 'booked'); show(place.wrap, v === 'booked' || v === 'received'); show(hint, v === 'booked'); });
           const date = dateField('Booked for');
           const place = field('Hospital or clinic', { max: 200, placeholder: 'e.g. IOM Kathmandu' });
           form.append(place.wrap);

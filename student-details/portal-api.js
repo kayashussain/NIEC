@@ -727,7 +727,15 @@ function createPortalApi({
       } else return { error: 'Choose what happened.' };
     } else if (kind === 'medical' && f.medical && f.medical !== 'none') {
       const place = text(f.place).slice(0, 200);
-      if (f.medical === 'booked') {
+      // The report check ISR gives on the day of the test (the owner's team, 18 Nov 2026: "I finish it and it comes back"): "Booked"
+      // for the same day it is already booked for is the same as "not received yet", so no second identical task is ever made.
+      const sameBooking = (d) => Boolean(d) && Fields.isReportCheck(task) && (text(task.text).startsWith(`Medical test of ${niceDay(d)}`) || (card.medical && card.medical.date === d));
+      if (f.medical === 'waiting') {
+        plan.note = `Medical report not received yet${place ? ` (${place})` : ''}. ${sentence(note)}`.trim();
+      } else if (f.medical === 'booked' && sameBooking(day(f.date))) {
+        plan.note = `Medical test still booked for ${niceDay(day(f.date))}${place ? ` at ${place}` : ''}: report not received yet. ${sentence(note)}`.trim();
+        plan.warnings.push('The medical test is already booked for this day, so no new "is the report received?" task is made.');
+      } else if (f.medical === 'booked') {
         const d = day(f.date);
         if (!d) return { error: 'Choose the day the medical test is booked for.' };
         // Booked, and on that day the team is asked to confirm the report (the owner, 16 Nov 2026: never Received by itself).
@@ -835,7 +843,9 @@ function createPortalApi({
         if (made.option) wrote.options.push({ id: made.option.id, before: null });
       }
     });
-    if (plan.remind) {
+    // Never a second open task with the same words for the same team (a task finished twice, or two people finishing together).
+    const twin = plan.remind && (cards.get(rowId).tasks || []).some((x) => !x.done && x.id !== task.id && x.team === task.team && squash(x.text) === squash(plan.remind.text));
+    if (plan.remind && !twin) {
       const team = task.team === HEAD ? (plan.remind.tag === 'mock' ? 'mock' : task.team) : task.team;
       const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: plan.remind.tag, priority: 'high' }, by(req));
       if (!made.error) { wrote.remind = made.task.id; if (plan.remind.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: plan.remind.day, reason: plan.remind.tag === 'medical' ? 'On the day of the medical test' : 'On the day of the mock interview' }, by(req), cards.today()); }

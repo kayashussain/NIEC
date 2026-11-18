@@ -88,6 +88,25 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.ok(ask.length === 2 && ask.some((x) => x.doOn === add(5)) && ask.some((x) => !x.doOn), 'the team is asked on the day of each booking');
   assert.match((await notes()).join('\n'), /Medical test booked for .* at IOM Kathmandu\./);
 
+  // The team's report: finishing "is the report received?" never makes the same task again (18 Nov 2026), whichever way it is answered.
+  const openReports = async () => (await admin('GET', `/api/cards/${id}`)).json.card.tasks.filter((x) => /is the report received\?/.test(x.text) && !x.done);
+  const rc5 = ask.find((x) => x.doOn === add(5));
+  assert.strictEqual((await finish(rc5.id, { medical: 'booked', date: add(5), place: 'iom kathmandu' })).status, 200, 'booked again for the same day');
+  assert.deepStrictEqual((await openReports()).map((x) => x.id), [ask.find((x) => !x.doOn).id], 'no twin of the finished report task');
+  const rcToday = ask.find((x) => !x.doOn);
+  assert.strictEqual((await finish(rcToday.id, { medical: 'waiting', note: 'Report not out yet.' })).status, 200, 'not received yet');
+  assert.deepStrictEqual(await openReports(), [], 'finished means finished: nothing comes back');
+  assert.strictEqual((await row())['MEDICAL REPORT'], 'Booked', 'still Booked, never Received by itself');
+  assert.match((await notes()).join('\n'), /Medical report not received yet/);
+  // A new day is a real new booking and does ask again.
+  const d3 = await give('Rebook the medical test', 'medical');
+  assert.strictEqual((await finish(d3, { medical: 'booked', date: add(9), place: 'Norvic' })).status, 200);
+  const again = (await openReports())[0];
+  assert.ok(again && again.doOn === add(9));
+  assert.strictEqual((await finish(again.id, { medical: 'booked', date: add(9), place: 'Norvic Hospital' })).status, 200);
+  assert.deepStrictEqual(await openReports(), [], 'the same day with another spelling of the place is still the same booking');
+  assert.strictEqual((await finish(await give('Check the report', 'medical'), { medical: 'received' })).status, 200);
+
   // Payment: Payment Date and the first empty deposit; Visa and CAS: the step's date, and the stage moves on (never back).
   const p1 = await give('Collect the deposit', 'payment');
   assert.strictEqual((await finish(p1, { paid: true, date: today, amount: '5,000' })).status, 200);
