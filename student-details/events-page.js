@@ -90,7 +90,7 @@
     ['Event or campaign', 'Cost', 'Inquiries', 'To follow up', 'Visas', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
     list.replaceChildren(head, ...shown.map((a) => {
       const r = el('div', 'ev-lrow item');
-      r.tabIndex = 0; r.setAttribute('role', 'button'); r.setAttribute('aria-label', `Open ${a.name}`);
+      r.tabIndex = 0; r.setAttribute('role', 'button'); // its name is the words in the row (the name, the cost ...), so what is seen is what is read out
       const who = el('div');
       who.append(el('div', 'ev-lname', a.name), el('div', 'ev-lmeta', where(a, [ran(a), intake === 'all' ? (a.intakeName || 'No intake yet') : ''])));
       const num = (label, v, k) => { const d = el('div', 'num' + (v === '-' ? ' none' : '') + (k ? ' ' + k : ''), v); d.dataset.label = label; return d; };

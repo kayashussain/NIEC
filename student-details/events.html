@@ -19,7 +19,8 @@
   .ev-band > div + div { border-left: 1px solid rgba(0, 0, 0, .06); }
   .ev-band span { display: block; color: #6e6e73; font-size: 13.5px; font-weight: 500; }
   .ev-band b { display: block; margin-top: 4px; color: #1d1d1f; font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-  .ev-band small { display: block; margin-top: 3px; color: #86868b; font-size: 13px; }
+  /* 🔴 CSS CHANGED (2026-11-18): the small grey line under each figure on Events and marketing is easier to read (a bug fix) | from: #86868b, contrast 3.5 to 1, below the 4.5 to 1 needed | to: #6e6e73, contrast 4.9 to 1 */
+  .ev-band small { display: block; margin-top: 3px; color: #6e6e73; font-size: 13px; }
   @media (max-width: 900px) { .ev-band { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ev-band > div + div { border-left: 0; } .ev-band > div { border-top: 1px solid rgba(0, 0, 0, .06); } .ev-band > div:first-child { grid-column: 1 / -1; border-top: 0; } }
   .ev-note { margin: -8px 0 16px; color: #6e6e73; font-size: 14px; line-height: 1.5; }
   .ev-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }

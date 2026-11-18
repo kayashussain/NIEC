@@ -549,6 +549,7 @@
       const fresh = tasks.tasks.reduce((n, x) => n + (x.history || []).filter((m) => m.isNew).length, 0);
       bellCount.textContent = fresh > 99 ? '99+' : String(fresh);
       bellCount.hidden = !fresh;
+      bell.setAttribute('aria-label', fresh ? `Notifications, ${fresh > 99 ? '99+' : fresh} new` : 'Notifications');
       bell.classList.toggle('has-new', fresh > 0);
       drawPop();
       const own = ownTeamCard(tasks);

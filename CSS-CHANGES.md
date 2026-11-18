@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-18 · student-details/events.html · the small grey line under each figure on Events and marketing · from: #86868b (contrast 3.5 to 1, below the 4.5 to 1 needed) · to: #6e6e73 (4.9 to 1) · why: easier to read, as the owner wants for older eyes.**
+
 - **2026-11-18 · shared/theme.css, student-details/style.css, student-details/portal.css, student-details/dashboard.css, student-details/phone.css · duplicate styles cleaned out, nothing on screen changes · from: 349 style lines (and 51 whole rules) that a later rule for the very same element set again, so they never had any effect; they only made the files longer and harder to read · to: those dead lines removed; every other line is untouched. Checked by taking a screenshot of every page, on a computer and a phone, before and after, and comparing them pixel by pixel · why: the owner asked for clean code with no CSS errors.**
 
 - **2026-11-18 · shared/theme.css, shared/ui.css · the hidden text helpers use clip-path · from: the old "clip: rect()" property that browsers have retired · to: "clip-path: inset(50%)", which hides the text in the same way (the message box label on Follow-up, and the screen-reader-only text) · why: a CSS check reported the old property.**
