@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 
 /* ---- the page ---- */
 body.p-body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--font); }
@@ -92,7 +93,7 @@ html:has(body.p-body) { scrollbar-gutter: stable; }
 /* ---- the student card ---- */
 .p-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; color: var(--text-dim); font-size: 13px; text-decoration: none; }
 .p-back:hover { color: var(--ink); }
-.p-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center; border-left: 4px solid var(--niec-blue); }
+.p-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; border-left: 4px solid var(--niec-blue); }
 .p-hero h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 28px; letter-spacing: -.02em; line-height: 1.2; color: var(--ink); overflow-wrap: anywhere; }
 .p-hero-line { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; margin-top: 6px; color: var(--text-dim); font-size: 13.5px; }
 .p-hero-line b { color: var(--text); font-weight: 600; }

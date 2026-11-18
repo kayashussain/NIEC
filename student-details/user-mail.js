@@ -82,7 +82,7 @@ function createUserMail(dir) {
       const pass = String((input && input.password) ?? '').replace(/[\r\n]/g, '').slice(0, 300);
       if (!pass) return { error: 'Type the password of that mailbox.' };
       const host = str(input && input.host, 200) || defaults.host;
-      if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host)) return { error: 'The mail server name does not look right.' };
+      if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host) || /(^|\.)(localhost|localdomain|local|internal|intranet|lan|home|corp)$/i.test(host)) return { error: 'The mail server name does not look right.' };
       const port = Number(input && input.port) || Number(defaults.port) || 465;
       if (!Number.isInteger(port) || port < 1 || port > 65535) return { error: 'The port must be a number such as 465 or 587.' };
       const security = SECURITIES.includes(input && input.security) ? input.security : (port === 587 ? 'starttls' : (defaults.security || 'ssl'));

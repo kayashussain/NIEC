@@ -30,7 +30,6 @@
       const a = document.createElement('a');
       a.href = t.href;
       a.title = t.hint;
-      a.setAttribute('aria-selected', String(t.id === here));
       if (t.id === here) a.setAttribute('aria-current', 'page');
       a.innerHTML = `<span>${t.label}</span><span class="pt-n" hidden></span>`;
       nav.append(a);

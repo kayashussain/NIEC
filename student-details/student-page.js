@@ -22,9 +22,10 @@
   if (embedded) {
     document.body.classList.add('p-embed');
     document.getElementById('closeEmbed').addEventListener('click', () => parent.postMessage({ niecCard: 'close' }, location.origin));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && !document.querySelector('dialog[open], .p-dialog')) parent.postMessage({ niecCard: 'close' }, location.origin); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !editingHero && !editingOrigin && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && !document.querySelector('dialog[open], .p-dialog')) parent.postMessage({ niecCard: 'close' }, location.origin); });
     // ← and → go to the previous and next student of the list the card was opened from (card-drawer.js), when nothing is being typed.
     document.addEventListener('keydown', (e) => {
+      if (editingHero || editingOrigin) return; // a form is open: its words are never lost to a keystroke
       if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const a = document.activeElement;
       if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable || a.closest('[role="tablist"], .p-seg, .p-tabs'))) return;
@@ -70,10 +71,18 @@
     form.append(dob.wrap, passNo.wrap, address.wrap, nation.wrap);
     const bar = el('div', 'p-bar');
     const msg = el('div', 'p-msg');
+    // What was in each box when it opened: only the boxes that were changed are saved, so a detail someone else fixed in the
+    // meantime (on the sheet or another card) is never put back to the old one.
+    const started = { dob: dob.input.value, passportNo: passNo.input.value, address: address.input.value, nationality: nation.input.value };
+    const startedSheet = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.value]));
     const save = async () => {
       try {
-        await api(`/api/cards/${id}/profile`, { dob: dob.input.value, passportNo: passNo.input.value.trim().toUpperCase(), address: address.input.value.trim(), nationality: nation.input.value });
-        await api(`/api/cards/${id}/sheet`, { fields: Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.value])) });
+        const nowProfile = { dob: dob.input.value, passportNo: passNo.input.value.trim().toUpperCase(), address: address.input.value.trim(), nationality: nation.input.value };
+        const tidy = (k, v) => (k === 'passportNo' ? String(v).trim().toUpperCase() : String(v).trim());
+        const profileChanged = Object.fromEntries(Object.entries(nowProfile).filter(([k, v]) => v !== tidy(k, started[k])));
+        if (Object.keys(profileChanged).length) await api(`/api/cards/${id}/profile`, profileChanged);
+        const sheetChanged = Object.fromEntries(Object.entries(inputs).filter(([k, i]) => i.value !== startedSheet[k]).map(([k, i]) => [k, i.value]));
+        if (Object.keys(sheetChanged).length) await api(`/api/cards/${id}/sheet`, { fields: sheetChanged });
         data = await api('/api/cards/' + encodeURIComponent(id));
         editingHero = false; say('Saved on the sheet'); render();
       } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; }

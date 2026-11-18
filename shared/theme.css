@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 /* ISR design system.
    One light look, made to be easy on the eyes through a long day: a soft grey canvas, panels that are a gentle off-white instead of glaring pure white, strong dark text (about 15 to 1 contrast), a calm blue for the main action and for focus, and larger, roomier type and controls.
    Every page loads this last, so a value here changes every page. Sections: tokens, base, buttons and fields, the sheet, cards and pages, Incentive, small screens. */
@@ -87,11 +88,9 @@
 
 /* ---------- 2. Base ---------- */
 html, body, button, input, select, textarea, table, th, td, dialog, a, .ui-toast, .ui-dialog, .ui-dialog * { font-family: var(--font); }
-body { background: var(--bg); color: var(--text); letter-spacing: 0; -webkit-font-smoothing: antialiased; font-size: 15px; line-height: 1.5; }
+body { letter-spacing: 0; font-size: 15px; line-height: 1.5; }
 h1, .stat-card .stat-value, .summary-title, .summary-row.final .value { font-family: var(--serif); }
 h1 { color: var(--ink); font-weight: 650; letter-spacing: -.03em; }
-
-::selection { background: color-mix(in srgb, var(--gold) 28%, transparent); }
 a { color: var(--gold-deep); }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 ::-webkit-scrollbar { width: 12px; height: 12px; }
@@ -104,9 +103,8 @@ a { color: var(--gold-deep); }
 
 /* ---------- 3. Buttons and fields ---------- */
 .btn, button.btn, a.btn {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 20px;
-  border: 0; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink);
-  font-size: 14.5px; font-weight: 600; text-decoration: none; cursor: pointer; box-shadow: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14.5px; text-decoration: none; cursor: pointer;
   transition: background-color .18s var(--ease), border-color .18s var(--ease), box-shadow .2s var(--ease), transform .12s;
 }
 .btn.btn-sm { min-height: 36px; padding: 0 16px; font-size: 13.5px; }
@@ -114,7 +112,7 @@ a { color: var(--gold-deep); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn:disabled, .btn:disabled:hover { opacity: .4; cursor: not-allowed; }
 .btn-danger { color: var(--red-fg); border-color: color-mix(in srgb, var(--red-fg) 38%, var(--border)); }
-.btn-danger:hover:not(:disabled) { background: var(--red-bg); border-color: var(--red-fg); }
+.btn-danger:hover:not(:disabled) { border-color: var(--red-fg); }
 .btn-primary, button.btn-primary, .btn.btn-primary, .topbar .btn-primary {
   color: var(--on-primary); border-color: var(--primary);
   background: var(--primary);
@@ -129,7 +127,7 @@ a { color: var(--gold-deep); }
 .topbar .btn-danger:hover:not(:disabled), .toolbar .btn-danger:hover:not(:disabled) { background: var(--red-bg); color: var(--red-fg); }
 
 input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], input:not([type]), select, textarea {
-  border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--panel); color: var(--ink);
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm); color: var(--ink);
   transition: border-color .18s, box-shadow .18s;
 }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 18%, transparent); }
@@ -143,16 +141,16 @@ input.search { width: 260px; }
 .save-status { font-size: 12px; color: var(--text-dim); }
 .status-summary { background: var(--bg); border: 0; padding: 2px 26px 12px; gap: 4px; }
 .stat-group-title { color: var(--text-dim); font-weight: 650; font-size: 12px; letter-spacing: .14em; }
-.stat-group-cards { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(104px, 1fr); gap: 10px; width: max(88%, 1240px); max-width: 100%; align-items: stretch; overflow-x: auto; padding: 4px 2px 10px; }
+.stat-group-cards { align-items: stretch; overflow-x: auto; padding: 4px 2px 10px; }
 .stat-card, .stat-card.stat-total {
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; min-width: 0; padding: 11px 4px 10px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; text-align: center;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--sh-1);
   transition: box-shadow .2s ease, border-color .2s ease, transform .2s var(--ease);
 }
 /* 🔴 CSS CHANGED (2026-11-12): number tiles above the sheet | from: lifted and changed border on hover as if clickable | to: no hover effect (they only show numbers) */
 .stat-card { cursor: default; }
-.stat-card .stat-value, .stat-card.stat-total .stat-value { font-size: 26px; font-weight: 600; color: var(--ink); letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.stat-card .stat-label { display: block; width: 100%; min-height: 2.5em; white-space: normal; line-height: 1.25; font-size: 12px; letter-spacing: .03em; color: var(--text-dim); font-weight: 600; overflow-wrap: normal; hyphens: manual; word-break: normal; }
+.stat-card .stat-value, .stat-card.stat-total .stat-value { font-weight: 600; color: var(--ink); letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat-card .stat-label { display: block; width: 100%; line-height: 1.25; font-size: 12px; letter-spacing: .03em; color: var(--text-dim); overflow-wrap: normal; hyphens: manual; word-break: normal; }
 .stat-card.stat-total { background: var(--gold-soft); border-color: color-mix(in srgb, var(--gold) 50%, var(--border)); box-shadow: inset 0 -3px 0 var(--gold), var(--sh-1); }
 .stat-card.stat-total .stat-label { color: var(--gold-deep); }
 
@@ -173,7 +171,6 @@ input.search { width: 260px; }
 #sheet td.calculated { background-color: transparent !important; color: var(--text-dim); font-style: normal; }
 #body td.active-cell { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 3px; }
 /* row colours, picked rows and worked-out cells: a coloured or picked row keeps its colour, the fee cells follow the row */
-#sheet td.date { padding-right: 32px; }
 #sheet tbody tr.rc-green td.col-idx { background-color: var(--rc-green); }
 #sheet tbody tr.rc-yellow td.col-idx { background-color: var(--rc-yellow); }
 #sheet tbody tr.rc-orange td.col-idx { background-color: var(--rc-orange); }
@@ -210,7 +207,7 @@ input.search { width: 260px; }
 .programs th { background: color-mix(in srgb, var(--gold-soft) 70%, var(--panel)); color: var(--head-ink); }
 #sheet td.date { padding-right: 32px; }
 .filter-menu { width: 264px; max-height: 380px; border-radius: 16px; border: 1px solid var(--border); background: var(--panel); box-shadow: var(--sh-3); font-size: 13px; overflow: hidden; }
-.filter-menu-title { padding: 12px 16px 2px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+.filter-menu-title { padding: 12px 16px 2px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
 .filter-menu-search { padding: 8px 12px 10px; border-bottom: 0; }
 .filter-menu-search input { height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--panel); font-size: 13px; }
 .filter-menu-actions { gap: 14px; padding: 0 16px 8px; border-bottom: 1px solid var(--border); }
@@ -265,7 +262,7 @@ select:not(.status-select):disabled { opacity: .5; cursor: not-allowed; }
 p.count:empty { display: none; }
 .doc { border-radius: var(--r-lg); box-shadow: var(--sh-2); }
 .doc h2 { color: var(--text); }
-.doc h2::before { content: ""; display: inline-block; width: 4px; height: 16px; margin-right: 10px; border-radius: 2px; background: var(--gold); vertical-align: -2px; }
+.doc h2::before { content: ""; display: inline-block; width: 4px; height: 16px; margin-right: 10px; border-radius: 2px; vertical-align: -2px; }
 .toc a { transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
 .toc a:hover, .toc a:focus-visible { background: var(--gold-soft); border-color: var(--gold); color: var(--gold-deep); }
 
@@ -294,7 +291,7 @@ p.count:empty { display: none; }
 .summary-card .summary-row .value { font-size: 16px; }
 .summary-card .summary-row .hint { font-size: 13px; line-height: 1.4; margin-left: 10px; }
 .summary-card .summary-row:not(.final):not(.pay-form):hover { background: var(--row-hover); }
-.summary-row.final { background: var(--soft); box-shadow: inset 3px 0 0 var(--gold); padding-top: 20px; padding-bottom: 20px; }
+.summary-row.final { background: var(--soft); padding-top: 20px; padding-bottom: 20px; }
 .summary-row.final .label, .summary-row.final .value { color: var(--ink); }
 .summary-row.final .label { font-size: 15.5px; }
 .summary-row.final .value { font-size: 28px; font-weight: 600; letter-spacing: -.03em; }
@@ -328,7 +325,7 @@ p.count:empty { display: none; }
 .p-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 38px 20px; text-align: center; color: var(--text-dim); }
 .p-empty b { color: var(--ink); font-size: 15px; font-weight: 650; }
 .p-empty::before { content: ""; width: 46px; height: 46px; margin-bottom: 6px; border-radius: 50%; background: var(--focus-dim) radial-gradient(circle at 50% 50%, var(--gold) 0 4px, transparent 5px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 25%, transparent); }
-.ui-toast { border-radius: 16px; box-shadow: var(--sh-3); animation: fly-pop .28s var(--ease) both; }
+.ui-toast { animation: fly-pop .28s var(--ease) both; }
 @keyframes fly-pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 dialog.p-dialog, .ui-dialog { animation: fly-pop .24s var(--ease) both; }
 dialog::backdrop { background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
@@ -350,7 +347,6 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
 label, .p-label, dt { font-size: 13.5px; }
 small, .p-small, .p-muted { font-size: 13.5px; }
 :focus-visible { outline-width: 3px; }
-::selection { background: color-mix(in srgb, var(--gold) 30%, transparent); }
 
 /* 🔴 CSS CHANGED (2026-11-12): fixes from the front-end review | from: the column filter arrow was a 12px by 18px bit of text; the sheet toolbar overflowed and wrapped button labels on a phone; the message-templates editor was pushed off the right edge on a phone; the phone menu strip was cut mid-word with no cue; Dashboard bar labels were cut with "..."; file buttons were the plain browser grey; the dialog's Stage and Note touched; hint messages covered the sheet tabs; some pages had smaller headings and table text than others; the student card pills and email ran past the card on a phone | to: a 30px real button for the filter arrow; a wrapping toolbar with one-line labels; stacked columns on a phone; a fade at the end of the phone menu; wrapped Dashboard labels; rounded file buttons; spacing in dialogs; messages at the top right; one heading size and 14.5px tables everywhere; wrapping pills, emails and tabs in the card */
 .filter-btn { display: inline-grid; place-items: center; min-width: 30px; min-height: 30px; margin-left: 4px; padding: 0; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; color: var(--text-dim); cursor: pointer; }
@@ -358,9 +354,10 @@ small, .p-small, .p-muted { font-size: 13.5px; }
 .topbar .btn, .toolbar .btn { white-space: nowrap; }
 .topbar, .topbar .toolbar-group { flex-wrap: wrap; }
 input[type="file"] { max-width: 100%; font: inherit; font-size: 14px; color: var(--text-dim); }
-input[type="file"]::file-selector-button { margin-right: 12px; padding: 9px 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
-input[type="file"]::file-selector-button:hover { background: color-mix(in srgb, var(--ink) 14%, transparent); }
+input[type="file"]::file-selector-button { font-size: 14px; }
 dialog .p-field, .ui-dialog .p-field, .p-form .p-field { margin-bottom: 12px; }
+/* 🔴 CSS CHANGED (2026-11-18): empty answer boxes in a form take no room (a bug fix) | from: the boxes for where-from details and remarks, empty until a source is chosen, still took a row and a gap, so Add student and Add many students had a blank space in the middle | to: an empty box is not shown, and appears when it has something in it */
+.p-form > .p-field:empty { display: none; }
 .ui-toasts { left: auto; right: 24px; top: 20px; bottom: auto; transform: none; align-items: flex-end; }
 .p-head h1 { font-size: 36px; font-weight: 650; letter-spacing: -.03em; }
 .p-head p { font-size: 16px; }
@@ -380,7 +377,7 @@ dialog .p-field, .ui-dialog .p-field, .p-form .p-field { margin-bottom: 12px; }
 [hidden] { display: none !important; }
 
 /* 🔴 CSS CHANGED (2026-11-12): the "Admin only" label next to page titles | from: tiny squeezed grey text on B2B and Agents, a yellow pill on Partner Universities | to: one clear small label, same on every page */
-h1 .p-chip, h1 .pill, h1 #adminOnly { font-family: var(--font); font-size: 12px; font-weight: 650; letter-spacing: .02em; line-height: 1; padding: 6px 10px; margin-left: 10px; vertical-align: middle; white-space: nowrap; border-radius: 999px; }
+h1 .p-chip, h1 .pill, h1 #adminOnly { font-family: var(--font); font-weight: 650; letter-spacing: .02em; line-height: 1; padding: 6px 10px; margin-left: 10px; vertical-align: middle; white-space: nowrap; border-radius: 999px; }
 
 /* 🔴 CSS CHANGED (2026-11-12): small text on the portal pages | from: labels, hints, table headings, chips and captions at 12px | to: 14px (hints and labels) and 13px (chips, table headings, small captions) so older eyes can read them */
 .p-label, .p-hint, .p-fact dt, .p-kpi small, .p-small, .p-muted.p-small { font-size: 14px; }
@@ -560,7 +557,7 @@ label span, .p-card label span { font-size: 14px; }
 .niec-sep { margin: 14px 12px 4px; padding-top: 12px; border-top: 1px solid var(--h-border, var(--border)); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
 @media (max-width: 900px) { .niec-sep { display: none; } }
 /* 🔴 CSS CHANGED (2026-11-13): the number tiles above the sheet (Total students ... Conversion rate) | from: one row that scrolled sideways inside itself, so on a zoomed-in browser the last tiles (Withdrawn, Conversion rate) were cut off | to: the tiles wrap onto a second row when the screen is narrower, so every tile is always visible */
-.stat-group-cards { display: grid; grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); grid-auto-columns: auto; width: 100%; max-width: 100%; overflow: visible; }
+.stat-group-cards { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); grid-auto-columns: auto; }
 /* 🔴 CSS CHANGED (2026-11-13): wide tables on Users and Partner Universities when the browser is zoomed in (screens up to 1280px wide) | from: the table was wider than the screen below 1100px, so the page scrolled sideways | to: cells and headings wrap from 1280px down, so the table always fits */
 @media (max-width: 1280px) {
   .page .card table, .table-card table, .p-table-wrap table { width: 100%; min-width: 0; table-layout: auto; }
@@ -605,11 +602,10 @@ html:has(#sheet) { overflow-y: auto; }
 }
 /* 🔴 CSS CHANGED (2026-11-13): Add student and other pop-up forms on short screens | from: the Cancel and Add buttons sat below the visible part of the pop-up, reachable only by scrolling inside the form | to: the buttons stay fixed at the bottom of the pop-up and the fields scroll above them */
 dialog.p-dialog { max-height: 94vh; overflow: auto; }
-.p-dialog-foot { position: sticky; bottom: 0; z-index: 2; background: var(--panel); padding-top: 12px; padding-bottom: 6px; margin-top: 8px; border-top: 1px solid var(--border); }
+.p-dialog-foot { position: sticky; bottom: 0; z-index: 2; background: var(--panel); padding-top: 12px; padding-bottom: 6px; margin-top: 8px; }
 /* 🔴 CSS CHANGED (2026-11-13): lists and tables when zoomed in | from: Events, B2B and Agents tables squeezed names and the Edit button into one-word lines, long labels on the Dashboard were cut with dots, and the Fact File section chips ran off the edge | to: those tables keep a readable width and scroll sideways with a shadow, labels wrap, and the chips wrap */
 .p-table-wrap > .p-table { min-width: 760px; }
 .p-table td button, .p-table td .p-link, .p-table td a { white-space: nowrap; }
-.p-table-wrap { box-shadow: inset -12px 0 10px -10px rgba(0,0,0,.16); }
 nav.toc { flex-wrap: wrap; overflow: visible; }
 /* 🔴 CSS CHANGED (2026-11-13): the side menu on short screens, the team note and card tabs on a phone, phone numbers in tables | from: the side menu was cut off at short heights with a hidden scroll bar (Today, Incentive and Log out out of reach); the "Application Team: ..." note ran off the screen on a phone; the student card tabs were cut at the right; phone numbers broke in the middle in tables | to: the menu gets a thin visible scroll bar, tighter spacing on short screens and a Log out area that stays at the bottom; the note and the tabs wrap onto more lines; phone numbers stay whole */
 .niec-header { scrollbar-width: thin; scrollbar-color: rgba(20,30,50,.28) transparent; }
@@ -640,7 +636,6 @@ input[type="date"]:not(.date-input) { min-height: 44px; border-radius: var(--r-s
 .page-head h1 + p, .p-head h1 + p { margin-top: 10px; max-width: 72ch; }
 #editor h3 { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border); }
 .p-form .btn-sm.btn-danger { justify-self: start; width: auto; }
-.p-x { width: 40px; height: 40px; font-size: 26px; border-radius: 50%; }
 .ov-row { align-items: start; }
 .ov-kpi { min-height: 188px; }
 .ov-kpi .ov-spark { margin-top: auto; }
@@ -671,7 +666,7 @@ input[type="date"]:not(.date-input) { min-height: 44px; border-radius: var(--r-s
 /* title row: title and save note on the left, search on the right; then one row of actions */
 body:has(#sheet) .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 10px; padding: 22px 32px 14px; }
 body:has(#sheet) .topbar::before { content: ""; order: 5; flex-basis: 100%; height: 0; }
-body:has(#sheet) .sheet-title { order: 1; margin: 0 6px 0 0; font-family: var(--serif); font-size: 32px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; color: var(--lux-ink); }
+body:has(#sheet) .sheet-title { order: 1; margin: 0 6px 0 0; line-height: 1.15; }
 body:has(#sheet) .topbar .save-status { order: 2; display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--green-fg) 9%, transparent); color: var(--green-fg); font-size: 13px; font-weight: 600; }
 body:has(#sheet) .topbar .save-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 body:has(#sheet) .topbar .team-note, body:has(#sheet) .topbar #viewOnly { order: 3; }
@@ -681,19 +676,16 @@ body:has(#sheet) .topbar .toolbar-group { order: 6; gap: 8px; flex-wrap: wrap; }
 body:has(#sheet) .topbar .toolbar-group:has(#undoBtn) { order: 7; margin-left: auto; padding-left: 0; border-left: 0; gap: 4px; }
 body:has(#sheet) .topbar .toolbar-group + .toolbar-group { border-left: 0; padding-left: 0; }
 body:has(#sheet) .topbar .toolbar-group:has(#addRow) { margin-left: 0; }
-body:has(#sheet) .topbar .toolbar-group .btn { min-height: 42px; padding: 0 18px; border: 1px solid var(--lux-line); border-radius: 10px; background: var(--panel); color: var(--lux-ink-2); font-weight: 600; font-size: 14.5px; }
-body:has(#sheet) .topbar .toolbar-group .btn:hover:not(:disabled) { border-color: var(--lux-ink-2); background: var(--panel); color: var(--lux-ink); }
+body:has(#sheet) .topbar .toolbar-group .btn:hover:not(:disabled) { border-color: var(--lux-ink-2); }
 body:has(#sheet) .topbar #undoBtn, body:has(#sheet) .topbar #redoBtn { border-color: transparent; background: transparent; }
-body:has(#sheet) .topbar #addRow { order: -1; border-color: var(--lux-ink); background: var(--lux-ink); color: #f6f4ef; box-shadow: 0 10px 22px -14px rgba(29, 47, 82, .9); }
-body:has(#sheet) .topbar #addRow:hover:not(:disabled) { background: var(--lux-ink-2); border-color: var(--lux-ink-2); color: #fff; box-shadow: 0 12px 26px -14px rgba(20, 27, 41, .95); }
-body:has(#sheet) .topbar #delRow { color: var(--red-fg); }
-body:has(#sheet) .topbar #delRow:hover:not(:disabled) { border-color: var(--red-fg); background: var(--red-bg); color: var(--red-fg); }
+body:has(#sheet) .topbar #addRow { order: -1; border-color: var(--lux-ink); }
+body:has(#sheet) .topbar #addRow:hover:not(:disabled) { border-color: var(--lux-ink-2); }
+body:has(#sheet) .topbar #delRow:hover:not(:disabled) { border-color: var(--red-fg); }
 /* the numbers: one panel, fine dividers, serif figures */
 body:has(#sheet) .status-summary { padding: 4px 32px 18px; background: transparent; }
-body:has(#sheet) .stat-group-cards { display: flex; flex-wrap: wrap; gap: 0; padding: 4px 0; border: 1px solid var(--lux-line); border-radius: 14px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04); overflow: hidden; }
-body:has(#sheet) .stat-card, body:has(#sheet) .stat-card.stat-total { flex: 1 1 0; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; min-width: min-content; width: auto; padding: 10px 11px 12px; border: 0; border-radius: 0; background: transparent; box-shadow: none; text-align: left; position: relative; }
-body:has(#sheet) .stat-card .stat-value, body:has(#sheet) .stat-card.stat-total .stat-value { font-family: var(--serif); font-size: 26px; font-weight: 600; color: var(--lux-ink); letter-spacing: 0; line-height: 1.1; }
-body:has(#sheet) .stat-card .stat-label, body:has(#sheet) .stat-card.stat-total .stat-label { min-height: 0; width: auto; color: var(--text-dim); font-weight: 550; white-space: normal; line-height: 1.25; }
+body:has(#sheet) .stat-card, body:has(#sheet) .stat-card.stat-total { text-align: left; position: relative; }
+body:has(#sheet) .stat-card .stat-value, body:has(#sheet) .stat-card.stat-total .stat-value { line-height: 1.1; }
+body:has(#sheet) .stat-card .stat-label, body:has(#sheet) .stat-card.stat-total .stat-label { min-height: 0; width: auto; }
 body:has(#sheet) .stat-card.stat-total .stat-label { color: var(--lux-ink); font-weight: 650; }
 @media (max-height: 820px) {
   body:has(#sheet) .stat-card, body:has(#sheet) .stat-card.stat-total { flex-direction: row; align-items: baseline; gap: 8px; padding: 6px 14px; }
@@ -703,14 +695,11 @@ body:has(#sheet) .stat-card.stat-total .stat-label { color: var(--lux-ink); font
   body:has(#sheet) .sheet-title { font-size: 26px; }
 }
 /* the table heading and rows */
-body:has(#sheet) .table-wrap { margin: 0 32px; border: 1px solid var(--lux-line); border-bottom: 0; border-radius: 14px 14px 0 0; }
-body:has(#sheet) #sheet thead th, body:has(#sheet) #sheet thead th.col-idx { background: #eef0f3; color: var(--lux-ink); font-weight: 650; border-bottom: 1.5px solid color-mix(in srgb, var(--lux-ink) 28%, transparent); }
+body:has(#sheet) .table-wrap { margin: 0 32px; border-bottom: 0; }
 body:has(#sheet) #sheet td { border-bottom-color: color-mix(in srgb, var(--lux-line) 75%, transparent); }
-body:has(#sheet) #sheet td.col-idx { color: color-mix(in srgb, var(--text-dim) 85%, transparent); }
 /* intake tabs and the footer */
 body:has(#sheet) .topbar, body:has(#sheet) .status-summary, body:has(#sheet) .sheet-tabs, body:has(#sheet) .footbar { flex-shrink: 0; }
-body:has(#sheet) .sheet-tabs { margin: 0 32px; padding: 8px 12px; border: 1px solid var(--lux-line); border-top: 1px solid var(--lux-line); border-radius: 0 0 14px 14px; background: var(--panel); }
-body:has(#sheet) .sheet-tab { color: var(--text-dim); font-weight: 550; }
+body:has(#sheet) .sheet-tabs { margin: 0 32px; border: 1px solid var(--lux-line); border-radius: 0 0 14px 14px; }
 body:has(#sheet) .sheet-tab.active { background: transparent; box-shadow: inset 0 -2px 0 var(--lux-bronze); border-radius: 6px 6px 0 0; color: var(--lux-ink); font-weight: 700; }
 body:has(#sheet) .footbar { padding: 10px 32px 14px; background: transparent; border-top: 0; }
 @media (max-width: 900px) {
@@ -739,53 +728,44 @@ body.p-embed .p-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 520px) { body:has(.p-embed-bar) .p-hero .p-hero-top h1 { font-size: 26px; } .p-hero-source { white-space: normal; } }
 body.p-embed .p-fact dd, body.p-embed .p-fact dd a { overflow-wrap: break-word; word-break: normal; }
 @media (max-width: 460px) { body.p-embed .p-facts { grid-template-columns: minmax(0, 1fr); } }
-.ns-many { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; margin: 0 0 18px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--soft); color: var(--text-dim); }
+.ns-many { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; margin: 0 0 18px; padding: 12px 16px; color: var(--text-dim); }
 
 /* 🔴 CSS CHANGED (2026-11-13): the student card, a calm and clean premium look (the card that opens from All Students, and the same page opened on its own) | from: first a light panel with a blue stripe, a bright blue button and grey pill tabs; then a heavy deep navy band with ivory text, champagne links and a bronze button | to: a light, calm top panel (soft off-white with a fine bronze line along its top), the name in a large navy serif, the initials in a soft navy circle with a thin bronze ring, the stage as a soft navy tag and the source as a fine outlined tag, a slim progress line of the student's journey (navy for steps done, bronze for where the student is now, grey for what is still to come, with "Step 3 of 8, Mock Stage" under it, or a calm amber note for Withdrawn, Hold, Defer and Visa Rejected), the details as a quiet two-column list, a navy "Send a message" and an outlined "Edit details"; tabs with a bronze line under the open one; panels with fine borders and roomy spacing, navy "Add note" and similar buttons, bronze timeline dots and quiet underlined "Remove" links */
 body:has(.p-embed-bar) .p-embed-bar { justify-content: flex-end; margin-bottom: 14px; padding-bottom: 0; border-bottom: 0; }
 body:has(.p-embed-bar) .p-embed-bar .btn { border: 1px solid var(--lux-line); background: var(--panel); color: var(--lux-ink-2); box-shadow: none; }
 body:has(.p-embed-bar) .p-embed-bar .btn:hover:not(:disabled) { border-color: var(--lux-ink-2); color: var(--lux-ink); }
 /* the top panel */
-body:has(.p-embed-bar) .p-card.p-hero { position: relative; overflow: hidden; padding: 28px 28px 24px; gap: 14px 20px; border: 1px solid var(--lux-line); border-left: 1px solid var(--lux-line); border-radius: 20px; background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 18px 40px -30px rgba(29, 47, 82, .45); }
-body:has(.p-embed-bar) .p-card.p-hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent 0%, var(--lux-bronze) 30%, var(--lux-bronze) 70%, transparent 100%); opacity: .85; }
-body:has(.p-embed-bar) .p-hero .p-avatar { width: 60px; height: 60px; background: var(--gold-soft); color: var(--lux-ink); font-family: var(--serif); font-size: 22px; font-weight: 600; box-shadow: 0 0 0 1.5px var(--lux-bronze), 0 0 0 5px color-mix(in srgb, var(--lux-bronze) 12%, transparent); }
-body:has(.p-embed-bar) .p-hero h1 { font-family: var(--serif); font-size: 32px; font-weight: 600; letter-spacing: 0; color: var(--lux-ink); }
+body:has(.p-embed-bar) .p-card.p-hero { position: relative; overflow: hidden; gap: 14px 20px; border-left: 1px solid var(--lux-line); color: var(--text); }
+body:has(.p-embed-bar) .p-card.p-hero::before { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent 0%, var(--lux-bronze) 30%, var(--lux-bronze) 70%, transparent 100%); opacity: .85; }
 body:has(.p-embed-bar) .p-hero-line { margin-top: 10px; gap: 8px; color: var(--text-dim); font-size: 14.5px; }
 body:has(.p-embed-bar) .p-hero-line .p-pill, body:has(.p-embed-bar) .p-hero-line .p-chip { padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 550; }
-body:has(.p-embed-bar) .p-hero-line .p-pill { border: 1px solid color-mix(in srgb, var(--lux-ink) 18%, transparent); background: var(--gold-soft); color: var(--lux-ink); font-weight: 650; }
-body:has(.p-embed-bar) .p-hero-line .p-chip { border: 1px solid var(--lux-line); background: transparent; color: var(--text-dim); }
 /* the journey line */
 body:has(.p-embed-bar) .p-journey { margin-top: 18px; }
-body:has(.p-embed-bar) .p-journey-bar { display: flex; gap: 4px; }
-body:has(.p-embed-bar) .p-journey-text { margin-top: 8px; font-size: 14px; color: var(--text-dim); }
+body:has(.p-embed-bar) .p-journey-bar { display: flex; }
+body:has(.p-embed-bar) .p-journey-text { margin-top: 8px; color: var(--text-dim); }
 body:has(.p-embed-bar) .p-journey-text b { color: var(--lux-ink); font-weight: 650; }
 body:has(.p-embed-bar) .p-journey.lost .p-journey-bar i { background: #e5e2da; }
 body:has(.p-embed-bar) .p-journey.lost .p-journey-text { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--amber-bg); color: var(--amber-fg); font-weight: 600; }
 /* the details */
 body:has(.p-embed-bar) .p-hero .p-facts { margin-top: 18px; padding-top: 16px; gap: 14px 24px; border-top: 1px solid var(--lux-line); }
-body:has(.p-embed-bar) .p-hero .p-fact dt { color: var(--text-dim); font-size: 13.5px; letter-spacing: .01em; }
-body:has(.p-embed-bar) .p-hero .p-fact dd { margin-top: 2px; color: var(--ink); font-weight: 550; font-size: 15px; }
-body:has(.p-embed-bar) .p-hero .p-fact dd a { color: var(--lux-ink); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--lux-bronze) 55%, transparent); text-underline-offset: 4px; }
+body:has(.p-embed-bar) .p-hero .p-fact dd { color: var(--ink); }
+body:has(.p-embed-bar) .p-hero .p-fact dd a { text-underline-offset: 4px; }
 /* 🔴 CSS CHANGED (2026-11-14): student card, the email | from: the email took two of the three columns, leaving a gap before Date of birth | to: one column like the others (a long email wraps), so the details read in the order asked: Email, Date of birth, Passport number, Address, WhatsApp ... */
 @media (max-width: 460px) { body:has(.p-embed-bar) .p-hero .p-fact:has(a[href^="mailto:"]) { grid-column: auto; } }
 body:has(.p-embed-bar) .p-hero-actions { margin-top: 6px; }
-body:has(.p-embed-bar) .p-hero-actions .btn { min-height: 44px; padding: 0 22px; border-radius: 12px; border: 1px solid var(--lux-line); background: var(--panel); color: var(--lux-ink-2); box-shadow: none; font-weight: 600; }
-body:has(.p-embed-bar) .p-hero-actions .btn:hover:not(:disabled) { border-color: var(--lux-ink-2); color: var(--lux-ink); }
-body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary { border-color: var(--lux-ink); background: var(--lux-ink); color: var(--brand-ivory); box-shadow: 0 10px 22px -14px rgba(29, 47, 82, .9); }
-body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary:hover:not(:disabled) { border-color: var(--lux-ink-2); background: var(--lux-ink-2); color: #fff; }
+body:has(.p-embed-bar) .p-hero-actions .btn { box-shadow: none; }
+body:has(.p-embed-bar) .p-hero-actions .btn:hover:not(:disabled) { border-color: var(--lux-ink-2); }
+body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary { border-color: var(--lux-ink); }
+body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary:hover:not(:disabled) { border-color: var(--lux-ink-2); }
 /* the tabs */
-body:has(.p-embed-bar) .p-tabs { gap: 6px; margin: 24px 0 18px; padding: 0; border-radius: 0; background: transparent; border-bottom: 1px solid var(--lux-line); width: 100%; }
-body:has(.p-embed-bar) .p-tabs button { padding: 10px 14px 12px; border-radius: 0; font-size: 15px; font-weight: 550; color: var(--text-dim); }
-body:has(.p-embed-bar) .p-tabs button[aria-selected="true"] { background: transparent; box-shadow: inset 0 -2px 0 var(--lux-bronze); color: var(--lux-ink); font-weight: 700; }
+body:has(.p-embed-bar) .p-tabs { border-bottom: 1px solid var(--lux-line); }
 /* the panels under the tabs */
-body:has(.p-embed-bar) #view .p-card:not(.p-hero) { padding: 24px 26px; border: 1px solid var(--lux-line); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 14px 32px -28px rgba(29, 47, 82, .4); }
-body:has(.p-embed-bar) #view .p-card:not(.p-hero) h2 { font-size: 18px; font-weight: 700; color: var(--lux-ink); letter-spacing: -.005em; }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .p-card-head { padding-bottom: 14px; border-bottom: 1px solid var(--lux-line); }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .p-facts { border-top: 0; }
-body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn { border: 1px solid var(--lux-line); background: var(--panel); color: var(--lux-ink-2); box-shadow: none; }
+body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn { box-shadow: none; }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn:hover:not(:disabled) { border-color: var(--lux-ink-2); color: var(--lux-ink); }
-body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary { border-color: var(--lux-ink); background: var(--lux-ink); color: var(--brand-ivory); }
-body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary:hover:not(:disabled) { background: var(--lux-ink-2); border-color: var(--lux-ink-2); color: #fff; }
+body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary { border-color: var(--lux-ink); }
+body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-primary:hover:not(:disabled) { border-color: var(--lux-ink-2); }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-danger { color: var(--red-fg); }
 @media (max-width: 520px) {
   body:has(.p-embed-bar) .p-card.p-hero { padding: 22px 18px 20px; }
@@ -796,10 +776,8 @@ body:has(.p-embed-bar) #view .p-card:not(.p-hero) .btn.btn-danger { color: var(-
 .niec-nav a[aria-current="page"] { color: var(--brand-navy); background: var(--gold-soft); box-shadow: inset 3px 0 0 var(--brand-bronze); }
 .niec-menu a[aria-current="page"] { color: var(--brand-navy); }
 :root { --h-gold: var(--brand-navy); }
-.niec-avatar { background: var(--brand-navy); color: var(--brand-champagne); }
 body:has(#sheet) .stat-group-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
-body:has(#sheet) .stat-card, body:has(#sheet) .stat-card.stat-total { flex: 0 0 160px; width: 160px; min-width: 160px; height: 70px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 8px 14px; border: 1px solid var(--lux-line); border-radius: 12px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04); }
-body:has(#sheet) .stat-card .stat-value, body:has(#sheet) .stat-card.stat-total .stat-value { font-size: 24px; }
+body:has(#sheet) .stat-card, body:has(#sheet) .stat-card.stat-total { flex: 0 0 160px; width: 160px; min-width: 160px; height: 70px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 8px 14px; }
 body:has(#sheet) .stat-card .stat-label, body:has(#sheet) .stat-card.stat-total .stat-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.25; }
 @media (max-height: 820px) {
   body:has(#sheet) .stat-card, body:has(#sheet) .stat-card.stat-total { flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 14px; }
@@ -885,7 +863,7 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 .bp-search { width: 380px; max-width: 100%; height: 46px; padding: 0 18px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font: inherit; font-size: 15px; }
 .bp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 18px; }
 @media (max-width: 560px) { .bp-grid { grid-template-columns: minmax(0, 1fr); } }
-.bp-card { display: flex; flex-direction: column; gap: 16px; padding: 22px 24px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 16px 34px -30px rgba(29, 47, 82, .5); }
+.bp-card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 16px 34px -30px rgba(29, 47, 82, .5); }
 .bp-card:hover { border-color: color-mix(in srgb, var(--brand-navy) 30%, var(--border)); }
 .bp-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .bp-name { padding: 0; border: 0; background: none; font: inherit; font-size: 19px; font-weight: 700; color: var(--brand-navy); text-align: left; cursor: pointer; }
@@ -897,16 +875,14 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 .bp-status.red { background: var(--red-bg); color: var(--red-fg); }
 .bp-submit { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--brand-navy) 16%, var(--border)); border-radius: 14px; background: color-mix(in srgb, var(--gold-soft) 55%, var(--panel)); }
 .bp-submit-title { color: var(--brand-navy); font-size: 14px; font-weight: 700; }
-.bp-submit-line { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
-.bp-submit-label { flex: 0 0 84px; color: var(--text-dim); font-size: 14px; }
+.bp-submit-line { flex-wrap: wrap; }
+.bp-submit-label { flex: 0 0 84px; }
 .bp-submit-line code { font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--brand-navy); overflow-wrap: anywhere; }
-.bp-portal { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border: 1px solid var(--brand-navy); border-radius: 10px; background: var(--panel); color: var(--brand-navy); font-size: 14px; font-weight: 650; text-decoration: none; }
-.bp-portal:hover { background: var(--gold-soft); }
+.bp-portal { display: inline-flex; align-items: center; text-decoration: none; }
 .bp-mini { min-height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font: inherit; font-size: 14px; font-weight: 600; color: var(--brand-navy); cursor: pointer; }
 .bp-facts { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 10px 16px; margin: 0; padding-top: 14px; border-top: 1px solid var(--border); font-size: 15px; }
 .bp-facts dt { color: var(--text-dim); font-size: 14px; }
 .bp-facts dd { margin: 0; overflow-wrap: anywhere; }
-.bp-lines { display: grid; gap: 2px; }
 /* 🔴 CSS CHANGED (2026-11-14): hint text no longer slanted | from: italic grey | to: plain grey (Apple never slants text) */
 .bp-none { color: var(--text-dim); }
 .bp-link { color: var(--brand-navy); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-bronze) 55%, transparent); text-underline-offset: 4px; }
@@ -961,29 +937,26 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 .tp-panel .p-field input, .tp-panel .p-field textarea { min-height: 46px; border-radius: 12px; font-size: 15px; line-height: 1.55; }
 .tp-label { display: block; margin: 16px 0 8px; color: var(--brand-navy); font-size: 14px; font-weight: 600; }
 .tp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.tp-chip { min-height: 32px; padding: 0 12px; border: 1px dashed color-mix(in srgb, var(--brand-navy) 30%, var(--border)); border-radius: 8px; background: color-mix(in srgb, var(--gold-soft) 35%, var(--panel)); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; color: var(--brand-navy); cursor: pointer; }
+.tp-chip { min-height: 32px; padding: 0 12px; cursor: pointer; }
 .tp-chip:hover { border-style: solid; border-color: var(--brand-navy); }
 
 /* 🔴 CSS CHANGED (2026-11-14): the old Today and task styles removed from this file (t-tile, t-card, t-task, t-tasks, t-clear, t-kind, p-task ...) | from: kept though no page used them any more | to: gone; nothing on screen changes, the new look is just below */
 /* 🔴 CSS CHANGED (2026-11-14): Today rebuilt as a quiet page of tasks and one "Needs attention" list | from: number tiles, buttons (Open All Students, Add many students, Follow-up, Dashboard), a plain task box and big work-list cards | to: a short greeting, a highlighted "Your tasks" panel (bronze edge, tasks grouped Late, Due today, Coming up, Later, each a soft row with a round tick, the task in larger type, the student and stage under it, the due date as a tag: red when late, amber today), then one calm "Needs attention" list, a line per kind of work with its count, opened with a click */
 .td-page { max-width: 1040px; margin: 0 auto; }
 .td-hello { margin: 4px 0 26px; }
-.td-kicker { display: inline-block; margin-bottom: 8px; color: var(--brand-bronze); font-size: 12.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.td-hello h1 { margin: 0; font-family: var(--brand-serif); font-size: 40px; font-weight: 600; line-height: 1.12; color: var(--brand-navy); }
+.td-kicker { display: inline-block; margin-bottom: 8px; font-size: 12.5px; font-weight: 700; text-transform: uppercase; }
+.td-hello h1 { margin: 0; font-family: var(--brand-serif); font-weight: 600; line-height: 1.12; color: var(--brand-navy); }
 .td-hello p { margin: 8px 0 0; color: var(--text-dim); font-size: 16px; }
-.td-tasks { position: relative; margin: 0 0 28px; padding: 26px 28px 22px; border: 1px solid var(--border); border-radius: 22px; background: linear-gradient(180deg, color-mix(in srgb, var(--brand-ivory) 70%, var(--panel)) 0, var(--panel) 120px); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 22px 44px -34px rgba(29, 47, 82, .55); overflow: hidden; }
-.td-tasks::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, var(--brand-bronze), color-mix(in srgb, var(--brand-bronze) 35%, transparent)); }
-.td-tasks-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+.td-tasks { position: relative; margin: 0 0 28px; border: 1px solid var(--border); border-radius: 22px; overflow: hidden; }
+.td-tasks::before { position: absolute; left: 0; top: 0; bottom: 0; }
+.td-tasks-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .td-tasks-head h2, .td-attn-head h2 { margin: 0; font-family: var(--brand-serif); font-size: 26px; font-weight: 600; color: var(--brand-navy); }
 .td-tasks-head p, .td-attn-head p { margin: 4px 0 0; color: var(--text-dim); font-size: 14.5px; }
 .td-sum { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
-.td-chip { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px; background: var(--soft); color: var(--brand-navy); font-size: 13.5px; font-weight: 700; }
+.td-chip { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px; background: var(--soft); color: var(--brand-navy); }
 .td-chip.is-today { background: var(--amber-bg); color: var(--amber-fg); }
-.td-group { margin-top: 18px; }
 .td-group h3 { margin: 0 0 8px; color: var(--text-dim); font-size: 12.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-.td-task { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: start; gap: 14px; margin-top: 8px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--edit-bg); transition: box-shadow .2s var(--ease), border-color .2s var(--ease); }
-.td-task:hover { border-color: var(--border-strong); box-shadow: 0 12px 26px -22px rgba(29, 47, 82, .6); }
-.td-task.is-today { border-left: 3px solid #c08a1e; }
+.td-task { display: grid; align-items: start; transition: box-shadow .2s var(--ease), border-color .2s var(--ease); }
 .td-check { width: 30px; height: 30px; margin-top: 1px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--brand-navy) 40%, var(--border)); border-radius: 50%; background: var(--panel); cursor: pointer; display: grid; place-items: center; }
 .td-check svg { width: 16px; height: 16px; fill: none; stroke: var(--brand-navy); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity .15s; }
 .td-check:hover svg { opacity: .35; }
@@ -993,12 +966,12 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 .td-task-text { color: var(--ink); font-size: 16.5px; font-weight: 600; line-height: 1.45; }
 .td-task.is-done .td-task-text { color: var(--text-dim); font-weight: 500; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-dim) 50%, transparent); }
 .td-task-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-.td-student { color: var(--brand-navy); font-size: 15px; font-weight: 700; text-decoration: none; }
+.td-student { text-decoration: none; }
 .td-student:hover { text-decoration: underline; text-decoration-color: var(--brand-bronze); text-underline-offset: 4px; }
-.td-from { color: var(--text-dim); font-size: 13px; white-space: nowrap; }
+.td-from { white-space: nowrap; }
 .td-empty { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 18px 20px; border: 1px dashed var(--border-strong); border-radius: 16px; color: var(--text-dim); font-size: 15.5px; }
 .td-empty svg { flex: 0 0 34px; width: 34px; height: 34px; padding: 7px; border-radius: 50%; background: var(--green-bg); fill: none; stroke: var(--green-fg); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.td-done-toggle { margin-top: 16px; padding: 0; border: 0; background: none; color: var(--brand-navy); font: inherit; font-size: 14.5px; font-weight: 600; text-decoration: underline; text-decoration-color: var(--brand-bronze); text-underline-offset: 4px; cursor: pointer; }
+.td-done-toggle { margin-top: 16px; padding: 0; border: 0; background: none; font: inherit; font-size: 14.5px; font-weight: 600; text-decoration-color: var(--brand-bronze); text-underline-offset: 4px; cursor: pointer; }
 .td-attn { padding: 24px 28px 14px; border: 1px solid var(--border); border-radius: 22px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 16px 34px -30px rgba(29, 47, 82, .45); }
 .td-attn-head { margin-bottom: 10px; }
 .td-attn-row { border-top: 1px solid var(--border); }
@@ -1010,7 +983,7 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 .td-attn-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .td-attn-words b { color: var(--brand-navy); font-size: 16.5px; font-weight: 700; }
 .td-attn-words small { color: var(--text-dim); font-size: 14px; }
-.td-attn-count { min-width: 40px; padding: 4px 12px; border-radius: 999px; background: var(--brand-navy); color: var(--brand-ivory); font-size: 14.5px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.td-attn-count { min-width: 40px; padding: 4px 12px; border-radius: 999px; font-size: 14.5px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
 .td-attn-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; padding: 0 4px 18px; }
 .td-attn-student, .md-person { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; color: inherit; text-decoration: none; }
 .td-attn-student:hover, .md-person:hover { background: var(--row-hover); }
@@ -1033,11 +1006,10 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 .md-page { max-width: 1180px; margin: 0 auto; }
 .md-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .md-kpi { display: flex; flex-direction: column; gap: 4px; padding: 20px 22px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 16px 34px -30px rgba(29, 47, 82, .45); }
-.md-kpi:first-child { box-shadow: inset 0 -3px 0 var(--brand-bronze), 0 1px 2px rgba(20, 27, 41, .04), 0 16px 34px -30px rgba(29, 47, 82, .45); }
 .md-kpi-label { color: var(--text-dim); font-size: 14px; font-weight: 700; }
 .md-kpi b { font-family: var(--brand-serif); font-size: 40px; font-weight: 600; line-height: 1.1; color: var(--brand-navy); font-variant-numeric: tabular-nums; }
 .md-kpi small { color: var(--text-dim); font-size: 13.5px; }
-.md-taskline { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; padding: 14px 20px; border: 1px solid var(--border); border-left: 4px solid var(--brand-bronze); border-radius: 14px; background: color-mix(in srgb, var(--brand-ivory) 60%, var(--panel)); color: var(--ink); text-decoration: none; }
+.md-taskline { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; padding: 14px 20px; border-radius: 14px; color: var(--ink); text-decoration: none; }
 .md-taskline b { color: var(--brand-navy); font-size: 16px; }
 .md-taskline span { color: var(--text-dim); font-size: 14.5px; }
 .md-taskline .md-taskline-go { margin-left: auto; color: var(--brand-navy); font-weight: 700; text-decoration: underline; text-decoration-color: var(--brand-bronze); text-underline-offset: 4px; }
@@ -1058,7 +1030,7 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 
 .md-bar-label { color: var(--ink); font-size: 14.5px; font-weight: 600; }
 .md-bar-track { height: 10px; border-radius: 99px; background: var(--soft); overflow: hidden; }
-.md-bar-fill { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--brand-navy), var(--brand-navy-2)); }
+.md-bar-fill { display: block; height: 100%; border-radius: 99px; }
 .md-bar-n { color: var(--brand-navy); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
 .md-people { display: flex; flex-direction: column; gap: 2px; }
 .md-date { padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--brand-navy); font-size: 13px; font-weight: 700; white-space: nowrap; }
@@ -1067,7 +1039,6 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 /* 🔴 CSS CHANGED (2026-11-14): card headings, card heads and form fields on every portal page (student card, Follow-up, Add many students, compose, templates, partners) | from: small 16px sans card headings; a card's Edit button dropped under a long heading; form fields 14px text, 38px high, the dropdowns smaller than the text boxes | to: card headings in the navy serif at 21px like the page titles; the heading shrinks so its button stays beside it; fields and dropdowns 15px text, 44px high, labels 13.5px, a soft navy ring when typing */
 .p-card > h2, .p-card-head h2 { font-family: var(--brand-serif); font-size: 21px; font-weight: 600; letter-spacing: 0; color: var(--brand-navy); }
 .p-card-head h2 { flex: 1 1 0; min-width: 9rem; }
-body:has(.p-embed-bar) #view .p-card:not(.p-hero) h2 { font-family: var(--brand-serif); font-size: 21px; font-weight: 600; letter-spacing: 0; color: var(--brand-navy); }
 .p-card-head > .btn, .p-card-head > button, .p-card-head > .td-chip { flex: 0 0 auto; }
 .p-field input, .p-field select, .p-field textarea, .p-input { min-height: 44px; font-size: 15px; border-radius: 12px; background: var(--edit-bg); }
 .p-field input:focus, .p-field select:focus, .p-field textarea:focus, .p-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent); }
@@ -1153,7 +1124,7 @@ body:has(.p-embed-bar) .p-journey-bar i.done { background: rgba(0, 113, 227, .38
 body:has(.p-embed-bar) .p-journey-bar i.now { background: #0071e3; }
 body:has(.p-embed-bar) .p-journey-text { font-size: 13.5px; }
 body:has(.p-embed-bar) .p-hero .p-facts { border-top-color: var(--border); }
-body:has(.p-embed-bar) .p-hero .p-fact dt { color: #66666b; font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+body:has(.p-embed-bar) .p-hero .p-fact dt { color: #66666b; font-weight: 600; text-transform: uppercase; }
 body:has(.p-embed-bar) .p-hero .p-fact dd { margin-top: 4px; font-size: 15px; font-weight: 500; }
 body:has(.p-embed-bar) .p-hero .p-fact dd a { text-decoration-color: rgba(0, 102, 204, .45); }
 body:has(.p-embed-bar) .p-hero-actions .btn { min-height: 38px; padding: 0 18px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font-weight: 500; }
@@ -1181,7 +1152,6 @@ body:has(.p-embed-bar) .p-hero .p-fact dd a:hover { text-decoration: underline; 
 /* ---- every page: titles, panels, buttons, fields, pills, tabs and tables in the same Apple-like look ---- */
 body .ov { --ov-track: #ececf0; }
 h1, .p-head h1, .page-head h1, .td-hello h1 { font-family: var(--font); font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
-.td-hello h1 { font-size: 44px; }
 h2, h3, .p-card > h2, .p-card-head h2, .md-card-head h2, .td-tasks-head h2, .td-attn-head h2, body:has(.p-embed-bar) #view .p-card:not(.p-hero) h2 { font-family: var(--font); font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 .p-card-head h2, .p-card > h2 { font-size: 19px; }
 .p-kpi b, .md-kpi b, .md-week-item b, .ov-kpi b, .ov-kpi-value, .stat-value { font-family: var(--font); font-weight: 600; letter-spacing: -.025em; color: var(--ink); }
@@ -1190,10 +1160,9 @@ h2, h3, .p-card > h2, .p-card-head h2, .md-card-head h2, .td-tasks-head h2, .td-
 .p-card, .page .card, .md-card, .md-kpi, .td-attn, .td-tasks, .p-kpi, .bp-card, .pu-card, .ov-card, .tp-panel, .bp-band, .ev-band, .p-table-wrap { border-color: rgba(0, 0, 0, .05) !important; border-radius: 20px; background: var(--panel); box-shadow: var(--sh-2); }
 .td-tasks { background: var(--panel); box-shadow: var(--sh-3); }
 .td-tasks::before { width: 3px; background: #0071e3; }
-.td-task { border-color: var(--border); background: #fdfdfe; border-radius: 14px; }
+.td-task { border-color: var(--border); }
 .td-task:hover { border-color: var(--border-strong); box-shadow: 0 4px 16px rgba(0, 0, 0, .05); }
-.md-kpi:first-child { box-shadow: inset 0 -3px 0 #0071e3, var(--sh-2); }
-.md-taskline { border: 0; border-left: 3px solid #0071e3; background: var(--panel); box-shadow: var(--sh-2); }
+.md-taskline { border: 0; background: var(--panel); box-shadow: var(--sh-2); }
 
 .md-bar-fill { background: #0071e3; }
 .td-attn-count { background: #e8e8ed; color: #1d1d1f; }
@@ -1244,7 +1213,6 @@ body:has(#sheet) .stat-card:hover { transform: translateY(-1px); box-shadow: 0 4
 body:has(#sheet) .stat-card .stat-value, body:has(#sheet) .stat-card.stat-total .stat-value { font-family: var(--font); font-size: 24px; font-weight: 600; letter-spacing: -.02em; color: #1d1d1f; }
 body:has(#sheet) .stat-card .stat-label, body:has(#sheet) .stat-card.stat-total .stat-label { color: #5f5f64; font-size: 13.5px !important; font-weight: 500; }
 body:has(#sheet) .stat-card.stat-total { box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
-body:has(#sheet) .stat-card.stat-total .stat-value { color: #0071e3; }
 body:has(#sheet) .stat-card.stat-rate { box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
 body:has(#sheet) .stat-card.stat-rate .stat-value { color: #248a3d; }
 /* pop-ups: Mac-style sheets */
@@ -1279,8 +1247,6 @@ details.td-attn-row[open] .td-attn-list { animation: isr-slide-down .35s var(--e
 ::view-transition-group(isr-menu), ::view-transition-group(isr-demo) { animation: none; }
 ::view-transition-old(isr-menu), ::view-transition-old(isr-demo) { display: none; }
 ::view-transition-new(isr-menu), ::view-transition-new(isr-demo) { animation: none; }
-::view-transition-old(root) { animation: isr-fade-out .15s ease-in both; }
-::view-transition-new(root) { animation: isr-page-in .42s cubic-bezier(.32, .72, 0, 1) both; }
 @supports (view-transition-name: none) { .page, .wrap, .app-main, .p-page { animation: none; } }
 @keyframes isr-page-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes isr-slide-down { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
@@ -1322,7 +1288,6 @@ button.p-link:hover { text-decoration: underline; color: #0066cc; }
 body:has(.p-embed-bar) .p-hero .p-fact dt { font-size: 13px; letter-spacing: .04em; }
 /* tasks and Today: no coloured bars, the status pills say it */
 .td-task.is-today { border-left: 1px solid var(--border); }
-.td-tasks::before { content: none; }
 .md-taskline { border-left: 0; }
 .md-kpi:first-child { box-shadow: var(--sh-2); }
 /* 🔴 CSS CHANGED (2026-11-15): a team's Dashboard, "To do now" (new) | from: the team's Dashboard had figures and charts only, nothing said what to do | to: a panel under the open-tasks line, one row per kind of work: a large blue number in a soft blue rounded square, the title in semibold with a grey line under it, and the first students as small grey pills that open their card ("+12 more" after them) */
@@ -1399,22 +1364,18 @@ body:has(.niec-demo) .ui-toasts { top: 60px; }
 /* 🔴 CSS CHANGED (2026-11-14): tasks, who gave them to whom, their comments, and red dots for what is new | from: a date pill on every task and, in the first try of comments, chat bubbles (blue on the right, grey on the left) with a text box inside a second box (it looked broken) | to: no date pill; under the task "From SK Kayas Hussain → Application Team · 14 Nov"; the comments as a calm record like Apple's own apps: a small round initial, the name in bold, the time in grey, the words under it, thin lines between them; one clean text box (no box inside a box) with a blue "Comment" pill; what is new for you is marked with a red dot with its number on the task, a red "2 new" on its comment line and its list, and a red badge on Today in the menu (it pops when something new arrives); the comment list slides open and closed; the tick circle springs when pressed */
 .td-task { grid-template-columns: 34px minmax(0, 1fr); }
 .td-task:has(.tk-thread.is-open):hover { transform: none; }
-.td-task.has-unread { box-shadow: inset 3px 0 0 #ff3b30, 0 1px 2px rgba(0, 0, 0, .04); }
-.td-task-top { display: flex; align-items: flex-start; gap: 10px; }
 .td-task-top .td-task-text { flex: 1; min-width: 0; }
 .td-dot { flex: none; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px; background: #ff3b30; color: #fff; font-size: 12.5px; font-weight: 700; line-height: 22px; text-align: center; box-shadow: 0 2px 8px -2px rgba(255, 59, 48, .6); animation: isr-pop .5s cubic-bezier(.34, 1.56, .64, 1) both; }
-.td-route { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; color: #5f5f64; font-size: 13.5px; }
-.td-route .td-from-who, .td-route .td-to-who { color: #1d1d1f; font-weight: 600; }
+.td-route { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; }
 .td-route .td-arrow { color: #66666b; }
 .td-route .td-when::before, .td-route .td-donemark::before { content: "\00b7"; margin-right: 8px; color: #66666b; }
-.td-route .td-donemark { color: #248a3d; font-weight: 600; }
-.td-group-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 4px; }
-.td-group-head h3 { margin: 0; color: #1d1d1f; font-size: 17px; font-weight: 650; letter-spacing: -.01em; text-transform: none; }
-.td-group-head p { margin: 2px 0 0; color: #5f5f64; font-size: 14px; }
+.td-route .td-donemark { color: #248a3d; }
+.td-group-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.td-group-head h3 { margin: 0; color: #1d1d1f; font-size: 17px; letter-spacing: -.01em; text-transform: none; }
 .td-group + .td-group { margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(0, 0, 0, .06); }
 .td-chip.is-new { background: #ff3b30; color: #fff; }
 .tk-thread { margin-top: 12px; }
-.tk-toggle { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 0 12px 0 10px; border: 0; border-radius: 980px; background: rgba(0, 0, 0, .045); color: #424245; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background-color .2s var(--ease-out), transform .15s var(--ease-out); }
+.tk-toggle { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 0 12px 0 10px; border: 0; border-radius: 980px; background: rgba(0, 0, 0, .045); font: inherit; font-size: 13.5px; cursor: pointer; transition: background-color .2s var(--ease-out), transform .15s var(--ease-out); }
 .tk-toggle:hover { background: rgba(0, 0, 0, .08); color: #1d1d1f; }
 .tk-toggle:active { transform: scale(.96); }
 .tk-ico svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
@@ -1436,9 +1397,9 @@ body:has(.niec-demo) .ui-toasts { top: 60px; }
 .tk-msg.is-new { animation: isr-rise-in .45s cubic-bezier(.32, .72, 0, 1) backwards; background: linear-gradient(90deg, rgba(255, 59, 48, .06), transparent 60%); }
 .tk-msg.is-posted { animation: isr-rise-in .45s cubic-bezier(.32, .72, 0, 1) backwards; }
 .tk-empty { padding: 14px 16px; color: #5f5f64; font-size: 14px; }
-.tk-compose { margin-top: 10px; border: 1px solid #d2d2d7; border-radius: 14px; background: #fff; transition: border-color .2s, box-shadow .2s; }
+.tk-compose { transition: border-color .2s, box-shadow .2s; }
 .tk-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .14); }
-html body .tk-compose textarea.tk-input { display: block; width: 100%; min-height: 44px; max-height: 180px; margin: 0; padding: 12px 14px 4px; border: 0 !important; border-radius: 14px 14px 0 0; outline: 0 !important; box-shadow: none !important; resize: none; background: transparent !important; color: #1d1d1f; font: inherit; font-size: 15px; line-height: 1.45; }
+html body .tk-compose textarea.tk-input { display: block; width: 100%; max-height: 180px; margin: 0; border: 0 !important; outline: 0 !important; box-shadow: none !important; resize: none; background: transparent !important; color: #1d1d1f; font: inherit; line-height: 1.45; }
 .tk-send:disabled { opacity: .4; }
 .td-check:active:not(:disabled) { transform: scale(.86); }
 .td-task.is-ticking .td-check { animation: isr-pop .45s cubic-bezier(.34, 1.56, .64, 1) both; }
@@ -1490,7 +1451,7 @@ svg .dd-slice, svg circle[stroke-dasharray] { animation: isr-ring .9s cubic-bezi
 @keyframes isr-ring { from { stroke-dasharray: 0 1000; } }
 .isr-reveal { opacity: 0; transform: translateY(18px); }
 .isr-reveal.is-in { opacity: 1; transform: none; transition: opacity .7s ease, transform .8s cubic-bezier(.32, .72, 0, 1); }
-.td-hello { position: relative; isolation: isolate; }
+.td-hello { isolation: isolate; }
 .td-hello::before { content: ""; position: absolute; z-index: -1; left: -80px; top: -70px; width: min(860px, 95vw); height: 320px; background: radial-gradient(38% 46% at 28% 50%, rgba(0, 113, 227, .13), rgba(0, 113, 227, 0) 100%), radial-gradient(32% 42% at 62% 56%, rgba(175, 82, 222, .10), rgba(175, 82, 222, 0) 100%), radial-gradient(26% 36% at 46% 74%, rgba(255, 149, 0, .08), rgba(255, 149, 0, 0) 100%); animation: isr-glow 18s ease-in-out infinite alternate; pointer-events: none; }
 @keyframes isr-glow { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(40px, 10px) scale(1.08); } 100% { transform: translate(-20px, 20px) scale(.96); } }
 @media (prefers-reduced-motion: reduce) {
@@ -1694,7 +1655,7 @@ select option { color: #1d1d1f; }
 .tr-source select { min-height: 32px; padding: 0 30px 0 12px; border: 0; border-radius: 980px; background-color: rgba(0, 0, 0, .04); font: inherit; font-size: 13px; color: #1d1d1f; }
 .tr-lines { align-items: center; }
 .tr-table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 14px; }
-.tr-table th { padding: 8px 10px; color: #5f5f64; font-size: 12.5px; font-weight: 600; text-align: right; text-transform: none; letter-spacing: 0; border-bottom: 1px solid rgba(0, 0, 0, .08); }
+.tr-table th { padding: 8px 10px; color: #5f5f64; font-size: 12.5px; font-weight: 600; text-align: right; border-bottom: 1px solid rgba(0, 0, 0, .08); }
 .tr-table th:first-child, .tr-table td:first-child { text-align: left; }
 .tr-table td { padding: 10px; text-align: right; border-bottom: 1px solid rgba(0, 0, 0, .05); font-variant-numeric: tabular-nums; }
 .tr-table td b { font-weight: 600; }
@@ -1741,7 +1702,7 @@ select option { color: #1d1d1f; }
 .td-act.danger:hover { background: #ffe5e3; color: #d70015; }
 .td-act:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
 /* 🔴 CSS CHANGED (2026-11-14): University options, Find a course | from: two boxes and a remarks box with no Search button (results changed as you typed) | to: one row: Study level, Course name and a blue Search button lined up at the bottom; the remarks box below is two lines high; the count of courses found sits above the results */
-.p-find { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 2fr) auto; gap: 12px; align-items: end; }
+.p-find { display: grid; gap: 12px; align-items: end; }
 .p-find > .btn { min-height: 44px; padding: 0 26px; }
 /* 🔴 CSS CHANGED (2026-11-15): University options, Find a course, in the owner's order | from: Study level, Course name and the blue Search button on one row, the Remarks box under the Search button | to: Study level and Course name on the first row, Remarks across the whole width under them, then the blue Search button last, at the left */
 .p-find { grid-template-columns: minmax(180px, 1fr) minmax(220px, 2fr); }
@@ -1751,7 +1712,7 @@ select option { color: #1d1d1f; }
 .p-found { margin-bottom: -2px; }
 @media (max-width: 700px) { .p-find { grid-template-columns: 1fr; } .p-find > .btn { width: 100%; } }
 /* 🔴 CSS CHANGED (2026-11-14): Today, the day at a glance (new) | from: Today started straight with the task list | to: a soft off-white panel at the top: a ring that fills in blue as this week's tasks are done (its % in the middle), "3 tasks open for you" or "All caught up" in large type, then "done this week" in green and "students waiting" in orange as big numbers; on a phone the numbers go under the ring */
-.td-pulse { display: grid; grid-template-columns: auto 1fr auto auto; gap: 22px; align-items: center; margin: 0 0 18px; padding: 20px 24px; border-radius: 20px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 28px -18px rgba(0, 0, 0, .18); }
+.td-pulse { display: grid; gap: 22px; align-items: center; margin: 0 0 18px; padding: 20px 24px; border-radius: 20px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 28px -18px rgba(0, 0, 0, .18); }
 .td-pulse-words h2 { margin: 0; color: #1d1d1f; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
 .td-pulse-words p { margin: 4px 0 0; color: #5f5f64; font-size: 14.5px; }
 .td-stat { display: grid; min-width: 104px; padding: 10px 16px; border-radius: 14px; background: #f5f5f7; text-align: center; }
@@ -1787,8 +1748,8 @@ select option { color: #1d1d1f; }
 .td-tag-pick :is(.td-tag, .td-prio) { min-height: 34px; padding: 0 14px; font-size: 14px; line-height: 34px; opacity: .55; }
 .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { opacity: 1; font-weight: 600; box-shadow: 0 0 0 2px currentColor inset; }
 .td-tag-pick :is(.td-tag, .td-prio):hover { opacity: 1; }
-.td-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
-.td-filter-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #ececf0; color: #1d1d1f; font: 500 14.5px/36px var(--font); cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
+.td-filter { display: flex; flex-wrap: wrap; }
+.td-filter-pill { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #ececf0; color: #1d1d1f; font: 500 14.5px/36px var(--font); cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
 .td-filter-pill:hover { background: #e2e2e7; }
 .td-filter-pill[aria-selected="true"] { background: #1d1d1f; color: #fff; }
 .td-filter-n { min-width: 22px; padding: 0 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); font-size: 12.5px; font-weight: 600; line-height: 20px; text-align: center; }
@@ -1827,11 +1788,10 @@ select option { color: #1d1d1f; }
 @keyframes isr-burst { 0% { opacity: 1; transform: translate(0, 0) scale(.6); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .isr-burst { display: none; } }
 /* 🔴 CSS CHANGED (2026-11-15): a shorter task | from: the tag on a line of its own, then who gave it to whom on the next line | to: the tag first and who gave it to whom beside it on one line (they wrap onto two lines only when there is no room) */
-.td-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; }
 .td-meta > .td-tag-line, .td-meta > .td-route { margin-top: 0; }
 
 /* 🔴 CSS CHANGED (2026-11-15): the task, redesigned (Today and the student card) | from: each task was a tall box: the task, then the tag and who gave it on a line, then the student and a stage pill on another, then an "Add an update" pill on a fourth line, with Reassign and Remove as two grey pills at the top right and a red line down the left both for "new" and for "super priority" | to: a shorter, calmer row: the round tick; the task in semibold with, at its right, a small speech-bubble button with how many updates (a red "N new" when something is new) and a quiet round "..." button that opens a small menu (Reassign to another team, Remove the task in red); under the task one grey line with the priority (only when not the usual), the tag, the student's name and the stage in plain grey; then who gave it to whom and when, smaller; the updates open under the task. A task with something new has a thin blue line down its left edge; a Super priority task a thin red one; the row softly lifts under the mouse */
-.td-task { gap: 14px; padding: 16px 18px 14px; border: 1px solid rgba(0, 0, 0, .06); border-radius: 16px; background: #fdfdfe; }
+.td-task { border: 1px solid rgba(0, 0, 0, .06); border-radius: 16px; background: #fdfdfe; }
 .td-task.has-unread { box-shadow: inset 3px 0 0 #0071e3, 0 1px 2px rgba(0, 0, 0, .04); }
 .td-task.is-super, .td-task.is-super.has-unread { box-shadow: inset 3px 0 0 #ff3b30, 0 1px 2px rgba(0, 0, 0, .04); }
 .td-task-top { display: flex; align-items: flex-start; gap: 12px; }
@@ -1847,7 +1807,6 @@ select option { color: #1d1d1f; }
 .td-sub .td-tag, .td-sub .td-prio { min-height: 22px; padding: 0 9px; font-size: 12px; line-height: 22px; }
 .td-task .td-route { margin-top: 6px; font-size: 13px; }
 .td-task .tk-thread { margin-top: 0; }
-.td-task .tk-thread.is-open { margin-top: 12px; }
 .td-task .td-dot { display: none; }
 .td-menu-wrap { position: relative; }
 .td-more-btn { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #5f5f64; cursor: pointer; transition: background-color .15s, color .15s; }
@@ -1952,7 +1911,7 @@ select option { color: #1d1d1f; }
 .td-who-name { color: #1d1d1f; font-size: 17px; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; text-decoration: none; overflow-wrap: anywhere; }
 .td-who-name:hover { color: #0066cc; }
 .td-who-stage { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #f0f0f3; color: #515154; font-size: 12px; font-weight: 500; line-height: 22px; }
-.td-task.has-student .td-task-text { margin-top: 4px; color: #3a3a3c; font-size: 15.5px; font-weight: 400; line-height: 1.45; }
+.td-task.has-student .td-task-text { color: #3a3a3c; font-weight: 400; line-height: 1.45; }
 .td-task.has-student.is-done .td-who-name { color: #66666b; }
 .td-note-task .td-note-student { color: #1d1d1f; font-weight: 600; }
 .td-note-task .td-note-student::after { content: "\00b7"; margin: 0 7px; color: #aeaeb2; font-weight: 400; }
@@ -1963,11 +1922,11 @@ select option { color: #1d1d1f; }
 @media (max-width: 600px) { .td-task .td-route .td-route-meta { flex-basis: 100%; } .td-task .td-route .td-route-meta > .td-when::before { content: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-15): search the tasks on Today (new) | from: no way to find one student's tasks but to scroll | to: above the kind pills, a round white search box ("Search tasks by student name or word") with a small grey magnifying glass at its left, 44px high, a blue ring while typing; after typing, "3 open tasks found" in grey beside it; the lists, the kind pills and their counts show only what matches */
-.td-search { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0 12px; }
+.td-search { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
 .td-search-field { position: relative; display: block; flex: 1 1 320px; max-width: 520px; }
 .td-search-ico { position: absolute; left: 16px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); pointer-events: none; }
 .td-search-ico svg { width: 16px; height: 16px; fill: none; stroke: #86868b; stroke-width: 2; stroke-linecap: round; }
-.td-search-field .td-search-input { width: 100%; height: 44px; padding: 0 16px 0 42px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; color: #1d1d1f; font: 400 15px var(--font); }
+.td-search-field .td-search-input { width: 100%; padding: 0 16px 0 42px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; color: #1d1d1f; font: 400 15px var(--font); }
 html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); outline: none; }
 .td-search-n { color: #5f5f64; font-size: 14px; }
 
@@ -2009,7 +1968,7 @@ html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-s
 .td-tasks-head h2 { font-size: 26px; }
 .td-tasks-head .td-views { margin: 0; }
 .td-group { margin-top: 6px; }
-.td-group-head { align-items: center; margin: 0 0 6px; }
+.td-group-head { align-items: center; }
 .td-group-head p { margin: 0; color: #5f5f64; font-size: 14px; }
 .td-search { margin: 0 0 10px; }
 .td-search-field .td-search-input { height: 40px; }
@@ -2242,7 +2201,8 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .bp-funnel-step b { color: #1d1d1f; font-size: 20px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .bp-funnel-step small { color: #5f5f64; font-size: 12.5px; }
 .bp-funnel-step i { display: block; height: 5px; margin-top: 6px; border-radius: 999px; background: linear-gradient(90deg, #0071e3 var(--w, 0%), #e8e8ed var(--w, 0%)); }
-.bp-funnel-step.is-visa b { color: #248a3d; }
+/* 🔴 CSS CHANGED (2026-11-18): the green Visas figure on partner cards is easier to read (a bug fix) | from: #248a3d, contrast 3.9 to 1 on the soft grey tray, below the 4.5 to 1 needed | to: #1d7a34, contrast 5.2 to 1, still the same green family */
+.bp-funnel-step.is-visa b { color: #1d7a34; }
 .bp-funnel-step.is-visa i { background: linear-gradient(90deg, #34c759 var(--w, 0%), #e8e8ed var(--w, 0%)); }
 .bp-card { transition: transform .25s cubic-bezier(.32, .72, 0, 1), box-shadow .25s ease, border-color .25s ease; }
 .bp-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .04), 0 22px 44px -26px rgba(0, 0, 0, .28); }
@@ -2261,7 +2221,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 /* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the task Board (new) | from: every task as a tall card with its own update box, one under the other, behind You gave / Given by others, with the team tiles above | to: a "Board | List" switch beside the Tasks title (the Board first); the Board is a row of soft grey columns, one per team ("For you" first), each headed by a coloured dot, the team's name, a round count, who has its tasks, an orange "N waiting 3+ days" and a thin blue progress line; inside, each task is a small off-white tile with the student in bold and the stage in grey, the task in two lines, then the tag as a coloured pill, how long it has waited ("Today", "4 days" in orange from 3 days), and a speech bubble with the number of updates; a new update gives the tile a blue edge on its left, a Super priority task a red one; tiles lift on hover; "Show 3 done this week" at the foot of each column shows the done ones faded; the columns scroll sideways on a narrow screen; pressing a tile opens the whole task in a window; the team tiles show only in List */
 .td-tasks-head > div:first-child { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .tb-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(290px, 1fr); gap: 14px; overflow-x: auto; padding: 4px 2px 14px; scroll-snap-type: x proximity; }
-.tb-col { display: flex; flex-direction: column; min-width: 0; border-radius: 20px; background: #ebebef; scroll-snap-align: start; }
+.tb-col { display: flex; flex-direction: column; min-width: 0; border-radius: 20px; scroll-snap-align: start; }
 .tb-col-head { display: grid; gap: 4px; padding: 14px 16px 12px; }
 .tb-col-name { display: flex; align-items: center; gap: 8px; }
 .tb-col-name b { color: #1d1d1f; font-size: 16px; font-weight: 700; }
@@ -2590,7 +2550,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .fd-courses li:first-child { border-top: 0; }
 .fd-course { color: var(--ink); }
 .fd-meta { color: var(--text-dim); font-size: 13px; }
-.fd-courses li .btn, .fd-courses li .sl-pick { margin-left: auto; }
 .fd-foot { margin-top: 8px; }
 @media (max-width: 600px) { .fd-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 
@@ -2672,7 +2631,6 @@ html body .td-hello:has(.td-bell-wrap) > :not(.td-bell-wrap) { padding-right: 56
 
 /* 🔴 CSS CHANGED (2026-11-17): small text readable everywhere (the accessibility check, and the owner's "easy on older eyes") | from: small grey words in #86868b, #8e8e93 and #6e6e73 and small orange words in #c45c00 (contrast 3.0 to 4.4 against the panels, under the 4.5 the standard asks for); the "Every source"/"Everyone" choice of a box and "Choose a date" in the same pale grey; the switched-off lines of the Dashboard chart at 40% | to: the greys darkened to #66666b and #5f5f64 and the orange to #a84d00 wherever they colour text (98 places; backgrounds and borders unchanged), so every small word reaches at least 4.5 to 1; the University options' titles are headings of the right level, looking the same */
 html body .p-option h3, html body .p-chosen-item h3 { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-html body .p-chosen-item h3 { margin: 0 0 8px; }
 html body .wk-change.down { color: #a84d00; }
 html body .page .count { color: #515154; }
 html body:has(.p-embed-bar) .p-option h3 { color: var(--ink); font-size: 16px; font-weight: 650; }
@@ -2770,8 +2728,7 @@ html body .doc .more-block ul { margin: 0 0 4px; }
 html body .course-more { margin: 4px 0 8px; font-weight: 600; }
 html body .doc details.fold > summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 4px 0; }
 html body .doc details.fold[open] > summary { margin-bottom: 8px; }
-html body .sl-for { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: #e8f2fd; }
-html body .sl-for-text { flex: 1 1 220px; color: #1d1d1f; font-size: 14.5px; }
+html body .sl-for-text { font-size: 14.5px; }
 
 html body .p-send { margin: 0 0 14px; padding: 14px 16px; border-radius: 14px; background: #f5f5f7; }
 html body .p-send h3 { margin: 0 0 2px; font-size: 16px; }
@@ -2803,10 +2760,13 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .pt-switch { justify-self: start; }
 .pt-switch a { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 9px; color: #515154; font-size: 15px; font-weight: 500; text-decoration: none; transition: color .25s var(--ease-out, ease); }
 .pt-switch a:hover { color: #1d1d1f; }
-.pt-switch a[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
+/* 🔴 CSS CHANGED (2026-11-18): the open tab of the Universities | B2B partners | Agents switch is found by aria-current instead of aria-selected (a bug fix, nothing changes on screen) | from: a link carrying aria-selected, which is not allowed on a link and was reported as a critical accessibility error | to: the standard aria-current="page" */
+.pt-switch a[aria-current="page"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
 .pt-n { min-width: 24px; padding: 1px 8px; border-radius: 999px; background: rgba(0, 0, 0, .06); color: #515154; font-size: 13px; font-weight: 600; text-align: center; }
-.pt-switch a[aria-selected="true"] .pt-n { background: rgba(0, 113, 227, .1); color: #0071e3; }
+.pt-switch a[aria-current="page"] .pt-n { background: rgba(0, 113, 227, .1); color: #0071e3; }
 @media (max-width: 640px) { .pt-switch { display: flex; justify-self: stretch; } .pt-switch a { flex: 1 1 0; justify-content: center; padding: 0 8px; font-size: 14px; } }
+/* 🔴 CSS CHANGED (2026-11-18): the Universities | B2B partners | Agents switch on a small phone (a bug fix) | from: the last tab touched the edge of the switch and its count was cut off at 390px wide | to: a little less padding and gap on phones under 430px wide, so all three tabs sit inside the switch */
+@media (max-width: 430px) { .pt-switch a { gap: 5px; padding: 0 5px; font-size: 13.5px; min-width: 0; } }
 @media print { .pt-bar { display: none !important; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): Follow-up turned into steps, one screen each (the owner: "step by step, each on its own page") | from: one long page with the setup, "1. Choose the students", "2. Write the message" and "3. Check and send" as numbered cards one under another, a "0 chosen" pill, Check and Send buttons at the bottom | to: the shared parts kept here: the search and the filters as soft grey fields, the students as a white grouped list with round iOS ticks, initials circles and stage pills (a ticked row soft blue), "Tick all shown" and "Clear" as blue links, the message as a Mail-style window (To, Subject, the text with no box) with "Insert" and the words as grey pills; the steps themselves are in the next block (.fw) */
@@ -2860,7 +2820,8 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .bk-mail > .p-field:first-of-type .p-label { color: #5f5f64; }
 .bk-mail > .p-field input { flex: 1 1 auto; min-height: 50px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px; font-weight: 600; color: #1d1d1f; }
 .bk-mail > .p-field:has(textarea) { display: block; padding: 0; }
-.bk-mail > .p-field:has(textarea) .p-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* 🔴 CSS CHANGED (2026-11-18): the hidden label of the message box (a bug fix, nothing changes on screen) | from: the old 'clip: rect()' property, which browsers have retired | to: 'clip-path: inset(50%)', which hides it the same way */
+.bk-mail > .p-field:has(textarea) .p-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .bk-mail textarea { display: block; width: 100%; min-height: 260px; padding: 18px; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px; line-height: 1.6; color: #1d1d1f; resize: vertical; }
 .bk .bk-mail > .p-field input, .bk .bk-mail > .p-field input:focus, .bk .bk-mail > .p-field input:focus-visible, .bk .bk-mail textarea, .bk .bk-mail textarea:focus, .bk .bk-mail textarea:focus-visible { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent; }
 .bk-mail:focus-within { box-shadow: 0 0 0 1px rgba(0, 113, 227, .5), 0 0 0 4px rgba(0, 113, 227, .14); }
@@ -3555,7 +3516,8 @@ html body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.bt
 html body .bp-page .bp-empty { padding: 56px 24px; border: 0; border-radius: 22px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); font-size: 16px; }
 @media (max-width: 700px) {
   html body .bp-page .p-head { align-items: stretch; }
-  .pt-add { width: 100%; }
+  /* 🔴 CSS CHANGED (2026-11-18): the 'name + Add' box on Universities, B2B partners and Agents on a phone (a bug fix) | from: the Add button dropped under the name box inside a round pill, which looked broken | to: name box and Add button stay on one row inside the pill */
+  .pt-add { width: 100%; flex-wrap: nowrap; }
   html body .pt-add input { flex: 1 1 auto; width: auto; min-width: 0; }
   html body .bp-page .bp-grid { grid-template-columns: minmax(0, 1fr); }
   html body .bp-page .bp-band { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -3599,3 +3561,8 @@ html body .p-dialog .p-form.p-assign select::picker-icon { flex: none; }
 html body .p-dialog .p-form.p-assign select > button, html body .p-dialog .p-form.p-assign select selectedcontent { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 html body .p-dialog .p-form.p-assign textarea { width: 100%; min-height: 96px; border-radius: 10px; }
 html body .p-dialog .p-form.p-assign .p-goes { margin-top: 6px; color: #86868b; font-size: 13px; }
+
+/* 🔴 CSS CHANGED (2026-11-18): the All Students toolbar on a phone (a bug fix) | from: when the buttons wrapped, "Show numbers, Undo, Redo" sat pushed to the right of its own row, out of line with the buttons above | to: on phones under 700px wide that row starts at the left edge, in line with the buttons above */
+@media (max-width: 700px) {
+  body:has(#sheet) .topbar .toolbar-group:has(#undoBtn) { margin-left: 0; }
+}

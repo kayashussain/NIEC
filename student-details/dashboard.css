@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 /* The dashboard: thin marks, hairline grid, text in ink colours. The chart colours (--s1 to --s5, Apple's system colours) are set in
    shared/theme.css. */
 :root {
@@ -55,7 +56,7 @@ html { scrollbar-gutter: stable; }
 .ov-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 /* the headline numbers */
-.ov-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.ov-kpis { display: grid; gap: 14px; }
 .ov-kpi { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 18px 18px 14px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
 .ov-kpi::before { content: ''; position: absolute; left: 18px; top: 0; width: 34px; height: 4px; border-radius: 0 0 4px 4px; background: var(--accent, var(--s1)); }
 .ov-kpi-label { font-size: 14px; font-weight: 650; color: var(--ink-2); }
@@ -152,7 +153,6 @@ details.rates summary { cursor: pointer; color: var(--brand-text); font-weight: 
 @media (prefers-reduced-motion: reduce) { .first-load :is(#attention, #speed, #notes, [id^="chart"]):empty { animation: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-13): the Dashboard, rebuilt for decisions | from: six headline cards compared with the last intake, a ring with jargon, many lists; long cards of text on Decisions, Universities and Intake plan; a seven-page proposal with no charts | to: four headline cards, a target ring with one plain sentence, a short "needs a decision" list, a funnel, two lines for the week, the top five sources and universities; Decisions as numbered cards with one line of what is seen and one of what to do; Universities as ranked bars; Intake plan with the target at the top and progress bars; and a two-page A4 proposal with bar charts */
-.ov-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .ov-target-text { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink); }
 
 /* Decisions */

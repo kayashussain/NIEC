@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 :root {
   /* NIEC brand, from the official logo and niec.edu.np: light blue, orange and grey. --niec-blue-text
      is the same blue a few shades deeper, for text on white (the logo blue itself is too light to read). */
@@ -98,10 +99,8 @@ html, body, .table-wrap { overscroll-behavior-x: none; }
   font-size: 12px;
   cursor: pointer;
 }
-.btn:hover { background: var(--row-hover); }
 .btn:disabled { opacity: .4; cursor: not-allowed; background: var(--panel); }
 .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-.btn-primary:hover { filter: brightness(1.08); }
 .btn-danger { color: var(--danger); }
 
 .save-status { font-size: 11px; color: var(--text-dim); min-width: 110px; }
@@ -113,12 +112,11 @@ html, body, .table-wrap { overscroll-behavior-x: none; }
   flex-direction: column;
   gap: 8px;
   padding: 10px 16px 12px;
-  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 .stat-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .stat-group-title {
-  font-size: 11px; font-weight: 700; color: var(--text-dim);
+  font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.05em;
 }
 .stat-group-cards { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 2px; }
@@ -131,13 +129,11 @@ html, body, .table-wrap { overscroll-behavior-x: none; }
   border-radius: 8px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--orange);
-  box-shadow: 0 1px 3px rgba(252, 110, 31, 0.18);
   color: var(--text);
   min-width: 96px;
   flex: 0 0 auto;
 }
-.stat-card .stat-value { font-size: 20px; font-weight: 600; line-height: 1.15; color: var(--orange); font-variant-numeric: tabular-nums; }
+.stat-card .stat-value { font-size: 20px; font-weight: 600; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .stat-card .stat-label {
   font-size: 10px;
   color: var(--text-dim);
@@ -159,19 +155,15 @@ thead th {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border-strong);
   border-right: 1px solid var(--border);
   padding: 8px 10px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-dim);
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
 }
-thead th:hover { color: var(--text); }
 thead th.sorted .th-label::after { content: " ▾"; }
 thead th.sorted-desc .th-label::after { content: " ▴"; }
 
@@ -486,10 +478,8 @@ tr.defer-warning-row td { background-color: var(--red-bg) !important; }
 .sheet-tab:hover { background: var(--row-hover); color: var(--text); }
 .sheet-tab.active {
   background: var(--panel);
-  color: var(--text);
   font-weight: 600;
   border-color: var(--border-strong);
-  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .sheet-tab-menu-btn {

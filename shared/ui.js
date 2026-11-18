@@ -132,7 +132,7 @@
 (function () {
   if (typeof document === 'undefined' || !window.MutationObserver) return;
   const BOXES = '.p-tabs, .sheet-tabs-list, .dd-switch, .tabs, .ev-pills, .p-seg';
-  const isOn = (c) => c.getAttribute('aria-selected') === 'true' || c.classList.contains('active') || c.classList.contains('on');
+  const isOn = (c) => c.getAttribute('aria-selected') === 'true' || c.getAttribute('aria-current') === 'page' || c.classList.contains('active') || c.classList.contains('on');
   function sync(box, animate) {
     let thumb = box.querySelector(':scope > .seg-thumb');
     const on = [...box.children].find((c) => c !== thumb && isOn(c));
@@ -156,7 +156,7 @@
   let queued = false;
   const later = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; all(true); }); };
   new MutationObserver((list) => { if (list.some((m) => !(m.target.classList && m.target.classList.contains('seg-thumb')))) later(); })
-    .observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-selected'] });
+    .observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-selected', 'aria-current'] });
   window.addEventListener('resize', () => all(false));
   document.addEventListener('DOMContentLoaded', () => all(false));
 })();
@@ -223,6 +223,8 @@
   function outside(e) { if (open && !open.panel.contains(e.target) && e.target !== open.input) close(false); }
   function choose(value) {
     const { input } = open;
+    // The earliest and latest day the box allows (a date of birth is never in the future): the keyboard obeys them as the mouse does.
+    if ((input.min && value < input.min) || (input.max && value > input.max)) return;
     close(true);
     if (input.value === value) return;
     input.value = value;
@@ -324,7 +326,9 @@
       const base = open.focus || open.input.value || todayIso();
       const [y, m, d] = base.split('-').map(Number);
       const t = new Date(y, m - 1, d + step);
-      open.focus = iso(t.getFullYear(), t.getMonth(), t.getDate());
+      const next = iso(t.getFullYear(), t.getMonth(), t.getDate());
+      if ((open.input.min && next < open.input.min) || (open.input.max && next > open.input.max)) return; // not outside the allowed days
+      open.focus = next;
       if (t.getFullYear() !== open.y || t.getMonth() !== open.m) { open.y = t.getFullYear(); open.m = t.getMonth(); }
       draw();
       return;

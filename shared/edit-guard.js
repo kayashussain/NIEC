@@ -77,10 +77,11 @@
     function onKey(e) {
       if (e.key === 'Escape') { e.preventDefault(); finish(false); }
       else if (e.key === 'Enter' && !e.target.matches('.eg-cancel')) { e.preventDefault(); finish(true); }
-      else if (e.key === 'Tab') { // Tab stays between the two buttons, never on the page behind
+      else if (e.key === 'Tab') { // Tab goes round the box (the tick box, Cancel, OK), never on to the page behind
         e.preventDefault();
-        const cancel = overlay.querySelector('.eg-cancel');
-        (document.activeElement === okBtn ? cancel : okBtn).focus();
+        const ring = [overlay.querySelector('.eg-snooze'), overlay.querySelector('.eg-cancel'), okBtn];
+        const at = ring.indexOf(document.activeElement);
+        ring[(at + (e.shiftKey ? ring.length - 1 : 1)) % ring.length].focus();
       } else if (e.key !== ' ') { e.preventDefault(); }
       e.stopPropagation();
     }

@@ -1654,7 +1654,8 @@
             select.title = newVal;
             select.className = 'status-select ' + badgeClass(newVal);
             markDirty();
-            if (col === 'APPLICATION STATUS') renderBody(); // re-run the defer-move check, refresh the warning
+            // Redraw when the new value can move the row: the stage (defer-move check, warning), a sort or a filter on this column, or the partner (rows are grouped by it).
+            if (col === 'APPLICATION STATUS' || col === PARTNER_COL || sortCol === col || columnFilters[col]) renderBody();
           }, () => { select.value = shown; });
         });
         td.appendChild(select);
@@ -2988,7 +2989,10 @@
   });
 
   window.addEventListener('beforeunload', (e) => {
-    if (!dirty || BACKUP) return;
+    if (BACKUP) return;
+    // A cell still being typed in counts as unsaved: the browser asks before the page is left (nothing to send yet).
+    if (!dirty && editing) { e.preventDefault(); e.returnValue = ''; return; }
+    if (!dirty) return;
     // A regular fetch can be cancelled mid-flight when the page unloads; sendBeacon
     // is designed to survive that, so use it to flush any pending debounced save.
     if (!conflicted) {
