@@ -245,7 +245,7 @@ function buildDashboard(workbook, { sheetId = '', includeHidden = false, today: 
     // Paid in full or part? Only for students who have paid and still have a fee to compare with.
     if (p.reached.paid && !s.left) {
       const net = has(row, 'GROSS FEE') ? netTuitionFee(row) : 0;
-      if (net > 0) { if (s.deposited >= net) pay.full += 1; else pay.partly += 1; } else pay.unknown += 1;
+      if (net > 0) { if (s.deposited >= net - 0.5) pay.full += 1; else pay.partly += 1; } else pay.unknown += 1;
     }
 
     // Only what has been recorded is counted; a student with nothing there is simply not in that chart.

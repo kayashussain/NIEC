@@ -49,7 +49,13 @@ function badPlaceholder(...texts) {
     const opens = (s.match(/\{/g) || []).length; const closes = (s.match(/\}/g) || []).length;
     if (opens !== closes) return 'A { or } is not closed. Every {word} needs both braces.';
     for (const m of s.matchAll(/\{([^{}]*)\}/g)) {
-      if (!known.has(m[1].trim())) return `{${m[1]}} is not one of the words that can be filled in. Use the list under the message.`;
+      // Exactly the word, no spaces inside the braces: "{ first_name }" would go to the student as typed.
+      if (!known.has(m[1])) return `{${m[1]}} is not one of the words that can be filled in (write it with no spaces inside the braces). Use the list under the message.`;
+    }
+    // A list (the options table, the documents) is placed on a line of its own: anywhere else it would go out as the word in braces.
+    for (const line of s.split('\n')) {
+      const block = ['options_table', 'documents_list'].find((k) => line.includes('{' + k + '}'));
+      if (block && line.trim() !== '{' + block + '}') return `{${block}} must be on a line of its own, with nothing else on that line.`;
     }
   }
   return '';

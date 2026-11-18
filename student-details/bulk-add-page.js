@@ -58,7 +58,7 @@
       const checks = checkRows(rows);
       const ready = checks.filter((c) => !c.skip).length;
       const skipped = checks.length - ready;
-      out.replaceChildren(el('p', '', `${rows.length} ${rows.length === 1 ? 'line' : 'lines'} found: ${ready} will be added${skipped ? `, ${skipped} will be skipped` : ''}.`), ...(rows.length > 200 ? [el('p', 'p-notice warn', 'Only the first 200 lines are added in one go. Add the rest afterwards.')] : []));
+      out.replaceChildren(el('p', '', `${rows.length} ${rows.length === 1 ? 'line' : 'lines'} found: ${Math.min(ready, 200)} will be added${skipped ? `, ${skipped} will be skipped` : ''}.`), ...(rows.length > 200 ? [el('p', 'p-notice warn', 'Only 200 students are added in one go. Add the rest afterwards: the ones already added are skipped.')] : []));
       const t = el('table', 'p-table');
       t.append(h('thead', {}, h('tr', {}, ...['Name', 'Email', 'Phone', 'Check'].map((x) => el('th', '', x)))));
       const tb = el('tbody');
@@ -78,7 +78,7 @@
       if (picker && pickValue().group === 'Branch' && !pickValue().branch) { say('Choose which branch.', true); return; }
       if (picker && picker.check()) { say(picker.check(), true); return; }
       const checks = checkRows(rows);
-      const sendRows = rows.filter((_, i) => !checks[i].skip);
+      const sendRows = rows.filter((_, i) => !checks[i].skip).slice(0, 200); // 200 at a time; the page said so
       if (!sendRows.length) return;
       if (!(await window.NiecUI.confirm(`Add ${sendRows.length} students with the source "${sourceText()}"?`, { confirmText: 'Add them' }))) return;
       go.disabled = true;

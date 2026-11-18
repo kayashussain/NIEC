@@ -346,6 +346,8 @@ function createPortalApi({
     const subject = typeof body.subject === 'string' ? body.subject : '';
     const emailBody = typeof body.body === 'string' ? body.body : 'Dear {first_name},\n\n';
     const whatsappBody = typeof body.whatsapp === 'string' ? body.whatsapp : 'Hello {first_name}, ';
+    const wrongWord = Messages.badPlaceholder ? Messages.badPlaceholder(subject, emailBody, whatsappBody) : '';
+    if (wrongWord) { sendJSON(res, 400, { error: wrongWord }); return true; }
     const ctx = messageContext(req, found, card, body.optionIds);
     const cfg = mailFor(req.user);
     const signed = signatureFor(req.user, cfg);
@@ -2680,7 +2682,9 @@ function createPortalApi({
     if (urlPath === '/api/bulk/send-email' && Teams.isReadOnly(req.user)) { sendJSON(res, 403, { error: 'Your account can only view students.' }); return true; }
     const body = await bodyOf(req, res, 512 * 1024);
     if (!body) return true;
-    const ids = [...new Set(Array.isArray(body.ids) ? body.ids.map(String) : [])].filter((i) => ROW_ID.test(i)).slice(0, 150);
+    const ids = [...new Set(Array.isArray(body.ids) ? body.ids.map(String) : [])].filter((i) => ROW_ID.test(i));
+    // 150 at a time: more is refused with a clear message, never half sent and described as "every chosen student".
+    if (ids.length > 150) { sendJSON(res, 400, { error: `${ids.length} students are chosen: at most 150 can be emailed at a time. Untick some and send the rest afterwards.` }); return true; }
     if (!ids.length) { sendJSON(res, 400, { error: 'Choose at least one student.' }); return true; }
     const subject = typeof body.subject === 'string' ? body.subject : '';
     const emailBody = typeof body.body === 'string' ? body.body : '';

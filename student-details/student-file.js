@@ -12,6 +12,23 @@
     out.push(cur);
     return out;
   }
+  // A whole CSV file to rows of cells. A cell in quotes may hold commas and line breaks, and "" inside it is one quote (a Facebook or Meta
+  // export with a comment on two lines is one row, not two). A comma, semicolon or tab separates cells.
+  function csvRows(text) {
+    const rows = []; let row = []; let cur = ''; let q = false;
+    const src = String(text).replace(/^\uFEFF/, '');
+    for (let i = 0; i < src.length; i += 1) {
+      const ch = src[i];
+      if (q) {
+        if (ch === '"') { if (src[i + 1] === '"') { cur += '"'; i += 1; } else q = false; } else cur += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === ',' || ch === ';' || ch === '\t') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && src[i + 1] === '\n') i += 1; row.push(cur); cur = ''; rows.push(row); row = []; }
+      else cur += ch;
+    }
+    row.push(cur); rows.push(row);
+    return rows.filter((r) => r.some((c) => String(c).trim()));
+  }
   const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   // What is wrong with a line, if anything: { skip, note }. Skipped lines are not added.
   function checkRows(list) {
@@ -22,6 +39,7 @@
       if (r.badPhone) return { skip: true, note: `The phone number "${r.badPhone}" looks too short, skipped` };
       if (r.badBit) return { skip: true, note: `"${r.badBit}" does not look like a name, an email or a phone number, skipped` };
       if (!name) return { skip: true, note: 'No name, skipped' };
+      if (r.phone && /\d[.,]?\d*\s*e\s*[+-]?\d+/i.test(r.phone)) return { skip: true, note: 'The phone number was changed by Excel into a short form (like 9.8E+09), skipped. Format the column as text and save the file again' };
       if (r.phone && r.phone.replace(/\D/g, '').length < 6) return { skip: true, note: 'The phone number looks too short, skipped' };
       if (r.email && !EMAIL_OK.test(r.email)) return { skip: true, note: 'The email does not look right, skipped' };
       const keys = [];
@@ -31,7 +49,7 @@
       if (!keys.length) keys.push('n:' + name.toLowerCase());
       if (keys.some((k) => seen.has(k))) return { skip: true, note: 'Same email or phone as an earlier line, skipped' };
       keys.forEach((k) => seen.add(k));
-      if (!r.email && !r.phone) return { skip: false, note: 'No email or phone yet' };
+      if (!r.email && !r.phone) return { skip: true, note: 'No email and no phone, skipped (a student cannot be reached)' };
       return { skip: false, note: '' };
     });
   }
@@ -101,15 +119,15 @@
   // What is about the list, not the student: never read into a note.
   const LIST_ONLY = /inquiry\s*(no|number|#)|enquiry\s*(no|number|#)|^s\.?\s*no\.?$|^s\.?\s*n\.?$|serial|^no\.?$|^#$|(^|[\s_])id$|_id$|^id\b|link|url|inbox|platform|campaign|^ad[\s_]|ad\s*name|adset|ad\s*set|^form|form[\s_]name|is_organic|utm|^source$|lead\s*source/;
   const isLink = (v) => /^(https?:\/\/|www\.)/i.test(String(v || '').trim());
-  function fromGrid(grid, max = 200) {
+  function fromGrid(grid, max = 100000) {
     const heads = (grid[0] || []).map((c) => String(c === null || c === undefined ? '' : (c.text || c.result || c)).trim());
     const head = heads.map((c) => c.toLowerCase());
     const find = (re, not) => head.findIndex((c) => re.test(c) && !(not && not.test(c)));
-    const col = { first: find(/first\s*name|given/), last: find(/last\s*name|surname|family/), name: find(/^(full[\s_]*)?name$|student|full[\s_]name/), email: find(/e-?mail/), phone: find(/phone|mobile|contact|whatsapp|cell/, /e-?mail/) };
+    const col = { first: find(/first\s*name|given/), last: find(/last\s*name|surname|family/), name: (() => { const exact = find(/^(full[\s_]*)?(student[\s_]*)?name$|^full[\s_]name/); return exact >= 0 ? exact : find(/student/, /id|e-?mail|phone|mobile|number|no\b|contact/); })(), email: find(/e-?mail/), phone: find(/phone|mobile|contact|whatsapp|cell/, /e-?mail/) };
     const hasHead = Object.values(col).some((i) => i >= 0);
     const taken = new Set(Object.values(col).filter((i) => i >= 0));
     const free = (re, not) => head.findIndex((c, i) => !taken.has(i) && re.test(c) && !(not && not.test(c)));
-    const more = { date: free(/date|created|when|submitted/), level: free(/programme|program|level|degree|course|study/, /intake/), intake: free(/intake/) };
+    const more = { date: free(/date|created|when|submitted/, /birth|dob|expir|valid|passport|deadline/), level: free(/programme|program|level|degree|course|study/, /intake/), intake: free(/intake/) };
     more.time = head.findIndex((c, i) => i !== more.date && !taken.has(i) && /time/.test(c));
     if (more.date < 0 && more.time >= 0) { more.date = more.time; more.time = -1; } // one "time" column with the date and time in it
     // The place: a column about where the student lives that is not already the email or phone ("Email Address" is not a place).
@@ -208,8 +226,8 @@
   }
 
   // A file the person chose: .csv as text; .xlsx read by ISR itself (above), and only if that fails, by the Excel library.
-  async function readFile(file, max = 200) {
-    if (/\.csv$/i.test(file.name)) return fromGrid((await file.text()).split(/\r?\n/).filter(Boolean).map((l) => splitLine(l)), max);
+  async function readFile(file, max = 100000) {
+    if (/\.csv$/i.test(file.name)) return fromGrid(csvRows(await file.text()), max);
     const buffer = await file.arrayBuffer();
     try {
       if (typeof DecompressionStream === 'function') return fromGrid(await readXlsx(buffer), max);
@@ -224,5 +242,5 @@
     return fromGrid(grid, max);
   }
 
-  root.StudentFile = { readFile, readXlsx, checkRows, parse, fromGrid };
+  root.StudentFile = { csvRows, readFile, readXlsx, checkRows, parse, fromGrid };
 })(this);

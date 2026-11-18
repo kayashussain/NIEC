@@ -277,6 +277,11 @@ function mergeSheet(base, theirs, mine) {
 function mergeWorkbooks(base, theirs, mine) {
   let sheets = mergeRecords(base.sheets, theirs.sheets, mine.sheets, 'id', mergeSheet);
   if (!sheets.length) sheets = theirs.sheets; // each side deleted the other's last sheet: keep theirs
+  // A student moved to another intake on one side while the other side edited the row on its old sheet: the merge would keep the
+  // student on both sheets and, once saved, count them twice. The student stays where the saved copy (theirs) has them.
+  const placed = new Map(); theirs.sheets.forEach((sh) => sh.rows.forEach((r) => placed.set(r._id, sh.id)));
+  const copies = new Map(); sheets.forEach((sh) => sh.rows.forEach((r) => copies.set(r._id, (copies.get(r._id) || 0) + 1)));
+  sheets = sheets.map((sh) => ({ ...sh, rows: sh.rows.filter((r) => copies.get(r._id) < 2 || !placed.has(r._id) || placed.get(r._id) === sh.id) }));
   const activeSheetId = sheets.some((s) => s.id === mine.activeSheetId) ? mine.activeSheetId : sheets[0].id;
   return { sheets, activeSheetId };
 }
