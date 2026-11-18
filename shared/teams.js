@@ -249,7 +249,12 @@
     if (!team) return { ok: true };
     if (team.readOnly) return { ok: false, message: 'Your account can only view students.' };
     if (row && ownedByBranch(team, row)) { // a branch moves its own students freely, but only to a real stage
-      return ALL_STATUSES.includes(String(to ?? '').trim()) ? { ok: true } : { ok: false, message: 'That is not one of the stages.' };
+      if (!ALL_STATUSES.includes(String(to ?? '').trim())) return { ok: false, message: 'That is not one of the stages.' };
+      // Leaving Application needs the same details for a branch (university, course, application day, offer).
+      const leave = MOVES.find((m) => m.dept === 'application' && m.from === from && m.to === to && m.mustFill);
+      const lacking = leave ? leave.mustFill.filter((c) => isBlank(row[c])) : [];
+      if (lacking.length) return { ok: false, message: `This student can't go to ${to} yet. Please fill these first:\n\n• ${lacking.map(label).join('\n• ')}` };
+      return { ok: true };
     }
     const move = MOVES.find((m) => team.departments.includes(m.dept) && m.from === from && m.to === to);
     if (!move) {
