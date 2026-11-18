@@ -62,7 +62,7 @@ function matchCourse(name, pages) {
 
 function createCourseSitemaps({ dir, facts, courseLinks, fetchImpl = (...a) => fetch(...a), pause = 400, now = () => new Date() }) {
   const file = path.join(dir, 'course-sitemaps.json');
-  const read = () => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return { runs: [], universities: {} }; } };
+  const read = () => { try { const d = JSON.parse(fs.readFileSync(file, 'utf8')); return { ...d, runs: Array.isArray(d && d.runs) ? d.runs : [], universities: d && d.universities && typeof d.universities === 'object' ? d.universities : {} }; } catch (e) { return { runs: [], universities: {} }; } };
   let running = null;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   async function get(url) {
