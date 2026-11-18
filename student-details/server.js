@@ -773,6 +773,7 @@ async function handleDirect(req, res, urlPath) {
       activity.record(req, req.user, 'Edited partner universities', { app: 'Student Details', changes: [`Uploaded the agreement ${added.agreement.name} for ${added.university.name}`] });
       return sendJSON(res, 200, added.university);
     }
+    if (!fileMatch[2]) return send(res, 405, 'Method not allowed'); // only .../delete removes a file, never a stray POST
     const gone = direct.removeAgreement(id, fid, req.user.label);
     if (gone.error) return sendJSON(res, 404, { error: gone.error });
     activity.record(req, req.user, 'Edited partner universities', { app: 'Student Details', changes: [`Removed the agreement ${gone.removed.name} from ${gone.university.name}`] });

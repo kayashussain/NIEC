@@ -10,7 +10,7 @@
 
 const { levelOf } = require('./course-index');
 
-const num = (s) => { const n = Number(String(s).replace(',', '.')); return Number.isFinite(n) ? n : null; };
+const num = (s) => { if (String(s === null || s === undefined ? '' : s).trim() === '') return null; const n = Number(String(s).replace(',', '.')); return Number.isFinite(n) ? n : null; };
 // Our study levels from the portal's names ("International Year One", "Upper Tier UG Course (YORK Campus)", "Top-up").
 function ourLevel(name) {
   const t = String(name || '').toLowerCase();
@@ -48,7 +48,7 @@ function gapFrom(accepted, text) {
   if (m) return num(m[1]);
   return accepted === false ? 0 : null;
 }
-const TESTS = { IELTS: /ielts/i, PTE: /pte/i, DUOLINGO: /duolingo|\bdet\b/i, TOEFL: /toefl/i, OET: /\boet\b/i, LANGUAGECERT: /languagecert|language cert/i, OXFORD: /oxford/i, SELT: /\bselt\b/i };
+const TESTS = { IELTS: /ielts/i, PTE: /\bpte\b/i, DUOLINGO: /duolingo|\bdet\b/i, TOEFL: /toefl/i, OET: /\boet\b/i, LANGUAGECERT: /languagecert|language cert/i, OXFORD: /oxford/i, SELT: /\bselt\b/i };
 const testOf = (name) => Object.keys(TESTS).find((k) => TESTS[k].test(String(name || ''))) || '';
 // The overall score asked for: the first number of the line ("6.0 overall (5.5 in each)" is 6.0).
 // The lowest band (every part, component or element) a test asks for: "6.0 overall (5.5 in each component)" is 5.5, "no band less

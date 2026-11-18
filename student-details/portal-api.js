@@ -1731,7 +1731,8 @@ function createPortalApi({
           if (v !== text(found.row[col])) changes[col] = v;
         }
       }
-      if ((changes['FIRST NAME'] === '' && !text(found.row['LAST NAME']) && !('LAST NAME' in changes)) || ('FIRST NAME' in changes && changes['FIRST NAME'] === '' && 'LAST NAME' in changes && changes['LAST NAME'] === '')) { sendJSON(res, 400, { error: 'A student needs a name.' }); return true; }
+      // What the name would be after this save: a student keeps at least one of the two names.
+      if (('FIRST NAME' in changes || 'LAST NAME' in changes) && !text('FIRST NAME' in changes ? changes['FIRST NAME'] : found.row['FIRST NAME']) && !text('LAST NAME' in changes ? changes['LAST NAME'] : found.row['LAST NAME'])) { sendJSON(res, 400, { error: 'A student needs a name.' }); return true; }
       const sub = 'APPLICATION SUBMISSION DATE' in changes ? changes['APPLICATION SUBMISSION DATE'] : realDay(found.row['APPLICATION SUBMISSION DATE']) || '';
       const off = 'OFFER RECEIVED DATE' in changes ? changes['OFFER RECEIVED DATE'] : realDay(found.row['OFFER RECEIVED DATE']) || '';
       if (sub && off && off < sub && ('APPLICATION SUBMISSION DATE' in changes || 'OFFER RECEIVED DATE' in changes)) { sendJSON(res, 400, { error: 'The offer cannot be received before the application was submitted.' }); return true; }
@@ -1908,7 +1909,9 @@ function createPortalApi({
         else differs.push(`${label}: ${v}`);
       } else if (now.toLowerCase() !== v.toLowerCase() && !(col === 'CONTACT NUMBER' && phoneKey(now) === phoneKey(v))) differs.push(`${label}: ${v}`);
     });
-    const source = text(given['STUDENT SOURCE']);
+    // Only one of the real sources is kept (as on the card's own source box); anything else is left out.
+    const rawSource = text(given['STUDENT SOURCE']);
+    const source = rawSource && (Fields.STORED_SOURCES.includes(rawSource) || Fields.isBranchValue(rawSource)) ? rawSource : '';
     const sourceSet = Boolean(source && !text(row['STUDENT SOURCE']) && Teams.canEdit(req.user, 'STUDENT SOURCE', row));
     if (source && !sourceSet && text(row['STUDENT SOURCE']) && text(row['STUDENT SOURCE']) !== source) differs.push(`Student source: ${source}`);
     if (sourceSet) fill['STUDENT SOURCE'] = source;

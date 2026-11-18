@@ -22,7 +22,9 @@
   const has = (s) => String(s || '').trim() !== '';
   const lines = (t) => String(t || '').replace(/\r/g, '').split('\n').map((l) => l.trim());
   const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-  const monthOf = (w) => MONTHS.findIndex((m) => m.startsWith(String(w).toLowerCase().slice(0, 3)));
+  // A month word only when the whole word is a month or its usual short form ("separate", "marks" and "maybe" are not months).
+  const MONTH_WORD = /^(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?)$/;
+  const monthOf = (w) => { const t = String(w).toLowerCase(); return MONTH_WORD.test(t) ? MONTHS.findIndex((m) => m.startsWith(t.slice(0, 3))) : -1; };
 
   // ---- words ----
   const KEEP_CAPS = new Set(['IELTS', 'UKVI', 'PTE', 'TOEFL', 'OET', 'CAS', 'MOI', 'GPA', 'UK', 'EU', 'USA', 'UG', 'PG', 'IY1', 'IYO', 'PMP', 'FDN', 'BSC', 'MSC', 'MBA', 'BA', 'MA', 'LLM',
@@ -43,7 +45,11 @@
   }
   // The owner's spelling of the English terms (17 Nov 2026).
   function tidyTerms(text) {
-    return lines(text).map((l) => calmCaps(l)
+    // Web addresses are left exactly as written (their paths are case sensitive); only the words around them are tidied.
+    return lines(text).map((line) => line.split(/(https?:\/\/\S+)/).map((part, i) => (i % 2 ? part : tidyPart(part))).join('')).join('\n');
+  }
+  function tidyPart(l) {
+    return [l].map((l) => calmCaps(l)
       .replace(/\buniversity\s+(?:internal\s+)?(?:english\s+)?test\b/gi, 'University Internal Test')
       .replace(/\binternal\s+english\s+test\b/gi, 'University Internal Test')
       .replace(/\bm\.?o\.?i\b\.?/gi, 'MOI')
@@ -60,7 +66,7 @@
       .replace(/\bfree\b(?=\s+(university|english|duolingo|pvt|test|one))/gi, 'Free')
       // Months and days always start with a capital ("jan 2027" becomes "Jan 2027").
       .replace(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|english|nepal)\b/g, (w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .replace(/\s{2,}/g, ' ')).join('\n');
+      .replace(/\s{2,}/g, ' '))[0];
   }
   // Blank lines and repeated lines out; bullets kept as "- ".
   function compact(text) {
@@ -105,7 +111,9 @@
       const iMonth = monthOf(im[1]);
       year = +im[2] - (month > iMonth + 2 ? 1 : 0);
     }
-    return { date: new Date(Date.UTC(year, month, day)), text: found };
+    const real = new Date(Date.UTC(year, month, day));
+    if (real.getUTCDate() !== day) return null; // "31 February" is not a day: the typed text is kept as it is
+    return { date: real, text: found };
   }
   const DATE_WORDS = /deadline|apply by|application|deposit|cas\b|visa|interview|arrival|arrive|start|enrol|booking|payment|offer|close|open/i;
   // "CAS submission deadline: 27 November 2026" as { label: 'CAS submission deadline', when: '27 November 2026', date }.

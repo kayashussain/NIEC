@@ -207,7 +207,7 @@
     try {
       users = await api('/api/users');
     } catch (e) {
-      $('users').innerHTML = `<tr><td class="muted">${esc(e.message)}</td></tr>`;
+      $('users').innerHTML = `<tr><td class="muted" colspan="6">${esc(e.message)}</td></tr>`;
       return;
     }
     people = Object.fromEntries(users.map((u) => [u.id, u]));
@@ -238,7 +238,7 @@
         <td data-label="Devices">${u.loggedInDevices}</td>
         <td>${actions}</td>
       </tr>`;
-    }).join('') || '<tr><td class="muted">No one yet.</td></tr>';
+    }).join('') || '<tr><td class="muted" colspan="6">No one yet.</td></tr>';
   }
 
   const CONFIRM = {
@@ -343,7 +343,7 @@
     try {
       list = await api('/api/sessions');
     } catch (e) {
-      $('sessions').innerHTML = `<tr><td class="muted">${esc(e.message)}</td></tr>`;
+      $('sessions').innerHTML = `<tr><td class="muted" colspan="6">${esc(e.message)}</td></tr>`;
       return;
     }
     $('devicesCount').textContent = list.length;
@@ -354,7 +354,7 @@
       <td data-label="Logged in">${when(s.created)}</td>
       <td data-label="Last active">${when(s.lastSeen)}</td>
       <td>${s.current ? '' : `<div class="actions"><button class="btn btn-sm" data-end="${s.id}">Log out</button></div>`}</td>
-    </tr>`).join('') || '<tr><td class="muted">No one is logged in.</td></tr>';
+    </tr>`).join('') || '<tr><td class="muted" colspan="6">No one is logged in.</td></tr>';
   }
 
   $('sessions').addEventListener('click', async (e) => {

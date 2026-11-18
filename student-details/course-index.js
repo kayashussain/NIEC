@@ -25,7 +25,7 @@ function levelOf(words) {
   if (/\bfoundation\b|\bifp\b|pathway/.test(t)) return 'Foundation';
   if (/\bphd\b|\bmres\b|doctor|research degree|by research/.test(t)) return 'Masters by Research or PhD';
   if (/postgraduate|\bpg\b|\bmba\b/.test(t)) return 'Postgraduate'; // an MBA is postgraduate (the owner, 14 Nov 2026)
-  if (/\bmasters?\b|\bmsc\b|\bma\b|\bllm\b|\bmeng\b|\bmph\b|\bpgdip\b|\bpgcert\b|\bmfa\b|\bmarch\b/.test(t)) return 'Postgraduate';
+  if (/\bmasters?\b|\bmsc\b|\bma\b|\bllm\b|\bmeng\b|\bmph\b|\bpgdip\b|\bpgcert\b|\bmfa\b/.test(t) || /\bMArch\b/.test(String(words || ''))) return 'Postgraduate'; // MArch only as written: the month March is not a degree
   if (/undergraduate|\bug\b|\bbachelors?\b|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bbba\b|\bbn\b|\(hons\)/.test(t)) return 'Undergraduate';
   return '';
 }
