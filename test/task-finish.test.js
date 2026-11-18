@@ -248,9 +248,15 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   }
   // A tracking task closed with words only records nothing: the student then needs a next step with a real day, never "Not needed".
   {
+    // With other tasks still open for the student, words alone are enough (nobody is left without a next step).
     const g = await giveT('Check on the NOC', 'noc');
-    assert.strictEqual((await finishT(g, { note: 'Spoke to the student, ok' })).status, 400, 'words only and no next day');
-    assert.strictEqual((await finishT(g, { note: 'Spoke to the student, ok', next: add(3) })).status, 200, 'words only with a next day');
+    assert.strictEqual((await finishT(g, { note: 'Spoke to the student, ok' })).status, 200, 'other tasks are still open: words only are enough');
+    // The student's last open task closed with words only needs a real next day, never "Not needed".
+    const solo = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Solo', 'LAST NAME': 'Task', 'CONTACT NUMBER': '9800000099' } })).json.id;
+    const soloTask = (await admin('POST', `/api/cards/${solo}/tasks`, { team: 'application', text: 'Check on the NOC', tag: 'noc' })).json.card.tasks[0].id;
+    const soloFinish = (f) => app('POST', `/api/cards/${solo}/tasks/${soloTask}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
+    assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok' })).status, 400, 'the last open task, words only, no next day');
+    assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok', next: add(3) })).status, 200, 'with a next day');
   }
   // A student who has withdrawn gets no new applications from a team; removing the "Apply for" task puts its courses back on the Shortlist.
   {

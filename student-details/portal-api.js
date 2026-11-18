@@ -603,7 +603,7 @@ function createPortalApi({
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
       needsNext: needsNextStep(found, task), stage: text(row[STATUS]), minNote: MIN_NOTE,
       // A task that tracks the student's journey cannot be closed with a note alone and no next step (unless the student's journey has ended).
-      trackTag: task.team !== HEAD && TRACK_TAGS.includes(kind) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(row[STATUS])),
+      trackTag: task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(kind) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(row[STATUS])),
     };
   }
   // Works out what finishing `task` with the answers `f` changes, without writing anything. Returns { error } or
@@ -1657,8 +1657,8 @@ function createPortalApi({
             // An answer to the task's question says what happened by itself; without one, a few words are needed.
             if (!answered && text(f.note).length < MIN_NOTE) { sendJSON(res, 400, { error: 'Write in a few words what was done, so the next person knows.' }); return true; }
             // A tracking task closed with a note alone records nothing: the student must then have a next step with a real day.
-            const trackOnly = !answered && task.team !== HEAD && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
-            if (trackOnly && (f.next === undefined || f.next === '' || f.next === 'none')) { sendJSON(res, 400, { error: 'This task recorded nothing, so choose the day someone gets back to the student: the student cannot be left with no next step.' }); return true; }
+            const trackOnly = !answered && task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
+            if (trackOnly && (f.next === undefined || f.next === '' || f.next === 'none')) { sendJSON(res, 400, { error: 'This was the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return true; }
             if ((trackOnly || needsNextStep(found, task)) && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
               if (f.next === undefined || f.next === '') { sendJSON(res, 400, { error: 'This was the last open task for this student: choose the day to follow up next, or "Not needed".' }); return true; }
               step = nextStepOf(f, task);

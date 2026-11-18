@@ -640,7 +640,7 @@
           // A tracking task closed with words only records nothing: the student then needs a next step with a real day, never "Not needed".
           const wordsOnly = !recorded && state && state.trackTag;
           const wantsNext = state && (state.needsNext || wordsOnly) && !makesOwnNext() && (state.needsNext || !recorded);
-          if (wordsOnly && !makesOwnNext() && nextValue === 'none') { fail({ message: 'This task recorded nothing, so choose the day someone gets back to the student (not "Not needed").' }); return; }
+          if (wordsOnly && !makesOwnNext() && nextValue === 'none') { fail({ message: 'This is the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return; }
           if (wantsNext && !nextValue) { fail({ message: 'Choose when someone should get back to this student, or "Not needed".' }); return; }
           const answers = { ...read(), note: words.input.value.trim(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
           if (!asks) { answer = answers; close(true); return; }
