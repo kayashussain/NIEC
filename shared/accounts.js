@@ -29,7 +29,7 @@ const { send, sendJSON, safeEqual, clientIp, readJSONBody, writeFileAtomic, desc
 const Teams = require('./teams');
 const defaultMailer = require('./mailer');
 
-const DEPARTMENTS = Object.fromEntries(Object.entries(Teams.DEPARTMENTS).map(([id, d]) => [id, d.label]));
+const DEPARTMENTS = Object.assign(Object.create(null), Object.fromEntries(Object.entries(Teams.DEPARTMENTS).map(([id, d]) => [id, d.label]))); // no prototype: "constructor" is not a team
 
 const SESSION_COOKIE = 'niec_session';
 const SESSION_MS = 12 * 60 * 60 * 1000; // a login lasts one working day
@@ -547,12 +547,15 @@ function createAccounts({
 
     if (urlPath === '/api/login/new-password' && method === 'POST') {
       const found = currentSession(req);
-      if (!found || found.session.stage !== 'setup') { bad(res, 401, 'Please start again with your username and password.'); return true; }
+      // A setup login only sets the first password once: a second device that logged in with the same temporary password
+      // cannot later replace the password the person already chose.
+      if (!found || found.session.stage !== 'setup' || !found.user.mustChangePassword) { bad(res, 401, 'Please start again with your username and password.'); return true; }
       const problem = passwordProblem(body.password);
       if (problem) { bad(res, 400, problem); return true; }
       if (await verifyPasswordAsync(body.password, found.user.passwordHash)) { bad(res, 400, 'Please choose a new password, not the temporary one.'); return true; }
       const updated = updateUser(found.user.id, { passwordHash: hashPassword(body.password), mustChangePassword: false });
       record(req, publicUser(updated), 'Set their own password');
+      endSessions((s) => s.userId === found.user.id && s.id !== found.session.id); // any other login made with the temporary password
       finishSetupIfDone(req, res, updated);
       return true;
     }

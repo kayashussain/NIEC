@@ -43,7 +43,8 @@
   // (the server marks those rows with `_addedByTeam`), on top of the department's usual columns.
   const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'STUDENT SOURCE', 'REMARKS'];
 
-  const DEPARTMENTS = {
+  // No prototype, so a name like "constructor" or "toString" is never taken for a team.
+  const DEPARTMENTS = Object.assign(Object.create(null), {
     application: {
       label: 'Application Team',
       start: 'Application Stage', // the stage a student this department adds starts at
@@ -65,7 +66,7 @@
     // A branch works on its own students, whatever their stage: the ones whose Student Source is the branch.
     // They can fill in and change every column (except the Student Source itself, which is what makes the
     // student theirs), and the students they add are tagged with the branch.
-  };
+  });
   // One branch team for each branch in the list: chitwan, pokhara, palpa, butwal ...
   BRANCH_LIST.forEach((name) => {
     DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, start: 'Inquiry', statuses: [], editable: new Set(), source: `${name} Branch` };

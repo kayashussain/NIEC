@@ -446,7 +446,10 @@ function teamSave(req, parsed) {
     activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: errors });
     return { status: 403, body: { error: errors.join(' ') } };
   }
-  if (!changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision } };
+  // Someone else saved after this page's copy: the page is told to fetch its fresh view, so it never claims a revision whose
+  // other edits it has not seen (and then sends an old cell back over a newer one).
+  const behind = base !== current;
+  if (!changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision, reload: behind } };
   if (adds.length > 50) { // a person adds students one or a few at a time; thousands in one save is a mistake or an attack
     activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: [`Tried to add ${adds.length} students in one save`] });
     return { status: 403, body: { error: 'You can add up to 50 students in one save.' } };
@@ -525,7 +528,7 @@ function teamSave(req, parsed) {
   recordChanges(req, before, next);
   // A student moved to another stage leaves this team's view, and a new one is stored as the server
   // checked it: either way the page fetches its fresh view.
-  const reload = adds.length > 0 || deletes.length > 0 || changes.some((c) => c.col === 'APPLICATION STATUS');
+  const reload = behind || adds.length > 0 || deletes.length > 0 || changes.some((c) => c.col === 'APPLICATION STATUS');
   return { status: 200, body: { ok: true, revision: next.revision, reload } };
 }
 
