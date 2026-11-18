@@ -60,7 +60,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await mock('GET', '/api/tasks')).json.tasks[0].comments.length, 2, 'the team sees the conversation on Today');
   assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10) } })).status, 200);
   const all = (await admin('GET', '/api/tasks')).json.tasks;
-  const finished = all.find((x) => x.id === taskId); // (a follow-up task for the next day was made with it)
+  const finished = all.find((x) => x.id === taskId); // (a Mock task asks no follow-up day)
   assert.deepStrictEqual([finished.done, finished.doneBy, finished.teamLabel], [true, 'bikram', 'Mock Team']);
   assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: false })).status, 200, 'marked not complete again');
   assert.strictEqual((await admin('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200);
@@ -75,7 +75,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   const dash = (await mock('GET', '/api/my-dashboard')).json;
   assert.strictEqual(dash.kind, 'mock');
   assert.strictEqual(dash.kpis.length, 4);
-  assert.deepStrictEqual([dash.tasks.open, dash.tasks.late], [2, undefined], 'the team sees its open tasks (this one and the follow-up made when the first was done) (no "late": tasks have no dates)');
+  assert.deepStrictEqual([dash.tasks.open, dash.tasks.late], [1, undefined], 'the team sees its open tasks (a Mock task asks no follow-up day, so none was made; no "late": tasks have no dates)');
   // A team gives Admin a task too (the owner, 14 Nov 2026): Admin is named with the signature's title, sees it under "For you" with
   // a red dot, and the dot goes once Admin reads it. A comment from the other side makes a new dot, for whoever gave the task too.
   const sita = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Gita', 'LAST NAME': 'Rai', 'CONTACT NUMBER': '9800000011' } })).json.id;

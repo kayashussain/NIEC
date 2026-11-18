@@ -609,9 +609,10 @@ function createPortalApi({
       // A task for one course, and an Offer request, have simple windows with no follow-up question: the Offer request is made by itself.
       courseTask: own ? { id: own.id, university: own.university, course: own.course, partner: own.partner || '', answered: !assignedOf(card).some((a) => a.id === own.id) } : null,
       offerTask: offerFor,
-      needsNext: !own && !offerFor && needsNextStep(found, task), stage: text(row[STATUS]), minNote: MIN_NOTE,
+      // Mock tasks ask no follow-up day either (the owner, 18 Nov 2026): a mock set makes its own feedback task, and the rest is the team's work.
+      needsNext: !own && !offerFor && kind !== 'mock' && needsNextStep(found, task), stage: text(row[STATUS]), minNote: MIN_NOTE,
       // A task that tracks the student's journey cannot be closed with a note alone and no next step (unless the student's journey has ended).
-      trackTag: task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(kind) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(row[STATUS])),
+      trackTag: task.team !== HEAD && kind !== 'mock' && needsNextStep(found, task) && TRACK_TAGS.includes(kind) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(row[STATUS])),
     };
   }
   // Works out what finishing `task` with the answers `f` changes, without writing anything. Returns { error } or
@@ -1669,7 +1670,7 @@ function createPortalApi({
             // An answer to the task's question says what happened by itself; without one, a few words are needed.
             if (!answered && text(f.note).length < MIN_NOTE) { sendJSON(res, 400, { error: 'Write in a few words what was done, so the next person knows.' }); return true; }
             // A tracking task closed with a note alone records nothing: the student must then have a next step with a real day.
-            const skipNext = Boolean(courseOf(cards.get(found.row._id), task)) || (Fields.taskTag(task, text(found.row[STATUS])) === 'offer' && answered);
+            const skipNext = Boolean(courseOf(cards.get(found.row._id), task)) || Fields.taskTag(task, text(found.row[STATUS])) === 'mock' || (Fields.taskTag(task, text(found.row[STATUS])) === 'offer' && answered);
             const trackOnly = !skipNext && !answered && f.generic !== true && f.waiting !== true && task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
             if (trackOnly && (f.next === undefined || f.next === '' || f.next === 'none')) { sendJSON(res, 400, { error: 'This was the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return true; }
             if (((!skipNext && needsNextStep(found, task)) || trackOnly || f.waiting === true) && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
