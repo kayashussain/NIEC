@@ -33,12 +33,13 @@ function ask(question, { hidden = false, fallback = '' } = {}) {
 
 async function setup() {
   const old = mailer.loadConfig(dir, {});
-  const user = await ask('Mailbox (also the address emails are sent from)', { fallback: old.user || 'kayas@niecedu.com.np' });
+  const user = await ask('Mailbox (also the address emails are sent from)', { fallback: old.user });
   const pass = await ask('Mailbox password (typing is hidden)', { hidden: true });
   if (!pass && !old.pass) { console.error('No password entered. Nothing saved.'); process.exit(1); }
-  const host = await ask('Mail server', { fallback: old.host });
+  const host = await ask('Mail server', { fallback: old.host || (/@(.+)$/.test(user) ? 'mail.' + user.split('@').pop() : '') });
   const port = await ask('Port (465 for SSL, 587 for STARTTLS)', { fallback: String(old.port) });
-  const siteUrl = await ask('Website address people open to log in', { fallback: old.siteUrl || 'https://niec.duckdns.org' });
+  if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) { console.error(`"${port}" is not a port number (465 or 587). Nothing saved.`); process.exit(1); }
+  const siteUrl = await ask('Website address people open to log in', { fallback: old.siteUrl });
   const config = {
     host, port: Number(port), security: Number(port) === 587 ? 'starttls' : 'ssl', user, pass: pass || old.pass,
     from: user, fromName: old.fromName, siteUrl,

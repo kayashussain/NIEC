@@ -138,8 +138,8 @@
       let result;
       // Closes with a short fade and shrink (as a Mac sheet does); a person who prefers less motion gets it at once.
       const close = (value) => {
+        if (d.classList.contains('is-closing')) return; // the first answer stands: a click during the fade cannot replace it
         result = value;
-        if (d.classList.contains('is-closing')) return;
         const quick = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (quick) { d.close(); return; }
         d.classList.add('is-closing');

@@ -224,6 +224,7 @@ function createAccounts({
   dir, homePath = (req) => req.url, activity = null, writable = true, now = Date.now, mailer = defaultMailer,
   maxFailures = 20, maxUserFailures = 8, windowMs = 15 * 60 * 1000,
   studentName = () => '', // the name of the student a student's own login is for (the server knows the sheet)
+  companyName = () => '', // the consultancy's own name, a stored setting (the email signature); never written into code
 }) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const usersStore = createStore(path.join(dir, 'users.json'), () => ({ users: [] }),
@@ -400,6 +401,7 @@ function createAccounts({
     if (!cfg) return { status: 'not-configured', to: user.email };
     const message = mailer.setupEmail({
       name: user.name, username: user.username, temporaryPassword: temp, access: accessLabel(user), siteUrl: siteUrlFor(req), kind,
+      company: (() => { try { return String(companyName() || ''); } catch (e) { return ''; } })(),
     });
     try {
       await mailer.sendMail(cfg, { to: user.email, ...message });

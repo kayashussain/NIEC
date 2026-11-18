@@ -34,7 +34,7 @@ console.log(`Open        : http://localhost:${port}`);
 console.log(`Log in as   : owner   password: ${PASSWORD}   (this private copy on your computer only)`);
 console.log('Keep this window open while you use the portal. Press Ctrl+C to stop.\n');
 
-const env = { ...process.env, PORT: port, STUDENT_DETAILS_DATA_DIR: dataDir, COUNSELOR_DATA_DIR: path.join(dataDir, 'counselor-incentive'), INCENTIVE_PASSWORD: process.env.INCENTIVE_PASSWORD || PASSWORD };
+const env = { ...process.env, HOST: '127.0.0.1', PORT: port, STUDENT_DETAILS_DATA_DIR: dataDir, COUNSELOR_DATA_DIR: path.join(dataDir, 'counselor-incentive'), INCENTIVE_PASSWORD: process.env.INCENTIVE_PASSWORD || PASSWORD };
 const child = spawn(process.execPath, [path.join(root, 'student-details', 'server.js')], { env, stdio: 'inherit' });
 child.on('exit', (code) => process.exit(code || 0));
 process.on('SIGINT', () => child.kill('SIGINT'));

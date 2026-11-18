@@ -30,7 +30,7 @@
   const has = (s) => String(s || '').trim() !== '';
   const when = (iso) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
   const student = () => Boolean(window.Shortlist && window.Shortlist.isStudent());
-  const team = () => !student() && !BACKUP && me.role && !(window.Teams && window.Teams.isReadOnly(me));
+  const team = () => !student() && !BACKUP && me.role && !(window.TeamRules && window.TeamRules.isReadOnly(me));
   function say(text, error) { const m = $('msg'); m.textContent = text || ''; m.className = 'no-print msg' + (error ? ' error' : ''); }
 
   // Text with "## " headings and "- " bullets, as headings, lists and paragraphs.

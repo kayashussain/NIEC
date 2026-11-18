@@ -1636,7 +1636,8 @@ function createPortalApi({
           if (!out.error) cards.markSeen(req.user.username, [task.id]);
           if (!out.error) note(req, [`${who2}: commented on the task for ${teamLabel(task.team)}: ${String(body.comment).slice(0, 120)}`], 'Task comment');
         } else {
-          if (!canAssign(req.user) && !forMe(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
+          // A view-only account (a Manager with no team) cannot finish a task: finishing writes the student's columns.
+          if (Teams.isReadOnly(req.user) || (!canAssign(req.user) && !forMe(req.user, task))) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
           const f = body.finish && typeof body.finish === 'object' ? body.finish : null;
           // What the "Mark as done?" window shows before it asks (see finishState).
           if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task) }); return true; }

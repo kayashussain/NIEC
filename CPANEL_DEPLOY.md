@@ -147,7 +147,7 @@ node scripts/email.js test someone@example.com
 
 `setup` asks for the mailbox (for example `kayas@niecedu.com.np`) and its password, and saves them in
 `mail.json` in the Student Details data folder (never in git, never served, private to the server user).
-The mail server defaults to `mail.niecedu.com.np` on port 465 with SSL; change it when asked (587 means
+`setup` also asks for the mail server (it suggests `mail.` plus the mailbox's domain, for example `mail.niecedu.com.np`); the port defaults to 465 with SSL, change it when asked (587 means
 STARTTLS). `test` sends a message and says what went wrong if it fails. From then on, adding a person (or
 resetting a password) emails them their link, username and temporary password. If email is not set up, or a
 message cannot be sent, the temporary password is shown to Admin instead so it can be given in person.
