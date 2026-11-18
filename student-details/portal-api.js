@@ -1643,7 +1643,7 @@ function createPortalApi({
           if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task) }); return true; }
           // Done needs what happened, and the next step when the student would be left without one (see needsNextStep).
           if (body.done && !task.done && !f) { sendJSON(res, 400, { error: 'Say what was done first.' }); return true; }
-          const hasKeys = Boolean(f) && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText'].includes(k) && f[k] !== undefined && f[k] !== '');
+          const hasKeys = Boolean(f) && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText', 'generic'].includes(k) && f[k] !== undefined && f[k] !== '');
           // An answer counts only when it records something: an extra word in the request is not an answer (the few words are then needed).
           const draft = hasKeys ? finishPlan(found, task, f, req.user) : null;
           const answered = Boolean(draft && (draft.error || Object.keys(draft.columns).length || draft.options.length || draft.remind || draft.medical !== undefined || (draft.note && draft.note !== text(f.note).slice(0, 2000))));
@@ -1652,13 +1652,13 @@ function createPortalApi({
             const plan0 = answered ? draft : null;
             if (plan0 && plan0.error) { sendJSON(res, 400, { error: plan0.error }); return true; }
             // "Nothing to record" is not an answer while courses given to the team are still unanswered.
-            if (Fields.taskTag(task, text(found.row[STATUS])) === 'application' && assignedOf(cards.get(found.row._id)).length && !(plan0 && plan0.options.length)) {
+            if (f.generic !== true && Fields.taskTag(task, text(found.row[STATUS])) === 'application' && assignedOf(cards.get(found.row._id)).length && !(plan0 && plan0.options.length)) {
               sendJSON(res, 400, { error: 'Courses were given to the team and have no answer yet: choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why) for each.' }); return true;
             }
             // An answer to the task's question says what happened by itself; without one, a few words are needed.
             if (!answered && text(f.note).length < MIN_NOTE) { sendJSON(res, 400, { error: 'Write in a few words what was done, so the next person knows.' }); return true; }
             // A tracking task closed with a note alone records nothing: the student must then have a next step with a real day.
-            const trackOnly = !answered && task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
+            const trackOnly = !answered && f.generic !== true && task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
             if (trackOnly && (f.next === undefined || f.next === '' || f.next === 'none')) { sendJSON(res, 400, { error: 'This was the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return true; }
             if ((trackOnly || needsNextStep(found, task)) && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
               if (f.next === undefined || f.next === '') { sendJSON(res, 400, { error: 'This was the last open task for this student: choose the day to follow up next, or "Not needed".' }); return true; }

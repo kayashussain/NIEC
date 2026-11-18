@@ -257,6 +257,13 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     const soloFinish = (f) => app('POST', `/api/cards/${solo}/tasks/${soloTask}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
     assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok' })).status, 400, 'the last open task, words only, no next day');
     assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok', next: add(3) })).status, 200, 'with a next day');
+    // A task tagged Application that is not about an application ("ask the university for the mock feedback"): the person says so, and words are
+    // enough, even as the last open task, with no follow-up needed (the owner, 18 Nov 2026).
+    const solo2 = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Feedback', 'LAST NAME': 'Task', 'CONTACT NUMBER': '9800000098' } })).json.id;
+    const fbTask = (await admin('POST', `/api/cards/${solo2}/tasks`, { team: 'application', text: 'Mock interview given for Roehampton to TOR. Ask for the feedback.', tag: 'application' })).json.card.tasks[0].id;
+    const fbFinish = (f) => app('POST', `/api/cards/${solo2}/tasks/${fbTask}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
+    assert.strictEqual((await fbFinish({ note: 'Asked TOR for the feedback.' })).status, 400, 'tagged Application, last task, words only, no day');
+    assert.strictEqual((await fbFinish({ note: 'Asked TOR for the feedback.', generic: true })).status, 200, 'said not to be about an application: words are enough');
   }
   // A student who has withdrawn gets no new applications from a team; removing the "Apply for" task puts its courses back on the Shortlist.
   {

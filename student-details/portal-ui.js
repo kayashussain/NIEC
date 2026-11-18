@@ -404,7 +404,7 @@
     let answer = null;
     const url = `/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`;
     const tag = tagOf(t, o.stage);
-    const asks = ['application', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
+    const asks = ['application', 'offer', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
     return dialog('Mark as done?', (body, close) => {
       body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
       const ask = el('div', 'td-done-step');
@@ -441,6 +441,8 @@
           if (bits.length) form.append(el('p', 'p-muted p-small p-wide td-done-now', `Now on All Students: ${bits.join(' · ')}`));
         };
         let read = () => ({});
+        let notAbout = () => false; // the person said the task is not about its tag's question
+        const specificFrom = form.children.length; // everything added from here to the "What was done?" box belongs to the task's own question
         let check = () => '';
         if (tag === 'application' || tag === 'offer') {
           // So far: every application ISR knows, each with its days; a press on one starts a line for it below.
@@ -593,10 +595,26 @@
           read = () => (q.value() && q.value() !== 'none' ? { step: q.value(), date: date.input.value } : {});
           check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Say why the visa was refused, in the note below.' : '');
         }
+        // A task is sometimes tagged for a question that is not what was asked (an Application tag on "ask for the mock feedback"): the
+        // person can say so, and then only what was done is written (the owner, 18 Nov 2026).
+        if (asks) {
+          const specific = [...form.children].slice(specificFrom);
+          if (specific.length) {
+            const off = el('label', 'p-check p-wide td-not-about');
+            const box = el('input'); box.type = 'checkbox';
+            off.append(box, el('span', '', tag === 'application' || tag === 'offer' ? 'This task is not about an application: I only want to write what was done' : 'This task does not record a step: I only want to write what was done'));
+            form.insertBefore(off, specific[0]);
+            const origRead = read; const origCheck = check;
+            read = () => (box.checked ? {} : origRead());
+            check = () => (box.checked ? '' : origCheck());
+            notAbout = () => box.checked;
+            box.addEventListener('change', () => { const w = form.querySelector('textarea[data-words]'); if (w) w.placeholder = box.checked ? 'e.g. Asked the university for the feedback.' : (w.dataset.was || w.placeholder); specific.forEach((n) => { if (box.checked) { n._wasHidden = n.hidden; n.hidden = true; } else n.hidden = Boolean(n._wasHidden); }); });
+          }
+        }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
         const minNote = (state && state.minNote) || 8;
         const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
-        words.input.rows = 2;
+        words.input.rows = 2; words.input.dataset.words = '1'; words.input.dataset.was = words.input.placeholder;
         form.append(words.wrap);
         // What next: when this is the student's last open task and the student is still on the way, the team picks the day someone
         // gets back to them, or says it is not needed. One tap for the usual days.
@@ -641,9 +659,9 @@
           // A tracking task closed with words only records nothing: the student then needs a next step with a real day, never "Not needed".
           const wordsOnly = !recorded && state && state.trackTag;
           const wantsNext = state && (state.needsNext || wordsOnly) && !makesOwnNext() && (state.needsNext || !recorded);
-          if (wordsOnly && !makesOwnNext() && nextValue === 'none') { fail({ message: 'This is the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return; }
+          if (wordsOnly && !notAbout() && !makesOwnNext() && nextValue === 'none') { fail({ message: 'This is the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return; }
           if (wantsNext && !nextValue) { fail({ message: 'Choose when someone should get back to this student, or "Not needed".' }); return; }
-          const answers = { ...read(), note: words.input.value.trim(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
+          const answers = { ...read(), ...(notAbout() ? { generic: true } : {}), note: words.input.value.trim(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
           if (!asks) { answer = answers; close(true); return; }
           next.disabled = true;
           try { const r = await api(url, { done: true, finish: answers, preview: true }); msg.textContent = ''; msg.className = 'p-msg'; review(r.preview, answers); } catch (e) { fail(e); }
