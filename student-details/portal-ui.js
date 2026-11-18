@@ -146,14 +146,14 @@
         setTimeout(() => d.close(), 160);
       };
       const head = el('div', 'p-dialog-head');
-      const x = h('button', { type: 'button', class: 'p-x', 'aria-label': 'Close', onclick: () => close() }, '×');
+      const x = h('button', { type: 'button', class: 'p-x', 'aria-label': 'Close', onclick: () => { if (!d.dataset.busy) close(); } }, '×');
       head.append(el('h2', '', title), x);
       const body = el('div', 'p-dialog-body');
       d.append(head, body);
       d.addEventListener('close', () => { d.remove(); resolve(result); });
-      d.addEventListener('mousedown', (e) => { if (e.target === d) close(); });
+      d.addEventListener('mousedown', (e) => { if (e.target === d && !d.dataset.busy) close(); });
       // Escape closes with the same short animation as the close button, not the browser's instant close.
-      d.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+      d.addEventListener('cancel', (e) => { e.preventDefault(); if (!d.dataset.busy) close(); }); // a window marked busy (a save is on its way) cannot be dismissed
       document.body.append(d);
       build(body, close);
       d.showModal();

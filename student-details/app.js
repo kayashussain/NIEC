@@ -2419,7 +2419,9 @@
   // the sheet, and every open sheet picks the new student up by itself.
   async function addRow() {
     if (isViewOnly()) return;
-    if (dirty || saving) await saveData(); // what is typed in the sheet is saved first, so nothing is lost when the sheet refreshes
+    // What is typed in the sheet is saved first (waiting for a save already on its way), so nothing is lost when the sheet refreshes.
+    for (let i = 0; i < 40 && (dirty || saving) && !conflicted; i++) { await saveData(); if (saving) await new Promise((r) => setTimeout(r, 150)); }
+    if (conflicted) { NiecUI.toast('The sheet changed somewhere else. Reload the page before adding a student.', { type: 'error' }); return; }
     // With a filter on a dropdown column (say Application Stage), the new student starts at that value and stays in the filtered list.
     let defaultStage = isTeam() ? '' : 'Inquiry';
     const filtered = columnFilters['APPLICATION STATUS'];
@@ -2429,7 +2431,8 @@
     if (!made || !made.id) return;
     searchEl.value = '';
     reloadWanted = true;
-    await checkForRemoteChanges();
+    // The refresh is skipped while a save or edit is busy: try again a few times until the new row is on the sheet.
+    for (let i = 0; i < 20 && !rows.some((r) => r._id === made.id); i++) { await checkForRemoteChanges(); if (!rows.some((r) => r._id === made.id)) await new Promise((r) => setTimeout(r, 300)); }
     // The student is saved: say so once and show the new row on the sheet. No second card opens by itself (the owner, 18 Nov 2026);
     // the card is one click away on the row if it is wanted.
     flashStatus(made.merged ? 'Student updated and saved' : 'Student saved');

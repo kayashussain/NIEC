@@ -42,15 +42,16 @@
       const picker = branchOnly ? null : root.SourcePicker.create({ lists });
       if (picker) { form.append(el('h3', '', 'Where the student came from')); const g = el('div', 'p-form p-form-2'); picker.nodes.forEach((n) => g.append(n)); form.append(g); }
 
-      const note = make('note', 'Remarks (optional)', { kind: 'area', wide: true, max: 2000, placeholder: 'What was discussed at the first contact.' });
+      const note = make('note', 'Note on the student card (optional)', { kind: 'area', wide: true, max: 2000, placeholder: 'What was discussed at the first contact.' });
       form.append(note.wrap);
       body.append(form);
 
-      const msg = el('div', 'p-msg');
+      const msg = el('div', 'p-msg'); msg.setAttribute('role', 'alert'); // read out by a screen reader
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save student');
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       body.append(msg, foot);
+      let nationalityTouched = false; inputs.nationality.addEventListener('change', () => { nationalityTouched = true; });
       let allowDuplicate = false; // set by "Add anyway (a different person)"
       form.addEventListener('input', () => { allowDuplicate = false; });
       ok.addEventListener('click', async () => {
@@ -60,6 +61,7 @@
         const missing = picker ? picker.check() : '';
         if (missing) { msg.textContent = missing; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
+        const dlg = ok.closest('dialog'); if (dlg) dlg.dataset.busy = '1'; // Escape, the X and a click outside wait until the save is answered
         msg.textContent = 'Saving…';
         msg.className = 'p-msg';
         const fields = {};
@@ -72,6 +74,7 @@
         } catch (e) {
           const dup = e.body && e.body.duplicate;
           ok.disabled = false;
+          if (dlg) delete dlg.dataset.busy;
           if (!dup) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.focus(); return; }
           // Already in ISR: never a second copy. Open them, or fill in only what is blank on them (nothing already there is replaced).
           msg.className = 'p-msg ns-dup';
@@ -84,7 +87,11 @@
           if (dup.canFill) {
             row.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: async () => {
               try {
-                const r = await api('/api/students/merge', { id: dup.id, fields, profile: { sourceDetail: pick.detail, sourceRemarks: pick.remarks, sourcePlatform: pick.platform || '', sourceWay: pick.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim(), nationality: v('nationality') }, note: v('note') });
+                // What is in the form now (it may have been edited since the warning), and the nationality only if it was chosen on purpose.
+                const now = {}; ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER'].forEach((k) => { now[k] = v(k); });
+                const p2 = picker ? picker.value() : { source: '', detail: '', remarks: '' };
+                now['STUDENT SOURCE'] = p2.source;
+                const r = await api('/api/students/merge', { id: dup.id, fields: now, profile: { sourceDetail: p2.detail, sourceRemarks: p2.remarks, sourcePlatform: p2.platform || '', sourceWay: p2.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim(), ...(nationalityTouched ? { nationality: v('nationality') } : {}) }, note: v('note') });
                 window.NiecUI.toast(r.filled.length ? `Filled in ${r.filled.length} missing detail${r.filled.length === 1 ? '' : 's'} on ${dup.name}${r.differs.length ? '; the different ones are in a note on the card' : ''}.` : `Nothing was missing on ${dup.name}${r.differs.length ? '; the different details are in a note on the card' : ''}.`, { type: 'success' });
                 close({ id: dup.id, merged: true });
               } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; }
