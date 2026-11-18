@@ -133,6 +133,7 @@
         const detail = detailInput ? detailInput.value : '';
         if (disabled || !g) return '';
         if (g === 'Events' && !detail) return 'Choose the event or campaign.';
+        if (g === 'Branch' && !detail) return 'Choose which branch.';
         if (g === 'Social Media' && social) {
           if (!social.platform.value) return 'Choose the platform.';
           if (!social.way()) return 'Choose Organic or Advert.';

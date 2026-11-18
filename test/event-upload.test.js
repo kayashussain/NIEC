@@ -207,6 +207,17 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   assert.strictEqual(earlyNow.student.email, 'early@example.com');
   assert.match(earlyNow.card.notes.at(-1).text, /other@example\.com/);
 
+  // Review fixes (18 Nov 2026): a different date of birth is noted on the card, never dropped; the same email is found even when
+  // another student comes first with the same phone; a date of birth in the future is not stored.
+  const dobDiff = (await admin('POST', '/api/students/merge', { id: early, fields: {}, profile: { dob: '1999-01-01' } })).json;
+  assert.ok(dobDiff.differs.some((d) => /Date of birth: 1999-01-01/.test(d)), 'a different date of birth is kept in the note');
+  assert.strictEqual((await admin('GET', `/api/cards/${early}`)).json.card.profile.dob, '2003-04-05', 'the date of birth on the card is not replaced');
+  const mixedDup = await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Zed', EMAIL: 'early@example.com', 'CONTACT NUMBER': '9800099999' }, allowDuplicate: true });
+  assert.strictEqual(mixedDup.status, 409, 'the same email is a hard duplicate, "Add anyway" cannot create a second copy');
+  assert.strictEqual(mixedDup.json.duplicate.maybeOther, false);
+  const future = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Futura', 'LAST NAME': 'Dob' }, profile: { dob: '2999-01-01' } })).json;
+  assert.strictEqual((await admin('GET', `/api/cards/${future.id}`)).json.card.profile.dob || '', '', 'a date of birth in the future is not stored');
+
   // The Dashboard's figures over time: every intake side by side, and the days of each step.
   const tr = (await admin('GET', '/api/trends')).json;
   assert.ok(Array.isArray(tr.intakes) && tr.intakes.length >= 1 && 'visas' in tr.intakes[0], 'every intake, as quarters');

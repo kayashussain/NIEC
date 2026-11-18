@@ -738,7 +738,7 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     assert.ok(await page.locator('#headerRow th[data-col="APPLICATION STATUS"] .filter-btn.active').count(), 'the filter button shows it is on');
 
     // A new student added with the filter on gets that status and stays in the filtered list.
-    // "+ Add student" opens the form; the student goes on the sheet at the filtered stage, and their card opens.
+    // "+ Add student" opens the form; the student goes on the sheet at the filtered stage, and a "Student saved" notice shows (no second card opens by itself).
     await page.click('#addRow');
     await page.waitForSelector('dialog.p-dialog[open]');
     await page.fill('.p-dialog-body input >> nth=0', 'Newly');
@@ -746,10 +746,8 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     // Only the name is needed, at any stage (the owner, 16 Nov 2026): the rest is added later on the student card.
     await page.click('.p-dialog-foot .btn-primary');
     await page.waitForFunction(() => document.querySelectorAll('#body tr:not(.pad-row)').length === 3);
-    await page.waitForSelector('.p-drawer iframe');
-    // The new student has no source yet, so the card asks for it first (the owner, 17 Nov 2026).
-    { const card = page.frameLocator('.p-drawer iframe'); await card.getByRole('button', { name: 'Not now' }).click(); await card.locator('dialog.p-dialog').waitFor({ state: 'detached' }); }
-    await page.keyboard.press('Escape');
+    await page.waitForSelector('.ui-toast:has-text("Student saved")');
+    assert.strictEqual(await page.locator('.p-drawer').count(), 0, 'no student card opens by itself after saving');
     const added = await page.locator('#body tr:not(.pad-row)').last().locator('td').nth(await colIndex('APPLICATION STATUS')).locator('select').inputValue();
     assert.strictEqual(added, 'Application Stage', 'the new student starts at the filtered status');
 

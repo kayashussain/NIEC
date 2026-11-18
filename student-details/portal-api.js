@@ -60,10 +60,13 @@ function createPortalApi({
   function existingStudent(email, phone) {
     const em = text(email).toLowerCase(); const ph = phoneKey(phone);
     if (!em && !ph) return null;
+    // The same email is always the same student, so it is looked for first; a phone match (maybe a brother or sister) comes second.
+    let byPhone = null;
     for (const { row } of rowIndex().values()) {
-      if ((em && text(row.EMAIL).toLowerCase() === em) || (ph && phoneKey(row['CONTACT NUMBER']) === ph)) return row;
+      if (em && text(row.EMAIL).toLowerCase() === em) return row;
+      if (!byPhone && ph && phoneKey(row['CONTACT NUMBER']) === ph) byPhone = row;
     }
-    return null;
+    return byPhone;
   }
   const currentIntake = () => { const wb = getWorkbook(); return wb ? Teams.newestSheet(wb.sheets.filter((s) => !s.hidden)) : null; };
   // The teams a person belongs to (department keys); a task given to one of them can be seen and marked by that person.
@@ -1736,7 +1739,7 @@ function createPortalApi({
     const asked = /^\d{4}-\d{2}-\d{2}$/.test(text(profile.inquiryDate)) && text(profile.inquiryDate) <= cards.today() ? text(profile.inquiryDate) : cards.today();
     const saved = cards.setProfile(rowId, { sourceDetail: profile.sourceDetail, sourceRemarks: profile.sourceRemarks || '', inquiryDate: asked, ...(asked === text(profile.inquiryDate) && /^\d{1,2}:\d{2} (am|pm)$/.test(text(profile.inquiryTime)) ? { inquiryTime: text(profile.inquiryTime) } : {}), ...(Fields.STUDY_LEVELS.includes(profile.studyLevel) ? { studyLevel: profile.studyLevel } : {}), ...(Fields.DISTRICTS.includes(profile.livesIn) ? { livesIn: profile.livesIn } : {}), ...(/^[a-f0-9]{12}$/.test(text(profile.fromList)) ? { fromList: text(profile.fromList) } : {}),
       // From the passport, and how a Social Media student came (cleanProfile keeps only what is valid).
-      ...Object.fromEntries(['dob', 'passportNo', 'address', 'nationality', 'sourcePlatform', 'sourceWay'].filter((k) => text(profile[k])).map((k) => [k, text(profile[k])])) }, by(req));
+      ...Object.fromEntries(['dob', 'passportNo', 'address', 'nationality', 'sourcePlatform', 'sourceWay'].filter((k) => text(profile[k]) && !(k === 'dob' && text(profile[k]) > cards.today())).map((k) => [k, text(profile[k])])) }, by(req));
     if (!saved.error && text(body.note)) cards.addNote(rowId, { text: body.note, kind: 'note' }, by(req));
     return { status: 200, json: { ok: true, id: rowId, sheetId: sheet.id, revision: getWorkbook().revision } };
   }
@@ -1756,15 +1759,29 @@ function createPortalApi({
     ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER'].forEach((col) => {
       const v = text(given[col]).slice(0, 240); if (!v) return;
       const now = text(row[col]);
-      if (!now) { if (Teams.canEdit(req.user, col, row) && CARD_EDITABLE[col] && CARD_EDITABLE[col](v) !== null) fill[col] = CARD_EDITABLE[col](v); }
-      else if (now.toLowerCase() !== v.toLowerCase() && !(col === 'CONTACT NUMBER' && phoneKey(now) === phoneKey(v))) differs.push(`${Fields.columnLabel ? Fields.columnLabel(col) : col}: ${v}`);
+      const label = Fields.columnLabel ? Fields.columnLabel(col) : col;
+      if (!now) {
+        // Blank on the sheet: filled in when this account may edit it; otherwise kept in the note, never thrown away.
+        if (Teams.canEdit(req.user, col, row) && CARD_EDITABLE[col] && CARD_EDITABLE[col](v) !== null) fill[col] = CARD_EDITABLE[col](v);
+        else differs.push(`${label}: ${v}`);
+      } else if (now.toLowerCase() !== v.toLowerCase() && !(col === 'CONTACT NUMBER' && phoneKey(now) === phoneKey(v))) differs.push(`${label}: ${v}`);
     });
     const source = text(given['STUDENT SOURCE']);
-    if (source && !text(row['STUDENT SOURCE']) && Teams.canEdit(req.user, 'STUDENT SOURCE', row)) fill['STUDENT SOURCE'] = source;
+    const sourceSet = Boolean(source && !text(row['STUDENT SOURCE']) && Teams.canEdit(req.user, 'STUDENT SOURCE', row));
+    if (sourceSet) fill['STUDENT SOURCE'] = source;
     if (Object.keys(fill).length) { const out = setColumns(req, found, fill); if (out.error) { sendJSON(res, out.status || 400, { error: out.error }); return true; } }
     const card = cards.get(row._id);
-    const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
-    const blanks = Object.fromEntries(Object.entries(profile).filter(([k, v]) => text(v) && !text(card.profile[k]) && (k !== 'sourceDetail' || fill['STUDENT SOURCE'] || !text(row['STUDENT SOURCE']))).map(([k, v]) => [k, text(v)]));
+    const given2 = body.profile && typeof body.profile === 'object' ? body.profile : {};
+    // Only the keys the form has, and the where-from details only when the source on the sheet is the one just set (or already the same one).
+    const SOURCE_KEYS = ['sourceDetail', 'sourceRemarks', 'sourcePlatform', 'sourceWay'];
+    const sourceAgrees = sourceSet || (source && text(row['STUDENT SOURCE']) === source);
+    const blanks = {};
+    ['dob', 'passportNo', 'address', 'nationality', ...SOURCE_KEYS].forEach((k) => {
+      const v = text(given2[k]); if (!v) return;
+      if (SOURCE_KEYS.includes(k)) { if (sourceAgrees && !text(card.profile[k])) blanks[k] = v; return; }
+      if (!text(card.profile[k])) blanks[k] = v;
+      else if (text(card.profile[k]).toLowerCase() !== v.toLowerCase()) differs.push(`${k === 'dob' ? 'Date of birth' : k === 'passportNo' ? 'Passport number' : k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`);
+    });
     if (Object.keys(blanks).length) cards.setProfile(row._id, blanks, by(req));
     const lines = [differs.length ? `Added again by ${req.user.name}, with different details (the ones above are kept): ${differs.join('; ')}.` : '', text(body.note)].filter(Boolean);
     if (lines.length) cards.addNote(row._id, { kind: 'note', text: lines.join(' ').slice(0, 4000) }, by(req));
