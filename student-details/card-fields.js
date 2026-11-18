@@ -162,11 +162,12 @@
 
   // What a task is about (the owner, 15 Nov 2026): a tag, so Today can show the tasks in calm groups. NOC and Medical are tags of
   // their own (the owner, 15 Nov 2026), as each is its own piece of work for the team.
-  const TASK_TAGS = [['application', 'Application'], ['mock', 'Mock interview'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
+  const TASK_TAGS = [['application', 'Application'], ['offer', 'Offer request'], ['mock', 'Mock interview'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
   const TASK_TAG_IDS = TASK_TAGS.map(([k]) => k);
   // The tag a task gets when none was chosen (older tasks, or a quick assign): from the words, then the team, then the student's stage.
   function guessTaskTag(text, team, stage) {
     const t = String(text || '').toLowerCase();
+    if (/^offer request\b/.test(t)) return 'offer'; // the task made when an application is submitted
     if (/\bnoc\b|no objection/.test(t)) return 'noc';
     // "medicals", "medical test", "IOM", "TB test", "chest x-ray", "health check" (the owner, 15 Nov 2026: medical tasks were tagged
     // Other or Payment). The health surcharge (IHS) is a payment, not a medical.

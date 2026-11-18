@@ -441,7 +441,7 @@
         };
         let read = () => ({});
         let check = () => '';
-        if (tag === 'application') {
+        if (tag === 'application' || tag === 'offer') {
           // So far: every application ISR knows, each with its days; a press on one starts a line for it below.
           const apps = state.applications || [];
           const listId = `td-unis-${t.id}`;
@@ -465,7 +465,7 @@
           form.append(so);
           // What happened now: one line per university, as many as needed, each with its own answer; one day for all.
           const box = el('div', 'p-wide td-unis');
-          box.append(el('span', 'p-label', 'What happened? One line per university'));
+          box.append(el('span', 'p-label', tag === 'offer' ? 'Has the student received the offer letter? Choose what the university said' : 'What happened? One line per university'));
           const rows = [];
           const WHAT = [['submitted', 'Applied'], ['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['notsubmitted', 'Not submitted (say why in the note)']];
           const more = h('button', { class: 'btn btn-sm td-uni-more', type: 'button', onclick: () => addRow().uf.input.focus() }, '+ Another university');
@@ -489,8 +489,11 @@
           // A first application starts with the sheet's university written in; what happened is always chosen by the person.
           // The courses given to the Application Team start with a line each (the owner, 17 Nov 2026): the team chooses Applied, or
           // Not submitted (for example not eligible) and says why in the note.
-          const assigned = state.assigned || [];
-          if (assigned.length) assigned.forEach((a) => addRow(a.university, a.course || ''));
+          // An Offer request task names its university and course: the line starts with them, and the answer is the university's reply.
+          const fromTask = tag === 'offer' ? /from (.+?)(?: \((.+)\))?\?$/.exec(String(t.text || '')) : null;
+          const assigned = tag === 'offer' ? [] : (state.assigned || []);
+          if (fromTask) addRow(fromTask[1], fromTask[2] || '');
+          else if (assigned.length) assigned.forEach((a) => addRow(a.university, a.course || ''));
           else if (!apps.length) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); else addRow();
           const on = dateField('On (the day it happened)', today);
           form.append(el('p', 'p-muted p-small p-wide', (state.assigned || []).length ? 'Choose what happened on each line (× takes a line off). Not submitted: say why in the note.' : 'Leave the lines empty if there is nothing to record: only the note is saved.'));
@@ -651,7 +654,7 @@
         sure.hidden = false;
         yes.focus();
       }
-    }, { wide: tag === 'application' }).then(() => answer);
+    }, { wide: tag === 'application' || tag === 'offer' }).then(() => answer);
   }
   // Reopening a task that recorded something (the owner, 16 Nov 2026): it says what the task recorded and offers to put it back, so a
   // wrong answer is corrected in one step. Resolves { revert: true }, {} (only reopen) or null (cancelled).

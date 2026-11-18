@@ -173,7 +173,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finishT(await giveT('No name', 'application'), { app: 'offer', date: today, unis: [] })).status, 400, 'an offer names the university');
   // Submitting an application starts its own "Offer request" task (the owner, 18 Nov 2026): once for each university applied to, never twice.
   const tasksOf = async () => (await cardT()).tasks;
-  const offerTasks = async () => (await tasksOf()).filter((x) => /^Offer request: is there any update on the offer letter from/.test(x.text));
+  const offerTasks = async () => (await tasksOf()).filter((x) => /^Offer request: has the student received the offer letter from/.test(x.text));
   const before = (await offerTasks()).length;
   const o1T = await giveT('Apply to Offer Test University', 'application');
   const pv = (await app('POST', `/api/cards/${tId}/tasks/${o1T}`, { done: true, preview: true, finish: { next: 'none', app: 'record', date: today, unis: [{ university: 'Offer Test University', course: 'BSc Offer', what: 'submitted' }] } })).json.preview;
@@ -183,6 +183,11 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual(madeOffer.length, 1, 'one offer request task');
   assert.deepStrictEqual([madeOffer[0].team, madeOffer[0].done], ['application', false]);
   assert.strictEqual((await offerTasks()).length, before + 1);
+  assert.strictEqual(madeOffer[0].tag, 'offer', 'its own category: Offer request');
+  // Finishing the Offer request with the university's answer records the offer (no courses given to the team are asked about there).
+  assert.strictEqual((await finishT(madeOffer[0].id, { app: 'record', date: today, unis: [{ university: 'Offer Test University', course: 'BSc Offer', what: 'conditional' }] })).status, 200);
+  assert.strictEqual((await cardT()).options.find((o) => o.university === 'Offer Test University').offer, today);
+  assert.strictEqual((await app('POST', `/api/cards/${tId}/tasks/${madeOffer[0].id}`, { done: false, finish: { revert: true } })).status, 200);
   // Reopening the application task and putting back what it wrote takes the offer request task away again.
   assert.strictEqual((await app('POST', `/api/cards/${tId}/tasks/${o1T}`, { done: false, finish: { revert: true } })).status, 200);
   assert.strictEqual((await offerTasks()).filter((x) => /Offer Test University/.test(x.text)).length, 0, 'put back with the task');

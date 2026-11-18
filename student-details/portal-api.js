@@ -581,7 +581,7 @@ function createPortalApi({
     return {
       kind, today: cards.today(), applications: applicationsOf(row, card), universities: unis,
       // The courses given to the Application Team and not answered yet: the "Mark as done?" window starts with one line for each.
-      assigned: assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
+      assigned: kind === 'offer' ? [] : assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
@@ -610,7 +610,7 @@ function createPortalApi({
     };
     // Application (the owner, 16 Nov 2026): one line per university, each with what happened; as many as needed.
     const legacy = f.app && f.app !== 'record' && f.app !== 'none' ? f.app : (f.submitted ? 'submitted' : '');
-    const hasApp = kind === 'application' && f.app !== 'none' && (legacy || f.app === 'record' || Array.isArray(f.unis));
+    const hasApp = (kind === 'application' || kind === 'offer') && f.app !== 'none' && (legacy || f.app === 'record' || Array.isArray(f.unis));
     if (hasApp) {
       let list = (Array.isArray(f.unis) ? f.unis : (f.university ? [{ university: f.university, course: f.course }] : []))
         .map((u) => ({ university: text(u && u.university).replace(/\s+/g, ' ').slice(0, 160), course: text(u && u.course).replace(/\s+/g, ' ').slice(0, 240), what: APP_WHAT[u && u.what] ? u.what : legacy }))
@@ -631,9 +631,9 @@ function createPortalApi({
         if (u.course) return cands.find((a) => strictKey(a.course) === strictKey(u.course)) || null;
         return cands.length === 1 ? cands[0] : 'ambiguous';
       };
-      const vague = list.find((u) => matchAssigned(u) === 'ambiguous');
+      const vague = kind === 'application' ? list.find((u) => matchAssigned(u) === 'ambiguous') : null;
       if (vague) return { error: `Write the course for ${vague.university}: more than one course was given to the team there.` };
-      const unanswered = assignedAll.filter((a) => !list.some((u) => matchAssigned(u) === a));
+      const unanswered = kind === 'application' ? assignedAll.filter((a) => !list.some((u) => matchAssigned(u) === a)) : [];
       if (unanswered.length) return { error: `${unanswered.map((a) => a.university + (a.course ? ` (${a.course})` : '')).join(', ')} ${unanswered.length > 1 ? 'were' : 'was'} given to the team and ${unanswered.length > 1 ? 'have' : 'has'} no answer yet. For each, choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why).` };
       const needsWhy = list.find((u) => ['notsubmitted', 'refused', 'withdrawn'].includes(u.what) && text(note).length < MIN_NOTE);
       if (needsWhy) return { error: `Say why in the note: ${needsWhy.university} was ${APP_WHAT[needsWhy.what].toLowerCase()}.` };
@@ -860,7 +860,7 @@ function createPortalApi({
   }
   // The separate task made when an application is submitted: the Application Team asks the university for the offer letter and records the
   // answer (an offer, a refusal) by finishing it, as any application task.
-  const offerRequestText = (r) => `Offer request: is there any update on the offer letter from ${r.university}${r.course ? ` (${r.course})` : ''}?`;
+  const offerRequestText = (r) => `Offer request: has the student received the offer letter from ${r.university}${r.course ? ` (${r.course})` : ''}?`;
   // Writes a confirmed plan and keeps on the task what it wrote, so reopening the task can put it back.
   function applyPlan(req, found, task, plan) {
     const rowId = found.row._id;
@@ -903,7 +903,7 @@ function createPortalApi({
       const words = offerRequestText(r);
       const open = (cards.get(rowId).tasks || []).some((x) => !x.done && squash(x.text) === squash(words));
       if (open) return;
-      const made = cards.addTask(rowId, { team: task.team === HEAD ? 'application' : task.team, text: words, tag: 'application' }, by(req));
+      const made = cards.addTask(rowId, { team: task.team === HEAD ? 'application' : task.team, text: words, tag: 'offer' }, by(req));
       if (!made.error) wrote.offerRequests.push(made.task.id);
     });
     if (wrote.options.length) syncApplicationDays(req, rowId);
