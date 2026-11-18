@@ -404,7 +404,7 @@
     let answer = null;
     const url = `/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`;
     const tag = tagOf(t, o.stage);
-    const asks = ['application', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
+    const asks = ['application', 'offer', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
     return dialog('Mark as done?', (body, close) => {
       body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
       const ask = el('div', 'td-done-step');

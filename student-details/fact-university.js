@@ -261,7 +261,7 @@
             if (watch.admin) {
               const ok = el('button', 'p-link no-print', 'Checked');
               ok.type = 'button';
-              ok.addEventListener('click', async () => { await fetch('/api/course-watch/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: w.key }) }); watch.warnings = watch.warnings.filter((x) => x !== w); render(); });
+              ok.addEventListener('click', async () => { let done = false; try { done = (await fetch('/api/course-watch/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: w.key }) })).ok; } catch (e) { /* offline */ } if (!done) { window.NiecUI.toast('That did not work. Try again.', { type: 'error' }); return; } watch.warnings = watch.warnings.filter((x) => x !== w); render(); });
               li.append(ok);
             }
           }

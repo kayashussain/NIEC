@@ -496,7 +496,7 @@
     const openList = mine.filter((x) => !x.done && !later(x));
     const open = openList.length;
     const upcoming = mine.filter((x) => !x.done && later(x)).length;
-    const slow = openList.filter((x) => Date.now() - Date.parse(x.at || 0) >= 3 * 86400000).length;
+    const slow = openList.filter((x) => Date.now() - Date.parse(x.at) >= 3 * 86400000).length;
     const waiting = typeof waitingCount === 'number' ? waitingCount : sections.reduce((n, x) => n + x.count, 0);
     const box = el('section', 'td-pulse');
     const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('span', '', label)); return x; };

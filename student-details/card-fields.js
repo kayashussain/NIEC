@@ -80,11 +80,11 @@
     { key: 'passport', text: 'Passport (the page with the photo)' },
     { key: 'see', text: 'SEE (Grade 10) mark sheet and certificate' },
     { key: 'plus2', text: '+2 (Grade 12) transcript, certificate and character certificate' },
-    { key: 'bachelor', text: 'Bachelor transcript, degree certificate and character certificate', levels: ['Pre-Masters', 'Postgraduate', 'MBA', 'MRes or PhD'] },
+    { key: 'bachelor', text: 'Bachelor transcript, degree certificate and character certificate', levels: ['Pre-Masters', 'Postgraduate', 'MBA', 'MRes or PhD', 'Masters by Research or PhD'] },
     { key: 'english', text: 'English test result (IELTS, PTE or other), or the MOI letter' },
     { key: 'cv', text: 'CV (up to date)' },
     { key: 'sop', text: 'Statement of purpose (SOP)' },
-    { key: 'lor', text: 'Two recommendation letters (teacher or employer)', levels: ['Top-up (final year)', 'Pre-Masters', 'Postgraduate', 'MBA', 'MRes or PhD'] },
+    { key: 'lor', text: 'Two recommendation letters (teacher or employer)', levels: ['Top-up (final year)', 'Pre-Masters', 'Postgraduate', 'MBA', 'MRes or PhD', 'Masters by Research or PhD'] },
     { key: 'work', text: 'Work experience letters (for any study gap)' },
     { key: 'refusal', text: 'Any earlier visa refusal letter (any country)' },
   ];

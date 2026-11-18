@@ -433,7 +433,7 @@
       pushUndo();
       target[col] = value;
       markDirty();
-      renderRow(rowIdx, col); // the cell shows the date at once (it used to stay blank until the page was refreshed)
+      renderRow(rows.indexOf(target), col); // the row's place now (rows may have moved while the box was open); the cell shows the date at once (it used to stay blank until the page was refreshed)
     });
     td.appendChild(input); // the cell's own text stays where it is; the box lies invisibly over it (see style.css)
     return input;
@@ -864,13 +864,15 @@
     const source = sheets.find((s) => s.id === id);
     if (!source) return;
     pushUndo();
+    const newId = makeSheetId();
     const sheet = {
-      id: makeSheetId(),
+      id: newId,
       name: uniqueSheetName(`${source.name} (Copy)`),
       columns: [...source.columns],
       leadColumnsApplied: true,
       columnOrderVersion: source.columnOrderVersion,
-      rows: source.rows.map((r) => ({ ...r, _id: makeRowId() })),
+      // A deferred student copied here stays in the copy (the marker names the copy), so the copy does not push them on again.
+      rows: source.rows.map((r) => ({ ...r, _id: makeRowId(), ...(r['APPLICATION STATUS'] === 'Defer' ? { _deferredInto: newId } : {}) })),
       hidden: false,
     };
     const idx = sheets.findIndex((s) => s.id === id);
@@ -2031,8 +2033,9 @@
   // as one undo step. The rows themselves stay: the "Delete rows" button removes rows. Calculated fee
   // cells can't be cleared: they're worked out from the others.
   function clearSelectedCells() {
+    // A team never blanks a student's stage (the server would refuse it): the stage is changed with its own drop-down.
     const cells = selectedCells().filter(({ rowIdx, col }) => rows[rowIdx] && !CALC_COLS[col] && canEditCol(col, rows[rowIdx])
-      && (rows[rowIdx][col] || ''));
+      && !(col === 'APPLICATION STATUS' && isTeam()) && (rows[rowIdx][col] || ''));
     if (!cells.length) return;
     confirmChange(() => {
       pushUndo();
@@ -2124,6 +2127,8 @@
         }
         const rowIdx = indices[r.top + dr];
         if (!canEditCol(col, rows[rowIdx])) continue; // not this team's column
+        if (col === 'APPLICATION STATUS' && isTeam()) { const check = Teams.checkMove(me, rows[rowIdx], val); if (!check.ok || check.confirm) continue; } // only moves the drop-down allows without asking
+        if (col === 'CONTACT NUMBER' && val && !(/^\+?[\d\s()-]{6,25}$/.test(val) && val.replace(/\D/g, '').length >= 6)) continue; // a phone number, as when typed
         if ((rows[rowIdx][col] || '') !== val) changes.push({ rowIdx, col, val });
       }
     }

@@ -151,7 +151,7 @@ function checkLevel(rules, s) {
   }
   // The study gap.
   if (s.gap !== null) {
-    if (L.gap === null) say(null, s.gap ? `A ${s.gap}-year gap: the gap rule is not stated, check` : 'No study gap');
+    if (L.gap === null) say(s.gap ? null : true, s.gap ? `A ${s.gap}-year gap: the gap rule is not stated, check` : 'No study gap');
     else if (L.gap === 0) say(s.gap === 0 ? true : null, s.gap === 0 ? 'No study gap' : `Study gap not accepted as written: check (${s.gap} years)`);
     else if (s.gap === 0) say(true, 'No study gap');
     else say(s.gap <= L.gap, s.gap <= L.gap ? `Gap of ${s.gap} year${s.gap === 1 ? '' : 's'} is within ${L.gap}` : `Gap of ${s.gap} years is over the ${L.gap} allowed`);

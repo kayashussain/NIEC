@@ -69,7 +69,7 @@
     pick.addEventListener('change', async () => {
       const f = pick.files && pick.files[0];
       if (!f) return;
-      try { rows = await readFile(f); await markExisting(); showRows(); } catch (e) { out.replaceChildren(el('div', 'p-notice bad', 'Could not read the file: ' + e.message)); }
+      try { rows = await readFile(f); await markExisting(); showRows(); } catch (e) { rows = []; go.disabled = true; out.replaceChildren(el('div', 'p-notice bad', 'Could not read the file: ' + e.message)); }
     });
     const pickValue = () => (picker ? picker.value() : { source: '', detail: '', remarks: '' });
     const sourceText = () => { const v = pickValue(); return v.source ? [v.source, v.detail, v.remarks].filter(Boolean).join(': ') : 'your branch'; };

@@ -560,6 +560,7 @@ function createAccounts({
       if (problem) { bad(res, 400, problem); return true; }
       if (await verifyPasswordAsync(body.password, found.user.passwordHash)) { bad(res, 400, 'Please choose a new password, not the temporary one.'); return true; }
       const updated = updateUser(found.user.id, { passwordHash: hashPassword(body.password), mustChangePassword: false });
+      if (!updated) { bad(res, 401, 'Please start again with your username and password.'); return true; } // removed while this was being checked
       record(req, publicUser(updated), 'Set their own password');
       endSessions((s) => s.userId === found.user.id && s.id !== found.session.id); // any other login made with the temporary password
       finishSetupIfDone(req, res, updated);

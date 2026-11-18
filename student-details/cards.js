@@ -314,7 +314,7 @@ function createCards(dir, { now = () => new Date() } = {}) {
     // written in the task's updates with its reason, so everyone sees why.
     scheduleTask(rowId, taskId, input, by, today) {
       const date = String((input && input.date) || '');
-      if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00Z')))) return { error: 'Choose the day.' };
+      if (date && !isoDay(date)) return { error: 'Choose the day.' };
       if (date && today && date < today) return { error: 'Choose today or a later day.' };
       if (date && today && Date.parse(date) - Date.parse(today) > 366 * 86400000) return { error: 'Choose a day within a year.' };
       const reason = str(input && input.reason, LIMITS.text);

@@ -1672,6 +1672,7 @@ document.addEventListener('cut', (e) => {
   if (!out) return;
   e.preventDefault();
   e.clipboardData.setData('text/plain', out.tsv);
+  if (rangeRects().length > 1) { showHint('Copied the last block. Cut works on one block at a time, so nothing was cleared.'); return; }
   clearSelectedCells();
 });
 
@@ -1742,7 +1743,8 @@ document.addEventListener('keydown', (e) => {
   if (!(e.ctrlKey || e.metaKey)) return;
   const key = e.key.toLowerCase();
   if (key !== 'z' && key !== 'y') return;
-  if (editing || document.activeElement === searchInput) return;
+  const a = document.activeElement;
+  if (editing || a === searchInput || (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))) return; // text undo belongs to the field
   e.preventDefault();
   if (key === 'y' || (key === 'z' && e.shiftKey)) redo();
   else undo();
