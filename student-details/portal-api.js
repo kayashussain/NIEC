@@ -759,17 +759,18 @@ function createPortalApi({
         }
       }
     } else if (kind === 'noc' && f.noc) {
-      const status = f.noc === 'Submitted' ? 'Submitted' : f.noc === 'Pending' ? 'Pending' : '';
-      if (!status) return { error: 'Choose Pending or Submitted for the NOC.' };
+      // The NOC is Pending or Received (the owner, 18 Nov 2026); no day and no number are needed. An older "Submitted" counts as Received.
+      const status = ['Received', 'Submitted'].includes(f.noc) ? 'Received' : f.noc === 'Pending' ? 'Pending' : '';
+      if (!status) return { error: 'Choose Pending or Received for the NOC.' };
       const number = text(f.nocNumber).slice(0, 60);
-      if (status === 'Submitted' && !number && !text(row['NOC NUMBER'])) return { error: 'Write the NOC number: it is needed once the NOC is submitted.' };
-      // A NOC already Submitted never goes back to Pending; a new number replaces the old one, which the note keeps.
+      // A NOC already Received never goes back to Pending.
       const was = text(row.NOC);
-      if (status === 'Pending' && was === 'Submitted') plan.kept.push('NOC already says Submitted: it never goes back to Pending.');
+      const gotIt = status === 'Received' || was === 'Submitted' || was === 'Received';
+      if (status === 'Pending' && (was === 'Submitted' || was === 'Received')) plan.kept.push(`NOC already says ${was}: it never goes back to Pending.`);
       else plan.columns.NOC = status;
       const oldNo = text(row['NOC NUMBER']);
       if (number) plan.columns['NOC NUMBER'] = number;
-      plan.note = `NOC ${status === 'Submitted' || was === 'Submitted' ? 'submitted' : 'pending (not submitted yet)'}${number ? `, NOC number ${number}` : ''}${number && oldNo && oldNo !== number ? ` (was ${oldNo})` : ''}. ${sentence(note)}`.trim();
+      plan.note = `NOC ${gotIt ? 'received' : 'pending'}${number ? `, NOC number ${number}` : ''}${number && oldNo && oldNo !== number ? ` (was ${oldNo})` : ''}. ${sentence(note)}`.trim();
     } else if (kind === 'mock' && (f.mock || f.scheduled) && f.mock !== 'none') {
       // Mock interview (the owner, 15 Nov 2026): a mock set for a day, the feedback of a mock held, or the Pre-CAS result.
       const what = f.mock || 'set';
@@ -816,7 +817,6 @@ function createPortalApi({
       } else if (f.medical === 'booked') {
         const d = day(f.date);
         if (!d) return { error: 'Choose the day the medical test is booked for.' };
-        if (!place) return { error: 'Write the hospital or clinic the test is booked at.' };
         // Booked, and on that day the team is asked to confirm the report (the owner, 16 Nov 2026: never Received by itself).
         if (text(row['MEDICAL REPORT']) === 'Received') plan.warnings.push('Medical Report already says Received.');
         plan.columns['MEDICAL REPORT'] = 'Booked';
@@ -827,6 +827,12 @@ function createPortalApi({
         plan.columns['MEDICAL REPORT'] = 'Received';
         plan.medical = null;
         plan.note = `Medical report received${place ? ` (${place})` : ''}. ${sentence(note)}`.trim();
+      } else if (f.medical === 'pending') {
+        // Pending: not booked yet (the Medical Report column as All Students shows it); a report already Received stays.
+        if (text(row['MEDICAL REPORT']) === 'Received') plan.kept.push('Medical Report already says Received: it never goes back to Pending.');
+        else plan.columns['MEDICAL REPORT'] = 'Pending';
+        if (card.medical && text(row['MEDICAL REPORT']) !== 'Received') plan.medical = null;
+        plan.note = `Medical report pending. ${sentence(note)}`.trim();
       } else if (f.medical === 'notBooked') {
         if (text(row['MEDICAL REPORT']) === 'Booked') plan.columns['MEDICAL REPORT'] = '';
         if (card.medical) plan.medical = null;

@@ -32,9 +32,9 @@
       'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected', 'Defer', 'Hold', 'Withdrawn',
     ],
     'PRE CAS INTERVIEW': ['Passed', 'Fail'],
-    // Pending: the NOC account is made, the application not submitted yet; Booked: the medical test has a day (the owner, 15 Nov 2026).
-    'NOC': ['Pending', 'Submitted'],
-    'MEDICAL REPORT': ['Booked', 'Received'],
+    // NOC: Pending or Received; Medical Report: Pending, Booked (the test has a day) or Received (the owner, 15 and 18 Nov 2026).
+    'NOC': ['Pending', 'Received'], // (an older "Submitted" in a cell stays selectable)
+    'MEDICAL REPORT': ['Pending', 'Booked', 'Received'],
     'STUDENT SOURCE': SOURCE_OPTIONS,
     // Filled from Partner Universities and B2B Partners when the page opens (loadPartnerChoices); a new partner is added there first.
     'UNIVERSITY PARTNER': [],

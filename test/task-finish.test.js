@@ -60,14 +60,14 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   const opts = (await admin('GET', `/api/cards/${id}`)).json.card.options.map((o) => [o.university, o.applied]);
   assert.deepStrictEqual(opts.sort(), [['Backup University', today], ['Example University', add(-1)]]);
 
-  // NOC: Pending, then Submitted with its number.
+  // NOC: Pending, then Received (no day and no number needed; an older "Submitted" counts as Received).
   const n1 = await give('Make the NOC account', 'noc');
   assert.strictEqual((await finish(n1, { noc: 'maybe' })).status, 400);
   assert.strictEqual((await finish(n1, { noc: 'Pending', note: 'Account created' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Pending');
   const n2 = await give('Submit the NOC', 'noc');
-  assert.strictEqual((await finish(n2, { noc: 'Submitted', nocNumber: 'NOC-778' })).status, 200);
-  assert.deepStrictEqual([(await row()).NOC, (await row())['NOC NUMBER']], ['Submitted', 'NOC-778']);
+  assert.strictEqual((await finish(n2, { noc: 'Received' })).status, 200);
+  assert.strictEqual((await row()).NOC, 'Received');
 
   // Mock: the next empty Mock Schedule, and the feedback reminder waiting for that day.
   const m1 = await give('Set the first mock', 'mock');
@@ -141,8 +141,8 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   // person typed is never overwritten.
   const n3 = await give('Check the NOC', 'noc');
   assert.strictEqual((await finish(n3, { noc: 'Pending' })).status, 200);
-  assert.strictEqual((await row()).NOC, 'Submitted', 'never back to Pending');
-  assert.match((await row()).REMARKS, /NOC submitted/, 'Remarks shows the latest progress');
+  assert.strictEqual((await row()).NOC, 'Received', 'never back to Pending');
+  assert.match((await row()).REMARKS, /NOC received/, 'Remarks shows the latest progress');
   const wb = (await admin('GET', '/api/data')).json;
   wb.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) r.REMARKS = 'Typed by the counsellor'; }));
   assert.strictEqual((await admin('POST', '/api/data', { baseRevision: wb.revision, sheets: wb.sheets, activeSheetId: wb.activeSheetId })).status, 200);
@@ -228,8 +228,10 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   // Needed to track the student (18 Nov 2026): a payment names its amount, a submitted NOC its number, a booked test its place, and every
   // course given to the team gets an answer, a "not submitted" or refusal saying why.
   assert.strictEqual((await finishT(await giveT('Collect', 'payment'), { paid: true, date: today })).status, 400, 'a payment needs its amount');
-  assert.strictEqual((await finishT(await giveT('Submit the NOC', 'noc'), { noc: 'Submitted' })).status, 400, 'a submitted NOC needs its number');
-  assert.strictEqual((await finishT(await giveT('Book the test', 'medical'), { medical: 'booked', date: add(4) })).status, 400, 'a booked test needs its place');
+  assert.strictEqual((await finishT(await giveT('Book the test', 'medical'), { medical: 'booked', date: add(4) })).status, 200, 'a booked test needs only its day');
+  assert.strictEqual((await rowT())['MEDICAL REPORT'], 'Booked');
+  assert.strictEqual((await finishT(await giveT('Medical not booked', 'medical'), { medical: 'pending' })).status, 200);
+  assert.strictEqual((await rowT())['MEDICAL REPORT'], 'Pending');
   const wbA = (await admin('GET', '/api/data')).json;
   assert.ok(wbA.sheets.some((sh) => sh.rows.some((x) => x._id === tId)));
   const optIds = [];
