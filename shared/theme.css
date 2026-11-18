@@ -2306,6 +2306,8 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-uni-row .p-field { margin: 0; }
 .td-uni-x { width: 32px; height: 32px; margin-bottom: 7px; border: 0; border-radius: 50%; background: #ececf0; color: #515154; font-size: 18px; line-height: 1; cursor: pointer; }
 .td-uni-x:hover { background: #ffe5e3; color: #c41e14; }
+/* 🔴 CSS CHANGED (2026-11-18): the cross beside a course given to the team in "Mark as done?" shows when it is pressed (not eligible) | from: the round grey button looked the same pressed or not | to: pressed, it is a soft red circle with a red cross */
+.td-uni-x.is-on, .td-uni-x[aria-pressed="true"] { background: #ffe5e3; color: #c41e14; box-shadow: 0 0 0 2px #ffb8b3 inset; }
 .td-uni-more { justify-self: start; }
 .p-applied.is-offer { background: #e6f0fc; color: #0058b0; }
 .p-applied.is-refused { background: #ffe9e7; color: #b42318; }

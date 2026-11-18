@@ -772,7 +772,7 @@
     return { submitted, offers };
   }
   function waitingOptions() {
-    const waiting = data.card.options.filter((o) => !o.sent && !o.applied && !o.skipped);
+    const waiting = data.card.options.filter(F.onShortlist);
     const ids = waiting.map((o) => o.id);
     sendOrder = (sendOrder || []).filter((x) => ids.includes(x));
     ids.forEach((x) => { if (!sendOrder.includes(x)) sendOrder.push(x); });
@@ -844,6 +844,7 @@
   const RESULTS = [['', 'Waiting for the answer'], ['offer', 'Offer (type not known)'], ['Conditional', 'Conditional offer'], ['Unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['skipped', 'Not submitted (for example not eligible)']];
   const WITH_REASON = ['refused', 'withdrawn', 'skipped'];
   async function updateApplication(o) {
+    const wasSheet = Boolean(o.fromSheet);
     if (o.fromSheet) {
       // Kept in University options first (with the days All Students has), then updated like any other.
       const r = await save('options', { university: o.university, course: o.course, applied: o.applied, offer: o.offer });
@@ -853,6 +854,9 @@
     const todayIso = data.today || new Date().toISOString().slice(0, 10);
     const saved = await dialog(`${o.university}${o.course ? ': ' + o.course : ''}`, (body, close) => {
       const form = el('div', 'p-form');
+      // The university and the course can be corrected here too (a wrong name, or a course changed), not only the answer.
+      const uniF = field('University', { value: o.university || '', max: 160 });
+      const courseF = field('Course', { value: o.course || '', max: 240 });
       const applied = field('Application submitted on', { kind: 'date', value: o.applied || '' });
       const now = o.skipped ? 'skipped' : o.refused ? 'refused' : o.withdrawn ? 'withdrawn' : o.offer ? (o.offerType || 'offer') : '';
       const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: now });
@@ -862,7 +866,7 @@
       const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; when2.wrap.querySelector('.p-label').textContent = r === 'skipped' ? 'Decided on' : 'Day of the answer'; };
       result.input.addEventListener('change', show);
       show();
-      form.append(applied.wrap, result.wrap, when2.wrap, reason.wrap);
+      form.append(uniF.wrap, courseF.wrap, applied.wrap, result.wrap, when2.wrap, reason.wrap);
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
@@ -872,11 +876,16 @@
         if (r && !a && !['withdrawn', 'skipped'].includes(r)) return fail('Fill in the day the application was submitted.');
         if (r && !d) return fail('Fill in the day of the answer.');
         if (a && d && d < a) return fail('The answer cannot come before the application was submitted.');
-        if (WITH_REASON.includes(r) && !reason.input.value.trim()) return fail('Write the reason in a few words.');
+        if (!uniF.input.value.trim()) return fail('Write the university.');
+        if (WITH_REASON.includes(r) && reason.input.value.trim().length < 8) return fail('Write the reason in a few words (at least 8 letters), for example: grades below the entry requirement.');
         ok.disabled = true;
         const offer = ['offer', 'Conditional', 'Unconditional'].includes(r);
         try {
-          await save('options/' + o.id, { applied: r === 'skipped' ? '' : a, offer: offer ? d : '', offerType: offer && r !== 'offer' ? r : '', refused: r === 'refused' ? d : '', withdrawn: r === 'withdrawn' ? d : '', skipped: r === 'skipped' ? d : '', reason: WITH_REASON.includes(r) ? reason.input.value.trim() : '' }, 'Saved');
+          await save('options/' + o.id, { university: uniF.input.value.trim(), course: courseF.input.value.trim(), applied: r === 'skipped' ? '' : a, offer: offer ? d : '', offerType: offer && r !== 'offer' ? r : '', refused: r === 'refused' ? d : '', withdrawn: r === 'withdrawn' ? d : '', skipped: r === 'skipped' ? d : '', reason: WITH_REASON.includes(r) ? reason.input.value.trim() : '' }, 'Saved');
+          // The application All Students names: a corrected university or course is corrected there too, so it does not appear twice.
+          if (wasSheet && data.can.edit && (uniF.input.value.trim() !== o.university || courseF.input.value.trim() !== (o.course || ''))) {
+            try { await save('sheet', { fields: { 'UNIVERSITY NAME': uniF.input.value.trim(), 'COURSE NAME': courseF.input.value.trim() } }); } catch (e) { /* shown by save */ }
+          }
           close({ a, offer: offer ? d : '' });
         } catch (e) { fail(e.message); ok.disabled = false; }
       });

@@ -469,7 +469,7 @@
           const rows = [];
           const WHAT = [['submitted', 'Applied'], ['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['notsubmitted', 'Not submitted (say why in the note)']];
           const more = h('button', { class: 'btn btn-sm td-uni-more', type: 'button', onclick: () => addRow().uf.input.focus() }, '+ Another university');
-          function addRow(u = '', c = '') {
+          function addRow(u = '', c = '', given = false) {
             const r = el('div', 'td-uni-row td-uni-row-3');
             const uf = field('', { value: u, max: 160, placeholder: 'University', list: listId });
             const cf = field('', { value: c, max: 240, placeholder: 'Course' });
@@ -479,7 +479,24 @@
             uf.input.addEventListener('change', () => { const k = apps.find((a) => a.university.toLowerCase() === uf.input.value.trim().toLowerCase()); if (k && !cf.input.value.trim()) cf.input.value = k.course || ''; });
             r.append(uf.wrap, cf.wrap, what.wrap);
             const x = { r, uf, cf, what };
-            if (rows.length || (state.assigned || []).length) r.append(h('button', { class: 'td-uni-x', type: 'button', 'aria-label': 'Remove this line', onclick: () => { r.remove(); rows.splice(rows.indexOf(x), 1); } }, '×'));
+            if (given) {
+              // A course given to the team: the university and course are already here, and the answer starts as Applied. The cross says
+              // the student is not eligible: it is not submitted, and the reason is started in the note (the owner, 18 Nov 2026).
+              what.input.value = 'submitted';
+              const no = h('button', { class: 'td-uni-x', type: 'button', title: 'Not eligible: do not submit to this university', 'aria-label': `Not eligible for ${u}: do not submit`, 'aria-pressed': 'false' }, '✗');
+              no.addEventListener('click', () => {
+                const off = no.getAttribute('aria-pressed') === 'true';
+                no.setAttribute('aria-pressed', String(!off));
+                what.input.value = off ? 'submitted' : 'notsubmitted';
+                no.classList.toggle('is-on', !off);
+                const line = `${uf.input.value.trim()}${cf.input.value.trim() ? ` (${cf.input.value.trim()})` : ''}: not submitted, the student is not eligible (entry requirements not met).`;
+                if (!off && !words.input.value.includes(line)) words.input.value = [words.input.value.trim(), line].filter(Boolean).join(' ');
+                if (off) words.input.value = words.input.value.replace(line, '').replace(/\s{2,}/g, ' ').trim();
+                words.input.focus(); words.input.setSelectionRange(words.input.value.length, words.input.value.length);
+              });
+              what.input.addEventListener('change', () => { no.setAttribute('aria-pressed', String(what.input.value === 'notsubmitted')); no.classList.toggle('is-on', what.input.value === 'notsubmitted'); });
+              r.append(no);
+            } else if (rows.length || (state.assigned || []).length) r.append(h('button', { class: 'td-uni-x', type: 'button', 'aria-label': 'Remove this line', onclick: () => { r.remove(); rows.splice(rows.indexOf(x), 1); } }, '×'));
             rows.push(x);
             more.before(r);
             return x;
@@ -493,10 +510,12 @@
           const fromTask = tag === 'offer' ? /from (.+?)(?: \((.+)\))?\?$/.exec(String(t.text || '')) : null;
           const assigned = tag === 'offer' ? [] : (state.assigned || []);
           if (fromTask) addRow(fromTask[1], fromTask[2] || '');
-          else if (assigned.length) assigned.forEach((a) => addRow(a.university, a.course || ''));
-          else if (!apps.length) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); else addRow();
+          else if (assigned.length) assigned.forEach((a) => addRow(a.university, a.course || '', true));
+          else if (sheet['UNIVERSITY NAME'] && !apps.some((a) => a.onSheet && a.applied)) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); // the student's university on All Students, not yet recorded as applied
+          else addRow();
           const on = dateField('On (the day it happened)', today);
-          form.append(el('p', 'p-muted p-small p-wide', (state.assigned || []).length ? 'Choose what happened on each line (× takes a line off). Not submitted: say why in the note.' : 'Leave the lines empty if there is nothing to record: only the note is saved.'));
+          if (tag === 'application') on.input.value = today; // the day the application is submitted is today unless it is changed (the owner, 18 Nov 2026)
+          form.append(el('p', 'p-muted p-small p-wide', (state.assigned || []).length ? 'The universities and courses are filled in, with today as the day. Each starts as Applied: press ✗ beside one the student is not eligible for, and say why in the note.' : 'Leave the lines empty if there is nothing to record: only the note is saved.'));
           const filled = () => rows.map((x) => ({ university: x.uf.input.value.trim(), course: x.cf.input.value.trim(), what: x.what.input.value })).filter((x) => x.university || x.what);
           read = () => (filled().length ? { app: 'record', date: on.input.value, unis: filled() } : {});
           check = () => {

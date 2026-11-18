@@ -494,6 +494,12 @@ function createPortalApi({
     const first = (k) => opts.filter((o) => o[k]).sort((x, y) => x[k].localeCompare(y[k]))[0] || null;
     const fa = first('applied'); const fo = first('offer');
     const changes = {};
+    // An offer that the university then refused no longer stands: All Students' Offer received day goes (the application day stays), unless
+    // another university still holds an offer, which then becomes the first offer below.
+    if (!fo && o0 && uni) {
+      const sheetOpt = opts.find((o) => squash(o.university) === squash(uni));
+      if (sheetOpt && (sheetOpt.refused || sheetOpt.withdrawn) && !sheetOpt.offer) changes['OFFER RECEIVED DATE'] = '';
+    }
     if (fa && fa.applied !== a0) changes['APPLICATION SUBMISSION DATE'] = fa.applied;
     if (fo && fo.offer !== o0) changes['OFFER RECEIVED DATE'] = fo.offer;
     // An empty university or course on All Students takes the first offer's (else the first application's); a typed one stays.

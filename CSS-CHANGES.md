@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-18 · shared/theme.css · the cross beside a course given to the team, in "Mark as done?" · from: a grey round button that looked the same pressed or not · to: pressed (the student is not eligible), a soft red circle with a red cross and a thin red ring · why: the owner asked for a cross mark to say a university cannot be included.**
+
 - **2026-11-18 · shared/theme.css · the "Offer request" task category · from: it did not exist · to: a soft purple tag (#efe7fb, text #5b34a8) beside the blue Application tag, on Today and on the student card · why: the owner asked for Offer request to be its own category.**
 
 - **2026-11-18 · student-details/events.html · the small grey line under each figure on Events and marketing · from: #86868b (contrast 3.5 to 1, below the 4.5 to 1 needed) · to: #6e6e73 (4.9 to 1) · why: easier to read, as the owner wants for older eyes.**

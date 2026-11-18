@@ -45,7 +45,7 @@
   }
   // The courses not yet given to the Application Team, in the order chosen in the tray.
   function waiting() {
-    const list = state.options.filter((o) => !o.sent && !o.applied);
+    const list = state.options.filter(CardFields.onShortlist);
     const ids = list.map((o) => o.id);
     state.order = (state.order || []).filter((x) => ids.includes(x));
     ids.forEach((x) => { if (!state.order.includes(x)) state.order.push(x); });
@@ -144,10 +144,10 @@
   function paint(b) {
     const on = found(b.slOption);
     b.classList.toggle('is-on', Boolean(on));
-    b.classList.toggle('is-sent', Boolean(on && (on.sent || on.applied)));
+    b.classList.toggle('is-sent', Boolean(on && CardFields.WITH_TEAM(on)));
     b.setAttribute('aria-pressed', String(Boolean(on)));
-    b.textContent = on ? (on.sent || on.applied ? '✓ With the team' : '✓ Shortlisted') : '+ Shortlist';
-    b.title = on ? (on.sent || on.applied ? 'Already given to the Application Team' : 'Press again to take it off the shortlist') : (state.student ? `Shortlist for ${state.student.name}` : 'Choose the student, then shortlist');
+    b.textContent = on ? (CardFields.WITH_TEAM(on) ? '✓ With the team' : '✓ Shortlisted') : '+ Shortlist';
+    b.title = on ? (CardFields.WITH_TEAM(on) ? 'Already given to the Application Team' : 'Press again to take it off the shortlist') : (state.student ? `Shortlist for ${state.student.name}` : 'Choose the student, then shortlist');
   }
   function syncButtons() { document.querySelectorAll('.sl-pick').forEach((b) => { if (b.slOption) paint(b); }); }
   // Adds or removes a course on the student's shortlist, at once on the page.
@@ -156,7 +156,7 @@
     const now = found(o);
     const sid = encodeURIComponent(state.student.id);
     const before = state.options;
-    if (now && (now.sent || now.applied)) { say('Already given to the Application Team: change it on the student card.', true); return; }
+    if (now && CardFields.WITH_TEAM(now)) { say('Already given to the Application Team: change it on the student card.', true); return; }
     if (now) state.options = state.options.filter((x) => x !== now);
     else state.options = [...state.options, { id: 'new-' + Date.now(), universityId: o.universityId, university: o.university, course: o.course, intake: o.intake || '', level: o.level || '', fee: o.fee || '', pending: true }];
     changed();
@@ -188,7 +188,7 @@
     document.body.classList.toggle('has-sl-tray', Boolean(state.student));
     if (!state.student) return;
     const list = waiting();
-    const sent = state.options.filter((o) => o.sent || o.applied).length;
+    const sent = state.options.filter(CardFields.WITH_TEAM).length;
     trayBox.replaceChildren();
     const head = el('div', 'sl-tray-head');
     const who = el('button', 'sl-tray-who');

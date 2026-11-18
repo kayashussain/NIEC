@@ -229,6 +229,20 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finishT(v3, { step: 'refused', date: today, note: 'Refused: funds not shown for 28 days.' })).status, 200);
   assert.strictEqual((await rowT())['APPLICATION STATUS'], 'Visa Rejected');
 
+  // The university refuses the offer All Students shows (Thapamogul, East London, 18 Nov 2026): refusing it on the card takes the Offer
+  // received day off All Students too, and the application day stays.
+  const firstOpt = (await cardT()).options.find((o) => o.university === 'First University');
+  assert.ok(firstOpt && firstOpt.offer, 'the first university holds the offer that All Students shows');
+  assert.strictEqual((await admin('POST', `/api/cards/${tId}/options/${firstOpt.id}`, { refused: today, offer: '', offerType: '' })).status, 400, 'a refusal says why');
+  assert.strictEqual((await admin('POST', `/api/cards/${tId}/options/${firstOpt.id}`, { refused: today, reason: 'Refused: entry grade not met.', offer: '', offerType: '' })).status, 200);
+  const afterRefusal = await rowT();
+  assert.strictEqual(afterRefusal['OFFER RECEIVED DATE'], today, 'the refused offer no longer stands on All Students: the next offer held (Third University, today) is the first offer now');
+  assert.strictEqual(afterRefusal['APPLICATION SUBMISSION DATE'], add(-30), 'the application day stays');
+  // With no offer left anywhere, the Offer received day is empty on All Students (and the "offer refused" check has nothing to say).
+  const thirdOpt = (await cardT()).options.find((o) => o.university === 'Third University');
+  assert.strictEqual((await admin('POST', `/api/cards/${tId}/options/${thirdOpt.id}`, { refused: today, reason: 'Refused: course is full.', offer: '', offerType: '' })).status, 200);
+  const stillOffer = (await cardT()).options.filter((o) => o.offer && !o.refused);
+  if (!stillOffer.length) assert.strictEqual((await rowT())['OFFER RECEIVED DATE'], '', 'no offer stands any more');
   // A task with no answers is simply done, as before; the Application Team may now fill in the Medical Report on the sheet.
   const o1 = await give('Call the student', 'other');
   assert.strictEqual((await app('POST', `/api/cards/${id}/tasks/${o1}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
