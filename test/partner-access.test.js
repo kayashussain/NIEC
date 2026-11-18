@@ -129,7 +129,7 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   assert.ok((await asha('GET', '/api/tasks')).json.tasks.some((x) => x.text === 'Submit to Example University'), 'the Application Team sees it on Today');
   assert.ok((await chitwan('GET', '/api/tasks')).json.tasks.some((x) => x.given && x.text === 'Submit to Example University'), 'the branch sees the task it gave');
   assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'the team ticks it, not the branch');
-  assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
+  assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10) } })).status, 200); // a tracking task closed with words only needs a next day
   assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 403);
   assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200, 'the branch removes the task it gave');
 });

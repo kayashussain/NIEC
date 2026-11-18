@@ -602,10 +602,10 @@
         let nextValue = '';
         const nextBox = el('div', 'p-field p-wide td-next');
         let nextText = null;
-        if (state && state.needsNext) {
+        if (state && (state.needsNext || state.trackTag)) {
           const plus = (n) => { const d = new Date(Date.parse(today + 'T12:00:00Z') + n * 86400000); return d.toISOString().slice(0, 10); };
           nextBox.append(el('span', 'p-label', 'When should someone get back to this student?'));
-          nextBox.append(el('p', 'p-muted p-small td-next-why', 'This is the last open task for this student. Pick a day, so nobody is forgotten.'));
+          nextBox.append(el('p', 'p-muted p-small td-next-why', state.needsNext ? 'This is the last open task for this student. Pick a day, so nobody is forgotten.' : 'Needed only if you record nothing above: pick the day someone gets back to the student.'));
           const custom = field('', { kind: 'date', value: '' });
           custom.input.min = today;
           custom.input.setAttribute('aria-label', 'Follow-up day');
@@ -637,7 +637,10 @@
           if (problem) { fail({ message: problem }); return; }
           const recorded = Object.keys(read()).length > 0;
           if (!recorded && words.input.value.trim().length < minNote) { fail({ message: 'Write in a few words what was done, so the next person knows.' }); words.input.focus(); return; }
-          const wantsNext = state && state.needsNext && !makesOwnNext();
+          // A tracking task closed with words only records nothing: the student then needs a next step with a real day, never "Not needed".
+          const wordsOnly = !recorded && state && state.trackTag;
+          const wantsNext = state && (state.needsNext || wordsOnly) && !makesOwnNext() && (state.needsNext || !recorded);
+          if (wordsOnly && !makesOwnNext() && nextValue === 'none') { fail({ message: 'This task recorded nothing, so choose the day someone gets back to the student (not "Not needed").' }); return; }
           if (wantsNext && !nextValue) { fail({ message: 'Choose when someone should get back to this student, or "Not needed".' }); return; }
           const answers = { ...read(), note: words.input.value.trim(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
           if (!asks) { answer = answers; close(true); return; }

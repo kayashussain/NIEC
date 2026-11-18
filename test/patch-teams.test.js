@@ -82,7 +82,8 @@ test('teams edit only their own columns and make only their own moves', () => {
   assert.ok(canEdit('mock', 'PRE CAS INTERVIEW') && !canEdit('mock', 'STUDENT ID'));
   assert.ok(canEdit('followup', 'REMARKS') && !canEdit('followup', 'FIRST NAME'));
   assert.ok(canEdit('admin', 'ANYTHING'));
-  assert.deepStrictEqual(statusChoices('application', 'Application Stage', []), ['Application Stage', 'Mock Stage']);
+  // A team can also stop, wait or hold a student it has (the owner, 18 Nov 2026), so nobody is stuck at a stage.
+  assert.deepStrictEqual(statusChoices('application', 'Application Stage', []), ['Application Stage', 'Mock Stage', 'Defer', 'Withdrawn', 'Hold']);
   assert.deepStrictEqual(statusChoices('followup', 'Inquiry', []), ['Inquiry', 'Application Stage', 'Defer', 'Withdrawn']);
 });
 

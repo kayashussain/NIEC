@@ -58,12 +58,13 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.deepStrictEqual(answered.json.card.tasks[0].comments.map((c) => [c.by, c.text]), [['bikram', 'Please send the student email.'], ['Owner', 'Sent it to your inbox.']]);
   assert.strictEqual(answered.json.card.tasks[0].done, false, 'a comment does not tick the task');
   assert.strictEqual((await mock('GET', '/api/tasks')).json.tasks[0].comments.length, 2, 'the team sees the conversation on Today');
-  assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
+  assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10) } })).status, 200);
   const all = (await admin('GET', '/api/tasks')).json.tasks;
-  assert.deepStrictEqual([all[0].done, all[0].doneBy, all[0].teamLabel], [true, 'bikram', 'Mock Team']);
+  const finished = all.find((x) => x.id === taskId); // (a follow-up task for the next day was made with it)
+  assert.deepStrictEqual([finished.done, finished.doneBy, finished.teamLabel], [true, 'bikram', 'Mock Team']);
   assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: false })).status, 200, 'marked not complete again');
   assert.strictEqual((await admin('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200);
-  assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.tasks.length, 0);
+  assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.tasks.filter((x) => x.id === taskId).length, 0, 'the deleted task is gone (its follow-up task stays)');
 
   // Each team has a Dashboard of its own; Admin keeps the full one.
   assert.strictEqual((await mock('GET', '/dashboard')).location, '/my-dashboard', 'a team that opens Dashboard gets its own');
@@ -74,7 +75,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   const dash = (await mock('GET', '/api/my-dashboard')).json;
   assert.strictEqual(dash.kind, 'mock');
   assert.strictEqual(dash.kpis.length, 4);
-  assert.deepStrictEqual([dash.tasks.open, dash.tasks.late], [1, undefined], 'the team sees its open tasks (no "late": tasks have no dates)');
+  assert.deepStrictEqual([dash.tasks.open, dash.tasks.late], [2, undefined], 'the team sees its open tasks (this one and the follow-up made when the first was done) (no "late": tasks have no dates)');
   // A team gives Admin a task too (the owner, 14 Nov 2026): Admin is named with the signature's title, sees it under "For you" with
   // a red dot, and the dot goes once Admin reads it. A comment from the other side makes a new dot, for whoever gave the task too.
   const sita = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Gita', 'LAST NAME': 'Rai', 'CONTACT NUMBER': '9800000011' } })).json.id;
@@ -161,7 +162,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { seen: true })).status, 200);
   const kept = (await both('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
   assert.deepStrictEqual([kept.news.length, kept.history.map((n) => [n.kind, n.isNew])], [0, [['edited', false], ['update', false], ['task', false]]], 'read, and still listed');
-  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { done: true, finish: { note: 'Done and checked.', next: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10) } })).status, 200);
   const toGiver = (await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
   assert.deepStrictEqual([toGiver.news[0].kind, toGiver.news[0].by], ['done', 'maya'], 'Admin is told the task is done');
   // Today and Upcoming (the owner, 15 Nov 2026): the team moves a task to a later day with a reason; whoever gave it is told.

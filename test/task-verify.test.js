@@ -109,15 +109,16 @@ test('answers are checked and confirmed before they are written, and can be put 
   assert.strictEqual((await b.call(t3, { done: true, finish: { app: 'record', date: add(-40), unis: [{ university: 'Beta University', what: 'conditional' }], confirmed: true } })).status, 400, 'an offer before its application');
   assert.strictEqual((await b.call(t3, { done: true, finish: { app: 'record', date: add(-2), unis: [{ university: 'Beta University' }], confirmed: true } })).status, 400, 'what happened must be chosen');
   assert.strictEqual((await b.call(t3, { done: true, finish: { app: 'record', date: add(1), unis: [{ university: 'Beta University', what: 'conditional' }], confirmed: true } })).status, 400, 'not a day still to come');
-  const c = await student('Chandra', 'CAS Stage', { 'CAS RECEIVED DATE': add(-3), 'VISA LODGE DATE': add(-2) });
+  const c = await student('Chandra', 'CAS Issued', { 'CAS RECEIVED DATE': add(-3), 'VISA LODGE DATE': add(-2), 'OFFER RECEIVED DATE': add(2) });
   const v1 = await c.give('Lodge the visa', 'visa');
   assert.strictEqual((await c.call(v1, { done: true, finish: { step: 'lodged', date: add(-5), confirmed: true } })).status, 400, 'visa lodged before the CAS');
   const pv3 = (await c.call(v1, { done: true, finish: { step: 'lodged', date: add(-1) }, preview: true })).json.preview;
   assert.match(pv3.kept.join('\n'), /Visa lodge date already says/);
   const p1 = await c.give('Collect the deposit', 'payment');
   assert.strictEqual((await c.call(p1, { done: true, finish: { paid: true, date: today, amount: 'five', confirmed: true } })).status, 400, 'the amount in numbers');
+  // (A payment with no offer recorded is refused for a team now: see task-finish.test.js.)
   const pv4 = (await c.call(p1, { done: true, finish: { paid: true, date: today, amount: '5000' }, preview: true })).json.preview;
-  assert.match(pv4.warnings.join('\n'), /No offer is recorded/);
+  assert.match(pv4.warnings.join('\n'), /The offer on All Students is from .*, after this payment/);
   const m1 = await c.give('Feedback of mock interview 1', 'mock');
   const wbm = (await admin('GET', '/api/data')).json;
   wbm.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === c.sid) r['MOCK SCHEDULE 1'] = add(3); }));

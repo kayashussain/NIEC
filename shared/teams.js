@@ -88,6 +88,9 @@
     { dept: 'mock', from: 'Mock Stage', to: 'Application Stage' },
     // The Follow-up Team moves its own students on: an inquiry who decides goes to the Application Team; a student who waits goes to
     // Defer and comes back; one who stops goes to Withdrawn (the owner, 15 Nov 2026: every move waited for Admin).
+    // A student who stops, waits or is put on hold can be moved by the team that has them (the owner, 18 Nov 2026: a student whose
+    // universities all refused had no way out of Application Stage, and one who withdrew after Mock stayed there with open tasks).
+    ...['application', 'mock'].flatMap((dept) => ['Application Stage', 'Mock Stage'].filter((from) => dept === 'application' ? true : from === 'Mock Stage').flatMap((from) => ['Defer', 'Withdrawn', 'Hold'].map((to) => ({ dept, from, to })))),
     { dept: 'followup', from: 'Inquiry', to: 'Application Stage' },
     { dept: 'followup', from: 'Inquiry', to: 'Defer' },
     { dept: 'followup', from: 'Inquiry', to: 'Withdrawn' },

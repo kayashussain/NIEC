@@ -224,8 +224,8 @@ test('someone in two teams sees both teams students and may use both teams moves
   const both = { role: 'staff', departments: ['application', 'mock'] };
   assert.deepStrictEqual(ids(Teams.viewFor(both, book())), ['1', '2']);
   assert.deepStrictEqual(ids(Teams.viewFor({ role: 'staff', departments: ['application', 'followup'] }, book())), ['1', '3']);
-  assert.deepStrictEqual(Teams.statusChoices(both, 'Application Stage', []), ['Application Stage', 'Mock Stage']);
-  assert.deepStrictEqual(Teams.statusChoices(both, 'Mock Stage', []), ['Mock Stage', 'Payment Stage', 'Application Stage']);
+  assert.deepStrictEqual(Teams.statusChoices(both, 'Application Stage', []), ['Application Stage', 'Mock Stage', 'Defer', 'Withdrawn', 'Hold']);
+  assert.deepStrictEqual(Teams.statusChoices(both, 'Mock Stage', []), ['Mock Stage', 'Payment Stage', 'Application Stage', 'Defer', 'Withdrawn', 'Hold']);
   assert.ok(Teams.canEdit(both, 'STUDENT ID') && Teams.canEdit(both, 'MOCK SCHEDULE 1') && !Teams.canEdit(both, 'GROSS FEE'));
   assert.strictEqual(Teams.viewKey({ role: 'staff', departments: ['mock', 'application'] }), Teams.viewKey(both));
 });

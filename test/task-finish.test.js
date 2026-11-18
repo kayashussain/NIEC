@@ -109,12 +109,26 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finish(await give('Check the report', 'medical'), { medical: 'received' })).status, 200);
 
   // Payment: Payment Date and the first empty deposit; Visa and CAS: the step's date, and the stage moves on (never back).
+  // A team records a payment only once there is an offer, and visa steps follow the journey (Payment Stage, then CAS Stage, CAS Issued ...).
+  const pEarly = await give('Collect the deposit early', 'payment');
+  assert.strictEqual((await finish(pEarly, { paid: true, date: today, amount: '5000' })).status, 400, 'no offer recorded yet');
+  const vEarly = await give('Get the CAS too early', 'visa');
+  assert.strictEqual((await finish(vEarly, { step: 'casReceived', date: today })).status, 400, 'visa steps start at Payment Stage');
+  {
+    const wbP = (await admin('GET', '/api/data')).json;
+    wbP.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) Object.assign(r, { 'OFFER RECEIVED DATE': add(-3), 'APPLICATION STATUS': 'Payment Stage' }); }));
+    assert.strictEqual((await admin('POST', '/api/data', { baseRevision: wbP.revision, sheets: wbP.sheets, activeSheetId: wbP.activeSheetId })).status, 200);
+  }
   const p1 = await give('Collect the deposit', 'payment');
   assert.strictEqual((await finish(p1, { paid: true, date: today, amount: '5,000' })).status, 200);
   assert.deepStrictEqual([(await row())['PAYMENT DATE'], (await row())['TUITION FEE DEPOSIT(1st Installment)']], [today, '5000']);
   const p2 = await give('Collect the second payment', 'payment');
   assert.strictEqual((await finish(p2, { paid: true, date: today, amount: '3000' })).status, 200);
   assert.strictEqual((await row())['TUITION FEE DEPOSIT(2nd Installment)'], '3000', 'the next installment');
+  const vReq = await give('Ask for the CAS', 'visa');
+  assert.strictEqual((await finish(vReq, { step: 'casRequested', date: add(-1) })).status, 200);
+  assert.strictEqual((await row())['APPLICATION STATUS'], 'CAS Stage', 'requesting the CAS moves the student to CAS Stage');
+  assert.strictEqual((await finish(await give('Visa too soon', 'visa'), { step: 'visa', date: today })).status, 400, 'no jumping over the steps in between');
   const v1 = await give('Get the CAS', 'visa');
   assert.strictEqual((await finish(v1, { step: 'casReceived', date: today })).status, 200);
   assert.deepStrictEqual([(await row())['CAS RECEIVED DATE'], (await row())['APPLICATION STATUS']], [today, 'CAS Issued']);
@@ -232,6 +246,36 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     const sixth = (await cardT()).options.find((o) => o.university === 'Sixth University');
     assert.ok(sixth && sixth.skipped && /Not eligible/.test(sixth.reason), 'the not-submitted course is kept with its reason, so it is not given again');
   }
+  // A tracking task closed with words only records nothing: the student then needs a next step with a real day, never "Not needed".
+  {
+    const g = await giveT('Check on the NOC', 'noc');
+    assert.strictEqual((await finishT(g, { note: 'Spoke to the student, ok' })).status, 400, 'words only and no next day');
+    assert.strictEqual((await finishT(g, { note: 'Spoke to the student, ok', next: add(3) })).status, 200, 'words only with a next day');
+  }
+  // A student who has withdrawn gets no new applications from a team; removing the "Apply for" task puts its courses back on the Shortlist.
+  {
+    const setStage = async (stage) => { const w = (await admin('GET', '/api/data')).json; w.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === tId) r['APPLICATION STATUS'] = stage; })); assert.strictEqual((await admin('POST', '/api/data', { baseRevision: w.revision, sheets: w.sheets, activeSheetId: w.activeSheetId })).status, 200); };
+    const was = (await rowT())['APPLICATION STATUS'];
+    await setStage('Withdrawn');
+    assert.strictEqual((await finishT(await giveT('Apply after withdrawing', 'application'), { app: 'record', date: today, unis: [{ university: 'Late University', course: 'BSc Late', what: 'submitted' }] })).status, 400, 'no applications for a withdrawn student');
+    await setStage(was);
+    const o7 = (await admin('POST', `/api/cards/${tId}/options`, { university: 'Seventh University', course: 'BSc Seven' })).json.card.options.find((x) => x.university === 'Seventh University').id;
+    assert.strictEqual((await admin('POST', `/api/cards/${tId}/options/send`, { ids: [o7], partners: { [o7]: 'Direct' } })).status, 200);
+    const applyTask = (await cardT()).tasks.find((x) => /^Apply for .*1 course/.test(x.text) && !x.done);
+    assert.ok(applyTask && (await cardT()).options.find((x) => x.id === o7).sent);
+    assert.strictEqual((await admin('POST', `/api/cards/${tId}/tasks/${applyTask.id}/delete`, {})).status, 200);
+    assert.ok(!(await cardT()).options.find((x) => x.id === o7).sent, 'its course is back on the Shortlist, not held by a task that no longer exists');
+  }
+  // Putting back an application after its offer was recorded keeps the offer (only what that task wrote is taken off).
+  {
+    const ap = await giveT('Apply to Revert University', 'application');
+    assert.strictEqual((await finishT(ap, { app: 'record', date: add(-2), unis: [{ university: 'Revert University', course: 'BSc Revert', what: 'submitted' }] })).status, 200);
+    const offerReq = (await cardT()).tasks.find((x) => /^Offer request: .*Revert University/.test(x.text));
+    assert.strictEqual((await finishT(offerReq.id, { app: 'record', date: today, unis: [{ university: 'Revert University', course: 'BSc Revert', what: 'conditional' }] })).status, 200);
+    assert.strictEqual((await app('POST', `/api/cards/${tId}/tasks/${ap}`, { done: false, finish: { revert: true } })).status, 200);
+    const kept = (await cardT()).options.find((x) => x.university === 'Revert University');
+    assert.ok(kept && kept.offer === today && !kept.applied, 'the offer stays, only the application day this task wrote is taken off');
+  }
   // Mock: the feedback of a mock held goes to its Feedback column; the Pre-CAS result to Pre-CAS Interview.
   const mT1 = await giveT('Set the mock', 'mock');
   assert.strictEqual((await finishT(mT1, { mock: 'set', date: today, remind: true })).status, 200);
@@ -244,6 +288,11 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finishT(mT2, { mock: 'precas', result: 'Passed' })).status, 200);
   assert.strictEqual((await rowT())['PRE CAS INTERVIEW'], 'Passed');
   // Visa refused: the stage goes to Visa Rejected.
+  {
+    const wbV = (await admin('GET', '/api/data')).json;
+    wbV.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === tId) r['APPLICATION STATUS'] = 'Visa Lodge'; }));
+    assert.strictEqual((await admin('POST', '/api/data', { baseRevision: wbV.revision, sheets: wbV.sheets, activeSheetId: wbV.activeSheetId })).status, 200);
+  }
   const v3 = await giveT('Visa decision', 'visa');
   assert.strictEqual((await finishT(v3, { step: 'refused', date: today })).status, 400, 'a refusal says why');
   assert.strictEqual((await finishT(v3, { step: 'refused', date: today, note: 'Refused: funds not shown for 28 days.' })).status, 200);
