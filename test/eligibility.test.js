@@ -101,9 +101,13 @@ test('on the server: the finder answers the team and a student, and courses are 
   const sent = await admin('POST', `/api/cards/${sid}/options/send`, { ids: [o2.id, o1.id], partners: { [o2.id]: 'Real Dreams', [o1.id]: 'Direct' }, note: 'Documents complete.' });
   assert.strictEqual(sent.status, 200);
   const card = (await admin('GET', `/api/cards/${sid}`)).json.card;
-  const task = card.tasks.find((x) => /^Apply for Mina Demo: 2 courses in this order/.test(x.text));
-  assert.ok(task && task.team === 'application' && !task.done);
-  assert.strictEqual(task.comments[0].text, `1. MSc Testing at ${page.name} (January 2027), through Real Dreams\n2. MSc Data Science at ${page.name} (January 2027), direct\n\nDocuments complete.`);
+  // One Apply task for each course (the owner, 18 Nov 2026), each linked to its course, with its own partner line and the shared note.
+  const tasks = card.tasks.filter((x) => /^Apply to .* for Mina Demo$/.test(x.text));
+  assert.strictEqual(tasks.length, 2, 'two courses, two tasks');
+  assert.ok(tasks.every((x) => x.team === 'application' && !x.done && x.tag === 'application'));
+  const t1 = tasks.find((x) => /MSc Testing/.test(x.text));
+  assert.strictEqual(t1.comments[0].text, `1. MSc Testing at ${page.name} (January 2027), through Real Dreams\n\nDocuments complete.`);
+  assert.strictEqual(card.options.find((o) => o.course === 'MSc Testing').taskId, t1.id, 'the course is linked to its task');
   assert.deepStrictEqual(['MSc Testing', 'MSc Data Science'].map((c) => card.options.find((o) => o.course === c).partner), ['Real Dreams', 'Direct']);
   assert.deepStrictEqual(['MSc Testing', 'MSc Data Science'].map((c) => card.options.find((o) => o.course === c).rank), ['1', '2']);
   assert.ok(card.options.every((o) => /^\d{4}-\d{2}-\d{2}$/.test(o.sent)));

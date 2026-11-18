@@ -29,19 +29,19 @@
       else if (lists.departments.length > 1) rest.push(make('dept', 'Add the student for', { kind: 'select', choices: lists.departments.map((d) => [d.id, `${d.label} (starts at ${d.start})`]), value: lists.departments[0].id }));
       if (rest.length) group('Where the student starts', ...rest);
 
-      group('The student', make('FIRST NAME', 'First name', { max: 80 }), make('LAST NAME', 'Last name', { max: 80 }),
-        make('EMAIL', 'Email', { max: 254, placeholder: 'student@example.com' }), make('CONTACT NUMBER', 'WhatsApp number (needed)', { max: 40, placeholder: '98XXXXXXXX' }),
+      group('The student', make('FIRST NAME', 'First name', { max: 80, required: true }), make('LAST NAME', 'Last name', { max: 80 }),
+        make('EMAIL', 'Email', { max: 254, placeholder: 'student@example.com' }), make('CONTACT NUMBER', 'WhatsApp number', { required: true, max: 40, placeholder: '98XXXXXXXX' }),
         make('dob', 'Date of birth', { kind: 'date' }), make('passportNo', 'Passport number', { max: 20, placeholder: 'e.g. PA1234567' }),
         make('address', 'Address (as in the passport)', { max: 200, wide: true, placeholder: 'e.g. Butwal-11, Rupandehi' }),
         make('nationality', 'Nationality', { kind: 'select', choices: F.NATIONALITIES, value: 'Nepali' }));
       inputs.dob.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10); // a date of birth is never in the future; the calendar's years end this year
       // Only the name is needed to add a student (the owner, 16 Nov 2026): everything else can be filled in later on the student card.
-      form.append(el('p', 'p-muted p-small ns-passport-note', 'Needed to add a student: the name, the WhatsApp number and where the student came from. The rest can be added later on the student card.'));
+      form.append(el('p', 'p-muted p-small ns-passport-note', 'Fields marked * are needed: the name, the WhatsApp number and where the student came from. The rest can be added later on the student card.'));
 
       // Where the student came from: the source, then exactly which (the branch, the agent, the event ...). The choices are shared: a missing one is added once.
       // A branch account adds its own students, so the source is not asked: the server tags them with the branch.
       const branchOnly = !admin && lists.departments.length > 0 && lists.departments.every((d) => d.source);
-      const picker = branchOnly ? null : root.SourcePicker.create({ lists, hideBranch: !admin });
+      const picker = branchOnly ? null : root.SourcePicker.create({ lists, hideBranch: !admin, required: true });
       if (picker) { form.append(el('h3', '', 'Where the student came from')); const g = el('div', 'p-form p-form-2'); picker.nodes.forEach((n) => g.append(n)); form.append(g); }
 
       const note = make('note', 'Note on the student card (optional)', { kind: 'area', wide: true, max: 2000, placeholder: 'What was discussed at the first contact.' });

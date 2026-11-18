@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-18 · shared/theme.css · red asterisk for required details, and the simple course window · from: required boxes were only explained in words; no simple window for one course · to: a bold red * (#d70015) after the label of every required box (Add student: name, WhatsApp number, source; Mark as done: the answer and its day; the university in Update); a soft grey band with the university in bold, its course and partner beside it, at the top of the one-course Mark as done window and the Offer request window · why: the owner asked that every mandatory detail be marked with a red asterisk and that one task per course ask only Applied or not, and when.**
+
 - **2026-11-18 · shared/theme.css (and portal-ui.js) · each university line in "Mark as done?" has its own day · from: one day for every line, so an application to Middlesex today and an older offer from West London looked as if they were done on the same day · to: a "Day it happened" box under each line's university, course and answer, across the three columns, with the round button staying at the right of the first line (also on a phone) · why: the owner could not record the earlier application day of a university that had already given an offer.**
 
 - **2026-11-18 · shared/theme.css · the cross beside a course given to the team, in "Mark as done?" · from: a grey round button that looked the same pressed or not · to: pressed (the student is not eligible), a soft red circle with a red cross and a thin red ring · why: the owner asked for a cross mark to say a university cannot be included.**

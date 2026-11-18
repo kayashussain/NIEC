@@ -589,19 +589,27 @@ function createPortalApi({
   }
   // The courses given to the Application Team that have no answer yet.
   const assignedOf = (card) => (card.options || []).filter((o) => o.sent && !o.applied && !o.offer && !o.refused && !o.withdrawn && !o.skipped);
+  // The course an Apply task was made for (one task per course), and the university and course an Offer request names.
+  const courseOf = (card, task) => (card.options || []).find((o) => o.taskId === task.id) || null;
+  const offerOf = (task) => { const m = /^Offer request: .*? from (.+?)(?: \((.+)\))?\?$/.exec(text(task.text)); return m ? { university: m[1], course: m[2] || '' } : null; };
   function finishState(found, task) {
     const row = found.row;
     const card = cards.get(row._id);
     const kind = Fields.taskTag(task, text(row[STATUS]));
+    const own = courseOf(card, task);
+    const offerFor = kind === 'offer' ? offerOf(task) : null;
     const unis = [...new Set([...applicationsOf(row, card).map((a) => a.university), ...(card.options || []).map((o) => o.university), ...(facts ? facts.all() : []).map((u) => u.name), ...(direct ? direct.all() : []).map((u) => u.name)].filter(Boolean))].slice(0, 400);
     return {
       kind, today: cards.today(), applications: applicationsOf(row, card), universities: unis,
       // The courses given to the Application Team and not answered yet: the "Mark as done?" window starts with one line for each.
-      assigned: kind === 'offer' ? [] : assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
+      assigned: kind === 'offer' || own ? [] : assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
-      needsNext: needsNextStep(found, task), stage: text(row[STATUS]), minNote: MIN_NOTE,
+      // A task for one course, and an Offer request, have simple windows with no follow-up question: the Offer request is made by itself.
+      courseTask: own ? { id: own.id, university: own.university, course: own.course, partner: own.partner || '', answered: !assignedOf(card).some((a) => a.id === own.id) } : null,
+      offerTask: offerFor,
+      needsNext: !own && !offerFor && needsNextStep(found, task), stage: text(row[STATUS]), minNote: MIN_NOTE,
       // A task that tracks the student's journey cannot be closed with a note alone and no next step (unless the student's journey has ended).
       trackTag: task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(kind) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(row[STATUS])),
     };
@@ -647,7 +655,8 @@ function createPortalApi({
       // refusal, a withdrawal or "not submitted" says why. Otherwise a course is lost between "given" and "applied".
       // A line answers a given course when the university and the course are the same (a course in brackets counts: "BSc Nursing (Adult)"
       // is not "BSc Nursing (Child)"); with no course typed it answers only when exactly one course was given at that university.
-      const assignedAll = assignedOf(card);
+      const ownCourse = courseOf(card, task); // a task made for one course answers for that course only
+      const assignedAll = ownCourse ? assignedOf(card).filter((a) => a.id === ownCourse.id) : assignedOf(card);
       const strictKey = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9()]+/g, '');
       const matchAssigned = (u) => {
         const cands = assignedAll.filter((a) => squash(a.university) === squash(u.university));
@@ -1587,11 +1596,11 @@ function createPortalApi({
             cards.addNote(rowId, { kind: 'note', text: words.slice(0, 3900) }, by(req));
           }
           out = cards.removeTask(rowId, sub, by(req));
-          if (!out.error && /^Apply for /.test(text(task.text))) {
+          if (!out.error && (/^Apply (for|to) /.test(text(task.text)))) {
             // The courses that task carried (named in its list), still unanswered, go back to the Shortlist: nobody is left holding a course
             // with no task.
             const listed = (task.comments || []).map((c) => text(c.text)).join('\n');
-            assignedOf(cards.get(rowId)).filter((o) => listed.includes([o.course, o.university].filter(Boolean).join(' at '))).forEach((o) => cards.updateOption(rowId, o.id, { sent: '', rank: '' }, by(req)));
+            assignedOf(cards.get(rowId)).filter((o) => o.taskId === task.id || listed.includes([o.course, o.university].filter(Boolean).join(' at '))).forEach((o) => cards.updateOption(rowId, o.id, { sent: '', rank: '', taskId: '' }, by(req)));
           }
           if (!out.error) note(req, [`${who2}: removed the task for ${teamLabel(task.team)}`], 'Removed a task');
         } else if (body.handTo !== undefined) {
@@ -1643,7 +1652,7 @@ function createPortalApi({
           if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task) }); return true; }
           // Done needs what happened, and the next step when the student would be left without one (see needsNextStep).
           if (body.done && !task.done && !f) { sendJSON(res, 400, { error: 'Say what was done first.' }); return true; }
-          const hasKeys = Boolean(f) && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText', 'generic'].includes(k) && f[k] !== undefined && f[k] !== '');
+          const hasKeys = Boolean(f) && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText', 'generic', 'waiting'].includes(k) && f[k] !== undefined && f[k] !== '');
           // An answer counts only when it records something: an extra word in the request is not an answer (the few words are then needed).
           const draft = hasKeys ? finishPlan(found, task, f, req.user) : null;
           const answered = Boolean(draft && (draft.error || Object.keys(draft.columns).length || draft.options.length || draft.remind || draft.medical !== undefined || (draft.note && draft.note !== text(f.note).slice(0, 2000))));
@@ -1652,18 +1661,22 @@ function createPortalApi({
             const plan0 = answered ? draft : null;
             if (plan0 && plan0.error) { sendJSON(res, 400, { error: plan0.error }); return true; }
             // "Nothing to record" is not an answer while courses given to the team are still unanswered.
-            if (f.generic !== true && Fields.taskTag(task, text(found.row[STATUS])) === 'application' && assignedOf(cards.get(found.row._id)).length && !(plan0 && plan0.options.length)) {
+            const ownC = courseOf(cards.get(found.row._id), task);
+            const pendingAssigned = ownC ? assignedOf(cards.get(found.row._id)).filter((a) => a.id === ownC.id) : assignedOf(cards.get(found.row._id));
+            if (f.generic !== true && f.waiting !== true && Fields.taskTag(task, text(found.row[STATUS])) === 'application' && pendingAssigned.length && !(plan0 && plan0.options.length)) {
               sendJSON(res, 400, { error: 'Courses were given to the team and have no answer yet: choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why) for each.' }); return true;
             }
             // An answer to the task's question says what happened by itself; without one, a few words are needed.
             if (!answered && text(f.note).length < MIN_NOTE) { sendJSON(res, 400, { error: 'Write in a few words what was done, so the next person knows.' }); return true; }
             // A tracking task closed with a note alone records nothing: the student must then have a next step with a real day.
-            const trackOnly = !answered && f.generic !== true && task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
+            const skipNext = Boolean(courseOf(cards.get(found.row._id), task)) || (Fields.taskTag(task, text(found.row[STATUS])) === 'offer' && answered);
+            const trackOnly = !skipNext && !answered && f.generic !== true && f.waiting !== true && task.team !== HEAD && needsNextStep(found, task) && TRACK_TAGS.includes(Fields.taskTag(task, text(found.row[STATUS]))) && !['Visa Issued', 'Withdrawn', 'Visa Rejected'].includes(text(found.row[STATUS]));
             if (trackOnly && (f.next === undefined || f.next === '' || f.next === 'none')) { sendJSON(res, 400, { error: 'This was the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return true; }
-            if ((trackOnly || needsNextStep(found, task)) && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
+            if (((!skipNext && needsNextStep(found, task)) || trackOnly || f.waiting === true) && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
               if (f.next === undefined || f.next === '') { sendJSON(res, 400, { error: 'This was the last open task for this student: choose the day to follow up next, or "Not needed".' }); return true; }
               step = nextStepOf(f, task);
               if (step && step.error) { sendJSON(res, 400, { error: step.error }); return true; }
+              if (f.waiting === true && !step) { sendJSON(res, 400, { error: 'Choose the day to check for the offer letter again.' }); return true; }
             }
           }
           const stepWords = (p) => (step ? { ...p, remind: [p.remind, `${step.text}, ${step.day > cards.today() ? `on ${niceDay(step.day)}` : 'today'}`].filter(Boolean).join('; ') } : p);
@@ -1760,15 +1773,21 @@ function createPortalApi({
       const without = chosen.filter((o) => !via(o));
       if (without.length) { sendJSON(res, 400, { error: `Choose the partner for ${without.map((o) => o.university || o.course).join(', ')} first.` }); return true; }
       const through = (o) => (/^direct$/i.test(via(o)) ? 'direct' : `through ${via(o)}`);
-      const list = chosen.map((o, n) => `${n + 1}. ${[o.course, o.university].filter(Boolean).join(' at ')}${o.intake ? ` (${o.intake})` : ''}, ${through(o)}`);
-      const made = cards.addTask(rowId, { team: 'application', text: `Apply for ${who}: ${chosen.length} course${chosen.length === 1 ? '' : 's'} in this order (University options)`, tag: 'application', priority: 'high' }, by(req));
-      if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
+      // One Apply task for each course (the owner, 18 Nov 2026): the team ticks each university on its own, with its own day, and each task
+      // is linked to its course.
       const words = text(body.note).slice(0, 1500);
-      cards.commentTask(rowId, made.task.id, [list.join('\n'), words].filter(Boolean).join('\n\n'), by(req));
       const today = localDate();
-      // A course that was answered before and is given again starts with no answer, so it is asked about again.
-      chosen.forEach((o, n) => cards.updateOption(rowId, o.id, { sent: today, rank: String(n + 1), partner: via(o), skipped: '', refused: '', withdrawn: '', reason: '' }, by(req)));
-      activity.record(req, req.user, 'Task', { app: 'Student card', changes: [`Sent ${chosen.length} course${chosen.length === 1 ? '' : 's'} of ${who} to the Application Team`] });
+      const made = [];
+      for (const [n, o] of chosen.entries()) {
+        const label = `${o.university}${o.course ? ` (${o.course})` : ''}`;
+        const t = cards.addTask(rowId, { team: 'application', text: `Apply to ${label} for ${who}`, tag: 'application', priority: 'high' }, by(req));
+        if (t.error) { sendJSON(res, 400, { error: t.error }); return true; }
+        cards.commentTask(rowId, t.task.id, [`${n + 1}. ${[o.course, o.university].filter(Boolean).join(' at ')}${o.intake ? ` (${o.intake})` : ''}, ${through(o)}`, words].filter(Boolean).join('\n\n'), by(req));
+        // A course that was answered before and is given again starts with no answer, so it is asked about again.
+        cards.updateOption(rowId, o.id, { sent: today, rank: String(n + 1), partner: via(o), taskId: t.task.id, skipped: '', refused: '', withdrawn: '', reason: '' }, by(req));
+        made.push(t.task.id);
+      }
+      activity.record(req, req.user, 'Task', { app: 'Student card', changes: [`Sent ${chosen.length} course${chosen.length === 1 ? '' : 's'} of ${who} to the Application Team (one task for each)`] });
       sendJSON(res, 200, { ok: true, card: cards.get(rowId) });
       return true;
     } else if (part === 'options' && sub && del) {

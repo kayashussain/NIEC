@@ -25,7 +25,7 @@
     const stage = field('Stage', { kind: 'select', choices: lists.stages, value: 'Inquiry' });
     const dept = lists.departments.length > 1 ? field('Team', { kind: 'select', choices: lists.departments.map((d) => [d.id, d.label]), value: lists.departments[0].id }) : null;
     const branchOnly = lists.departments.length > 0 && lists.departments.every((d) => d.source);
-    const picker = branchOnly ? null : window.SourcePicker.create({ lists, hideBranch: lists.departments.length > 0 });
+    const picker = branchOnly ? null : window.SourcePicker.create({ lists, hideBranch: lists.departments.length > 0, required: true });
     const isTeamUser = lists.departments.length > 0;
     if (isTeamUser) { stage.wrap.hidden = true; }
     form.append(intake.wrap, stage.wrap);

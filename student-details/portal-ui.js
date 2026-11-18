@@ -96,8 +96,10 @@
     return parent;
   }
 
+  // The red asterisk after the label of anything that must be filled in (the owner, 18 Nov 2026: every required detail is marked).
+  function requiredMark() { const m = el('b', 'p-req', ' *'); m.setAttribute('aria-hidden', 'true'); m.title = 'Required'; return m; }
   // A labelled box of a form. kind: text | date | number | area | select (choices: [value] or [[value, label]]).
-  function field(label, { kind = 'text', value = '', choices = [], placeholder = '', max = 300, list = '', hint = '', wide = false, disabled = false } = {}) {
+  function field(label, { kind = 'text', value = '', choices = [], placeholder = '', max = 300, list = '', hint = '', wide = false, disabled = false, required = false } = {}) {
     let input;
     if (kind === 'select') {
       input = el('select');
@@ -120,7 +122,9 @@
     if (placeholder) input.placeholder = placeholder;
     input.disabled = disabled;
     const wrap = el('label', `p-field${wide ? ' p-wide' : ''}`);
-    wrap.append(el('span', 'p-label', label), input);
+    const lab = el('span', 'p-label', label);
+    if (required) { lab.append(requiredMark()); input.setAttribute('aria-required', 'true'); }
+    wrap.append(lab, input);
     if (hint) wrap.append(el('span', 'p-hint', hint));
     return { wrap, input };
   }
@@ -426,7 +430,8 @@
         // A short question answered with pills; nothing is chosen until the person chooses.
         const question = (label, choices, onChange) => {
           const w = el('div', 'p-field p-wide');
-          w.append(el('span', 'p-label', label));
+          const ql = el('span', 'p-label', label); ql.append(requiredMark()); // an answer is required
+          w.append(ql);
           const p = picker(choices, '', (k) => `td-prio td-answer ans-${k}`, label);
           p.node.addEventListener('click', () => setTimeout(() => onChange && onChange(p.value()), 0));
           w.append(p.node);
@@ -441,10 +446,47 @@
           if (bits.length) form.append(el('p', 'p-muted p-small p-wide td-done-now', `Now on All Students: ${bits.join(' · ')}`));
         };
         let read = () => ({});
+        let fallbackNote = () => ''; // words supplied when the person writes none (an Offer request that is not answered yet)
+        let onWhat = () => {}; // the answer chosen changes what the notes box asks
         let notAbout = () => false; // the person said the task is not about its tag's question
         const specificFrom = form.children.length; // everything added from here to the "What was done?" box belongs to the task's own question
         let check = () => '';
-        if (tag === 'application' || tag === 'offer') {
+        if (state && state.courseTask) {
+          // One task, one course (the owner, 18 Nov 2026): the university and course are here already; the answer is Applied (with its day) or
+          // Not applied (with why). The Offer request that follows is made by itself, so no follow-up question is asked.
+          const c = state.courseTask;
+          const who = el('div', 'p-wide td-course');
+          who.append(el('b', '', c.university), c.course ? el('span', 'td-sofar-course', c.course) : '', c.partner ? el('span', 'td-sofar-sheet', /^direct$/i.test(c.partner) ? 'Direct' : `Through ${c.partner}`) : '');
+          form.append(who);
+          const q = question('Did you apply to this university?', [['yes', 'Applied'], ['no', 'Not applied']], (v) => { show(dayF.wrap, v === 'yes'); onWhat(v); });
+          const dayF = field('Day you applied', { kind: 'date', value: today, required: true });
+          dayF.input.max = today;
+          form.append(dayF.wrap);
+          show(dayF.wrap, false);
+          onWhat = (v) => { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(v === 'no' ? 'Why was it not applied? (for example not eligible)' : 'Notes (optional)'); if (v === 'no') l.append(requiredMark()); };
+          read = () => (q.value() === 'yes' ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'submitted', date: dayF.input.value }] }
+            : q.value() === 'no' ? { app: 'record', date: today, unis: [{ university: c.university, course: c.course, what: 'notsubmitted', date: today }] } : {});
+          check = () => (!q.value() ? 'Choose Applied or Not applied.' : q.value() === 'yes' && !dayF.input.value ? 'Choose the day you applied.' : q.value() === 'no' && words.input.value.trim().length < minNote ? 'Write why it was not applied, in a few words.' : '');
+        } else if (state && state.offerTask) {
+          // The Offer request: has the university answered? An offer (with its day), a refusal (with why), or not yet (with the day to ask again,
+          // which makes the next Offer request by itself).
+          const c = state.offerTask;
+          const who = el('div', 'p-wide td-course');
+          who.append(el('b', '', c.university), c.course ? el('span', 'td-sofar-course', c.course) : '');
+          form.append(who);
+          const q = question('Has the student received the offer letter?', [['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['waiting', 'Not received yet']], (v) => { show(dayF.wrap, ['conditional', 'unconditional', 'refused'].includes(v)); show(againF.wrap, v === 'waiting'); onWhat(v); });
+          const dayF = field('Day of the answer', { kind: 'date', value: today, required: true });
+          dayF.input.max = today;
+          const againF = field('Ask the university again on', { kind: 'date', value: new Date(Date.parse(today + 'T12:00:00Z') + 7 * 86400000).toISOString().slice(0, 10), required: true });
+          againF.input.min = today;
+          form.append(dayF.wrap, againF.wrap);
+          show([dayF.wrap, againF.wrap], false);
+          onWhat = (v) => { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(v === 'refused' ? 'Why was it refused?' : 'Notes (optional)'); if (v === 'refused') l.append(requiredMark()); };
+          fallbackNote = () => (q.value() === 'waiting' ? `Offer letter from ${c.university} not received yet; asking again on ${againF.input.value}.` : '');
+          read = () => (['conditional', 'unconditional', 'refused'].includes(q.value()) ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: q.value(), date: dayF.input.value }] }
+            : q.value() === 'waiting' ? { waiting: true, generic: true, next: againF.input.value, nextText: t.text } : {});
+          check = () => (!q.value() ? 'Choose what the university said.' : ['conditional', 'unconditional', 'refused'].includes(q.value()) && !dayF.input.value ? 'Choose the day of the answer.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Write why it was refused, in a few words.' : q.value() === 'waiting' && !againF.input.value ? 'Choose the day to ask again.' : '');
+        } else if (tag === 'application' || tag === 'offer') {
           // So far: every application ISR knows, each with its days; a press on one starts a line for it below.
           const apps = state.applications || [];
           const listId = `td-unis-${t.id}`;
@@ -597,7 +639,7 @@
         }
         // A task is sometimes tagged for a question that is not what was asked (an Application tag on "ask for the mock feedback"): the
         // person can say so, and then only what was done is written (the owner, 18 Nov 2026).
-        if (asks) {
+        if (asks && !(state && (state.courseTask || state.offerTask))) {
           const specific = [...form.children].slice(specificFrom);
           if (specific.length) {
             const off = el('label', 'p-check p-wide td-not-about');
@@ -616,6 +658,7 @@
         const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
         words.input.rows = 2; words.input.dataset.words = '1'; words.input.dataset.was = words.input.placeholder;
         form.append(words.wrap);
+        if (state && (state.courseTask || state.offerTask)) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren('Notes (optional)'); words.input.placeholder = 'e.g. Application ID 12345.'; }
         // What next: when this is the student's last open task and the student is still on the way, the team picks the day someone
         // gets back to them, or says it is not needed. One tap for the usual days.
         let nextValue = '';
@@ -661,7 +704,7 @@
           const wantsNext = state && (state.needsNext || wordsOnly) && !makesOwnNext() && (state.needsNext || !recorded);
           if (wordsOnly && !notAbout() && !makesOwnNext() && nextValue === 'none') { fail({ message: 'This is the last open task for this student and it recorded nothing. Choose the day someone gets back to the student, or, if a university cannot be applied to, add its line above and choose "Not submitted" with the reason.' }); return; }
           if (wantsNext && !nextValue) { fail({ message: 'Choose when someone should get back to this student, or "Not needed".' }); return; }
-          const answers = { ...read(), ...(notAbout() ? { generic: true } : {}), note: words.input.value.trim(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
+          const answers = { ...read(), ...(notAbout() ? { generic: true } : {}), note: words.input.value.trim() || fallbackNote(), ...(wantsNext ? { next: nextValue, nextText: nextText && nextValue !== 'none' ? nextText.input.value.trim() : '' } : {}) };
           if (!asks) { answer = answers; close(true); return; }
           next.disabled = true;
           try { const r = await api(url, { done: true, finish: answers, preview: true }); msg.textContent = ''; msg.className = 'p-msg'; review(r.preview, answers); } catch (e) { fail(e); }
@@ -945,5 +988,5 @@
     if (root.PhoneLink) { root.PhoneLink.openChat({ id, number, name, text }); return; }
     window.open(`https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`, '_blank', 'noopener');
   }
-  root.Portal = { whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { requiredMark, whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
 })(this);

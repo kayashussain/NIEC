@@ -2306,6 +2306,10 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-uni-row .p-field { margin: 0; }
 .td-uni-x { width: 32px; height: 32px; margin-bottom: 7px; border: 0; border-radius: 50%; background: #ececf0; color: #515154; font-size: 18px; line-height: 1; cursor: pointer; }
 .td-uni-x:hover { background: #ffe5e3; color: #c41e14; }
+/* 🔴 CSS CHANGED (2026-11-18): the red asterisk after anything that must be filled in, and the university and course line at the top of the simple "Mark as done?" windows | from: required boxes were only said to be needed in words, and the simple windows did not exist | to: a bold red * (#d70015) after the label of a required box; the course window shows the university in bold with its course and partner beside it on a soft grey band */
+.p-req { color: #d70015; font-weight: 700; }
+.td-course { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 12px 14px; border-radius: 12px; background: #f2f2f5; }
+.td-course b { font-size: 16px; font-weight: 650; color: #1d1d1f; }
 /* 🔴 CSS CHANGED (2026-11-18): the cross beside a course given to the team in "Mark as done?" shows when it is pressed (not eligible) | from: the round grey button looked the same pressed or not | to: pressed, it is a soft red circle with a red cross */
 .td-uni-x.is-on, .td-uni-x[aria-pressed="true"] { background: #ffe5e3; color: #c41e14; box-shadow: 0 0 0 2px #ffb8b3 inset; }
 .td-uni-more { justify-self: start; }

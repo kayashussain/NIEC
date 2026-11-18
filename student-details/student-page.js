@@ -855,7 +855,7 @@
     const saved = await dialog(`${o.university}${o.course ? ': ' + o.course : ''}`, (body, close) => {
       const form = el('div', 'p-form');
       // The university and the course can be corrected here too (a wrong name, or a course changed), not only the answer.
-      const uniF = field('University', { value: o.university || '', max: 160 });
+      const uniF = field('University', { value: o.university || '', max: 160, required: true });
       const courseF = field('Course', { value: o.course || '', max: 240 });
       const applied = field('Application submitted on', { kind: 'date', value: o.applied || '' });
       const now = o.skipped ? 'skipped' : o.refused ? 'refused' : o.withdrawn ? 'withdrawn' : o.offer ? (o.offerType || 'offer') : '';

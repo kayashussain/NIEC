@@ -274,10 +274,47 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     await setStage(was);
     const o7 = (await admin('POST', `/api/cards/${tId}/options`, { university: 'Seventh University', course: 'BSc Seven' })).json.card.options.find((x) => x.university === 'Seventh University').id;
     assert.strictEqual((await admin('POST', `/api/cards/${tId}/options/send`, { ids: [o7], partners: { [o7]: 'Direct' } })).status, 200);
-    const applyTask = (await cardT()).tasks.find((x) => /^Apply for .*1 course/.test(x.text) && !x.done);
+    const applyTask = (await cardT()).tasks.find((x) => /^Apply to Seventh University/.test(x.text) && !x.done);
     assert.ok(applyTask && (await cardT()).options.find((x) => x.id === o7).sent);
     assert.strictEqual((await admin('POST', `/api/cards/${tId}/tasks/${applyTask.id}/delete`, {})).status, 200);
     assert.ok(!(await cardT()).options.find((x) => x.id === o7).sent, 'its course is back on the Shortlist, not held by a task that no longer exists');
+  }
+  // One task per course, a simple answer (Applied with its day, or Not applied with the reason), no follow-up question, and the Offer request
+  // made by itself; the Offer request is answered with the university's reply, or "not yet" with the day to check again (the owner, 18 Nov 2026).
+  {
+    const solo3 = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Course', 'LAST NAME': 'Tasks', 'CONTACT NUMBER': '9800000097' } })).json.id;
+    const cardS = async () => (await admin('GET', `/api/cards/${solo3}`)).json.card;
+    const ids3 = [];
+    for (const [u, c] of [['Alpha Course University', 'BSc A'], ['Beta Course University', 'BSc B'], ['Gamma Course University', 'BSc C']]) { const o = (await admin('POST', `/api/cards/${solo3}/options`, { university: u, course: c })).json; ids3.push(o.card.options.find((x) => x.university === u).id); }
+    assert.strictEqual((await admin('POST', `/api/cards/${solo3}/options/send`, { ids: ids3, partners: Object.fromEntries(ids3.map((i) => [i, 'Direct'])) })).status, 200);
+    const applyTasks = (await cardS()).tasks.filter((x) => /^Apply to .* Course University/.test(x.text));
+    assert.strictEqual(applyTasks.length, 3, 'three courses, three tasks');
+    const fin3 = (tid, f) => app('POST', `/api/cards/${solo3}/tasks/${tid}`, { done: true, finish: { ...f, confirmed: true } });
+    const st = (await app('POST', `/api/cards/${solo3}/tasks/${applyTasks[0].id}`, { finishState: true })).json.state;
+    assert.deepStrictEqual([st.courseTask.university, st.courseTask.course, st.needsNext], ['Alpha Course University', 'BSc A', false], 'the course comes with the task, and no follow-up is asked');
+    const alpha = applyTasks.find((x) => /Alpha/.test(x.text)); const beta = applyTasks.find((x) => /Beta/.test(x.text)); const gamma = applyTasks.find((x) => /Gamma/.test(x.text));
+    // Applied: only the day; the other two courses are not asked about in this task.
+    assert.strictEqual((await fin3(alpha.id, { app: 'record', date: today, unis: [{ university: 'Alpha Course University', course: 'BSc A', what: 'submitted', date: today }] })).status, 200);
+    // Not applied: the reason is needed.
+    assert.strictEqual((await fin3(beta.id, { app: 'record', date: today, unis: [{ university: 'Beta Course University', course: 'BSc B', what: 'notsubmitted', date: today }] })).status, 400, 'not applied needs a reason');
+    assert.strictEqual((await fin3(beta.id, { app: 'record', date: today, note: 'Not eligible: IELTS below 6.5.', unis: [{ university: 'Beta Course University', course: 'BSc B', what: 'notsubmitted', date: today }] })).status, 200);
+    // The Offer request for Alpha was made by itself; Beta (not applied) has none.
+    const offerTasks3 = (await cardS()).tasks.filter((x) => x.tag === 'offer');
+    assert.deepStrictEqual(offerTasks3.map((x) => /Alpha Course University/.test(x.text)), [true], 'one Offer request, for the university applied to');
+    // Not received yet: finished, and a new Offer request waits for the chosen day.
+    const offerTask3 = offerTasks3[0];
+    const stO = (await app('POST', `/api/cards/${solo3}/tasks/${offerTask3.id}`, { finishState: true })).json.state;
+    assert.deepStrictEqual([stO.offerTask.university, stO.offerTask.course], ['Alpha Course University', 'BSc A']);
+    assert.strictEqual((await fin3(offerTask3.id, { waiting: true, generic: true, note: 'Offer not received yet.' })).status, 400, 'a day to check again is needed');
+    assert.strictEqual((await fin3(offerTask3.id, { waiting: true, generic: true, note: 'Offer not received yet.', next: add(5), nextText: offerTask3.text })).status, 200);
+    const again3 = (await cardS()).tasks.filter((x) => x.tag === 'offer' && !x.done);
+    assert.strictEqual(again3.length, 1, 'the next Offer request is waiting');
+    assert.strictEqual(again3[0].doOn, add(5), 'for the day chosen');
+    // The university's reply: no follow-up question.
+    assert.strictEqual((await fin3(again3[0].id, { app: 'record', date: today, unis: [{ university: 'Alpha Course University', course: 'BSc A', what: 'conditional', date: today }] })).status, 200);
+    assert.strictEqual((await cardS()).options.find((o) => o.university === 'Alpha Course University').offer, today);
+    // Gamma is still waiting for its answer, held by its own task.
+    assert.ok((await cardS()).options.find((o) => o.university === 'Gamma Course University').sent && !gamma.done);
   }
   // Putting back an application after its offer was recorded keeps the offer (only what that task wrote is taken off).
   {

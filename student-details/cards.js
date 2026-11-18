@@ -83,6 +83,8 @@ function cleanOption(input, old = {}) {
     reason: pick('reason', 300),
     // Sent to the Application Team from the shortlist (the day), and its place in the order it was sent in (1, 2, 3 ...).
     sent: (() => { const v = pick('sent', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
+    // The Apply task made for this course when it was sent to the team (one task per course, the owner, 18 Nov 2026).
+    taskId: pick('taskId', 40),
     rank: (() => { const v = pick('rank', 3); return /^\d{1,2}$/.test(v) ? v : ''; })(),
     // Through which partner the application goes: "Direct" or a B2B partner's name (asked when it is sent to the Application Team).
     partner: pick('partner', 120),
