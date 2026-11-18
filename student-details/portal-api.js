@@ -598,7 +598,7 @@ function createPortalApi({
     const today = cards.today();
     const note = text(f && f.note).slice(0, 2000);
     const day = (v) => { const d = realDay(v); return d === null ? null : d; };
-    const plan = { kind, columns: {}, kept: [], warnings: [], options: [], note: '', medical: undefined, remind: null };
+    const plan = { kind, columns: {}, kept: [], warnings: [], options: [], note: '', medical: undefined, remind: null, offerRequests: [] };
     if (!f || typeof f !== 'object') return plan;
     const label = (c) => Fields.columnLabel(c);
     // A column is filled only when empty; a different value already there stays, and the team is told.
@@ -698,6 +698,8 @@ function createPortalApi({
             else if (u.what === 'refused') opt.refused = d;
             else if (u.what === 'withdrawn') opt.withdrawn = d;
           }
+          // An application submitted starts its own task: "Offer request", asking whether the university has answered (the owner, 18 Nov 2026).
+          if (u.what === 'submitted' && !prior.offer) plan.offerRequests.push({ university: opt.university, course: opt.course });
           plan.options.push(opt);
           (groups[u.what] = groups[u.what] || []).push({ name, course: u.course });
         }
@@ -851,10 +853,14 @@ function createPortalApi({
       changes: Object.entries(plan.columns).map(([c, v]) => ({ column: c, label: Fields.columnLabel(c), from: shown(row[c]), to: v === '' ? '(empty)' : shown(v) })),
       options: plan.options.map(optLine),
       kept: plan.kept, warnings: plan.warnings, note: plan.note,
+      offerTasks: (plan.offerRequests || []).map((r) => offerRequestText(r)),
       remind: plan.remind ? `${plan.remind.text}${plan.remind.day > cards.today() ? `, on ${niceDay(plan.remind.day)}` : ''}` : '',
       remarks: plan.note && (!text(row.REMARKS) || text(row.REMARKS) === text(cards.get(row._id).autoRemark)),
     };
   }
+  // The separate task made when an application is submitted: the Application Team asks the university for the offer letter and records the
+  // answer (an offer, a refusal) by finishing it, as any application task.
+  const offerRequestText = (r) => `Offer request: is there any update on the offer letter from ${r.university}${r.course ? ` (${r.course})` : ''}?`;
   // Writes a confirmed plan and keeps on the task what it wrote, so reopening the task can put it back.
   function applyPlan(req, found, task, plan) {
     const rowId = found.row._id;
@@ -891,8 +897,17 @@ function createPortalApi({
       const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: plan.remind.tag, priority: 'high' }, by(req));
       if (!made.error) { wrote.remind = made.task.id; if (plan.remind.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: plan.remind.day, reason: plan.remind.tag === 'medical' ? 'On the day of the medical test' : 'On the day of the mock interview' }, by(req), cards.today()); }
     }
+    // One "Offer request" task for each application submitted now, never a second open one for the same university and course.
+    wrote.offerRequests = [];
+    (plan.offerRequests || []).forEach((r) => {
+      const words = offerRequestText(r);
+      const open = (cards.get(rowId).tasks || []).some((x) => !x.done && squash(x.text) === squash(words));
+      if (open) return;
+      const made = cards.addTask(rowId, { team: task.team === HEAD ? 'application' : task.team, text: words, tag: 'application' }, by(req));
+      if (!made.error) wrote.offerRequests.push(made.task.id);
+    });
     if (wrote.options.length) syncApplicationDays(req, rowId);
-    if (Object.keys(wrote.columns).length || wrote.options.length || plan.medical !== undefined || wrote.remind) cards.setTaskWrote(rowId, task.id, wrote, by(req));
+    if (Object.keys(wrote.columns).length || wrote.options.length || plan.medical !== undefined || wrote.remind || wrote.offerRequests.length) cards.setTaskWrote(rowId, task.id, wrote, by(req));
     return wrote;
   }
   // Reopening a finished task can put back what it wrote (the owner, 16 Nov 2026: a wrong answer is corrected in one step). A column
@@ -915,6 +930,7 @@ function createPortalApi({
       if (o.before === null) { cards.removeOption(rowId, o.id, by(req)); undone.push(`${now.university}: taken out of University options`); }
       else { cards.updateOption(rowId, o.id, o.before, by(req)); undone.push(`${now.university}: University options as before`); }
     });
+    (w.offerRequests || []).forEach((tid) => { const r = (cards.get(rowId).tasks || []).find((x) => x.id === tid); if (r && !r.done) { cards.removeTask(rowId, tid, by(req)); undone.push(`The task "${r.text.slice(0, 60)}" removed`); } });
     if (w.remind) { const r = (cards.get(rowId).tasks || []).find((x) => x.id === w.remind); if (r && !r.done) { cards.removeTask(rowId, w.remind, by(req)); undone.push(`The task "${r.text.slice(0, 60)}" removed`); } }
     if ('medical' in w) cards.setMedical(rowId, w.medical, by(req));
     cards.setTaskWrote(rowId, task.id, null, by(req));

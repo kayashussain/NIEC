@@ -638,7 +638,7 @@
         block('Please look at this first', p.warnings, 'is-warn');
         block('Changes on All Students', p.changes.map((c) => { const li = el('li', 'td-check-change'); li.append(el('b', '', c.label), el('span', c.from === '(empty)' ? 'td-check-from is-empty' : 'td-check-from', c.from), el('span', 'td-check-arrow', '→'), el('span', 'td-check-to', c.to)); return li; }));
         block('University options', p.options);
-        block('A new task for the team', p.remind ? [p.remind] : []);
+        block('A new task for the team', [...(p.remind ? [p.remind] : []), ...(p.offerTasks || [])]);
         block('Stays as it is', p.kept, 'is-quiet');
         block('Note on the student', p.note ? [p.note + (p.remarks ? ' (also shown in Remarks)' : '')] : []);
         if (!p.changes.length && !p.options.length && !p.remind) sure.append(el('p', 'p-muted', `Nothing changes on All Students. The task is marked done${p.note ? ' and the note is saved' : ''}.`));

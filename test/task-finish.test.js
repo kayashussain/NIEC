@@ -171,6 +171,21 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finishT(t3, { app: 'refused', date: today, unis: [{ university: 'Fourth University' }], note: 'Did not meet the entry grade.' })).status, 200);
   assert.strictEqual((await cardT()).options.find((o) => o.university === 'Fourth University').refused, today);
   assert.strictEqual((await finishT(await giveT('No name', 'application'), { app: 'offer', date: today, unis: [] })).status, 400, 'an offer names the university');
+  // Submitting an application starts its own "Offer request" task (the owner, 18 Nov 2026): once for each university applied to, never twice.
+  const tasksOf = async () => (await cardT()).tasks;
+  const offerTasks = async () => (await tasksOf()).filter((x) => /^Offer request: is there any update on the offer letter from/.test(x.text));
+  const before = (await offerTasks()).length;
+  const o1T = await giveT('Apply to Offer Test University', 'application');
+  const pv = (await app('POST', `/api/cards/${tId}/tasks/${o1T}`, { done: true, preview: true, finish: { next: 'none', app: 'record', date: today, unis: [{ university: 'Offer Test University', course: 'BSc Offer', what: 'submitted' }] } })).json.preview;
+  assert.ok(pv.offerTasks && /Offer Test University \(BSc Offer\)/.test(pv.offerTasks[0]), 'the check says the offer request task will be made');
+  assert.strictEqual((await finishT(o1T, { app: 'record', date: today, unis: [{ university: 'Offer Test University', course: 'BSc Offer', what: 'submitted' }] })).status, 200);
+  const madeOffer = (await offerTasks()).filter((x) => /Offer Test University/.test(x.text));
+  assert.strictEqual(madeOffer.length, 1, 'one offer request task');
+  assert.deepStrictEqual([madeOffer[0].team, madeOffer[0].done], ['application', false]);
+  assert.strictEqual((await offerTasks()).length, before + 1);
+  // Reopening the application task and putting back what it wrote takes the offer request task away again.
+  assert.strictEqual((await app('POST', `/api/cards/${tId}/tasks/${o1T}`, { done: false, finish: { revert: true } })).status, 200);
+  assert.strictEqual((await offerTasks()).filter((x) => /Offer Test University/.test(x.text)).length, 0, 'put back with the task');
   // Needed to track the student (18 Nov 2026): a payment names its amount, a submitted NOC its number, a booked test its place, and every
   // course given to the team gets an answer, a "not submitted" or refusal saying why.
   assert.strictEqual((await finishT(await giveT('Collect', 'payment'), { paid: true, date: today })).status, 400, 'a payment needs its amount');
