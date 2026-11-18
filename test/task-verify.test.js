@@ -90,7 +90,7 @@ test('answers are checked and confirmed before they are written, and can be put 
   // (the owner, 17 Nov 2026: the days are kept per university, the hidden column holds the first offer).
   const b = await student('Bina', 'Application Stage', { 'UNIVERSITY NAME': 'Beta University', 'COURSE NAME': 'BSc Business', 'APPLICATION SUBMISSION DATE': add(-30) });
   const t2 = await b.give('Record the news', 'application');
-  const mixed = { app: 'record', date: add(-1), unis: [{ university: 'Gamma University', course: 'BSc Business', what: 'submitted' }, { university: 'Delta University', course: 'BSc Business', what: 'refused' }, { university: 'Epsilon University', what: 'unconditional' }] };
+  const mixed = { app: 'record', date: add(-1), unis: [{ university: 'Gamma University', course: 'BSc Business', what: 'submitted' }, { university: 'Delta University', course: 'BSc Business', what: 'refused' }, { university: 'Epsilon University', course: 'BSc Business', what: 'unconditional' }], note: 'Delta refused: entry grade not met.' };
   const pv2 = (await b.call(t2, { done: true, finish: mixed, preview: true })).json.preview;
   assert.ok(pv2.changes.some((c) => c.column === 'OFFER RECEIVED DATE'), 'the first offer, whichever university gave it');
   assert.match(pv2.warnings.join('\n'), /No application to Epsilon University is recorded/);

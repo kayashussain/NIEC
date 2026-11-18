@@ -569,6 +569,8 @@ function createPortalApi({
     if (step.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: step.day, reason: 'The follow-up day chosen when the last task was done' }, by(req), cards.today());
     return made.task.id;
   }
+  // The courses given to the Application Team that have no answer yet.
+  const assignedOf = (card) => (card.options || []).filter((o) => o.sent && !o.applied && !o.offer && !o.refused && !o.withdrawn && !o.skipped);
   function finishState(found, task) {
     const row = found.row;
     const card = cards.get(row._id);
@@ -577,7 +579,7 @@ function createPortalApi({
     return {
       kind, today: cards.today(), applications: applicationsOf(row, card), universities: unis,
       // The courses given to the Application Team and not answered yet: the "Mark as done?" window starts with one line for each.
-      assigned: (card.options || []).filter((o) => o.sent && !o.applied && !o.offer && !o.refused && !o.withdrawn && !o.skipped).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
+      assigned: assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
@@ -615,6 +617,14 @@ function createPortalApi({
       if (!list.length && legacy === 'submitted') list = [{ university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']), what: 'submitted' }];
       if (!list.length && legacy) return { error: 'Name the university.' };
       if (list.some((u) => !APP_WHAT[u.what])) return { error: `Choose what happened with ${list.find((u) => !APP_WHAT[u.what]).university}.` };
+      // Needed to track the student (the owner, 18 Nov 2026): every course given to the team gets an answer, the course is named, and a
+      // refusal, a withdrawal or "not submitted" says why. Otherwise a course is lost between "given" and "applied".
+      const unanswered = assignedOf(card).filter((a) => !list.some((u) => squash(u.university) === squash(a.university) && (!u.course || !a.course || squash(u.course) === squash(a.course))));
+      if (unanswered.length) return { error: `${unanswered.map((a) => a.university + (a.course ? ` (${a.course})` : '')).join(', ')} ${unanswered.length > 1 ? 'were' : 'was'} given to the team and ${unanswered.length > 1 ? 'have' : 'has'} no answer yet. For each, choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why).` };
+      const needsWhy = list.find((u) => ['notsubmitted', 'refused', 'withdrawn'].includes(u.what) && text(note).length < MIN_NOTE);
+      if (needsWhy) return { error: `Say why in the note: ${needsWhy.university} was ${APP_WHAT[needsWhy.what].toLowerCase()}.` };
+      const noCourse = list.find((u) => ['submitted', ...OFFERS].includes(u.what) && !u.course && !(applicationsOf(row, card).find((a) => squash(a.university) === squash(u.university)) || {}).course && !(squash(u.university) === squash(text(row['UNIVERSITY NAME'])) && text(row['COURSE NAME'])));
+      if (noCourse) return { error: `Write the course for ${noCourse.university}.` };
       if (list.length) {
         const d = day(f.date);
         if (!d) return { error: 'Choose the day.' };
@@ -691,6 +701,7 @@ function createPortalApi({
       const status = f.noc === 'Submitted' ? 'Submitted' : f.noc === 'Pending' ? 'Pending' : '';
       if (!status) return { error: 'Choose Pending or Submitted for the NOC.' };
       const number = text(f.nocNumber).slice(0, 60);
+      if (status === 'Submitted' && !number && !text(row['NOC NUMBER'])) return { error: 'Write the NOC number: it is needed once the NOC is submitted.' };
       // A NOC already Submitted never goes back to Pending; a new number replaces the old one, which the note keeps.
       const was = text(row.NOC);
       if (status === 'Pending' && was === 'Submitted') plan.kept.push('NOC already says Submitted: it never goes back to Pending.');
@@ -743,6 +754,7 @@ function createPortalApi({
       } else if (f.medical === 'booked') {
         const d = day(f.date);
         if (!d) return { error: 'Choose the day the medical test is booked for.' };
+        if (!place) return { error: 'Write the hospital or clinic the test is booked at.' };
         // Booked, and on that day the team is asked to confirm the report (the owner, 16 Nov 2026: never Received by itself).
         if (text(row['MEDICAL REPORT']) === 'Received') plan.warnings.push('Medical Report already says Received.');
         plan.columns['MEDICAL REPORT'] = 'Booked';
@@ -763,7 +775,7 @@ function createPortalApi({
       if (!d) return { error: 'Choose the day it was paid.' };
       if (d > today) return { error: 'A payment cannot be made on a day still to come.' };
       const amount = text(f.amount).replace(/[^\d.]/g, '').slice(0, 14);
-      if (text(f.amount) && !(Number(amount) > 0)) return { error: 'Write the amount in numbers, for example 5000.' };
+      if (!(Number(amount) > 0)) return { error: 'Write the amount paid, in numbers, for example 5000.' };
       const offer = isoDate(row['OFFER RECEIVED DATE']);
       if (!offer) plan.warnings.push('No offer is recorded on All Students.');
       else if (d < offer) plan.warnings.push(`The offer on All Students is from ${niceDay(offer)}, after this payment.`);
@@ -778,6 +790,7 @@ function createPortalApi({
       const STEPS = { casRequested: ['CAS REQUESTED DATE', 'CAS requested', ''], casReceived: ['CAS RECEIVED DATE', 'CAS received', 'CAS Issued'], lodged: ['VISA LODGE DATE', 'Visa lodged', 'Visa Lodge'], vfs: ['VFS ATTENDED DATE', 'VFS attended', ''], visa: ['VISA RECEIVED DATE', 'Visa received', 'Visa Issued'], refused: ['', 'Visa refused', 'Visa Rejected'] };
       const st = STEPS[f.step];
       if (!st) return { error: 'Choose the step.' };
+      if (f.step === 'refused' && note.length < MIN_NOTE) return { error: 'Say why the visa was refused (the reason in the refusal letter).' };
       const d = day(f.date);
       if (!d) return { error: 'Choose the day.' };
       if (d > today) return { error: 'Choose a day that has come.' };
@@ -801,7 +814,7 @@ function createPortalApi({
     // Nothing changes on the sheet when it already says the same.
     Object.keys(plan.columns).forEach((c) => { if (text(row[c]) === plan.columns[c]) delete plan.columns[c]; });
     // University options: only the days that are new.
-    plan.options = plan.options.filter((o) => ['applied', 'offer', 'refused', 'withdrawn', 'offerType'].some((k) => o[k]));
+    plan.options = plan.options.filter((o) => ['applied', 'offer', 'refused', 'withdrawn', 'skipped', 'offerType'].some((k) => o[k]));
     return plan;
   }
   // The plan in the words the team checks before confirming.
@@ -1537,6 +1550,10 @@ function createPortalApi({
           if (body.done && !task.done && f) {
             const plan0 = answered ? finishPlan(found, task, f) : null;
             if (plan0 && plan0.error) { sendJSON(res, 400, { error: plan0.error }); return true; }
+            // "Nothing to record" is not an answer while courses given to the team are still unanswered.
+            if (Fields.taskTag(task, text(found.row[STATUS])) === 'application' && assignedOf(cards.get(found.row._id)).length && !(plan0 && plan0.options.length)) {
+              sendJSON(res, 400, { error: 'Courses were given to the team and have no answer yet: choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why) for each.' }); return true;
+            }
             // An answer to the task's question says what happened by itself; without one, a few words are needed.
             if (!answered && text(f.note).length < MIN_NOTE) { sendJSON(res, 400, { error: 'Write in a few words what was done, so the next person knows.' }); return true; }
             if (needsNextStep(found, task) && !(plan0 && plan0.remind)) {
@@ -1803,6 +1820,13 @@ function createPortalApi({
   async function handleNewStudent(req, res) {
     const body = await bodyOf(req, res);
     if (!body) return true;
+    // The Add student form (strict) also needs a WhatsApp number and where the student came from (a branch account is tagged with its branch).
+    if (body.strict === true) {
+      const given = body.fields && typeof body.fields === 'object' ? body.fields : {};
+      const branchOnly = !Teams.isAdmin(req.user) && Teams.addableDepartments(req.user).length > 0 && Teams.addableDepartments(req.user).every((d) => Teams.DEPARTMENTS[d].source);
+      if (!text(given['CONTACT NUMBER'])) { sendJSON(res, 400, { error: "Please enter the student's WhatsApp number." }); return true; }
+      if (!branchOnly && !text(given['STUDENT SOURCE'])) { sendJSON(res, 400, { error: 'Choose where the student came from.' }); return true; }
+    }
     const out = addStudent(req, body);
     sendJSON(res, out.status, out.json);
     return true;

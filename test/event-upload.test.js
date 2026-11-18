@@ -225,6 +225,12 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   assert.deepStrictEqual([nameAgain.status, nameAgain.json.duplicate.sameName], [409, true]);
   assert.strictEqual((await admin('POST', '/api/students/new', { ...nameOnly, allowDuplicate: true })).status, 200, 'added anyway when it is another person');
 
+  // The Add student form (strict) needs a WhatsApp number and where the student came from; the name alone still works through the API.
+  const strictBase = { stage: 'Inquiry', strict: true, fields: { 'FIRST NAME': 'Strict', 'LAST NAME': 'Form' } };
+  assert.strictEqual((await admin('POST', '/api/students/new', strictBase)).status, 400, 'a WhatsApp number is needed');
+  assert.strictEqual((await admin('POST', '/api/students/new', { ...strictBase, fields: { ...strictBase.fields, 'CONTACT NUMBER': '9800077701' } })).status, 400, 'where the student came from is needed');
+  assert.strictEqual((await admin('POST', '/api/students/new', { ...strictBase, fields: { ...strictBase.fields, 'CONTACT NUMBER': '9800077701', 'STUDENT SOURCE': 'Visitor' } })).status, 200);
+
   // The Dashboard's figures over time: every intake side by side, and the days of each step.
   const tr = (await admin('GET', '/api/trends')).json;
   assert.ok(Array.isArray(tr.intakes) && tr.intakes.length >= 1 && 'visas' in tr.intakes[0], 'every intake, as quarters');

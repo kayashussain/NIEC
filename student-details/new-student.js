@@ -30,13 +30,13 @@
       if (rest.length) group('Where the student starts', ...rest);
 
       group('The student', make('FIRST NAME', 'First name', { max: 80 }), make('LAST NAME', 'Last name', { max: 80 }),
-        make('EMAIL', 'Email', { max: 254, placeholder: 'student@example.com' }), make('CONTACT NUMBER', 'WhatsApp number', { max: 40, placeholder: '98XXXXXXXX' }),
+        make('EMAIL', 'Email', { max: 254, placeholder: 'student@example.com' }), make('CONTACT NUMBER', 'WhatsApp number (needed)', { max: 40, placeholder: '98XXXXXXXX' }),
         make('dob', 'Date of birth', { kind: 'date' }), make('passportNo', 'Passport number', { max: 20, placeholder: 'e.g. PA1234567' }),
         make('address', 'Address (as in the passport)', { max: 200, wide: true, placeholder: 'e.g. Butwal-11, Rupandehi' }),
         make('nationality', 'Nationality', { kind: 'select', choices: F.NATIONALITIES, value: 'Nepali' }));
       inputs.dob.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10); // a date of birth is never in the future; the calendar's years end this year
       // Only the name is needed to add a student (the owner, 16 Nov 2026): everything else can be filled in later on the student card.
-      form.append(el('p', 'p-muted p-small ns-passport-note', 'Only the name is needed. The rest can be added later on the student card.'));
+      form.append(el('p', 'p-muted p-small ns-passport-note', 'Needed to add a student: the name, the WhatsApp number and where the student came from. The rest can be added later on the student card.'));
 
       // Where the student came from: the source, then exactly which (the branch, the agent, the event ...). The choices are shared: a missing one is added once.
       // A branch account adds its own students, so the source is not asked: the server tags them with the branch.
@@ -60,6 +60,9 @@
         const v = (k) => (inputs[k] ? inputs[k].value : '');
         if (!v('FIRST NAME').trim() && !v('LAST NAME').trim()) { msg.textContent = "Please enter the student's name."; msg.className = 'p-msg error'; inputs['FIRST NAME'].focus(); return; }
         // Where the student came from must be complete (the event, or the campaign answer), so the student counts in its cost.
+        // Needed so every student can be reached and counted (the owner, 18 Nov 2026): a WhatsApp number and where the student came from.
+        if (!v('CONTACT NUMBER').trim()) { msg.textContent = "Please enter the student's WhatsApp number."; msg.className = 'p-msg error'; inputs['CONTACT NUMBER'].focus(); return; }
+        if (picker && !picker.value().source) { msg.textContent = 'Choose where the student came from.'; msg.className = 'p-msg error'; return; }
         const missing = picker ? picker.check() : '';
         if (missing) { msg.textContent = missing; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
@@ -71,7 +74,7 @@
         const pick = picker ? picker.value() : { source: '', detail: '', remarks: '' };
         fields['STUDENT SOURCE'] = pick.source;
         try {
-          const r = await api('/api/students/new', { fields, profile: { sourceDetail: pick.detail, sourceRemarks: pick.remarks, sourcePlatform: pick.platform || '', sourceWay: pick.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim(), nationality: v('nationality') }, stage: v('stage'), sheetId: activeSheetId, dept: v('dept'), note: v('note'), allowDuplicate });
+          const r = await api('/api/students/new', { fields, profile: { sourceDetail: pick.detail, sourceRemarks: pick.remarks, sourcePlatform: pick.platform || '', sourceWay: pick.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim(), nationality: v('nationality') }, stage: v('stage'), sheetId: activeSheetId, dept: v('dept'), note: v('note'), allowDuplicate, strict: true });
           close(r);
         } catch (e) {
           const dup = e.body && e.body.duplicate;

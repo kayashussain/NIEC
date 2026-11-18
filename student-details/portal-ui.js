@@ -499,15 +499,18 @@
           check = () => {
             const f = filled();
             const noWhat = f.find((x) => !x.what); const noName = f.find((x) => !x.university);
-            return noWhat ? `Choose what happened with ${noWhat.university}.` : noName ? 'Name the university on each line.' : f.length && !on.input.value ? 'Choose the day it happened.' : '';
+            const noCourse = f.find((x) => ['submitted', 'conditional', 'unconditional', 'offer'].includes(x.what) && !x.course);
+            const needsWhy = f.find((x) => ['notsubmitted', 'refused', 'withdrawn'].includes(x.what));
+            const why = words.input.value.trim().length >= minNote;
+            return noWhat ? `Choose what happened with ${noWhat.university}.` : noName ? 'Name the university on each line.' : noCourse ? `Write the course for ${noCourse.university}.` : f.length && !on.input.value ? 'Choose the day it happened.' : needsWhy && !why ? 'Say why in the note below (not submitted, refused or withdrawn).' : '';
           };
         } else if (tag === 'noc') {
           nowLine(['NOC', 'NOC NUMBER']);
           const q = question('The NOC', [['Pending', 'Pending (account made)'], ['Submitted', 'Submitted'], ['none', 'Nothing to record']], (v) => show(num.wrap, v !== 'none'));
-          const num = field('NOC number', { value: sheet['NOC NUMBER'] || '', max: 60, placeholder: 'If there is one' });
+          const num = field('NOC number (needed once it is submitted)', { value: sheet['NOC NUMBER'] || '', max: 60, placeholder: 'e.g. NOC-12345' });
           form.append(num.wrap);
           read = () => (q.value() && q.value() !== 'none' ? { noc: q.value(), nocNumber: num.input.value.trim() } : {});
-          check = () => (!q.value() ? 'Choose Pending, Submitted or Nothing to record.' : '');
+          check = () => (!q.value() ? 'Choose Pending, Submitted or Nothing to record.' : q.value() === 'Submitted' && !num.input.value.trim() && !sheet['NOC NUMBER'] ? 'Write the NOC number.' : '');
         } else if (tag === 'mock') {
           nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW']);
           const q = question('What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
@@ -544,23 +547,23 @@
           form.append(hint);
           show([date.wrap, place.wrap, hint], false);
           read = () => (q.value() && q.value() !== 'none' ? { medical: q.value(), date: date.input.value, place: place.input.value.trim() } : {});
-          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'booked' && !date.input.value ? 'Choose the day it is booked for.' : '');
+          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'booked' && !date.input.value ? 'Choose the day it is booked for.' : q.value() === 'booked' && !place.input.value.trim() ? 'Write the hospital or clinic.' : '');
         } else if (tag === 'payment') {
           nowLine(['PAYMENT DATE', 'TUITION FEE DEPOSIT(1st Installment)', 'TUITION FEE DEPOSIT(2nd Installment)', 'TUITION FEE DEPOSIT(3rd Installment)']);
           const q = question('Was a payment made?', [['yes', 'Yes, paid'], ['no', 'No']], (v) => show([date.wrap, amount.wrap], v === 'yes'));
           const date = dateField('Paid on', today);
-          const amount = field('Amount', { max: 20, placeholder: 'e.g. 5000' });
+          const amount = field('Amount paid', { max: 20, placeholder: 'e.g. 5000' });
           amount.input.inputMode = 'decimal';
           form.append(amount.wrap);
           show([date.wrap, amount.wrap], false);
           read = () => (q.value() === 'yes' ? { paid: true, date: date.input.value, amount: amount.input.value.trim() } : {});
-          check = () => (!q.value() ? 'Choose Yes or No.' : q.value() === 'yes' && !date.input.value ? 'Choose the day it was paid.' : '');
+          check = () => (!q.value() ? 'Choose Yes or No.' : q.value() === 'yes' && !date.input.value ? 'Choose the day it was paid.' : q.value() === 'yes' && !(Number(amount.input.value.replace(/[^\d.]/g, '')) > 0) ? 'Write the amount paid, in numbers.' : '');
         } else if (tag === 'visa') {
           nowLine(['CAS REQUESTED DATE', 'CAS RECEIVED DATE', 'VISA LODGE DATE', 'VFS ATTENDED DATE', 'VISA RECEIVED DATE']);
           const q = question('Which step is done?', [['casRequested', 'CAS requested'], ['casReceived', 'CAS received'], ['lodged', 'Visa lodged'], ['vfs', 'VFS attended'], ['visa', 'Visa received'], ['refused', 'Visa refused'], ['none', 'Nothing to record']], (v) => show(date.wrap, v !== 'none'));
           const date = dateField('On', today);
           read = () => (q.value() && q.value() !== 'none' ? { step: q.value(), date: date.input.value } : {});
-          check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : '');
+          check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Say why the visa was refused, in the note below.' : '');
         }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
         const minNote = (state && state.minNote) || 8;

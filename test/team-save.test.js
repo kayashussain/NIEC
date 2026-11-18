@@ -48,7 +48,7 @@ test('team saves from an old page are checked against the students as they are n
   let wb = (await admin('GET', '/api/data')).json;
   const sheet = wb.sheets[0];
   const blank = Object.fromEntries(sheet.columns.map((c) => [c, '']));
-  sheet.rows = [{ ...blank, _id: 'r1', 'FIRST NAME': 'Asha', [S]: 'Application Stage' }];
+  sheet.rows = [{ ...blank, _id: 'r1', 'FIRST NAME': 'Asha', [S]: 'Application Stage', 'UNIVERSITY NAME': 'Test University', 'COURSE NAME': 'BSc Test', 'APPLICATION SUBMISSION DATE': '2026-09-01', 'OFFER RECEIVED DATE': '2026-10-01' }];
   assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
 
   const manager = await person('chief', 'manager', ['application']);
@@ -66,7 +66,7 @@ test('team saves from an old page are checked against the students as they are n
   assert.strictEqual(r.status, 409);
   let now = (await admin('GET', '/api/data')).json.sheets[0].rows[0];
   assert.strictEqual(now[S], 'Visa Stage');
-  assert.strictEqual(now['UNIVERSITY NAME'], '');
+  assert.strictEqual(now['UNIVERSITY NAME'], 'Test University', 'the old page did not rename it');
 
   // Staff on the current intake: an object in a cell, or a column the sheet doesn't have, is refused.
   wb = (await admin('GET', '/api/data')).json;

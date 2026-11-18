@@ -43,6 +43,8 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     const row = { _id: 'row-ui' + i };
     sheet.columns.forEach((c) => { row[c] = ''; });
     Object.assign(row, { 'FIRST NAME': 'Student' + i, 'LAST NAME': 'Test', 'APPLICATION STATUS': i === 11 ? 'Visa Issued' : i < 4 ? 'Application Stage' : 'Mock Stage', 'STUDENT SOURCE': 'Visitor', 'GROSS FEE': '16000' });
+    // The university, course, application day and offer are needed to leave Application Stage (the owner, 18 Nov 2026).
+    if (i < 4) Object.assign(row, { 'UNIVERSITY NAME': 'Test University', 'COURSE NAME': 'BSc Test', 'APPLICATION SUBMISSION DATE': '2026-09-01', 'OFFER RECEIVED DATE': '2026-10-01' });
     return row;
   });
   assert.ok((await admin.request.post('/api/data', { data: { sheets: current.sheets, activeSheetId: current.activeSheetId, baseRevision: current.revision } })).ok());
@@ -743,6 +745,13 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.waitForSelector('dialog.p-dialog[open]');
     await page.fill('.p-dialog-body input >> nth=0', 'Newly');
     await page.fill('.p-dialog-body input >> nth=1', 'Added');
+    // The WhatsApp number and where the student came from are needed (the owner, 18 Nov 2026).
+    await page.click('.p-dialog-foot .btn-primary');
+    assert.match(await page.textContent('.p-dialog .p-msg'), /WhatsApp number/);
+    await page.fill('.p-dialog-body input[placeholder="98XXXXXXXX"]', '9800055501');
+    await page.click('.p-dialog-foot .btn-primary');
+    assert.match(await page.textContent('.p-dialog .p-msg'), /where the student came from/);
+    await page.selectOption('.p-dialog-body select >> nth=2', { label: 'Visitor' });
     // Only the name is needed, at any stage (the owner, 16 Nov 2026): the rest is added later on the student card.
     await page.click('.p-dialog-foot .btn-primary');
     await page.waitForFunction(() => document.querySelectorAll('#body tr:not(.pad-row)').length === 3);

@@ -87,7 +87,12 @@ test('teams edit only their own columns and make only their own moves', () => {
 });
 
 test('Application → Mock warns about blank details; Mock → Payment is refused until the mocks are filled', () => {
-  const warn = checkMove('application', { [S]: 'Application Stage', 'STUDENT ID': '' }, 'Mock Stage');
+  // The university, course, application day and offer are needed to leave Application (the owner, 18 Nov 2026); the rest only asks.
+  const need = { 'UNIVERSITY NAME': 'Test University', 'COURSE NAME': 'BSc Test', 'APPLICATION SUBMISSION DATE': '2026-09-01', 'OFFER RECEIVED DATE': '2026-10-01' };
+  const refused = checkMove('application', { [S]: 'Application Stage' }, 'Mock Stage');
+  assert.ok(!refused.ok && /University Name/.test(refused.message) && /Course Name/.test(refused.message) && /Application Submitted/.test(refused.message) && /Offer Received/.test(refused.message));
+  assert.ok(!checkMove('application', { [S]: 'Application Stage', ...need, 'OFFER RECEIVED DATE': '' }, 'Mock Stage').ok, 'no offer yet: it cannot leave Application');
+  const warn = checkMove('application', { [S]: 'Application Stage', ...need, 'STUDENT ID': '' }, 'Mock Stage');
   assert.ok(warn.ok && /Student ID/.test(warn.confirm));
   const blocked = checkMove('mock', { [S]: 'Mock Stage', 'MOCK SCHEDULE 1': '2026-01-01' }, 'Payment Stage');
   assert.ok(!blocked.ok && /Feedback 1/.test(blocked.message) && /Pre-CAS Interview/.test(blocked.message) && !/Mock Schedule 4/.test(blocked.message));
@@ -134,6 +139,8 @@ test('a team save moving a student on is checked from the status it had before',
   const base = viewFor('application', book());
   const mine = clone(base);
   mine.sheets[0].rows[0][S] = 'Mock Stage';
+  assert.ok(teamChanges('application', base, mine).errors.some((e) => /can't go to Mock Stage/.test(e)), 'refused without the university, course, application day and offer');
+  Object.assign(mine.sheets[0].rows[0], { 'UNIVERSITY NAME': 'Test University', 'COURSE NAME': 'BSc Test', 'APPLICATION SUBMISSION DATE': '2026-09-01', 'OFFER RECEIVED DATE': '2026-10-01' });
   assert.deepStrictEqual(teamChanges('application', base, mine).errors, []);
   const mockBase = viewFor('mock', book());
   const early = clone(mockBase);

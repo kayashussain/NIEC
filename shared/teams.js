@@ -76,7 +76,10 @@
   // The stage moves a department may make. Follow-up can't move students on.
   const MOVES = [
     // Moving on with any of these blank asks "are you sure?" first.
-    { dept: 'application', from: 'Application Stage', to: 'Mock Stage', warnIfBlank: APPLICATION_COLUMNS.filter((c) => c !== 'REMARKS') },
+    // A student cannot leave Application without the university and course, the day it was applied and the offer: otherwise nobody can
+    // tell where the student is going (the owner, 18 Nov 2026). The other application columns still ask "are you sure?".
+    { dept: 'application', from: 'Application Stage', to: 'Mock Stage', mustFill: ['UNIVERSITY NAME', 'COURSE NAME', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE'],
+      warnIfBlank: APPLICATION_COLUMNS.filter((c) => c !== 'REMARKS' && !['UNIVERSITY NAME', 'COURSE NAME', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE'].includes(c)) },
     // Moving on is refused until the mocks held are written up (see mockReady): one mock is enough when the Pre-CAS is done (the owner,
     // 15 Nov 2026: a student who passed after one mock waited for four dates and four feedbacks).
     { dept: 'mock', from: 'Mock Stage', to: 'Payment Stage', ready: (row) => mockReady(row) },
