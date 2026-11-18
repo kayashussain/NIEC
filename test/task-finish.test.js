@@ -191,6 +191,26 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   // Reopening the application task and putting back what it wrote takes the offer request task away again.
   assert.strictEqual((await app('POST', `/api/cards/${tId}/tasks/${o1T}`, { done: false, finish: { revert: true } })).status, 200);
   assert.strictEqual((await offerTasks()).filter((x) => /Offer Test University/.test(x.text)).length, 0, 'put back with the task');
+  // Each line has its own day (18 Nov 2026): Middlesex applied today, West London applied weeks ago and already holding an offer. They are not
+  // the same day, and the application day of West London is recorded without a second offer request.
+  const wlSheet = (await rowT());
+  const mT = await giveT('Apply to Middlesex', 'application');
+  const wlDay = add(-20);
+  assert.strictEqual((await finishT(mT, { app: 'record', unis: [{ university: 'Middlesex University', course: 'BSc Nursing', what: 'submitted', date: today }, { university: 'West London Test University', course: 'BSc Nursing', what: 'submitted', date: wlDay }] })).status, 200);
+  const optsDay = Object.fromEntries((await cardT()).options.map((o) => [o.university, o.applied]));
+  assert.strictEqual(optsDay['Middlesex University'], today);
+  assert.strictEqual(optsDay['West London Test University'], wlDay, 'its own, earlier day');
+  assert.match((await cardT()).notes.map((n) => n.text).join('\n'), /applied to Middlesex University \(BSc Nursing\) on .*; applied to West London Test University \(BSc Nursing\) on /i);
+  assert.ok(wlSheet);
+  // The university that already gave an offer (no application day recorded): its application day is added, before the offer, and no offer
+  // request is made for it.
+  await admin('POST', `/api/cards/${tId}/options`, { university: 'West London Offer University', course: 'BSc Midwifery', offer: add(-10), offerType: 'Conditional' });
+  const mW = await giveT('Record the West London application', 'application');
+  assert.strictEqual((await finishT(mW, { app: 'record', unis: [{ university: 'West London Offer University', course: 'BSc Midwifery', what: 'submitted', date: add(-5) }] })).status, 400, 'the application cannot be after its own offer');
+  assert.strictEqual((await finishT(mW, { app: 'record', unis: [{ university: 'West London Offer University', course: 'BSc Midwifery', what: 'submitted', date: add(-25) }] })).status, 200);
+  const wo = (await cardT()).options.find((o) => o.university === 'West London Offer University');
+  assert.deepStrictEqual([wo.applied, wo.offer], [add(-25), add(-10)], 'application day added, offer kept');
+  assert.ok(!(await tasksOf()).some((x) => /Offer request: .*West London Offer University/.test(x.text)), 'no offer request for a university that already gave its offer');
   // Needed to track the student (18 Nov 2026): a payment names its amount, a submitted NOC its number, a booked test its place, and every
   // course given to the team gets an answer, a "not submitted" or refusal saying why.
   assert.strictEqual((await finishT(await giveT('Collect', 'payment'), { paid: true, date: today })).status, 400, 'a payment needs its amount');
@@ -236,7 +256,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await admin('POST', `/api/cards/${tId}/options/${firstOpt.id}`, { refused: today, offer: '', offerType: '' })).status, 400, 'a refusal says why');
   assert.strictEqual((await admin('POST', `/api/cards/${tId}/options/${firstOpt.id}`, { refused: today, reason: 'Refused: entry grade not met.', offer: '', offerType: '' })).status, 200);
   const afterRefusal = await rowT();
-  assert.strictEqual(afterRefusal['OFFER RECEIVED DATE'], today, 'the refused offer no longer stands on All Students: the next offer held (Third University, today) is the first offer now');
+  assert.strictEqual(afterRefusal['OFFER RECEIVED DATE'], add(-10), 'the refused offer no longer stands on All Students: the earliest offer still held (West London Offer University) is the first offer now');
   assert.strictEqual(afterRefusal['APPLICATION SUBMISSION DATE'], add(-30), 'the application day stays');
   // With no offer left anywhere, the Offer received day is empty on All Students (and the "offer refused" check has nothing to say).
   const thirdOpt = (await cardT()).options.find((o) => o.university === 'Third University');

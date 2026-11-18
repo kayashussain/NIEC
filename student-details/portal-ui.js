@@ -474,11 +474,15 @@
             const uf = field('', { value: u, max: 160, placeholder: 'University', list: listId });
             const cf = field('', { value: c, max: 240, placeholder: 'Course' });
             const what = field('', { kind: 'select', choices: WHAT, value: '' });
+            // Its own day: an application today, another university's offer weeks ago (they are never the same day by default).
+            const dayF = field('Day it happened', { kind: 'date', value: tag === 'application' ? today : '' });
+            dayF.input.max = today; dayF.input.setAttribute('aria-label', 'Day it happened');
+            dayF.wrap.classList.add('td-uni-day'); // its own line under the three boxes (theme.css)
             uf.input.setAttribute('aria-label', 'University'); cf.input.setAttribute('aria-label', 'Course'); what.input.setAttribute('aria-label', 'What happened');
             // A university chosen from the list brings its course with it.
             uf.input.addEventListener('change', () => { const k = apps.find((a) => a.university.toLowerCase() === uf.input.value.trim().toLowerCase()); if (k && !cf.input.value.trim()) cf.input.value = k.course || ''; });
-            r.append(uf.wrap, cf.wrap, what.wrap);
-            const x = { r, uf, cf, what };
+            r.append(uf.wrap, cf.wrap, what.wrap, dayF.wrap);
+            const x = { r, uf, cf, what, dayF };
             if (given) {
               // A course given to the team: the university and course are already here, and the answer starts as Applied. The cross says
               // the student is not eligible: it is not submitted, and the reason is started in the note (the owner, 18 Nov 2026).
@@ -515,8 +519,9 @@
           else addRow();
           const on = dateField('On (the day it happened)', today);
           if (tag === 'application') on.input.value = today; // the day the application is submitted is today unless it is changed (the owner, 18 Nov 2026)
-          form.append(el('p', 'p-muted p-small p-wide', (state.assigned || []).length ? 'The universities and courses are filled in, with today as the day. Each starts as Applied: press ✗ beside one the student is not eligible for, and say why in the note.' : 'Leave the lines empty if there is nothing to record: only the note is saved.'));
-          const filled = () => rows.map((x) => ({ university: x.uf.input.value.trim(), course: x.cf.input.value.trim(), what: x.what.input.value })).filter((x) => x.university || x.what);
+          on.wrap.hidden = true; // every line has its own day above; this one is only the fallback for a line left without one
+          form.append(el('p', 'p-muted p-small p-wide', (state.assigned || []).length ? 'The universities and courses are filled in, each with its own day (today to start with: change it for an offer that came earlier). Each starts as Applied: press ✗ beside one the student is not eligible for, and say why in the note.' : 'Leave the lines empty if there is nothing to record: only the note is saved.'));
+          const filled = () => rows.map((x) => ({ university: x.uf.input.value.trim(), course: x.cf.input.value.trim(), what: x.what.input.value, date: x.dayF.input.value })).filter((x) => x.university || x.what);
           read = () => (filled().length ? { app: 'record', date: on.input.value, unis: filled() } : {});
           check = () => {
             const f = filled();
@@ -524,7 +529,7 @@
             const noCourse = f.find((x) => ['submitted', 'conditional', 'unconditional', 'offer'].includes(x.what) && !x.course);
             const needsWhy = f.find((x) => ['notsubmitted', 'refused', 'withdrawn'].includes(x.what));
             const why = words.input.value.trim().length >= minNote;
-            return noWhat ? `Choose what happened with ${noWhat.university}.` : noName ? 'Name the university on each line.' : noCourse ? `Write the course for ${noCourse.university}.` : f.length && !on.input.value ? 'Choose the day it happened.' : needsWhy && !why ? 'Say why in the note below (not submitted, refused or withdrawn).' : '';
+            return noWhat ? `Choose what happened with ${noWhat.university}.` : noName ? 'Name the university on each line.' : noCourse ? `Write the course for ${noCourse.university}.` : f.find((x) => !x.date && !on.input.value) ? `Choose the day for ${f.find((x) => !x.date && !on.input.value).university}.` : needsWhy && !why ? 'Say why in the note below (not submitted, refused or withdrawn).' : '';
           };
         } else if (tag === 'noc') {
           nowLine(['NOC', 'NOC NUMBER']);

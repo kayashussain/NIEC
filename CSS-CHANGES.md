@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-18 · shared/theme.css (and portal-ui.js) · each university line in "Mark as done?" has its own day · from: one day for every line, so an application to Middlesex today and an older offer from West London looked as if they were done on the same day · to: a "Day it happened" box under each line's university, course and answer, across the three columns, with the round button staying at the right of the first line (also on a phone) · why: the owner could not record the earlier application day of a university that had already given an offer.**
+
 - **2026-11-18 · shared/theme.css · the cross beside a course given to the team, in "Mark as done?" · from: a grey round button that looked the same pressed or not · to: pressed (the student is not eligible), a soft red circle with a red cross and a thin red ring · why: the owner asked for a cross mark to say a university cannot be included.**
 
 - **2026-11-18 · shared/theme.css · the "Offer request" task category · from: it did not exist · to: a soft purple tag (#efe7fb, text #5b34a8) beside the blue Application tag, on Today and on the student card · why: the owner asked for Offer request to be its own category.**

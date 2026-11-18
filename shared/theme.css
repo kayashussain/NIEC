@@ -2326,7 +2326,11 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-sofar-sheet { padding: 1px 8px; border-radius: 999px; background: #e5e5ea; color: #515154; font-size: 12px; font-weight: 600; }
 .td-uni-row-3 { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) 32px; }
 .td-uni-row-3 > .p-field:nth-child(3):last-child { grid-column: 3 / span 2; }
+/* 🔴 CSS CHANGED (2026-11-18): each university line in "Mark as done?" has its own day | from: one day for every line, so two universities looked as if they were done on the same day | to: under the university, course and answer a "Day it happened" box across the three columns, with the round button staying at the right of the first line */
+.td-uni-row-3 > .td-uni-day { grid-column: 1 / 4; }
+.td-uni-row-3 > .td-uni-x { grid-column: 4; grid-row: 1; }
 @media (max-width: 600px) { .td-uni-row-3 { grid-template-columns: minmax(0, 1fr) 32px; } .td-uni-row-3 .p-field { grid-column: 1; } }
+@media (max-width: 600px) { .td-uni-row-3 > .td-uni-x { grid-column: 2; grid-row: 1; } }
 .td-done-now { margin: 0; }
 .td-check-title { margin: 0 0 12px; font-size: 17px; font-weight: 650; }
 .td-check-block { margin: 0 0 12px; }

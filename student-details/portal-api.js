@@ -619,7 +619,7 @@ function createPortalApi({
     const hasApp = (kind === 'application' || kind === 'offer') && f.app !== 'none' && (legacy || f.app === 'record' || Array.isArray(f.unis));
     if (hasApp) {
       let list = (Array.isArray(f.unis) ? f.unis : (f.university ? [{ university: f.university, course: f.course }] : []))
-        .map((u) => ({ university: text(u && u.university).replace(/\s+/g, ' ').slice(0, 160), course: text(u && u.course).replace(/\s+/g, ' ').slice(0, 240), what: APP_WHAT[u && u.what] ? u.what : legacy }))
+        .map((u) => ({ university: text(u && u.university).replace(/\s+/g, ' ').slice(0, 160), course: text(u && u.course).replace(/\s+/g, ' ').slice(0, 240), what: APP_WHAT[u && u.what] ? u.what : legacy, date: text(u && u.date).slice(0, 10) }))
         .filter((u) => u.university).slice(0, 20);
       // "Submitted" with no university named: the sheet's own university (an older way of answering).
       if (!list.length && legacy === 'submitted') list = [{ university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']), what: 'submitted' }];
@@ -646,9 +646,13 @@ function createPortalApi({
       const noCourse = list.find((u) => ['submitted', ...OFFERS].includes(u.what) && !u.course && !(applicationsOf(row, card).find((a) => squash(a.university) === squash(u.university)) || {}).course && !(squash(u.university) === squash(text(row['UNIVERSITY NAME'])) && text(row['COURSE NAME'])));
       if (noCourse) return { error: `Write the course for ${noCourse.university}.` };
       if (list.length) {
-        const d = day(f.date);
-        if (!d) return { error: 'Choose the day.' };
-        if (d > today) return { error: 'Choose a day that has come.' };
+        // Each line has its own day (an application to one university today, the offer of another received weeks ago); the day for all is
+        // the fallback for a line without one.
+        const d0 = day(f.date);
+        const lineDay = (u) => day(u.date) || d0;
+        const noDay = list.find((u) => !lineDay(u));
+        if (noDay) return { error: `Choose the day for ${noDay.university || 'each line'}.` };
+        if (list.some((u) => lineDay(u) > today)) return { error: 'Choose a day that has come.' };
         const known = applicationsOf(row, card);
         const sheetUni = text(row['UNIVERSITY NAME']);
         const sheetApplied = isoDate(row['APPLICATION SUBMISSION DATE']) || '';
@@ -657,6 +661,8 @@ function createPortalApi({
           || (u.university ? null : known.find((a) => a.onSheet));
         const groups = {};
         for (const u of list) {
+          const d = lineDay(u);
+          u.d = d;
           const prior = priorOf(u) || {};
           const name = u.university || sheetUni || 'the university';
           const opt = { university: u.university || sheetUni, course: u.course || prior.course || '' };
@@ -725,7 +731,12 @@ function createPortalApi({
         const parts = [groups.submitted && `applied to ${names(groups.submitted)}`, groups.conditional && `conditional offer from ${names(groups.conditional)}`,
           groups.unconditional && `unconditional offer from ${names(groups.unconditional)}`, groups.offer && `offer from ${names(groups.offer)}`,
           groups.refused && `refused by ${names(groups.refused)}`, groups.withdrawn && `withdrawn from ${names(groups.withdrawn)}`, groups.notsubmitted && `not submitted to ${names(groups.notsubmitted)}`].filter(Boolean);
-        plan.note = `On ${niceDay(d)}: ${join(parts)}. ${sentence(note)}`.trim();
+        const days = [...new Set(list.map((u) => u.d))];
+        if (days.length === 1) plan.note = `On ${niceDay(days[0])}: ${join(parts)}. ${sentence(note)}`.trim();
+        else { // lines on different days: each says its own day
+          const one = (u) => `${{ submitted: 'applied to', conditional: 'conditional offer from', unconditional: 'unconditional offer from', offer: 'offer from', refused: 'refused by', withdrawn: 'withdrawn from', notsubmitted: 'not submitted to' }[u.what]} ${u.university || sheetUni}${u.course ? ` (${u.course})` : ''} on ${niceDay(u.d)}`;
+          plan.note = `${list.map(one).join('; ')}. ${sentence(note)}`.replace(/^./, (c) => c.toUpperCase()).trim();
+        }
       }
     } else if (kind === 'noc' && f.noc) {
       const status = f.noc === 'Submitted' ? 'Submitted' : f.noc === 'Pending' ? 'Pending' : '';
