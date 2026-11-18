@@ -2430,8 +2430,12 @@
     searchEl.value = '';
     reloadWanted = true;
     await checkForRemoteChanges();
-    flashStatus('Student added');
-    if (window.CardDrawer) window.CardDrawer.open(made.id);
+    // The student is saved: say so once and show the new row on the sheet. No second card opens by itself (the owner, 18 Nov 2026);
+    // the card is one click away on the row if it is wanted.
+    flashStatus(made.merged ? 'Student updated and saved' : 'Student saved');
+    if (!made.merged) NiecUI.toast('Student saved. The new row is on the sheet.', { type: 'success' }); // a merge already said what it filled in
+    const at = rows.findIndex((r) => r._id === made.id);
+    if (at !== -1 && columns.length) setActiveCell(at, columns.includes('FIRST NAME') ? 'FIRST NAME' : columns[0]);
   }
 
   // The student card of the picked row, or of the row the cursor is on.

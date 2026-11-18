@@ -10,7 +10,7 @@
     let lists = { sourceOptions: {}, sourceLabels: F.SOURCE_DETAIL_LABEL, sourceCanAdd: F.SOURCE_CAN_ADD, partners: [], stages: [], departments: [] };
     try { lists = { ...lists, ...(await api('/api/card-lists')) }; } catch (e) { /* the form still works with the starting choices */ }
     const admin = me && me.role === 'admin';
-    return dialog(sheetName ? `Add a student to ${sheetName}` : 'Add a student', (body, close) => {
+    return dialog(sheetName ? `New student for ${sheetName}` : 'New student', (body, close) => {
       const inputs = {};
       const form = el('div');
       // Many students at once (from an Excel or CSV file) is its own page: offered here, at the top of Add student.
@@ -48,7 +48,7 @@
 
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
-      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Add student');
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save student');
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       body.append(msg, foot);
       let allowDuplicate = false; // set by "Add anyway (a different person)"
@@ -60,7 +60,7 @@
         const missing = picker ? picker.check() : '';
         if (missing) { msg.textContent = missing; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
-        msg.textContent = 'Adding…';
+        msg.textContent = 'Saving…';
         msg.className = 'p-msg';
         const fields = {};
         ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER'].forEach((k) => { fields[k] = v(k); });
@@ -86,7 +86,7 @@
               try {
                 const r = await api('/api/students/merge', { id: dup.id, fields, profile: { sourceDetail: pick.detail, sourceRemarks: pick.remarks, sourcePlatform: pick.platform || '', sourceWay: pick.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim(), nationality: v('nationality') }, note: v('note') });
                 window.NiecUI.toast(r.filled.length ? `Filled in ${r.filled.length} missing detail${r.filled.length === 1 ? '' : 's'} on ${dup.name}${r.differs.length ? '; the different ones are in a note on the card' : ''}.` : `Nothing was missing on ${dup.name}${r.differs.length ? '; the different details are in a note on the card' : ''}.`, { type: 'success' });
-                close({ id: dup.id });
+                close({ id: dup.id, merged: true });
               } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; }
             } }, 'Fill in what is missing'));
           }
