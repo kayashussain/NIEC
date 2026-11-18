@@ -412,7 +412,8 @@
       sure.hidden = true;
       body.append(ask, sure);
       const msg = el('div', 'p-msg');
-      const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; };
+      // The message is shown where the person is looking: scrolled into view and announced (a long window hid it below the buttons).
+      const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; msg.setAttribute('role', 'alert'); try { msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) { /* older browsers */ } };
       const wait = el('p', 'p-muted p-small', 'Loading what ISR knows about this student...');
       ask.append(wait);
       api(url, { finishState: true }).then((r) => { wait.remove(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
@@ -594,7 +595,7 @@
         }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
         const minNote = (state && state.minNote) || 8;
-        const words = field(asks ? 'What was done? (needed when there is nothing to record above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
+        const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
         words.input.rows = 2;
         form.append(words.wrap);
         // What next: when this is the student's last open task and the student is still on the way, the team picks the day someone
@@ -604,8 +605,8 @@
         let nextText = null;
         if (state && (state.needsNext || state.trackTag)) {
           const plus = (n) => { const d = new Date(Date.parse(today + 'T12:00:00Z') + n * 86400000); return d.toISOString().slice(0, 10); };
-          nextBox.append(el('span', 'p-label', 'When should someone get back to this student?'));
-          nextBox.append(el('p', 'p-muted p-small td-next-why', state.needsNext ? 'This is the last open task for this student. Pick a day, so nobody is forgotten.' : 'Needed only if you record nothing above: pick the day someone gets back to the student.'));
+          nextBox.append(el('span', 'p-label', 'When should someone get back to this student? (required)'));
+          nextBox.append(el('p', 'p-muted p-small td-next-why', state.needsNext ? 'This is the last open task for this student. Pick a day (or "Not needed" if you recorded something above), so nobody is forgotten.' : 'Needed only if you record nothing above: pick the day someone gets back to the student.'));
           const custom = field('', { kind: 'date', value: '' });
           custom.input.min = today;
           custom.input.setAttribute('aria-label', 'Follow-up day');
