@@ -47,7 +47,7 @@
         <div class="check-group">
           ${boxes}
           <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Sees every student and the Dashboard, exports to Excel. View only unless a team is ticked.</small></span></label>
-          <label class="check check-student"><input type="checkbox" name="${name}-student"><span><b>Student (Universities only)</b><small>For a student: reads Universities and marks the courses they like. Sees nothing else, no other student.</small></span></label>
+          <label class="check check-student"><input type="checkbox" name="${name}-student"><span><b>Student (own portal)</b><small>For a student: their own portal only (their applications, where they are, mock interviews and the interview guides). Sees nothing else, no other student.</small></span></label>
         </div>
         <div class="student-pick" hidden>
           <span><b>Which student is this login for?</b><small>Their choices go to this student's University options, and the Application Team gets a task.</small></span>
@@ -191,7 +191,7 @@
   // own team chosen yet shows an orange "Own team not chosen", so it is noticed and set.
   function accessChips(u) {
     if (u.role === 'admin') return '<span class="chip chip-admin">Admin</span>';
-    if (u.role === 'student') return `<span class="chip chip-student">Student, Universities only</span>${u.studentName ? ` <span class="muted">${esc(u.studentName)}</span>` : ''}`;
+    if (u.role === 'student') return `<span class="chip chip-student">Student, own portal</span>${u.studentName ? ` <span class="muted">${esc(u.studentName)}</span>` : ''}`;
     const depts = u.departments || [];
     const label = (d) => esc((DEPARTMENTS[d] || { label: d }).label);
     const own = u.taskTeam && depts.includes(u.taskTeam) ? u.taskTeam : (depts.length === 1 ? depts[0] : '');
@@ -212,7 +212,7 @@
     }
     people = Object.fromEntries(users.map((u) => [u.id, u]));
     $('peopleCount').textContent = users.filter((u) => !u.disabled).length;
-    $('users').innerHTML = users.map((u) => {
+    const row = (u) => {
       const self = me && u.id === me.id;
       const notSetUp = !u.disabled && u.mustChangePassword;
       const actions = self ? `<div class="actions"><button class="btn btn-sm" data-act="edit" data-id="${u.id}">Edit name or email</button><span class="muted">This is you</span></div>` : `
@@ -238,7 +238,12 @@
         <td data-label="Devices">${u.loggedInDevices}</td>
         <td>${actions}</td>
       </tr>`;
-    }).join('') || '<tr><td class="muted" colspan="6">No one yet.</td></tr>';
+    };
+    // The team first; the students' own logins in a list of their own (the owner, 20 Nov 2026).
+    const students = users.filter((u) => u.role === 'student');
+    $('users').innerHTML = users.filter((u) => u.role !== 'student').map(row).join('') || '<tr><td class="muted" colspan="6">No one yet.</td></tr>';
+    $('studentsCard').hidden = !students.length;
+    $('studentUsers').innerHTML = students.map(row).join('');
   }
 
   const CONFIRM = {
@@ -261,7 +266,8 @@
   // One "…" menu open at a time; it closes when something outside it is clicked, or once a choice is made.
   const closeMenus = (except) => document.querySelectorAll('.row-more[open]').forEach((d) => { if (d !== except) d.open = false; });
   document.addEventListener('click', (e) => { closeMenus(e.target.closest('.row-more')); });
-  $('users').addEventListener('click', async (e) => {
+  // Both lists (the team and the students) answer the same buttons.
+  $('panel-people').addEventListener('click', async (e) => {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
     closeMenus(null);

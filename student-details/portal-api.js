@@ -2358,10 +2358,26 @@ function createPortalApi({
     }));
     return [...found.values()].sort((x, y) => y.students - x.students || x.name.localeCompare(y.name));
   }
+  // A university, a Partner University or the short form of one ("OIEG" or "OIG" for Oxford International Education Group) is
+  // never a B2B partner: it is not listed on B2B Partners, not even as hidden (the owner, 20 Nov 2026).
+  function universityNames() {
+    const keys = new Set([...facts.all().map((u) => squash(u.name)), ...direct.all().map((u) => squash(u.name))].filter(Boolean));
+    direct.all().forEach((u) => {
+      const words = String(u.name || '').replace(/\(.*?\)/g, ' ').split(/[^A-Za-z]+/).filter((w) => w && !/^(of|the|and|for)$/i.test(w));
+      const short = (list) => list.map((w) => w[0]).join('').toLowerCase();
+      if (words.length > 1) { keys.add(short(words)); keys.add(short(words.filter((w) => !/^education(al)?$/i.test(w)))); }
+    });
+    keys.delete('');
+    return keys;
+  }
+  const isUniversityName = (name, keys = universityNames()) => keys.has(squash(name)) || /universit|college/i.test(String(name || ''));
+  // A university's old B2B card, kept as Ended only for its files, is not shown among the B2B partners either.
+  const b2bCards = () => { const keys = universityNames(); return b2b.list().filter((p) => !(p.status === 'Ended' && isUniversityName(p.name, keys))); };
+  const hiddenPartners = () => { const keys = universityNames(); return (planning.all().settings.notPartners || []).filter((n) => !isUniversityName(n, keys)); };
   function sheetPartners() {
     const wb = getWorkbook();
     const known = new Set((b2b ? b2b.list() : []).map((p) => squash(p.name)));
-    const unis = new Set([...facts.all().map((u) => squash(u.name)), ...direct.all().map((u) => squash(u.name))].filter(Boolean));
+    const unis = universityNames();
     // Another name of a known partner ("TOR" for "The Official Rep") is not a partner of its own.
     const hidden = new Set([...(planning.all().settings.notPartners || []), ...Object.keys(planning.all().settings.partnerAliases || {})].map(squash));
     const found = new Map();
@@ -2369,7 +2385,7 @@ function createPortalApi({
       if (!isStudent(row)) return;
       const name = text(row['UNIVERSITY PARTNER']).replace(/\s+/g, ' ');
       const key = squash(name);
-      if (!key || known.has(key) || unis.has(key) || hidden.has(key) || /universit|college/i.test(name)) return;
+      if (!key || known.has(key) || hidden.has(key) || isUniversityName(name, unis)) return;
       const f = found.get(key) || { name, students: 0 };
       f.students += 1; found.set(key, f);
     }));
@@ -2386,7 +2402,7 @@ function createPortalApi({
       const next = body.undo ? now.filter((n) => squash(n) !== squash(name)) : [...now, name];
       planning.saveSettings({ notPartners: next });
       activity.record(req, req.user, 'Edited partners', { app: 'B2B Partners', changes: [body.undo ? `${name}: shown again as a B2B partner` : `${name}: marked as not a B2B partner`] });
-      sendJSON(res, 200, { notPartners: planning.all().settings.notPartners });
+      sendJSON(res, 200, { notPartners: hiddenPartners() });
       return true;
     } return handlePartnerStore(req, res, urlPath, { store: b2b, prefix: 'b2b', label: 'B2B Partners', kind: 'b2b' }); }
   async function handleAgents(req, res, urlPath) {
@@ -2450,8 +2466,8 @@ function createPortalApi({
     }
     if (req.method === 'GET') {
       if (!id && urlPath !== `/api/${prefix}`) { sendJSON(res, 404, { error: 'No such partner.' }); return true; }
-      if (!id && level !== 'full') { sendJSON(res, 200, { access: level, partners: b2b.list().map((p) => shapePartner(p, level, seesLogins(req.user))), ...(level === 'setup' ? { onSheet: sheetPartners(), notPartners: planning.all().settings.notPartners || [] } : {}), statuses: PARTNER_STATUSES, performance: partnerPerformance(kind), currentIntake: (currentIntake() || {}).name || '' }); return true; }
-      if (!id) { sendJSON(res, 200, { access: level, partners: b2b.list(), ...(kind === 'b2b' ? { onSheet: sheetPartners(), notPartners: planning.all().settings.notPartners || [] } : { onSheet: sheetAgents(), notPartners: planning.all().settings.notAgents || [] }), statuses: PARTNER_STATUSES, performance: partnerPerformance(kind), currentIntake: (currentIntake() || {}).name || '', intakes: (() => { const wb = getWorkbook(); return wb ? wb.sheets.filter((x) => !x.hidden || true).map((x) => x.name) : []; })() }); return true; }
+      if (!id && level !== 'full') { sendJSON(res, 200, { access: level, partners: (kind === 'b2b' ? b2bCards() : b2b.list()).map((p) => shapePartner(p, level, seesLogins(req.user))), ...(level === 'setup' ? { onSheet: sheetPartners(), notPartners: hiddenPartners() } : {}), statuses: PARTNER_STATUSES, performance: partnerPerformance(kind), currentIntake: (currentIntake() || {}).name || '' }); return true; }
+      if (!id) { sendJSON(res, 200, { access: level, partners: kind === 'b2b' ? b2bCards() : b2b.list(), ...(kind === 'b2b' ? { onSheet: sheetPartners(), notPartners: hiddenPartners() } : { onSheet: sheetAgents(), notPartners: planning.all().settings.notAgents || [] }), statuses: PARTNER_STATUSES, performance: partnerPerformance(kind), currentIntake: (currentIntake() || {}).name || '', intakes: (() => { const wb = getWorkbook(); return wb ? wb.sheets.filter((x) => !x.hidden || true).map((x) => x.name) : []; })() }); return true; }
       const one = shapePartner(b2b.get(id), level, seesLogins(req.user));
       if (one) sendJSON(res, 200, one); else sendJSON(res, 404, { error: 'No such partner.' });
       return true;
@@ -3178,7 +3194,7 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note };
+  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };

@@ -12,6 +12,7 @@
 // name as they were given, so nothing breaks. The pictures, the about and anything else on the page stay as they are.
 // Every run is written in Activity (how many universities were read, and anything that failed). PARTNER_REFRESH=off switches it off.
 
+const { samePartner } = require('./partner-names');
 const fs = require('fs');
 const path = require('path');
 const { writeFileAtomic, localDate } = require('../shared/server-utils');
@@ -208,7 +209,8 @@ function createPartnerRefresh({ dir, facts, b2b, record = () => {}, fetchImpl = 
   const file = path.join(dir, 'partner-refresh.json');
   const read = () => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return { runs: [] }; } };
   const write = (d) => writeFileAtomic(file, JSON.stringify(d, null, 1));
-  const login = (name) => { const c = b2b.all().find((p) => squash(p.name) === squash(name)); return c && c.applyUser && c.applyPassword ? { user: c.applyUser, pass: c.applyPassword } : null; };
+  // A card is found by any spelling of the partner (Real Dreams is Real Dreams Educational Consultancy, partner-names.js).
+  const login = (name) => { const c = b2b.all().find((p) => samePartner(p.name, name)); return c && c.applyUser && c.applyPassword ? { user: c.applyUser, pass: c.applyPassword } : null; };
   let running = null;
   async function run(by = 'schedule') {
     if (running) return running;

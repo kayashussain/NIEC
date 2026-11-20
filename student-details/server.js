@@ -33,6 +33,8 @@ const { createSourceOptions } = require('./source-options');
 const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createApplyThrough } = require('./apply-through');
+const { createMockGuides } = require('./mock-guides');
+const { createMockApi, guideAccess } = require('./mock-api');
 const { createPortalApi } = require('./portal-api');
 const { createPush } = require('./push');
 const { createCourseSitemaps } = require('./course-sitemap');
@@ -40,7 +42,7 @@ const { createNavitasToolkit } = require('./navitas-toolkit');
 const { createPartnerRefresh } = require('./partner-refresh');
 const { studentFrom, checkLevel, rulesFromPage, ourLevel: eligLevel } = require('./eligibility');
 const FP = require('./fact-present'); // a university page's courses and requirements, as the page shows them
-const { tidyPartners, tidyOfficialRep, tidyNov20 } = require('./partner-tidy');
+const { tidyPartners, tidyOfficialRep, tidyNov20, tidyNames } = require('./partner-tidy');
 const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
 const { createUserMail } = require('./user-mail');
@@ -118,6 +120,11 @@ const STATIC_FILES = {
   '/partners-switch.js': 'text/javascript; charset=utf-8',
   '/apply-through.html': 'text/html; charset=utf-8',
   '/apply-through-page.js': 'text/javascript; charset=utf-8',
+  '/my-portal.html': 'text/html; charset=utf-8',
+  '/my-portal-page.js': 'text/javascript; charset=utf-8',
+  '/mock-guides.html': 'text/html; charset=utf-8',
+  '/mock-guides-page.js': 'text/javascript; charset=utf-8',
+  '/guide-view.js': 'text/javascript; charset=utf-8',
   '/dashboard-insights.js': 'text/javascript; charset=utf-8',
   '/fact-finder.js': 'text/javascript; charset=utf-8',
   '/fact-present.js': 'text/javascript; charset=utf-8',
@@ -156,7 +163,7 @@ const agents = createB2b(DATA_DIR, { file: 'agents.json', filesFolder: 'agent-fi
 const planning = createPlanning(DATA_DIR);
 // Which partner each university is applied through (apply-through.js). The starting list is only for an installation that works
 // with Real Dreams, Adventus or Apply Board.
-const applyThrough = createApplyThrough(DATA_DIR, { wanted: () => b2b.all().some((p) => /^(real dreams|adventus|apply ?board)$/i.test(String(p.name).trim())) });
+const applyThrough = createApplyThrough(DATA_DIR, { wanted: () => b2b.all().some((p) => /^(real dreams( educational consultancy)?|adventus|apply ?board)$/i.test(String(p.name).trim())) });
 // Daily backups (6 p.m., kept 30 days) and Admin's restore (see backups.js). `current` is the students, held in memory below.
 const backups = createBackups(DATA_DIR, () => ({
   students: current, facts: facts.all(), partners: direct.all(),
@@ -211,7 +218,7 @@ const advisor = createAdvisorMcp({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/apply-through', '/events']);
+  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/apply-through', '/events', '/mock-guides', '/my-portal']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -865,7 +872,26 @@ const portal = createPortalApi({
   insights: servedInsights, calculated: CALCULATED_COLUMNS,
   userMail, push, courseSitemaps, officeMailSettings: () => require('../shared/mailer').loadConfig(DATA_DIR),
   safetyCopy: () => backups.create('manual'),
-});
+});// Mock interview guides and the student's own portal (the owner, 20 Nov 2026; mock-guides.js, mock-api.js). The first drafts are
+// written once, for the universities among Partner Universities.
+const mockGuides = createMockGuides(DATA_DIR, { universities: () => direct.all().map((u) => u.name) });
+const mockApi = createMockApi({ guides: mockGuides, portal, cards, facts, direct, activity, isoDate: require('./dashboard-stats').isoDate });
+// The student logins of before (Universities only) are deleted once (the owner, 20 Nov 2026): a student's login is now for their portal.
+try {
+  const TIDY = 'student-logins-2026-11-20';
+  const settings = planning.all().settings;
+  if (!(settings.tidied || []).includes(TIDY)) {
+    const gone = accounts.removeStudentLogins();
+    planning.saveSettings({ tidied: [...(planning.all().settings.tidied || []), TIDY] });
+    if (gone.length) {
+      activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Removed user', { app: 'Users', changes: gone.map((n) => `Removed the old student login of ${n} (Universities only); a student login is now for the student's own portal`) });
+      console.log('[startup] old student logins removed:', gone.length);
+    }
+  }
+} catch (e) {
+  console.error('[startup] removing the old student logins failed:', e.message);
+}
+
 
 try {
   current = loadWorkbook();
@@ -890,6 +916,11 @@ try {
     record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
   });
   if (nov20.changes && nov20.changes.length) console.log('[startup] partners tidied (20 Nov):', nov20.changes.join('; '));
+  const names = tidyNames({
+    getWorkbook: () => current, writeWorkbook, b2b, cards, planning,
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+  });
+  if (names.changes && names.changes.length) console.log('[startup] partner names:', names.changes.join('; '));
 } catch (e) {
   console.error('[startup] partner tidy-up failed:', e.message);
 }
@@ -994,33 +1025,22 @@ async function handleRestore(req, res, urlPath) {
   return sendJSON(res, 200, { ok: true, restored: done, safety });
 }
 
-// What a student's own login may open: the Universities' two pages, the files those pages are made of (code, styles, pictures:
-// nothing private), Universities itself without its internal notes, and their own shortlist. Answers every other request with
-// "not for a student" (a page goes to Universities). Returns true when it answered.
-const STUDENT_PAGES = new Set(['/fact-file.html', '/fact-university.html']);
+// What a student's own login may open (the owner, 20 Nov 2026): their own portal page, the files pages are made of (code, styles,
+// pictures: nothing private) and their own portal's data (mock-api.js answers it, for their own file only). No Universities, no
+// course search, nothing else: every other page goes to their portal and every other request is refused. Returns true when it
+// answered.
 async function studentGate(req, res, urlPath) {
   const get = req.method === 'GET';
-  if (get && (urlPath === '/' || PAGE_PATHS.has(urlPath) || urlPath === '/incentive' || urlPath.startsWith('/incentive/'))) {
-    if (urlPath !== '/fact-file') { send(res, 302, '', { Location: '/fact-file' }); return true; }
-    return false; // the university page itself, served below as for everyone
-  }
-  if (get && (STUDENT_PAGES.has(urlPath) || (STATIC_FILES[urlPath] && !/html/.test(STATIC_FILES[urlPath])) || (SHARED_FILES[urlPath] && !/html/.test(SHARED_FILES[urlPath])))) return false;
-  if (get && urlPath === '/api/demo') return false;
-  if (get && (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}$/.test(urlPath))) {
-    const id = (urlPath.match(/^\/api\/facts\/([a-f0-9]{12})$/) || [])[1];
-    if (!id) { sendJSON(res, 200, facts.list((new URL(req.url, 'http://x').searchParams.get('q') || '').slice(0, 100))); return true; }
-    const uni = facts.get(id);
-    if (!uni) { sendJSON(res, 404, { error: 'No such university.' }); return true; }
-    // The page as a student sees it: no internal notes (contacts at the university, checks), no application steps, no editor.
-    // The fields stay (empty), so the page reads the same shape as everyone's.
-    // A Navitas college's page (navitas-toolkit.js): its interview section is the agents' preparation guide, not for students.
-    sendJSON(res, 200, { ...uni, notes: '', process: [], updatedBy: '', interview: uni.source && uni.source.navitas ? '' : uni.interview, intakes: (uni.intakes || []).map((i) => ({ ...i, notes: '' })) });
+  if (get && urlPath === '/my-portal') { req.url = '/my-portal.html'; serveStatic(req, res); return true; }
+  if (get && (urlPath === '/' || PAGE_PATHS.has(urlPath) || urlPath === '/incentive' || urlPath.startsWith('/incentive/') || urlPath === '/fact-file')) {
+    send(res, 302, '', { Location: '/my-portal' });
     return true;
   }
-  if (urlPath === '/api/eligibility' && req.method === 'POST') return false; // the finder: which universities the student can go to
-  if ((get && urlPath === '/api/fact-courses') || urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) return false; // portal-api.js answers for a student
-  if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for Universities only.' }); return true; }
-  send(res, 302, '', { Location: '/fact-file' });
+  if (get && ((STATIC_FILES[urlPath] && !/html/.test(STATIC_FILES[urlPath])) || (SHARED_FILES[urlPath] && !/html/.test(SHARED_FILES[urlPath])))) return false;
+  if (get && urlPath === '/api/demo') return false;
+  if (urlPath === '/api/my-portal' || urlPath.startsWith('/api/my-portal/')) return false; // mock-api.js answers, for their own file
+  if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for your own portal only.' }); return true; }
+  send(res, 302, '', { Location: '/my-portal' });
   return true;
 }
 
@@ -1095,7 +1115,7 @@ const server = http.createServer(async (req, res) => {
     // Logging in, the login steps, /api/me, and Admin's people/devices/settings.
     if (await accounts.handleApi(req, res, urlPath)) return;
     if (!requireAuth(req, res)) return;
-    // A student's own login (the owner, 17 Nov 2026) reads Universities and keeps a shortlist, and nothing else: every other page
+    // A student's own login (the owner, 20 Nov 2026) opens their own portal, and nothing else: every other page
     // and every other piece of data is refused here, before any of it is looked at (see studentGate).
     if (isStudent(req.user) && await studentGate(req, res, urlPath)) return;
 
@@ -1109,9 +1129,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       const page = {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
-        '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/events': 'events.html',
+        '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/mock-guides': 'mock-guides.html', '/events': 'events.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
+      if (urlPath === '/my-portal') return send(res, 302, '', { Location: '/today' }); // a student's own page; the team has the student card
       // Partners: one place for Partner Universities, B2B Partners and Agents (the owner, 17 Nov 2026). It opens the first of the three
       // this account may see; a switch at the top of each moves between them (partners-switch.js).
       if (urlPath === '/partners') {
@@ -1137,7 +1158,7 @@ const server = http.createServer(async (req, res) => {
         // Every account opens the sheet and a student card (each shows only the students the account sees); the Dashboard is for
         // Admin and the Manager; the partner pages as partner-access.js says; the rest is Admin's.
         const access = partnerAccess(req.user);
-        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/apply-through': access.applyThrough }[urlPath];
+        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/apply-through': access.applyThrough, '/mock-guides': guideAccess(req.user) }[urlPath];
         const allowed = Boolean(shared) || ['/students', '/student', '/wa', '/today', '/my-dashboard'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
         if (!allowed) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
         req.url = '/' + page;
@@ -1265,6 +1286,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/deadlines|\/choices)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
     // The student cards and the pages around them (portal-api.js).
+    if (await mockApi.handle(req, res, urlPath)) return;
     if (await portal.handle(req, res, urlPath)) return;
     if (urlPath === '/api/direct' || /^\/api\/direct\/[a-f0-9]{12}(\/delete|\/files(\/[a-f0-9]{12}(\/delete)?)?)?$/.test(urlPath)) return await handleDirect(req, res, urlPath);
     if (urlPath === '/api/restore' || urlPath.startsWith('/api/restore/')) return await handleRestore(req, res, urlPath);

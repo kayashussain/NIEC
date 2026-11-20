@@ -96,6 +96,9 @@
     activity: svg('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
     incentive: svg('<path d="M12 3v18M16.5 7.5C15.8 6.4 14.2 6 12.5 6 10.3 6 8.5 7 8.5 8.8c0 4 8 2 8 6.2 0 1.8-1.9 3-4.2 3-2 0-3.7-.6-4.5-1.8"/>'),
     events: svg('<path d="M4 14V8l12-4v14L4 14z"/><path d="M16 8a3 3 0 0 1 0 6M7 14v4a2 2 0 0 0 4 0v-3"/>'),
+    // The student's portal (a graduation cap) and the mock interview guides (a speech bubble).
+    portal: svg('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/>'),
+    mock: svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
     factfile: svg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>'),
   };
   const LINKS = {
@@ -103,8 +106,8 @@
     manager: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Universities']],
     staff: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']],
     followup: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Universities']],
-    // A student's own login: Universities only (the owner, 17 Nov 2026).
-    student: [['factfile', '/fact-file', 'Universities']],
+    // A student's own login: their own portal only (the owner, 20 Nov 2026).
+    student: [['portal', '/my-portal', 'My portal']],
     branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulkadd', '/bulk-add', 'Add many students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Universities']],
   };
   // The menu of an account: Admin and Manager have their own; a team gets the pages its work needs (a branch adds students, the Follow-up Team follows up).
@@ -131,15 +134,18 @@
   // them; the Application and Mock Teams Partner Universities, B2B Partners and Agents; a branch Partner Universities. Admin has them.
   // All three are one menu entry, Partners.
   function sharedLinks(me) {
-    if (me.role === 'admin' || me.role === 'student') return { before: [], after: [] };
+    if (me.role === 'student') return { before: [], after: [] };
     const deps = me.departments || [];
+    // Mock interviews (the guides students read): Admin, the Manager and the Mock Team (the owner, 20 Nov 2026).
+    const after = me.role === 'admin' || me.role === 'manager' || deps.includes('mock') ? [['mock', '/mock-guides', 'Mock interviews']] : [];
+    if (me.role === 'admin') return { before: [], after };
     const manager = me.role === 'manager';
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
     const branch = deps.some((d) => !['application', 'mock', 'followup'].includes(d));
     const before = [];
     // One "Partners" link for all three lists (the owner, 17 Nov 2026); the page itself shows only the lists this person may open.
     if (manager || appMock || branch) before.push(['partners', '/partners', 'Partners']);
-    return { before, after: [] };
+    return { before, after };
   }
 
   let studentLogin = false; // a student's own login: no tasks, no student search
@@ -176,7 +182,7 @@
     const here = nav.querySelector('[aria-current="page"]');
     if (here) nav.scrollLeft = Math.max(0, here.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft - (nav.clientWidth - here.offsetWidth) / 2);
     // The logo goes home: the dashboard for the Manager, All Students for everyone else.
-    header.querySelector('#niecHome').setAttribute('href', me.role === 'student' ? '/fact-file' : '/today');
+    header.querySelector('#niecHome').setAttribute('href', me.role === 'student' ? '/my-portal' : '/today');
     studentLogin = me.role === 'student';
     const initials = String(me.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
     const account = header.querySelector('.niec-account');

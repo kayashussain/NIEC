@@ -127,7 +127,7 @@
     let role = typeof x === 'string' ? x : x.role;
     if (role === 'ceo') role = 'manager'; // the Manager role was first called CEO
     if (role === 'admin') return { role, departments: [] };
-    // A student's own login sees no student and changes nothing (it reads Universities only, see server.js).
+    // A student's own login sees no student on the sheet and changes nothing (it opens its own portal only, see server.js).
     if (role === 'student') return { role, departments: [] };
     const listed = typeof x === 'object' && Array.isArray(x.departments) ? x.departments : (DEPARTMENTS[role] ? [role] : []);
     // A Manager can also work in teams (then they can change those teams' students in the current intake).

@@ -146,7 +146,7 @@ function normalizeUser(raw) {
 // What a person can do, in words: "Admin", "Manager", or their teams joined with a plus.
 function accessLabel(u) {
   if (u.role === 'admin') return 'Admin';
-  if (u.role === 'student') return 'Student (Universities only)';
+  if (u.role === 'student') return 'Student (own portal)';
   const teams = (u.departments || []).map((d) => DEPARTMENTS[d]);
   if (u.role === 'manager') return ['Manager', ...teams].join(' + ');
   return teams.join(' + ') || 'No team';
@@ -186,7 +186,7 @@ function parseAccess(body) {
   let departments = Array.isArray(body.departments) ? body.departments.map(String) : [];
   if (DEPARTMENTS[role]) { departments = [role]; role = 'staff'; } // the older single-team form
   if (role === 'admin') return { error: "Admin access can't be given to anyone. The Admin account belongs to the owner only." };
-  // A student's own login: Universities only, nothing else (the owner, 17 Nov 2026). It belongs to one student on the sheet.
+  // A student's own login: their own portal only, nothing else (the owner, 20 Nov 2026). It belongs to one student on the sheet.
   if (role === 'student') {
     const studentRow = String(body.studentRow || '');
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(studentRow)) return { error: 'Choose which student this login is for.' };
@@ -748,7 +748,17 @@ function createAccounts({
   }
   // The enabled account with this username, as the pages see it, or null (the Claude connector sends as this person, NIEC_ADVISOR_SEND_AS).
   const userByUsername = (name) => { const u = users().find((x) => x.username === String(name || '').trim().toLowerCase() || x.username === String(name || '').trim()); return u && !u.disabled ? publicUser(u) : null; };
-  return { requireAuth, handleApi, emailConfig, userForSessionKey, people, setOwnTeam, userByUsername };
+  // The owner, 20 Nov 2026: the student logins of before (Universities only) are deleted, once. A student's login is now for the
+  // student's own portal (applications, progress, mock interviews), created again by Admin in Users. Every device they were logged in
+  // on is ended. Returns the names removed.
+  function removeStudentLogins() {
+    const gone = users().filter((u) => u.role === 'student');
+    if (!gone.length) return [];
+    gone.forEach((u) => { endSessions((x) => x.userId === u.id); userFailures.delete(u.username); });
+    saveUsers(users().filter((u) => u.role !== 'student'));
+    return gone.map((u) => `${u.name} (${u.username})`);
+  }
+  return { requireAuth, handleApi, emailConfig, userForSessionKey, people, setOwnTeam, userByUsername, removeStudentLogins };
 }
 
 module.exports = {
