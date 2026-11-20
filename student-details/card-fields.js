@@ -164,6 +164,10 @@
   // their own (the owner, 15 Nov 2026), as each is its own piece of work for the team.
   const TASK_TAGS = [['application', 'Application'], ['offer', 'Offer request'], ['mock', 'Mock interview'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
   const TASK_TAG_IDS = TASK_TAGS.map(([k]) => k);
+  // The tags a person chooses from when giving or editing a task (the owner, 20 Nov 2026): Application, Mock interview, Documents, NOC,
+  // Medical and Other. Offer request, Payment and Visa and CAS are no longer offered; tasks that already carry one keep it and still show
+  // it (ISR's own "Offer request" task after a submission keeps its tag), so stored tasks keep their meaning.
+  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'mock', 'documents', 'noc', 'medical', 'other'].includes(k));
   // A course leaves the Shortlist for good once it has gone to the Application Team (the owner, 18 Nov 2026): given to the team, applied
   // to, answered (offer, refused, withdrawn) or decided not to be submitted. The Shortlist holds only courses still to be assigned.
   const WITH_TEAM = (o) => Boolean(o && (o.sent || o.applied || o.offer || o.refused || o.withdrawn || o.skipped));
@@ -201,7 +205,7 @@
   const taskPriorityOf = (task) => (TASK_PRIORITY_IDS.includes(task && task.priority) ? task.priority : 'high');
 
   return {
-    TASK_TAGS, TASK_TAG_IDS, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
+    TASK_TAGS, TASK_TAG_IDS, TASK_TAGS_CHOOSABLE, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
     OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, SHEET_SECTIONS, columnLabel, whatsappNumber,
   };
