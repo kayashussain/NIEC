@@ -85,10 +85,11 @@
         if (Object.keys(sheetChanged).length) await api(`/api/cards/${id}/sheet`, { fields: sheetChanged });
         data = await api('/api/cards/' + encodeURIComponent(id));
         editingHero = false; say('Saved on the sheet'); render();
-      } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; }
+      } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; shake(msg); throw e; }
     };
-    bar.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: save }, 'Save'), h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = false; render(); } }, 'Cancel'));
-    form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); save(); } });
+    const saveBtn = h('button', { class: 'btn btn-primary', type: 'button', onclick: () => morph(saveBtn, save).catch(() => {}) }, 'Save');
+    bar.append(saveBtn, h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = false; render(); } }, 'Cancel'));
+    form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); saveBtn.click(); } });
     c.append(form, bar, msg);
     return c;
   }
@@ -110,7 +111,60 @@
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     alert: '<path d="M12 4l9 15.5H3z"/><path d="M12 10v4M12 17v.01"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+    keys: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/>',
   };
+  // ---- small moments of feedback (the owner, 20 Nov 2026: every action answers) ----
+  const calm = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // A gentle shake for a mistake, so the eye finds the message.
+  const shake = (node) => { if (!node || calm() || !node.animate) return; node.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-7px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(2px)' }, { transform: 'translateX(0)' }], { duration: 380, easing: 'ease-out' }); };
+  // A button that says what it is doing: "Saving..." while it works, then a tick and "Saved" for a moment.
+  async function morph(btn, work, { busy = 'Saving…', done = 'Saved' } = {}) {
+    const was = [...btn.childNodes];
+    btn.disabled = true; btn.classList.add('is-busy');
+    btn.replaceChildren(el('span', 'sc-spin'), busy);
+    try {
+      const out = await work();
+      btn.classList.remove('is-busy'); btn.classList.add('is-done');
+      btn.replaceChildren(icon('check', 'sc-btn-ico sc-tick'), done);
+      await new Promise((r) => setTimeout(r, calm() ? 0 : 650));
+      return out;
+    } catch (e) {
+      btn.classList.remove('is-busy'); btn.disabled = false; btn.replaceChildren(...was); shake(btn);
+      throw e;
+    }
+  }
+  // Confetti for a milestone (an offer, a visa): soft coloured pieces fall from the top for a moment; only transform and opacity move.
+  /* 🔴 CSS CHANGED (2026-11-20): confetti styles set here | from: none | to: each piece placed at random across the top, coloured, with its own drift, spin, delay and fall time */
+  function confetti() {
+    if (calm()) return;
+    const box = el('div', 'sc-confetti');
+    box.setAttribute('aria-hidden', 'true');
+    const colours = ['#0071e3', '#34c759', '#ff9f0a', '#af52de', '#ff375f', '#5ac8fa', '#ffd60a'];
+    for (let i = 0; i < 90; i += 1) {
+      const d = el('i');
+      d.style.left = `${Math.random() * 100}%`;
+      d.style.background = colours[i % colours.length];
+      d.style.setProperty('--x', `${(Math.random() - 0.5) * 220}px`);
+      d.style.setProperty('--r', `${(Math.random() - 0.5) * 1080}deg`);
+      d.style.animationDelay = `${Math.random() * 0.5}s`;
+      d.style.animationDuration = `${1.8 + Math.random() * 1.4}s`;
+      if (i % 3 === 0) d.style.borderRadius = '50%';
+      box.append(d);
+    }
+    document.body.append(box);
+    setTimeout(() => box.remove(), 4000);
+  }
+  // A light that follows the mouse over the tiles, buttons and the main card.
+  /* 🔴 CSS CHANGED (2026-11-20): --mx and --my set here | from: none | to: the mouse position inside the tile, read by the soft light in theme.css */
+  document.addEventListener('pointermove', (e) => {
+    const t = e.target.closest && e.target.closest('.sc-fact, .sc-reach-btn, .sc-hero, .sc-tl-body, .sc-source');
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    t.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    t.style.setProperty('--my', `${e.clientY - r.top}px`);
+  }, { passive: true });
+  let intro = true; // the first drawing of the card: its parts arrive one after another; later redraws do not replay it
   const icon = (name, cls) => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); if (cls) sv.setAttribute('class', cls); sv.innerHTML = ICONS[name] || ''; return sv; };
 
   // ---- where the student is on the way from first inquiry to visa: eight named steps under the name ----
@@ -126,6 +180,7 @@
     else if (lost) { box.classList.add('is-lost'); head.append(el('span', 'sc-eyebrow', 'Progress'), el('b', '', `Not moving at the moment: ${stage}`)); }
     else head.append(el('span', 'sc-eyebrow', 'Progress'), el('b', '', stage ? `Stage: ${stage}` : 'No stage yet'));
     const ol = el('ol', 'sc-steps');
+    /* 🔴 CSS CHANGED (2026-11-20): --sc-done set here | from: none | to: how far the blue progress line reaches (0 to 1) */
     ol.style.setProperty('--sc-done', at <= 0 ? '0' : String(at / (JOURNEY.length - 1)));
     JOURNEY.forEach(([, label], i) => {
       const li = el('li', at === -1 ? '' : i < at ? 'is-done' : i === at ? 'is-now' : '');
@@ -134,6 +189,8 @@
       li.append(dot, el('span', 'sc-step-label', label));
       li.title = label;
       if (i === at) li.setAttribute('aria-current', 'step');
+      /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: the step's number, so the dots light up one after another */
+      li.style.setProperty('--i', String(i));
       ol.append(li);
     });
     box.append(head, ol);
@@ -146,7 +203,7 @@
     if (editingHero) return heroEdit();
     const pp = profile();
     const kind = window.Portal.stageKind(s.stage);
-    const c = el('section', `sc-hero is-${kind}`);
+    const c = el('section', `sc-hero is-${kind}${intro ? ' is-intro' : ''}`);
     const head = el('div', 'sc-head');
     const av = el('div', 'sc-avatar', initials(s.name));
     av.setAttribute('aria-hidden', 'true');
@@ -158,6 +215,8 @@
     meta.append(stagePill(s.stage));
     if (s.intake) { const ch = el('span', 'sc-chip'); ch.append(icon('calendar'), s.intake); meta.append(ch); }
     if (pp.nationality && pp.nationality !== 'Nepali') { const ch = el('span', 'sc-chip'); ch.append(icon('globe'), pp.nationality); meta.append(ch); }
+    // A milestone the team can see at a glance: the student holds an offer.
+    if (appStats().offers) { const ch = el('span', 'sc-chip is-offer'); ch.append(icon('star'), appStats().offers > 1 ? `${appStats().offers} offers received` : 'Offer received'); meta.append(ch); }
     who.append(name, meta);
     const reach = contactBar();
     if (reach) who.append(reach);
@@ -200,7 +259,15 @@
     tile('passport', 'Passport number', pp.passportNo, { missing: !pp.passportNo });
     tile('pin', 'Address (passport)', pp.address, { missing: !pp.address });
     // How many universities were applied to and how many offers, from Applications (one student applies to many); a press opens them.
-    { const ap = appStats(); tile('cap', 'Applications', ap.submitted || ap.offers ? `${ap.submitted} submitted · ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}` : 'None yet', { onClick: () => select('options') }); }
+    {
+      const ap = appStats();
+      const t = tile('cap', 'Applications', 'None yet', { onClick: () => select('options') });
+      t.setAttribute('aria-label', `Applications: ${ap.submitted} submitted, ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}. Open Applications`);
+      // The two numbers count up when the card opens (ui.js, the one count-up of ISR).
+      if (ap.submitted || ap.offers) t.querySelector('.sc-fact-value').replaceChildren(el('b', 'sc-num', String(ap.submitted)), ' submitted · ', el('b', 'sc-num', String(ap.offers)), ` ${ap.offers === 1 ? 'offer' : 'offers'}`);
+    }
+    /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: each tile's number, so the tiles cascade in */
+    [...facts.children].forEach((t, i) => t.style.setProperty('--i', String(i)));
     c.append(facts);
     // What is still missing, named in one line with one button that opens the form (the owner, 17 Nov 2026: less work for the team).
     const gaps = [['Date of birth', pp.dob], ['Passport number', pp.passportNo], ['Address', pp.address]].filter(([, v]) => !v).map(([k]) => k);
@@ -289,7 +356,7 @@
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Assign');
       ok.addEventListener('click', async () => {
-        const stop = (t) => { msg.textContent = t; msg.className = 'p-msg error'; };
+        const stop = (t) => { msg.textContent = t; msg.className = 'p-msg error'; shake(msg); };
         if (!team.input.value) return stop('Choose who should do it.');
         if (!tag.value()) return stop('Choose what it is about.');
         let payload;
@@ -307,8 +374,7 @@
           // No comments: the task is named by what it is about ("Mock interview"), so the team still sees what to do.
           payload = { team: team.input.value, text: words || window.Portal.tagLabel(tag.value()), tag: tag.value() };
         }
-        ok.disabled = true;
-        try { await save('tasks', payload, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        try { await morph(ok, () => save('tasks', payload), { busy: 'Assigning…', done: 'Assigned' }); window.Portal.celebrate(ok); say('Task assigned. The team is told.'); close(true); } catch (e) { /* shown */ }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       const g = el('div', 'p-form p-assign'); g.append(team.wrap, tagWrap, appBox, text.wrap);
@@ -415,11 +481,12 @@
     words.append(form);
     if (!data.can.source && s.source) words.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
     const bar = el('div', 'p-bar');
-    bar.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: async () => {
+    bar.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: async (ev) => {
+      const btn = ev.currentTarget;
       try {
         const missing = picker.check();
-        if (missing) { say(missing, true); return; }
-        await saveSource(picker.value());
+        if (missing) { say(missing, true); shake(form); return; }
+        await morph(btn, () => saveSource(picker.value()));
         editingOrigin = false; render();
       } catch (e) { /* shown */ }
     } }, 'Save'), h('button', { class: 'btn', type: 'button', onclick: () => { editingOrigin = false; render(); } }, 'Cancel'));
@@ -512,6 +579,7 @@
       // The writer's own round badge beside the box, as in Apple's comments.
       const me = el('span', 'sc-tl-av sc-tl-me', initials((data.me || {}).name || '?'));
       me.setAttribute('aria-hidden', 'true');
+      const field2 = el('div', 'sc-tl-compose-field');
       const text = el('textarea', 'sc-tl-input');
       text.placeholder = 'Add a note…';
       text.setAttribute('aria-label', 'Write a note');
@@ -525,16 +593,14 @@
       text.addEventListener('input', () => { noteDraft = text.value; showAdd(); try { if (noteDraft.trim()) localStorage.setItem(draftKey(), noteDraft); else localStorage.removeItem(draftKey()); } catch (e) { /* not kept */ } });
       text.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); add.click(); } });
       add.addEventListener('click', async () => {
-        if (!text.value.trim()) { text.focus(); return; }
-        add.disabled = true;
+        if (!text.value.trim()) { text.focus(); shake(field2); return; }
         try {
-          const r = await save('notes', { text: text.value, kind: 'note' }, 'Note added');
+          const r = await morph(add, () => save('notes', { text: text.value, kind: 'note' }), { busy: 'Adding…', done: 'Added' });
           justAdded = (r && r.note && r.note.id) || '';
           noteDraft = ''; try { localStorage.removeItem(draftKey()); } catch (e) { /* nothing kept */ } historyFilter = historyFilter === 'all' || historyFilter === 'note' ? historyFilter : 'all'; render();
-        } catch (e) { add.disabled = false; }
+        } catch (e) { /* shown by save */ }
       });
       bar.append(add);
-      const field2 = el('div', 'sc-tl-compose-field');
       field2.append(text, bar);
       box.append(me, field2);
       showAdd();
@@ -678,6 +744,10 @@
         // Notes written one after another by the same person sit together under one name, as in Messages (within half an hour).
         if (prev && e.kind === 'note' && prev.kind === 'note' && e.by && e.by === prev.by && e.by !== AUTO && Math.abs(Date.parse(prev.at) - Date.parse(e.at)) < 30 * 60000) li.classList.add('is-cont');
         if (revealFrom && i >= revealFrom) li.classList.add('is-reveal');
+        // The entries arrive one after another (the first ten); the rest rise in as they are scrolled to.
+        /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: each Timeline entry's number (up to 10), so they arrive one after another */
+        li.style.setProperty('--i', String(Math.min(i, 10)));
+        if (i >= 10) li.classList.add('sc-later');
         list.append(li);
         prev = e;
       });
@@ -970,7 +1040,14 @@
       const li = el('li');
       li.append(el('span', 'sc-checks-text', c.text));
       if (can()) {
-        const b = h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { b.disabled = true; li.classList.add('is-leaving'); try { await save('checks', { key: c.key }, 'Marked as checked'); data = await api('/api/cards/' + encodeURIComponent(id)); render(); } catch (e) { b.disabled = false; li.classList.remove('is-leaving'); } } });
+        const b = h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => {
+          try {
+            await morph(b, () => save('checks', { key: c.key }), { busy: 'Saving…', done: 'Checked' });
+            li.classList.add('is-leaving');
+            await new Promise((r) => setTimeout(r, calm() ? 0 : 380));
+            data = await api('/api/cards/' + encodeURIComponent(id)); say('Marked as checked'); render();
+          } catch (e) { /* shown */ }
+        } });
         b.append(icon('check', 'sc-btn-ico'), 'It is correct');
         li.append(b);
       }
@@ -1107,10 +1184,91 @@
       b.addEventListener('click', () => select(key));
       tabs.append(b);
     });
-    frag.append(tabs);
+    // A quiet key symbol at the end of the tabs opens the list of keys (the same as pressing ?).
+    const keysBtn = h('button', { class: 'sc-keys-btn', type: 'button', title: 'Keys for this card (?)', 'aria-label': 'Keys for this card', onclick: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' })) });
+    keysBtn.append(icon('keys'));
+    const tabRow = el('div', 'sc-tabrow');
+    tabRow.append(tabs, keysBtn);
+    frag.append(tabRow);
     frag.append(tab === 'options' ? optionsTab() : details());
     view.replaceChildren(frag);
+    miniBar();
+    watchLater();
+    if (intro) { intro = false; milestones(); }
   }
+
+  // Entries further down rise in as they come into view.
+  let laterObs = null;
+  function watchLater() {
+    const items = view.querySelectorAll('.sc-later');
+    if (!items.length) return;
+    if (!('IntersectionObserver' in window) || calm()) { items.forEach((x) => x.classList.add('is-in')); return; }
+    if (laterObs) laterObs.disconnect();
+    laterObs = new IntersectionObserver((list) => list.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('is-in'); laterObs.unobserve(en.target); } }), { rootMargin: '0px 0px -40px 0px' });
+    items.forEach((x) => laterObs.observe(x));
+  }
+
+  // A slim frosted bar with the student's name, stage and step slides in at the top once the main card is scrolled away, so the
+  // person always knows whose card this is. It has no buttons (the main card has them).
+  let mini = null; let miniObs = null;
+  function miniBar() {
+    const s = data.student;
+    if (!mini) { mini = el('div', 'sc-mini'); mini.setAttribute('aria-hidden', 'true'); document.body.append(mini); }
+    const at = JOURNEY.findIndex(([n]) => n === s.stage);
+    const av = el('span', `sc-mini-av is-${window.Portal.stageKind(s.stage)}`, initials(s.name));
+    /* 🔴 CSS CHANGED (2026-11-20): the mini bar's fill set here | from: none | to: a thin blue line as long as the student's progress */
+    const bar = el('span', 'sc-mini-bar'); const fill = el('i'); fill.style.transform = `scaleX(${at < 0 ? 0 : (at + 1) / JOURNEY.length})`; bar.append(fill);
+    mini.replaceChildren(av, el('b', '', s.name), stagePill(s.stage), at >= 0 ? el('span', 'sc-mini-step', `Step ${at + 1} of ${JOURNEY.length}`) : '', bar);
+    const head = view.querySelector('.sc-head');
+    if (miniObs) miniObs.disconnect();
+    if (!head || !('IntersectionObserver' in window)) { mini.classList.remove('is-on'); return; }
+    /* 🔴 CSS CHANGED (2026-11-20): --sc-mini-x set here | from: none | to: the middle of the card, so the frosted bar sits over the card */
+    // Centred over the card, not the window (the menu is on the left).
+    const place = () => { const r = view.getBoundingClientRect(); mini.style.setProperty('--sc-mini-x', `${r.left + r.width / 2}px`); };
+    place();
+    if (!miniBar.placed) { miniBar.placed = true; window.addEventListener('resize', place); }
+    miniObs = new IntersectionObserver(([en]) => { place(); mini.classList.toggle('is-on', !en.isIntersecting && en.boundingClientRect.top < 0); });
+    miniObs.observe(head);
+  }
+
+  // Milestones (the owner, 20 Nov 2026: a reward when something good happens): the first time a person opens a student who holds an
+  // offer, or whose visa is issued, confetti falls and a word of praise shows. Kept in this browser, so it happens once per person.
+  function milestones() {
+    const me = (data.me || {}).name || '';
+    const s = data.student;
+    const once = (what, words) => {
+      const key = `isrCheer:${what}:${me}:${id}`;
+      try { if (localStorage.getItem(key)) return false; localStorage.setItem(key, new Date().toISOString()); } catch (e) { return false; }
+      setTimeout(() => { confetti(); window.NiecUI.toast(words, { type: 'success' }); }, 700);
+      return true;
+    };
+    if (s.stage === 'Visa Issued' && once('visa', `Visa issued for ${s.name}. Wonderful work.`)) return;
+    if (appStats().offers) once('offer', `${s.name} holds an offer. Well done.`);
+  }
+
+  // Keys for the card (the owner, 20 Nov 2026), when nothing is being typed and no window is open: N a note (above), E Edit details,
+  // A Assign a task, 1 and 2 the tabs, ? the list of keys. Ctrl+K (quick search) and the arrow keys (the next student) are kept.
+  const KEYS = [['N', 'Write a note'], ['E', 'Edit details'], ['A', 'Assign a task'], ['1', 'Timeline'], ['2', 'Applications'], ['← →', 'Previous or next student (from All Students)'], ['Ctrl K', 'Quick search'], ['?', 'These keys']];
+  document.addEventListener('keydown', (e) => {
+    if (!data || e.ctrlKey || e.metaKey || e.altKey) return;
+    const a = document.activeElement;
+    if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
+    if (document.querySelector('dialog[open], .p-dialog') || editingHero || editingOrigin) return;
+    const k = e.key.toLowerCase();
+    if (k === 'e' && can()) { e.preventDefault(); editingHero = true; render(); window.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' }); }
+    else if (k === 'a' && data.can.assign) { e.preventDefault(); assignTask(); }
+    else if (k === '1' || k === '2') { e.preventDefault(); select(k === '1' ? 'details' : 'options'); }
+    else if (e.key === '?') {
+      e.preventDefault();
+      dialog('Keys for this card', (body, close) => {
+        const list = el('dl', 'sc-keys');
+        KEYS.forEach(([key, what]) => { const d = el('div'); const dt = el('dt'); key.split(' ').forEach((x) => dt.append(el('kbd', '', x))); d.append(dt, el('dd', '', what)); list.append(d); });
+        const foot = el('div', 'p-dialog-foot');
+        foot.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => close() }, 'Got it'));
+        body.append(list, foot);
+      });
+    }
+  });
 
   async function start() {
     if (!id) { view.replaceChildren(el('div', 'p-card', 'Choose a student from the sheet first.')); return; }
