@@ -55,3 +55,9 @@ test('a name typed in capitals reads normally in a message; the sheet keeps it a
   assert.strictEqual(v.full_name, 'Sanjip Kumar Mahato');
   assert.strictEqual(valuesFor({ row: { 'FIRST NAME': 'McKenzie' } }).first_name, 'McKenzie', 'a name in mixed case is left alone');
 });
+
+test('a task is given with Application, Mock interview, Documents, NOC, Medical or Other; older tags still read (the owner, 20 Nov 2026)', () => {
+  const F = require('../student-details/card-fields');
+  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'documents', 'noc', 'medical', 'other']);
+  ['offer', 'payment', 'visa'].forEach((k) => assert.ok(F.TASK_TAG_IDS.includes(k), `${k} is still a known tag, so stored tasks keep it`));
+});

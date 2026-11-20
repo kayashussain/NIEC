@@ -1,5 +1,5 @@
-// One student's card (student.html), kept short: Notes (where the student came from, the notes and the history) and University
-// options. Call, WhatsApp and Email are one tap under the name; messages to many students go from Follow-up. The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
+// One student's card (student.html): the main card (who the student is, Call, WhatsApp and Email, the progress, the details and
+// where the student came from), then two tabs, Timeline (tasks, notes and history) and Applications. Call, WhatsApp and Email are one tap under the name; messages to many students go from Follow-up. The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
 // which is chosen here (it is no longer a column of the sheet).
 (function () {
   const { el, h, api, day, when, stagePill, initials, field, dialog } = window.Portal;
@@ -93,95 +93,126 @@
     return c;
   }
 
-  // ---- where the student is on the way from first inquiry to visa: a slim line of steps under the name ----
+  // ---- small line pictures for the card (drawn in lines, as Apple's own symbols are) ----
+  const ICONS = {
+    phone: '<path d="M6.6 3.5h2.6l1.4 4-2 1.4a12 12 0 0 0 6.5 6.5l1.4-2 4 1.4v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/>',
+    whatsapp: '<path d="M4 20l1.3-4A8 8 0 1 1 8 18.8z"/><path d="M9.2 8.6c.2 2.6 3.2 5.6 6 6l1-1.3-1.8-.9-.8.8c-1-.4-2.4-1.8-2.8-2.8l.8-.8-.9-1.8z"/>',
+    mail: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3.5 7l8.5 6.5L20.5 7"/>',
+    cake: '<rect x="4" y="11" width="16" height="9" rx="2"/><path d="M4 15c2 1.3 4 1.3 5.3 0s4-1.3 5.4 0 4 1.3 5.3 0M12 11V8M12 5.5v-.01"/>',
+    passport: '<rect x="5" y="3" width="14" height="18" rx="2.5"/><circle cx="12" cy="10.5" r="3"/><path d="M9 17h6"/>',
+    pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+    cap: '<path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5V16c2.8 2.3 8.2 2.3 11 0v-4.5M21.5 9.5v5"/>',
+    globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    compass: '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+    pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    alert: '<path d="M12 4l9 15.5H3z"/><path d="M12 10v4M12 17v.01"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  };
+  const icon = (name, cls) => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); if (cls) sv.setAttribute('class', cls); sv.innerHTML = ICONS[name] || ''; return sv; };
+
+  // ---- where the student is on the way from first inquiry to visa: eight named steps under the name ----
+  // Done steps are a blue dot with a tick, the step the student is at has a soft ring, the rest are grey (the owner, 20 Nov 2026).
   const JOURNEY = [['Inquiry', 'Inquiry'], ['Application Stage', 'Application'], ['Mock Stage', 'Mock interview'], ['Payment Stage', 'Payment'],
     ['CAS Stage', 'CAS requested'], ['CAS Issued', 'CAS issued'], ['Visa Lodge', 'Visa lodged'], ['Visa Issued', 'Visa issued']];
   function journey(stage) {
-    const box = el('div', 'p-journey');
-    const bar = el('div', 'p-journey-bar');
+    const box = el('div', 'sc-steps-box');
     const at = JOURNEY.findIndex(([name]) => name === stage);
-    JOURNEY.forEach(([, label], i) => { const step = el('i', at === -1 ? '' : i < at ? 'done' : i === at ? 'now' : ''); step.title = label; bar.append(step); });
-    bar.setAttribute('aria-hidden', 'true');
-    const text = el('div', 'p-journey-text');
-    if (at !== -1) text.append(`Step ${at + 1} of ${JOURNEY.length}: `, el('b', '', JOURNEY[at][1]));
-    else if (F.LOST_STAGES.includes(stage)) { box.classList.add('lost'); text.textContent = `Not moving at the moment: ${stage}`; }
-    else text.textContent = stage ? `Stage: ${stage}` : 'No stage yet';
-    box.append(bar, text);
+    const lost = F.LOST_STAGES.includes(stage);
+    const head = el('div', 'sc-steps-head');
+    if (at !== -1) head.append(el('span', 'sc-eyebrow', 'Progress'), el('span', 'sc-steps-now', `Step ${at + 1} of ${JOURNEY.length}: `), el('b', '', JOURNEY[at][1]));
+    else if (lost) { box.classList.add('is-lost'); head.append(el('span', 'sc-eyebrow', 'Progress'), el('b', '', `Not moving at the moment: ${stage}`)); }
+    else head.append(el('span', 'sc-eyebrow', 'Progress'), el('b', '', stage ? `Stage: ${stage}` : 'No stage yet'));
+    const ol = el('ol', 'sc-steps');
+    ol.style.setProperty('--sc-done', at <= 0 ? '0' : String(at / (JOURNEY.length - 1)));
+    JOURNEY.forEach(([, label], i) => {
+      const li = el('li', at === -1 ? '' : i < at ? 'is-done' : i === at ? 'is-now' : '');
+      const dot = el('span', 'sc-step-dot');
+      if (at !== -1 && i < at) dot.append(icon('check'));
+      li.append(dot, el('span', 'sc-step-label', label));
+      li.title = label;
+      if (i === at) li.setAttribute('aria-current', 'step');
+      ol.append(li);
+    });
+    box.append(head, ol);
     return box;
   }
 
-  // The source in a few plain words, for the line under the name. A campaign's own date is left out (it is the day the campaign
-  // started, not the student's), and so is a "Marketing:" or "Event:" word the records sometimes keep in front of the name.
-  function sourceLine(s) {
-    if (!s.source) return '';
-    const p = profile();
-    const plain = (v) => String(v || '').replace(/^(Marketing|Event)\s*:\s*/i, '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '').trim();
-    const g = F.sourceGroup(s.source) || s.source;
-    const parts = [g === 'Branch' ? s.source : g];
-    if (p.sourcePlatform) parts.push(p.sourcePlatform);
-    const what = data.event ? plain(data.event.name) : plain(p.sourceDetail);
-    if (p.sourceWay === 'Advert') parts.push(what ? `Advert: ${what}` : 'Advert');
-    else if (p.sourceWay === 'Organic') parts.push('Organic');
-    else if (what && !parts.includes(what)) parts.push(what);
-    return parts.filter(Boolean).join(' \u00b7 ');
-  }
-
-  // ---- the top: name, stage, contact ----
+  // ---- the top: who the student is, how to reach them, where they are, and where they came from ----
   function hero() {
     const s = data.student;
     if (editingHero) return heroEdit();
-    const c = el('section', 'p-card p-hero');
-    c.append(el('div', 'p-avatar', initials(s.name)));
-    const mid = el('div', 'p-hero-mid');
-    // The name and the buttons share the top row; a long name (SANJIP KUMAR MAHTO Mahato) wraps and the buttons move under it,
-    // they never sit on top of each other (the owner, 15 Nov 2026).
-    const top = el('div', 'p-hero-top');
-    const name = el('h1', '', s.name);
-    name.title = s.name;
-    const act = el('div', 'p-hero-actions');
-    top.append(name, act);
-    mid.append(top);
-    const line = el('div', 'p-hero-line');
-    line.append(stagePill(s.stage), el('span', 'p-hero-intake', s.intake));
-    mid.append(line);
-    // Where the student came from, as one quiet line in smaller grey type: "Social Media · Facebook · Advert: Facebook ads ...".
-    // The full story (dates, first inquiry, remarks) is in the Source panel.
-    const src = sourceLine(s);
-    if (src) { const sl = el('div', 'p-hero-source', src); sl.title = src; mid.append(sl); }
-    mid.append(journey(s.stage));
-    const facts = el('dl', 'p-facts');
-    const fact = (k, v, href) => { if (!v) return; const d = el('div', 'p-fact'); const dd = el('dd'); if (href) { const a = el('a', '', v); a.href = href; dd.append(a); } else dd.textContent = v; d.append(el('dt', '', k), dd); facts.append(d); };
-    // The order the owner asked for (14 Nov 2026): who the student is (email and the passport details), then how to reach them, then
-    // the application.
     const pp = profile();
-    // The passport details are always shown: an empty one says "Missing" in orange (needed from Application Stage on; Today lists them).
-    const missing = (k) => { const d = el('div', 'p-fact'); const dd = el('dd'); dd.append(el('span', 'p-missing', 'Missing')); d.append(el('dt', '', k), dd); facts.append(d); };
-    const must = (k, v) => (v ? fact(k, v) : missing(k));
-    fact('Email', s.email, s.email ? 'mailto:' + s.email : '');
+    const kind = window.Portal.stageKind(s.stage);
+    const c = el('section', `sc-hero is-${kind}`);
+    const head = el('div', 'sc-head');
+    const av = el('div', 'sc-avatar', initials(s.name));
+    av.setAttribute('aria-hidden', 'true');
+    const who = el('div', 'sc-id');
+    // A long name (SANJIP KUMAR MAHTO Mahato) wraps; the buttons move under it, they never sit on top of each other (the owner, 15 Nov 2026).
+    const name = el('h1', 'sc-name', s.name);
+    name.title = s.name;
+    const meta = el('div', 'sc-meta');
+    meta.append(stagePill(s.stage));
+    if (s.intake) { const ch = el('span', 'sc-chip'); ch.append(icon('calendar'), s.intake); meta.append(ch); }
+    if (pp.nationality && pp.nationality !== 'Nepali') { const ch = el('span', 'sc-chip'); ch.append(icon('globe'), pp.nationality); meta.append(ch); }
+    who.append(name, meta);
+    const reach = contactBar();
+    if (reach) who.append(reach);
+    const act = el('div', 'sc-actions');
+    if (can()) { const b = h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }); b.append(icon('pencil', 'sc-btn-ico'), 'Edit details'); act.append(b); }
+    if (data.can.assign) { const b = h('button', { class: 'btn btn-primary', type: 'button', onclick: assignTask }); b.append(icon('plus', 'sc-btn-ico'), 'Assign a task'); act.append(b); }
+    head.append(av, who);
+    if (act.childNodes.length) head.append(act);
+    c.append(head, journey(s.stage));
+
+    // The details as tiles, in the order the owner asked for (14 Nov 2026): who the student is (email and the passport details), then how
+    // to reach them, then the applications. The passport details are always shown: an empty one says "Missing" in orange.
+    const facts = el('div', 'sc-facts');
+    const tile = (ico, k, v, { href, missing, onClick, wide } = {}) => {
+      const t = el(onClick ? 'button' : 'div', `sc-fact${missing ? ' is-missing' : ''}${onClick ? ' is-action' : ''}${wide ? ' is-wide' : ''}`);
+      if (onClick) { t.type = 'button'; t.addEventListener('click', onClick); }
+      const ic = el('span', 'sc-fact-ico'); ic.append(icon(ico));
+      const txt = el('span', 'sc-fact-text');
+      txt.append(el('span', 'sc-fact-label', k));
+      const val = el('span', 'sc-fact-value');
+      if (missing) val.append(el('span', 'p-missing', 'Missing'));
+      else if (href) { const a2 = el('a', '', v); a2.href = href; val.append(a2); }
+      else val.textContent = v;
+      val.title = missing ? '' : v;
+      txt.append(val);
+      t.append(ic, txt);
+      if (onClick) t.append(icon('arrow', 'sc-fact-go'));
+      facts.append(t);
+      return t;
+    };
+    if (s.email) tile('mail', 'Email', s.email, { href: 'mailto:' + s.email, wide: s.email.length > 26 });
+    if (s.phone) {
+      const wa = F.whatsappNumber(s.phone);
+      const t = tile('whatsapp', 'WhatsApp', s.phone, { href: wa ? 'https://wa.me/' + wa : '' });
+      const a2 = t.querySelector('a');
+      if (a2) a2.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(wa, s.name, '', id); });
+    }
     // The date only, no age beside it (the owner, 15 Nov 2026): the Dashboard groups the students by age.
-    must('Date of birth', pp.dob ? day(pp.dob) : '');
-    must('Passport number', pp.passportNo);
-    must('Address (passport)', pp.address);
-    fact('WhatsApp', s.phone, F.whatsappNumber(s.phone) ? 'https://wa.me/' + F.whatsappNumber(s.phone) : '');
-    { const a = facts.lastChild && facts.lastChild.querySelector('a[href^="https://wa.me/"]'); if (a) a.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(F.whatsappNumber(s.phone), s.name, '', id); }); }
-    // No University and Course here (the owner, 17 Nov 2026): the student applies to many, so the one going ahead is chosen under
-    // Applications (the Priority university picker), which writes it on All Students by itself.
-    // How many universities were applied to and how many offers, from Applications (one student applies to many).
-    { const ap = appStats(); if (ap.submitted || ap.offers) fact('Applications', `${ap.submitted} submitted · ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}`); }
-    if (pp.nationality && pp.nationality !== 'Nepali') fact('Nationality', pp.nationality);
-    mid.append(facts);
+    tile('cake', 'Date of birth', pp.dob ? day(pp.dob) : '', { missing: !pp.dob });
+    tile('passport', 'Passport number', pp.passportNo, { missing: !pp.passportNo });
+    tile('pin', 'Address (passport)', pp.address, { missing: !pp.address });
+    // How many universities were applied to and how many offers, from Applications (one student applies to many); a press opens them.
+    { const ap = appStats(); tile('cap', 'Applications', ap.submitted || ap.offers ? `${ap.submitted} submitted · ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}` : 'None yet', { onClick: () => select('options') }); }
+    c.append(facts);
     // What is still missing, named in one line with one button that opens the form (the owner, 17 Nov 2026: less work for the team).
     const gaps = [['Date of birth', pp.dob], ['Passport number', pp.passportNo], ['Address', pp.address]].filter(([, v]) => !v).map(([k]) => k);
     if (gaps.length && can()) {
-      const bar = el('div', 'p-gaps');
-      bar.append(el('span', 'p-gaps-dot'), el('span', 'p-gaps-text', `${gaps.length === 1 ? '1 detail' : `${gaps.length} details`} missing: ${gaps.join(', ')}`),
+      const bar = el('div', 'sc-gaps');
+      const ic = el('span', 'sc-gaps-ico'); ic.append(icon('alert'));
+      bar.append(ic, el('span', 'sc-gaps-text', `${gaps.length === 1 ? '1 detail' : `${gaps.length} details`} missing: ${gaps.join(', ')}`),
         h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => { editingHero = true; render(); } }, gaps.length === 1 ? 'Fill it in' : 'Fill them in'));
-      mid.append(bar);
+      c.append(bar);
     }
-    if (can()) act.append(h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }, 'Edit details'));
-    if (data.can.assign) act.append(h('button', { class: 'btn', type: 'button', onclick: assignTask }, 'Assign a task'));
-    if (!act.childNodes.length) act.remove();
-    c.append(mid);
+    // Where the student came from, inside the main card (the owner, 20 Nov 2026: not a separate panel under the tabs).
+    c.append(origin());
     return c;
   }
 
@@ -208,15 +239,16 @@
       showGoes();
       // What it is about first, required (the owner, 20 Nov 2026). An Application task then asks, each required with a red *: the
       // university (every university in Universities), the intake, the course level, the location (when it teaches in more than one
-      // place) and the course, from the university's own list; then optional comments. Any other task asks what should be done.
+      // place) and the course, from the university's own list; then optional comments. Mock interview, Documents, NOC and Medical ask
+      // for comments only (the owner, 20 Nov 2026); Other asks for them too, and needs them, since it says nothing by itself.
       const tag = window.Portal.tagPicker('');
       const tagWrap = el('div', 'p-field p-wide');
       const tagLabel = el('span', 'p-label', 'What is it about?');
       tagLabel.append(window.Portal.requiredMark());
       tagWrap.append(tagLabel, tag.node);
-      const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, required: true, placeholder: 'e.g. Ask for the bank statement.' });
-      const apps = liveApps();
-      const uniF = apps.length ? field('For which university?', { kind: 'select', choices: [['', 'Not about one university'], ...apps.map((o) => [o.id, appName(o)])], value: (apps.find(isGoingAhead) || {}).id || '' }) : null;
+      const text = field('Comments', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Ask for the bank statement.' });
+      const textLabel = text.wrap.querySelector('.p-label');
+      const otherMark = window.Portal.requiredMark();
       // The application fields.
       const appBox = el('div', 'p-form p-assign-app p-wide');
       const uni = field('University', { kind: 'select', choices: [], required: true });
@@ -245,7 +277,13 @@
       place.input.addEventListener('change', refreshCourses);
       api('/api/facts').then((list) => { unis = list.sort((a, b) => a.name.localeCompare(b.name)); uni.input.replaceChildren(h('option', { value: '' }, 'Choose\u2026'), ...unis.map((u) => h('option', { value: u.id }, u.name))); }).catch(() => {});
       const isApp = () => tag.value() === 'application';
-      const showKind = () => { const a = isApp(); appBox.hidden = !a; text.wrap.hidden = a; if (uniF) uniF.wrap.hidden = a; };
+      const showKind = () => {
+        const a = isApp(); const k = tag.value();
+        appBox.hidden = !a; text.wrap.hidden = a || !k;
+        if (k === 'other') { if (textLabel && !otherMark.isConnected) textLabel.append(otherMark); } else otherMark.remove();
+        const hints = { mock: 'e.g. Book the mock interview for Tuesday.', documents: 'e.g. Ask for the bank statement.', noc: 'e.g. Apply for the NOC this week.', medical: 'e.g. Book the TB test at the clinic.', other: 'What should they do?' };
+        text.input.placeholder = hints[k] || '';
+      };
       tag.node.addEventListener('click', () => setTimeout(showKind, 0));
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
@@ -264,15 +302,16 @@
           const line = [uName, app.intake, app.level, loc, app.course].filter(Boolean).join(' · ');
           payload = { team: team.input.value, tag: 'application', app, text: `Submit the application: ${line}${comments.input.value.trim() ? `\n${comments.input.value.trim()}` : ''}` };
         } else {
-          if (!text.input.value.trim()) return stop('Write what should be done.');
-          const u2 = uniF && apps.find((o) => o.id === uniF.input.value);
-          payload = { team: team.input.value, text: (u2 ? `${appName(u2)}: ` : '') + text.input.value, tag: tag.value() };
+          const words = text.input.value.trim();
+          if (!words && tag.value() === 'other') return stop('Write what should be done.');
+          // No comments: the task is named by what it is about ("Mock interview"), so the team still sees what to do.
+          payload = { team: team.input.value, text: words || window.Portal.tagLabel(tag.value()), tag: tag.value() };
         }
         ok.disabled = true;
         try { await save('tasks', payload, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form p-assign'); g.append(team.wrap, tagWrap, appBox, ...(uniF ? [uniF.wrap] : []), text.wrap);
+      const g = el('div', 'p-form p-assign'); g.append(team.wrap, tagWrap, appBox, text.wrap);
       body.append(g, msg, foot);
       showKind();
     }).then((done) => { if (done) render(); });
@@ -289,7 +328,7 @@
     const open = tasks.filter((t) => !t.done).length;
     // The title with how many are open in grey beside it, and a small red pill only when something is new.
     const title = el('h2', '', 'Tasks');
-    title.append(el('span', 'p-tl-count', String(open)));
+    title.append(el('span', 'sc-tl-count', String(open)));
     head.append(title);
     c.append(head);
     const label = (id) => ((data.taskTeams || []).find((t) => t.id === id) || { label: id }).label;
@@ -323,63 +362,58 @@
   }
 
   // The Timeline tab (the owner, 17 Nov 2026: calm and professional, as Apple would make it): one column across the whole width, so
-  // the tasks and the notes have room. Where the student came from is one slim bar at the top (the owner, 17 Nov 2026: the Source
-  // column on the right was small and took the space). There is no box for why a student did not go on: it is explained in a note.
+  // the tasks and the notes have room. Where the student came from is in the main card above (the owner, 20 Nov 2026). There is no
+  // box for why a student did not go on: it is explained in a note.
   function details() {
-    const page = el('div', 'p-tl-page is-single');
-    const main = el('div', 'p-tl-main');
-    main.append(origin());
+    const page = el('div', 'sc-tl-page');
     const tc = tasksCard();
-    if (tc) main.append(tc);
-    main.append(notes());
-    if (editingOrigin) page.classList.add('p-editing-origin');
-    page.append(main);
+    if (tc) page.append(tc);
+    page.append(notes());
     return page;
   }
 
-  // ---- Where the student came from: shown as text, and changed only after pressing Edit ----
+  // ---- Where the student came from: part of the main card, shown as text and changed only after pressing Edit ----
+  // A student's source is asked when the student is added (it is required there), so the card no longer asks for it in a window when
+  // it opens (the owner, 20 Nov 2026). An older student without one shows "Not recorded yet" here, with Add source.
   let editingOrigin = false;
+  const SOURCE_ICON = { Branch: 'pin', Agent: 'globe', Events: 'calendar', 'Social Media': 'whatsapp', 'Language Classes': 'cap', Reference: 'compass', Visitor: 'pin' };
   function origin() {
     const p = profile();
     const s = data.student;
-    const box = el('section', 'p-card p-origin');
-    const head = el('div', 'p-card-head');
-    const title = el('div');
-    title.append(el('h2', '', 'Source'));
-    head.append(title);
-    if (can() && !editingOrigin) head.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { editingOrigin = true; render(); } }, 'Edit'));
-    box.append(head);
+    const g = F.sourceGroup(s.source);
+    const box = el('div', `sc-source${g ? '' : ' is-missing'}${editingOrigin ? ' is-editing' : ''}`);
+    const ico = el('span', 'sc-source-ico');
+    ico.append(icon(g ? SOURCE_ICON[g] || 'compass' : 'alert'));
+    const words = el('div', 'sc-source-words');
+    words.append(el('span', 'sc-eyebrow', 'Student source'));
     if (!editingOrigin) {
-      // The source itself large, with a round initial (the owner, 15 Nov 2026: the source did not look well); the details under it
-      // as quiet label and value rows.
-      const g = F.sourceGroup(s.source);
-      const main = el('div', `p-origin-main${g ? '' : ' is-empty'}`);
-      const ico = el('span', 'p-origin-ico', g ? g.charAt(0) : '?');
-      ico.setAttribute('aria-hidden', 'true');
-      const mw = el('div');
-      mw.append(el('b', '', g === 'Branch' ? s.source : g || 'Not recorded yet'));
-      if (!g && can()) mw.append(el('small', '', 'Press Edit to add it.'));
-      main.append(ico, mw);
-      box.append(main);
-      const dl = el('dl', 'p-origin-rows');
-      const fact = (k, v) => { const d = el('div', 'p-origin-row'); d.append(el('dt', '', k), el('dd', v ? '' : 'is-empty', v || 'Not recorded')); dl.append(d); };
+      words.append(el('b', 'sc-source-name', g === 'Branch' ? s.source : g || 'Not recorded yet'));
       // An event or campaign is shown by its name: the date kept beside it in the records is the day the campaign started, not the
-      // student's (the owner, 14 Nov 2026). The student's own first inquiry day and time are shown below it.
-      const plain = (v) => String(v || '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '');
-      if (g === 'Branch') { /* the branch is named in the line above ("Chitwan Branch") */ } else if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
+      // student's (the owner, 14 Nov 2026). The student's own first inquiry day and time are shown beside it.
+      const plain = (v) => String(v || '').replace(/^(Marketing|Event)\s*:\s*/i, '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '').trim();
+      const rows = el('dl', 'sc-source-rows');
+      const fact = (k, v) => { if (!v) return; const d = el('div'); d.append(el('dt', '', k), el('dd', '', v)); rows.append(d); };
+      if (g === 'Branch') { /* the branch is named above ("Chitwan Branch") */ } else if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
         fact('Platform', p.sourcePlatform);
         fact('How they came', p.sourceWay === 'Advert' ? `Advert: ${plain(p.sourceDetail) || 'campaign not named'}` : 'Organic (by itself)');
-      } else if (p.sourceDetail || (F.SOURCE_DETAILS[g] || []).length || g === 'Agent') fact(F.SOURCE_DETAIL_LABEL[g] || (g === 'Agent' ? 'Which agent' : 'Where exactly'), plain(p.sourceDetail));
+      } else if (g) fact(F.SOURCE_DETAIL_LABEL[g] || (g === 'Agent' ? 'Which agent' : 'Where exactly'), (g === 'Events' && data.event ? plain(data.event.name) : plain(p.sourceDetail)) || 'Not recorded');
       if (p.inquiryDate) fact('First inquiry', `${day(p.inquiryDate)}${p.inquiryTime ? ` at ${p.inquiryTime}` : ''}`);
       if (p.sourceRemarks) fact('Remarks', p.sourceRemarks);
-      if (dl.children.length) box.append(dl);
+      if (!g && can()) words.append(el('span', 'sc-source-hint', 'Where did this student come from? Add it once and it is counted on the Dashboard.'));
+      if (rows.children.length) words.append(rows);
+      box.append(ico, words);
+      if (can()) {
+        const b = h('button', { class: `btn btn-sm${g ? '' : ' btn-primary'}`, type: 'button', onclick: () => { editingOrigin = true; render(); } });
+        b.append(icon(g ? 'pencil' : 'plus', 'sc-btn-ico'), g ? 'Edit' : 'Add source');
+        box.append(b);
+      }
       return box;
     }
     const picker = window.SourcePicker.create({ lists, initial: { source: s.source, detail: p.sourceDetail, remarks: p.sourceRemarks, platform: p.sourcePlatform, way: p.sourceWay }, disabled: !data.can.source });
     const form = el('div', 'p-form');
     picker.nodes.forEach((n) => form.append(n));
-    box.append(form);
-    if (!data.can.source && s.source) box.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
+    words.append(form);
+    if (!data.can.source && s.source) words.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
     const bar = el('div', 'p-bar');
     bar.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: async () => {
       try {
@@ -389,7 +423,8 @@
         editingOrigin = false; render();
       } catch (e) { /* shown */ }
     } }, 'Save'), h('button', { class: 'btn', type: 'button', onclick: () => { editingOrigin = false; render(); } }, 'Cancel'));
-    box.append(bar);
+    words.append(bar);
+    box.append(ico, words);
     return box;
   }
 
@@ -397,134 +432,6 @@
     const s = data.student;
     if (data.can.source && v.source !== (s.source || '')) { await save('source', { source: v.source }); data.student.source = v.source; }
     await save('profile', { sourceDetail: v.detail, sourceRemarks: v.remarks, sourcePlatform: v.platform || '', sourceWay: v.way || '' }, 'Saved');
-  }
-
-  // What is still missing from the source ('' when it is complete): the source itself, and then how exactly the student reached us
-  // (the branch, the platform and Organic or Advert, the event, the agent, the class, how a visitor came, who referred them).
-  function sourceGap(v) {
-    const g = v.group;
-    if (!g) return 'Choose the student source.';
-    if (g === 'Branch') return v.source ? '' : 'Choose the branch.';
-    if (g === 'Social Media') {
-      if (!v.platform) return 'Choose the platform.';
-      if (!v.way) return 'Choose Organic or Advert.';
-      return v.way === 'Advert' && !v.detail ? 'Choose the campaign.' : '';
-    }
-    if (!v.detail) return `Fill in: ${F.SOURCE_DETAIL_LABEL[g] || 'where exactly'}.`;
-    return '';
-  }
-  const storedSourceValue = () => {
-    const s = data.student; const p = profile(); const g = F.sourceGroup(s.source);
-    return { group: g, source: s.source || '', detail: p.sourceDetail || '', platform: p.sourcePlatform || '', way: p.sourceWay || '' };
-  };
-
-  // Asked every time the card opens (the owner, 17 Nov 2026): what is still missing from the student. At Inquiry only the Student
-  // Source (and how exactly the student reached us) is asked. From Application Stage on (Mock, Payment, CAS, visa ...) the details
-  // needed to apply are asked too: phone, email, date of birth, passport number and the address in the passport. The application
-  // and offer days are not asked at Application Stage (an application may not be submitted yet); past it, when no university has an
-  // application day, the pop-up asks which university and the day, and from Payment Stage on the same for the offer (kept under
-  // Applications). "Not now" closes it and the card is used as before; the next time the card opens it asks again, until nothing is
-  // missing. Only for those who can change the card, and only what they may change.
-  const ASK_STAGES = ['Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
-  function missingDetails() {
-    const s = data.student; const p = profile(); const row = s.row || {};
-    const out = [];
-    const sourceMissing = Boolean(sourceGap(storedSourceValue())) && (data.can.source || F.sourceGroup(s.source));
-    if (!ASK_STAGES.includes(s.stage || '')) return { sourceMissing, fields: out };
-    // Past Application Stage the student has applied, and from Payment Stage on holds an offer: when no university says so yet, the
-    // pop-up asks which one and the day (the owner, 17 Nov 2026: the days must always be there). At Application Stage it never asks.
-    const st = appStats();
-    const askApp = s.stage !== 'Application Stage' && !st.submitted;
-    const askOffer = ['Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'].includes(s.stage) && !st.offers;
-    const blank = (v) => !String(v || '').trim();
-    if (blank(row['CONTACT NUMBER'])) out.push({ on: 'sheet', key: 'CONTACT NUMBER', label: 'Phone number', max: 40 });
-    if (blank(row.EMAIL)) out.push({ on: 'sheet', key: 'EMAIL', label: 'Email', max: 120 });
-    if (blank(p.dob)) out.push({ on: 'profile', key: 'dob', label: 'Date of birth', kind: 'date' });
-    if (blank(p.passportNo)) out.push({ on: 'profile', key: 'passportNo', label: 'Passport number', max: 20, upper: true });
-    if (blank(p.address)) out.push({ on: 'profile', key: 'address', label: 'Address (as in the passport)', max: 200 });
-    return { sourceMissing, fields: out, askApp, askOffer };
-  }
-  // A university to choose (the student's shortlisted or applied ones) or another one typed, with its course and a day.
-  function uniQuestion(form, title, choices, dayLabel, withType) {
-    form.append(el('h3', 'p-wide', title));
-    const NEW = '__new';
-    const pick = field('University', { kind: 'select', choices: [...choices.map((o) => [o.id, [o.university, o.course].filter(Boolean).join(': ')]), [NEW, 'Another university (type it)']], value: choices.length ? '' : NEW });
-    const row = data.student.row || {};
-    const uni = field('University name', { max: 160, value: String(row['UNIVERSITY NAME'] || '') });
-    const course = field('Course', { max: 240, value: String(row['COURSE NAME'] || '') });
-    const when2 = field(dayLabel, { kind: 'date' });
-    when2.input.max = data.today || '';
-    const type = withType ? field('Offer', { kind: 'select', choices: [['', 'Type not known'], ['Conditional', 'Conditional'], ['Unconditional', 'Unconditional']] }) : null;
-    const showNew = () => { const n = pick.input.value === NEW; uni.wrap.hidden = !n; course.wrap.hidden = !n; };
-    pick.input.addEventListener('change', showNew); showNew();
-    form.append(pick.wrap, uni.wrap, course.wrap, when2.wrap, ...(type ? [type.wrap] : []));
-    return {
-      filled: () => Boolean(when2.input.value),
-      check: () => (!when2.input.value ? '' : !pick.input.value ? 'Choose the university.' : pick.input.value === NEW && !uni.input.value.trim() ? 'Type the name of the university.' : ''),
-      async save(key) {
-        const extra = key === 'offer' ? { offer: when2.input.value, offerType: type ? type.input.value : '' } : { applied: when2.input.value };
-        if (pick.input.value !== NEW) { await api(`/api/cards/${id}/options/${pick.input.value}`, extra); return; }
-        // The same university typed for the application and the offer is one line: the second answer goes on the first.
-        const u = uni.input.value.trim(); const c = course.input.value.trim(); const low = (v) => String(v || '').trim().toLowerCase();
-        const now = (await api('/api/cards/' + encodeURIComponent(id))).card.options;
-        const same = now.find((o) => low(o.university) === low(u) && (!c || !o.course || low(o.course) === low(c)));
-        if (same) await api(`/api/cards/${id}/options/${same.id}`, extra);
-        else await api(`/api/cards/${id}/options`, { university: u, course: c, ...extra });
-      },
-    };
-  }
-  async function askMissing() {
-    if (!can()) return;
-    const { sourceMissing, fields, askApp, askOffer } = missingDetails();
-    if (!sourceMissing && !fields.length && !askApp && !askOffer) return;
-    const s = data.student; const p = profile();
-    const saved = await dialog(sourceMissing && !fields.length && !askApp && !askOffer ? 'Where did this student come from?' : 'Details missing for this student', (body, close) => {
-      body.append(el('p', 'p-muted', `Some details of ${s.name || 'this student'} are missing. Fill in what you have now and press Save; what is left is asked again next time.`));
-      const form = el('div', 'p-form');
-      let picker = null;
-      if (sourceMissing) {
-        picker = window.SourcePicker.create({ lists, initial: { source: s.source, detail: p.sourceDetail, remarks: p.sourceRemarks, platform: p.sourcePlatform, way: p.sourceWay }, disabled: !data.can.source });
-        picker.nodes.forEach((n) => form.append(n));
-      }
-      const inputs = fields.map((f) => {
-        const x = field(f.label, { kind: f.kind, max: f.max });
-        if (f.key === 'dob') x.input.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-        form.append(x.wrap);
-        return { f, input: x.input };
-      });
-      const opts = data.card.options;
-      const appQ = askApp ? uniQuestion(form, 'Application submitted', opts.filter((o) => !o.applied && !o.skipped), 'Submitted on', false) : null;
-      const offerQ = askOffer ? uniQuestion(form, 'Offer received', opts.filter((o) => !o.offer && !o.refused && !o.skipped), 'Offer received on', true) : null;
-      const msg = el('div', 'p-msg');
-      const foot = el('div', 'p-dialog-foot');
-      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
-      ok.addEventListener('click', async () => {
-        const v = picker ? picker.value() : null;
-        const sourceChosen = Boolean(v && v.group);
-        if (sourceChosen) { const gap = picker.check() || sourceGap(v); if (gap) { msg.textContent = gap; msg.className = 'p-msg error'; return; } }
-        const qs = [appQ, offerQ].filter(Boolean);
-        const qGap = qs.map((q) => q.check()).find(Boolean);
-        if (qGap) { msg.textContent = qGap; msg.className = 'p-msg error'; return; }
-        const filled = inputs.filter((x) => x.input.value.trim());
-        if (!sourceChosen && !filled.length && !qs.some((q) => q.filled())) { msg.textContent = 'Fill in at least one detail, or press Not now.'; msg.className = 'p-msg error'; return; }
-        ok.disabled = true;
-        try {
-          if (sourceChosen) await saveSource(v);
-          const value = (x) => (x.f.upper ? x.input.value.trim().toUpperCase() : x.input.value.trim());
-          const prof = Object.fromEntries(filled.filter((x) => x.f.on === 'profile').map((x) => [x.f.key, value(x)]));
-          const sheet = Object.fromEntries(filled.filter((x) => x.f.on === 'sheet').map((x) => [x.f.key, value(x)]));
-          if (Object.keys(prof).length) await api(`/api/cards/${id}/profile`, prof);
-          if (Object.keys(sheet).length) await api(`/api/cards/${id}/sheet`, { fields: sheet });
-          if (appQ && appQ.filled()) await appQ.save('applied');
-          if (offerQ && offerQ.filled()) await offerQ.save('offer');
-          close(true);
-        } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.disabled = false; }
-      });
-      form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); ok.click(); } });
-      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Not now'), ok);
-      body.append(form, msg, foot);
-    });
-    if (saved) { data = await api('/api/cards/' + encodeURIComponent(id)); say('Saved'); render(); }
   }
 
   // ---- Notes (replace the Remarks column of the sheet) ----
@@ -550,7 +457,7 @@
     const a = document.activeElement;
     if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
     if (document.querySelector('dialog[open], .p-dialog')) return;
-    const box = document.querySelector('.p-tl-input');
+    const box = document.querySelector('.sc-tl-input');
     if (box) { e.preventDefault(); box.focus(); box.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   });
   let tlRevealFrom = 0; // after Show all, the entries from here on fade in once
@@ -564,7 +471,7 @@
     if (mins >= 1 && mins < 60) return `${mins} min ago`;
     return t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   }
-  setInterval(() => { document.querySelectorAll('.p-tl-time[datetime]').forEach((x) => { const v = tlTime(x.dateTime); if (x.textContent !== v) x.textContent = v; }); }, 60000);
+  setInterval(() => { document.querySelectorAll('.sc-tl-time[datetime]').forEach((x) => { const v = tlTime(x.dateTime); if (x.textContent !== v) x.textContent = v; }); }, 60000);
   // Web addresses, email addresses and phone numbers in what was written open with one click.
   const LINKABLE = /(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]]|www\.[^\s<>"]+[^\s<>".,;:!?)\]]|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|\+?977[\s-]?9\d{9}|\b9[678]\d{8}\b)/g;
   function linked(text) {
@@ -573,7 +480,7 @@
     while ((m = LINKABLE.exec(t))) {
       if (m.index > i) out.push(t.slice(i, m.index));
       const v = m[0];
-      const a = el('a', 'p-tl-link', v);
+      const a = el('a', 'sc-tl-link', v);
       if (/@/.test(v) && !/^https?:|^www\./.test(v)) a.href = 'mailto:' + v;
       else if (/^[+\d]/.test(v)) a.href = 'tel:' + v.replace(/[^\d+]/g, '');
       else { a.href = /^www\./.test(v) ? 'https://' + v : v; a.target = '_blank'; a.rel = 'noopener'; }
@@ -590,7 +497,7 @@
     // still be removed by the person who wrote it or Admin, and a done task reopened. The applications are not repeated here: the
     // tasks and notes already say each step, and Applications has the rest.
     // The title on the left and the switch (All, Notes, Tasks, Messages) on the right of the same row, as in Apple's apps.
-    const top = el('div', 'p-tl-top');
+    const top = el('div', 'sc-tl-top');
     top.append(el('h2', '', 'Timeline'));
     wrap.append(top);
     // What is new since this person last opened the student: a small blue dot, as in Mail. Kept in this browser only.
@@ -600,19 +507,18 @@
       try { tlLastSeen = localStorage.getItem(key) || ''; localStorage.setItem(key, new Date().toISOString()); } catch (e) { tlLastSeen = ''; }
     }
     if (can()) {
-      // The box to write a note, with its button inside it at the bottom, as in Apple's own apps. "p-note-box" keeps the card's
-      // two-column layout (theme.css).
-      const box = el('div', 'p-note-box p-tl-compose');
+      // The box to write a note, with its button inside it at the bottom, as in Apple's own apps.
+      const box = el('div', 'sc-tl-compose');
       // The writer's own round badge beside the box, as in Apple's comments.
-      const me = el('span', 'p-tl-av p-tl-me', initials((data.me || {}).name || '?'));
+      const me = el('span', 'sc-tl-av sc-tl-me', initials((data.me || {}).name || '?'));
       me.setAttribute('aria-hidden', 'true');
-      const text = el('textarea', 'p-tl-input');
+      const text = el('textarea', 'sc-tl-input');
       text.placeholder = 'Add a note…';
       text.setAttribute('aria-label', 'Write a note');
       text.maxLength = 4000;
       // What is typed survives a redraw of the card (a tab change, a task ticked) until it is added.
       text.value = noteDraft;
-      const bar = el('div', 'p-tl-compose-bar');
+      const bar = el('div', 'sc-tl-compose-bar');
       const add = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Add note');
       // The button appears once something is typed (Ctrl+Enter or Cmd+Return also adds it).
       const showAdd = () => { box.classList.toggle('has-text', Boolean(text.value.trim())); };
@@ -628,7 +534,7 @@
         } catch (e) { add.disabled = false; }
       });
       bar.append(add);
-      const field2 = el('div', 'p-tl-compose-field');
+      const field2 = el('div', 'sc-tl-compose-field');
       field2.append(text, bar);
       box.append(me, field2);
       showAdd();
@@ -677,40 +583,40 @@
     // line, then the words. Long notes fold to six lines with "Read more".
     const entry = (e) => {
       const k = e.kind === 'note' && e.by === AUTO ? 'auto' : e.kind;
-      const li = el('li', `p-tl-item is-${k}`);
-      const av = el('span', 'p-tl-av');
+      const li = el('li', `sc-tl-item is-${k}`);
+      const av = el('span', 'sc-tl-av');
       av.setAttribute('aria-hidden', 'true');
       if (k === 'note') av.textContent = initials(e.by || '?');
       else if (k === 'auto') av.textContent = 'ISR';
       else av.append(tlIcon(k === 'message' ? (e.message.channel === 'whatsapp' ? 'whatsapp' : 'email') : k));
-      const body = el('div', 'p-tl-body');
-      const line = el('div', 'p-tl-line');
-      const time = el('time', 'p-tl-time', tlTime(e.at));
+      const body = el('div', 'sc-tl-body');
+      const line = el('div', 'sc-tl-line');
+      const time = el('time', 'sc-tl-time', tlTime(e.at));
       time.dateTime = e.at; time.title = when(e.at);
       const label = k === 'auto' ? 'Automatic' : k === 'note' ? 'Note' : e.label;
-      line.append(el('b', 'p-tl-who', k === 'auto' ? 'ISR' : e.by || 'Someone'), el('span', 'p-tl-kind', label), time);
+      line.append(el('b', 'sc-tl-who', k === 'auto' ? 'ISR' : e.by || 'Someone'), el('span', 'sc-tl-kind', label), time);
       body.append(line);
-      if (e.lead) body.append(el('p', 'p-tl-lead', e.lead));
-      if (e.ref) { const q = el('p', 'p-tl-ref', e.ref); q.title = e.ref; body.append(q); }
+      if (e.lead) body.append(el('p', 'sc-tl-lead', e.lead));
+      if (e.ref) { const q = el('p', 'sc-tl-ref', e.ref); q.title = e.ref; body.append(q); }
       if (e.text) {
-        const p = el('p', 'p-tl-text');
+        const p = el('p', 'sc-tl-text');
         if (e.tag) p.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' ');
         p.append(...linked(e.text));
         body.append(p);
         const long = e.text.length > 420 || e.text.split('\n').length > 6;
         if (long && !(e.note && openNotes.has(e.note.id))) {
           p.classList.add('is-folded');
-          const more = h('button', { class: 'p-tl-more', type: 'button', onclick: () => { if (e.note) openNotes.add(e.note.id); p.classList.remove('is-folded'); more.remove(); } }, 'Read more');
+          const more = h('button', { class: 'sc-tl-more', type: 'button', onclick: () => { if (e.note) openNotes.add(e.note.id); p.classList.remove('is-folded'); more.remove(); } }, 'Read more');
           body.append(more);
         }
       }
-      const acts = el('div', 'p-tl-acts');
-      if (e.message && e.message.channel === 'email') acts.append(h('button', { class: 'p-tl-act', type: 'button', onclick: () => readMessage(e.message) }, 'Read email'));
+      const acts = el('div', 'sc-tl-acts');
+      if (e.message && e.message.channel === 'email') acts.append(h('button', { class: 'sc-tl-act', type: 'button', onclick: () => readMessage(e.message) }, 'Read email'));
       // A done task can be reopened (the team it is for, Admin and the Manager), and what it recorded put back (the owner, 16 Nov
       // 2026: a wrong answer is corrected in one step).
       const mayReopen = e.task && !data.can.readOnly && (data.can.removeAnyTask || (data.can.myTeams || []).includes(e.task.team) || (e.task.team === 'head' && (data.me || {}).role === 'admin'));
       if (mayReopen) {
-        acts.append(h('button', { class: 'p-tl-act', type: 'button', onclick: async () => {
+        acts.append(h('button', { class: 'sc-tl-act', type: 'button', onclick: async () => {
           const how = await window.Portal.reopenDialog(e.task);
           if (!how) return;
           const r = await save(`tasks/${e.task.id}`, { done: false, finish: how }, 'Reopened');
@@ -721,7 +627,7 @@
       // Remove stays for a note written by mistake (the writer or Admin); it shows when the mouse is on the note.
       const n = e.note;
       if (n && can() && (n.by === data.me.name || data.can.removeAnyNote)) {
-        line.insertBefore(h('button', { class: 'p-tl-act is-remove', type: 'button', 'aria-label': 'Remove this note', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'), time);
+        line.insertBefore(h('button', { class: 'sc-tl-act is-remove', type: 'button', 'aria-label': 'Remove this note', onclick: async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } } }, 'Remove'), time);
       }
       if (acts.children.length) body.append(acts);
       li.append(av, body);
@@ -732,10 +638,10 @@
     // Everything, Notes, Tasks or Messages.
     const present = new Set(events.map(kindOfEvent));
     if (present.size > 1) {
-      const seg = el('div', 'p-tl-seg');
+      const seg = el('div', 'sc-tl-seg');
       seg.setAttribute('role', 'tablist');
       [['all', 'All'], ['note', 'Notes'], ['task', 'Tasks'], ['message', 'Messages']].filter(([k]) => k === 'all' || present.has(k)).forEach(([k, label]) => {
-        const b = h('button', { class: 'p-tl-seg-btn', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label);
+        const b = h('button', { class: 'sc-tl-seg-btn', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label);
         b.addEventListener('click', () => { historyFilter = k; render(); });
         seg.append(b);
       });
@@ -745,15 +651,15 @@
     const remark = data.student.remarks && data.student.remarks !== data.card.autoRemark ? data.student.remarks : '';
     const LIMIT = 8;
     let revealFrom = tlRevealFrom; tlRevealFrom = 0;
-    const days = el('div', 'p-tl-days');
-    const moreBtn = h('button', { class: 'p-tl-all', type: 'button' });
+    const days = el('div', 'sc-tl-days');
+    const moreBtn = h('button', { class: 'sc-tl-all', type: 'button' });
     function fill() {
       const all = events.filter((e) => historyFilter === 'all' || kindOfEvent(e) === historyFilter);
       const items = showAllNotes ? all : all.slice(0, LIMIT);
       days.replaceChildren();
       if (!all.length && !remark) {
-        const empty = el('div', 'p-tl-empty');
-        const ico = el('span', 'p-tl-empty-ico'); ico.append(tlIcon('update'));
+        const empty = el('div', 'sc-tl-empty');
+        const ico = el('span', 'sc-tl-empty-ico'); ico.append(tlIcon('update'));
         empty.append(ico, el('b', '', 'No history yet'), el('span', '', 'Notes, tasks and messages about this student will appear here.'));
         days.append(empty);
       }
@@ -763,9 +669,9 @@
         const d = localDay(e);
         if (d !== lastDay) {
           lastDay = d; prev = null;
-          const g = el('section', 'p-tl-group');
-          list = el('ol', 'p-tl-list');
-          g.append(el('h3', 'p-tl-day', dayName(d)), list);
+          const g = el('section', 'sc-tl-group');
+          list = el('ol', 'sc-tl-list');
+          g.append(el('h3', 'sc-tl-day', dayName(d)), list);
           days.append(g);
         }
         const li = entry(e);
@@ -777,15 +683,15 @@
       });
       revealFrom = 0;
       if (remark && historyFilter !== 'task' && historyFilter !== 'message' && (showAllNotes || all.length <= LIMIT)) {
-        const g = el('section', 'p-tl-group');
-        const ol = el('ol', 'p-tl-list');
-        const li = el('li', 'p-tl-item is-auto');
-        const av = el('span', 'p-tl-av', 'ISR'); av.setAttribute('aria-hidden', 'true');
-        const body = el('div', 'p-tl-body');
-        const line = el('div', 'p-tl-line'); line.append(el('b', 'p-tl-who', 'All Students'), el('span', 'p-tl-kind', 'Earlier remark'));
-        body.append(line, el('p', 'p-tl-text', remark));
+        const g = el('section', 'sc-tl-group');
+        const ol = el('ol', 'sc-tl-list');
+        const li = el('li', 'sc-tl-item is-auto');
+        const av = el('span', 'sc-tl-av', 'ISR'); av.setAttribute('aria-hidden', 'true');
+        const body = el('div', 'sc-tl-body');
+        const line = el('div', 'sc-tl-line'); line.append(el('b', 'sc-tl-who', 'All Students'), el('span', 'sc-tl-kind', 'Earlier remark'));
+        body.append(line, el('p', 'sc-tl-text', remark));
         li.append(av, body); ol.append(li);
-        g.append(el('h3', 'p-tl-day', 'From the sheet'), ol);
+        g.append(el('h3', 'sc-tl-day', 'From the sheet'), ol);
         days.append(g);
       }
       moreBtn.hidden = all.length <= LIMIT;
@@ -962,7 +868,7 @@
     const box = el('section', 'p-card');
     const head = el('div', 'p-card-head');
     const waiting = waitingOptions();
-    { const t = el('h2', '', 'Shortlist'); t.append(el('span', 'p-tl-count', String(waiting.length))); head.append(t); }
+    { const t = el('h2', '', 'Shortlist'); t.append(el('span', 'sc-tl-count', String(waiting.length))); head.append(t); }
     const acts = el('div', 'p-card-acts');
     // Straight to Universities with this student already chosen, so the team shortlists without searching for the student again.
     // target _top: from the half card (an iframe on All Students) Universities opens as the whole page, not inside the card.
@@ -995,7 +901,7 @@
     const box = el('section', 'p-card');
     const offers = apps.filter((o) => o.offer).length;
     const submitted = apps.filter((o) => o.applied).length;
-    { const t = el('h2', '', 'Universities Applied To'); t.append(el('span', 'p-tl-count', String(apps.length))); box.append(t); }
+    { const t = el('h2', '', 'Universities Applied To'); t.append(el('span', 'sc-tl-count', String(apps.length))); box.append(t); }
     if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses above and press "Assign to the Application Team".')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
     box.append(el('p', 'p-apps-summary', [`${submitted} submitted`, `${offers} ${offers === 1 ? 'offer' : 'offers'}`, waitingTeam ? `${waitingTeam} with the Application Team` : ''].filter(Boolean).join(' · ')));
@@ -1053,16 +959,24 @@
   // Details that do not add up (the owner, 16 Nov 2026), right under the student's name: each says what is wrong. Correct it with
   // Edit above (or the sheet), or press "It is correct" once checked, and it leaves the list (and Today's "Details to check").
   function checksBox() {
-    const box = el('section', 'p-checks');
-    box.append(el('h2', '', 'Details to check'));
+    const box = el('section', 'sc-checks');
+    const head = el('div', 'sc-checks-head');
+    const ic = el('span', 'sc-checks-ico'); ic.append(icon('alert'));
+    const t = el('h2', '', 'Details to check');
+    t.append(el('span', 'sc-checks-count', String(data.checks.length)));
+    head.append(ic, t);
     const list = el('ul');
     data.checks.forEach((c) => {
       const li = el('li');
-      li.append(el('span', '', c.text));
-      if (can()) li.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { await save('checks', { key: c.key }, 'Marked as checked'); data = await api('/api/cards/' + encodeURIComponent(id)); render(); } }, 'It is correct'));
+      li.append(el('span', 'sc-checks-text', c.text));
+      if (can()) {
+        const b = h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { b.disabled = true; li.classList.add('is-leaving'); try { await save('checks', { key: c.key }, 'Marked as checked'); data = await api('/api/cards/' + encodeURIComponent(id)); render(); } catch (e) { b.disabled = false; li.classList.remove('is-leaving'); } } });
+        b.append(icon('check', 'sc-btn-ico'), 'It is correct');
+        li.append(b);
+      }
       list.append(li);
     });
-    box.append(list, el('p', 'p-muted p-small', 'Wrong? Correct it with Edit above, or on All Students.'));
+    box.append(head, list, el('p', 'sc-checks-foot', 'Wrong? Correct it with Edit details above, or on All Students.'));
     return box;
   }
   // ---- fewer clicks (the owner, 17 Nov 2026) ----
@@ -1098,16 +1012,17 @@
     }
     return bar;
   }
-  // One tap to reach the student: call, WhatsApp or email (no Copy number, the owner, 17 Nov 2026).
+  // One tap to reach the student: call, WhatsApp or email (no Copy number, the owner, 17 Nov 2026), in the main card under the name.
   function contactBar() {
     const s = data.student;
     const wa = F.whatsappNumber(s.phone);
     if (!s.phone && !s.email) return null;
-    const bar = el('div', 'p-reach');
+    const bar = el('div', 'sc-reach');
+    const btn = (cls, ico, text, attrs) => { const a = h('a', { class: `sc-reach-btn ${cls}`, ...attrs }); const i = el('span', 'sc-reach-ico'); i.append(icon(ico)); a.append(i, el('span', '', text)); return a; };
     // Call rings the student from the person's own phone, as WhatsApp does (phone-link.js); with no phone connected it says how.
-    if (s.phone) bar.append(h('a', { class: 'p-reach-btn', href: 'tel:' + String(s.phone).replace(/[^\d+]/g, ''), onclick: (e) => { if (!window.PhoneLink || !wa) return; e.preventDefault(); window.PhoneLink.call({ id, number: wa, name: s.name }); } }, el('span', 'p-reach-ico', '☎'), 'Call'));
-    if (wa) bar.append(h('a', { class: 'p-reach-btn is-wa', href: 'https://wa.me/' + wa, target: '_blank', rel: 'noopener', onclick: (e) => { e.preventDefault(); window.Portal.whatsapp(wa, s.name, '', id); } }, el('span', 'p-reach-ico', '●'), 'WhatsApp'));
-    if (s.email) bar.append(h('a', { class: 'p-reach-btn', href: 'mailto:' + s.email }, el('span', 'p-reach-ico', '@'), 'Email'));
+    if (s.phone) bar.append(btn('is-call', 'phone', 'Call', { href: 'tel:' + String(s.phone).replace(/[^\d+]/g, ''), onclick: (e) => { if (!window.PhoneLink || !wa) return; e.preventDefault(); window.PhoneLink.call({ id, number: wa, name: s.name }); } }));
+    if (wa) bar.append(btn('is-wa', 'whatsapp', 'WhatsApp', { href: 'https://wa.me/' + wa, target: '_blank', rel: 'noopener', onclick: (e) => { e.preventDefault(); window.Portal.whatsapp(wa, s.name, '', id); } }));
+    if (s.email) bar.append(btn('is-mail', 'mail', 'Email', { href: 'mailto:' + s.email }));
     return bar;
   }
   // The next thing the sheet needs for this student, done right here: one day to pick and Save, or the passport details to add.
@@ -1130,10 +1045,11 @@
       step = { title: 'Add the passport details', why: `Still missing: ${gone.join(', ')}.`, edit: true };
     }
     if (!step) return null;
-    const box = el('section', 'p-next');
-    const words = el('div', 'p-next-words');
-    words.append(el('span', 'p-next-eyebrow', 'Next step'), el('b', '', step.title), el('span', 'p-next-why', step.why));
-    const act = el('div', 'p-next-act');
+    const box = el('section', 'sc-next');
+    const ic = el('span', 'sc-next-ico'); ic.append(icon('arrow'));
+    const words = el('div', 'sc-next-words');
+    words.append(el('span', 'sc-eyebrow', 'Next step'), el('b', '', step.title), el('span', 'sc-next-why', step.why));
+    const act = el('div', 'sc-next-act');
     if (step.apps) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('options') }, 'Open Applications'));
     else if (step.edit) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { editingHero = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 'Add them'));
     else {
@@ -1155,7 +1071,7 @@
       });
       act.append(input, ok);
     }
-    box.append(words, act);
+    box.append(ic, words, act);
     return box;
   }
 
@@ -1176,11 +1092,10 @@
     const frag = document.createDocumentFragment();
     const q = queueBar(); if (q) frag.append(q);
     frag.append(hero());
-    if (!editingHero) { const r = contactBar(); if (r) frag.append(r); const n = nextStep(); if (n) frag.append(n); }
+    if (!editingHero) { const n = nextStep(); if (n) frag.append(n); }
     if ((data.checks || []).length) frag.append(checksBox());
     if (!can()) frag.append(el('div', 'p-notice', 'View only.'));
-    const tabs = el('div', 'p-tabs');
-    tabs.style.marginTop = '16px';
+    const tabs = el('div', 'p-tabs sc-tabs');
     tabs.setAttribute('role', 'tablist');
     TABS.forEach(([key, text]) => {
       const b = el('button');
@@ -1207,9 +1122,7 @@
       render();
     } catch (e) {
       view.replaceChildren(h('div', { class: 'p-card' }, el('h1', 'p-error-title', 'This student cannot be opened'), el('p', '', e.message), h('a', { class: 'btn', href: '/students' }, 'Back to All Students')));
-      return;
     }
-    askMissing();
   }
   window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (data && t !== tab && TABS.some(([k]) => k === t)) { tab = t; render(); } });
   start();

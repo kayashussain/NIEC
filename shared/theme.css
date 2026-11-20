@@ -364,7 +364,7 @@ dialog .p-field, .ui-dialog .p-field, .p-form .p-field { margin-bottom: 12px; }
 .p-table { font-size: 14.5px; }
 .p-table th { font-size: 13px; }
 
-.p-hero-line .p-chip, .p-facts dd, .p-fact a { overflow-wrap: anywhere; }
+.p-facts dd, .p-fact a { overflow-wrap: anywhere; }
 .p-tabs { overflow-x: auto; scrollbar-width: none; }
 @media (max-width: 900px) {
   .p-cols { grid-template-columns: 1fr !important; }
@@ -394,108 +394,7 @@ h1 .p-chip, h1 .pill, h1 #adminOnly { font-size: 13px; }
 .niec-nav .user, .niec-nav .role, .p-msg, .msg, .error, .p-count, .ui-dialog label, .eg-box label, .footbar, .help-btn { font-size: 14px; }
 
 /* 🔴 CSS CHANGED (2026-11-12): a reading-size floor for the whole portal | from: many labels, notes, hints, table headings and sub-lines at 10 to 13px | to: 14px for all reading text, 15px for table headings, so nothing is below 14px (the sheet's own cells stay at 15px) */
-.p-small,
-.p-msg,
-.p-card > h2 + p,
-.p-card-head + p,
-.p-card h3,
-.p-pill,
-.p-chip,
-.p-count,
-.p-tabs button,
-.p-tabs a,
-.p-label,
-.p-hint,
-.p-notice,
-.p-table,
-.p-table .sub td,
-.p-table input,
-.p-table select,
-.p-back,
-.p-hero-line,
-.p-fact dt,
-.p-wa-preview,
-.p-sent,
-.p-option .p-uni,
-.p-option .p-money,
-.p-option .p-why,
-.p-dialog-body h3,
-.p-kpi span,
-.p-kpi small,
-.p-bar-row,
-.t-title p,
-.conflict-banner,
-html,
-body,
-#search,
-.btn,
-.save-status,
-.filter-btn,
-.filter-menu,
-.filter-menu-search input,
-.filter-menu-actions button,
-.filter-menu-footer .btn,
-.lang-test-flag,
-.defer-warning-flag,
-.sheet-tab,
-.sheet-tab-menu-btn,
-.sheet-menu,
-.all-sheets-heading,
-.sheet-tab-input,
-.footbar,
-#body td.peer-cell::after,
-.view-only,
-.help-btn,
-.filter-bar,
-.filters label,
-.updated,
-.alert,
-figcaption p,
-.toggle,
-.legend button,
-table.data,
-.tip,
-.method,
-details.rates,
-.notes,
-.btn-sm,
-.msg,
-.uni-card .city,
-.uni-card .updated,
-.count,
-.matches,
-.chip,
-.doc-top .kind,
-.steps > li::before,
-.programs,
-.label,
-.foot,
-.toc a,
-.editor .hint,
-.editor label,
-.block-head b,
-.tabs .count,
-.card > p,
-.form label,
-.notice,
-table,
-.who span,
-.pill,
-.actions select,
-td[data-label]::before,
-.activity-action,
-.activity-app,
-.activity-time,
-.activity-device,
-.activity-note,
-.activity-changes,
-.hint,
-.access legend,
-.radio small,
-.check small,
-.tile-label,
-.tile-sub,
-.filter-row label { font-size: 14px; }
+.p-small, .p-msg, .p-card > h2 + p, .p-card-head + p, .p-card h3, .p-pill, .p-chip, .p-count, .p-tabs button, .p-tabs a, .p-label, .p-hint, .p-notice, .p-table, .p-table .sub td, .p-table input, .p-table select, .p-back, .p-fact dt, .p-wa-preview, .p-sent, .p-option .p-uni, .p-option .p-money, .p-option .p-why, .p-dialog-body h3, .p-kpi span, .p-kpi small, .p-bar-row, .t-title p, .conflict-banner, html, body, #search, .btn, .save-status, .filter-btn, .filter-menu, .filter-menu-search input, .filter-menu-actions button, .filter-menu-footer .btn, .lang-test-flag, .defer-warning-flag, .sheet-tab, .sheet-tab-menu-btn, .sheet-menu, .all-sheets-heading, .sheet-tab-input, .footbar, #body td.peer-cell::after, .view-only, .help-btn, .filter-bar, .filters label, .updated, .alert, figcaption p, .toggle, .legend button, table.data, .tip, .method, details.rates, .notes, .btn-sm, .msg, .uni-card .city, .uni-card .updated, .count, .matches, .chip, .doc-top .kind, .steps > li::before, .programs, .label, .foot, .toc a, .editor .hint, .editor label, .block-head b, .tabs .count, .card > p, .form label, .notice, table, .who span, .pill, .actions select, td[data-label]::before, .activity-action, .activity-app, .activity-time, .activity-device, .activity-note, .activity-changes, .hint, .access legend, .radio small, .check small, .tile-label, .tile-sub, .filter-row label { font-size: 14px; }
 .p-table th,
 thead th,
 table.data th,
@@ -715,17 +614,11 @@ body:has(#sheet) .footbar { padding: 10px 32px 14px; background: transparent; bo
 /* 🔴 CSS CHANGED (2026-11-13): the top of the wider student card | from: buttons always under the name and the details in two columns (made for a 600px card) | to: in the 920px card (and the card opened as its own page) the buttons sit in the top right corner, the name keeps clear of them, and the journey line and the details (three columns) use the full width under the name; a window narrower than the card falls back to buttons under the name and two columns */
 /* 🔴 CSS CHANGED (2026-11-15): the top of the student card, a long name (a bug fix) | from: the buttons were pinned to the top right corner and the name kept a fixed 330px clear of them, so a long name (SANJIP KUMAR MAHTO Mahato) ran under "Send a message"; the source was a big grey pill reading "Social Media: Marketing: Facebook ads Bangalore University, 6 Nov 2026" | to: the name and the buttons share one row that wraps: the name takes the room it needs (up to two lines, 30px) and the buttons move under it when they do not fit, never on top; the stage and intake on one line, then the source as one quiet grey line in 13.5px ("Social Media · Facebook · Advert: Facebook ads Bangalore University"), cut with … if longer than the card (the whole text shows on hover) */
 body:has(.p-embed-bar) .p-card.p-hero, body.p-embed .p-hero { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
-.p-hero-mid { min-width: 0; }
-.p-hero-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; }
-body:has(.p-embed-bar) .p-hero .p-hero-top h1 { flex: 1 1 280px; min-width: 0; margin: 0; font-size: 30px; line-height: 1.15; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-body:has(.p-embed-bar) .p-hero .p-hero-top .p-hero-actions { position: static; flex: 0 1 auto; max-width: 100%; flex-wrap: wrap; margin: 2px 0 0; justify-content: flex-start; }
-.p-hero-line .p-hero-intake { color: var(--text-dim); font-size: 14px; font-weight: 500; }
-.p-hero-source { margin-top: 8px; max-width: 100%; overflow: hidden; color: var(--text-dim); font-size: 13.5px; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; }
 body.p-embed .p-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 761px) {
   body:has(.p-embed-bar) .p-hero .p-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (max-width: 520px) { body:has(.p-embed-bar) .p-hero .p-hero-top h1 { font-size: 26px; } .p-hero-source { white-space: normal; } }
+
 body.p-embed .p-fact dd, body.p-embed .p-fact dd a { overflow-wrap: break-word; word-break: normal; }
 @media (max-width: 460px) { body.p-embed .p-facts { grid-template-columns: minmax(0, 1fr); } }
 /* 🔴 CSS CHANGED (2026-11-20): Add student no longer offers "Add many students" at its top | from: a soft grey band "Adding many students at once?" with a button | to: no band */
@@ -737,26 +630,12 @@ body:has(.p-embed-bar) .p-embed-bar .btn:hover:not(:disabled) { border-color: va
 /* the top panel */
 body:has(.p-embed-bar) .p-card.p-hero { position: relative; overflow: hidden; gap: 14px 20px; border-left: 1px solid var(--lux-line); color: var(--text); }
 body:has(.p-embed-bar) .p-card.p-hero::before { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent 0%, var(--lux-bronze) 30%, var(--lux-bronze) 70%, transparent 100%); opacity: .85; }
-body:has(.p-embed-bar) .p-hero-line { margin-top: 10px; gap: 8px; color: var(--text-dim); font-size: 14.5px; }
-body:has(.p-embed-bar) .p-hero-line .p-pill, body:has(.p-embed-bar) .p-hero-line .p-chip { padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 550; }
-/* the journey line */
-body:has(.p-embed-bar) .p-journey { margin-top: 18px; }
-body:has(.p-embed-bar) .p-journey-bar { display: flex; }
-body:has(.p-embed-bar) .p-journey-text { margin-top: 8px; color: var(--text-dim); }
-body:has(.p-embed-bar) .p-journey-text b { color: var(--lux-ink); font-weight: 650; }
-body:has(.p-embed-bar) .p-journey.lost .p-journey-bar i { background: #e5e2da; }
-body:has(.p-embed-bar) .p-journey.lost .p-journey-text { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--amber-bg); color: var(--amber-fg); font-weight: 600; }
 /* the details */
 body:has(.p-embed-bar) .p-hero .p-facts { margin-top: 18px; padding-top: 16px; gap: 14px 24px; border-top: 1px solid var(--lux-line); }
 body:has(.p-embed-bar) .p-hero .p-fact dd { color: var(--ink); }
 body:has(.p-embed-bar) .p-hero .p-fact dd a { text-underline-offset: 4px; }
 /* 🔴 CSS CHANGED (2026-11-14): student card, the email | from: the email took two of the three columns, leaving a gap before Date of birth | to: one column like the others (a long email wraps), so the details read in the order asked: Email, Date of birth, Passport number, Address, WhatsApp ... */
 @media (max-width: 460px) { body:has(.p-embed-bar) .p-hero .p-fact:has(a[href^="mailto:"]) { grid-column: auto; } }
-body:has(.p-embed-bar) .p-hero-actions { margin-top: 6px; }
-body:has(.p-embed-bar) .p-hero-actions .btn { box-shadow: none; }
-body:has(.p-embed-bar) .p-hero-actions .btn:hover:not(:disabled) { border-color: var(--lux-ink-2); }
-body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary { border-color: var(--lux-ink); }
-body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary:hover:not(:disabled) { border-color: var(--lux-ink-2); }
 /* the tabs */
 body:has(.p-embed-bar) .p-tabs { border-bottom: 1px solid var(--lux-line); }
 /* the panels under the tabs */
@@ -927,7 +806,6 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 .bp-undo { padding: 0; border: 0; background: none; font: inherit; color: var(--brand-navy); text-decoration: underline; cursor: pointer; }
 
 /* 🔴 CSS CHANGED (2026-11-13): tasks | from: nothing | to: on Today a soft panel "Today's tasks" (a team) or "Assigned tasks" (Admin, Manager) above the work lists, one row per task with a round tick (navy with a white tick when done), the student's name in navy with the stage tag, the task, and a small line (team, by when, from whom, done by; amber when overdue); done tasks greyed; "Show done"; on the student card a "Tasks" panel with the same rows and "Assign a task"; a small "Needs attention" / "Your work lists" heading above the work lists */
-
 
 /* 🔴 CSS CHANGED (2026-11-14): Message templates rebuilt calm and premium | from: two plain columns (a list of template boxes with the email signature form under it, and one long editor with a grid of stage tick boxes and a "Words you can use" fold-out), and a long yellow notice | to: a short soft notice; two underline tabs (Templates, Email signature); a slim list on the left with a search, each template a quiet row (name in navy, its stages under it, an "Edited" or "Yours" tag) and the open one marked with a bronze line; the editor in calm panels (Name and stages with the stages as pills, Email with the subject, the message and the fill-in words as chips, WhatsApp) and a Save bar that stays at the bottom; the signature on its own tab in three panels */
 @media (max-width: 900px) { .tp-layout { grid-template-columns: minmax(0, 1fr); } }
@@ -1116,21 +994,10 @@ body:has(.p-embed-bar) .p-card.p-hero { padding: 32px 32px 28px; border: 0; bord
 body:has(.p-embed-bar) .p-card.p-hero::before { content: none; }
 body:has(.p-embed-bar) .p-hero .p-avatar { width: 64px; height: 64px; background: linear-gradient(180deg, #a1a1a6, #6e6e73); color: #fff; font-family: var(--font); font-size: 21px; font-weight: 600; letter-spacing: .02em; box-shadow: none; }
 body:has(.p-embed-bar) .p-hero h1 { font-family: var(--font); font-size: 34px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
-body:has(.p-embed-bar) .p-hero-line .p-pill { border: 0; background: var(--blue-bg); color: var(--blue-fg); font-weight: 600; border-radius: 980px; }
-body:has(.p-embed-bar) .p-hero-line .p-chip { border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; }
-body:has(.p-embed-bar) .p-journey-bar { gap: 3px; }
-body:has(.p-embed-bar) .p-journey-bar i { flex: 1 1 0; height: 4px; border-radius: 980px; background: #e5e5ea; }
-body:has(.p-embed-bar) .p-journey-bar i.done { background: rgba(0, 113, 227, .38); }
-body:has(.p-embed-bar) .p-journey-bar i.now { background: #0071e3; }
-body:has(.p-embed-bar) .p-journey-text { font-size: 13.5px; }
 body:has(.p-embed-bar) .p-hero .p-facts { border-top-color: var(--border); }
 body:has(.p-embed-bar) .p-hero .p-fact dt { color: #66666b; font-weight: 600; text-transform: uppercase; }
 body:has(.p-embed-bar) .p-hero .p-fact dd { margin-top: 4px; font-size: 15px; font-weight: 500; }
 body:has(.p-embed-bar) .p-hero .p-fact dd a { text-decoration-color: rgba(0, 102, 204, .45); }
-body:has(.p-embed-bar) .p-hero-actions .btn { min-height: 38px; padding: 0 18px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font-weight: 500; }
-body:has(.p-embed-bar) .p-hero-actions .btn:hover:not(:disabled) { background: #dcdce2; color: var(--ink); }
-body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary { border: 0; background: #0071e3; color: #fff; box-shadow: none; }
-body:has(.p-embed-bar) .p-hero-actions .btn.btn-primary:hover:not(:disabled) { background: #0077ed; color: #fff; }
 body:has(.p-embed-bar) .p-tabs { display: inline-flex; width: auto; gap: 2px; margin: 22px 0 18px; padding: 3px; border: 0; border-radius: 12px; background: #ececf0; }
 body:has(.p-embed-bar) .p-tabs button { padding: 7px 16px; border-radius: 9px; font-size: 14.5px; font-weight: 550; color: #5c5c63; box-shadow: none; }
 body:has(.p-embed-bar) .p-tabs button[aria-selected="true"] { background: #fff; color: var(--ink); font-weight: 650; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
@@ -1535,9 +1402,6 @@ html.isr-cal-on input[type="date"]:hover::-webkit-calendar-picker-indicator { ba
 .p-notice.warn { display: flex; align-items: baseline; gap: 10px; border: 0; background: var(--panel, #fbfbfd); color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
 .p-notice.warn::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ff9500; transform: translateY(-1px); }
 input[type="checkbox"], input[type="radio"] { accent-color: #0071e3; }
-/* 🔴 CSS CHANGED (2026-11-14): the line of steps on the student card | from: finished steps as near-black bars | to: finished steps in soft blue, the step the student is on in full Apple blue (it fills in from the left when the card opens), the steps to come in light grey, all with round ends */
-.p-journey-bar i.now { transform-origin: left center; animation: isr-grow .7s cubic-bezier(.32, .72, 0, 1) .15s backwards; }
-@media (prefers-reduced-motion: reduce) { .p-journey-bar i.now { animation: none; } }
 /* 🔴 CSS CHANGED (2026-11-14): forms | from: an empty dropdown was a blank box; a section heading sat right on the first labels under it | to: an empty dropdown reads "Choose…" in grey; 16px between a section heading and its form */
 select:has(> option:checked[value=""]) { color: #66666b; }
 select option { color: #1d1d1f; }
@@ -1997,23 +1861,6 @@ html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-s
   .td-meta > .td-tag + .td-route::before, .td-meta > .td-prio + .td-route::before { content: none; }
 }
 
-/* 🔴 CSS CHANGED (2026-11-15): the Source panel on the student card | from: a panel titled "Where the student came from" in large type that wrapped onto two lines, with a wide empty gap and then "Student source" and "Events" as small grey text | to: a short title "Source" with "Where they came from" in grey under it; the source itself in a soft grey rounded box with a round blue initial ("E") and the name in semibold 17px ("Events", or the branch itself, "Chitwan Branch"); the details (which event, platform, first inquiry, remarks) as calm rows under it, label in grey on the left and the value in near-black on the right, divided by thin lines; "Not recorded yet" in grey when nothing is set */
-body:has(.p-embed-bar) #view .p-card.p-origin:not(.p-hero) .p-card-head, .p-origin .p-card-head { flex-wrap: nowrap; align-items: flex-start; margin-bottom: 14px; padding-bottom: 0; border-bottom: 0; }
-.p-origin .p-card-head .btn { flex: none; }
-.p-origin .p-card-head > div { flex: 1; min-width: 0; }
-.p-origin .p-card-head h2 { margin: 0; font-size: 19px; }
-.p-origin-main { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #f2f2f5; }
-.p-origin-ico { display: grid; flex: none; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 16px; font-weight: 600; }
-.p-origin-main b { display: block; color: #1d1d1f; font-size: 17px; font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere; }
-.p-origin-main small { display: block; margin-top: 2px; color: #5f5f64; font-size: 13.5px; }
-.p-origin-main.is-empty .p-origin-ico { background: #d2d2d7; color: #515154; }
-.p-origin-main.is-empty b { color: #5f5f64; font-weight: 500; }
-.p-origin-rows { margin: 10px 0 0; padding: 0; }
-.p-origin-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 2px; border-top: 1px solid rgba(0, 0, 0, .06); }
-.p-origin-row:first-child { border-top: 0; }
-.p-origin-row dt { flex: none; color: #5f5f64; font-size: 14px; }
-.p-origin-row dd { min-width: 0; margin: 0; color: #1d1d1f; font-size: 14.5px; font-weight: 500; text-align: right; overflow-wrap: anywhere; }
-
 /* 🔴 CSS CHANGED (2026-11-15): B2B Partners and Agents, the partner's page and the list | from: "Agreement starts" and "Agreement ends" as two plain text boxes ("2025-06-01"), a whole "Agreement and other files" section with the browser's own "Choose File, No file chosen", the commission PDF with the same grey "Choose File" box, and after Save the page stayed put until "Back to the list" was pressed; on the list "Agreement: From 1 Jun 2025 to 31 Jan 2027" | to: one "Agreement started" field that opens a calendar, beside Name, Status and City on one row (two rows on a tablet, one column on a phone); no end date and no agreement files section; the commission PDF is one grey "Upload PDF" pill; Save goes straight back to the list with "Adventus is saved." and that partner's card glows soft blue once; the list says "Agreement: Started 1 Jun 2025"; a day typed by hand in an older record that cannot be read shows a small orange note under the calendar */
 .bp-step .p-form.bp-four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .bp-step .p-form.bp-four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -2284,7 +2131,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 /* 🔴 CSS CHANGED (2026-11-15): University options, an applied university (new) | from: no sign on an option that an application was sent | to: after the university's name a small soft green pill "Applied 15 Nov 2026" */
 .p-applied { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 999px; background: #e3f5e8; color: #1f7a35; font-size: 12.5px; font-weight: 600; vertical-align: middle; }
 
-
 /* 🔴 CSS CHANGED (2026-11-15): Today for Admin and the Manager, the Board only, and wider | from: a Board | List switch beside Tasks, a focus row (Everything, New updates ...), "Show N done this week" and a thin progress line in each column, a red edge and a "Super priority" pill on some tiles, the team tiles above the List, and the page 1040px wide | to: the Board alone (the styles of the removed parts are deleted), the page up to 1600px wide so more columns and tiles show at once, and the columns at least 250px wide, so four fit on a laptop screen; the top panel has no ring any more (it only repeated the number in the headline): the headline, then "waiting 3+ days" and "students waiting"; the "All" pill on the Board has no number (it repeated the same total) */
 .td-pulse { grid-template-columns: 1fr auto auto; }
 @media (max-width: 760px) { .td-pulse { grid-template-columns: 1fr 1fr; } .td-pulse > .td-pulse-words { grid-column: 1 / -1; } }
@@ -2310,7 +2156,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-applied.is-offer { background: #e6f0fc; color: #0058b0; }
 .p-applied.is-refused { background: #ffe9e7; color: #b42318; }
 @media (max-width: 600px) { .td-uni-row { grid-template-columns: minmax(0, 1fr) 32px; } .td-uni-row .p-field:nth-child(2) { grid-column: 1; } }
-
 
 /* 🔴 CSS CHANGED (2026-11-15): clean-up, nothing on screen changes | from: styles kept for things removed earlier today (the ring in Today's top panel, the priority pills, the old Partner Universities cards) | to: those styles are deleted, so the stylesheet holds only what the pages use */
 
@@ -2341,11 +2186,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-check-to { color: #0058b0; font-weight: 650; }
 .td-check-block.is-warn .td-check-list li { background: #fff4e0; color: #8a4b00; }
 .td-check-block.is-quiet .td-check-list li { background: #f5f5f7; color: #5f5f64; }
-.p-checks { margin: 14px 0 0; padding: 14px 16px; border-radius: 16px; background: #fff4e0; color: #5c3300; }
-.p-checks h2 { margin: 0 0 8px; font-size: 16px; font-weight: 650; color: #8a4b00; }
-.p-checks ul { display: grid; gap: 8px; margin: 0 0 8px; padding: 0; list-style: none; }
-.p-checks li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; font-size: 14.5px; line-height: 1.45; }
-.p-checks .p-muted { margin: 0; }
 
 /* 🔴 CSS CHANGED (2026-11-20): Data to fix page removed (all .df- rules in this file) | from: the Data to fix page and its look | to: no such page, so no styling for it */
 
@@ -2357,19 +2197,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-queue-where b { color: var(--ink); font-weight: 650; }
 .p-queue-where span { overflow: hidden; color: #5f5f64; text-overflow: ellipsis; white-space: nowrap; }
 .p-queue-gap { flex: 1; }
-.p-reach { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
-.p-reach-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #e8e8ed; color: var(--ink); font: inherit; font-size: 15px; font-weight: 500; text-decoration: none; cursor: pointer; transition: background .2s; }
-.p-reach-btn:hover { background: #dcdce2; color: var(--ink); }
-.p-reach-ico { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #fbfbfd; color: #48484e; font-size: 12px; line-height: 1; }
-.p-reach-btn.is-wa .p-reach-ico { background: #25d366; color: #fff; font-size: 9px; }
-.p-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 14px 0 0; padding: 16px 18px; border-radius: 18px; background: var(--blue-tint); }
-.p-next-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.p-next-eyebrow { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--blue-fg); }
-.p-next-words b { font-size: 17px; font-weight: 650; color: var(--ink); }
-.p-next-why { font-size: 14.5px; color: var(--text-dim); }
-.p-next-act { display: flex; align-items: center; gap: 8px; }
-.p-next-act .p-date { width: 190px; }
-@media (max-width: 600px) { .p-next-act { width: 100%; } .p-next-act .p-date { flex: 1; width: auto; } .p-queue-gap { display: none; } }
+@media (max-width: 600px) { .p-queue-gap { display: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-20): Weekly summary removed (all .wk- rules) | from: the Weekly summary page and its blue pill on the Dashboard, with their look | to: no such page and no pill */
 /* 🔴 CSS CHANGED (2026-11-17): Follow-up, "Your setup for sending" (new) and the Message chip in a student's history (new) | from: nothing (the email, signature and WhatsApp were set up on the My email page; the history showed notes and tasks only) | to: one off-white panel at the top of Follow-up with three rows (Your email, Your signature, Your WhatsApp), each with a round mark (green tick when ready, orange ! when missing, grey when optional), the state in plain words and one small pill button, the form opening right under its row; a soft violet "Message" chip in the history */
@@ -3133,9 +2961,6 @@ html body .sl-pick.is-sent { background: #ececf0; color: #3a3a3c; cursor: defaul
 .p-drawer-nav .p-drawer-where[hidden], .p-drawer-nav .p-drawer-jump[hidden], .p-drawer-nav .p-drawer-where small[hidden] { display: none; }
 .p-drawer-nav .p-drawer-jump { width: 96px; height: 36px; padding: 0 10px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fbfbfd; color: #1d1d1f; font: 600 15px var(--font); text-align: center; }
 .p-drawer-nav .p-drawer-jump:focus { border-color: #0071e3; outline: 3px solid rgba(0, 113, 227, .25); }
-.p-gaps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 14px; padding: 10px 12px 10px 14px; border-radius: 12px; background: #fff4e5; color: #6b3a00; font-size: 14.5px; }
-.p-gaps-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ff9f0a; }
-.p-gaps-text { flex: 1 1 220px; }
 /* (the same change) room at the bottom of a card opened over a page, so the ‹ › pill never covers its last line */
 body.p-embed { padding-bottom: 76px; }
 
@@ -3213,103 +3038,8 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 button.md-todo-more { border: 0; background: none; font: inherit; font-size: 13.5px; cursor: pointer; border-radius: 6px; }
 button.md-todo-more:hover, button.md-todo-more:focus-visible { color: #0066cc; text-decoration: underline; }
 
-/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline redesigned in the style of Apple's own apps | from: a vertical line with coloured dots, the time in a grey pill on every line, Pin, Change and Remove as blue words on every note, a soft amber Pinned panel, grey filter pills, a plain search box, a plain note box with the Add note button under it | to: the note box as one rounded field with "Ctrl + Enter to add" in grey and a small blue Add note pill inside it at the bottom (blue ring when typing in it); a grey segmented control (Everything, Notes, Tasks, Messages with a count each, the chosen one raised on a soft off-white tab) beside a rounded grey search field with a magnifier; the entries grouped by day under a bold heading (Today, Yesterday, Monday 16 November); each entry a row with a 36px round badge (the writer's initials in soft blue on a note, a line symbol for the rest: a checklist in orange for a task, a tick in green for done, a speech bubble in grey for an update, an envelope in purple for an email, a chat bubble in green for WhatsApp, "ISR" in grey for automatic notes), the name in bold, the kind in grey and the time in grey on the right, the words under it, thin hairlines between rows; Reopen and Read email as small blue words; Remove only appears in grey when the mouse is on the note (red on hover; always shown on phones); "Show all" as a grey pill in the middle; no vertical line, no dots, no Pin and no Change */
-.p-tl-list { margin: 0; padding: 0; list-style: none; }
-.p-tl-item { display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 12px; }
-.p-tl-av { display: grid; place-items: center; width: 36px; height: 36px; margin-top: 12px; border-radius: 50%; background: #e8f0fc; color: #0066cc; font: 600 13px/1 var(--font); letter-spacing: .02em; }
-.p-tl-av svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.p-tl-item.is-task .p-tl-av { background: #fff1e0; color: #c25e00; }
-.p-tl-item.is-done .p-tl-av { background: #e4f6e9; color: #1f8a3b; }
-.p-tl-item.is-done .p-tl-av svg { stroke-width: 2.4; }
-.p-tl-item.is-update .p-tl-av { background: #ececf0; color: #515154; }
-.p-tl-item.is-message .p-tl-av { background: #f1eafb; color: #7d3fc0; }
-.p-tl-item.is-auto .p-tl-av { background: #f0f0f3; color: #8e8e93; font-size: 10px; }
-.p-tl-body { min-width: 0; padding: 12px 0 14px; }
-.p-tl-item + .p-tl-item > .p-tl-body { border-top: 1px solid #e8e8ed; }
-.p-tl-item + .p-tl-item > .p-tl-av { margin-top: 13px; }
-.p-tl-line { display: flex; align-items: baseline; gap: 8px; min-height: 22px; }
-.p-tl-who { overflow: hidden; color: #1d1d1f; font-size: 15px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
-.p-tl-kind { flex: none; color: #86868b; font-size: 13px; }
-.p-tl-time { flex: none; margin-left: auto; color: #86868b; font-size: 13px; font-variant-numeric: tabular-nums; }
-.p-tl-text { margin: 3px 0 0; color: #1d1d1f; font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
-.p-tl-text .td-tag { font-size: 12px; vertical-align: 1px; }
-.p-tl-text.is-folded { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-.p-tl-more, .p-tl-act { padding: 0; border: 0; background: none; color: #0066cc; font: 500 13.5px var(--font); cursor: pointer; }
-.p-tl-more { margin-top: 4px; }
-.p-tl-more:hover, .p-tl-act:hover { text-decoration: underline; }
-.p-tl-acts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; }
-
-/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline tab made calmer, in the style of Apple's own apps | from: Tasks across the whole width, then a narrow Source card (and "Why the student did not go on") on the left beside the Timeline, with an empty space under them; the Timeline with a count line beside the title, a grey hint and an always-visible Add note button in the note box, counts in the switch, a search field, Remove under each note on hover | to: two columns: the work on the left (Tasks, then the Timeline, one under the other, the same width) and a slim 300px column on the right with Source (and the reason, when there is one) that stays in view while scrolling; on a phone or a narrow card one column (Tasks, Timeline, then Source); every title the same size (20px, the right column 17px); the Tasks title without the line under it; the note box one quiet rounded field that grows as you type, the blue Add note pill appears only once something is typed; a plain switch All, Notes, Tasks, Messages without numbers; no search; day headings in small grey; Remove in grey beside the time, shown only when the mouse is on the note (red on hover, always shown on phones); while Source is being changed, its form goes across the whole width above the rest */
-.p-tl-page { display: grid; gap: 20px; }
-.p-tl-main, .p-tl-side { display: grid; gap: 20px; align-content: start; min-width: 0; }
-.p-tl-page .p-card, body:has(.p-embed-bar) .p-tl-page .p-card { margin: 0; }
-@media (min-width: 900px) {
-  .p-tl-page { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
-  .p-tl-side { position: sticky; top: 16px; }
-  .p-tl-page.p-editing-origin { grid-template-columns: minmax(0, 1fr); }
-  .p-tl-page.p-editing-origin .p-tl-side { order: -1; position: static; }
-}
-body:has(.p-embed-bar) .p-tl-page:not(.p-editing-origin) .p-tl-side .p-form, .p-tl-page:not(.p-editing-origin) .p-tl-side .p-form { grid-template-columns: minmax(0, 1fr); }
-body:has(.p-embed-bar) .p-tl-page.p-editing-origin .p-form, .p-tl-page.p-editing-origin .p-form { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; }
-.p-editing-origin .p-seg { justify-self: start; width: max-content; }
-.p-tl-main .p-card > h2, .p-tl-main .p-card-head h2 { margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 650; letter-spacing: -.015em; }
-.p-tl-side .p-card > h2, .p-tl-side .p-card-head h2 { margin: 0; color: #1d1d1f; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
-.p-tl-side .p-card > h2 { margin-bottom: 12px; }
-body:has(.p-embed-bar) #view .p-tl-page .p-tasks .p-card-head, .p-tl-page .p-tasks .p-card-head { margin-bottom: 4px; padding-bottom: 0; border-bottom: 0; }
-.p-tl-input { display: block; width: 100%; min-height: 50px; max-height: 320px; padding: 13px 16px; border: 0; outline: none; resize: none; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); field-sizing: content; }
-.p-tl-input::placeholder { color: #86868b; }
-.p-tl-compose-bar { display: none; justify-content: flex-end; padding: 0 10px 10px; }
-.p-tl-compose.has-text .p-tl-compose-bar { display: flex; }
-.p-tl-compose-bar .btn { border-radius: 999px; padding-inline: 16px; }
-.p-tl-seg { display: inline-flex; gap: 2px; max-width: 100%; padding: 2px; overflow-x: auto; border-radius: 9px; background: #e8e8ed; scrollbar-width: none; }
-.p-tl-seg-btn { flex: none; min-height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: #1d1d1f; font: 500 14px/30px var(--font); cursor: pointer; transition: background .2s, box-shadow .2s; }
-.p-tl-seg-btn:hover { background: rgba(255, 255, 255, .5); }
-.p-tl-seg-btn[aria-selected="true"] { background: #fbfbfd; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); font-weight: 600; }
-.p-tl-group { margin-top: 20px; }
-.p-tl-act.is-remove { flex: none; margin-left: auto; color: #86868b; font-size: 13px; opacity: 0; transition: opacity .15s; }
-.p-tl-act.is-remove + .p-tl-time { margin-left: 12px; }
-.p-tl-item:hover .p-tl-act.is-remove, .p-tl-act.is-remove:focus-visible { opacity: 1; }
-.p-tl-act.is-remove:hover { color: #d70015; text-decoration: none; }
-@media (hover: none) { .p-tl-act.is-remove { opacity: 1; } }
-.p-tl-all { display: block; margin: 16px auto 0; min-height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 500 14px var(--font); cursor: pointer; }
-.p-tl-all:hover { background: #dedee3; }
-.p-tl-all[hidden] { display: none; }
-@media (prefers-reduced-motion: reduce) { .p-tl-compose, .p-tl-act.is-remove { transition: none; } }
-
-/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline entries and Tasks title | from: each task line in bold ("Gave Application Team a task", "Update on “Get the NOC letter...”", "Done: “...”") with the words under it; the Tasks title with a grey "2 open" pill; the "Why the student did not go on" box in the right column | to: what an entry is in grey words beside the name ("Task for Application Team", "Update", "Reassigned", "Moved", "Marked done", "Email sent"), then the words in normal black; the task it belongs to as a small grey quote with a thin grey line on its left (as a reply in Apple's Mail), on one line; a change of team or day in medium weight ("Application Team → Mock Team"); the number of open tasks in grey right after the word Tasks; the reason box gone */
-.p-tl-lead { margin: 3px 0 0; color: #1d1d1f; font-size: 15px; font-weight: 500; line-height: 1.45; overflow-wrap: anywhere; }
-.p-tl-ref { margin: 5px 0 0; padding: 1px 0 1px 10px; overflow: hidden; border-left: 2px solid #d2d2d7; color: #6e6e73; font-size: 13.5px; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; }
-.p-tl-ref + .p-tl-text { margin-top: 6px; }
-.p-tl-count { margin-left: 8px; color: #86868b; font-weight: 500; }
-.p-tl-page .p-tasks .p-card-head { justify-content: flex-start; gap: 10px; }
-.p-tl-page .p-tasks .p-card-head .td-chip.is-new { margin-left: auto; }
-
 /* 🔴 CSS CHANGED (2026-11-17): the Timeline polished further, in the way Apple's own apps behave | from: the note box a bordered field on its own; each day heading scrolling away with the list; every note with its own badge and name even when the same person wrote several in a row; links in notes as plain text; a new note simply appearing; a grey box with one sentence when there is nothing yet | to: your own round initials badge beside the note box, the box itself the same rounded field with the blue ring when typing; the day heading (Today, Yesterday, ...) stays at the top of the list while scrolling, on a soft frosted strip; notes written one after another by the same person within half an hour sit together under one badge and name, as in Messages, their time showing when the mouse is on them; web addresses, email addresses and phone numbers in blue and clickable; a note you add slides in and glows soft blue for a moment; the rest of the list fades in softly after Show all; the empty Timeline shows a round grey bubble icon, "No history yet" in bold and one grey line under it */
-.p-tl-compose { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; margin: 0 0 18px; }
-.p-tl-me { margin-top: 7px; }
-.p-tl-compose-field { border: 1px solid #d2d2d7; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
-.p-tl-compose-field:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
-.p-tl-day { position: sticky; top: 0; z-index: 2; margin: 0 -8px 2px; padding: 8px; border-radius: 10px; background: color-mix(in srgb, var(--panel) 92%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .01em; }
-@media (max-width: 900px) { body:not(.p-embed) .p-tl-day { top: var(--tl-top, 64px); } }
-.p-tl-item.is-cont { position: relative; }
-.p-tl-item.is-cont > .p-tl-av { visibility: hidden; height: 0; margin-top: 0; }
-.p-tl-item.is-cont > .p-tl-body, .p-tl-item + .p-tl-item.is-cont > .p-tl-body { padding-top: 0; border-top: 0; }
-.p-tl-item:has(+ .p-tl-item.is-cont) > .p-tl-body { padding-bottom: 6px; }
-.p-tl-item.is-cont .p-tl-who, .p-tl-item.is-cont .p-tl-kind { display: none; }
-.p-tl-item.is-cont .p-tl-line { position: absolute; top: 0; right: 0; min-height: 0; padding-left: 12px; background: var(--panel); opacity: 0; transition: opacity .15s; }
-.p-tl-item.is-cont:hover .p-tl-line, .p-tl-item.is-cont:focus-within .p-tl-line { opacity: 1; }
-.p-tl-item.is-cont .p-tl-text { margin-top: 0; }
-.p-tl-link { color: #0066cc; text-decoration: none; overflow-wrap: anywhere; }
-.p-tl-link:hover { text-decoration: underline; }
-@keyframes p-tl-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-@keyframes p-tl-glow { 0%, 35% { background: rgba(0, 113, 227, .08); } 100% { background: rgba(0, 113, 227, 0); } }
-.p-tl-item.is-new { margin-inline: -8px; padding-inline: 8px; border-radius: 12px; animation: p-tl-in .45s cubic-bezier(.32, .72, 0, 1) both, p-tl-glow 2.6s ease-out both; }
-.p-tl-item.is-reveal { animation: p-tl-in .4s cubic-bezier(.32, .72, 0, 1) both; }
-.p-tl-empty { display: grid; justify-items: center; gap: 4px; margin: 8px 0 0; padding: 36px 16px; border-radius: 14px; background: #f5f5f7; color: #86868b; font-size: 14.5px; text-align: center; }
-.p-tl-empty b { color: #1d1d1f; font-size: 16px; font-weight: 600; }
-.p-tl-empty-ico { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 6px; border-radius: 50%; background: #e8e8ed; color: #86868b; }
-.p-tl-empty-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
-@media (prefers-reduced-motion: reduce) { .p-tl-item.is-new, .p-tl-item.is-reveal { animation: none; } .p-tl-compose-field, .p-tl-item.is-cont .p-tl-line { transition: none; } }
+
 /* 🔴 CSS CHANGED (2026-11-17): the student card's Applications tab (Shortlist and Universities Applied To) redesigned in the style of Apple's own apps | from: separate boxes with a solid blue number, the course as the title and the university in grey under it, a plain "Priority university" dropdown under a long grey sentence, a line under the Shortlist title, counts in brackets | to: one rounded grouped list per card with hairlines between rows; the university as the title and the course under it in grey (long names wrap cleanly); a soft round badge (the shortlist's 1, 2, 3 in soft blue; an application's university initials in grey, blue for the priority one); status tags as small even capsules; the priority row tinted soft blue with a solid blue Priority tag; the Priority University choice as one quiet grey row (words on the left, a rounded field on the right that ends long names in "...", stacked on a narrow card); counts in grey after the title; no line under the titles */
 html body .p-apps { display: grid; gap: 16px; }
 html body .p-apps .p-card { margin: 0; padding: 22px 24px; }
@@ -3356,26 +3086,6 @@ html body .p-apps .p-chosen-facts dd { font-size: 14.5px; font-weight: 600; }
   html body .p-apps ol.p-chosen > li.p-chosen-item + li.p-chosen-item::after { left: 56px; }
 }
 @media (max-width: 400px) { html body .p-apps .p-chosen-item header { flex-direction: column; gap: 10px; } }
-
-/* 🔴 CSS CHANGED (2026-11-17): the Timeline tab finished | from: the title "Timeline" on its own row with the switch (All, Notes, Tasks, Messages) under the note box; nothing to show what is new; each task in the Tasks card turning light grey under the mouse, its update box pure white with a square blue Post button; Source with a solid blue circle on a grey bar and "Not recorded" in black; the frosted day strip a little darker than the card | to: the title on the left and the switch on the right of the same row; a small blue dot left of each entry someone else added since you last opened the student (as unread mail in Apple's Mail); the tasks staying calm under the mouse, their update box the same soft off-white rounded field as the note box with a blue ring when typing and a round blue Post pill; Source as a soft blue circle with the initial and the name beside it (no grey bar), "Not recorded" in grey; the day strip the same colour as the card; one blue ring only around the note box and the update box while typing (a second ring inside them removed, a bug fix); the first task no longer on a pale box */
-.p-tl-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 0 0 16px; }
-.p-tl-top h2 { margin: 0; }
-.p-tl-item { position: relative; }
-.p-tl-item.is-unseen::before { content: ""; position: absolute; top: 25px; left: -16px; width: 8px; height: 8px; border-radius: 50%; background: #0071e3; }
-.p-tl-item.is-unseen.is-cont::before { top: 8px; }
-.p-tl-page .p-tasks .td-list > .td-task, .p-tl-page .p-tasks .td-list > .td-task:hover { background: transparent; }
-html body .p-tl-compose textarea.p-tl-input:focus, html body .p-tl-compose textarea.p-tl-input:focus-visible, html body .p-tl-page .tk-compose textarea.tk-input:focus, html body .p-tl-page .tk-compose textarea.tk-input:focus-visible { border: 0 !important; outline: none !important; box-shadow: none !important; }
-.p-tl-page .p-tasks .tk-compose { align-items: center; padding: 4px 4px 4px 6px; border-radius: 14px; background: var(--edit-bg); transition: border-color .2s, box-shadow .2s; }
-.p-tl-page .p-tasks .tk-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); }
-html body .p-tl-page .p-tasks .tk-compose textarea.tk-input { background: transparent; }
-.p-tl-page .p-tasks .tk-compose .tk-send { min-height: 32px; padding: 0 16px; border-radius: 999px; }
-.p-tl-side .p-origin-main { padding: 2px 0; background: none; }
-.p-tl-side .p-origin-ico { width: 36px; height: 36px; background: #e8f0fc; color: #0066cc; font-size: 15px; }
-.p-tl-side .p-origin-main.is-empty .p-origin-ico { background: #f0f0f3; color: #86868b; }
-.p-tl-side .p-origin-main b { font-size: 16px; }
-.p-tl-side .p-origin-rows { margin-top: 8px; }
-.p-origin-row dd.is-empty { color: #86868b; font-weight: 400; }
-@media (max-width: 640px) { .p-tl-item.is-unseen::before { left: -12px; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): Partners (Universities, B2B partners, Agents) made more professional, one look on all three (the owner asked) | from: the title with a loose name box and button beside it; the numbers in one long box split by thin lines; a plain round search box with "N in the list" far away on the right; cards with a light border, the numbers bar and the facts in loose rows | to: the title on the left and one joined "name + Add" pill on the right (the same on all three pages, no list dropping down); the numbers as separate soft tiles, each with a thin blue line on top and big figures; a frosted search bar with a magnifier that stays at the top of the screen while scrolling, the count beside it in a small grey pill; cards with a crisper edge, a deeper shadow on hover and a soft blue ring, the name larger, the numbers bar in a soft grey tray, the facts as small grey labels over their values, the Edit or Open button as a blue text link at the bottom right */
 html body .bp-page .p-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px 28px; flex-wrap: wrap; margin-bottom: 26px; }
@@ -3427,33 +3137,6 @@ html body .bp-page .bp-empty { padding: 56px 24px; border: 0; border-radius: 22p
   html body .bp-page .bp-funnel { gap: 8px; padding: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { html body .bp-page .bp-card:hover { transform: none; } }
-/* 🔴 CSS CHANGED (2026-11-17): the student card's Timeline tab in one column, Source as a slim bar | from: two columns, the Tasks and the Timeline squeezed on the left and a 300px Source column on the right with a large "Events" panel and empty space under it | to: one column across the whole width (Source, Tasks, Timeline); Source one slim row at the top: the word Source, a small round initial and the source name, its details (platform, first inquiry, remarks) as small grey label and value pairs on the same line, Edit on the right; more room inside each task; on a narrow card the ... menu of a task no longer sits on its words, and the tag, who gave it to whom and the day wrap as one tidy line */
-@media (min-width: 0px) { html body .p-tl-page.is-single { grid-template-columns: minmax(0, 1fr); } }
-html body .p-tl-page.is-single .p-tl-main { gap: 16px; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 14px 20px; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head { display: contents; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head > div { flex: none; }
-html body #view .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head h2, html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head h2 { color: #86868b; font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head .btn { order: 3; margin-left: auto; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main { order: 1; gap: 10px; padding: 0; background: none; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-ico { width: 30px; height: 30px; font-size: 13.5px; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main b { font-size: 16px; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main small { display: inline; margin: 0 0 0 8px; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-main > div { display: flex; align-items: baseline; flex-wrap: wrap; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-rows { order: 2; display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-row { gap: 6px; padding: 0; border: 0; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-row dt { color: #86868b; font-size: 13.5px; }
-html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin-row dd { font-size: 14px; text-align: left; }
-html body .p-tl-page.is-single .p-tasks .td-task { padding-top: 16px; padding-bottom: 16px; }
-html body #view .p-tl-page.is-single:not(.p-editing-origin) .p-origin .p-card-head h2 { min-width: 0; }
-html body .p-tl-page.is-single .p-tasks .td-task-top { display: flex; align-items: flex-start; gap: 10px; }
-html body .p-tl-page.is-single .p-tasks .td-head-main { flex: 1 1 auto; min-width: 0; }
-html body #view .p-tl-page.is-single .p-tasks .td-side { position: static; flex: none; }
-html body #view .p-tl-page.is-single .p-tasks .td-head-main { padding-right: 0; }
-html body .p-tl-page.is-single .p-tasks .td-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-html body #view .p-tl-page.is-single .p-tasks .td-meta .td-route { flex: 1 1 auto; min-width: 0; max-width: none; margin-top: 0; }
-@media (max-width: 560px) { html body .p-tl-page.is-single:not(.p-editing-origin) .p-origin { padding: 12px 16px; } }
-
 /* 🔴 CSS CHANGED (2026-11-17): the Assign a task window | from: "Who should do it?" and "For which university?" squeezed side by side, a long university name broken over two lines inside its box, the boxes at uneven widths | to: one clean column: each question on its own row across the whole window, every box the same full width and 44px tall with rounded corners, a long university and course on one line ending in "..." */
 html body .p-dialog .p-form.p-assign { grid-template-columns: minmax(0, 1fr); gap: 18px; }
 html body .p-dialog .p-form.p-assign .p-field { min-width: 0; }
@@ -3467,7 +3150,6 @@ html body .p-dialog .p-form.p-assign .p-goes { margin-top: 6px; color: #86868b; 
 @media (max-width: 700px) {
   body:has(#sheet) .topbar .toolbar-group:has(#undoBtn) { margin-left: 0; }
 }
-
 
 /* 🔴 CSS CHANGED (2026-11-20): Universities list cards show the university's logo, who it is applied through and its next deadline | from: a small grey circle with the initials, the name, city and intake chips | to: the logo in a white rounded square (52px) where the partner gives one (else the initials as before), a line "Apply through Adventus" in a soft grey pill (Admin and the Application Team only), and the January 2027 deadline in amber when the page has one */
 html body .uni-mono.has-logo { width: 52px; height: 52px; padding: 6px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 4px 12px -6px rgba(0, 0, 0, .2); }
@@ -4071,4 +3753,223 @@ html body .up-sub, html body .up-sub .up-place { text-shadow: 0 1px 8px rgba(0, 
 .up-group-count { color: #6e6e73; font-size: 15px; font-weight: 500; }
 @media (max-width: 600px) {
   html body .up-doc > .up-section, html body .up-doc > section, html body .up-doc > .up-facts { padding-left: 14px; padding-right: 14px; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-20): the student card redesigned (the owner: "make the student card professional, with fire in it") | from: a plain white panel with a grey initials circle, a thin line of eight grey bars, the details as grey capital labels over blue words, a separate row of Call, WhatsApp and Email pills under the panel with ☎ ● @ marks, the Source as its own slim panel under the tabs, a pale amber "Details to check" box, a pale blue "Next step" band, and a Timeline of plain rows with hairlines between them | to: one main card with a soft coloured glow at the top in the colour of the stage; a 76px initials badge with a blue gradient and a white ring; the name at 30px; the stage pill and grey chips (intake with a calendar, nationality with a globe); Call (blue), WhatsApp (green) and Email (purple) as pill buttons with line icons right under the name; Edit details (grey) and Assign a task (blue) with small icons on the right; a "Progress" stepper of eight named steps with round dots (done: blue with a white tick on a blue line, now: a blue dot with a soft pulsing ring, to come: grey); the details as rounded tiles in a grid, each with a small coloured icon square, a grey label and the value (Missing in orange on an amber tile); Applications as a tile with an arrow that opens the Applications tab; the Student Source inside the main card as a soft blue panel with its icon, the source large and its details beside it (amber with "Add source" when not recorded); "Details to check" as an amber card with a warning icon, a count and each point as a white row; "Next step" as a blue card with an arrow icon; the Timeline with a thin grey rail on the left, each entry a coloured round icon on the rail and its words in a soft off-white bubble that lifts on hover, day headings as small grey capitals, the note box raised with a blue ring when typing; new entries and the card itself rise softly in (none for people who ask for less motion) */
+#view .sc-hero { position: relative; overflow: hidden; margin: 0 0 18px; padding: 28px 30px 26px; border-radius: 24px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 30px rgba(0, 0, 0, .06); animation: sc-rise .45s var(--ease, ease) both; }
+#view .sc-hero::before { content: ""; position: absolute; inset: 0 0 auto; height: 150px; background: radial-gradient(120% 140% at 0% 0%, rgba(0, 113, 227, .13), rgba(0, 113, 227, 0) 60%), radial-gradient(90% 120% at 100% 0%, rgba(175, 82, 222, .08), rgba(175, 82, 222, 0) 60%); pointer-events: none; }
+#view .sc-hero.is-green::before { background: radial-gradient(120% 140% at 0% 0%, rgba(52, 199, 89, .16), rgba(52, 199, 89, 0) 60%), radial-gradient(90% 120% at 100% 0%, rgba(0, 113, 227, .07), rgba(0, 113, 227, 0) 60%); }
+#view .sc-hero.is-amber::before { background: radial-gradient(120% 140% at 0% 0%, rgba(255, 159, 10, .16), rgba(255, 159, 10, 0) 60%); }
+#view .sc-hero.is-red::before { background: radial-gradient(120% 140% at 0% 0%, rgba(255, 59, 48, .12), rgba(255, 59, 48, 0) 60%); }
+#view .sc-hero > * { position: relative; }
+.sc-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; align-items: start; }
+.sc-avatar { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(145deg, #2f8cff, #0058c4); color: #fff; font: 650 26px/1 var(--font); letter-spacing: .02em; box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(0, 113, 227, .18), 0 10px 24px -8px rgba(0, 88, 196, .55); }
+.sc-hero.is-green .sc-avatar { background: linear-gradient(145deg, #3ad16a, #1f9a45); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(52, 199, 89, .25), 0 10px 24px -8px rgba(31, 154, 69, .5); }
+.sc-hero.is-amber .sc-avatar { background: linear-gradient(145deg, #ffb340, #e08600); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(255, 159, 10, .25), 0 10px 24px -8px rgba(224, 134, 0, .5); }
+.sc-hero.is-red .sc-avatar { background: linear-gradient(145deg, #ff6b61, #d70015); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(255, 59, 48, .22), 0 10px 24px -8px rgba(215, 0, 21, .45); }
+.sc-hero.is-gray .sc-avatar { background: linear-gradient(145deg, #a1a1a8, #6e6e73); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(0, 0, 0, .08); }
+.sc-id { min-width: 0; padding-top: 2px; }
+#view .sc-name { margin: 0; color: #1d1d1f; font: 700 30px/1.15 var(--font); letter-spacing: -.025em; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.sc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.sc-meta .p-pill { padding: 5px 12px; font-size: 14px; font-weight: 600; }
+.sc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #3a3a3c; font-size: 14px; font-weight: 550; }
+.sc-chip svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: #6e6e73; }
+.sc-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+#view .sc-hero .btn, #view .sc-source .btn, #view .sc-checks .btn, #view .sc-next .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 18px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 600 15px var(--font); box-shadow: none; transition: background .15s, transform .15s, box-shadow .15s; }
+#view .sc-hero .btn-sm, #view .sc-source .btn-sm, #view .sc-checks .btn-sm { min-height: 34px; padding: 0 14px; font-size: 14px; }
+#view .sc-hero .btn:hover:not(:disabled), #view .sc-source .btn:hover:not(:disabled), #view .sc-checks .btn:hover:not(:disabled), #view .sc-next .btn:hover:not(:disabled) { background: #dcdce2; transform: translateY(-1px); }
+#view .sc-hero .btn.btn-primary, #view .sc-source .btn.btn-primary, #view .sc-next .btn.btn-primary { background: #0071e3; color: #fff; box-shadow: 0 6px 16px -8px rgba(0, 113, 227, .8); }
+#view .sc-hero .btn.btn-primary:hover:not(:disabled), #view .sc-source .btn.btn-primary:hover:not(:disabled), #view .sc-next .btn.btn-primary:hover:not(:disabled) { background: #0077ed; }
+.sc-btn-ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* Call, WhatsApp and Email under the name */
+.sc-reach { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.sc-reach-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px 0 6px; border-radius: 980px; background: #fff; color: #1d1d1f; font-size: 15px; font-weight: 600; text-decoration: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 2px 6px -2px rgba(0, 0, 0, .1); transition: transform .15s, box-shadow .15s; }
+.sc-reach-btn:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 8px 18px -8px rgba(0, 0, 0, .22); text-decoration: none; }
+.sc-reach-btn:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+.sc-reach-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #0071e3; color: #fff; }
+.sc-reach-ico svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.sc-reach-btn.is-wa .sc-reach-ico { background: #25d366; }
+.sc-reach-btn.is-mail .sc-reach-ico { background: #8944d6; }
+/* the steps from first inquiry to visa */
+.sc-steps-box { margin-top: 24px; padding: 18px 20px 16px; border-radius: 18px; background: rgba(255, 255, 255, .75); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .05); }
+.sc-steps-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; color: #1d1d1f; font-size: 15px; }
+.sc-steps-head .sc-eyebrow { margin-right: 6px; }
+.sc-steps-now { color: #6e6e73; }
+.sc-eyebrow { color: #6e6e73; font-size: 12.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.sc-steps { --sc-done: 0; position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); margin: 16px 0 0; padding: 0; list-style: none; }
+.sc-steps::before, .sc-steps::after { content: ""; position: absolute; top: 11px; left: 6.25%; height: 3px; border-radius: 3px; }
+.sc-steps::before { right: 6.25%; background: #e3e3e8; }
+.sc-steps::after { width: calc(87.5% * var(--sc-done)); background: linear-gradient(90deg, #5aa9ff, #0071e3); transition: width .6s var(--ease, ease); }
+.sc-steps li { position: relative; z-index: 1; display: grid; justify-items: center; gap: 8px; min-width: 0; text-align: center; }
+.sc-step-dot { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #fbfbfd; box-shadow: inset 0 0 0 2px #d2d2d7; }
+.sc-step-dot svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.sc-steps li.is-done .sc-step-dot { background: #0071e3; box-shadow: none; }
+.sc-steps li.is-now .sc-step-dot { background: #0071e3; box-shadow: 0 0 0 5px rgba(0, 113, 227, .18); animation: sc-pulse 2.4s ease-in-out infinite; }
+.sc-steps li.is-now .sc-step-dot::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.sc-step-label { max-width: 100%; color: #86868b; font-size: 12.5px; font-weight: 550; line-height: 1.25; overflow-wrap: anywhere; }
+.sc-steps li.is-done .sc-step-label { color: #3a3a3c; }
+.sc-steps li.is-now .sc-step-label { color: #0066cc; font-weight: 700; }
+.sc-steps-box.is-lost { background: #fff8ec; box-shadow: inset 0 0 0 1px #f6dfb5; }
+.sc-steps-box.is-lost .sc-steps-head b { color: #9a5b00; }
+.sc-steps-box.is-lost .sc-steps::after { display: none; }
+/* the details as tiles */
+.sc-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 16px; }
+.sc-fact { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px 14px; border: 0; border-radius: 16px; background: #fff; text-align: left; font: inherit; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); transition: transform .15s, box-shadow .15s; }
+.sc-fact:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 8px 20px -10px rgba(0, 0, 0, .2); }
+.sc-fact.is-action { cursor: pointer; }
+.sc-fact.is-action:hover { transform: translateY(-1px); }
+.sc-fact.is-action:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+.sc-fact-ico { display: grid; flex: none; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: #e8f1fd; color: #0066cc; }
+.sc-fact-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sc-fact:nth-child(2) .sc-fact-ico { background: #e4f8eb; color: #1b8a3e; }
+.sc-fact:nth-child(3) .sc-fact-ico { background: #fdeef3; color: #c4325f; }
+.sc-fact:nth-child(4) .sc-fact-ico { background: #f1eafb; color: #7d3fc0; }
+.sc-fact:nth-child(5) .sc-fact-ico { background: #fff2e0; color: #b25f00; }
+.sc-fact:nth-child(6) .sc-fact-ico { background: #e7f6f8; color: #0f7c8c; }
+.sc-fact-text { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.sc-fact-label { color: #6e6e73; font-size: 13px; font-weight: 550; }
+.sc-fact-value { color: #1d1d1f; font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+.sc-fact-value a { color: #0066cc; text-decoration: none; }
+.sc-fact-value a:hover { text-decoration: underline; }
+.sc-source-rows div { flex-wrap: wrap; }
+@media (min-width: 700px) { .sc-fact.is-wide { grid-column: span 2; } }
+.sc-fact.is-missing { background: #fffaf2; box-shadow: 0 0 0 1px #f8e3c0; }
+.sc-fact.is-missing .sc-fact-ico { background: #ffeccc; color: #b25f00; }
+.sc-fact-go { width: 18px; height: 18px; flex: none; fill: none; stroke: #86868b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s, stroke .15s; }
+.sc-fact.is-action:hover .sc-fact-go { stroke: #0071e3; transform: translateX(3px); }
+.sc-gaps { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 10px 10px 14px; border-radius: 14px; background: #fff4e3; color: #7a4600; font-size: 15px; font-weight: 550; }
+.sc-gaps-ico svg, .sc-checks-ico svg { width: 20px; height: 20px; fill: none; stroke: #c27400; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.sc-gaps-ico { display: grid; flex: none; }
+.sc-gaps-text { flex: 1; min-width: 0; }
+/* where the student came from, in the main card */
+.sc-source { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: start; margin-top: 16px; padding: 16px 16px 16px 18px; border-radius: 18px; background: linear-gradient(135deg, #eef5ff, #f6f1fd); box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .1); }
+.sc-source-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: #0071e3; color: #fff; box-shadow: 0 8px 18px -10px rgba(0, 113, 227, .9); }
+.sc-source-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sc-source-words { display: grid; gap: 3px; min-width: 0; }
+.sc-source-name { color: #1d1d1f; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.sc-source-hint { color: #7a4600; font-size: 14.5px; }
+.sc-source-rows { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 6px 0 0; }
+.sc-source-rows div { display: inline-flex; gap: 6px; padding: 5px 11px; border-radius: 10px; background: rgba(255, 255, 255, .8); font-size: 14px; }
+.sc-source-rows dt { color: #6e6e73; font-weight: 500; }
+.sc-source-rows dd { margin: 0; color: #1d1d1f; font-weight: 600; overflow-wrap: anywhere; }
+.sc-source.is-missing { background: #fff6e8; box-shadow: inset 0 0 0 1px #f6dcae; }
+.sc-source.is-missing .sc-source-ico { background: #ff9f0a; box-shadow: 0 8px 18px -10px rgba(224, 134, 0, .9); }
+.sc-source.is-editing { grid-template-columns: auto minmax(0, 1fr); background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .07), 0 10px 30px -18px rgba(0, 0, 0, .3); }
+.sc-source.is-editing .p-form { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; margin-top: 10px; }
+.sc-source.is-editing .p-seg { justify-self: start; width: max-content; }
+/* details that do not add up */
+#view .sc-checks { margin: 0 0 18px; padding: 18px 20px; border-radius: 20px; background: #fffaf1; box-shadow: inset 0 0 0 1px #f6dfb5, 0 6px 20px -14px rgba(178, 95, 0, .35); animation: sc-rise .45s .05s var(--ease, ease) both; }
+.sc-checks-head { display: flex; align-items: center; gap: 10px; }
+.sc-checks-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #ffe9c4; }
+#view .sc-checks h2 { display: flex; align-items: center; gap: 8px; margin: 0; color: #5c3600; font-size: 18px; font-weight: 700; }
+.sc-checks-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 980px; background: #ff9f0a; color: #fff; font-size: 13px; font-weight: 700; }
+.sc-checks ul { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.sc-checks li { display: flex; align-items: center; gap: 12px; padding: 11px 12px 11px 16px; border-radius: 14px; background: #fff; color: #1d1d1f; font-size: 15.5px; font-weight: 550; box-shadow: 0 0 0 1px rgba(0, 0, 0, .04); transition: opacity .25s, transform .25s; }
+.sc-checks li.is-leaving { opacity: .4; transform: translateX(6px); }
+.sc-checks-text { flex: 1; min-width: 0; }
+.sc-checks-foot { margin: 10px 2px 0; color: #7a5a2a; font-size: 14px; }
+/* the next thing to do */
+#view .sc-next { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; margin: 0 0 18px; padding: 16px 18px; border-radius: 20px; background: linear-gradient(135deg, #e9f2fe, #f1f7ff); box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .14); animation: sc-rise .45s .08s var(--ease, ease) both; }
+.sc-next-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #0071e3; color: #fff; }
+.sc-next-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.sc-next-words { display: grid; gap: 2px; min-width: 0; }
+.sc-next-words .sc-eyebrow { color: #0066cc; }
+.sc-next-words b { color: #1d1d1f; font-size: 17px; }
+.sc-next-why { color: #3a3a3c; font-size: 14.5px; }
+.sc-next-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sc-next-act input[type="date"] { min-height: 40px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 12px; background: #fff; font: 15px var(--font); }
+/* the tabs and the Timeline tab */
+body:has(.p-embed-bar) .p-tabs.sc-tabs { margin: 4px 0 18px; }
+.sc-tl-page { display: grid; gap: 18px; }
+#view .sc-tl-page > .p-card { margin: 0; animation: sc-rise .4s var(--ease, ease) both; }
+#view .sc-tl-page .p-card > h2, #view .sc-tl-page .p-card-head h2, .sc-tl-top h2 { margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 700; letter-spacing: -.015em; }
+body:has(.p-embed-bar) #view .sc-tl-page .p-tasks .p-card-head { margin-bottom: 4px; padding-bottom: 0; border-bottom: 0; }
+.sc-tl-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; margin-left: 8px; padding: 0 7px; border-radius: 980px; background: #e8e8ed; color: #3a3a3c; font-size: 13px; font-weight: 700; vertical-align: 3px; }
+.sc-tl-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.sc-tl-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: #e8e8ed; }
+.sc-tl-seg-btn { padding: 6px 14px; border: 0; border-radius: 8px; background: none; color: #515154; font: 600 14px var(--font); cursor: pointer; transition: background .15s, color .15s; }
+.sc-tl-seg-btn:hover { color: #1d1d1f; }
+.sc-tl-seg-btn[aria-selected="true"] { background: #fff; color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .14); }
+/* the note box */
+.sc-tl-compose { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 20px; }
+.sc-tl-compose-field { position: relative; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px #d2d2d7; transition: box-shadow .15s; }
+.sc-tl-compose-field:focus-within { box-shadow: 0 0 0 2px #0071e3, 0 8px 22px -12px rgba(0, 113, 227, .55); }
+.sc-tl-input { display: block; width: 100%; min-height: 52px; max-height: 320px; padding: 14px 16px; border: 0; outline: none; resize: none; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); field-sizing: content; }
+.sc-tl-input::placeholder { color: #86868b; }
+.sc-tl-compose-bar { display: none; justify-content: flex-end; padding: 0 10px 10px; }
+.sc-tl-compose.has-text .sc-tl-compose-bar { display: flex; animation: sc-rise .2s ease both; }
+#view .sc-tl-compose .btn { border: 0; border-radius: 980px; background: #0071e3; color: #fff; font-weight: 600; }
+/* the entries: a rail on the left, a round icon on it, the words in a soft bubble */
+.sc-tl-days { display: grid; gap: 18px; }
+.sc-tl-group { position: relative; }
+#view .sc-tl-day { margin: 0 0 10px 52px; color: #6e6e73; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.sc-tl-list { position: relative; display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.sc-tl-list::before { content: ""; position: absolute; top: 6px; bottom: 6px; left: 19px; width: 2px; border-radius: 2px; background: #e3e3e8; }
+.sc-tl-item { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px; animation: sc-rise .35s var(--ease, ease) both; }
+.sc-tl-av { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #e8f1fd; color: #0066cc; font: 650 13.5px/1 var(--font); letter-spacing: .02em; box-shadow: 0 0 0 4px #fbfbfd; }
+.sc-tl-av svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.sc-tl-item.is-task .sc-tl-av { background: #fff1e0; color: #c25e00; }
+.sc-tl-item.is-done .sc-tl-av { background: #34c759; color: #fff; }
+.sc-tl-item.is-done .sc-tl-av svg { stroke-width: 2.6; }
+.sc-tl-item.is-update .sc-tl-av { background: #ececf0; color: #515154; }
+.sc-tl-item.is-message .sc-tl-av { background: #f1eafb; color: #7d3fc0; }
+.sc-tl-item.is-auto .sc-tl-av { background: #f0f0f3; color: #8e8e93; font-size: 10.5px; }
+.sc-tl-body { min-width: 0; padding: 12px 16px 13px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); transition: box-shadow .15s, transform .15s; }
+.sc-tl-item:hover .sc-tl-body { box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 10px 24px -14px rgba(0, 0, 0, .25); }
+.sc-tl-item.is-cont .sc-tl-av { visibility: hidden; }
+.sc-tl-item.is-auto .sc-tl-body { background: #f7f7f9; box-shadow: none; }
+.sc-tl-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-height: 22px; }
+.sc-tl-who { color: #1d1d1f; font-size: 15px; font-weight: 650; }
+.sc-tl-kind { padding: 2px 9px; border-radius: 980px; background: #f0f0f3; color: #515154; font-size: 12.5px; font-weight: 600; }
+.sc-tl-item.is-task .sc-tl-kind { background: #fff1e0; color: #a35000; }
+.sc-tl-item.is-done .sc-tl-kind { background: #e4f6e9; color: #1b7a36; }
+.sc-tl-item.is-message .sc-tl-kind { background: #f1eafb; color: #6c34a8; }
+.sc-tl-time { margin-left: auto; color: #86868b; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sc-tl-lead { margin: 6px 0 0; color: #1d1d1f; font-size: 15px; font-weight: 600; }
+.sc-tl-ref { margin: 6px 0 0; padding: 6px 10px; overflow: hidden; border-left: 3px solid #d2d2d7; border-radius: 4px 10px 10px 4px; background: #f5f5f7; color: #515154; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
+.sc-tl-text { margin: 6px 0 0; color: #1d1d1f; font-size: 15.5px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
+.sc-tl-text .td-tag { font-size: 12px; vertical-align: 1px; }
+.sc-tl-text.is-folded { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.sc-tl-link { color: #0066cc; }
+.sc-tl-more, .sc-tl-act { padding: 0; border: 0; background: none; color: #0066cc; font: 600 14px var(--font); cursor: pointer; }
+.sc-tl-more { margin-top: 4px; }
+.sc-tl-more:hover, .sc-tl-act:hover { text-decoration: underline; }
+.sc-tl-acts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; }
+.sc-tl-act.is-remove { color: #86868b; font-weight: 500; opacity: 0; transition: opacity .15s; }
+.sc-tl-item:hover .sc-tl-act.is-remove, .sc-tl-act.is-remove:focus-visible { opacity: 1; }
+.sc-tl-act.is-remove:hover { color: #d70015; }
+@media (hover: none) { .sc-tl-act.is-remove { opacity: 1; } }
+.sc-tl-item.is-new .sc-tl-body { animation: sc-glow 2.4s ease both; }
+.sc-tl-item.is-unseen .sc-tl-body { box-shadow: 0 0 0 1px rgba(0, 113, 227, .35); }
+.sc-tl-item.is-unseen .sc-tl-who::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 7px; border-radius: 50%; background: #0071e3; vertical-align: 2px; }
+.sc-tl-item.is-reveal { animation-delay: .05s; }
+.sc-tl-all { display: block; margin: 16px auto 0; padding: 8px 18px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 600 14px var(--font); cursor: pointer; }
+.sc-tl-all:hover { background: #dcdce2; }
+.sc-tl-all[hidden] { display: none; }
+.sc-tl-empty { display: grid; justify-items: center; gap: 6px; padding: 30px 12px; color: #6e6e73; font-size: 15px; text-align: center; }
+.sc-tl-empty b { color: #1d1d1f; font-size: 17px; }
+.sc-tl-empty-ico { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 50%; background: #e8f1fd; color: #0066cc; }
+.sc-tl-empty-ico svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes sc-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes sc-pulse { 0%, 100% { box-shadow: 0 0 0 5px rgba(0, 113, 227, .18); } 50% { box-shadow: 0 0 0 9px rgba(0, 113, 227, .06); } }
+@keyframes sc-glow { 0%, 35% { background: #eaf3ff; } 100% { background: #fff; } }
+@media (prefers-reduced-motion: reduce) { #view .sc-hero, #view .sc-checks, #view .sc-next, #view .sc-tl-page > .p-card, .sc-tl-item, .sc-steps li.is-now .sc-step-dot, .sc-tl-compose.has-text .sc-tl-compose-bar { animation: none; } .sc-steps::after { transition: none; } }
+/* the half card on All Students (920px) and phones */
+@media (max-width: 960px) {
+  .sc-head { grid-template-columns: auto minmax(0, 1fr); }
+  .sc-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+@media (max-width: 640px) {
+  #view .sc-hero { padding: 20px 16px; border-radius: 20px; }
+  .sc-head { gap: 14px; }
+  .sc-avatar { width: 56px; height: 56px; font-size: 20px; }
+  #view .sc-name { font-size: 24px; }
+  .sc-step-label { display: none; }
+  .sc-steps li.is-now .sc-step-label { position: absolute; top: 32px; display: block; white-space: nowrap; }
+  .sc-steps { padding-bottom: 22px; }
+  .sc-facts { grid-template-columns: minmax(0, 1fr); }
+  .sc-source, #view .sc-next { grid-template-columns: auto minmax(0, 1fr); }
+  .sc-source > .btn, .sc-next-act { grid-column: 1 / -1; }
+  #view .sc-tl-day { margin-left: 0; }
+  .sc-tl-time { margin-left: 0; }
 }

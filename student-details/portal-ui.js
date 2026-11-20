@@ -940,7 +940,13 @@
     function set(k) { value = k; buttons.forEach(([kk, b]) => b.setAttribute('aria-checked', String(kk === k))); }
     return { node, value: () => value, set: (k) => { if (!touched) set(k); }, touched: () => touched };
   }
-  const tagPicker = (initial) => picker(TAGS(), initial === undefined ? 'other' : initial, (k) => `td-tag tag-${k}`, 'What the task is about');
+  // Only the tags still offered (card-fields.js TASK_TAGS_CHOOSABLE); a task that already has an older tag (Payment ...) keeps it offered.
+  const tagPicker = (initial) => {
+    const start = initial === undefined ? 'other' : initial;
+    const offered = F().TASK_TAGS_CHOOSABLE || TAGS();
+    const choices = start && !offered.some(([k]) => k === start) ? [...offered, ...TAGS().filter(([k]) => k === start)] : offered;
+    return picker(choices, start, (k) => `td-tag tag-${k}`, 'What the task is about');
+  };
   // A few words of thanks when a task is ticked, not the same line every time.
   const CHEERS = ['Done. Nice work.', 'Ticked off. Well done.', 'One less to think about.', 'Great job, that is done.', 'Done. The student is a step closer.', 'Nicely done.'];
   const cheer = () => CHEERS[Math.floor(Math.random() * CHEERS.length)];

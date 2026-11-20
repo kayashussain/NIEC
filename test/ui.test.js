@@ -155,18 +155,18 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.locator('#body tr:not(.pad-row)').first().locator('td').nth(nameIdx).dblclick();
     await page.waitForSelector('.p-drawer iframe');
     const frame = page.frameLocator('.p-drawer iframe');
-    await frame.locator('.p-hero h1').waitFor();
-    assert.match(await frame.locator('.p-hero h1').textContent(), /Student/);
-    assert.ok(await frame.locator('.p-tabs button').count() === 2, 'two tabs only: Notes and University options (no Send a message, the owner, 17 Nov 2026)');
+    await frame.locator('.sc-hero h1').waitFor();
+    assert.match(await frame.locator('.sc-hero h1').textContent(), /Student/);
+    assert.ok(await frame.locator('.p-tabs button').count() === 2, 'two tabs only: Timeline and Applications (no Send a message, the owner, 17 Nov 2026)');
     assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp and Email are under the name')
     assert.strictEqual(await frame.getByRole('button', { name: 'Copy number' }).count(), 0, 'no Copy number (the owner, 17 Nov 2026)');
-    // No source recorded: the card asks for it every time it opens (the owner, 17 Nov 2026), and from Application Stage on also the
-    // missing details (phone, email, date of birth, passport); never the application or offer day. Not now closes it.
-    await frame.locator('dialog.p-dialog h2', { hasText: /Where did this student come from\?|Details missing for this student/ }).waitFor();
-    assert.strictEqual(await frame.locator('dialog.p-dialog').getByText('Student source', { exact: true }).count(), 1, 'the source is asked');
-    assert.strictEqual(await frame.locator('dialog.p-dialog').getByText(/Application submitted|Offer received/).count(), 0, 'never the application or offer day');
-    await frame.getByRole('button', { name: 'Not now' }).click();
-    await frame.locator('dialog.p-dialog').waitFor({ state: 'detached' });
+    // The card never opens a window asking where the student came from or for missing details (the owner, 20 Nov 2026): the source is
+    // in the main card (Add source when it is not recorded) and the missing details are named there.
+    await frame.locator('.sc-hero .sc-source').waitFor();
+    await page.waitForTimeout(500);
+    assert.strictEqual(await frame.locator('dialog.p-dialog').count(), 0, 'no pop-up when the card opens');
+    assert.strictEqual(await frame.locator('.sc-tl-page .sc-source').count(), 0, 'the source is not repeated under the tabs');
+    await frame.locator('.sc-hero h1').click();
     // The keyboard is in the card now: typing must not reach the cell of the sheet hidden behind it.
     assert.strictEqual(await page.evaluate(() => document.activeElement && document.activeElement.tagName), 'IFRAME');
     await page.keyboard.type('x');
