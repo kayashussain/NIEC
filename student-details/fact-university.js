@@ -398,7 +398,7 @@
     // video and pictures (the owner, 20 Nov 2026): the pictures fill one large frame edge to edge (no blurred bands) and fade one into
     // the next on their own, with a bar under each that fills while it is shown; a click on a bar goes to it, the mouse over the frame
     // holds it. The video has its own frame beside them and plays only when pressed.
-    const pics = [P0.banner, ...P0.photos].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k);
+    const pics = [...P0.photos, P0.banner].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k);
     if (pics.length > 1 || P0.video) {
       const m = el('section', 'up-section up-gallery no-print up-reveal');
       m.append(el('h2', '', P0.video ? 'See the campus' : 'Pictures'));
