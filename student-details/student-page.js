@@ -1022,7 +1022,7 @@
     return box;
   }
   // ---- fewer clicks (the owner, 17 Nov 2026) ----
-  // Working through a list (Data to fix, "Work through them"): "3 of 12" with Previous and Next, and the [ and ] keys, so the next
+  // Working through a list ("Work through them"): "3 of 12" with Previous and Next, and the [ and ] keys, so the next
   // student opens without going back to the list.
   function queue() {
     try {

@@ -70,10 +70,6 @@ const STATIC_FILES = {
   '/today-page.js': 'text/javascript; charset=utf-8',
   '/my-dashboard.html': 'text/html; charset=utf-8',
   '/my-dashboard-page.js': 'text/javascript; charset=utf-8',
-  '/data-fix.html': 'text/html; charset=utf-8',
-  '/data-fix-page.js': 'text/javascript; charset=utf-8',
-  '/weekly.html': 'text/html; charset=utf-8',
-  '/weekly-page.js': 'text/javascript; charset=utf-8',
   '/events-page.js': 'text/javascript; charset=utf-8',
   '/dashboard.js': 'text/javascript; charset=utf-8',
   '/dashboard-trends.js': 'text/javascript; charset=utf-8',
@@ -214,7 +210,7 @@ const advisor = createAdvisorMcp({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/apply-through', '/events', '/data-to-fix', '/weekly']);
+  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/apply-through', '/events']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -1102,7 +1098,6 @@ const server = http.createServer(async (req, res) => {
       const page = {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
         '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/events': 'events.html',
-        '/data-to-fix': 'data-fix.html', '/weekly': 'weekly.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
       // Partners: one place for Partner Universities, B2B Partners and Agents (the owner, 17 Nov 2026). It opens the first of the three
@@ -1131,7 +1126,7 @@ const server = http.createServer(async (req, res) => {
         // Admin and the Manager; the partner pages as partner-access.js says; the rest is Admin's.
         const access = partnerAccess(req.user);
         const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/apply-through': access.applyThrough }[urlPath];
-        const allowed = Boolean(shared) || ['/students', '/student', '/wa', '/today', '/my-dashboard', '/data-to-fix'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events', '/weekly'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
+        const allowed = Boolean(shared) || ['/students', '/student', '/wa', '/today', '/my-dashboard'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
         if (!allowed) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
         req.url = '/' + page;
         return serveStatic(req, res);

@@ -2348,46 +2348,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-checks li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; font-size: 14.5px; line-height: 1.45; }
 .p-checks .p-muted { margin: 0; }
 
-/* 🔴 CSS CHANGED (2026-11-17): Data to fix, a new page (data-fix-page.js) | from: no such page; gaps were found one card at a time | to: the page in the site's look: a small grey heading line, the big "Data to fix" title and one line saying how many gaps; grey pills for each kind of gap with its number (the chosen one dark); then one off-white rounded panel per kind of gap, its title with a grey count, a grey hint, and a row per student: the name in semibold (a link to the card), the stage pill, intake and university in grey, what is missing, then a box to fill in and a blue Save; a filled row fades out; "All clear" with a green tick when nothing is left */
-.df-page { max-width: 1100px; margin: 0 auto; }
-.df-top { margin: 6px 0 18px; }
-.df-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #5f5f64; }
-.df-top h1 { margin: 4px 0 6px; font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
-.df-lead { margin: 0; max-width: 720px; font-size: 17px; line-height: 1.45; color: var(--text-dim); }
-.df-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
-.df-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #e8e8ed; color: var(--ink); font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: background .2s; }
-.df-pill:hover { background: #dcdce2; }
-.df-pill.on { background: var(--ink); color: #fff; }
-.df-pill-n { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); font-size: 12.5px; font-weight: 600; text-align: center; }
-.df-pill.on .df-pill-n { background: rgba(255, 255, 255, .2); }
-.df-group { margin: 0 0 16px; padding: 20px 22px 12px; }
-.df-group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.df-group-title { display: flex; align-items: center; gap: 10px; }
-.df-group-title h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.015em; color: var(--ink); }
-.df-count { padding: 2px 10px; border-radius: 999px; background: #f0f0f3; color: #48484e; font-size: 13px; font-weight: 600; }
-.df-hint { margin: 4px 0 10px; font-size: 14.5px; color: #5f5f64; }
-.df-list { margin: 0; padding: 0; list-style: none; }
-.df-row { display: grid; grid-template-columns: minmax(200px, 1.3fr) minmax(120px, 1fr) minmax(260px, auto); align-items: center; gap: 8px 18px; padding: 12px 0; border-top: 1px solid var(--border); transition: opacity .35s ease, transform .35s ease; }
-.df-row.is-done { opacity: 0; transform: translateX(14px); }
-.df-who { min-width: 0; }
-.df-name { display: block; overflow: hidden; color: var(--ink); font-size: 16px; font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.df-name:hover { color: var(--link); }
-.df-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 3px; font-size: 13px; color: #5f5f64; }
-.df-detail { font-size: 14.5px; color: var(--text-dim); }
-.df-fix { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-.df-fix .df-input, .df-fix .p-date { width: 200px; }
-.df-fix .df-input { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--edit-bg); font: inherit; font-size: 15px; }
-.df-fix .df-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
-.df-more { margin: 8px 0 4px; }
-.df-clear { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 20px; text-align: center; }
-.df-clear b { font-size: 18px; color: var(--ink); }
-.df-clear-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--green-bg); color: var(--green-fg); font-size: 22px; font-weight: 700; }
-@media (max-width: 760px) {
-  .df-top h1 { font-size: 32px; }
-  .df-row { grid-template-columns: 1fr; gap: 6px; }
-  .df-fix { justify-content: flex-start; }
-  .df-fix .df-input, .df-fix .p-date { flex: 1; width: auto; min-width: 0; }
-}
+/* 🔴 CSS CHANGED (2026-11-20): Data to fix page removed (all .df- rules in this file) | from: the Data to fix page and its look | to: no such page, so no styling for it */
 
 /* 🔴 CSS CHANGED (2026-11-17): the student card, fewer clicks (student-page.js) | from: only Send a message, Edit details and Assign a task at the top; to reach the next student of a list, back to the list each time | to: (1) when the card is opened from a list, a slim off-white bar above the card: "Back to the list", "3 of 12" in semibold with the list's name in grey, then a grey "Previous" and a blue "Next" pill; (2) under the card, a row of soft grey pill buttons with a small icon: Call, WhatsApp (green icon), Email, Copy number; (3) a soft blue panel "Next step" with the step in semibold, why in grey, and a date box with a blue Save (or a blue "Add them" for the passport details) */
 .p-queue { position: sticky; top: 8px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; padding: 8px 10px 8px 16px; border-radius: 16px; background: rgba(251, 251, 253, .9); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); box-shadow: 0 6px 24px -14px rgba(0, 0, 0, .35), 0 0 0 .5px rgba(0, 0, 0, .08); }
@@ -2411,53 +2372,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-next-act .p-date { width: 190px; }
 @media (max-width: 600px) { .p-next-act { width: 100%; } .p-next-act .p-date { flex: 1; width: auto; } .p-queue-gap { display: none; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): the weekly summary, a new page (weekly-page.js), and a blue "Weekly summary" pill on the Dashboard beside the intake | from: no such page | to: a grey heading line ("This week"), the big "Weekly summary" title, the dates in grey, grey "Earlier week" and "Later week" pills and a blue Print; the week in one large sentence; off-white tiles (seven of the same size in one row: label in grey, the number large, then "3 more than the week before" in green or "2 fewer" in orange); panels listing who received a visa, an offer, paid or applied (day in grey, name as a link, the stage pill); the teams' work as small tiles; soft blue bars for tasks done by team and new students by source. Printed: no menu, no buttons, panels kept whole */
-.wk-page { max-width: 1180px; margin: 0 auto; }
-.wk-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 6px 0 14px; }
-.wk-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #5f5f64; }
-.wk-top h1 { margin: 4px 0 6px; font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
-.wk-lead { margin: 0; font-size: 16px; color: var(--text-dim); }
-.wk-nav { display: flex; flex-wrap: wrap; gap: 8px; }
-.wk-headline { margin: 6px 0 18px; font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: var(--ink); }
-.wk-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; margin: 0 0 16px; }
-.wk-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 0 0 .5px rgba(0, 0, 0, .06); }
-.wk-tile-label { font-size: 14px; font-weight: 500; color: #5f5f64; }
-.wk-tile-n { font-size: 38px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.wk-tiles.is-small { margin: 4px 0 6px; }
-.wk-tiles.is-small .wk-tile { background: #f5f5f7; box-shadow: none; }
-.wk-tiles.is-small .wk-tile-n { font-size: 28px; }
-.wk-change { font-size: 12.5px; font-weight: 500; }
-.wk-change.up { color: var(--green-fg); }
-.wk-change.down { color: var(--orange); }
-.wk-change.same { color: #66666b; }
-.wk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 0 0 16px; }
-.wk-card { margin: 0; padding: 20px 22px; }
-.wk-grid .wk-card { margin: 0; }
-.wk-page > .wk-card { margin: 0 0 16px; }
-.wk-card h2 { margin: 0 0 10px; font-size: 19px; font-weight: 650; letter-spacing: -.015em; color: var(--ink); }
-.wk-empty { margin: 0; color: #66666b; font-size: 14.5px; }
-.wk-people { margin: 0; padding: 0; list-style: none; }
-.wk-people li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
-.wk-people li:first-child { border-top: 0; }
-.wk-day { font-size: 13px; color: #5f5f64; font-variant-numeric: tabular-nums; }
-.wk-who { display: flex; flex-direction: column; min-width: 0; }
-.wk-who a { overflow: hidden; color: var(--ink); font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.wk-who a:hover { color: var(--link); }
-.wk-meta { overflow: hidden; font-size: 13px; color: #5f5f64; text-overflow: ellipsis; white-space: nowrap; }
-.wk-still { margin: 8px 0 0; font-size: 15px; color: var(--text-dim); }
-.wk-bar { display: grid; grid-template-columns: minmax(110px, 160px) 1fr 36px; align-items: center; gap: 12px; padding: 6px 0; font-size: 14.5px; }
-.wk-bar-label { overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
-.wk-track { height: 10px; border-radius: 999px; background: #f0f0f3; overflow: hidden; }
-.wk-track i { display: block; height: 100%; border-radius: 999px; background: #6fa8ec; }
-.wk-bar b { text-align: right; font-variant-numeric: tabular-nums; }
-.wk-foot { margin: 4px 0 24px; font-size: 13px; color: #66666b; }
-@media (max-width: 600px) { .wk-top h1 { font-size: 32px; } .wk-headline { font-size: 21px; } .wk-grid { grid-template-columns: 1fr; } }
-@media print {
-  .niec-header, .no-print { display: none !important; }
-  .wk-card, .wk-tile { break-inside: avoid; box-shadow: none; border: 1px solid #e3e3e8; }
-  .wk-page { max-width: none; }
-}
-
+/* 🔴 CSS CHANGED (2026-11-20): Weekly summary removed (all .wk- rules) | from: the Weekly summary page and its blue pill on the Dashboard, with their look | to: no such page and no pill */
 /* 🔴 CSS CHANGED (2026-11-17): Follow-up, "Your setup for sending" (new) and the Message chip in a student's history (new) | from: nothing (the email, signature and WhatsApp were set up on the My email page; the history showed notes and tasks only) | to: one off-white panel at the top of Follow-up with three rows (Your email, Your signature, Your WhatsApp), each with a round mark (green tick when ready, orange ! when missing, grey when optional), the state in plain words and one small pill button, the form opening right under its row; a soft violet "Message" chip in the history */
 .ss-card { margin: 0 0 18px; }
 .ss-head h2 { margin: 0 0 2px; }
@@ -2588,19 +2503,18 @@ html body .page, html body .p-page { max-width: 1320px; padding-left: 28px; padd
 html body .p-page.bp-page, html body .p-page.pu-page, html body .p-page.ev-page { max-width: 1480px; }
 html body .page { padding-top: 32px; }
 html body .p-page { padding-top: 32px; }
-html body .df-page, html body .td-page, html body .wk-page { padding-left: 0; padding-right: 0; }
-html body .df-page { max-width: none; }
+html body .td-page { padding-left: 0; padding-right: 0; }
 /* All Students keeps its title in the tool bar (a working page): the same weight, a little smaller so the bar stays one line. */
 html body:has(#sheet) h1.sheet-title { font-size: 34px; font-weight: 700; letter-spacing: -.025em; }
 /* One page title. */
-html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .df-top h1, html body .wk-top h1, html body h1.sheet-title {
+html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body h1.sheet-title {
   font-size: 38px; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; color: var(--ink);
 }
-html body .page-head h1 + p, html body .page-head > div > p, html body .p-head > div > p, html body .td-hello > p, html body .df-top p, html body .wk-top p {
+html body .page-head h1 + p, html body .page-head > div > p, html body .p-head > div > p, html body .td-hello > p {
   font-size: 17px; line-height: 1.45; color: var(--text-dim);
 }
 /* One panel. */
-html body .p-card, html body .page .card, html body .md-card, html body .bp-card, html body .pu-card, html body .ov-card, html body .wk-card, html body .fd-card,
+html body .p-card, html body .page .card, html body .md-card, html body .bp-card, html body .pu-card, html body .ov-card, html body .fd-card,
 html body .ss-card, html body .sl-card, html body .uni-card, html body .md-kpi, html body .p-kpi {
   border: 0; border-radius: var(--pl-radius); background: var(--panel); box-shadow: var(--pl-shadow);
 }
@@ -2612,7 +2526,7 @@ html body .btn, html body button.btn, html body a.btn { font-weight: 600; letter
 html body :focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; border-radius: 10px; }
 html body input:focus-visible, html body select:focus-visible, html body textarea:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18); border-color: #0071e3; }
 /* Figures line up. */
-html body .md-kpi b, html body .p-kpi b, html body .wk-tile-n, html body table td, html body .kpi-value, html body .fd-money b { font-variant-numeric: tabular-nums; }
+html body .md-kpi b, html body .p-kpi b, html body table td, html body .kpi-value, html body .fd-money b { font-variant-numeric: tabular-nums; }
 ::selection { background: rgba(0, 113, 227, .18); }
 /* Quiet scrollbars. */
 * { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, .22) transparent; }
@@ -2621,7 +2535,7 @@ html body .md-kpi b, html body .p-kpi b, html body .wk-tile-n, html body table t
 *::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .32) padding-box; }
 @media (max-width: 700px) {
   html body .page, html body .p-page { padding-left: 16px; padding-right: 16px; padding-top: 20px; }
-  html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .df-top h1, html body .wk-top h1, html body h1.sheet-title { font-size: 30px; }
+  html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body h1.sheet-title { font-size: 30px; }
 }
 @media (prefers-reduced-motion: reduce) { html body a.uni-card:hover, html body .uni-card:hover { transform: none; } }
 /* A switched-off line of the Dashboard chart: its key stays readable (grey words, a faded line) instead of the whole key at 40% (too faint
@@ -2639,7 +2553,6 @@ html body .td-hello:has(.td-bell-wrap) > :not(.td-bell-wrap) { padding-right: 56
 
 /* 🔴 CSS CHANGED (2026-11-17): small text readable everywhere (the accessibility check, and the owner's "easy on older eyes") | from: small grey words in #86868b, #8e8e93 and #6e6e73 and small orange words in #c45c00 (contrast 3.0 to 4.4 against the panels, under the 4.5 the standard asks for); the "Every source"/"Everyone" choice of a box and "Choose a date" in the same pale grey; the switched-off lines of the Dashboard chart at 40% | to: the greys darkened to #66666b and #5f5f64 and the orange to #a84d00 wherever they colour text (98 places; backgrounds and borders unchanged), so every small word reaches at least 4.5 to 1; the University options' titles are headings of the right level, looking the same */
 html body .p-option h3, html body .p-chosen-item h3 { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-html body .wk-change.down { color: #a84d00; }
 html body .page .count { color: #515154; }
 html body:has(.p-embed-bar) .p-option h3 { color: var(--ink); font-size: 16px; font-weight: 650; }
 html body h1.p-error-title { margin: 0 0 8px; font-size: 24px; font-weight: 650; }
@@ -3296,19 +3209,6 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 .pc-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 @media (max-width: 640px) { .pc-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } .pc-side { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .pc-dot, .pc-done.is-new .pc-check { animation: none; } }
-
-/* 🔴 CSS CHANGED (2026-11-17): Data to fix: By gap | By student | from: the gap pills alone above the lists; a student missing three details listed three times, one box each | to: the pills on the left and a segmented switch "By gap | By student" on the right of the same row; By student shows one panel "Students with gaps" with each student once: the name, stage and intake on the left, a small grey label above each box they are missing (Date of birth, Passport number, Address) side by side in the middle, and one blue Save on the right; the boxes look like the ones of By gap (rounded, 12px inside, the blue focus ring) */
-.df-bar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; margin: 0 0 18px; }
-.df-bar .df-pills { margin: 0; }
-.df-mode { flex: none; }
-.df-row.df-row-student { grid-template-columns: minmax(200px, 1fr) minmax(280px, 2fr) auto; }
-.df-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
-.df-field { display: grid; gap: 4px; flex: 1 1 170px; min-width: 0; }
-.df-field > span { color: #5f5f64; font-size: 12.5px; font-weight: 600; }
-.df-field .df-input, .df-field .p-date { width: 100%; }
-.df-field .df-input { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--edit-bg); font: inherit; font-size: 15px; }
-.df-field .df-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
-@media (max-width: 760px) { .df-row.df-row-student { grid-template-columns: 1fr; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): the team's Dashboard, Needs attention: "+16 more" | from: grey words "+16 more" that did nothing | to: the same grey words as a button (blue on hover, underlined) that shows every other name in place, as the same grey name pills */
 button.md-todo-more { border: 0; background: none; font: inherit; font-size: 13.5px; cursor: pointer; border-radius: 6px; }
