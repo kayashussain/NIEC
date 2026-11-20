@@ -137,9 +137,6 @@
       throw e;
     }
   }
-  // Confetti for a milestone (an offer, a visa): soft coloured pieces fall from the top for a moment; only transform and opacity move.
-  // Confetti for a milestone (an offer, a visa): the shared motion kit's big burst (motion.js, DESIGN.md).
-  const confetti = () => { if (window.Motion) window.Motion.celebrate(innerWidth / 2, innerHeight / 4, true); };
   // The light that follows the mouse is the shared motion kit's (motion.js), on the tiles, contact buttons and Timeline bubbles too.
   let sourceSaved = false; // the source was just saved: its panel glows green with a tick once
   let justFilled = new Set(); // tiles filled in by the last Edit details: they flash green once
@@ -169,8 +166,6 @@
       li.append(dot, el('span', 'sc-step-label', label));
       li.title = label;
       if (i === at) li.setAttribute('aria-current', 'step');
-      /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: the step's number, so the dots light up one after another */
-      li.style.setProperty('--i', String(i));
       ol.append(li);
     });
     box.append(head, ol);
@@ -182,8 +177,7 @@
     const s = data.student;
     if (editingHero) return heroEdit();
     const pp = profile();
-    const kind = window.Portal.stageKind(s.stage);
-    const c = el('section', `sc-hero is-${kind}${intro ? ' is-intro' : ''}`);
+    const c = el('section', 'sc-hero');
     const head = el('div', 'sc-head');
     const av = el('div', 'sc-avatar', initials(s.name));
     av.setAttribute('aria-hidden', 'true');
@@ -193,10 +187,8 @@
     name.title = s.name;
     const meta = el('div', 'sc-meta');
     meta.append(stagePill(s.stage));
-    if (s.intake) { const ch = el('span', 'sc-chip'); ch.append(icon('calendar'), s.intake); meta.append(ch); }
-    if (pp.nationality && pp.nationality !== 'Nepali') { const ch = el('span', 'sc-chip'); ch.append(icon('globe'), pp.nationality); meta.append(ch); }
-    // A milestone the team can see at a glance: the student holds an offer.
-    if (appStats().offers && !['CAS Issued', 'Visa Lodge', 'Visa Issued'].includes(s.stage)) { const ch = el('span', 'sc-chip is-offer'); ch.append(icon('star'), appStats().offers > 1 ? `${appStats().offers} offers received` : 'Offer received'); meta.append(ch); }
+    if (s.intake) meta.append(el('span', 'sc-meta-text', s.intake));
+    if (pp.nationality && pp.nationality !== 'Nepali') meta.append(el('span', 'sc-meta-text', pp.nationality));
     who.append(name, meta);
     const reach = contactBar();
     if (reach) who.append(reach);
@@ -213,7 +205,6 @@
     const tile = (ico, k, v, { href, missing, onClick, wide } = {}) => {
       const t = el(onClick ? 'button' : 'div', `sc-fact${missing ? ' is-missing' : ''}${onClick ? ' is-action' : ''}${wide ? ' is-wide' : ''}`);
       if (onClick) { t.type = 'button'; t.addEventListener('click', onClick); }
-      const ic = el('span', 'sc-fact-ico'); ic.append(icon(ico));
       const txt = el('span', 'sc-fact-text');
       txt.append(el('span', 'sc-fact-label', k));
       const val = el('span', 'sc-fact-value');
@@ -222,7 +213,7 @@
       else val.textContent = v;
       val.title = missing ? '' : v;
       txt.append(val);
-      t.append(ic, txt);
+      t.append(txt);
       if (onClick) t.append(icon('arrow', 'sc-fact-go'));
       if (justFilled.has(k)) { t.classList.add('is-filled'); t.append(icon('check', 'sc-fact-tick sc-tick')); justFilled.delete(k); }
       facts.append(t);
@@ -246,8 +237,6 @@
       // The two numbers count up when the card opens (ui.js, the one count-up of ISR).
       if (ap.submitted || ap.offers) t.querySelector('.sc-fact-value').replaceChildren(el('b', 'sc-num', String(ap.submitted)), ' submitted · ', el('b', 'sc-num', String(ap.offers)), ` ${ap.offers === 1 ? 'offer' : 'offers'}`);
     }
-    /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: each tile's number, so the tiles cascade in */
-    [...facts.children].forEach((t, i) => t.style.setProperty('--i', String(i)));
     c.append(facts);
     // What is missing shows as Missing on its tile; Edit details above opens the form (the owner, 17 Nov 2026: one button per action).
     // Where the student came from, inside the main card (the owner, 20 Nov 2026: not a separate panel under the tabs).
@@ -723,10 +712,6 @@
         // Notes written one after another by the same person sit together under one name, as in Messages (within half an hour).
         if (prev && e.kind === 'note' && prev.kind === 'note' && e.by && e.by === prev.by && e.by !== AUTO && Math.abs(Date.parse(prev.at) - Date.parse(e.at)) < 30 * 60000) li.classList.add('is-cont');
         if (revealFrom && i >= revealFrom) li.classList.add('is-reveal');
-        // The entries arrive one after another (the first ten); the rest rise in as they are scrolled to.
-        /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: each Timeline entry's number (up to 10), so they arrive one after another */
-        li.style.setProperty('--i', String(Math.min(i, 10)));
-        if (i >= 10 && (intro || days.classList.contains('is-anim'))) li.classList.add('sc-later');
         list.append(li);
         prev = e;
       });
@@ -1178,58 +1163,7 @@
     view.replaceChildren(frag);
     // The first drawing (and a change of filter) animates; other redraws (a saved note, a tab) do not replay the entrance.
     if (intro) { view.classList.add('sc-entering'); setTimeout(() => view.classList.remove('sc-entering'), 1200); }
-    miniBar();
-    watchLater();
-    if (intro) { intro = false; milestones(); }
-  }
-
-  // Entries further down rise in as they come into view.
-  let laterObs = null;
-  function watchLater() {
-    const items = view.querySelectorAll('.sc-later');
-    if (!items.length) return;
-    if (!('IntersectionObserver' in window) || calm()) { items.forEach((x) => x.classList.add('is-in')); return; }
-    if (laterObs) laterObs.disconnect();
-    laterObs = new IntersectionObserver((list) => list.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('is-in'); laterObs.unobserve(en.target); } }), { rootMargin: '0px 0px -40px 0px' });
-    items.forEach((x) => laterObs.observe(x));
-  }
-
-  // A slim frosted bar with the student's name, stage and step slides in at the top once the main card is scrolled away, so the
-  // person always knows whose card this is. It has no buttons (the main card has them).
-  let mini = null; let miniObs = null;
-  function miniBar() {
-    const s = data.student;
-    if (!mini) { mini = el('div', 'sc-mini'); mini.setAttribute('aria-hidden', 'true'); document.body.append(mini); }
-    const at = JOURNEY.findIndex(([n]) => n === s.stage);
-    const av = el('span', `sc-mini-av is-${window.Portal.stageKind(s.stage)}`, initials(s.name));
-    /* 🔴 CSS CHANGED (2026-11-20): the mini bar's fill set here | from: none | to: a thin blue line as long as the student's progress */
-    const bar = el('span', 'sc-mini-bar'); const fill = el('i'); fill.style.transform = `scaleX(${at < 0 ? 0 : (at + 1) / JOURNEY.length})`; bar.append(fill);
-    mini.replaceChildren(av, el('b', '', s.name), stagePill(s.stage), at >= 0 ? el('span', 'sc-mini-step', `Step ${at + 1} of ${JOURNEY.length}`) : '', bar);
-    const head = view.querySelector('.sc-head');
-    if (miniObs) miniObs.disconnect();
-    if (!head || !('IntersectionObserver' in window)) { mini.classList.remove('is-on'); return; }
-    /* 🔴 CSS CHANGED (2026-11-20): --sc-mini-x set here | from: none | to: the middle of the card, so the frosted bar sits over the card */
-    // Centred over the card, not the window (the menu is on the left).
-    const place = () => { const r = view.getBoundingClientRect(); mini.style.setProperty('--sc-mini-x', `${r.left + r.width / 2}px`); const demo = document.querySelector('.niec-demo'); mini.style.setProperty('--sc-mini-y', `${(demo ? demo.getBoundingClientRect().bottom : 0) + 10}px`); };
-    place();
-    if (!miniBar.placed) { miniBar.placed = true; window.addEventListener('resize', place); }
-    miniObs = new IntersectionObserver(([en]) => { place(); mini.classList.toggle('is-on', !en.isIntersecting && en.boundingClientRect.top < 0); });
-    miniObs.observe(head);
-  }
-
-  // Milestones (the owner, 20 Nov 2026: a reward when something good happens): the first time a person opens a student who holds an
-  // offer, or whose visa is issued, confetti falls and a word of praise shows. Kept in this browser, so it happens once per person.
-  function milestones() {
-    const me = (data.me || {}).name || '';
-    const s = data.student;
-    const once = (what, words) => {
-      const key = `isrCheer:${what}:${me}:${id}`;
-      try { if (localStorage.getItem(key)) return false; localStorage.setItem(key, new Date().toISOString()); } catch (e) { return false; }
-      setTimeout(() => { confetti(); window.NiecUI.toast(words, { type: 'success' }); }, 700);
-      return true;
-    };
-    if (s.stage === 'Visa Issued' && once('visa', `Visa issued for ${s.name}. Wonderful work.`)) return;
-    if (appStats().offers) once('offer', `${s.name} holds an offer. Well done.`);
+    intro = false;
   }
 
   // Keys for the card (the owner, 20 Nov 2026), when nothing is being typed and no window is open: N a note (above), E Edit details,

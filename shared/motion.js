@@ -7,8 +7,8 @@
 //   Motion.ring(value, total)    an SVG progress ring that fills with a spring, for "3 of 8 done"
 //   Motion.reduced()             true when the person asked for less motion (or a test robot drives the page)
 //
-// Automatic on every page: the light that follows the mouse over cards, the soft press of buttons and pills (CSS), and the
-// cross-fade between pages (CSS). Everything is skipped for a reader who asked for less motion, and for automated tests (they
+// Automatic on every page: the quick colour change and slight dim of buttons and pills when pressed (CSS), and the short
+// fade between pages (CSS). Everything is skipped for a reader who asked for less motion, and for automated tests (they
 // must read the final numbers at once).
 (function () {
   if (window.Motion) return;
@@ -110,24 +110,7 @@
     return wrap;
   }
 
-  // ---- the light that follows the mouse over a card ----
-  const GLOW = '.p-card, .td-tasks, .td-stat, .td-pulse, .uc-card, .up-course, .up-level, .up-fact, .fd-uni, .tb-tile, .td-row, .p-task, .sc-hero, .sc-fact, .sc-reach-btn, .sc-tl-body';
-  document.addEventListener('pointermove', (e) => {
-    if (reduced()) return;
-    const card = e.target.closest && e.target.closest(GLOW);
-    if (!card) return;
-    // only on a card with a plain background (a card's own gradient or picture is never covered)
-    if (!card.dataset.moGlow) card.dataset.moGlow = getComputedStyle(card).backgroundImage === 'none' ? 'y' : 'n';
-    if (card.dataset.moGlow !== 'y') return;
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--mo-x', `${e.clientX - r.left}px`);
-    card.style.setProperty('--mo-y', `${e.clientY - r.top}px`);
-    card.classList.add('mo-lit');
-  }, { passive: true });
-  document.addEventListener('pointerout', (e) => {
-    const card = e.target.closest && e.target.closest(GLOW);
-    if (card && !card.contains(e.relatedTarget)) card.classList.remove('mo-lit');
-  }, { passive: true });
+  // No light follows the mouse (the owner, 20 Nov 2026: calm, as apple.com, which has none).
 
   window.Motion = { reveal, countUp, celebrate, ring, reduced };
 })();

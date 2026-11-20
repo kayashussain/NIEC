@@ -3755,244 +3755,24 @@ html body .up-sub, html body .up-sub .up-place { text-shadow: 0 1px 8px rgba(0, 
   html body .up-doc > .up-section, html body .up-doc > section, html body .up-doc > .up-facts { padding-left: 14px; padding-right: 14px; }
 }
 
-/* 🔴 CSS CHANGED (2026-11-20): the student card redesigned (the owner: "make the student card professional, with fire in it") | from: a plain white panel with a grey initials circle, a thin line of eight grey bars, the details as grey capital labels over blue words, a separate row of Call, WhatsApp and Email pills under the panel with ☎ ● @ marks, the Source as its own slim panel under the tabs, a pale amber "Details to check" box, a pale blue "Next step" band, and a Timeline of plain rows with hairlines between them | to: one main card with a soft coloured glow at the top in the colour of the stage; a 76px initials badge with a blue gradient and a white ring; the name at 30px; the stage pill and grey chips (intake with a calendar, nationality with a globe); Call (blue), WhatsApp (green) and Email (purple) as pill buttons with line icons right under the name; Edit details (grey) and Assign a task (blue) with small icons on the right; a "Progress" stepper of eight named steps with round dots (done: blue with a white tick on a blue line, now: a blue dot with a soft pulsing ring, to come: grey); the details as rounded tiles in a grid, each with a small coloured icon square, a grey label and the value (Missing in orange on an amber tile); Applications as a tile with an arrow that opens the Applications tab; the Student Source inside the main card as a soft blue panel with its icon, the source large and its details beside it (amber with "Add source" when not recorded); "Details to check" as an amber card with a warning icon, a count and each point as a white row; "Next step" as a blue card with an arrow icon; the Timeline with a thin grey rail on the left, each entry a coloured round icon on the rail and its words in a soft off-white bubble that lifts on hover, day headings as small grey capitals, the note box raised with a blue ring when typing; new entries and the card itself rise softly in (none for people who ask for less motion) */
-#view .sc-hero { position: relative; overflow: hidden; margin: 0 0 18px; padding: 28px 30px 26px; border-radius: 24px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 30px rgba(0, 0, 0, .06); animation: sc-rise .45s var(--ease, ease) both; }
-#view .sc-hero::before { content: ""; position: absolute; inset: 0 0 auto; height: 150px; background: radial-gradient(120% 140% at 0% 0%, rgba(0, 113, 227, .13), rgba(0, 113, 227, 0) 60%), radial-gradient(90% 120% at 100% 0%, rgba(175, 82, 222, .08), rgba(175, 82, 222, 0) 60%); pointer-events: none; }
-#view .sc-hero.is-green::before { background: radial-gradient(120% 140% at 0% 0%, rgba(52, 199, 89, .16), rgba(52, 199, 89, 0) 60%), radial-gradient(90% 120% at 100% 0%, rgba(0, 113, 227, .07), rgba(0, 113, 227, 0) 60%); }
-#view .sc-hero.is-amber::before { background: radial-gradient(120% 140% at 0% 0%, rgba(255, 159, 10, .16), rgba(255, 159, 10, 0) 60%); }
-#view .sc-hero.is-red::before { background: radial-gradient(120% 140% at 0% 0%, rgba(255, 59, 48, .12), rgba(255, 59, 48, 0) 60%); }
-#view .sc-hero > * { position: relative; }
-.sc-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; align-items: start; }
-.sc-avatar { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(145deg, #2f8cff, #0058c4); color: #fff; font: 650 26px/1 var(--font); letter-spacing: .02em; box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(0, 113, 227, .18), 0 10px 24px -8px rgba(0, 88, 196, .55); }
-.sc-hero.is-green .sc-avatar { background: linear-gradient(145deg, #3ad16a, #1f9a45); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(52, 199, 89, .25), 0 10px 24px -8px rgba(31, 154, 69, .5); }
-.sc-hero.is-amber .sc-avatar { background: linear-gradient(145deg, #ffb340, #e08600); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(255, 159, 10, .25), 0 10px 24px -8px rgba(224, 134, 0, .5); }
-.sc-hero.is-red .sc-avatar { background: linear-gradient(145deg, #ff6b61, #d70015); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(255, 59, 48, .22), 0 10px 24px -8px rgba(215, 0, 21, .45); }
-.sc-hero.is-gray .sc-avatar { background: linear-gradient(145deg, #a1a1a8, #6e6e73); box-shadow: 0 0 0 4px #fbfbfd, 0 0 0 5px rgba(0, 0, 0, .08); }
-.sc-id { min-width: 0; padding-top: 2px; }
-#view .sc-name { margin: 0; color: #1d1d1f; font: 700 30px/1.15 var(--font); letter-spacing: -.025em; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-.sc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
-.sc-meta .p-pill { padding: 5px 12px; font-size: 14px; font-weight: 600; }
-.sc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #3a3a3c; font-size: 14px; font-weight: 550; }
-.sc-chip svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: #6e6e73; }
-.sc-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-#view .sc-hero .btn, #view .sc-source .btn, #view .sc-checks .btn, #view .sc-next .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 18px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 600 15px var(--font); box-shadow: none; transition: background .15s, transform .15s, box-shadow .15s; }
-#view .sc-hero .btn-sm, #view .sc-source .btn-sm, #view .sc-checks .btn-sm { min-height: 34px; padding: 0 14px; font-size: 14px; }
-#view .sc-hero .btn:hover:not(:disabled), #view .sc-source .btn:hover:not(:disabled), #view .sc-checks .btn:hover:not(:disabled), #view .sc-next .btn:hover:not(:disabled) { background: #dcdce2; transform: translateY(-1px); }
-#view .sc-hero .btn.btn-primary, #view .sc-source .btn.btn-primary, #view .sc-next .btn.btn-primary { background: #0071e3; color: #fff; box-shadow: 0 6px 16px -8px rgba(0, 113, 227, .8); }
-#view .sc-hero .btn.btn-primary:hover:not(:disabled), #view .sc-source .btn.btn-primary:hover:not(:disabled), #view .sc-next .btn.btn-primary:hover:not(:disabled) { background: #0077ed; }
-.sc-btn-ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-/* Call, WhatsApp and Email under the name */
-.sc-reach { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.sc-reach-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px 0 6px; border-radius: 980px; background: #fff; color: #1d1d1f; font-size: 15px; font-weight: 600; text-decoration: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 2px 6px -2px rgba(0, 0, 0, .1); transition: transform .15s, box-shadow .15s; }
-.sc-reach-btn:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 8px 18px -8px rgba(0, 0, 0, .22); text-decoration: none; }
-.sc-reach-btn:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
-.sc-reach-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #0071e3; color: #fff; }
-.sc-reach-ico svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.sc-reach-btn.is-wa .sc-reach-ico { background: #25d366; }
-.sc-reach-btn.is-mail .sc-reach-ico { background: #8944d6; }
-/* the steps from first inquiry to visa */
-.sc-steps-box { margin-top: 24px; padding: 18px 20px 16px; border-radius: 18px; background: rgba(255, 255, 255, .75); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .05); }
-.sc-steps-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; color: #1d1d1f; font-size: 15px; }
-.sc-steps-head .sc-eyebrow { margin-right: 6px; }
-.sc-steps-now { color: #6e6e73; }
-.sc-eyebrow { color: #6e6e73; font-size: 12.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
-.sc-steps { --sc-done: 0; position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); margin: 16px 0 0; padding: 0; list-style: none; }
-.sc-steps::before, .sc-steps::after { content: ""; position: absolute; top: 11px; left: 6.25%; height: 3px; border-radius: 3px; }
-.sc-steps::before { right: 6.25%; background: #e3e3e8; }
-.sc-steps::after { width: calc(87.5% * var(--sc-done)); background: linear-gradient(90deg, #5aa9ff, #0071e3); transition: width .6s var(--ease, ease); }
-.sc-steps li { position: relative; z-index: 1; display: grid; justify-items: center; gap: 8px; min-width: 0; text-align: center; }
-.sc-step-dot { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #fbfbfd; box-shadow: inset 0 0 0 2px #d2d2d7; }
-.sc-step-dot svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
-.sc-steps li.is-done .sc-step-dot { background: #0071e3; box-shadow: none; }
-.sc-steps li.is-now .sc-step-dot { background: #0071e3; box-shadow: 0 0 0 5px rgba(0, 113, 227, .18); animation: sc-pulse 2.4s ease-in-out infinite; }
-.sc-steps li.is-now .sc-step-dot::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
-.sc-step-label { max-width: 100%; color: #86868b; font-size: 12.5px; font-weight: 550; line-height: 1.25; overflow-wrap: anywhere; }
-.sc-steps li.is-done .sc-step-label { color: #3a3a3c; }
-.sc-steps li.is-now .sc-step-label { color: #0066cc; font-weight: 700; }
-.sc-steps-box.is-lost { background: #fff8ec; box-shadow: inset 0 0 0 1px #f6dfb5; }
-.sc-steps-box.is-lost .sc-steps-head b { color: #9a5b00; }
-.sc-steps-box.is-lost .sc-steps::after { display: none; }
-/* the details as tiles */
-.sc-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 16px; }
-.sc-fact { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px 14px; border: 0; border-radius: 16px; background: #fff; text-align: left; font: inherit; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); transition: transform .15s, box-shadow .15s; }
-.sc-fact:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 8px 20px -10px rgba(0, 0, 0, .2); }
-.sc-fact.is-action { cursor: pointer; }
-.sc-fact.is-action:hover { transform: translateY(-1px); }
-.sc-fact.is-action:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
-.sc-fact-ico { display: grid; flex: none; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: #e8f1fd; color: #0066cc; }
-.sc-fact-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.sc-fact:nth-child(2) .sc-fact-ico { background: #e4f8eb; color: #1b8a3e; }
-.sc-fact:nth-child(3) .sc-fact-ico { background: #fdeef3; color: #c4325f; }
-.sc-fact:nth-child(4) .sc-fact-ico { background: #f1eafb; color: #7d3fc0; }
-.sc-fact:nth-child(5) .sc-fact-ico { background: #fff2e0; color: #b25f00; }
-.sc-fact:nth-child(6) .sc-fact-ico { background: #e7f6f8; color: #0f7c8c; }
-.sc-fact-text { display: grid; gap: 2px; min-width: 0; flex: 1; }
-.sc-fact-label { color: #6e6e73; font-size: 13px; font-weight: 550; }
-.sc-fact-value { color: #1d1d1f; font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
-.sc-fact-value a { color: #0066cc; text-decoration: none; }
-.sc-fact-value a:hover { text-decoration: underline; }
-.sc-source-rows div { flex-wrap: wrap; }
-@media (min-width: 700px) { .sc-fact.is-wide { grid-column: span 2; } }
-.sc-fact.is-missing { background: #fffaf2; box-shadow: 0 0 0 1px #f8e3c0; }
-.sc-fact.is-missing .sc-fact-ico { background: #ffeccc; color: #b25f00; }
-.sc-fact-go { width: 18px; height: 18px; flex: none; fill: none; stroke: #86868b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s, stroke .15s; }
-.sc-fact.is-action:hover .sc-fact-go { stroke: #0071e3; transform: translateX(3px); }
-.sc-gaps { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 10px 10px 14px; border-radius: 14px; background: #fff4e3; color: #7a4600; font-size: 15px; font-weight: 550; }
-.sc-gaps-ico svg, .sc-checks-ico svg { width: 20px; height: 20px; fill: none; stroke: #c27400; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.sc-gaps-ico { display: grid; flex: none; }
-.sc-gaps-text { flex: 1; min-width: 0; }
-/* where the student came from, in the main card */
-.sc-source { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: start; margin-top: 16px; padding: 16px 16px 16px 18px; border-radius: 18px; background: linear-gradient(135deg, #eef5ff, #f6f1fd); box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .1); }
-.sc-source-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: #0071e3; color: #fff; box-shadow: 0 8px 18px -10px rgba(0, 113, 227, .9); }
-.sc-source-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.sc-source-words { display: grid; gap: 3px; min-width: 0; }
-.sc-source-name { color: #1d1d1f; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
-.sc-source-hint { color: #7a4600; font-size: 14.5px; }
-.sc-source-rows { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 6px 0 0; }
-.sc-source-rows div { display: inline-flex; gap: 6px; padding: 5px 11px; border-radius: 10px; background: rgba(255, 255, 255, .8); font-size: 14px; }
-.sc-source-rows dt { color: #6e6e73; font-weight: 500; }
-.sc-source-rows dd { margin: 0; color: #1d1d1f; font-weight: 600; overflow-wrap: anywhere; }
-.sc-source.is-missing { background: #fff6e8; box-shadow: inset 0 0 0 1px #f6dcae; }
-.sc-source.is-missing .sc-source-ico { background: #ff9f0a; box-shadow: 0 8px 18px -10px rgba(224, 134, 0, .9); }
-.sc-source.is-editing { grid-template-columns: auto minmax(0, 1fr); background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .07), 0 10px 30px -18px rgba(0, 0, 0, .3); }
-.sc-source.is-editing .p-form { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; margin-top: 10px; }
-.sc-source.is-editing .p-seg { justify-self: start; width: max-content; }
-/* details that do not add up */
-#view .sc-checks { margin: 0 0 18px; padding: 18px 20px; border-radius: 20px; background: #fffaf1; box-shadow: inset 0 0 0 1px #f6dfb5, 0 6px 20px -14px rgba(178, 95, 0, .35); animation: sc-rise .45s .05s var(--ease, ease) both; }
-.sc-checks-head { display: flex; align-items: center; gap: 10px; }
-.sc-checks-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #ffe9c4; }
-#view .sc-checks h2 { display: flex; align-items: center; gap: 8px; margin: 0; color: #5c3600; font-size: 18px; font-weight: 700; }
-.sc-checks-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 980px; background: #ff9f0a; color: #fff; font-size: 13px; font-weight: 700; }
-.sc-checks ul { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
-.sc-checks li { display: flex; align-items: center; gap: 12px; padding: 11px 12px 11px 16px; border-radius: 14px; background: #fff; color: #1d1d1f; font-size: 15.5px; font-weight: 550; box-shadow: 0 0 0 1px rgba(0, 0, 0, .04); transition: opacity .25s, transform .25s; }
-.sc-checks li.is-leaving { opacity: .4; transform: translateX(6px); }
-.sc-checks-text { flex: 1; min-width: 0; }
-.sc-checks-foot { margin: 10px 2px 0; color: #7a5a2a; font-size: 14px; }
-/* the next thing to do */
-#view .sc-next { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; margin: 0 0 18px; padding: 16px 18px; border-radius: 20px; background: linear-gradient(135deg, #e9f2fe, #f1f7ff); box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .14); animation: sc-rise .45s .08s var(--ease, ease) both; }
-.sc-next-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #0071e3; color: #fff; }
-.sc-next-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.sc-next-words { display: grid; gap: 2px; min-width: 0; }
-.sc-next-words .sc-eyebrow { color: #0066cc; }
-.sc-next-words b { color: #1d1d1f; font-size: 17px; }
-.sc-next-why { color: #3a3a3c; font-size: 14.5px; }
-.sc-next-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.sc-next-act input[type="date"] { min-height: 40px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 12px; background: #fff; font: 15px var(--font); }
-/* the tabs and the Timeline tab */
-body:has(.p-embed-bar) .p-tabs.sc-tabs { margin: 4px 0 18px; }
-.sc-tl-page { display: grid; gap: 18px; }
-#view .sc-tl-page > .p-card { margin: 0; animation: sc-rise .4s var(--ease, ease) both; }
-#view .sc-tl-page .p-card > h2, #view .sc-tl-page .p-card-head h2, .sc-tl-top h2 { margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 700; letter-spacing: -.015em; }
-body:has(.p-embed-bar) #view .sc-tl-page .p-tasks .p-card-head { margin-bottom: 4px; padding-bottom: 0; border-bottom: 0; }
-.sc-tl-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; margin-left: 8px; padding: 0 7px; border-radius: 980px; background: #e8e8ed; color: #3a3a3c; font-size: 13px; font-weight: 700; vertical-align: 3px; }
-.sc-tl-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.sc-tl-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: #e8e8ed; }
-.sc-tl-seg-btn { padding: 6px 14px; border: 0; border-radius: 8px; background: none; color: #515154; font: 600 14px var(--font); cursor: pointer; transition: background .15s, color .15s; }
-.sc-tl-seg-btn:hover { color: #1d1d1f; }
-.sc-tl-seg-btn[aria-selected="true"] { background: #fff; color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .14); }
-/* the note box */
-.sc-tl-compose { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 20px; }
-.sc-tl-compose-field { position: relative; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px #d2d2d7; transition: box-shadow .15s; }
-.sc-tl-compose-field:focus-within { box-shadow: 0 0 0 2px #0071e3, 0 8px 22px -12px rgba(0, 113, 227, .55); }
-.sc-tl-input { display: block; width: 100%; min-height: 52px; max-height: 320px; padding: 14px 16px; border: 0; outline: none; resize: none; background: transparent; color: #1d1d1f; font: 16px/1.5 var(--font); field-sizing: content; }
-.sc-tl-input::placeholder { color: #86868b; }
-.sc-tl-compose-bar { display: none; justify-content: flex-end; padding: 0 10px 10px; }
-.sc-tl-compose.has-text .sc-tl-compose-bar { display: flex; animation: sc-rise .2s ease both; }
-#view .sc-tl-compose .btn { border: 0; border-radius: 980px; background: #0071e3; color: #fff; font-weight: 600; }
-/* the entries: a rail on the left, a round icon on it, the words in a soft bubble */
-.sc-tl-days { display: grid; gap: 18px; }
-.sc-tl-group { position: relative; }
-#view .sc-tl-day { margin: 0 0 10px 52px; color: #6e6e73; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.sc-tl-list { position: relative; display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.sc-tl-list::before { content: ""; position: absolute; top: 6px; bottom: 6px; left: 19px; width: 2px; border-radius: 2px; background: #e3e3e8; }
-.sc-tl-item { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px; animation: sc-rise .35s var(--ease, ease) both; }
-.sc-tl-av { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #e8f1fd; color: #0066cc; font: 650 13.5px/1 var(--font); letter-spacing: .02em; box-shadow: 0 0 0 4px #fbfbfd; }
-.sc-tl-av svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.sc-tl-item.is-task .sc-tl-av { background: #fff1e0; color: #c25e00; }
-.sc-tl-item.is-done .sc-tl-av { background: #34c759; color: #fff; }
-.sc-tl-item.is-done .sc-tl-av svg { stroke-width: 2.6; }
-.sc-tl-item.is-update .sc-tl-av { background: #ececf0; color: #515154; }
-.sc-tl-item.is-message .sc-tl-av { background: #f1eafb; color: #7d3fc0; }
-.sc-tl-item.is-auto .sc-tl-av { background: #f0f0f3; color: #8e8e93; font-size: 10.5px; }
-.sc-tl-body { min-width: 0; padding: 12px 16px 13px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); transition: box-shadow .15s, transform .15s; }
-.sc-tl-item:hover .sc-tl-body { box-shadow: 0 0 0 1px rgba(0, 0, 0, .07), 0 10px 24px -14px rgba(0, 0, 0, .25); }
-.sc-tl-item.is-cont .sc-tl-av { visibility: hidden; }
-.sc-tl-item.is-auto .sc-tl-body { background: #f7f7f9; box-shadow: none; }
-.sc-tl-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-height: 22px; }
-.sc-tl-who { color: #1d1d1f; font-size: 15px; font-weight: 650; }
-.sc-tl-kind { padding: 2px 9px; border-radius: 980px; background: #f0f0f3; color: #515154; font-size: 12.5px; font-weight: 600; }
-.sc-tl-item.is-task .sc-tl-kind { background: #fff1e0; color: #a35000; }
-.sc-tl-item.is-done .sc-tl-kind { background: #e4f6e9; color: #1b7a36; }
-.sc-tl-item.is-message .sc-tl-kind { background: #f1eafb; color: #6c34a8; }
-.sc-tl-time { margin-left: auto; color: #86868b; font-size: 13px; font-variant-numeric: tabular-nums; }
-.sc-tl-lead { margin: 6px 0 0; color: #1d1d1f; font-size: 15px; font-weight: 600; }
-.sc-tl-ref { margin: 6px 0 0; padding: 6px 10px; overflow: hidden; border-left: 3px solid #d2d2d7; border-radius: 4px 10px 10px 4px; background: #f5f5f7; color: #515154; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
-.sc-tl-text { margin: 6px 0 0; color: #1d1d1f; font-size: 15.5px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
-.sc-tl-text .td-tag { font-size: 12px; vertical-align: 1px; }
-.sc-tl-text.is-folded { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-.sc-tl-link { color: #0066cc; }
-.sc-tl-more, .sc-tl-act { padding: 0; border: 0; background: none; color: #0066cc; font: 600 14px var(--font); cursor: pointer; }
-.sc-tl-more { margin-top: 4px; }
-.sc-tl-more:hover, .sc-tl-act:hover { text-decoration: underline; }
-.sc-tl-acts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; }
-.sc-tl-act.is-remove { color: #86868b; font-weight: 500; opacity: 0; transition: opacity .15s; }
-.sc-tl-item:hover .sc-tl-act.is-remove, .sc-tl-act.is-remove:focus-visible { opacity: 1; }
-.sc-tl-act.is-remove:hover { color: #d70015; }
-@media (hover: none) { .sc-tl-act.is-remove { opacity: 1; } }
-.sc-tl-item.is-new .sc-tl-body { animation: sc-glow 2.4s ease both; }
-.sc-tl-item.is-unseen .sc-tl-body { box-shadow: 0 0 0 1px rgba(0, 113, 227, .35); }
-.sc-tl-item.is-unseen .sc-tl-who::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 7px; border-radius: 50%; background: #0071e3; vertical-align: 2px; }
-.sc-tl-item.is-reveal { animation-delay: .05s; }
-.sc-tl-all { display: block; margin: 16px auto 0; padding: 8px 18px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 600 14px var(--font); cursor: pointer; }
-.sc-tl-all:hover { background: #dcdce2; }
-.sc-tl-all[hidden] { display: none; }
-.sc-tl-empty { display: grid; justify-items: center; gap: 6px; padding: 30px 12px; color: #6e6e73; font-size: 15px; text-align: center; }
-.sc-tl-empty b { color: #1d1d1f; font-size: 17px; }
-.sc-tl-empty-ico { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 50%; background: #e8f1fd; color: #0066cc; }
-.sc-tl-empty-ico svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-@keyframes sc-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes sc-pulse { 0%, 100% { box-shadow: 0 0 0 5px rgba(0, 113, 227, .18); } 50% { box-shadow: 0 0 0 9px rgba(0, 113, 227, .06); } }
-@keyframes sc-glow { 0%, 35% { background: #eaf3ff; } 100% { background: #fff; } }
-@media (prefers-reduced-motion: reduce) { #view .sc-hero, #view .sc-checks, #view .sc-next, #view .sc-tl-page > .p-card, .sc-tl-item, .sc-steps li.is-now .sc-step-dot, .sc-tl-compose.has-text .sc-tl-compose-bar { animation: none; } .sc-steps::after { transition: none; } }
-/* the half card on All Students (920px) and phones */
-@media (max-width: 960px) {
-  .sc-head { grid-template-columns: auto minmax(0, 1fr); }
-  .sc-actions { grid-column: 1 / -1; justify-content: flex-start; }
-}
-@media (max-width: 640px) {
-  #view .sc-hero { padding: 20px 16px; border-radius: 20px; }
-  .sc-head { gap: 14px; }
-  .sc-avatar { width: 56px; height: 56px; font-size: 20px; }
-  #view .sc-name { font-size: 24px; }
-  .sc-step-label { display: none; }
-  .sc-steps li.is-now .sc-step-label { position: absolute; top: 32px; display: block; white-space: nowrap; }
-  .sc-steps { padding-bottom: 22px; }
-  .sc-facts { grid-template-columns: minmax(0, 1fr); }
-  .sc-source, #view .sc-next { grid-template-columns: auto minmax(0, 1fr); }
-  .sc-source > .btn, .sc-next-act { grid-column: 1 / -1; }
-  #view .sc-tl-day { margin-left: 0; }
-  .sc-tl-time { margin-left: 0; }
-}
-
+/* 🔴 CSS CHANGED (2026-11-20): the motion kit calmed to Apple's own timings (measured on apple.com: colours 0.32s on cubic-bezier(.4, 0, .6, 1), backgrounds 0.1s, items fading in over 0.24 to 0.32s, no bounce, no glow) | from: cards rising 18px over 0.62s with a slight zoom, a blue light following the mouse over cards, buttons that sprang to 95% when pressed, a blue glow under the main button on hover, a page change with a slide | to: cards fade in and rise 8px over 0.4s (40ms apart), no light following the mouse, buttons change colour quickly (background 0.1s, words 0.32s) and dim to 85% while pressed, no glow, a page change as a quiet 0.2s fade */
 /* 🔴 CSS CHANGED (2026-11-20): the ISR motion kit, on every page (shared/motion.js, DESIGN.md) | from: pages that sat still between clicks, buttons with no press feel, a hard cut between pages | to: cards and rows rise in one after another as a page opens; a soft blue light follows the mouse over cards; buttons, pills and tabs press in with a little spring; pages cross-fade into each other (in browsers that can); a burst of confetti for a finished task; a progress ring that fills; everything still for anyone who asked for less motion */
 :root { --mo-spring: cubic-bezier(.34, 1.56, .64, 1); --mo-out: cubic-bezier(.2, .8, .2, 1); }
-html.mo-on .mo-rise { opacity: 0; transform: translateY(18px) scale(.985); }
-html.mo-on .mo-rise.mo-in { animation: mo-rise .62s var(--mo-out) both; animation-delay: calc(var(--mo-i, 0) * 42ms); }
-@keyframes mo-rise { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
-html.mo-on .mo-lit { background-image: radial-gradient(420px circle at var(--mo-x, 50%) var(--mo-y, 50%), rgba(0, 113, 227, .075), rgba(0, 113, 227, 0) 60%); }
-html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button) { transition: transform .22s var(--mo-spring), background-color .2s ease, color .2s ease, box-shadow .2s ease; }
-html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button):active:not(:disabled) { transform: scale(.955); }
-html.mo-on .btn-primary:hover:not(:disabled) { box-shadow: 0 8px 22px -10px rgba(0, 113, 227, .65); }
+html.mo-on .mo-rise { opacity: 0; transform: translateY(8px); }
+html.mo-on .mo-rise.mo-in { animation: mo-rise .4s cubic-bezier(.4, 0, .6, 1) both; animation-delay: calc(var(--mo-i, 0) * 40ms); }
+@keyframes mo-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button) { transition: background-color .1s linear, color .32s cubic-bezier(.4, 0, .6, 1), opacity .1s linear; }
+html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button):active:not(:disabled) { opacity: .85; }
 @view-transition { navigation: auto; }
-::view-transition-old(root) { animation: mo-page-out .2s ease both; }
-::view-transition-new(root) { animation: mo-page-in .32s var(--mo-out) both; }
+::view-transition-old(root) { animation: mo-page-out .12s linear both; }
+::view-transition-new(root) { animation: mo-page-in .2s cubic-bezier(.4, 0, .6, 1) both; }
 @keyframes mo-page-out { to { opacity: 0; } }
-@keyframes mo-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes mo-page-in { from { opacity: 0; } to { opacity: 1; } }
 .mo-confetti { position: fixed; inset: 0; z-index: 9999; width: 100vw; height: 100vh; pointer-events: none; }
 .mo-ring { position: relative; flex: none; width: var(--mo-size, 104px); height: var(--mo-size, 104px); }
 .mo-ring svg { display: block; width: 100%; height: 100%; }
 .mo-ring-track { stroke: #e8e8ed; }
-.mo-ring-fill { stroke: url(#mo-ring-g); transition: stroke-dashoffset 1.3s var(--mo-out); filter: drop-shadow(0 2px 6px rgba(10, 132, 255, .25)); }
+.mo-ring-fill { stroke: url(#mo-ring-g); transition: stroke-dashoffset 1.3s var(--mo-out); }
 .mo-ring-mid { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
 .mo-ring-mid b { color: #1d1d1f; font-size: 24px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.05; }
 .mo-ring-mid span { color: #6e6e73; font-size: 11.5px; font-weight: 600; }
@@ -4008,216 +3788,207 @@ html body .td-pulse .td-stat:hover { transform: translateY(-3px) scale(1.03); }
 .td-cheer { color: #1f8a3c !important; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .td-hello h1 .td-name { animation: none; } }
 
-/* 🔴 CSS CHANGED (2026-11-20): the student card comes alive (the owner: "motion, feedback, a game feeling, a surprise every visit") | from: the card and its parts appeared at once and sat still; the progress line simply stood at its step; buttons only changed colour; Save, Add note and Assign changed nothing while they worked; a mistake only showed red words; grey words as light as #86868b; buttons 34 to 40px tall; a single grey bar while loading | to: while loading, a shimmering outline of the card (badge, name, steps, six tiles); then the initials badge pops in, the name, chips, contact buttons and the two buttons rise in one after another, the progress line fills from the start to the student's step while the dots light up in turn, and the tiles cascade in; the stage glow drifts very slowly; a soft light follows the mouse over the main card, tiles, contact buttons, the source and Timeline bubbles; tiles lift a little and tilt their icon; every button springs when pressed; the contact icons give a small wiggle on hover; an "Offer received" chip in gold with a slow shine; Save, Add note, Assign and It is correct turn into "Saving..." with a small spinner, then a green tick that draws itself and "Saved"; a mistake shakes gently; a checked detail flies away to the right; confetti falls the first time a person opens a student with an offer or a visa; Timeline entries arrive one after another and later ones rise in as they are scrolled to; a slim frosted bar with the badge, name, stage, step and a thin progress line slides in at the top once the main card is scrolled away; a quiet key symbol beside the tabs opens a sheet of keyboard keys shown as keycaps; grey words no lighter than #6e6e73; every button on the card at least 44px tall; all of it calm (no motion) for people who ask their device for less motion */
-/* the shimmering outline while the student loads */
-.sc-skel { padding: 28px 30px; border-radius: 24px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 30px rgba(0, 0, 0, .06); }
-.sc-skel i { display: block; border-radius: 12px; background: linear-gradient(90deg, #ececf0 0%, #f6f6f8 45%, #ececf0 90%); background-size: 200% 100%; animation: sc-shimmer 1.3s linear infinite; }
-.sc-skel-head { display: flex; gap: 20px; align-items: center; }
-.sc-skel-head > div { display: grid; flex: 1; gap: 12px; }
-.sc-skel i.sc-skel-av { width: 76px; height: 76px; border-radius: 50%; }
-.sc-skel-line.is-name { width: 42%; height: 30px; }
-.sc-skel-line.is-short { width: 26%; height: 22px; }
-.sc-skel i.sc-skel-steps { height: 92px; margin-top: 24px; border-radius: 18px; }
-.sc-skel-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
-.sc-skel-tiles i { height: 66px; border-radius: 16px; }
-@keyframes sc-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-/* the entrance, the first time the card is drawn */
-.sc-hero.is-intro .sc-avatar { animation: sc-pop .6s cubic-bezier(.34, 1.56, .64, 1) .08s both; }
-.sc-hero.is-intro .sc-name { animation: sc-rise .5s var(--ease, ease) .14s both; }
-.sc-hero.is-intro .sc-meta { animation: sc-rise .5s var(--ease, ease) .2s both; }
-.sc-hero.is-intro .sc-reach { animation: sc-rise .5s var(--ease, ease) .26s both; }
-.sc-hero.is-intro .sc-actions { animation: sc-rise .5s var(--ease, ease) .3s both; }
-.sc-hero.is-intro .sc-steps-box { animation: sc-rise .5s var(--ease, ease) .32s both; }
-.sc-hero.is-intro .sc-steps li .sc-step-dot { animation: sc-pop .45s cubic-bezier(.34, 1.56, .64, 1) both; animation-delay: calc(.45s + var(--i, 0) * 70ms); }
-.sc-hero.is-intro .sc-steps li.is-now .sc-step-dot { animation: sc-pop .45s cubic-bezier(.34, 1.56, .64, 1) both, sc-pulse 2.4s ease-in-out 1.3s infinite; animation-delay: calc(.45s + var(--i, 0) * 70ms), 1.3s; }
-.sc-hero.is-intro .sc-fact { animation: sc-rise .5s var(--ease, ease) both; animation-delay: calc(.5s + var(--i, 0) * 55ms); }
-.sc-hero.is-intro .sc-gaps, .sc-hero.is-intro .sc-source { animation: sc-rise .5s var(--ease, ease) .85s both; }
-/* the progress line fills with a transform (smooth), from the start to the student's step */
-.sc-steps::after { width: 87.5%; transform: scaleX(var(--sc-done)); transform-origin: left center; transition: transform .6s var(--ease, ease); }
-.sc-hero.is-intro .sc-steps::after { animation: sc-fill 1.1s cubic-bezier(.22, 1, .36, 1) .5s both; }
-@keyframes sc-fill { from { transform: scaleX(0); } to { transform: scaleX(var(--sc-done)); } }
-@keyframes sc-pop { 0% { opacity: 0; transform: scale(.4); } 100% { opacity: 1; transform: none; } }
-/* the stage glow drifts very slowly */
-#view .sc-hero::before { animation: sc-drift 18s ease-in-out infinite alternate; }
-@keyframes sc-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(4%, 6px, 0) scale(1.04); } }
-.sc-fact, .sc-reach-btn, .sc-tl-body, .sc-source { position: relative; }
-.sc-fact:hover { transform: translateY(-2px); }
-.sc-fact-ico { transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
-.sc-fact:hover .sc-fact-ico { transform: rotate(-6deg) scale(1.08); }
-.sc-reach-btn:hover .sc-reach-ico svg { animation: sc-wiggle .5s ease; }
-@keyframes sc-wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 60% { transform: rotate(9deg); } }
-/* every press springs */
-#view .btn, .sc-reach-btn, .sc-fact.is-action, .sc-tl-seg-btn, .sc-keys-btn, .p-tabs button { transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), background .15s, box-shadow .15s, color .15s; }
-#view .btn:active:not(:disabled), .sc-reach-btn:active, .sc-fact.is-action:active, .sc-tl-seg-btn:active, .sc-keys-btn:active, .p-tabs button:active { transform: scale(.95); transition-duration: .08s; }
-/* bigger targets, stronger grey */
-#view .sc-hero .btn, #view .sc-source .btn, #view .sc-checks .btn, #view .sc-next .btn, #view .sc-hero .btn-sm, #view .sc-source .btn-sm, #view .sc-checks .btn-sm, .sc-reach-btn { min-height: 44px; }
-#view .sc-tl-compose .btn { min-height: 40px; padding: 0 18px; }
-.sc-tl-seg-btn { min-height: 38px; }
-.sc-step-label, .sc-tl-time, .sc-tl-input::placeholder { color: #6e6e73; }
-.sc-fact-go { stroke: #6e6e73; }
-/* the offer chip, in gold with a slow shine */
-.sc-chip.is-offer { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff3cf, #ffe39a); color: #7a5200; box-shadow: inset 0 0 0 1px rgba(196, 140, 0, .25); }
-.sc-chip.is-offer svg { color: #c48a00; fill: #ffd34d; }
-.sc-chip.is-offer::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .8) 50%, transparent 65%); transform: translateX(-120%); animation: sc-shine 3.6s ease-in-out 1.4s infinite; }
-@keyframes sc-shine { 0%, 60% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
-/* Saving..., then a tick that draws itself */
+/* 🔴 CSS CHANGED (2026-11-20): the student card rebuilt as one calm system, measured on apple.com (the owner: "Apple would not use so much colour; calm, premium, 4K quality") | from: a coloured glow behind the card, blue, green, orange and red gradient initials, gradient chips (a gold "Offer received"), coloured icon squares on every detail tile, blue, green and purple contact circles, a blue and purple source panel, an amber "Details to check" card, a blue "Next step" card, coloured Timeline badges and kind pills, a rail with bubbles, a pulsing step, wiggling icons, a shine, confetti and a "Well done" note on opening, a frosted bar on scrolling, many layers of styles written on top of each other | to: one set of styles in Apple's measured scale: text 17px with line height 1.47 and letter spacing -0.022em (apple.com body), headings 600 weight with tighter spacing (name 40px), labels 14px, near-black #1d1d1f and one grey #6e6e73, blue (#0071e3, links #0066cc) only for the main button, links and the current step; a grey Apple Contacts monogram; the stage pill, then intake and nationality as plain grey words; Call, WhatsApp and Email as grey pills with black line icons; the progress as a thin line with small black dots and one blue dot for now; the details as a clean three-column list (grey label over black value) with hairline rules between sections and no boxes; the Student Source as a section of the same card (grey label, the source at 24px, its details as grey label and black value); "Details to check" and "Next step" as plain off-white panels (a small orange dot is the only warning colour); the Timeline as a quiet list with grey monograms and symbols, hairlines between entries, the kind and time in grey; one soft fade as the card appears; no pulse, shine, wiggle, confetti, note or bar; buttons 44px tall at 17px */
+#view .sc-hero, .sc-skel { margin: 0 0 20px; padding: 40px 44px 36px; border-radius: 28px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .03), 0 4px 20px rgba(0, 0, 0, .035); }
+#view .sc-hero, #view .sc-checks, #view .sc-next, #view .sc-tl-page { color: #1d1d1f; font-size: 17px; line-height: 1.47; letter-spacing: -.022em; }
+#view.sc-entering > * { animation: sc-fade .4s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes sc-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* the top: monogram, name, stage, contact, buttons */
+.sc-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 24px; align-items: start; }
+.sc-avatar { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(180deg, #a1a1a6, #86868b); color: #fff; font: 600 26px/1 var(--font); letter-spacing: 0; }
+.sc-id { min-width: 0; }
+#view .sc-name { margin: 2px 0 0; color: #1d1d1f; font: 600 40px/1.1 var(--font); letter-spacing: -.028em; overflow-wrap: break-word; }
+.sc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 12px; }
+.sc-meta .p-pill { padding: 4px 12px; font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.sc-meta-text { color: #6e6e73; font-size: 17px; }
+.sc-reach { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.sc-reach-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px 0 16px; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font-size: 17px; font-weight: 400; letter-spacing: -.022em; text-decoration: none; transition: background-color .2s; }
+.sc-reach-btn:hover { background: #dcdce2; text-decoration: none; }
+.sc-reach-btn:focus-visible, #view .sc-hero .btn:focus-visible { outline: 3px solid rgba(0, 113, 227, .5); outline-offset: 2px; }
+.sc-reach-ico { display: grid; }
+.sc-reach-ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sc-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+#view .sc-hero .btn, #view .sc-checks .btn, #view .sc-next .btn, dialog .btn.is-busy, dialog .btn.is-done { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 22px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 400 17px var(--font); letter-spacing: -.022em; box-shadow: none; transition: background-color .2s; }
+#view .sc-hero .btn:hover:not(:disabled), #view .sc-checks .btn:hover:not(:disabled), #view .sc-next .btn:hover:not(:disabled) { background: #dcdce2; }
+#view .sc-hero .btn.btn-primary, #view .sc-next .btn.btn-primary, dialog .btn.btn-primary.is-busy, dialog .btn.btn-primary.is-done { background: #0071e3; color: #fff; }
+#view .sc-hero .btn.btn-primary:hover:not(:disabled), #view .sc-next .btn.btn-primary:hover:not(:disabled) { background: #0077ed; }
+#view .sc-hero .btn-sm, #view .sc-checks .btn-sm { min-height: 36px; padding: 0 16px; font-size: 15px; }
+.sc-btn-ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* a section of the card: a hairline above, a grey label */
+.sc-steps-box, .sc-facts, .sc-source { margin-top: 36px; padding-top: 28px; border-top: 1px solid #e8e8ed; }
+.sc-eyebrow { color: #6e6e73; font-size: 14px; font-weight: 600; letter-spacing: -.016em; }
+/* progress */
+.sc-steps-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 17px; }
+.sc-steps-head .sc-eyebrow { margin-right: 8px; }
+.sc-steps-now { color: #6e6e73; }
+.sc-steps-head b { font-weight: 600; }
+.sc-steps { --sc-done: 0; position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); margin: 22px 0 0; padding: 0; list-style: none; }
+.sc-steps::before, .sc-steps::after { content: ""; position: absolute; top: 6px; left: 6.25%; height: 2px; border-radius: 2px; }
+.sc-steps::before { right: 6.25%; background: #d2d2d7; }
+.sc-steps::after { width: 87.5%; background: #1d1d1f; transform: scaleX(var(--sc-done)); transform-origin: left center; }
+.sc-steps li { position: relative; z-index: 1; display: grid; justify-items: center; gap: 10px; min-width: 0; text-align: center; }
+.sc-step-dot { width: 14px; height: 14px; border-radius: 50%; background: #fbfbfd; box-shadow: inset 0 0 0 2px #c7c7cc; }
+.sc-step-dot svg { display: none; }
+.sc-steps li.is-done .sc-step-dot { background: #1d1d1f; box-shadow: none; }
+.sc-steps li.is-now .sc-step-dot { background: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .16); }
+.sc-step-label { max-width: 100%; color: #6e6e73; font-size: 13px; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.sc-steps li.is-done .sc-step-label { color: #1d1d1f; }
+.sc-steps li.is-now .sc-step-label { color: #1d1d1f; font-weight: 600; }
+.sc-steps-box.is-lost .sc-steps-head b { color: #b25000; }
+.sc-steps-box.is-lost .sc-steps::after { display: none; }
+/* the details: a clean list, grey label over black value */
+.sc-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 40px; }
+.sc-fact { display: block; min-width: 0; padding: 0; border: 0; background: none; text-align: left; font: inherit; }
+.sc-fact-text { display: grid; gap: 4px; min-width: 0; }
+.sc-fact-label { color: #6e6e73; font-size: 14px; letter-spacing: -.016em; }
+.sc-fact-value { color: #1d1d1f; font-size: 17px; letter-spacing: -.022em; overflow-wrap: break-word; }
+.sc-fact-value a { color: #0066cc; text-decoration: none; }
+.sc-fact-value a:hover { text-decoration: underline; }
+.sc-fact-value .p-missing { font-size: 17px; }
+.sc-fact.is-filled .sc-fact-value { animation: sc-filled 1.6s ease both; }
+@keyframes sc-filled { 0%, 50% { color: #1a7f37; } 100% { color: #1d1d1f; } }
+.sc-fact-tick { width: 16px; height: 16px; margin-left: 6px; vertical-align: -2px; fill: none; stroke: #1a7f37; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; animation: sc-out .5s ease 1.4s forwards; }
+.sc-fact.is-filled { display: block; }
+@keyframes sc-out { to { opacity: 0; } }
+/* where the student came from: a section of the same card */
+.sc-source { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+.sc-source-ico { display: none; }
+.sc-source-words { display: grid; gap: 4px; min-width: 0; }
+.sc-source-name { color: #1d1d1f; font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -.02em; }
+.sc-source-hint { color: #6e6e73; font-size: 15px; }
+.sc-source-rows { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 8px 0 0; }
+.sc-source-rows div { display: inline-flex; flex-wrap: wrap; gap: 6px; font-size: 15px; letter-spacing: -.016em; }
+.sc-source-rows dt { color: #6e6e73; }
+.sc-source-rows dd { margin: 0; color: #1d1d1f; overflow-wrap: anywhere; }
+.sc-source.is-missing .sc-source-name::before { content: ""; display: inline-block; width: 8px; height: 8px; margin: 0 10px 0 0; border-radius: 50%; background: #ff9f0a; vertical-align: 5px; }
+.sc-source.is-editing { grid-template-columns: minmax(0, 1fr); }
+.sc-source.is-editing .p-form { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; margin-top: 12px; }
+.sc-source.is-editing .p-seg { justify-self: start; width: max-content; }
+.sc-source.is-editing .p-bar { margin-top: 14px; }
+#view .sc-source .btn { min-height: 36px; padding: 0 16px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 400 15px var(--font); box-shadow: none; display: inline-flex; align-items: center; gap: 6px; }
+#view .sc-source .btn:hover:not(:disabled) { background: #dcdce2; }
+#view .sc-source .btn.btn-primary { background: #0071e3; color: #fff; }
+.sc-source-tick { position: absolute; top: 34px; right: 100px; width: 18px; height: 18px; fill: none; stroke: #1a7f37; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; animation: sc-out .5s ease 1.2s forwards; }
+/* details to check, next step: plain off-white panels */
+#view .sc-checks, #view .sc-next { margin: 0 0 20px; padding: 28px 32px; border-radius: 22px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .03), 0 4px 20px rgba(0, 0, 0, .035); }
+.sc-checks-head { display: flex; align-items: center; gap: 10px; }
+.sc-checks-ico { display: none; }
+#view .sc-checks h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: #1d1d1f; font-size: 21px; font-weight: 600; letter-spacing: -.02em; }
+#view .sc-checks h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #ff9f0a; }
+.sc-checks-count { color: #6e6e73; font-size: 17px; font-weight: 400; }
+.sc-checks ul { margin: 14px 0 0; padding: 0; list-style: none; }
+.sc-checks li { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-top: 1px solid #e8e8ed; font-size: 17px; transition: opacity .3s; }
+.sc-checks li.is-leaving { opacity: 0; }
+.sc-checks-text { flex: 1; min-width: 0; }
+.sc-checks-foot { margin: 6px 0 0; color: #6e6e73; font-size: 14px; }
+#view .sc-next { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; }
+.sc-next-ico { display: none; }
+.sc-next-words { display: grid; gap: 4px; min-width: 0; }
+.sc-next-words b { color: #1d1d1f; font-size: 21px; font-weight: 600; letter-spacing: -.02em; }
+.sc-next-why { color: #6e6e73; font-size: 15px; letter-spacing: -.016em; }
+.sc-next-act { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sc-next-act input[type="date"] { min-height: 44px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 12px; background: #fdfdfe; font: 17px var(--font); }
+/* saving: words and a tick, nothing louder */
 .sc-spin { width: 15px; height: 15px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: sc-turn .7s linear infinite; }
 @keyframes sc-turn { to { transform: rotate(360deg); } }
-#view .btn.is-done, dialog .btn.is-done { background: #34c759; color: #fff; }
-#view .btn.is-done:disabled, #view .btn.is-busy:disabled, dialog .btn.is-done:disabled, dialog .btn.is-busy:disabled { opacity: 1; }
-#view .btn.btn-primary.is-busy:disabled, dialog .btn.btn-primary.is-busy:disabled { background: #0071e3; color: #fff; }
-.sc-tick path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: sc-draw .4s ease-out forwards; }
+#view .btn.is-busy:disabled, #view .btn.is-done:disabled, dialog .btn.is-busy:disabled, dialog .btn.is-done:disabled { opacity: 1; }
+.sc-tick path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: sc-draw .35s ease-out forwards; }
 @keyframes sc-draw { to { stroke-dashoffset: 0; } }
-/* a checked detail flies away */
-.sc-checks li.is-leaving { opacity: 0; transform: translateX(60px) scale(.96); transition: opacity .35s ease, transform .35s cubic-bezier(.5, 0, .75, 0); }
-/* Timeline entries arrive one after another; later ones rise in when scrolled to */
-.sc-tl-item { animation-delay: calc(var(--i, 0) * 45ms); }
-.sc-tl-item.sc-later { opacity: 0; transform: translateY(14px); animation: none; transition: opacity .45s var(--ease, ease), transform .45s var(--ease, ease); }
-.sc-tl-item.sc-later.is-in { opacity: 1; transform: none; }
-/* the slim frosted bar at the top once the main card is scrolled away */
-.sc-mini { position: fixed; top: 12px; left: var(--sc-mini-x, 50%); z-index: 900; display: flex; align-items: center; gap: 12px; max-width: min(760px, calc(100vw - 32px)); padding: 7px 18px 7px 7px; border-radius: 980px; background: rgba(251, 251, 253, .78); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 12px 30px -12px rgba(0, 0, 0, .25); opacity: 0; transform: translate(-50%, -16px) scale(.97); transition: opacity .3s var(--ease, ease), transform .35s cubic-bezier(.34, 1.4, .64, 1); pointer-events: none; }
-.sc-mini.is-on { opacity: 1; transform: translate(-50%, 0) scale(1); }
-.sc-mini b { overflow: hidden; color: #1d1d1f; font-size: 15px; white-space: nowrap; text-overflow: ellipsis; }
-.sc-mini-av { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(145deg, #2f8cff, #0058c4); color: #fff; font: 650 13px/1 var(--font); }
-.sc-mini-av.is-green { background: linear-gradient(145deg, #3ad16a, #1f9a45); }
-.sc-mini-av.is-amber { background: linear-gradient(145deg, #ffb340, #e08600); }
-.sc-mini-av.is-red { background: linear-gradient(145deg, #ff6b61, #d70015); }
-.sc-mini-av.is-gray { background: linear-gradient(145deg, #a1a1a8, #6e6e73); }
-.sc-mini .p-pill { flex: none; }
-.sc-mini-step { flex: none; color: #6e6e73; font-size: 13.5px; font-weight: 550; }
-.sc-mini-bar { flex: none; width: 90px; height: 5px; overflow: hidden; border-radius: 5px; background: #e3e3e8; }
-.sc-mini-bar i { display: block; height: 100%; background: linear-gradient(90deg, #5aa9ff, #0071e3); transform-origin: left center; }
-/* the tabs row with the key symbol, and the sheet of keys */
-.sc-tabrow { display: flex; align-items: center; gap: 10px; }
-.sc-keys-btn { display: grid; place-items: center; width: 44px; height: 44px; margin: 4px 0 18px auto; border: 0; border-radius: 50%; background: #e8e8ed; color: #3a3a3c; cursor: pointer; }
-.sc-keys-btn:hover { background: #dcdce2; }
-.sc-keys-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.sc-keys { display: grid; gap: 8px; margin: 0 0 8px; }
-.sc-keys div { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px; background: #f5f5f7; }
-.sc-keys dt { display: flex; gap: 5px; }
-.sc-keys dd { margin: 0; color: #1d1d1f; font-size: 15px; }
-.sc-keys kbd { display: inline-grid; place-items: center; min-width: 32px; height: 32px; padding: 0 8px; border-radius: 8px; background: #fbfbfd; color: #1d1d1f; font: 650 14px var(--font); box-shadow: 0 0 0 1px #d2d2d7, 0 2px 0 #d2d2d7; }
-@media (prefers-reduced-motion: reduce) {
-  .sc-skel i, #view .sc-hero::before, .sc-chip.is-offer::after, .sc-spin, .sc-tick path, .sc-reach-btn:hover .sc-reach-ico svg,
-  .sc-hero.is-intro .sc-avatar, .sc-hero.is-intro .sc-name, .sc-hero.is-intro .sc-meta, .sc-hero.is-intro .sc-reach, .sc-hero.is-intro .sc-actions, .sc-hero.is-intro .sc-steps-box,
-  .sc-hero.is-intro .sc-steps li .sc-step-dot, .sc-hero.is-intro .sc-fact, .sc-hero.is-intro .sc-gaps, .sc-hero.is-intro .sc-source, .sc-hero.is-intro .sc-steps::after { animation: none; }
-  .sc-tick path { stroke-dashoffset: 0; }
-  .sc-tl-item.sc-later, .sc-mini, .sc-checks li.is-leaving, .sc-fact, .sc-fact-ico { transition: none; }
-  .sc-fact:hover, .sc-fact:hover .sc-fact-ico { transform: none; }
-}
-
-/* 🔴 CSS CHANGED (2026-11-20): the student card after an independent design review | from: the entrance took about 2 seconds and played again after every save, tab or filter; the outline while loading was shorter than the card; the progress line took over a second; tiles could not lift (the entrance held them); white bubbles, tiles and note box; tabs, filter buttons, tag pills and the task's Post button under 44px; unchosen tags faded to 55% (hard to read), the chosen one shown by a thin ring only; the Assign window jumped up and down as fields appeared; the keys sheet had a wide gap; the source form turned white; the frosted bar sat on the red demo band; the "3 of 116" pill covered the last lines of the card; its "Next:" name at 11.5px | to: the entrance done in about 0.7 seconds and only the first time (and the Timeline entries again after a change of filter); the outline as tall as the card (steps, six tiles, source); the line fills in 0.45 seconds with the dots 40ms apart; tiles lift 2px on hover; tiles, bubbles and note box in soft off-white (#fdfdfe, Timeline bubbles #f7f7f9); tabs, filters, tags and Post at least 44px; tags at full strength, the chosen one with a bold ring, a tick and a small lift; a field left empty glows red and shakes; the Assign window stays put near the top; keycaps and words close together; the source form keeps its soft blue; the frosted bar sits below the demo band; room at the bottom of the half card for the pill; the "Next:" name at 13px; tiles three to a row with no empty holes (the last tile takes the rest of its row) */
-#view .sc-hero, #view .sc-checks, #view .sc-next, #view .sc-tl-page > .p-card, .sc-tl-item { animation: none; }
-#view.sc-entering .sc-hero { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) both; }
-#view.sc-entering .sc-checks, #view.sc-entering .sc-next { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) .12s both; }
-#view.sc-entering .sc-tl-page > .p-card { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) .18s both; }
-#view.sc-entering .sc-tl-item, .sc-tl-days.is-anim .sc-tl-item { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.2s + var(--i, 0) * 35ms); }
-.sc-tl-days.is-anim .sc-tl-item { animation-delay: calc(var(--i, 0) * 35ms); }
-.sc-tl-item.sc-later { animation: none; }
-.sc-tl-item.is-new .sc-tl-body { animation: sc-glow 2.4s ease both; }
-@keyframes sc-in { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.sc-hero.is-intro .sc-avatar, .sc-hero.is-intro .sc-name, .sc-hero.is-intro .sc-meta, .sc-hero.is-intro .sc-reach, .sc-hero.is-intro .sc-actions, .sc-hero.is-intro .sc-steps-box, .sc-hero.is-intro .sc-steps li .sc-step-dot, .sc-hero.is-intro .sc-fact, .sc-hero.is-intro .sc-gaps, .sc-hero.is-intro .sc-source, .sc-hero.is-intro .sc-steps::after { animation: none; }
-#view.sc-entering .sc-hero.is-intro .sc-avatar { animation: sc-pop .45s cubic-bezier(.34, 1.56, .64, 1) both; }
-#view.sc-entering .sc-hero.is-intro .sc-name { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .04s both; }
-#view.sc-entering .sc-hero.is-intro .sc-meta { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .08s both; }
-#view.sc-entering .sc-hero.is-intro .sc-reach, #view.sc-entering .sc-hero.is-intro .sc-actions { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .12s both; }
-#view.sc-entering .sc-hero.is-intro .sc-steps-box { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .16s both; }
-#view.sc-entering .sc-hero.is-intro .sc-steps li .sc-step-dot { animation: sc-pop .35s cubic-bezier(.34, 1.56, .64, 1) both; animation-delay: calc(.18s + var(--i, 0) * 40ms); }
-#view .sc-steps li.is-now .sc-step-dot, #view.sc-entering .sc-hero.is-intro .sc-steps li.is-now .sc-step-dot { animation: sc-pulse 2.4s ease-in-out .8s infinite; }
-#view.sc-entering .sc-hero.is-intro .sc-steps::after { animation: sc-fill .45s ease-out .18s both; }
-#view.sc-entering .sc-hero.is-intro .sc-fact { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.22s + var(--i, 0) * 30ms); }
-#view.sc-entering .sc-hero.is-intro .sc-source { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .4s both; }
-/* the outline while loading, as tall as the card */
-.sc-skel i.sc-skel-steps { height: 100px; }
-.sc-skel-tiles i { height: 72px; }
-.sc-skel i.sc-skel-src { height: 96px; margin-top: 16px; border-radius: 18px; }
-.sc-skel-reach { display: flex; gap: 8px; margin-top: 4px; }
-.sc-skel-reach i { width: 110px; height: 44px; border-radius: 980px; }
-/* tiles: three to a row, no holes, they lift */
-.sc-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.sc-facts > :last-child:nth-child(3n + 1) { grid-column: span 3; }
-.sc-facts > :last-child:nth-child(3n + 2) { grid-column: span 2; }
-.sc-fact { background: #fdfdfe; transition: transform .18s ease, box-shadow .18s ease; }
-.sc-fact:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 10px 24px -12px rgba(0, 0, 0, .18); }
-.sc-fact-value a { overflow-wrap: break-word; }
-.sc-reach-btn { background: #fdfdfe; }
-/* soft off-white instead of white */
-.sc-tl-body { background: #f7f7f9; box-shadow: 0 0 0 1px rgba(0, 0, 0, .04); }
-.sc-tl-item:hover .sc-tl-body { background: #f4f4f7; }
-.sc-tl-compose-field { background: #fdfdfe; }
-/* 44px targets */
-body:has(.p-embed-bar) .p-tabs.sc-tabs button { min-height: 44px; padding: 0 20px; }
-.sc-tl-seg-btn { min-height: 44px; padding: 0 16px; }
-.sc-tl-act { min-height: 44px; }
-.sc-tl-acts { margin-top: 0; }
-#view .p-tasks .tk-send { min-height: 44px; }
-#view .p-tasks .tk-send:disabled { opacity: 1; background: #e8e8ed; color: #6e6e73; }
-#view .p-tasks .td-check { position: relative; }
-#view .p-tasks .td-check::after { content: ""; position: absolute; inset: -10px; }
-/* the Assign window: clear tags, it stays put, an empty field glows red */
-dialog.p-dialog:has(.p-assign) { margin-top: 8vh; margin-bottom: auto; }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio) { min-height: 44px; padding: 0 18px; line-height: 44px; opacity: 1; font-size: 15px; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), background .15s, color .15s; }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { font-weight: 700; box-shadow: inset 0 0 0 2px currentColor, 0 6px 14px -8px rgba(0, 0, 0, .35); transform: translateY(-1px); }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"]::before { content: "\2713"; margin-right: 6px; font-weight: 800; }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio):active { transform: scale(.95); }
 .p-assign .sc-bad :is(input, select, textarea), .p-assign .sc-bad .td-tag-pick { border-radius: 12px; box-shadow: 0 0 0 2px #d70015; }
-/* the keys sheet, the source form, the frosted bar, the half card */
-.sc-keys div { grid-template-columns: auto minmax(0, 1fr); gap: 16px; }
-.sc-keys dt { min-width: 72px; }
-.sc-source.is-editing { background: linear-gradient(135deg, #eef5ff, #f6f1fd); box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .14); }
-.sc-source.is-editing .p-bar { margin-top: 12px; }
-.sc-mini { top: var(--sc-mini-y, 12px); }
-.sc-mini b { max-width: 40ch; }
-body.p-embed #view { padding-bottom: 90px; }
-.p-drawer-nav .p-drawer-where small { font-size: 13px; }
-@media (prefers-reduced-motion: reduce) { #view.sc-entering *, .sc-tl-days.is-anim .sc-tl-item, #view .sc-steps li.is-now .sc-step-dot { animation: none !important; } }
-
-/* 🔴 CSS CHANGED (2026-11-20): the student card, second review round | from: a white light over the main card that washed out the words under the mouse; the frosted bar cutting a name short in the half card; the task's Post button blue even when there was nothing to post; the Assign tags wrapping "Other" onto its own line; a keycap row 6px out of line; the task tick and its ⋯ button and the update box under 44px; the Timeline card hidden until scrolled to; the half card's "3 of 116" pill over the card's words | to: no white light over the main card (the soft blue light on the tiles, buttons and source stays, under the words' strength); the name in the frosted bar shows in full up to 32 letters; Post grey with grey words until something is typed; the six tags on one line (14px apart side padding, 6px gaps); keycaps in a column wide enough for "Ctrl K"; 44px touch areas on the tick and ⋯, a 44px update box; the Timeline card always shown (its entries arrive one by one instead); the half card's page stops above the pill (the card ends in a soft fade there); a detail just filled in flashes green with a tick that draws itself; the Record offer window's University, Course and Answer across the whole width */
-.sc-mini b { flex-shrink: 0; max-width: 32ch; }
-.sc-mini { max-width: min(860px, calc(100vw - 24px)); }
+dialog.p-dialog:has(.p-assign) { margin-top: 8vh; margin-bottom: auto; }
+.p-assign .td-tag-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio) { min-height: 44px; padding: 0 14px; line-height: 44px; opacity: 1; font-size: 15px; font-weight: 600; justify-content: center; text-align: center; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)::before { content: "\2713"; display: inline-block; width: 14px; margin-right: 4px; opacity: 0; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { box-shadow: inset 0 0 0 2px currentColor; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"]::before { opacity: 1; }
+/* tabs and the keys button */
+.sc-tabrow { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+body:has(.p-embed-bar) .p-tabs.sc-tabs { margin: 0 0 20px; }
+body:has(.p-embed-bar) .p-tabs.sc-tabs button { min-height: 40px; padding: 0 20px; font-size: 15px; }
+.sc-keys-btn { display: grid; place-items: center; width: 44px; height: 44px; margin: 0 0 20px auto; border: 0; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; cursor: pointer; }
+.sc-keys-btn:hover { background: #dcdce2; }
+.sc-keys-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sc-keys { display: grid; gap: 0; margin: 0 0 8px; }
+.sc-keys div { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 16px; padding: 10px 0; border-top: 1px solid #e8e8ed; }
+.sc-keys dt { display: flex; gap: 5px; }
+.sc-keys dd { margin: 0; color: #1d1d1f; font-size: 17px; letter-spacing: -.022em; }
+.sc-keys kbd { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 7px; background: #fdfdfe; color: #1d1d1f; font: 600 14px var(--font); box-shadow: 0 0 0 1px #d2d2d7, 0 1px 0 #d2d2d7; }
+/* the Timeline tab */
+.sc-tl-page { display: grid; gap: 20px; }
+#view .sc-tl-page > .p-card { margin: 0; padding: 32px 36px; border-radius: 22px; }
+#view .sc-tl-page .p-card > h2, #view .sc-tl-page .p-card-head h2, .sc-tl-top h2 { margin: 0; color: #1d1d1f; font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+body:has(.p-embed-bar) #view .sc-tl-page .p-tasks .p-card-head { margin-bottom: 4px; padding-bottom: 0; border-bottom: 0; }
+.sc-tl-count { margin-left: 8px; color: #6e6e73; font-size: 17px; font-weight: 400; letter-spacing: -.022em; }
 body:has(.p-embed-bar) #view .p-card.p-tasks .btn.btn-primary.tk-send:disabled { opacity: 1; background: #e8e8ed; color: #6e6e73; box-shadow: none; }
-.p-assign .td-tag-pick { gap: 6px; }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio) { padding: 0 14px; }
-.sc-keys dt { min-width: 88px; }
-#view .p-tasks .td-more-btn { position: relative; }
-#view .p-tasks .td-more-btn::after { content: ""; position: absolute; inset: -7px; }
-#view .p-tasks .tk-compose textarea.tk-input { min-height: 44px; }
+.sc-tl-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.sc-tl-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: #e8e8ed; }
+.sc-tl-seg-btn { min-height: 34px; padding: 0 16px; border: 0; border-radius: 8px; background: none; color: #1d1d1f; font: 400 15px var(--font); letter-spacing: -.016em; cursor: pointer; }
+.sc-tl-seg-btn[aria-selected="true"] { background: #fdfdfe; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
+.sc-tl-compose { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 14px; align-items: start; margin-bottom: 8px; scroll-margin-top: 110px; }
+.sc-tl-compose-field { border-radius: 14px; background: #fdfdfe; box-shadow: 0 0 0 1px #d2d2d7; transition: box-shadow .2s; }
+.sc-tl-compose-field:focus-within { box-shadow: 0 0 0 1px #0071e3, 0 0 0 4px rgba(0, 113, 227, .15); }
+.sc-tl-input { display: block; width: 100%; min-height: 50px; max-height: 320px; padding: 13px 16px; border: 0; outline: none; resize: none; background: transparent; color: #1d1d1f; font: 17px/1.47 var(--font); letter-spacing: -.022em; field-sizing: content; }
+.sc-tl-input::placeholder { color: #6e6e73; }
+.sc-tl-compose-bar { display: none; justify-content: flex-end; padding: 0 10px 10px; }
+.sc-tl-compose.has-text .sc-tl-compose-bar { display: flex; }
+#view .sc-tl-compose .btn { min-height: 36px; padding: 0 18px; border: 0; border-radius: 980px; background: #0071e3; color: #fff; font: 400 15px var(--font); display: inline-flex; align-items: center; gap: 6px; }
+.sc-tl-days { display: grid; }
+#view .sc-tl-day { margin: 26px 0 4px 50px; color: #6e6e73; font-size: 14px; font-weight: 600; letter-spacing: -.016em; text-transform: none; }
+.sc-tl-list { margin: 0; padding: 0; list-style: none; }
+.sc-tl-item { display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 14px; }
+.sc-tl-av { display: grid; place-items: center; width: 36px; height: 36px; margin-top: 14px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font: 600 13px/1 var(--font); letter-spacing: 0; }
+.sc-tl-av svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sc-tl-me { margin-top: 7px; }
+.sc-tl-item.is-auto .sc-tl-av { color: #6e6e73; font-size: 10px; }
+.sc-tl-body { min-width: 0; padding: 14px 0; }
+.sc-tl-item + .sc-tl-item .sc-tl-body { border-top: 1px solid #e8e8ed; }
+.sc-tl-item.is-cont .sc-tl-av { visibility: hidden; }
+.sc-tl-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.sc-tl-who { color: #1d1d1f; font-size: 17px; font-weight: 600; }
+.sc-tl-kind { color: #6e6e73; font-size: 15px; }
+.sc-tl-time { margin-left: auto; color: #6e6e73; font-size: 14px; font-variant-numeric: tabular-nums; }
+.sc-tl-lead { margin: 4px 0 0; color: #1d1d1f; font-size: 17px; font-weight: 600; }
+.sc-tl-ref { margin: 6px 0 0; padding: 0 0 0 12px; overflow: hidden; border-left: 2px solid #d2d2d7; color: #6e6e73; font-size: 15px; white-space: nowrap; text-overflow: ellipsis; }
+.sc-tl-text { margin: 4px 0 0; color: #1d1d1f; font-size: 17px; line-height: 1.47; white-space: pre-line; overflow-wrap: anywhere; }
+.sc-tl-text .td-tag { font-size: 13px; vertical-align: 1px; }
+.sc-tl-text.is-folded { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.sc-tl-link { color: #0066cc; }
+.sc-tl-more, .sc-tl-act { padding: 0; border: 0; background: none; color: #0066cc; font: 400 15px var(--font); cursor: pointer; }
+.sc-tl-more:hover, .sc-tl-act:hover { text-decoration: underline; }
+.sc-tl-acts { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 6px; }
+.sc-tl-act.is-remove { color: #6e6e73; opacity: 0; transition: opacity .15s; }
+.sc-tl-item:hover .sc-tl-act.is-remove, .sc-tl-act.is-remove:focus-visible { opacity: 1; }
+.sc-tl-act.is-remove:hover { color: #d70015; }
+.sc-tl-item.is-unseen .sc-tl-who::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 50%; background: #0071e3; vertical-align: 2px; }
+.sc-tl-item.is-new .sc-tl-body { animation: sc-fade .3s cubic-bezier(.2, .8, .2, 1) both; }
+.sc-tl-all { display: block; margin: 18px auto 0; min-height: 36px; padding: 0 18px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 400 15px var(--font); cursor: pointer; }
+.sc-tl-all:hover { background: #dcdce2; }
+.sc-tl-all[hidden] { display: none; }
+.sc-tl-empty { display: grid; justify-items: center; gap: 6px; padding: 32px 12px; color: #6e6e73; font-size: 15px; text-align: center; }
+.sc-tl-empty b { color: #1d1d1f; font-size: 17px; font-weight: 600; }
+.sc-tl-empty-ico { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 4px; border-radius: 50%; background: #e8e8ed; color: #6e6e73; }
+.sc-tl-empty-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 #view .sc-tl-page .isr-reveal { opacity: 1; transform: none; }
+/* the outline while loading (grey, shaped like the card) */
+.sc-skel i { display: block; border-radius: 10px; background: linear-gradient(90deg, #ececf0 0%, #f5f5f7 45%, #ececf0 90%); background-size: 200% 100%; animation: sc-shimmer 1.4s linear infinite; }
+.sc-skel-head { display: flex; gap: 24px; align-items: flex-start; }
+.sc-skel-head > div { display: grid; flex: 1; gap: 12px; }
+.sc-skel i.sc-skel-av { width: 72px; height: 72px; border-radius: 50%; }
+.sc-skel-line.is-name { width: 40%; height: 40px; }
+.sc-skel-line.is-short { width: 24%; height: 24px; }
+.sc-skel-reach { display: flex; gap: 10px; margin-top: 10px; }
+.sc-skel-reach i { width: 112px; height: 44px; border-radius: 980px; }
+.sc-skel i.sc-skel-steps { height: 72px; margin-top: 36px; }
+.sc-skel-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 40px; margin-top: 36px; }
+.sc-skel-tiles i { height: 46px; }
+.sc-skel i.sc-skel-src { height: 70px; margin-top: 36px; }
+@keyframes sc-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+/* the half card on All Students: the frame stops above the "3 of 116" pill */
 .p-drawer iframe { height: calc(100% - 78px); }
-.p-drawer { background: var(--bg); }
-body.p-embed #view { padding-bottom: 24px; }
-.sc-facts { align-items: stretch; }
-.sc-fact.is-filled { animation: sc-filled 1.6s ease both; }
-.sc-fact.is-filled .sc-fact-ico { background: #dff6e6; color: #1b8a3e; }
-.sc-fact-tick { width: 20px; height: 20px; flex: none; margin-left: auto; fill: none; stroke: #1b8a3e; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-@keyframes sc-filled { 0% { box-shadow: 0 0 0 2px #34c759; background: #eefbf2; } 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); background: #fdfdfe; } }
-@media (prefers-reduced-motion: reduce) { .sc-fact.is-filled { animation: none; } }
-
-/* 🔴 CSS CHANGED (2026-11-20): the student card, third review round, and on the shared motion kit | from: the card's own confetti and mouse light (a layer over each tile, button, bubble and the source) beside the kit's light; the chosen Assign tag growing wider (bold words and a tick) so "Other" jumped to a second line; a loading outline about 70px shorter than the card; a filled-in detail staying bright green; a new note only tinted; the source saved with no sign on it; the Record offer window's two days 120px wide between full-width fields; the frosted bar flat over the card | to: the shared kit's confetti (big burst) and one mouse light, the kit's (DESIGN.md), now also on the tiles, contact buttons and Timeline bubbles; every tag keeps a slot for its tick and the same weight, so choosing one changes no width; the outline as tall as the card (steps 104px, source 120px); a filled-in detail glows green, then settles back over 0.6 seconds and keeps a small tick at 60%; a new note slides down from the note box into place, its tint fading over 1.5 seconds; the source panel glows green with a tick that draws itself after a save; the Record offer days side by side; the frosted bar with a deeper shadow so it floats */
-.p-assign .td-tag-pick :is(.td-tag, .td-prio) { font-weight: 600; }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio)::before { content: "\2713"; display: inline-block; width: 14px; margin-right: 4px; font-weight: 800; opacity: 0; transform: scale(.4); transition: opacity .15s, transform .25s var(--mo-spring, cubic-bezier(.34, 1.56, .64, 1)); }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { font-weight: 600; }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"]::before { content: "\2713"; margin-right: 4px; opacity: 1; transform: none; }
-.sc-skel i.sc-skel-steps { height: 104px; }
-.sc-skel i.sc-skel-src { height: 120px; }
-.sc-fact.is-filled { animation: sc-filled 1.8s ease both; }
-@keyframes sc-filled { 0%, 65% { box-shadow: 0 0 0 2px #34c759; background: #eefbf2; } 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); background: #fdfdfe; } }
-.sc-fact-tick { animation: sc-settle .6s ease 1.2s forwards; }
-@keyframes sc-settle { to { opacity: .6; } }
-.sc-tl-item.is-new { animation: sc-drop .26s cubic-bezier(.2, .8, .2, 1) both; }
-.sc-tl-item.is-new .sc-tl-body { animation: sc-glow 1.5s ease both; }
-@keyframes sc-drop { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
-@keyframes sc-glow { 0%, 20% { background: #eaf3ff; } 100% { background: #f7f7f9; } }
-.sc-source.is-saved { animation: sc-saved 1.8s ease both; }
-@keyframes sc-saved { 0%, 60% { box-shadow: inset 0 0 0 2px #34c759; } 100% { box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .1); } }
-.sc-source-tick { width: 22px; height: 22px; fill: none; stroke: #1b8a3e; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; animation: sc-settle .6s ease 1.2s forwards; }
-.sc-mini { box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 14px 34px -10px rgba(0, 0, 0, .3); }
-@media (prefers-reduced-motion: reduce) { .sc-tl-item.is-new, .sc-tl-item.is-new .sc-tl-body, .sc-source.is-saved, .sc-fact-tick, .sc-source-tick, .p-assign .td-tag-pick :is(.td-tag, .td-prio)::before { animation: none; transition: none; } }
-
-/* 🔴 CSS CHANGED (2026-11-20): the student card, final review round | from: after saving the source, its tick took the Edit button's place (Edit dropped to the bottom and the panel grew) until a reload; the Assign tags in two uneven lines (four, then two); the frosted bar sitting over the note box while writing | to: the tick floats at the top right of the source panel without moving anything and leaves after 1.8 seconds; the six tags as an even grid, three to a row; the frosted bar steps aside while the note box is being written in, and the note box stops below it when the N key brings it into view */
-.sc-source { position: relative; }
-.sc-source-tick { position: absolute; top: 18px; right: 96px; }
-.p-assign .td-tag-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.p-assign .td-tag-pick :is(.td-tag, .td-prio) { justify-content: center; text-align: center; }
-body:has(.sc-tl-input:focus) .sc-mini { opacity: 0; transform: translate(-50%, -16px) scale(.97); }
-.sc-tl-compose { scroll-margin-top: 110px; }
+.p-drawer-nav .p-drawer-where small { font-size: 13px; }
+@media (max-width: 960px) {
+  .sc-head { grid-template-columns: auto minmax(0, 1fr); }
+  .sc-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  #view .sc-hero { padding: 32px 32px 30px; }
+}
+@media (prefers-reduced-motion: reduce) { #view.sc-entering > *, .sc-skel i, .sc-spin, .sc-tick path, .sc-fact.is-filled .sc-fact-value, .sc-fact-tick, .sc-source-tick, .sc-tl-item.is-new .sc-tl-body { animation: none; } .sc-tick path { stroke-dashoffset: 0; } }

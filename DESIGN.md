@@ -1,143 +1,127 @@
 # ISR design brief: how every screen must look, move and feel
 
 The owner's standing instruction (20 Nov 2026). Every change to a page, a card, a window or a style follows this file. CLAUDE.md
-points here, so every session reads it before front-end work. The front end is the product: the team works in ISR all day, and
-it must feel premium, alive and rewarding, like a beautifully made game, while staying fast and clear for real work.
+points here, so every session reads it before front-end work. The front end is the product. ISR is treated as an Apple product:
+premium, calm, quiet and exact. The measure is apple.com itself, not "inspired by" it.
+
+## 0. The prompt (paste this whenever you ask for front-end work)
+
+> You are Apple's own design and web engineering team (the designer, the front-end engineer and the person who signs it off).
+> Build this screen of ISR, a premium product, as Apple would ship it on apple.com: calm, quiet, exact, expensive-feeling.
+> Read CLAUDE.md and DESIGN.md first and follow them to the letter, especially section 2 (the measured Apple values).
+> - Colour: near-black #1d1d1f and one grey #6e6e73 for text; blue (#0071e3 buttons, #0066cc links) only for the one main
+>   action, links and "where you are now". No gradients, no coloured icons, no coloured panels, no glow. A colour appears only
+>   when it means something (an orange dot for missing, green for done, red for an error).
+> - Type: Apple's scale (17px body, line height 1.47, letter spacing -0.022em; headings weight 600 with tighter spacing). Sharp
+>   and large; never thin, never pale.
+> - Space: generous. Sections separated by space and a hairline, never by boxes inside boxes.
+> - Motion: short and quiet, Apple's own timings (colour 0.32s, background 0.1s, fade-in 0.4s, curve cubic-bezier(.4, 0, .6, 1)).
+>   No bounce, no confetti, no pop-ups or notifications that the person did not ask for, nothing that follows the mouse, nothing
+>   sticky that slides in.
+> - Every action still answers: a button says what it is doing (Saving..., then Saved with a tick), a mistake shows a short red
+>   line and a gentle shake of the field.
+> - Never a second copy of a feature that already exists on the page.
+> Check it in a real browser at 1440px and 1280px next to apple.com, click everything, look for any overlap, cut text or console
+> error on every page you touched, then have an independent reviewer score it against apple.com (9/10 or more on every screen)
+> before you hand it back. Follow CLAUDE.md for the 🔴 CSS marks, the log and the reply.
 
 ## 1. The feeling
 
-- **Premium and calm at rest, alive in use.** At rest a page is clean, light and quiet (Apple). The moment someone acts, it
-  answers: things rise, press, glow, count, fill and celebrate.
-- **A small surprise on every visit.** A greeting that shines, numbers that count up, a ring that fills, rows that arrive one after
-  another, confetti when work is finished. Never the same dead screen twice.
-- **Work that feels like progress.** Show progress as rings and bars that fill, and celebrate milestones:
-  - a task finished: a burst of confetti
-  - everything done today: one big burst, once a day
-  - students moving through stages, like levels
-  Elegant, never childish. Think of the rings in Apple Fitness and the rewards in Duolingo, made with the restraint of Apple.
-- **Benchmarks** (the owner keeps no links, so these name the standard):
-  - apple.com product pages: space, type, the sense of quality
-  - Linear and Raycast: speed, keyboard, crisp motion
-  - Stripe and Vercel: depth, light, gradients that move slowly
-  - Things 3 and Apple Fitness: satisfying completion
-  - Awwwards Site of the Day: surprise
-  The owner asked for more than the Apple website, which feels static.
+- **Calm and premium at rest, precise in use.** A page is quiet: lots of space, black text on soft grey and off-white, one blue.
+  When someone acts, the page answers at once and quietly (a colour change, a word, a tick), never with a show.
+- **Confidence comes from restraint.** Fewer colours, fewer borders, fewer words, fewer effects. What remains is placed exactly.
+- **The details people feel without noticing** (they decide whether something feels premium):
+  - text that is large, dark and tightly set, with even spacing everywhere
+  - one grey only for secondary words, so the eye knows what is less important
+  - buttons that react in a tenth of a second (a slow button feels cheap)
+  - everything lined up on the same edges; the same gap used again and again
+  - nothing moves unless the person did something; nothing blinks, pulses, shines or follows the mouse
+  - no surprise windows or notifications; the person is never interrupted
+  - hairlines instead of boxes; one level of panels, never a box inside a box inside a box
+  - the same control always looks the same on every page
 
-## 2. Fixed brand rules (never break)
+## 2. Fixed values (measured on apple.com, 20 Nov 2026)
 
-- Apple design language, **light theme only** (no dark mode, no extra themes).
-- Colours:
+| What | Apple's value | In ISR |
+|---|---|---|
+| Body text | 17px, line height 25px (1.47), letter spacing -0.374px (-0.022em), weight 400 | the same |
+| Small text and labels | 14px, line height 20px, letter spacing -0.224px (-0.016em) | the same |
+| Headings | weight 600; 40px (line 44px), 28px (line 32px), 21px (line 25px); 80px hero with -0.015em | page and card titles 40px, section titles 21 to 24px |
+| Text colours | #1d1d1f; secondary #6e6e73 | the same, nothing lighter than #6e6e73 |
+| Links | #0066cc | the same |
+| Main button | #0071e3, white 17px words, pill (980px radius), 44px tall, about 22px each side | the same |
+| Other buttons | grey pill (#e8e8ed, hover #dcdce2) with black words; or a blue outline pill | grey pill |
+| Page and panels | page #f5f5f7, tiles white with 18 to 28px corners, no border, no shadow | page #f5f5f7, panels soft off-white #fbfbfd (never pure white), 22 to 28px corners, a barely visible shadow |
+| Rules | hairlines | 1px #e8e8ed |
+| Top bar | 44px, rgba(245, 245, 247, .8) with saturate(180%) blur(20px) | the menu keeps its own place; nothing extra sticks to the top |
+| Text rendering | antialiased | antialiased, optimizeLegibility |
+| Colour change on hover | 0.32s cubic-bezier(.4, 0, .6, 1) | the same |
+| Background change on hover or press | 0.1s linear | the same; a pressed button dims to 85% |
+| Items appearing (menus) | opacity and 8 to 12px movement, 0.24 to 0.32s, 80ms apart | 0.4s, 8px, 40ms apart |
+| Tile hover | a slight scale over 0.3s cubic-bezier(0, 0, .5, 1) | only on picture tiles; never on text panels |
+| Page change | none (the new page simply appears) | a 0.2s fade |
+| Bounce, glow, confetti, light under the mouse | none | none |
 
-  | Use | Colour |
-  |---|---|
-  | Canvas | `#f5f5f7` |
-  | Panels | soft off-white, never pure white |
-  | Text | `#1d1d1f` |
-  | Primary action | blue pill `#0071e3` |
-  | Other actions | grey pills |
-  | Tabs | segmented |
-
-- **One font**, the system font (SF Pro on Apple), Inter elsewhere (`--font`). No serif.
-- **Easy on older eyes:**
-  - large type and large buttons
-  - tap targets of at least 44px
-  - contrast passing WCAG AA
-  - grey text never lighter than `#6e6e73`
-  - motion never makes text hard to read
+- **Light theme only** (no dark mode, no extra themes). **One font**, the system font (SF Pro on Apple), Inter elsewhere
+  (`--font`). No serif.
+- **Easy on older eyes:** large type, 44px targets for main actions, contrast passing WCAG AA, motion never in the way of reading.
 - Only the consultancy's logo (menu, login). Its name is a stored setting, never written into code.
 - **Never a second copy of a feature that already exists on the page.** Make the existing control better instead.
-- Pictures:
-  - never black, white, blank, blurry, a poster, a banner with text, a ceremony, or a logo used as a photo
-  - never the same picture twice on a page
-  - a picture that fails is removed gracefully
+- Pictures: never black, white, blank, blurry, a poster, a banner with text, a ceremony, or a logo used as a photo; never the same
+  picture twice on a page; a picture that fails is removed gracefully.
 - Fewer words: titles, numbers and short labels.
 - **Desktop and laptop first** (until the owner asks for phones). Phone styles already in the code stay as they are.
 
 ## 3. The motion kit (use it; do not reinvent it)
 
-`shared/motion.js` is loaded on every page by `header.js` (and directly by a page that needs it before it draws). Its styles are
-the "ISR motion kit" section of `shared/theme.css`.
+`shared/motion.js` is loaded on every page by `header.js`. Its styles are the "ISR motion kit" section of `shared/theme.css`,
+set to Apple's timings above.
 
 | Piece | How to use it | What it does |
 |---|---|---|
-| Rise in | `Motion.reveal(container, '.selector')` | the matching elements rise and fade in one after another (42ms apart), each once |
+| Rise in | `Motion.reveal(container, '.selector')` | the elements fade in and rise 8px, 40ms apart, each once |
 | Count up | `Motion.countUp(el, number, { format })` | a number counts up; the final text is always exact |
-| Celebrate | `Motion.celebrate(x, y, big)` | confetti from a point; `big` for a milestone |
-| Progress ring | `Motion.ring(done, total, { size, stroke, label })` | an SVG ring that fills (green to blue) with the percentage counting up |
-| Cursor light | automatic on cards (list in `motion.js`) | a soft blue light follows the mouse over cards with a plain background |
-| Press | automatic (CSS) on buttons, pills, tabs | a small spring when pressed, a blue glow on the primary button |
-| Page change | automatic (CSS view transitions) | pages cross-fade into each other |
+| Celebrate | `Motion.celebrate(x, y, big)` | confetti; only where the owner asked for it (finishing work on Today), never on opening a page |
+| Progress ring | `Motion.ring(done, total, { size, stroke, label })` | an SVG ring that fills |
+| Press | automatic (CSS) on buttons, pills, tabs | quick colour change, a slight dim while pressed |
+| Page change | automatic (CSS view transitions) | a 0.2s fade |
 | Less motion | `Motion.reduced()` | true when the person asked for less motion, and in automated tests |
 
-Motion tokens:
-
-- **Spring:** `--mo-spring` (`cubic-bezier(.34, 1.56, .64, 1)`), for presses and pops.
-- **Smooth ease-out:** `--mo-out` (`cubic-bezier(.2, .8, .2, 1)`), for entrances.
-- **Durations:**
-
-  | Use | Time |
-  |---|---|
-  | Press | 0.2s |
-  | Entrance | 0.6s |
-  | Ring | 1.3s |
-  | Celebration | 1.7s (2.6s big) |
-
-- Animate only `transform` and `opacity` (60 frames a second).
-- Nothing moves for a reader who asked for less motion; the page still works the same.
+- Animate only `transform` and `opacity`. Nothing moves for a reader who asked for less motion.
 - Automated tests see final values at once (the kit skips motion when `navigator.webdriver` is set).
-
-New pieces join the kit when a second page needs them, for example skeleton loading, morphing buttons (Save, Saving, Saved),
-drag with physics, or shared-element transitions.
+- New pieces join the kit when a second page needs them (for example the loading outline or the Saving, Saved button of the
+  student card).
 
 ## 4. A checklist for every screen
 
-1. **First second:** what catches the eye (a greeting, a ring, a hero picture) and what rises in.
-2. **Every action answers:**
-   - a press springs
-   - a save confirms (a tick, a toast)
-   - an error shakes gently, with a friendly line
-   - a finish celebrates
-3. **Progress is visible:** rings, bars and counts for the work of the day or the stage of a student.
-4. **Hover is rich:** cards lift slightly, the light follows the mouse, and details appear without clutter.
-5. **Empty and loading states are designed:** skeleton shimmer while loading, and for empty a small icon, one line and the next
-   step.
-6. **Keyboard:**
-   - Ctrl/Cmd+K is the existing command palette; do not add a second one
-   - `/` focuses the page's search
-   - Escape closes
-7. **Nothing breaks:**
-   - no console errors
-   - no layout jump
-   - no text over a picture without a shade under it
-8. **Accessible:**
-   - focus rings
-   - `aria` labels on icon buttons
-   - anything that moves on its own has a pause button and stops when off screen
+1. **First look:** is it calm? One blue, black and grey text, space, hairlines. Would it sit on apple.com without looking out of
+   place?
+2. **Every action answers, quietly:** a press changes colour at once; a save says Saving..., then Saved with a tick; an error shows a
+   short red line and the field shakes gently.
+3. **Nothing the person did not ask for:** no pop-ups on opening, no notifications, no confetti, no sticky bars, no pulsing.
+4. **Loading and empty:** a grey outline shaped like the content while loading; when empty, a grey symbol, one line and the next step.
+5. **Keyboard:** Ctrl/Cmd+K is the existing quick search (never a second one); Escape closes; a page's own keys are listed under `?`.
+6. **Nothing breaks:** no console errors, no layout jump, no overlap, no cut text, no sideways scrolling, on every page touched.
+7. **Accessible:** focus rings, `aria` labels on icon buttons, anything that moves on its own can be paused and stops off screen.
 
 ## 5. How to work (every front-end change)
 
 1. Read CLAUDE.md and this file. Work on the latest `master`.
-2. Write a short interaction plan for the screen (first second, what moves, reward moments, keyboard), then build all of it.
-3. Check it in a real browser:
-   - take screenshots at 1440px
-   - click every control
-   - step through the motion
-   - no console errors
-4. **Run an independent reviewer agent** as a strict Apple and Awwwards judge. It scores the delight, motion, clarity,
-   accessibility and speed of each screen out of 10. Fix everything below 9 and review again until every screen scores 9 or more.
-5. Run `npm test` (all of it) before pushing.
-6. Follow CLAUDE.md:
-   - mark every CSS change with the 🔴 comment
-   - log it in CSS-CHANGES.md
-   - start the reply with the 🔴 CSS CHANGED list
-   - no em or en dashes
-   - demo data is called made up
+2. Look at apple.com (it is allowed in this project's cloud environment) and measure what you are matching.
+3. Write a short plan for the screen (what it shows first, how it answers, what is removed), then build all of it.
+4. Check it in a real browser at 1440px and 1280px: click every control, open every window, no console errors, and walk every page
+   for overlaps and cut text.
+5. **Run an independent reviewer agent** as a strict Apple judge, comparing with apple.com. Fix everything below 9 and review again
+   until every screen scores 9 or more.
+6. Run `npm test` (all of it) before pushing.
+7. Follow CLAUDE.md: mark every CSS change with the 🔴 comment, log it in CSS-CHANGES.md, start the reply with the 🔴 CSS CHANGED
+   list, no em or en dashes, demo data is called made up.
 
-## 6. Pages on the motion kit so far
+## 6. Pages so far
 
-| Page | What is done | Still to come |
+| Page | Done | Still to come |
 |---|---|---|
-| Student card | a shimmering outline while loading; badge, name, buttons, steps and tiles arrive in about 0.7 s, only the first time; the progress line fills; the kit's mouse light on the card, tiles, contact buttons and Timeline bubbles; buttons say Saving..., then show a drawn tick (local `morph`); mistakes shake (local `shake`); a filled detail and a saved source flash green; the kit's big confetti the first time a person opens a student with an offer or a visa; a frosted mini bar after scrolling; keys N, E, A, 1, 2, ? | the skeleton and the Saving/Saved button join the kit when a second page needs them |
-| Today | the greeting shine; a progress ring of the day; numbers count up; task rows rise in; confetti for each finished task, and a big burst once a day when everything is done | |
-| Universities (university pages) | cover slideshow with pause; gallery fades; course and level cards rise in; amounts count up | moving to the shared kit |
-| Every page | the cursor light on cards, the press spring, page cross-fades | |
+| Student card | rebuilt as one calm system on the measured values: grey monogram, 40px name, grey contact pills, black progress dots with one blue "now", details as a three-column list, the Student Source as a section of the main card, plain Next step and Details to check panels, a quiet Timeline; a grey loading outline; Saving..., then Saved with a tick; a gentle shake on a mistake; keys N, E, A, 1, 2, ?; no notification, confetti or sticky bar | |
+| Every page | the kit at Apple's timings: quick colour on press, 0.2s page fade, no mouse light, no spring | each page brought to the calm system, one at a time |
+| Today | the greeting, a progress ring of the day, counting numbers, rising rows, confetti for finished tasks | the greeting shine and the confetti to be checked against the calm rule with the owner |
+| Universities (university pages) | cover slideshow with pause, gallery fades, rising cards, counting amounts | moving to the calm system |
