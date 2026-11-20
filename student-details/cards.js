@@ -1,5 +1,5 @@
 // The student cards: everything NIEC knows about a student that is not a column of the sheet. Where the student
-// came from exactly, what the student has studied (for the Fact File assistant), notes, the university options prepared
+// came from exactly, what the student has studied (for Universities assistant), notes, the university options prepared
 // for them and the record of the messages sent to them.
 //
 // A card belongs to one student and is found by the student's row id (the `_id` every row of the sheet has, which
@@ -88,7 +88,7 @@ function cleanOption(input, old = {}) {
     rank: (() => { const v = pick('rank', 3); return /^\d{1,2}$/.test(v) ? v : ''; })(),
     // Through which partner the application goes: "Direct" or a B2B partner's name (asked when it is sent to the Application Team).
     partner: pick('partner', 120),
-    // Chosen by the student themselves on the Fact File (their own login, the owner, 17 Nov 2026).
+    // Chosen by the student themselves on Universities (their own login, the owner, 17 Nov 2026).
     byStudent: input && Object.prototype.hasOwnProperty.call(input, 'byStudent') ? input.byStudent === true : Boolean(old.byStudent),
     addedAt: old.addedAt, addedBy: old.addedBy,
   };

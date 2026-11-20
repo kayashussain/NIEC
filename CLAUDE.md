@@ -59,7 +59,7 @@ The owner does not want old versions, copies or rewrites lying around, because a
 
 ## Rule 3: the owner's real data is on the live server, and the data in a preview is made up (the owner insisted on this, strictly)
 
-- The live server holds the real students, intakes, partners and Fact File. The students, intakes and figures in any preview, demo, screenshot
+- The live server holds the real students, intakes, partners and Universities. The students, intakes and figures in any preview, demo, screenshot
   or test run (`scripts/local-demo.js`, `scripts/demo-data.js`) are **made up by Claude** and must always be called that. Never present
   them as real, and never let the owner think a number from them is real.
 - The owner wants to see and work with the real data before pushing to the live server. Claude cannot reach the live server or the owner's

@@ -155,9 +155,9 @@ The web server must be allowed to reach the mail server on that port. You can al
 variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURITY`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`,
 `MAIL_FROM_NAME` and `SITE_URL` instead of the file.
 
-## Fact File
+## Universities
 
-Every account has a **Fact File** page: a list of universities, and for each one a page with its entry
+Every account has a **Universities** page: a list of universities, and for each one a page with its entry
 requirements, language test, courses, location, intakes (with their own requirements and courses) and the
 application process step by step. Anyone can read it and use **Print or save as PDF** to get a clean A4
 copy. Only Admin can add, edit or delete a university. It is stored in `fact-file.json` in the Student
@@ -201,20 +201,20 @@ New in the same app, no new setup needed: the data goes in new files of the Stud
 
 - **Email to students** goes from **each person's own mailbox** (the owner, 14 Nov 2026). Everyone sets theirs up once on **Follow-up**, **Your setup for sending**, type the address and its password, **Check and save** (a test email is sent first; it is saved only if it works). The password is kept encrypted in `user-mail.json` with its key in `mail-key`, both in the Student Details data folder, never in git, never in the daily backups, never shown on a page. A team member without their own mailbox cannot email (Send email keeps a preview). Admin sends from their own mailbox if set, else from the office mailbox (`node scripts/email.js setup`, see Email above). A team member's email is signed with their name, team, address and phone; a copy goes to their own mailbox and to the office mailbox unless Admin switches copies off (Follow-up, Your setup for sending).
 - **WhatsApp on your phone**: nothing to set up on the server. Each person connects their phone once: on the computer, the menu (their name), **Connect my phone** shows a code; they point the phone's camera at it and tap **Turn on** (an iPhone shows one extra step, Add to Home Screen). Then WhatsApp on the computer sends a notification to that phone, and one tap opens the student's chat there. The site must be on https (it is). The server makes its own key the first time (`push-keys.json` in the data folder); deleting that file disconnects every phone. A phone connected before 17 Nov 2026 should be connected once more (Disconnect, then Connect my phone): from then on it keeps itself connected.
-- **The Fact File assistant needs nothing set up:** it runs inside the server and reads the entry rules in the Fact File. No key, no outside service.
+- **The university finder needs nothing set up:** it runs inside the server and reads the entry rules in Universities. No key, no outside service.
 
 New files of the same kind since then: `agents.json` with `agent-files/` (the Agents page), `source-options.json` (choices added to "Where exactly") and `course-watch.json` (the weekly check of the course pages; set `COURSE_WATCH=off` to switch it off). A file the server could not read is never deleted: it is set aside as `<name>.damaged-<time>.json` next to the data.
 
 ## Route2Uni (removed)
 
-Route2Uni was removed on 17 Nov 2026 (the owner): ISR no longer logs into the Route2Uni portal, and the Fact File has no
-"Kept up to date by itself" panel. What it had already written into the Fact File pages stays. If `ROUTE2UNI_EMAIL` and
+Route2Uni was removed on 17 Nov 2026 (the owner): ISR no longer logs into the Route2Uni portal, and Universities has no
+"Kept up to date by itself" panel. What it had already written into the university pages stays. If `ROUTE2UNI_EMAIL` and
 `ROUTE2UNI_PASSWORD` are still in the app's Environment variables, delete them (they are no longer used), then Restart.
 
-## The Navitas product toolkit in the Fact File
+## The Navitas product toolkit in Universities
 
 ISR reads the Navitas product toolkit (the public Google Sheet "Nepal UK/Europe Navitas product toolkit") twice a week, Monday and
-Thursday from 2 a.m. office time, and gives each UK Navitas college its own Fact File page: fees,
+Thursday from 2 a.m. office time, and gives each UK Navitas college its own university page: fees,
 scholarships, entry requirements, English, study gap, courses, the January intake with its deadlines and courses, interview
 questions, Flywire payment and refund links, accommodation and the application steps. German and Dutch colleges are left out,
 and so is Manchester Metropolitan University International College (closed). Nothing needs to be set up: the sheet must stay shared
@@ -224,7 +224,7 @@ button to start it).
 - To read another copy of the toolkit, add the variable `NAVITAS_SHEET_ID` = the long id in the sheet's link (between `/d/` and
   `/edit`), then Restart.
 - To switch it off, add `NAVITAS_TOOLKIT` = `off` and Restart (the pages keep what they have).
-- Every part of these pages follows the sheet. Nobody edits a Fact File page; the team may only correct an intake's dates (Change
+- Every part of these pages follows the sheet. Nobody edits a university page; the team may only correct an intake's dates (Change
   dates), which are kept until the sheet itself changes them.
 
 ## Updating the code later
@@ -251,7 +251,7 @@ cd ~/uk-student-niec && git fetch origin master && git reset --hard origin/maste
 
 3. In cPanel's Node.js App screen, hit **Restart** on the app (and **Run NPM Install** again if `package.json` changed).
 
-4. Open the site and log in. Everyone stays logged in, and every student, intake, Fact File entry, partner and incentive
+4. Open the site and log in. Everyone stays logged in, and every student, intake, Universities entry, partner and incentive
    figure is as it was. Never run `git clean`: it would delete the data files that are not in git.
 
 To go back to the code before an update: `git reset --hard <the commit shown by git log -1 before the update>`, then Restart.

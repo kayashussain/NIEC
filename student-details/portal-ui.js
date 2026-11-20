@@ -1,5 +1,5 @@
 // Small helpers shared by the portal pages (student card, templates, B2B partners, the decision pages and
-// the Fact File's option finder). Loaded as window.Portal after session.js and ui.js.
+// the Universities' option finder). Loaded as window.Portal after session.js and ui.js.
 // Everything that comes from a student, a template or a partner is put on the page as text, never as HTML.
 (function (root) {
   function el(tag, cls, text) {
@@ -81,7 +81,7 @@
   const rupees = (n) => (n === null || n === undefined ? '' : `Rs ${Number(n).toLocaleString('en-IN')}`);
   const percent = (n) => (n === null || n === undefined ? 'n/a' : `${n}%`);
 
-  // Typed text as paragraphs, bullets ("- ") and small headings ("## "), like the Fact File pages.
+  // Typed text as paragraphs, bullets ("- ") and small headings ("## "), like the university pages.
   function richText(parent, text) {
     let list = null;
     String(text || '').split('\n').forEach((raw) => {

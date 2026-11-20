@@ -720,7 +720,7 @@ async function handlePresence(req, res) {
   return sendJSON(res, 200, stateFor(tabKey(req.user, tabOf(body.id)), req.user));
 }
 
-// The Fact File (the owner, 17 Nov 2026): kept by the automatic readings only (the Navitas toolkit, the course pages).
+// Universities (the owner, 17 Nov 2026): kept by the automatic readings only (the Navitas toolkit, the course pages).
 // Nobody adds, edits or deletes a university by hand; the team may only correct the dates of the intakes.
 async function handleFacts(req, res, urlPath) {
   const id = (urlPath.match(/^\/api\/facts\/([a-f0-9]{12})/) || [])[1];
@@ -729,13 +729,13 @@ async function handleFacts(req, res, urlPath) {
     const uni = facts.get(id);
     return uni ? sendJSON(res, 200, uni) : sendJSON(res, 404, { error: 'No such university.' });
   }
-  if (req.method !== 'POST' || !id || !urlPath.endsWith('/deadlines')) return sendJSON(res, 405, { error: 'The Fact File is kept up to date by itself. Only the dates of an intake can be changed.' });
+  if (req.method !== 'POST' || !id || !urlPath.endsWith('/deadlines')) return sendJSON(res, 405, { error: 'Universities is kept up to date by itself. Only the dates of an intake can be changed.' });
   if (isReadOnly(req.user)) return sendJSON(res, 403, { error: 'Your account can only look.' });
   let body;
   try { body = await readJSONBody(req, 64 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
   const saved = facts.setDeadlines(id, body && body.intakes, req.user.label);
   if (saved.error) return sendJSON(res, 400, { error: saved.error });
-  activity.record(req, req.user, 'Edited fact file', { app: 'Fact File', changes: [`Changed the intake dates of ${saved.university.name}`] });
+  activity.record(req, req.user, 'Edited universities', { app: 'Universities', changes: [`Changed the intake dates of ${saved.university.name}`] });
   return sendJSON(res, 200, saved.university);
 }
 
@@ -844,7 +844,7 @@ const userMail = createUserMail(DATA_DIR);
 const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
 // The page of every course on the university's own website (course-sitemap.js), twice a week, at least 100 courses each time.
 const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks });
-// The Navitas product toolkit (a public Google Sheet), read twice a week into the Fact File: one page per UK Navitas college (see
+// The Navitas product toolkit (a public Google Sheet), read twice a week into Universities: one page per UK Navitas college (see
 // navitas-toolkit.js). NAVITAS_SHEET_ID is the sheet's id (else the one the owner gave); NAVITAS_TOOLKIT=off switches it off.
 const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.env.NAVITAS_SHEET_ID || undefined, enabled: process.env.NAVITAS_TOOLKIT !== 'off', clean: cleanFact });
 const portal = createPortalApi({
@@ -892,7 +892,7 @@ try {
   console.error('[startup] data tidy-up failed:', e.message);
 }
 
-// Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Fact File and
+// Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Universities and
 // Partner Universities, each on its own). The data as it is now is saved first, so a restore can be undone.
 async function handleRestore(req, res, urlPath) {
   if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can restore data.' });
@@ -909,7 +909,7 @@ async function handleRestore(req, res, urlPath) {
     if (!snap) return sendJSON(res, 404, { error: 'That backup could not be read.' });
     return sendJSON(res, 200, backups.compare(snap, { students: current, facts: facts.all(), partners: direct.all() }));
   }
-  // Look at a backup (read only): the real pages (Student Details, Fact File, Partner Universities) are opened on the
+  // Look at a backup (read only): the real pages (Student Details, Universities, Partner Universities) are opened on the
   // backup's data with ?backup=ID and ask for it here, in the same shape the live data has.
   const snapMatch = urlPath.match(/^\/api\/restore\/snapshot\/([a-z0-9-]+)\/(data|facts|partners)(?:\/([a-f0-9]{12}))?$/);
   if (snapMatch && req.method === 'GET') {
@@ -953,7 +953,7 @@ async function handleRestore(req, res, urlPath) {
   if (!snap) return sendJSON(res, 404, { error: 'That backup could not be read.' });
   // Check everything before changing anything.
   if (parts.includes('students') && !isValidWorkbook(snap.students)) return sendJSON(res, 400, { error: 'The students in that backup could not be read, so nothing was restored.' });
-  if (parts.includes('facts') && !Array.isArray(snap.facts)) return sendJSON(res, 400, { error: 'That backup has no Fact File, so nothing was restored.' });
+  if (parts.includes('facts') && !Array.isArray(snap.facts)) return sendJSON(res, 400, { error: 'That backup has no Universities, so nothing was restored.' });
   if (parts.includes('partners') && !Array.isArray(snap.partners)) return sendJSON(res, 400, { error: 'That backup has no Partner Universities, so nothing was restored.' });
   if (parts.includes('cards') && (!snap.cards || typeof snap.cards !== 'object')) return sendJSON(res, 400, { error: 'That backup has no student cards, so nothing was restored.' });
   if (parts.includes('records') && !snap.planning && !Array.isArray(snap.b2b) && !snap.templates) return sendJSON(res, 400, { error: 'That backup has no B2B partners or Dashboard records, so nothing was restored.' });
@@ -967,7 +967,7 @@ async function handleRestore(req, res, urlPath) {
     writeWorkbook(ensureRowIds({ revision, sheets: mine.sheets, activeSheetId: mine.activeSheetId }));
     done.push('the students');
   }
-  if (parts.includes('facts')) { facts.restoreAll(snap.facts); done.push('the Fact File'); }
+  if (parts.includes('facts')) { facts.restoreAll(snap.facts); done.push('Universities'); }
   if (parts.includes('partners')) { direct.restoreAll(snap.partners); done.push('the Partner Universities'); }
   if (parts.includes('cards')) { cards.restoreAll(snap.cards); done.push('the student cards'); }
   if (parts.includes('records')) {
@@ -982,15 +982,15 @@ async function handleRestore(req, res, urlPath) {
   return sendJSON(res, 200, { ok: true, restored: done, safety });
 }
 
-// What a student's own login may open: the Fact File's two pages, the files those pages are made of (code, styles, pictures:
-// nothing private), the Fact File itself without its internal notes, and their own shortlist. Answers every other request with
-// "not for a student" (a page goes to the Fact File). Returns true when it answered.
+// What a student's own login may open: the Universities' two pages, the files those pages are made of (code, styles, pictures:
+// nothing private), Universities itself without its internal notes, and their own shortlist. Answers every other request with
+// "not for a student" (a page goes to Universities). Returns true when it answered.
 const STUDENT_PAGES = new Set(['/fact-file.html', '/fact-university.html']);
 async function studentGate(req, res, urlPath) {
   const get = req.method === 'GET';
   if (get && (urlPath === '/' || PAGE_PATHS.has(urlPath) || urlPath === '/incentive' || urlPath.startsWith('/incentive/'))) {
     if (urlPath !== '/fact-file') { send(res, 302, '', { Location: '/fact-file' }); return true; }
-    return false; // the Fact File page itself, served below as for everyone
+    return false; // the university page itself, served below as for everyone
   }
   if (get && (STUDENT_PAGES.has(urlPath) || (STATIC_FILES[urlPath] && !/html/.test(STATIC_FILES[urlPath])) || (SHARED_FILES[urlPath] && !/html/.test(SHARED_FILES[urlPath])))) return false;
   if (get && urlPath === '/api/demo') return false;
@@ -1007,7 +1007,7 @@ async function studentGate(req, res, urlPath) {
   }
   if (urlPath === '/api/eligibility' && req.method === 'POST') return false; // the finder: which universities the student can go to
   if ((get && urlPath === '/api/fact-courses') || urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) return false; // portal-api.js answers for a student
-  if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for the Fact File only.' }); return true; }
+  if (urlPath.startsWith('/api/')) { sendJSON(res, 403, { error: 'Your login is for Universities only.' }); return true; }
   send(res, 302, '', { Location: '/fact-file' });
   return true;
 }
@@ -1083,7 +1083,7 @@ const server = http.createServer(async (req, res) => {
     // Logging in, the login steps, /api/me, and Admin's people/devices/settings.
     if (await accounts.handleApi(req, res, urlPath)) return;
     if (!requireAuth(req, res)) return;
-    // A student's own login (the owner, 17 Nov 2026) reads the Fact File and keeps a shortlist, and nothing else: every other page
+    // A student's own login (the owner, 17 Nov 2026) reads Universities and keeps a shortlist, and nothing else: every other page
     // and every other piece of data is refused here, before any of it is looked at (see studentGate).
     if (isStudent(req.user) && await studentGate(req, res, urlPath)) return;
 
@@ -1154,12 +1154,6 @@ const server = http.createServer(async (req, res) => {
         } : {};
         return sendJSON(res, 200, { entry: { name: e.name, partner: e.partner, direct: Boolean(e.direct), ...where } });
       }
-      // Each Fact File page's partner, for the cards of the Fact File list (the owner, 20 Nov 2026).
-      if (urlPath === '/api/apply-through/map' && req.method === 'GET') {
-        const map = {};
-        facts.all().forEach((u) => { const e = applyThrough.find(u.name); if (e) map[u.id] = !e.direct ? e.partner : /oxford international/i.test(e.partner) ? 'OIEG (direct)' : /navitas/i.test(e.partner) ? 'Navitas (direct)' : 'Direct'; });
-        return sendJSON(res, 200, { map });
-      }
       if (urlPath === '/api/apply-through' && req.method === 'GET') {
         const choices = applyThrough.choices();
         return sendJSON(res, 200, { canChange: level === 'full', choices, choosable: choices.length });
@@ -1197,22 +1191,22 @@ const server = http.createServer(async (req, res) => {
       activity.record(req, req.user, 'Cleared activity', { changes: ['Deleted the saved activity; the record starts again from here'] });
       return sendJSON(res, 200, { ok: true });
     }
-    // Admin's backups: a copy of all students or of the Fact File to keep, and what the server has copied by itself.
+    // Admin's backups: a copy of all students or of Universities to keep, and what the server has copied by itself.
     const backupMatch = urlPath.match(/^\/api\/backup\/(students|fact-file)\.json$/);
     if (backupMatch && req.method === 'GET') {
       if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'Only Admin can make backups.' });
       const which = backupMatch[1];
       if (which === 'students' && !current) return sendJSON(res, 500, { error: 'Could not read the data file' });
       const data = which === 'students' ? current : { universities: facts.all() };
-      activity.record(req, req.user, 'Downloaded backup', { changes: [which === 'students' ? 'Downloaded a copy of all students' : 'Downloaded a copy of the Fact File'] });
+      activity.record(req, req.user, 'Downloaded backup', { changes: [which === 'students' ? 'Downloaded a copy of all students' : 'Downloaded a copy of Universities'] });
       return send(res, 200, JSON.stringify(data, null, 1), {
         'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store',
         'Content-Disposition': `attachment; filename="uk-student-niec-${which}-${localDate()}.json"`,
       });
     }
-    // Who can go where (eligibility.js): one student's level, grade, gap and English against every university of the Fact File that
+    // Who can go where (eligibility.js): one student's level, grade, gap and English against every university in Universities that
     // has its rules in numbers, with the courses of that level (narrowed by the subject), the fee and the open
-    // intake's deadline. For everyone who reads the Fact File, a student's own login too.
+    // intake's deadline. For everyone who reads Universities, a student's own login too.
     if (urlPath === '/api/eligibility' && req.method === 'POST') {
       let body;
       try { body = await readJSONBody(req, 8 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
@@ -1238,7 +1232,7 @@ const server = http.createServer(async (req, res) => {
         const links = courseLinks.all(facts.all());
         // Copies with their link, never changed here.
         const linked = list.map((c) => ({ ...c, link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
-        results.push({ id: u.id, name: u.name, city: u.city, status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit: row.deposit || '',
+        results.push({ id: u.id, name: u.name, city: u.city || (u.profile && u.profile.city) || '', logo: (u.profile && u.profile.logo) || '', cover: (u.profile && (u.profile.banner || u.profile.photos[0])) || '', status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit: row.deposit || '',
           intake: open ? { name: open.name, deadline: open.deadline || '' } : null, courses: linked.slice(0, 40), more: Math.max(0, linked.length - 40), total: linked.length });
       }
       const order = { yes: 0, check: 1, no: 2 };

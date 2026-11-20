@@ -1,6 +1,6 @@
 // Daily backups and restore (Admin only, see server.js).
 //
-// Every day after 6 p.m. (office time) a copy of the students, the Fact File and the Partner Universities is saved as
+// Every day after 6 p.m. (office time) a copy of the students, Universities and the Partner Universities is saved as
 // one compressed file in the data folder (daily-backups/). Copies older than 30 days are deleted. Every restore first
 // saves a "before restore" copy, so a restore can itself be undone. Accounts and passwords are never part of a backup
 // (restoring an old copy must not bring back a person who has since been removed).

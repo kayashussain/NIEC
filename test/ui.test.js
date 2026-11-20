@@ -18,7 +18,7 @@ try { axeSource = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8'
 const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 180000, skip: !playwright && 'Playwright is not installed' }, async (t) => {
+test('screens: log in, edit, delete, search, team rules, Universities', { timeout: 180000, skip: !playwright && 'Playwright is not installed' }, async (t) => {
   let browser;
   try { browser = await playwright.chromium.launch(); } catch (e) { t.skip('no Chromium browser available'); return; }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-ui-'));
@@ -277,7 +277,7 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.close();
   });
 
-  await t.test('the Fact File finds a course; a page is read only, the team changes only the dates', async () => {
+  await t.test('Universities finds a course; a page is read only, the team changes only the dates', async () => {
     const page = await open(admin, '/fact-file');
     await page.waitForSelector('.uni-card:not(.skeleton)');
     assert.strictEqual(await page.locator('#addForm').count(), 0, 'no university is added by hand');
@@ -681,7 +681,7 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.close();
   });
 
-  await t.test('Admin can download a backup of the students and the Fact File; a team member cannot', async () => {
+  await t.test('Admin can download a backup of the students and Universities; a team member cannot', async () => {
     const students = await admin.request.get('/api/backup/students.json');
     assert.ok(students.ok());
     assert.match(students.headers()['content-disposition'], /attachment; filename="uk-student-niec-students-\d{4}-\d{2}-\d{2}\.json"/);

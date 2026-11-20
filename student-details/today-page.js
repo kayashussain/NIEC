@@ -580,7 +580,7 @@
     const quiet = () => { if (!document.hidden && !busy() && !typing()) refresh(true); };
     setInterval(quiet, 60000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) quiet(); });
-    // "/" jumps to the task search, as on the Fact File.
+    // "/" jumps to the task search, as on Universities.
     document.addEventListener('keydown', (e) => {
       if (e.key !== '/' || e.ctrlKey || e.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) || busy()) return;
       const q = page.querySelector('.td-search-input');

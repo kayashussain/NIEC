@@ -47,7 +47,7 @@
         <div class="check-group">
           ${boxes}
           <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Sees every student and the Dashboard, exports to Excel. View only unless a team is ticked.</small></span></label>
-          <label class="check check-student"><input type="checkbox" name="${name}-student"><span><b>Student (Fact File only)</b><small>For a student: reads the Fact File and marks the courses they like. Sees nothing else, no other student.</small></span></label>
+          <label class="check check-student"><input type="checkbox" name="${name}-student"><span><b>Student (Universities only)</b><small>For a student: reads Universities and marks the courses they like. Sees nothing else, no other student.</small></span></label>
         </div>
         <div class="student-pick" hidden>
           <span><b>Which student is this login for?</b><small>Their choices go to this student's University options, and the Application Team gets a task.</small></span>
@@ -191,7 +191,7 @@
   // own team chosen yet shows an orange "Own team not chosen", so it is noticed and set.
   function accessChips(u) {
     if (u.role === 'admin') return '<span class="chip chip-admin">Admin</span>';
-    if (u.role === 'student') return `<span class="chip chip-student">Student, Fact File only</span>${u.studentName ? ` <span class="muted">${esc(u.studentName)}</span>` : ''}`;
+    if (u.role === 'student') return `<span class="chip chip-student">Student, Universities only</span>${u.studentName ? ` <span class="muted">${esc(u.studentName)}</span>` : ''}`;
     const depts = u.departments || [];
     const label = (d) => esc((DEPARTMENTS[d] || { label: d }).label);
     const own = u.taskTeam && depts.includes(u.taskTeam) ? u.taskTeam : (depts.length === 1 ? depts[0] : '');

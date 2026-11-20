@@ -55,7 +55,7 @@ test('a partner is changed only to one that offers the place, and never for a pl
   assert.ok(store.choose('no-such-place', 'Adventus', 'Admin').error);
 });
 
-test('the Fact File finds a university by its name, the university before its college', () => {
+test('Universities finds a university by its name, the university before its college', () => {
   const store = createApplyThrough(tmp(), { wanted: () => true });
   assert.strictEqual(store.find('University of Greenwich').type, 'university');
   assert.strictEqual(store.find('UWE Bristol').name, 'University of the West of England');

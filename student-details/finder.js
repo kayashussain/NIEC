@@ -1,9 +1,9 @@
 // "Find universities for a student" (the owner, 17 Nov 2026): the study level, GPA or percentage, study gap and English test of a
-// student, checked against every university of the Fact File at once (eligibility.js, /api/eligibility). The answer: Eligible, To
+// student, checked against every university in Universities at once (eligibility.js, /api/eligibility). The answer: Eligible, To
 // check (close, or a rule a person decides: a waiver, a gap not stated) and Not eligible, each university with the reasons in plain
 // words (what meets the rule, what the student would need), its fee, scholarship and deposit for that level, the open intake with its
-// deadline, and its courses of that level (narrowed by a subject). Used on the Fact File, on the student card (University options,
-// filled in from the card, with Add), on the Fact File for the team (with Shortlist, for the student chosen: fact-finder.js) and on a
+// deadline, and its courses of that level (narrowed by a subject). Used on Universities, on the student card (University options,
+// filled in from the card, with Add), on Universities for the team (with Shortlist, for the student chosen: fact-finder.js) and on a
 // student's own login (with I am interested).
 //
 //   window.Finder.mount(box, { prefill, onAdd(result, course), addLabel, onSave(values), shortlist })
@@ -16,7 +16,7 @@
     const wrap = el('section', 'p-card fd-card');
     const head = el('div', 'fd-head');
     const words = el('div');
-    words.append(el('h2', '', title), el('p', 'p-muted p-small', intro || 'Enter the student\'s details: every university of the Fact File is checked at once.'));
+    words.append(el('h2', '', title), el('p', 'p-muted p-small', intro || 'Enter the student\'s details: every university in Universities is checked at once.'));
     head.append(words);
     wrap.append(head);
     const form = el('div', 'fd-form');
@@ -56,7 +56,7 @@
     function draw() {
       const d = last;
       out.replaceChildren();
-      if (!d.results.length) { out.append(el('p', 'p-muted', 'No university of the Fact File has this level' + (values().subject ? ' in this subject. Try another word, or leave the subject empty.' : '.'))); return; }
+      if (!d.results.length) { out.append(el('p', 'p-muted', 'No university in Universities has this level' + (values().subject ? ' in this subject. Try another word, or leave the subject empty.' : '.'))); return; }
       const pills = el('div', 'fd-filter');
       pills.setAttribute('role', 'tablist');
       [['all', `All (${d.results.length})`], ['yes', `Eligible (${d.counts.yes})`], ['check', `To check (${d.counts.check})`], ['no', `Not eligible (${d.counts.no})`]].forEach(([k, label]) => {
@@ -66,16 +66,20 @@
       });
       out.append(pills);
       d.results.filter((r) => filter === 'all' || r.status === filter).forEach((r) => out.append(card(r)));
-      out.append(el('p', 'p-muted p-small fd-foot', `A guide from the rules on each university's Fact File page; the university decides. ${d.without ? `${d.without} universities of the Fact File have no rules in numbers yet: see their pages.` : ''}`));
+      out.append(el('p', 'p-muted p-small fd-foot', `A guide from the rules on each university's university page; the university decides. ${d.without ? `${d.without} universities in Universities have no rules in numbers yet: see their pages.` : ''}`));
     }
     function card(r) {
       const c = el('article', `fd-uni ${STATUS[r.status][1]}`);
+      // The university's picture and logo at the top of its result (the owner, 20 Nov 2026: bigger, clearer cards).
+      if (r.cover) { const cv = el('div', 'fd-cover'); const im = el('img'); im.src = r.cover; im.alt = ''; im.loading = 'lazy'; im.referrerPolicy = 'no-referrer'; im.addEventListener('error', () => cv.remove()); cv.append(im); c.append(cv); }
       const top = el('div', 'fd-uni-top');
+      if (r.logo) { const lg = el('span', 'fd-logo'); const im = el('img'); im.src = r.logo; im.alt = ''; im.loading = 'lazy'; im.referrerPolicy = 'no-referrer'; im.addEventListener('error', () => lg.remove()); lg.append(im); top.append(lg); }
       const name = el('a', 'fd-uni-name', r.name);
       name.href = '/fact-file?u=' + encodeURIComponent(r.id);
       if (onAdd) { name.target = '_blank'; name.rel = 'noopener'; }
       const t = el('div');
       t.append(name, el('span', 'fd-city', [r.city, r.intake && `${r.intake.name}${r.intake.deadline ? `, apply by ${r.intake.deadline}` : ''}`].filter(Boolean).join(' · ')));
+      t.classList.add('fd-uni-words');
       top.append(t, el('span', `fd-status ${STATUS[r.status][1]}`, STATUS[r.status][0]));
       c.append(top);
       const why = el('ul', 'fd-why');

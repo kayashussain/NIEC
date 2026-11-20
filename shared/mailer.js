@@ -231,11 +231,11 @@ async function sendMail(cfg, { to, subject, text, html, bcc = [], auto = true, a
 function setupEmail({ name, username, temporaryPassword, access, siteUrl, kind = 'new', company = '' }) {
   company = String(company || '').replace(/[\r\n]+/g, ' ').trim();
   const link = siteUrl.replace(/\/+$/, '') + '/login';
-  // A student's own login (Fact File only) is told what it is for, in a student's words.
+  // A student's own login (Universities only) is told what it is for, in a student's words.
   const student = /^Student\b/.test(String(access || ''));
   const intro = kind === 'reset'
     ? 'Your password for the ISR system has been reset. Use the temporary password below to log in and choose a new one.'
-    : student ? 'We have made you a login to our university Fact File: look through the universities and their courses, and press "I am interested" on the ones you like. We see your choices and advise you.'
+    : student ? 'We have made you a login to our Universities page: look through the universities and their courses, and press "I am interested" on the ones you like. We see your choices and advise you.'
       : `An account has been created for you on the ISR system (${access}).`;
   const steps = [
     'Open the website and log in with the username and temporary password above.',

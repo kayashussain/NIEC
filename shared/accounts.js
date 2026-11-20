@@ -146,7 +146,7 @@ function normalizeUser(raw) {
 // What a person can do, in words: "Admin", "Manager", or their teams joined with a plus.
 function accessLabel(u) {
   if (u.role === 'admin') return 'Admin';
-  if (u.role === 'student') return 'Student (Fact File only)';
+  if (u.role === 'student') return 'Student (Universities only)';
   const teams = (u.departments || []).map((d) => DEPARTMENTS[d]);
   if (u.role === 'manager') return ['Manager', ...teams].join(' + ');
   return teams.join(' + ') || 'No team';
@@ -186,7 +186,7 @@ function parseAccess(body) {
   let departments = Array.isArray(body.departments) ? body.departments.map(String) : [];
   if (DEPARTMENTS[role]) { departments = [role]; role = 'staff'; } // the older single-team form
   if (role === 'admin') return { error: "Admin access can't be given to anyone. The Admin account belongs to the owner only." };
-  // A student's own login: the Fact File only, nothing else (the owner, 17 Nov 2026). It belongs to one student on the sheet.
+  // A student's own login: Universities only, nothing else (the owner, 17 Nov 2026). It belongs to one student on the sheet.
   if (role === 'student') {
     const studentRow = String(body.studentRow || '');
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(studentRow)) return { error: 'Choose which student this login is for.' };

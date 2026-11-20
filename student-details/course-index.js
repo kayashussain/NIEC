@@ -1,9 +1,9 @@
-// Every course in the Fact File as one flat list, each with its university, level, intake, tuition fee and
+// Every course in Universities as one flat list, each with its university, level, intake, tuition fee and
 // scholarship, so a counselor can find "cyber security" once and send the matching options to a student instead of
-// opening each university's page. Built from the Fact File as it is (nothing is stored twice): the course lines of
+// opening each university's page. Built from Universities as it is (nothing is stored twice): the course lines of
 // each university and of each of its intakes, matched to the fees table of the same page by course level.
 //
-// The Fact File holds no web address for a single course. A link typed once for a course (on a student's options)
+// Universities holds no web address for a single course. A link typed once for a course (on a student's options)
 // is remembered in course-links.json in the data folder and offered the next time; until then the university's own
 // website is offered.
 
@@ -134,7 +134,7 @@ function pickLine(cell, course) {
 
 const linkKey = (universityId, course) => `${universityId}|${text(course).toLowerCase()}`;
 
-// Every course of the given universities (the Fact File's own records) as options.
+// Every course of the given universities (the Universities' own records) as options.
 function buildIndex(universities, links = {}) {
   const out = [];
   const seen = new Set();
@@ -194,7 +194,7 @@ function searchCourses(index, { q = '', level = '', intake = '', universityId = 
 }
 
 // The links typed for single courses, remembered for the next student.
-// Course pages checked by hand on the university's own website (public pages, nothing private). They show in the Fact File for every
+// Course pages checked by hand on the university's own website (public pages, nothing private). They show in Universities for every
 // installation that has the university and the course, until someone looks a link up with "Find the course page" (that one is kept).
 const STARTING_LINKS = [
   // Checked on 14 Nov 2026 on arden.ac.uk, Arden University's own site: the page names this course and lists a January 2027 intake.

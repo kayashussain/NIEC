@@ -1,15 +1,15 @@
 // Looking at a backup (?backup=ID, Admin only; the server refuses anyone else).
 //
 // While a page is open on a backup, this bar is the ONLY navigation: the usual NIEC header (Dashboard, All Students,
-// Users, Activity, Fact File) is removed so nobody mistakes the backup for the live data or clicks away by accident.
-// The bar says which backup it is, switches between the real All Students, Fact File and Partner Universities pages
+// Users, Activity, Universities) is removed so nobody mistakes the backup for the live data or clicks away by accident.
+// The bar says which backup it is, switches between the real All Students, Universities and Partner Universities pages
 // on that backup, offers "Restore this backup" (with a preview of what a restore would change), and "Close", which is
 // the only way out. The pages themselves read the backup's data and are read only (app.js, fact-file.js,
 // fact-university.js, direct-page.js).
 //
 // On the Activity page the same helpers describe what a restore would change (window.NiecBackup).
 (function () {
-  const NAMES = { students: 'students', facts: 'Fact File', partners: 'Partner Universities' };
+  const NAMES = { students: 'students', facts: 'Universities', partners: 'Partner Universities' };
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 
   // What restoring one part would do, in words: { text, warn, names }.
@@ -69,7 +69,7 @@
   const title = el('strong', 'title', 'Viewing backup');
   const when = el('span', '', id.replace(/^[a-z-]+?-(\d{4})/, '$1'));
   row.append(title, when);
-  [['/students', 'Students'], ['/fact-file', 'Fact File'], ['/partner-universities', 'Partner Universities']].forEach(([path, label]) => {
+  [['/students', 'Students'], ['/fact-file', 'Universities'], ['/partner-universities', 'Partner Universities']].forEach(([path, label]) => {
     const a = el('a', 'tab', label);
     a.href = `${path}?backup=${encodeURIComponent(id)}`;
     if (location.pathname === path) a.setAttribute('aria-current', 'page');

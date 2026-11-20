@@ -1,4 +1,4 @@
-// Who can go where (student-details/eligibility.js) and one Fact File kept up to date from the partner portal
+// Who can go where (student-details/eligibility.js) and one Universities kept up to date from the partner portal
 // (student-details/fact-sync.js). The universities and figures here are made up.
 const test = require('node:test');
 const assert = require('node:assert');
@@ -70,10 +70,10 @@ test('on the server: the finder answers the team and a student, and courses are 
   const code = fs.readFileSync(path.join(dir, 'first-admin-code.txt'), 'utf8').trim();
   await admin('POST', '/api/login/first-admin', { setupCode: code, username: 'owner', name: 'Owner' });
   await admin('POST', '/api/login/new-password', { password: 'Strong-Pass-2026' });
-  // No Route2Uni any more (the owner, 17 Nov 2026): the finder reads the Fact File's own pages.
+  // No Route2Uni any more (the owner, 17 Nov 2026): the finder reads the Universities' own pages.
   assert.strictEqual((await admin('GET', '/api/route2uni')).status, 404, 'the Route2Uni panel is gone');
   const page = (await admin('GET', '/api/facts')).json[0];
-  assert.ok(page, 'the Fact File has its starting pages');
+  assert.ok(page, 'Universities has its starting pages');
   const all = await admin('POST', '/api/eligibility', { level: 'Postgraduate', grade: '62%', gap: '3', test: 'IELTS Academic', score: '6.5', band: '6' });
   assert.strictEqual(all.status, 200);
   assert.ok(all.json.results.length > 10, 'the pages typed by hand are checked');

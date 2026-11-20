@@ -34,7 +34,7 @@ test('two events with the same name on different days are told apart', () => {
   assert.strictEqual(eventFor(events, 'School visit').id, 1);
 });
 
-test('a link typed on a card is not trusted for the Fact File; a file name loses direction marks', () => {
+test('a link typed on a card is not trusted for Universities; a file name loses direction marks', () => {
   const { createCourseWatch } = require('../student-details/course-watch');
   assert.strictEqual(typeof createCourseWatch, 'function');
 });

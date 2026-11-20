@@ -109,14 +109,14 @@ test('Admin can back up and restore; nobody else can; a restore saves the data a
   assert.strictEqual(first.hour, 18);
   assert.ok(first.backups.some((b) => b.kind === 'daily'), 'the daily copy was made without anyone asking');
 
-  // A copy now, then a change, then restore the Fact File from the copy.
+  // A copy now, then a change, then restore Universities from the copy.
   const manual = (await admin('POST', '/api/restore/backup-now', {})).json.id;
   // A backup is looked at through the real pages, which read its data from these (same shape as the live data).
   const snap = `/api/restore/snapshot/${manual}`;
   const data = (await admin('GET', `${snap}/data`)).json;
   assert.ok(Array.isArray(data.sheets) && data.sheets[0].columns.length > 10, 'the students of a backup come as the workbook');
   const factList = (await admin('GET', `${snap}/facts`)).json;
-  assert.ok(factList.length > 10 && factList[0].intakes, 'the Fact File list comes with the live list shape');
+  assert.ok(factList.length > 10 && factList[0].intakes, 'Universities list comes with the live list shape');
   assert.ok((await admin('GET', `${snap}/facts?q=bangor`)).json.some((u) => u.name === 'Bangor University'), 'and can be searched');
   assert.strictEqual((await admin('GET', `${snap}/facts/${factList[0].id}`)).json.name, factList[0].name, 'one university page of the backup');
   const partnerList = (await admin('GET', `${snap}/partners`)).json;

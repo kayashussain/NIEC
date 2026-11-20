@@ -3,7 +3,7 @@
 There are two supported ways to host this: **Render** (this file) or **cPanel / Nest Nepal** (see
 `CPANEL_DEPLOY.md`). Pick one; you don't need both.
 
-It is **one app**: `student-details/` (the visa application tracker, Fact File, Dashboard, Users and Activity), with the
+It is **one app**: `student-details/` (the visa application tracker, Universities, Dashboard, Users and Activity), with the
 Incentive page from `counselor-incentive/` running inside it at `/incentive`. Incentive is Admin only and behind its own
 password: set the `INCENTIVE_PASSWORD` environment variable on the service. `npm start` (the `gateway/` file) just starts
 that one app on the port the host expects.
@@ -116,9 +116,9 @@ The web server must be allowed to reach the mail server on that port. You can al
 variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURITY`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`,
 `MAIL_FROM_NAME` and `SITE_URL` instead of the file.
 
-## Fact File
+## Universities
 
-Every account has a **Fact File** page: a list of universities, and for each one a page with its entry
+Every account has a **Universities** page: a list of universities, and for each one a page with its entry
 requirements, language test, courses, location, intakes (with their own requirements and courses) and the
 application process step by step. Anyone can read it and use **Print or save as PDF** to get a clean A4
 copy. Only Admin can add, edit or delete a university. It is stored in `fact-file.json` in the Student
@@ -143,7 +143,7 @@ New in the same app, no new setup needed: the data goes in new files of the Stud
 
 - **Email to students** goes from **each person's own mailbox** (the owner, 14 Nov 2026). Everyone sets theirs up once on **Follow-up**, **Your setup for sending**, type the address and its password, **Check and save** (a test email is sent first; it is saved only if it works). The password is kept encrypted in `user-mail.json` with its key in `mail-key`, both in the Student Details data folder, never in git, never in the daily backups, never shown on a page. A team member without their own mailbox cannot email (Send email keeps a preview). Admin sends from their own mailbox if set, else from the office mailbox (`node scripts/email.js setup`, see Email above). A team member's email is signed with their name, team, address and phone; a copy goes to their own mailbox and to the office mailbox unless Admin switches copies off (Follow-up, Your setup for sending).
 - **WhatsApp on your phone**: nothing to set up on the server. Each person connects their phone once: on the computer, the menu (their name), **Connect my phone** shows a code; they point the phone's camera at it and tap **Turn on** (an iPhone shows one extra step, Add to Home Screen). Then WhatsApp on the computer sends a notification to that phone, and one tap opens the student's chat there. The site must be on https (it is). The server makes its own key the first time (`push-keys.json` in the data folder); deleting that file disconnects every phone. A phone connected before 17 Nov 2026 should be connected once more (Disconnect, then Connect my phone): from then on it keeps itself connected.
-- **The Fact File assistant needs nothing set up:** it runs inside the server and reads the entry rules in the Fact File. No key, no outside service.
+- **The university finder needs nothing set up:** it runs inside the server and reads the entry rules in Universities. No key, no outside service.
 
 ## Updating the code later
 
@@ -153,7 +153,7 @@ the persistent disk, separate from the code.
 
 ## Tests
 
-`npm test` runs the checks (they also run during `deploy.sh`). Most are quick tests of the rules and data. `test/ui.test.js` drives the real screens in a browser (log in, edit, delete, search, team rules, Fact File); it runs only where Playwright and Chromium are installed (add `npm i -D axe-core` to include the accessibility check) and skips itself on a normal server, so it never blocks a deploy.
+`npm test` runs the checks (they also run during `deploy.sh`). Most are quick tests of the rules and data. `test/ui.test.js` drives the real screens in a browser (log in, edit, delete, search, team rules, Universities); it runs only where Playwright and Chromium are installed (add `npm i -D axe-core` to include the accessibility check) and skips itself on a normal server, so it never blocks a deploy.
 
 ## Checking that it is running
 

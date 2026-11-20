@@ -1,4 +1,4 @@
-// Adds new facts to a Fact File page without overwriting anything that is already there.
+// Adds new facts to a university page without overwriting anything that is already there.
 //
 // The rules (the owner asked for them):
 //   - A field that is empty is filled; a field that has text keeps it.

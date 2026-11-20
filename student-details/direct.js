@@ -1,7 +1,7 @@
 // The Partner Universities list: the universities NIEC has a direct agreement with, each with its campuses,
 // commission slabs and the other details a consultancy needs (agreement, contacts, payment terms, conditions).
 // Admin changes it; the Manager, the Application and Mock Teams and the branches look at it, with what partner-access.js allows. Kept in direct-universities.json in the
-// data folder, written whole and atomically. Nothing here is shared with the Advisor connector or the Fact File.
+// data folder, written whole and atomically. Nothing here is shared with the Advisor connector or Universities.
 
 const fs = require('fs');
 const path = require('path');
@@ -114,7 +114,7 @@ const STARTERS = [
   { name: 'University of West London', campuses: [{ name: 'Ealing', city: 'London' }, { name: 'Brentford', city: 'London' }, { name: 'Reading', city: 'Reading' }] },
   {
     name: 'Bangor University', campuses: [{ name: 'Main Campus', city: 'Bangor, Wales' }],
-    // The regional team named on Bangor's flyer (also in its Fact File page).
+    // The regional team named on Bangor's flyer (also in its university page).
     contacts: [
       { name: 'Braj Jha (Regional Manager)', email: 'b.jha@bangor.ac.uk', phone: '+44 7833769210' },
       { name: 'Rajinder Kaur (Senior Regional Officer)', email: 'r.kaur@bangor.ac.uk', phone: '+91 98770 80865' },

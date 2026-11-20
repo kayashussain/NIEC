@@ -243,7 +243,7 @@ select:not(.status-select):disabled { opacity: .5; cursor: not-allowed; }
   select option::checkmark { color: var(--niec-blue-text); font-size: 12px; }
 }
 
-/* ---------- 5. Cards and pages (Dashboard, Fact File, Users, Activity, partners) ---------- */
+/* ---------- 5. Cards and pages (Dashboard, Universities, Users, Activity, partners) ---------- */
 .page { padding-top: 38px; }
 .page-head h1 { font-size: 36px; }
 .page-head p { font-size: 16px; color: var(--text-dim); }
@@ -522,13 +522,13 @@ option, select, select option { font-size: 14px; }
 .page b, .p-card b, .card b, .p-sent b, label b { font-size: 14px; }
 pre, .p-wa-preview { font-size: 14px !important; }
 .p-chip, .pill, .uni-mono { font-size: 14px !important; }
-/* 🔴 CSS CHANGED (2026-11-12): Fact File fees table | from: 13px text, no sign on a phone that it scrolls sideways | to: 14px text, and a soft shadow on the right edge on a phone */
+/* 🔴 CSS CHANGED (2026-11-12): Universities fees table | from: 13px text, no sign on a phone that it scrolls sideways | to: 14px text, and a soft shadow on the right edge on a phone */
 .programs { font-size: 14px; }
 @media (max-width: 700px) { .table-wrap { box-shadow: inset -14px 0 12px -12px rgba(0,0,0,.2); } }
 /* 🔴 CSS CHANGED (2026-11-12): small notes on Message templates | from: 13.5px | to: 14px */
 small, .p-muted, .muted, #mailNote, .help { font-size: 14px; }
 label span, .p-card label span { font-size: 14px; }
-/* 🔴 CSS CHANGED (2026-11-12): last 13px text and a scroll hint | from: Fact File City and Intakes labels 13.5px, chart numbers and months 13px, no sign that the Fact File fees table scrolls | to: 14px, and a line above the table on narrow screens saying to scroll sideways */
+/* 🔴 CSS CHANGED (2026-11-12): last 13px text and a scroll hint | from: Universities City and Intakes labels 13.5px, chart numbers and months 13px, no sign that Universities fees table scrolls | to: 14px, and a line above the table on narrow screens saying to scroll sideways */
 /* 🔴 CSS CHANGED (2026-11-12): Partner Universities table on a 1440px screen | from: the table was 40px wider than the screen, so the page scrolled sideways and the last button was cut | to: table cells wrap up to 1600px wide screens and a card scrolls inside itself if still too wide */
 .page .card, .table-card { overflow-x: auto; }
 @media (max-width: 1600px) {
@@ -539,7 +539,7 @@ label span, .p-card label span { font-size: 14px; }
 /* 🔴 CSS CHANGED (2026-11-12): long tags on the student card on a phone | from: a long event tag ran off the right edge | to: it wraps onto a second line */
 .p-chip { white-space: normal; max-width: 100%; overflow-wrap: anywhere; }
 
-/* 🔴 CSS CHANGED (2026-11-13): course names in the Fact File | from: plain text lines | to: each course is a link to its page (blue, underlined on hover), with a small "Find the course page" button when the page is not known yet */
+/* 🔴 CSS CHANGED (2026-11-13): course names in Universities | from: plain text lines | to: each course is a link to its page (blue, underlined on hover), with a small "Find the course page" button when the page is not known yet */
 .course-links { list-style: none; margin: 6px 0 14px; padding: 0; }
 .course-links li { margin: 4px 0; font-size: 15px; }
 .course-links .course-group { margin-top: 12px; font-weight: 700; color: var(--text-dim); letter-spacing: .02em; }
@@ -603,7 +603,7 @@ html:has(#sheet) { overflow-y: auto; }
 /* 🔴 CSS CHANGED (2026-11-13): Add student and other pop-up forms on short screens | from: the Cancel and Add buttons sat below the visible part of the pop-up, reachable only by scrolling inside the form | to: the buttons stay fixed at the bottom of the pop-up and the fields scroll above them */
 dialog.p-dialog { max-height: 94vh; overflow: auto; }
 .p-dialog-foot { position: sticky; bottom: 0; z-index: 2; background: var(--panel); padding-top: 12px; padding-bottom: 6px; margin-top: 8px; }
-/* 🔴 CSS CHANGED (2026-11-13): lists and tables when zoomed in | from: Events, B2B and Agents tables squeezed names and the Edit button into one-word lines, long labels on the Dashboard were cut with dots, and the Fact File section chips ran off the edge | to: those tables keep a readable width and scroll sideways with a shadow, labels wrap, and the chips wrap */
+/* 🔴 CSS CHANGED (2026-11-13): lists and tables when zoomed in | from: Events, B2B and Agents tables squeezed names and the Edit button into one-word lines, long labels on the Dashboard were cut with dots, and Universities section chips ran off the edge | to: those tables keep a readable width and scroll sideways with a shadow, labels wrap, and the chips wrap */
 .p-table-wrap > .p-table { min-width: 760px; }
 .p-table td button, .p-table td .p-link, .p-table td a { white-space: nowrap; }
 nav.toc { flex-wrap: wrap; overflow: visible; }
@@ -624,7 +624,7 @@ nav.toc { flex-wrap: wrap; overflow: visible; }
   .p-tabs { flex-wrap: wrap; overflow: visible; }
 }
 .p-table-wrap td, .p-table-wrap th { overflow-wrap: break-word; word-break: normal; }
-/* 🔴 CSS CHANGED (2026-11-13): design polish from the designer review | from: (1) empty Today cards took a whole tile each; (2) many small headings in capital letters (table headings, tile labels, form sections); (3) the plain browser "Choose File" button and date boxes that did not match the pills and selects; (4) a scroll shadow on tables that did not scroll; (5) page titles close to their intro line; (6) editor sections with no space between them; (7) the pop-up close X small; (8) Dashboard cards of different heights and a washed-out target ring; (9) the printed top of the Fact File shown on screen | to: (1) one quiet line per empty card, cards with work first; (2) sentence case, with capitals only for the Admin heading in the menu; (3) a pill file button and date boxes with the same height and rounding as the selects; (4) no shadow; (5) more space and a readable line length under every title; (6) a rule and 28px above each section; (7) a larger 40px close button; (8) equal card heights, graphs at the bottom and a clearer ring; (9) shown only when printing */
+/* 🔴 CSS CHANGED (2026-11-13): design polish from the designer review | from: (1) empty Today cards took a whole tile each; (2) many small headings in capital letters (table headings, tile labels, form sections); (3) the plain browser "Choose File" button and date boxes that did not match the pills and selects; (4) a scroll shadow on tables that did not scroll; (5) page titles close to their intro line; (6) editor sections with no space between them; (7) the pop-up close X small; (8) Dashboard cards of different heights and a washed-out target ring; (9) the printed top of Universities shown on screen | to: (1) one quiet line per empty card, cards with work first; (2) sentence case, with capitals only for the Admin heading in the menu; (3) a pill file button and date boxes with the same height and rounding as the selects; (4) no shadow; (5) more space and a readable line length under every title; (6) a rule and 28px above each section; (7) a larger 40px close button; (8) equal card heights, graphs at the bottom and a clearer ring; (9) shown only when printing */
 
 th, .p-table th, .stat-card .stat-label, .stat-group-title, .p-card h3, .p-dialog-body h3, .th-label { text-transform: none; letter-spacing: 0; }
 .stat-card .stat-label { min-height: 0; white-space: nowrap; font-weight: 600; }
@@ -828,7 +828,7 @@ body:has(#sheet) .topbar .came-from { order: 4; height: 46px; max-width: 320px; 
 body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lux-ink) 12%, transparent); outline: none; }
 @media (max-width: 900px) { body:has(#sheet) .topbar .came-from { order: 5; width: 100%; max-width: none; } }
 
-/* 🔴 CSS CHANGED (2026-11-13): one brand look on every page (Today, Dashboard, Follow-up, Add many students, Fact File, B2B Partners, Agents, Users, Activity, Message templates, Incentive, and the pages already redone) | from: heavy black sans page titles, plain number tiles with black figures, grey rounded pill tabs, cards and tables that each looked a little different, plain grey initials circles | to: every page title in the same large navy serif as All Students and the student card, with a short dim intro under it; number tiles with navy serif figures and a thin bronze line under the first; tabs as clean underline tabs with a bronze line under the open one; cards with the same fine border, roomy padding, soft shadow and navy headings; table headings on a soft navy tint; initials circles in soft navy with a bronze ring; on Today the counts on the cards in navy; the Dashboard number cards with serif figures */
+/* 🔴 CSS CHANGED (2026-11-13): one brand look on every page (Today, Dashboard, Follow-up, Add many students, Universities, B2B Partners, Agents, Users, Activity, Message templates, Incentive, and the pages already redone) | from: heavy black sans page titles, plain number tiles with black figures, grey rounded pill tabs, cards and tables that each looked a little different, plain grey initials circles | to: every page title in the same large navy serif as All Students and the student card, with a short dim intro under it; number tiles with navy serif figures and a thin bronze line under the first; tabs as clean underline tabs with a bronze line under the open one; cards with the same fine border, roomy padding, soft shadow and navy headings; table headings on a soft navy tint; initials circles in soft navy with a bronze ring; on Today the counts on the cards in navy; the Dashboard number cards with serif figures */
 .p-head h1, .page-head h1 { font-family: var(--brand-serif); font-size: 36px; font-weight: 600; letter-spacing: 0; line-height: 1.15; color: var(--brand-navy); }
 .p-head h1 + p, .page-head h1 + p, .p-head p, .page-head p { color: var(--text-dim); font-size: 16px; line-height: 1.55; max-width: 70ch; }
 /* number tiles */
@@ -845,7 +845,7 @@ body:has(#sheet) .topbar .came-from:focus { border-color: var(--lux-ink-2); box-
 /* 🔴 CSS CHANGED (2026-11-14): the old underline tabs (bronze under the open one) removed here | from: they beat the Apple segmented control on every page but the student card | to: every .p-tabs is the segmented control */
 /* tables */
 .p-table thead th, .page .card thead th, .table-card thead th { background: color-mix(in srgb, var(--gold-soft) 45%, var(--panel)); color: var(--brand-navy); font-weight: 650; border-bottom: 1px solid var(--border); }
-/* Fact File cards */
+/* Universities cards */
 .uni-card { border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(20, 27, 41, .04), 0 14px 30px -28px rgba(29, 47, 82, .45); }
 .uni-card:hover { border-color: color-mix(in srgb, var(--brand-navy) 35%, var(--border)); }
 .uni-card h3, .uni-card strong { color: var(--brand-navy); }
@@ -1259,7 +1259,7 @@ details.td-attn-row[open] .td-attn-list { animation: isr-slide-down .35s var(--e
   dialog.p-dialog[open], dialog.ui-dialog[open], body:has(#sheet) .status-summary:not([hidden]), details.td-attn-row[open] .td-attn-list, ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
 }
 
-/* 🔴 CSS CHANGED (2026-11-14): the last old pieces found by the page-by-page design review, now in the Apple look | from: Users, Activity and Incentive tabs as navy text with an orange underline; navy access chips, counts and "Logged in" pills; navy-barred tiles on Activity; orange step circles, an orange bar on the intake box and navy markers on the Fact File university page; bronze note-type pills, a navy bar on the chosen university option and black underlined links on the student card; coloured bars on the left of task rows, the task panel, the task strip and the first figure card; champagne initials in the account circle; navy filter-menu buttons and checkboxes; a square ⋮ on the intake tabs; a square navy "Add payment" and navy bars on the Incentive totals; square confirm buttons; a navy-tinted Ctrl+K search; small 11 to 12.5px labels; page titles of four different sizes; coloured stubs on the Dashboard cards | to: every tab row a segmented control with the sliding pill; chips and counts as soft grey or soft blue pills; no coloured bars anywhere (the status pills say late or due); Apple blue for links, step numbers and switched-on chips; white initials; a blue pill "Add payment"; pill buttons in every confirm box; a neutral blurred Ctrl+K; labels at least 13px; page titles 36px everywhere (the Today greeting 40px) */
+/* 🔴 CSS CHANGED (2026-11-14): the last old pieces found by the page-by-page design review, now in the Apple look | from: Users, Activity and Incentive tabs as navy text with an orange underline; navy access chips, counts and "Logged in" pills; navy-barred tiles on Activity; orange step circles, an orange bar on the intake box and navy markers on Universities university page; bronze note-type pills, a navy bar on the chosen university option and black underlined links on the student card; coloured bars on the left of task rows, the task panel, the task strip and the first figure card; champagne initials in the account circle; navy filter-menu buttons and checkboxes; a square ⋮ on the intake tabs; a square navy "Add payment" and navy bars on the Incentive totals; square confirm buttons; a navy-tinted Ctrl+K search; small 11 to 12.5px labels; page titles of four different sizes; coloured stubs on the Dashboard cards | to: every tab row a segmented control with the sliding pill; chips and counts as soft grey or soft blue pills; no coloured bars anywhere (the status pills say late or due); Apple blue for links, step numbers and switched-on chips; white initials; a blue pill "Add payment"; pill buttons in every confirm box; a neutral blurred Ctrl+K; labels at least 13px; page titles 36px everywhere (the Today greeting 40px) */
 .niec-avatar { color: #fff !important; }
 /* tabs on Users, Activity and Incentive: segmented control */
 .tabs[role="tablist"], #tabs.tabs { display: inline-flex; flex-wrap: wrap; gap: 2px; width: auto; padding: 3px; border: 0; border-radius: 12px; background: #e8e8ed; box-shadow: none; }
@@ -1272,7 +1272,7 @@ details.td-attn-row[open] .td-attn-list { animation: isr-slide-down .35s var(--e
 .activity-action.cat-logins { background: #e8f2fd; color: #0058b9; }
 #summary .tile { border: 0 !important; border-left: 0 !important; border-radius: 18px; background: var(--panel); box-shadow: var(--sh-2); }
 #view-only, #viewOnly.view-only, .view-only { border: 0; border-radius: 980px; background: #e8e8ed; color: #515154; }
-/* Fact File university page */
+/* Universities university page */
 .doc ol li::before { background: #e8f2fd !important; color: #0058b9 !important; border: 0 !important; }
 .doc h2::before { background: #0071e3 !important; }
 .chips .chip { background: #e8f2fd; color: #0058b9; }
@@ -2409,7 +2409,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 
 /* 🔴 CSS CHANGED (2026-11-17): the old "Connect my phone" window styles (.pl-dialog, .pl-ready, .pl-devices, .pl-ok) deleted | from: a narrow window, a green line and a plain list of phones | to: replaced by the new window, see ".pc-" at the end of this file */
 
-/* 🔴 CSS CHANGED (2026-11-17): a student's own login on the Fact File (new), and the Student choice on Users (new) | from: nothing (only the team had logins) | to: on the Fact File, an off-white "Welcome, <name>" panel with one line of help and "Your shortlist" (each course in bold with its university as a blue link and a grey "Take off" pill); beside each course of a university a small grey pill "I am interested" that turns soft green "✓ On your shortlist" when chosen; on Users, a "Student (Fact File only)" box under Manager and, when ticked, a soft grey box asking which student the login is for, with a search and the found students as rows; a soft violet "Student, Fact File only" chip in the list */
+/* 🔴 CSS CHANGED (2026-11-17): a student's own login on Universities (new), and the Student choice on Users (new) | from: nothing (only the team had logins) | to: on Universities, an off-white "Welcome, <name>" panel with one line of help and "Your shortlist" (each course in bold with its university as a blue link and a grey "Take off" pill); beside each course of a university a small grey pill "I am interested" that turns soft green "✓ On your shortlist" when chosen; on Users, a "Student (Universities only)" box under Manager and, when ticked, a soft grey box asking which student the login is for, with a search and the found students as rows; a soft violet "Student, Universities only" chip in the list */
 .sl-card { margin: 0 0 18px; }
 .sl-head h2 { margin: 0 0 4px; }
 .sl-head p { margin: 0 0 6px; }
@@ -2436,9 +2436,9 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 
 /* 🔴 CSS CHANGED (2026-11-17): the old code-and-two-steps styles (.pl-pair, .pl-qr, .pl-two, .pl-wait) deleted | from: the code on the left and two numbered steps in large type | to: replaced by the new window, see ".pc-" at the end of this file */
 
-/* 🔴 CSS CHANGED (2026-11-17): the Route2Uni panel removed (the owner) | from: an off-white panel above the Fact File list, "Kept up to date by itself, every Monday and Thursday", with when Route2Uni, Navitas and the course pages were last read and grey tabs Information Hub and What changed | to: no panel; its styles (.r2u-*) deleted */
+/* 🔴 CSS CHANGED (2026-11-17): the Route2Uni panel removed (the owner) | from: an off-white panel above Universities list, "Kept up to date by itself, every Monday and Thursday", with when Route2Uni, Navitas and the course pages were last read and grey tabs Information Hub and What changed | to: no panel; its styles (.r2u-*) deleted */
 
-/* 🔴 CSS CHANGED (2026-11-17): "Find universities for a student" (new) and an intake's key dates (new) | from: no way to check a student against the universities; an intake showed only one short deadline | to: an off-white panel at the top of the Fact File and in the student card's University options: six fields in one row (level, grade, gap, English, score, subject), a blue Find pill, then grey filter pills (All, Eligible, To check, Not eligible) and one rounded card per university with a coloured edge (green eligible, amber to check, grey not eligible), its status pill, the reasons as a list (green tick, amber question mark, red cross), the fee, scholarship and deposit, the intake and its deadline, and its courses with Add; under each intake on a university's page, its key dates as written */
+/* 🔴 CSS CHANGED (2026-11-17): "Find universities for a student" (new) and an intake's key dates (new) | from: no way to check a student against the universities; an intake showed only one short deadline | to: an off-white panel at the top of Universities and in the student card's University options: six fields in one row (level, grade, gap, English, score, subject), a blue Find pill, then grey filter pills (All, Eligible, To check, Not eligible) and one rounded card per university with a coloured edge (green eligible, amber to check, grey not eligible), its status pill, the reasons as a list (green tick, amber question mark, red cross), the fee, scholarship and deposit, the intake and its deadline, and its courses with Add; under each intake on a university's page, its key dates as written */
 .fd-card { margin: 0 0 18px; }
 .fd-head h2 { margin: 0 0 2px; }
 .fd-head p { margin: 0 0 12px; }
@@ -2478,7 +2478,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 
 /* 🔴 CSS CHANGED (2026-11-17): the old deadline cards, the "Submit application" pill and its window removed | from: a pale blue-grey band of
    deadline cards, a blue "Submit application" pill beside each course and its window | to: deleted (the new deadlines and Shortlist are in
-   the Fact File block at the end of this file) */
+   Universities block at the end of this file) */
 .fd-courses li .btn, .fd-courses li .sl-pick { margin-left: auto; }
 a.fd-course { color: var(--link); text-decoration: none; }
 a.fd-course:hover { text-decoration: underline; }
@@ -2558,8 +2558,8 @@ html body:has(.p-embed-bar) .p-option h3 { color: var(--ink); font-size: 16px; f
 html body h1.p-error-title { margin: 0 0 8px; font-size: 24px; font-weight: 650; }
 
 /* ===================================================================================================================================
-   🔴 CSS CHANGED (2026-11-17): a university's Fact File page rebuilt (the owner: "put the correct information in the correct section, in a
-   very professional manner"; the old Fact File rules no longer apply to this page) | from: a long document of sections (overview, location,
+   🔴 CSS CHANGED (2026-11-17): a university's university page rebuilt (the owner: "put the correct information in the correct section, in a
+   very professional manner"; the old Universities rules no longer apply to this page) | from: a long document of sections (overview, location,
    fees table, entry requirements, language test, courses with "Find the course page" and "Submit application", process, interview, intakes
    with their key dates again, notes), the deadlines on a pale blue-grey band | to: under the name (32px bold) the city and website in grey;
    a highlighted "Deadlines" panel in warm amber (#fff7e8 with a #f1d39a edge) with one white card per intake: the intake in small brown
@@ -2673,7 +2673,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
   html body .dl-left, html body .course-warn, html body .sl-pick, html body .sl-for, html body .dl-head .btn { display: none !important; }
 }
 
-/* 🔴 CSS CHANGED (2026-11-17): unused Fact File styles removed, nothing on screen changes | from: the old page's "at a glance" box, intake
+/* 🔴 CSS CHANGED (2026-11-17): unused Universities styles removed, nothing on screen changes | from: the old page's "at a glance" box, intake
    boxes, key dates text, the scroll hint above the fees table | to: deleted (the rebuilt page in the block above does not have them) */
 /* 🔴 CSS CHANGED (2026-11-17): Partners, one section for Partner Universities, B2B Partners and Agents | from: three separate menu entries and three pages with nothing joining them | to: one "Partners" menu entry; at the top of each of the three lists a small grey "PARTNERS" label and an Apple segmented switch (Universities | B2B partners | Agents), the open one as a white pill, each with a soft grey count bubble; on a phone the switch fills the width */
 .pt-bar { display: grid; gap: 8px; margin: 0 0 22px; }
@@ -2947,7 +2947,7 @@ html body .p-pick { padding: 10px 12px; border-radius: 12px; }
 html body .p-pick-list { max-height: 52vh; }
 
 /* 🔴 CSS CHANGED (2026-11-17): the shortlist tray (new) | from: shortlisting sent you to the student card ("Open the card to send"), leaving
-   the Fact File | to: an off-white bar fixed to the bottom of the Fact File pages (rounded top, soft shadow): the student's round badge, name
+   Universities | to: an off-white bar fixed to the bottom of the university pages (rounded top, soft shadow): the student's round badge, name
    and how many courses are shortlisted, a small arrow that opens the numbered list (1, 2, 3 in blue circles, each course with ↑ ↓ Remove),
    and on the right grey pills Change student, Open the card, Email these options and a blue pill Assign to the Application Team */
 .sl-tray { position: fixed; z-index: 40; left: calc(var(--side-w, 0px) + 16px); right: 16px; bottom: 0; max-width: 1100px; margin: 0 auto; padding: 10px 16px 12px; border-radius: 18px 18px 0 0; background: #fbfbfd; box-shadow: 0 -10px 40px -12px rgba(0, 0, 0, .25), 0 0 0 .5px rgba(0, 0, 0, .1); }
@@ -2979,7 +2979,7 @@ body.has-sl-tray main { padding-bottom: 120px; }
 }
 @media print { .sl-tray { display: none !important; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): searching a course on the Fact File shows a board (new) | from: small cards listing four matching courses as
+/* 🔴 CSS CHANGED (2026-11-17): searching a course on Universities shows a board (new) | from: small cards listing four matching courses as
    plain bullets, no way to shortlist without opening the university | to: wider off-white cards (two per row on a computer, one on a phone),
    each with the university's name as a link and a grey Open pill, "6 matching courses" in blue, then one row per course (name in dark
    type, its level and intake in grey below, a grey "+ Shortlist" pill on the right that turns green "✓ Shortlisted"), "Show all" for the rest;
@@ -3043,7 +3043,7 @@ html body .fd-label { color: #1d1d1f; font-size: 14px; }
    each course with five boxes to type in (Tuition fee, Minimum cash deposit, Scholarship, Course link, Note) and Save changes, plus a grey
    "Send to the Application Team" box with ticks | to: a numbered list (blue circles), each course with its university, intake and level in
    grey, the partner as a small grey pill ("Through Real Dreams"), and the fee, scholarship, deposit and course page as read-only lines
-   from the Fact File; Email these options and the blue Assign to the Application Team pill sit at the top right */
+   from Universities; Email these options and the blue Assign to the Application Team pill sit at the top right */
 html body ol.p-chosen { counter-reset: chosen; list-style: none; margin: 0; padding: 0; }
 html body ol.p-chosen > li.p-chosen-item { counter-increment: chosen; position: relative; padding: 14px 16px 14px 54px; }
 html body ol.p-chosen > li.p-chosen-item::before { content: counter(chosen); position: absolute; left: 16px; top: 14px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 13px; font-weight: 700; }
@@ -3058,7 +3058,7 @@ html body .p-chosen-item h3 { margin: 0; font-size: 16px; }
 .p-chosen-facts dd { margin: 0; color: #1d1d1f; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
 .p-card-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 
-/* 🔴 CSS CHANGED (2026-11-17): the Fact File list gives the answer without opening a page | from: 57 alike cards with only the name, city and intake chips; no filters; a course list on a university page with no way to search it | to: under the title a row of filters (a segmented switch All, Universities, Pathway colleges; Intake and Sort menus as soft grey pills; a blue "Clear filters" link); a soft amber line with an amber dot "4 universities close applications in the next 14 days. Show them first"; on each card a soft grey box "Apply by 4 Dec 2026" with the intake in grey and a days-left pill (grey; amber within 30 days; red within 7), "No open deadline listed" in grey when there is none, and at the bottom "123 courses" and a grey "Pathway college" pill; on a university page a search box above the courses "Filter the 123 courses" with how many match */
+/* 🔴 CSS CHANGED (2026-11-17): Universities list gives the answer without opening a page | from: 57 alike cards with only the name, city and intake chips; no filters; a course list on a university page with no way to search it | to: under the title a row of filters (a segmented switch All, Universities, Pathway colleges; Intake and Sort menus as soft grey pills; a blue "Clear filters" link); a soft amber line with an amber dot "4 universities close applications in the next 14 days. Show them first"; on each card a soft grey box "Apply by 4 Dec 2026" with the intake in grey and a days-left pill (grey; amber within 30 days; red within 7), "No open deadline listed" in grey when there is none, and at the bottom "123 courses" and a grey "Pathway college" pill; on a university page a search box above the courses "Filter the 123 courses" with how many match */
 .ff-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 18px 0 6px; }
 .ff-bar[hidden], .ff-soon[hidden] { display: none; }
 .ff-pick { display: inline-flex; align-items: center; gap: 8px; color: #515154; font-size: 14px; font-weight: 600; }
@@ -3068,7 +3068,7 @@ html body .p-chosen-item h3 { margin: 0; font-size: 16px; }
 .ff-soon { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 8px 0 0; padding: 10px 14px; border-radius: 12px; background: #fff7e8; color: #5c3b00; font-size: 14.5px; }
 .ff-soon-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff9f0a; }
 .ff-soon .p-link { font-weight: 600; }
-/* 🔴 CSS CHANGED (2026-11-17): the Fact File list cards and the Universities | Pathway colleges switch | from: a three-way switch (All, Universities, Pathway colleges) in 14.5px; cards with a small grey round badge at the top right, every card with a grey box (even "No open deadline listed"), the course count as loose grey text | to: a larger two-way switch (44px, 16px type) with a count bubble on each side (blue on the open one); each card with a 44px rounded-square badge on the left of the name (soft blue for a university, soft violet for a pathway college), the city under the name, the intakes as blue pills, the next deadline in a soft grey box only when one is open, and a footer under a hairline: the course count in bold on the left, "No open deadline" in grey on the right */
+/* 🔴 CSS CHANGED (2026-11-17): Universities list cards and the Universities | Pathway colleges switch | from: a three-way switch (All, Universities, Pathway colleges) in 14.5px; cards with a small grey round badge at the top right, every card with a grey box (even "No open deadline listed"), the course count as loose grey text | to: a larger two-way switch (44px, 16px type) with a count bubble on each side (blue on the open one); each card with a 44px rounded-square badge on the left of the name (soft blue for a university, soft violet for a pathway college), the city under the name, the intakes as blue pills, the next deadline in a soft grey box only when one is open, and a footer under a hairline: the course count in bold on the left, "No open deadline" in grey on the right */
 .ff-kind.p-seg { padding: 4px; border-radius: 14px; }
 .ff-kind.p-seg > button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 11px; font-size: 16px; }
 .ff-n { min-width: 24px; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); color: #3a3a3c; font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; }
@@ -3099,7 +3099,7 @@ html body .doc .course-filter .search { flex: 1 1 260px; max-width: 420px; min-h
 html body .doc .course-filter .search:focus { outline: 2px solid #0071e3; outline-offset: 1px; background: #fff; }
 .course-filter-info { color: #515154; font-size: 14px; font-weight: 600; }
 
-/* 🔴 CSS CHANGED (2026-11-17): the index of a university's Fact File page | from: a row of white pills that scrolled with the page background behind it, every pill alike | to: the same row kept at the top on a frosted, see-through band while scrolling, the section being read as a filled blue pill */
+/* 🔴 CSS CHANGED (2026-11-17): the index of a university's university page | from: a row of white pills that scrolled with the page background behind it, every pill alike | to: the same row kept at the top on a frosted, see-through band while scrolling, the section being read as a filled blue pill */
 html body nav.toc { top: 0; z-index: 6; margin: 0 -8px 14px; padding: 10px 8px; border-radius: 16px; background: rgba(245, 245, 247, .82); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); }
 html body nav.toc a.is-on { border-color: #0071e3; background: #0071e3; color: #fff; }
 
@@ -3469,98 +3469,164 @@ html body .p-dialog .p-form.p-assign .p-goes { margin-top: 6px; color: #86868b; 
   body:has(#sheet) .topbar .toolbar-group:has(#undoBtn) { margin-left: 0; }
 }
 
-/* 🔴 CSS CHANGED (2026-11-20): a university's Fact File page with its partner's January 2027 details, new look | from: a plain white document (name, deadlines, one table of requirements, a long course list folded at 12 with "Show all") | to: a large picture at the top with the university's logo, name, place and a blue Apply button; four fact tiles (location, intake, apply through with the portal and login, next deadline); the video and pictures; one wide card per level with five columns (entry, English, fee, scholarship, more); every course as a small rounded card in a two-column grid by level, a wide picture between levels; a checklist of documents; the deadlines. Light grey canvas, off-white panels, near-black text, blue #0071e3 as on the rest of the site */
-html body .up-doc { padding: 0 0 28px; overflow: hidden; background: #fbfbfd; }
-.up-hero { position: relative; min-height: 300px; display: flex; align-items: flex-end; background: linear-gradient(135deg, #1d1d1f, #3a3a3c); color: #fff; }
-.up-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.up-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .05) 20%, rgba(0, 0, 0, .72) 100%); }
-.up-hero-inner { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 24px; width: 100%; padding: 28px 36px; }
-.up-id { display: flex; align-items: flex-end; gap: 18px; min-width: 0; }
-.up-logo { flex: none; display: grid; place-items: center; width: 96px; height: 96px; padding: 10px; border-radius: 22px; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .25); color: #1d1d1f; font-weight: 700; font-size: 22px; }
-.up-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.up-titles { min-width: 0; }
-html body .up-titles h1 { margin: 0; color: #fff; font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; text-wrap: balance; }
-.up-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 8px; font-size: 16px; color: rgba(255, 255, 255, .92); }
-.up-chip { padding: 3px 11px; border-radius: 999px; background: rgba(255, 255, 255, .18); backdrop-filter: blur(8px); font-size: 14px; font-weight: 600; }
-html body .up-apply { min-height: 46px; padding: 0 24px; font-size: 16px; box-shadow: 0 6px 18px rgba(0, 113, 227, .35); }
-.up-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 22px 36px 6px; }
-.up-fact { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 16px 18px; border-radius: 16px; background: #f5f5f7; }
-.up-fact-label { color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
-.up-fact b { color: #1d1d1f; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
-.up-fact small { color: #515154; font-size: 14px; }
-.up-fact-more { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; font-size: 14px; }
-.up-fact-more a { color: #0066cc; font-weight: 600; text-decoration: none; }
-.up-login { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: #3a3a3c; }
-.up-copy { min-height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 600 13px var(--font); cursor: pointer; }
-.up-copy:hover { background: #dcdce1; }
-.up-section { padding: 26px 36px 4px; }
-html body .up-section h2 { margin: 0 0 14px; color: #1d1d1f; font-size: 24px; font-weight: 700; letter-spacing: -.015em; }
-.up-contact-list { display: flex; flex-wrap: wrap; gap: 12px; }
-.up-contact { display: flex; flex-direction: column; gap: 2px; min-width: 220px; padding: 14px 16px; border-radius: 14px; background: #f5f5f7; font-size: 15px; }
-.up-contact a { color: #0066cc; text-decoration: none; }
-.up-media { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; padding: 26px 36px 4px; }
-.up-media:not(:has(.up-video)) { grid-template-columns: 1fr; }
-.up-video { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 18px; background: #000; }
-.up-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.up-media:not(:has(.up-video)) .up-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.up-photos img { width: 100%; height: 100%; min-height: 120px; max-height: 220px; object-fit: cover; border-radius: 14px; }
-.up-about-text p { margin: 0 0 10px; max-width: 75ch; color: #3a3a3c; font-size: 16.5px; line-height: 1.6; }
-.up-about-meta { margin: 4px 0 6px; color: #6e6e73; font-size: 15px; }
-.up-web { color: #0066cc; font-weight: 600; text-decoration: none; }
-.up-level { margin: 0 0 14px; padding: 18px 20px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 6px 18px -12px rgba(0, 0, 0, .18); }
-.up-level-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; margin-bottom: 12px; }
-html body .up-level-head h3 { margin: 0; color: #1d1d1f; font-size: 19px; font-weight: 700; letter-spacing: 0; text-transform: none; }
-.up-count { color: #6e6e73; font-size: 14px; }
-.up-level-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 0; }
-.up-level-grid dt { margin: 0 0 6px; color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
-.up-level-grid dd { margin: 0; color: #1d1d1f; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
-.up-level-grid dd p { margin: 0 0 4px; }
-.up-level-grid .dim { color: #8e8e93; }
-.up-courses-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 6px; }
-html body .up-courses-head h2 { margin: 0; }
-.up-courses-head .search { width: 300px; max-width: 100%; min-height: 42px; padding: 0 16px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; font: 15px var(--font); }
-html body .up-group-head { margin: 22px 0 10px; color: #1d1d1f; font-size: 18px; font-weight: 700; letter-spacing: 0; text-transform: none; }
-.up-course-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.up-course { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 14px 16px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
-.up-course[hidden], .up-group[hidden], .up-band[hidden] { display: none; }
-.up-course-name { color: #1d1d1f; font-size: 15.5px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
-.up-course-meta { color: #515154; font-size: 14px; }
-.up-course-deadline { color: #b25000; font-size: 13.5px; font-weight: 600; }
-html body .up-course .sl-pick { margin: 6px 0 0; }
-.up-band { display: block; width: 100%; height: 200px; margin: 22px 0 4px; object-fit: cover; border-radius: 18px; }
-.up-none { color: #6e6e73; }
-.up-note { margin: -6px 0 12px; color: #6e6e73; font-size: 15px; }
-.up-docs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; margin: 0; padding: 0; list-style: none; }
-.up-docs li { position: relative; padding: 10px 14px 10px 40px; border-radius: 12px; background: #f5f5f7; color: #1d1d1f; font-size: 15px; }
-.up-docs li::before { content: ""; position: absolute; left: 14px; top: 13px; width: 14px; height: 14px; border-radius: 4px; border: 2px solid #0071e3; }
-.up-deadlines { margin: 0; padding: 0; list-style: none; }
-.up-deadlines li { padding: 10px 0; border-bottom: 1px solid #e5e5ea; color: #1d1d1f; font-size: 15.5px; }
-.up-deadlines li:last-child { border-bottom: 0; }
-.up-end { display: flex; justify-content: center; padding: 26px 36px 0; }
-.up-source { margin: 22px 36px 0; color: #8e8e93; font-size: 13.5px; }
-/* the shortlist tray's ⋯ menus open upwards, as the tray sits at the bottom of the screen */
-.sl-tray .td-menu { top: auto; bottom: calc(100% + 6px); }
-.sl-tray-head .td-menu-wrap { flex: none; }
-.sl-tray-list li .td-menu-wrap { flex: none; margin-left: auto; }
-@media (max-width: 900px) {
-  .up-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .up-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .up-media { grid-template-columns: 1fr; }
-}
-@media (max-width: 600px) {
-  .up-hero-inner, .up-facts, .up-section, .up-media, .up-end { padding-left: 16px; padding-right: 16px; }
-  .up-source { margin-left: 16px; margin-right: 16px; }
-  .up-id { flex-direction: column; align-items: flex-start; }
-  html body .up-titles h1 { font-size: 26px; }
-  .up-facts, .up-level-grid, .up-course-grid, .up-docs { grid-template-columns: 1fr; }
-  .up-photos, .up-media:not(:has(.up-video)) .up-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media print { .up-hero { min-height: 0; background: none; color: #000; } .up-hero-img, .up-hero::after { display: none; } html body .up-titles h1, .up-sub { color: #000; } }
 
-/* 🔴 CSS CHANGED (2026-11-20): the Fact File list cards show the university's logo, who it is applied through and its next deadline | from: a small grey circle with the initials, the name, city and intake chips | to: the logo in a white rounded square (52px) where the partner gives one (else the initials as before), a line "Apply through Adventus" in a soft grey pill (Admin and the Application Team only), and the January 2027 deadline in amber when the page has one */
+/* 🔴 CSS CHANGED (2026-11-20): Universities list cards show the university's logo, who it is applied through and its next deadline | from: a small grey circle with the initials, the name, city and intake chips | to: the logo in a white rounded square (52px) where the partner gives one (else the initials as before), a line "Apply through Adventus" in a soft grey pill (Admin and the Application Team only), and the January 2027 deadline in amber when the page has one */
 html body .uni-mono.has-logo { width: 52px; height: 52px; padding: 6px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 4px 12px -6px rgba(0, 0, 0, .2); }
 html body .uni-card:hover .uni-mono.has-logo { background: #fff; }
 .uni-mono.has-logo img { width: 100%; height: 100%; object-fit: contain; }
-.uc-via { display: inline-flex; align-items: center; gap: 6px; width: fit-content; margin-top: 8px; padding: 4px 12px; border-radius: 999px; background: #f0f0f3; color: #515154; font-size: 13.5px; }
-.uc-via b { color: #1d1d1f; font-weight: 600; }
 .uc-deadline { margin-top: 8px; color: #b25000; font-size: 14px; font-weight: 600; }
+
+/* 🔴 CSS CHANGED (2026-11-20): every university page in one premium look, bigger Universities cards, bigger "Find universities for a student" results, the Apply window, and a calmer shortlist tray | from: a page that changed look from one university to another (many with no picture), small square cards in a four-column grid, small finder results in one column, and a tray with plain buttons | to: a tall cover picture (or a deep blue gradient where there is none) with the logo, name, place and one blue "Apply now"; four fact tiles; a video and picture mosaic; a short about beside a list of key points with blue ticks; per level one card with two money tiles (fee, scholarship) in large type and two requirement lists with small icons, extras as grey chips; course cards in two columns with grey meta chips and the Shortlist button at the bottom; wide cards (two columns) with a cover picture in the list and in the finder; a frosted tray. Light grey canvas, off-white panels, near-black text, blue #0071e3 */
+html body .up-doc { padding: 0 0 30px; overflow: hidden; background: #fbfbfd; }
+.up-hero { position: relative; min-height: 360px; display: flex; align-items: flex-end; background: linear-gradient(135deg, #0b3a75 0%, #0071e3 55%, #5ab0ff 100%); color: #fff; }
+.up-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.up-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, .7) 100%); }
+.up-hero.no-pic::after { background: radial-gradient(120% 90% at 85% 0%, rgba(255, 255, 255, .22), transparent 60%); }
+.up-hero-inner { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 24px; width: 100%; padding: 30px 40px; }
+.up-id { display: flex; align-items: flex-end; gap: 20px; min-width: 0; }
+.up-logo { flex: none; display: grid; place-items: center; width: 112px; height: 112px; padding: 12px; border-radius: 26px; background: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .28); color: #1d1d1f; font-weight: 700; font-size: 24px; }
+.up-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.up-titles { min-width: 0; }
+html body .up-titles h1 { margin: 0; color: #fff; font-size: 38px; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; text-wrap: balance; text-shadow: 0 2px 14px rgba(0, 0, 0, .25); }
+.up-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 10px; font-size: 16px; color: rgba(255, 255, 255, .95); }
+.up-chip { padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, .2); backdrop-filter: blur(10px); font-size: 14px; font-weight: 600; }
+html body .up-apply { min-height: 50px; padding: 0 30px; border-radius: 999px; font-size: 17px; font-weight: 600; box-shadow: 0 8px 22px rgba(0, 113, 227, .45); }
+.up-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 24px 40px 4px; }
+.up-fact { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 18px 20px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 8px 20px -14px rgba(0, 0, 0, .25); }
+.up-fact-label { color: #6e6e73; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.up-fact b { color: #1d1d1f; font-size: 19px; font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
+.up-fact small { color: #6e6e73; font-size: 14px; }
+.up-section { padding: 30px 40px 4px; }
+html body .up-section h2 { margin: 0 0 16px; padding: 0; border: 0; color: #1d1d1f; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+html body .up-section h2::before { display: none; }
+.up-media { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 28px 40px 4px; }
+.up-media.has-video { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.up-video { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 20px; background: #000; }
+.up-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; grid-column: span 3; }
+.up-media.has-video .up-photos { grid-column: auto; }
+.up-media:not(.has-video) .up-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.up-media:not(.has-video) .up-photos img:first-child { grid-column: span 2; grid-row: span 2; }
+.up-photos img { width: 100%; height: 100%; min-height: 130px; object-fit: cover; border-radius: 16px; }
+.up-about { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+.up-about-text { margin: 0 0 10px; color: #3a3a3c; font-size: 17px; line-height: 1.6; }
+.up-web { color: #0066cc; font-weight: 600; text-decoration: none; }
+.up-points { display: grid; gap: 10px; margin: 6px 0 0; padding: 18px 20px; list-style: none; border-radius: 18px; background: #f2f6fc; }
+.up-points li { position: relative; padding-left: 30px; color: #1d1d1f; font-size: 16px; font-weight: 500; }
+.up-points li::before { content: ""; position: absolute; left: 0; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: #0071e3 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% no-repeat; }
+.up-level { margin: 0 0 16px; padding: 22px 24px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 10px 26px -18px rgba(0, 0, 0, .3); }
+.up-level-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin-bottom: 16px; }
+html body .up-level-head h3 { margin: 0; color: #1d1d1f; font-size: 21px; font-weight: 700; letter-spacing: -.01em; text-transform: none; }
+.up-level-link { padding: 6px 14px; border-radius: 999px; background: #e8f2fd; color: #0058b0; font-size: 14px; font-weight: 600; text-decoration: none; }
+.up-level-link:hover { background: #d6e8fc; }
+.up-money { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.up-money-tile { min-width: 0; padding: 16px 18px; border-radius: 16px; background: linear-gradient(180deg, #f7f9fc, #f1f4f9); }
+.up-money-k { display: block; color: #6e6e73; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.up-money-v { display: block; margin: 4px 0 2px; color: #1d1d1f; font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
+.up-money-d p { margin: 2px 0 0; color: #515154; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.up-reqs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+.up-req { min-width: 0; }
+.up-req-k { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: #1d1d1f; font-size: 15px; font-weight: 650; }
+.up-req-k::before { content: ""; width: 26px; height: 26px; border-radius: 8px; background: #eef4fd center / 16px no-repeat; }
+.up-ic-cap::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230071e3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 9l10-5 10 5-10 5z'/%3E%3Cpath d='M6 11v5c3 2 9 2 12 0v-5'/%3E%3C/svg%3E"); }
+.up-ic-lang::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230071e3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v11H9l-5 4z'/%3E%3C/svg%3E"); }
+.up-req ul { margin: 0; padding: 0; list-style: none; }
+.up-req li { position: relative; padding: 4px 0 4px 16px; color: #3a3a3c; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
+.up-req li::before { content: ""; position: absolute; left: 2px; top: 12px; width: 6px; height: 6px; border-radius: 50%; background: #0071e3; }
+.up-req .dim { margin: 0; color: #8e8e93; }
+.up-extra { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.up-extra span { padding: 6px 12px; border-radius: 999px; background: #f2f2f5; color: #3a3a3c; font-size: 13.5px; }
+.up-courses-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 8px; }
+html body .up-courses-head h2 { margin: 0; }
+.up-courses-head .search { width: 320px; max-width: 100%; min-height: 44px; padding: 0 18px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; font: 15px var(--font); }
+.up-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+.up-jump a { padding: 7px 14px; border-radius: 999px; background: #f2f2f5; color: #1d1d1f; font-size: 14px; font-weight: 600; text-decoration: none; }
+.up-jump a:hover { background: #e8e8ed; }
+.up-group { scroll-margin-top: 80px; }
+.up-group-head { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 12px; }
+html body .up-group-head h3 { margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 700; letter-spacing: -.01em; text-transform: none; }
+.up-group-head span { color: #6e6e73; font-size: 15px; }
+.up-course-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.up-course { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px 18px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); transition: box-shadow .18s ease, transform .18s ease; }
+.up-course:hover { box-shadow: 0 0 0 1px rgba(0, 113, 227, .25), 0 10px 24px -16px rgba(0, 0, 0, .3); }
+.up-course[hidden], .up-group[hidden], .up-band[hidden], .up-jump[hidden] { display: none; }
+.up-course-name { color: #1d1d1f; font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.up-course-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.up-course-meta span { padding: 3px 10px; border-radius: 999px; background: #f2f2f5; color: #515154; font-size: 13px; }
+.up-course-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+.up-course-deadline { color: #b25000; font-size: 13.5px; font-weight: 600; }
+html body .up-course .sl-pick { margin: 0 0 0 auto; }
+.up-band { display: block; width: 100%; height: 220px; margin: 26px 0 4px; object-fit: cover; border-radius: 20px; }
+.up-none { color: #6e6e73; }
+.up-deadlines { margin: 0; padding: 4px 18px; list-style: none; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); }
+.up-deadlines li { padding: 12px 0; border-bottom: 1px solid #ececf0; color: #1d1d1f; font-size: 15.5px; }
+.up-deadlines li:last-child { border-bottom: 0; }
+/* the Apply window */
+.up-steps { counter-reset: st; display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.up-steps li { counter-increment: st; display: flex; gap: 14px; }
+.up-steps li::before { content: counter(st); flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #0071e3; color: #fff; font-weight: 700; font-size: 14px; }
+.up-step-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; padding-top: 4px; }
+.up-step-text b { color: #1d1d1f; font-size: 16px; }
+.up-step-sub { color: #6e6e73; font-size: 14px; overflow-wrap: anywhere; }
+.up-creds { display: grid; gap: 8px; width: 100%; }
+.up-cred { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: #f5f5f7; }
+.up-cred-k { min-width: 76px; color: #6e6e73; font-size: 13px; font-weight: 600; }
+.up-cred code { flex: 1 1 auto; min-width: 0; color: #1d1d1f; font: 600 14.5px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.up-copy { min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 600 13px var(--font); cursor: pointer; }
+.up-copy:hover { background: #dcdce1; }
+.up-contacts { margin-top: 18px; padding-top: 14px; border-top: 1px solid #ececf0; }
+html body .up-contacts h3 { margin: 0 0 10px; font-size: 15px; text-transform: none; letter-spacing: 0; color: #1d1d1f; }
+.up-contact { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 0; font-size: 14.5px; }
+.up-contact a { color: #0066cc; text-decoration: none; }
+/* the Universities list: wide cards with a cover picture, two to a row */
+html body #cards.cards { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 18px; }
+html body a.uni-card.uc-card.has-cover { padding: 0 0 18px; overflow: hidden; }
+html body a.uni-card.uc-card.has-cover > :not(.uc-cover) { margin-left: 22px; margin-right: 22px; }
+.uc-cover { height: 170px; margin: 0 0 4px; overflow: hidden; background: #e8e8ed; }
+.uc-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+html body a.uni-card.uc-card:hover .uc-cover img { transform: scale(1.04); }
+html body a.uni-card.uc-card.has-cover .uc-head { margin-top: -38px; position: relative; }
+html body a.uni-card.uc-card.has-cover .uni-mono.has-logo { width: 64px; height: 64px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+html body a.uni-card.uc-card.has-cover .uc-head h2 { margin-top: 40px; }
+html body .uc-card h2 { font-size: 19px; }
+/* Find universities for a student: two wide cards to a row, with the picture and the logo */
+html body .fd-out { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+html body .fd-out > :not(.fd-uni) { grid-column: 1 / -1; }
+html body .fd-uni { margin: 0; padding: 0 0 16px; overflow: hidden; border-left: 0; border-radius: 20px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 10px 26px -18px rgba(0, 0, 0, .3); }
+html body .fd-uni > :not(.fd-cover) { margin-left: 20px; margin-right: 20px; }
+html body .fd-uni::before { content: ""; display: block; height: 4px; background: #d2d2d7; }
+html body .fd-uni.is-yes::before { background: #34c759; }
+html body .fd-uni.is-check::before { background: #ff9f0a; }
+html body .fd-uni:has(.fd-cover)::before { display: none; }
+.fd-cover { height: 130px; margin-bottom: 4px; overflow: hidden; background: #e8e8ed; }
+.fd-cover img { width: 100%; height: 100%; object-fit: cover; }
+html body .fd-uni-top { align-items: center; margin-top: 14px; }
+.fd-logo { flex: none; display: grid; place-items: center; width: 52px; height: 52px; padding: 6px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); }
+.fd-cover + .fd-uni-top .fd-logo { margin-top: -36px; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); }
+.fd-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+html body .fd-uni-top .fd-uni-words { flex: 1 1 auto; }
+html body .fd-uni-name { font-size: 18px; }
+/* the shortlist tray: a frosted bar */
+html body .sl-tray { border: 0; border-radius: 22px; background: rgba(251, 251, 253, .86); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 18px 44px -12px rgba(0, 0, 0, .3); }
+html body .sl-tray-list li { border-radius: 14px; }
+html body .sl-tray-list li:hover { background: rgba(0, 0, 0, .03); }
+@media (max-width: 980px) {
+  .up-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .up-media.has-video, .up-about { grid-template-columns: 1fr; }
+  html body .fd-out { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .up-hero { min-height: 300px; }
+  .up-hero-inner, .up-facts, .up-section, .up-media { padding-left: 16px; padding-right: 16px; }
+  .up-id { flex-direction: column; align-items: flex-start; }
+  .up-logo { width: 84px; height: 84px; border-radius: 20px; }
+  html body .up-titles h1 { font-size: 28px; }
+  .up-facts, .up-money, .up-reqs, .up-course-grid { grid-template-columns: 1fr; }
+  .up-media:not(.has-video) .up-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html body #cards.cards { grid-template-columns: 1fr; }
+}
+@media print { .up-hero { min-height: 0; background: none; color: #000; } .up-hero-img, .up-hero::after { display: none; } html body .up-titles h1, .up-sub { color: #000; text-shadow: none; } }
+/* 🔴 CSS CHANGED (2026-11-20): the fee and scholarship amounts in large type, and a coloured cover for a university card without a picture | from: the amount in the body size; a card without a picture had a white gap where the picture was | to: the amount at 26px bold; a deep blue to light blue gradient (purple for a pathway college) in place of the picture */
+html body .up-money-tile .up-money-v { margin: 6px 0 4px; color: #1d1d1f; font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: -.02em; }
+html body .up-money-tile .up-money-v:empty { display: none; }
+.uc-cover.is-blank { background: linear-gradient(135deg, #0b3a75 0%, #0071e3 60%, #5ab0ff 100%); }
+html body .uc-card.is-pathway .uc-cover.is-blank { background: linear-gradient(135deg, #3b1f73 0%, #7a52c7 60%, #b79cf0 100%); }

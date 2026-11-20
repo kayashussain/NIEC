@@ -7,12 +7,14 @@ const { createFacts, STARTER_UNIVERSITIES, PATHWAY } = require('../student-detai
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'niec-facts-'));
 
-test('the Fact File starts with a list of universities, each with the usual application steps', () => {
+test('Universities starts with a list of universities, each with the usual application steps', () => {
   const facts = createFacts(tmp());
   const list = facts.list();
-  // Every starting university is there; the partners' January 2027 pages add the universities the Fact File had no page for (20 Nov 2026).
+  // Every starting university is there; the partners' January 2027 pages add the universities Universities had no page for (20 Nov 2026).
   const names = list.map((u) => u.name);
-  STARTER_UNIVERSITIES.forEach((n) => assert.ok(names.includes(n), n));
+  // Buckinghamshire New University is taken off once (the owner, 20 Nov 2026: not promoted).
+  STARTER_UNIVERSITIES.filter((n) => !/buckinghamshire new/i.test(n)).forEach((n) => assert.ok(names.includes(n), n));
+  assert.ok(!names.some((n) => /buckinghamshire new/i.test(n)), 'BNU is not on the list');
   assert.ok(list.filter((u) => !STARTER_UNIVERSITIES.includes(u.name)).every((u) => facts.get(u.id).profile), 'every other page is a partner page');
   const uni = facts.get(list.find((u) => STARTER_UNIVERSITIES.includes(u.name)).id);
   assert.deepStrictEqual(uni.process.slice(0, 3).map((s) => s.title), ['Application submitted', 'Offer letter received', 'Pre-CAS interview']);
@@ -192,7 +194,7 @@ test('searching finds universities by name, city or any course they teach', () =
   assert.strictEqual(facts.list('').length, facts.list().length, 'no words: everything');
 });
 
-test('a damaged Fact File is set aside, not overwritten, and the list starts again', () => {
+test('a damaged Universities is set aside, not overwritten, and the list starts again', () => {
   const dir = tmp();
   fs.writeFileSync(path.join(dir, 'fact-file.json'), '{ this is not json');
   const facts = createFacts(dir);
@@ -202,7 +204,7 @@ test('a damaged Fact File is set aside, not overwritten, and the list starts aga
   assert.strictEqual(fs.readFileSync(path.join(dir, kept[0]), 'utf8'), '{ this is not json');
 });
 
-test('the Fact File is read from disk again when the file changes outside this process', () => {
+test('Universities is read from disk again when the file changes outside this process', () => {
   const dir = tmp();
   const facts = createFacts(dir);
   const id = facts.list().find((u) => u.name === 'University of York').id; // no starter details: nothing refreshes it
@@ -286,13 +288,13 @@ test('each card of the list says the next open deadline, how many courses, and w
   assert.strictEqual(list.find((u) => /OnCampus/.test(u.name)).kind, 'pathway');
 });
 
-test('the Fact File list is in two parts: ARU College and The College, Swansea University are pathway colleges (the owner, 17 Nov 2026)', () => {
+test('Universities list is in two parts: ARU College and The College, Swansea University are pathway colleges (the owner, 17 Nov 2026)', () => {
   for (const name of ['Anglia Ruskin University College (ARU College)', 'The College, Swansea University', 'International College Portsmouth (ICP)', 'University of Hull - OnCampus (UG ICAS)']) assert.ok(PATHWAY.test(name), name);
   for (const name of ['University College Birmingham', 'Swansea University', 'Anglia Ruskin University', 'Bath Spa University']) assert.ok(!PATHWAY.test(name), name);
 });
 
 // The partners' January 2027 pages (the owner, 20 Nov 2026): each university read from the partner it is applied through.
-test('a partner page has its January 2027 courses in the level order, its requirement cards and its documents, and a college is never a university', () => {
+test('a partner page has its January 2027 courses in the level order and its requirement cards, a college is never a university, and a direct university keeps its own courses', () => {
   const facts = createFacts(tmp());
   const list = facts.list();
   const ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
@@ -301,17 +303,19 @@ test('a partner page has its January 2027 courses in the level order, its requir
   assert.ok(uel.profile.courses.every((c) => /2027/.test(c.start)), 'January 2027 courses only');
   const levels = uel.profile.levels.map((l) => l.level);
   assert.deepStrictEqual(levels, [...levels].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)), 'the levels in the owner\'s order');
-  assert.ok(uel.profile.documents.length > 0);
+  const bangor = facts.get(list.find((u) => u.name === 'Bangor University').id);
+  assert.ok(bangor.profile && bangor.profile.own && !bangor.profile.courses.length, 'a direct university: its own courses, never a B2B partner\'s');
+  assert.ok(bangor.profile.logo && bangor.profile.banner, 'with its pictures');
   const greenwich = list.find((u) => u.name === 'University of Greenwich');
   const ugic = list.find((u) => u.name === 'University of Greenwich International College (UGIC)');
   assert.ok(greenwich && ugic && greenwich.id !== ugic.id, 'two pages');
   const g = facts.get(greenwich.id);
   assert.ok(g.profile.courses.every((c) => !/international college|foundation/i.test(c.name) || c.level !== 'Postgraduate'));
-  assert.ok(list.every((u) => !u.logo || /^https:\/\//.test(u.logo)), 'logos are https addresses');
+  assert.ok(list.every((u) => !u.logo || /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/.test(u.logo)), 'logos are https addresses or small pictures kept in the page');
   // the course search finds a partner page's courses
   assert.ok(facts.list('Airline and Airport Management').some((u) => u.name === 'University of East London'));
 });
-test('a partner page is put on an existing page by its name as the Fact File writes it, once per version, and kept by a save', () => {
+test('a partner page is put on an existing page by its name as Universities writes it, once per version, and kept by a save', () => {
   const dir = tmp();
   fs.writeFileSync(path.join(dir, 'fact-file.json'), JSON.stringify({ universities: ['Winchester University', 'University of Ravensbourne', 'Health Science University', 'University of Roehampton', 'University of East London', 'Ulster University'].map((name, i) => ({ id: `aaaaaaaaaaa${i}`, name, city: '', intakes: [], process: [], updatedAt: '2026-01-01T00:00:00.000Z', updatedBy: 'Kayas' })) }));
   const facts = createFacts(dir);

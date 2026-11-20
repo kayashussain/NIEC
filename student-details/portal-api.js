@@ -1,6 +1,6 @@
 // The requests behind the portal pages around the sheet: the student card (notes, university options, messages), adding a
 // student from the card form, the course search over the
-// Fact File, Follow-up messages, the B2B partners and the management records of the Dashboard.
+// Universities, Follow-up messages, the B2B partners and the management records of the Dashboard.
 //
 // Who may see or change a student here is decided by the very same rules as on the sheet (shared/teams.js): Admin
 // everything, the Manager every student but view only, a team its own students in the current intake. A student the
@@ -277,7 +277,7 @@ function createPortalApi({
     };
   }
   // ---- what a shortlisted course carries by itself (the owner, 17 Nov 2026: "I don't want to fill any details") ----
-  // The tuition fee, scholarship and deposit of the course's level and the course's own page, from the Fact File; nobody types them.
+  // The tuition fee, scholarship and deposit of the course's level and the course's own page, from Universities; nobody types them.
   const FactPresent = require('./fact-present');
   function factsForOption(o) {
     const uni = o.universityId ? facts.all().find((u) => u.id === o.universityId) : null;
@@ -290,7 +290,7 @@ function createPortalApi({
     const link = links[linkKey(uni.id, o.course)] || links[linkKey(uni.id, String(o.course || '').replace(/\s*\([^)]*\)\s*$/, '').trim())] || '';
     return { fee: first('tuition'), scholarship: first('scholarship'), deposit: first('deposit'), link };
   }
-  // An option as it is shown and emailed: what was saved on it, else what the Fact File says now.
+  // An option as it is shown and emailed: what was saved on it, else what Universities says now.
   function withFacts(o) {
     const f = factsForOption(o);
     return { ...o, fee: o.fee || f.fee || '', scholarship: o.scholarship || f.scholarship || '', deposit: o.deposit || f.deposit || '', link: o.link || f.link || '' };
@@ -395,7 +395,7 @@ function createPortalApi({
     if (total > 15 * 1024 * 1024) return sendJSON(res, 413, { error: 'The files are too large to send together (the limit is 15 MB).' });
     const entry = { channel, template: 'Follow-up', subject: email.subject, to, text: email.text, options: usesOptions ? ctx.options.length : 0, attachments: files.map((f) => f.name) };
     if (usesOptions) {
-      // A link typed on a card is only remembered for the Fact File when it is on that university's own website.
+      // A link typed on a card is only remembered for Universities when it is on that university's own website.
       const unis = facts.all();
       ctx.options.forEach((o) => { const u = unis.find((x) => x.id === o.universityId); if (u && hostsOf(u).length && onHosts(o.link, hostsOf(u))) courseLinks.remember(o.universityId, o.course, o.link); });
     }
@@ -1387,7 +1387,7 @@ function createPortalApi({
       if (!part) {
         sendJSON(res, 200, {
           student: { ...brief(found.sheet, found.row), color: found.row._color || '', remarks: text(found.row.REMARKS), columns: found.sheet.columns, row: Object.fromEntries(found.sheet.columns.map((c) => [c, found.row[c] ?? ''])) },
-          // Each option with its fee, scholarship, deposit and course page from the Fact File when the option has none of its own.
+          // Each option with its fee, scholarship, deposit and course page from Universities when the option has none of its own.
           card: { ...card, options: (card.options || []).map(withFacts) },
           checks: checksOf(found.row, card),
           can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
@@ -1656,7 +1656,7 @@ function createPortalApi({
       // every step day by day (the owner, 17 Nov 2026).
       if (!out.error && before) { const after = (cards.get(rowId).options || []).find((o) => o.id === sub); const line = applicationNote(before, after); if (line) cards.addNote(rowId, { kind: 'note', text: line }, by(req)); out = { ...out, card: cards.get(rowId) }; }
     } else if (part === 'options') {
-      // The fee, scholarship, deposit and course page come from the Fact File by themselves (nobody types them).
+      // The fee, scholarship, deposit and course page come from Universities by themselves (nobody types them).
       const auto = factsForOption({ universityId: text(body.universityId), course: text(body.course), level: text(body.level) });
       out = cards.addOption(rowId, { ...body, fee: text(body.fee) || auto.fee || '', scholarship: text(body.scholarship) || auto.scholarship || '', deposit: text(body.deposit) || auto.deposit || '', link: text(body.link) || auto.link || '' }, by(req));
       if (!out.error) note(req, [`${who}: added the option ${[out.option.university, out.option.course].filter(Boolean).join(', ')}`]);
@@ -2293,7 +2293,7 @@ function createPortalApi({
     return out.slice(0, 30);
   }
 
-  // ---- every course of the Fact File, for the course search ----
+  // ---- every course of Universities, for the course search ----
   let courseCache = { facts: null, links: null, index: [] };
   function courseIndex() {
     const all = facts.all();
@@ -2337,7 +2337,7 @@ function createPortalApi({
   }
   // B2B Partners (the businesses you send applications to) and Agents (the businesses that send you their students): the same kind of record.
   // The B2B partners named in the University Partner column of the sheet that are not set up on B2B Partners yet: every name that is
-  // not a university (the Fact File, Partner Universities, or a name with University or College in it) and that Admin did not mark as
+  // not a university (Universities, Partner Universities, or a name with University or College in it) and that Admin did not mark as
   // not a partner. They are shown on B2B Partners and offered in the dropdown, so no partner on the sheet is missing.
   // The Receiving Partner column: the head office and the branches are NIEC itself; any other name is an agent.
   const OFFICES = ['Head Office', ...Fields.BRANCHES.map(Fields.branchValue)];
@@ -3094,7 +3094,7 @@ function createPortalApi({
       sendJSON(res, 200, { started: Boolean(w && !w.isRunning()) });
       return true;
     }
-    // A student's own shortlist (the owner, 17 Nov 2026): a student with their own login reads the Fact File and presses "I am
+    // A student's own shortlist (the owner, 17 Nov 2026): a student with their own login reads Universities and presses "I am
     // interested" on a course; it goes into University options on their card (marked as chosen by the student) and the Application
     // Team gets one task to look at the shortlist and advise. Only for a student's login, only their own card.
     if (urlPath === '/api/shortlist' || /^\/api\/shortlist\/[a-z0-9-]{1,40}\/delete$/.test(urlPath)) {
@@ -3114,30 +3114,30 @@ function createPortalApi({
         if (!o || !o.byStudent) { sendJSON(res, 404, { error: 'That course is not on your shortlist.' }); return true; }
         if (o.applied || o.offer) { sendJSON(res, 400, { error: 'We have already applied for this course. Please talk to the office.' }); return true; }
         cards.removeOption(rowId, optId, by);
-        cards.addNote(rowId, { kind: 'note', text: `The student took ${o.course || 'a course'} at ${o.university} off their shortlist on the Fact File.` }, by);
-        activity.record(req, req.user, 'Edited student card', { app: 'Fact File', changes: [`${nameOf(found.row)} took ${o.course} at ${o.university} off their shortlist`] });
+        cards.addNote(rowId, { kind: 'note', text: `The student took ${o.course || 'a course'} at ${o.university} off their shortlist on Universities.` }, by);
+        activity.record(req, req.user, 'Edited student card', { app: 'Universities', changes: [`${nameOf(found.row)} took ${o.course} at ${o.university} off their shortlist`] });
         sendJSON(res, 200, { ok: true, items: mine() });
         return true;
       }
       const uni = facts.all().find((u) => u.id === text(body.universityId));
       const course = text(body.course).slice(0, 240);
-      if (!uni || !course) { sendJSON(res, 400, { error: 'Choose a course from the Fact File.' }); return true; }
+      if (!uni || !course) { sendJSON(res, 400, { error: 'Choose a course from Universities.' }); return true; }
       if (mine().length >= 10) { sendJSON(res, 400, { error: 'Your shortlist is full (10 courses). Take one off first.' }); return true; }
-      const made = cards.addOption(rowId, { universityId: uni.id, university: uni.name, course, intake: text(body.intake).slice(0, 80), byStudent: true, note: 'Chosen by the student on the Fact File' }, by);
+      const made = cards.addOption(rowId, { universityId: uni.id, university: uni.name, course, intake: text(body.intake).slice(0, 80), byStudent: true, note: 'Chosen by the student on Universities' }, by);
       if (made.error) { sendJSON(res, made.duplicate ? 409 : 400, { error: made.duplicate ? 'That course is already on your list.' : made.error }); return true; }
-      cards.addNote(rowId, { kind: 'note', text: `The student chose ${course} at ${uni.name}${text(body.intake) ? ` (${text(body.intake)})` : ''} on the Fact File.` }, by);
+      cards.addNote(rowId, { kind: 'note', text: `The student chose ${course} at ${uni.name}${text(body.intake) ? ` (${text(body.intake)})` : ''} on Universities.` }, by);
       // One open task for the Application Team about the shortlist; a later choice is added to it as an update.
-      const WORDS = 'chose courses on the Fact File: look at the shortlist';
+      const WORDS = 'chose courses on Universities: look at the shortlist';
       const open = (cards.get(rowId).tasks || []).find((x) => !x.done && x.team === 'application' && x.text.includes(WORDS));
       if (open) cards.commentTask(rowId, open.id, `Also chose ${course} at ${uni.name}.`, by);
       else cards.addTask(rowId, { team: 'application', text: `${nameOf(found.row) || 'The student'} ${WORDS} (University options) and advise`, tag: 'application', priority: 'high' }, by);
-      activity.record(req, req.user, 'Edited student card', { app: 'Fact File', changes: [`${nameOf(found.row)} chose ${course} at ${uni.name} on the Fact File`] });
+      activity.record(req, req.user, 'Edited student card', { app: 'Universities', changes: [`${nameOf(found.row)} chose ${course} at ${uni.name} on Universities`] });
       sendJSON(res, 200, { ok: true, items: mine() });
       return true;
     }
     // The page of a course on the university's website (course-finder.js), remembered once found.
-    // The courses of one university as the Fact File lists them (the general list and each intake), each with the page of the course
-    // when it is known, so a course in the Fact File opens its own page.
+    // The courses of one university as Universities lists them (the general list and each intake), each with the page of the course
+    // when it is known, so a course in Universities opens its own page.
     if (urlPath === '/api/fact-courses' && req.method === 'GET') {
       const uid = text(new URL(req.url, 'http://x').searchParams.get('university'));
       const uni = facts.all().find((u) => u.id === uid);

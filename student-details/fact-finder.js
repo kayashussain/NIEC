@@ -1,18 +1,18 @@
-// Shortlisting from the Fact File for a student (the owner, 17 Nov 2026). The team presses Shortlist beside any course; the first time,
+// Shortlisting from Universities for a student (the owner, 17 Nov 2026). The team presses Shortlist beside any course; the first time,
 // it asks for which student (there is no "Choose the student first" bar any more, the owner, 20 Nov 2026), and the student is kept
 // while the browser tab is open: on a university's page, in the search results ("nursing" lists every matching
-// course of every university) and in "Find universities for a student". Nobody leaves the Fact File: a tray at the bottom of the page
+// course of every university) and in "Find universities for a student". Nobody leaves Universities: a tray at the bottom of the page
 // holds the student's name and what is shortlisted on one line, the list numbered 1, 2, 3 in the order to apply (each with a ⋯ menu:
 // Move up, Move down, Remove), and one ⋯ menu for the rest (the owner, 20 Nov 2026):
 //
 //   Share options (by email)         the student gets the courses in one email (fee, scholarship, deposit and course page by themselves)
 //   Assign to the Application Team  asks, for every course, through which partner it goes (Direct or a B2B partner) and for notes,
 //                                   then gives the Application Team one task with the numbered list
-//   Open the card                   the student card in a new tab, so the Fact File stays where it was
+//   Open the card                   the student card in a new tab, so Universities stays where it was
 //   Stop shortlisting (in the ⋯ menu) ends the shortlisting: the tray goes away; courses not yet given to the Application
 //                                   Team can be kept on the student card or discarded (the owner, 17 Nov 2026)
 //
-// The chosen student is kept while moving between Fact File pages, but a refresh of the page starts clean, with no student chosen
+// The chosen student is kept while moving between university pages, but a refresh of the page starts clean, with no student chosen
 // (the owner, 17 Nov 2026: the bar kept coming back after every refresh).
 //
 // The same two windows are used on the student card (student-page.js) through window.OptionActions.
@@ -126,7 +126,7 @@
     studentChanged();
   }
 
-  // Shortlist / Shortlisted beside a course. The fee, scholarship, deposit and course page are added by the server from the Fact File.
+  // Shortlist / Shortlisted beside a course. The fee, scholarship, deposit and course page are added by the server from Universities.
   // The button changes the moment it is pressed and the server is told behind it; if the server refuses, the button goes back.
   const found = (o) => state.options.find((x) => optKey(x.universityId, x.course, x.intake) === optKey(o.universityId, o.course, o.intake));
   function paint(b) {
@@ -168,7 +168,7 @@
     return b;
   }
 
-  // ---- the tray at the bottom of the Fact File ----
+  // ---- the tray at the bottom of Universities ----
   let trayBox = null;
   function drawTray() {
     if (!trayBox) return;
@@ -350,7 +350,7 @@
   }
 
   // The student comes from the address (?for=ID, from "Find course" on the student card), else the one chosen before in this tab.
-  // A refresh starts clean: the student chosen before is forgotten (moving to another Fact File page keeps it).
+  // A refresh starts clean: the student chosen before is forgotten (moving to another university page keeps it).
   const refreshed = () => { try { const n = performance.getEntriesByType('navigation')[0]; return Boolean(n && n.type === 'reload'); } catch (e) { return false; } };
   const ready = async () => {
     if (refreshed()) {

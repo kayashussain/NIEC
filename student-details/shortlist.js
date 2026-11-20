@@ -1,5 +1,5 @@
-// A student's own login on the Fact File (the owner, 17 Nov 2026): a welcome line, "Your shortlist" (the courses the student chose,
-// each with Take off) at the top of both Fact File pages, and "I am interested" beside each course on a university's page (see
+// A student's own login on Universities (the owner, 17 Nov 2026): a welcome line, "Your shortlist" (the courses the student chose,
+// each with Take off) at the top of both university pages, and "I am interested" beside each course on a university's page (see
 // fact-university.js). What the student chooses goes to the University options on their card, and the Application Team gets a
 // task to advise (portal-api.js, /api/shortlist). For every other account this file does nothing.
 (function () {
@@ -81,7 +81,7 @@
       const r = await call('/api/shortlist');
       Object.assign(state, { linked: r.linked, name: r.name || '', items: r.items || [] });
       panel();
-    } catch (e) { /* the Fact File works without it */ }
+    } catch (e) { /* Universities works without it */ }
     return state;
   })();
 

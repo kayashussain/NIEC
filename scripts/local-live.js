@@ -1,10 +1,10 @@
 // See your REAL data in this portal on your own computer, without touching the live server.
 //
 //   1. On the live server, log in as Admin and open Admin > Restore (or the daily backup the server makes at 6 PM) and download a backup,
-//      or use the two download buttons for the students and the Fact File. Put the downloaded files in any folder on your computer.
+//      or use the two download buttons for the students and Universities. Put the downloaded files in any folder on your computer.
 //   2. Run:   node scripts/local-live.js  <the downloaded file> [another file ...]
 //      A file can be a daily backup (niec-daily-....json.gz, which holds everything), the students download (...-students-....json)
-//      or the Fact File download (...-fact-file-....json).
+//      or Universities download (...-fact-file-....json).
 //   3. Open http://localhost:8080. There is no login page: this copy opens straight into the portal as the owner (Admin).
 //      It opens only on this computer (127.0.0.1), never from another computer on the Wi-Fi or office network.
 //      To have the normal login page instead, add --login (then log in as "owner" with the password this script prints).
@@ -60,7 +60,7 @@ const wb = migrateWorkbook({ sheets: snap.students.sheets, activeSheetId: snap.s
 writeFileAtomic(path.join(studentsDir, 'data.json'), JSON.stringify(ensureRowIds({ revision: Number(snap.students.revision) || 1, sheets: wb.sheets, activeSheetId: wb.activeSheetId }), null, 1));
 const counts = { students: wb.sheets.reduce((n, s) => n + s.rows.length, 0), sheets: wb.sheets.length };
 const put = (label, fn, value) => { if (value === undefined || value === null) return; try { fn(value); counts[label] = Array.isArray(value) ? value.length : Object.keys(value).length; } catch (e) { console.error(`(skipped ${label}: ${e.message})`); } };
-put('Fact File universities', (v) => createFacts(studentsDir).restoreAll(v), snap.facts);
+put('Universities universities', (v) => createFacts(studentsDir).restoreAll(v), snap.facts);
 put('Partner Universities', (v) => createDirect(studentsDir).restoreAll(v), snap.partners);
 put('student cards', (v) => createCards(studentsDir).restoreAll(v), snap.cards);
 put('B2B partners', (v) => createB2b(studentsDir).restoreAll(v), snap.b2b);

@@ -1,4 +1,4 @@
-// The portal around the sheet: student cards, message templates and sending, university options from the Fact File,
+// The portal around the sheet: student cards, message templates and sending, university options from Universities,
 // B2B partners, the management records and the Dashboard's decision figures.
 // The stores and the figures are tested on their own; the access rules are tested through the real server.
 const test = require('node:test');
@@ -175,9 +175,9 @@ test('a message to a student is a personal letter: no machine-written mark, and 
   assert.ok(/Auto-Submitted: auto-generated/.test(buildMessage({ from: 'office@example.org', to: 'x@example.com', subject: 's', text: 't', html: 'h' })), 'the account emails keep their mark');
 });
 
-// ---- the Fact File as a list of courses ----
+// ---- Universities as a list of courses ----
 
-test('the level and the fee of a course are read from the Fact File as written', () => {
+test('the level and the fee of a course are read from Universities as written', () => {
   assert.strictEqual(levelOf('Postgraduate (MBA, MSc, LLM, MFA)'), 'Postgraduate');
   assert.strictEqual(levelOf('MBA Healthcare Management'), 'Postgraduate');
   assert.strictEqual(levelOf('BSc (Hons) Nursing - Adult'), 'Undergraduate');
@@ -190,7 +190,7 @@ test('the level and the fee of a course are read from the Fact File as written',
     [{ course: 'MSc Computer Science', group: 'Postgraduate - Leeds' }, { course: 'MBA', group: 'Postgraduate - Leeds' }]);
 });
 
-test('every course of the starting Fact File can be found with its fee, and a typed link is remembered', () => {
+test('every course of the starting Universities can be found with its fee, and a typed link is remembered', () => {
   const dir = tmp();
   const facts = createFacts(dir);
   const links = createCourseLinks(dir);
@@ -425,7 +425,7 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual(noted.json.note.by, 'Asha');
   assert.strictEqual((await app('GET', '/api/follow-ups')).status, 404, 'the Follow-ups page and its API are gone');
 
-  // University options from the Fact File, and one email with all of them.
+  // University options from Universities, and one email with all of them.
   const courses = (await app('GET', '/api/courses?q=cyber%20security&level=Postgraduate')).json;
   assert.ok(courses.total >= 20 && courses.options[0].university);
   const pick = courses.options.find((o) => o.fee);

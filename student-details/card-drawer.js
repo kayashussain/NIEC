@@ -1,4 +1,4 @@
-// Opens a student's card over the page the person is on (the sheet, the Fact File ...), so they can look
+// Opens a student's card over the page the person is on (the sheet, Universities ...), so they can look
 // at the student and carry on where they were. window.CardDrawer.open(rowId, { onClose }). Escape or the Close button shuts it;
 // onClose (optional) runs then, so a page can show what was changed on the card (a new note, a new stage).
 // `list` (optional): the ids of the students in the order shown on the page (the sheet with its search and filters). The card then
@@ -97,7 +97,7 @@
     frame.focus({ preventScroll: true });
     current = { back, drawer, onKey, onMessage, before, onClose };
   }
-  // Loaded in its own stylesheet-less pages too (the Fact File): make sure the drawer's look is there.
+  // Loaded in its own stylesheet-less pages too (Universities): make sure the drawer's look is there.
   if (!document.querySelector('link[href^="portal.css"]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';

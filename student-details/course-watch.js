@@ -4,8 +4,8 @@
 //   - a course with a page is opened: if the page is gone (404 or 410), or no longer says anything about the course, or the fees or intake
 //     months written on it are not the ones seen last week, the course gets a WARNING for a person to confirm;
 //   - a page that moved to a new address on the same website is followed, and the new address is remembered.
-// Nothing in the Fact File is changed by the check itself: the warning says what was found, and a person confirms it (Confirm), or
-// corrects the Fact File. The results are kept in course-watch.json in the data folder (never in git).
+// Nothing in Universities is changed by the check itself: the warning says what was found, and a person confirms it (Confirm), or
+// corrects Universities. The results are kept in course-watch.json in the data folder (never in git).
 
 const fs = require('fs');
 const path = require('path');
@@ -78,7 +78,7 @@ function createCourseWatch({ dir, getIndex, facts, finder, courseLinks, fetchFn 
     if (before && !sameList(before.intakes, read1.intakes)) changes.push(`Intakes written on the page were ${before.intakes.join(', ') || 'none'} and are now ${read1.intakes.join(', ') || 'none'}.`);
     if (changes.length) return { ...rec, status: 'changed', confirmed: false, changedAt: at, note: changes.join(' ') };
     // A change nobody has confirmed yet stays a warning: the new fees are now the page's, so a later look finds no difference, but
-    // the Fact File was never updated by a person.
+    // Universities was never updated by a person.
     if (old && old.status === 'changed' && !old.confirmed) return { ...rec, status: 'changed', confirmed: false, changedAt: old.changedAt, note: old.note };
     return { ...rec, status: 'active', confirmed: false, note: '' };
   }

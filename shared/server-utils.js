@@ -111,7 +111,7 @@ const CHANGE_ACTIONS = new Set(['Edited student card', 'Sent message', 'Edited t
 function activityCategory(action) {
   if (action === 'Logged in' || action === 'Logged out') return 'logins';
   if (SECURITY_ACTIONS.has(action)) return 'security';
-  if (action === 'Changed' || action === 'Edited fact file' || CHANGE_ACTIONS.has(action)) return 'changes';
+  if (action === 'Changed' || action === 'Edited universities' || CHANGE_ACTIONS.has(action)) return 'changes';
   return 'accounts';
 }
 

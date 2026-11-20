@@ -1,4 +1,4 @@
-// The official website of each university of the Fact File, used when the Fact File itself has no address written. Only the university's
+// The official website of each university in Universities, used when Universities itself has no address written. Only the university's
 // own address is listed: the course finder and the weekly check look at these addresses and nowhere else. A university with no entry here
 // (the pathway and international colleges, which run on a partner's site) is simply not searched until its website is written in the Fact
 // File. Each value is the list of hosts that belong to the university.
@@ -21,7 +21,7 @@ const BY_NAME = {
   'Sheffield Hallam University': ['shu.ac.uk'],
 };
 
-// The hosts of a university: from its website in the Fact File, or from the list above.
+// The hosts of a university: from its website in Universities, or from the list above.
 function hostsOf(university) {
   const hosts = [];
   const site = String((university && university.website) || '').trim();

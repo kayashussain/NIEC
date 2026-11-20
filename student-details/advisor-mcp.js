@@ -1,10 +1,10 @@
 // A door for the Claude "Strategy Advisor" project (an MCP connector).
 //
 // It lets Claude READ the live ISR sheet (every tab, row and column), the Dashboard numbers,
-// the Fact File, the Incentive page (commissions, incentives, company earnings; see
+// Universities, the Incentive page (commissions, incentives, company earnings; see
 // counselor-incentive/advisor-tools.js) and the rest of the portal (student cards with tasks, notes and messages, partners,
 // agents, planning, users, settings, the activity record; see advisor-data.js, never passwords, tokens or keys).
-// It can NOT change any student, task, the Fact File or any incentive.
+// It can NOT change any student, task, Universities or any incentive.
 //
 // One thing more, only when NIEC_ADVISOR_SEND_AS is set (the username of a portal account): send_followup_email sends one email to
 // chosen students exactly as the Follow-up page does, from that person's own mailbox with their signature, each email logged on the
@@ -70,7 +70,7 @@ const TOOLS = [
   },
   {
     name: 'get_fact_file',
-    description: 'The Fact File: one page per university (fees, entry requirements, English tests, courses, intakes, application process). Without arguments, lists the universities. With "id" returns one full page. With "q" searches by course or text.',
+    description: 'Universities: one page per university (fees, entry requirements, English tests, courses, intakes, application process). Without arguments, lists the universities. With "id" returns one full page. With "q" searches by course or text.',
     inputSchema: { type: 'object', properties: { id: { type: 'string' }, q: { type: 'string' } }, additionalProperties: false },
   }
 ];
@@ -226,7 +226,7 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir
 
   return createMcpEndpoint({
     prefix: PREFIX, token, tokenName: 'NIEC_ADVISOR_TOKEN', tools: [...TOOLS, ...(incentiveTools ? incentiveTools.TOOLS : []), ...(portalData ? portalData.TOOLS : []), ...(sendFollowUp ? [SEND_TOOL] : [])], callTool, serverName: 'niec-advisor', memoryDir, log,
-    instructions: (sendFollowUp ? 'Can email students with send_followup_email (show the sample and get a yes before confirm: true). Otherwise read-only: ' : '') + 'Read-only, live access to the ISR sheet and Fact File' + (incentiveTools ? ', and to the Incentive page (commissions, incentives and company earnings)' : '') + (portalData ? ', and to the rest of the portal (tasks, student cards, partners, agents, planning, users, settings, activity; get_portal_areas lists them, get_tasks and get_student_file are the quick ways in; passwords, tokens and keys are never shown)' : '') + ', plus a notebook you may write to. Call read_memory first in every conversation, then get_overview' + (incentiveTools ? ' (and get_incentive_overview for anything about incentives, commissions or earnings; University Partner is the agent; tuition and university commission are in GBP, incentives, TDS, advances and salary in NPR)' : '') + '. Save durable preferences and lessons with save_memory (never personal data). Prefer count_by for numbers and get_students with "columns" and "where" for rows' + (incentiveTools ? ', and summarize_incentives_by to compare agents and universities' : '') + '. Always say when the data was pulled (pulledAt).',
+    instructions: (sendFollowUp ? 'Can email students with send_followup_email (show the sample and get a yes before confirm: true). Otherwise read-only: ' : '') + 'Read-only, live access to the ISR sheet and Universities' + (incentiveTools ? ', and to the Incentive page (commissions, incentives and company earnings)' : '') + (portalData ? ', and to the rest of the portal (tasks, student cards, partners, agents, planning, users, settings, activity; get_portal_areas lists them, get_tasks and get_student_file are the quick ways in; passwords, tokens and keys are never shown)' : '') + ', plus a notebook you may write to. Call read_memory first in every conversation, then get_overview' + (incentiveTools ? ' (and get_incentive_overview for anything about incentives, commissions or earnings; University Partner is the agent; tuition and university commission are in GBP, incentives, TDS, advances and salary in NPR)' : '') + '. Save durable preferences and lessons with save_memory (never personal data). Prefer count_by for numbers and get_students with "columns" and "where" for rows' + (incentiveTools ? ', and summarize_incentives_by to compare agents and universities' : '') + '. Always say when the data was pulled (pulledAt).',
   });
 }
 

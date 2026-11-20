@@ -74,7 +74,7 @@ test('one course list per page: intake lists are joined and a course in one inta
   assert.strictEqual(d.intakes[0].courses, '## X\nMSc A\n## Y\nMSc A', 'twice under one heading is once; under two stages stays');
 });
 
-test('the Fact File starts with the OIEG universities, one page each, nothing repeated, and within the page limits', () => {
+test('Universities starts with the OIEG universities, one page each, nothing repeated, and within the page limits', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-oieg-'));
   const facts = createFacts(dir);
   const names = facts.list().map((u) => u.name);
@@ -115,7 +115,7 @@ test('a page an Admin already edited keeps their text; the new facts are added t
   assert.strictEqual(JSON.parse(fs.readFileSync(file, 'utf8')).oiegApplied, true);
 });
 
-test('loading the Fact File again changes nothing: the file is not rewritten and no id changes', () => {
+test('loading Universities again changes nothing: the file is not rewritten and no id changes', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-oieg-stable-'));
   createFacts(dir).list();
   const file = path.join(dir, 'fact-file.json');

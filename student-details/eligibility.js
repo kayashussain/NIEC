@@ -1,4 +1,4 @@
-// Who can go where (the owner, 17 Nov 2026: finding a student's universities must not mean opening every Fact File page). Each
+// Who can go where (the owner, 17 Nov 2026: finding a student's universities must not mean opening every university page). Each
 // university's rules, as written on the partner portal ("12th: GPA 2.8 or 60% or above", "Study gap: up to 10 years", "IELTS 6.0
 // overall"), are read once into numbers (rulesFrom), and a student (level, GPA or percentage, study gap, English test and score) is
 // checked against every university (check): Eligible, Check (close, or a rule that needs a person: a waiver, a gap not stated) or
@@ -6,7 +6,7 @@
 //
 // The rules are read generously: where a university gives several routes (12th grade, foundation, diploma), the lowest bar counts,
 // and a line about one subject (12th Maths or English) is not taken as the overall grade. A result is a guide for the team, not the
-// university's decision: the Fact File page has the full wording.
+// university's decision: the university page has the full wording.
 
 const { levelOf } = require('./course-index');
 
@@ -94,7 +94,7 @@ function rulesFrom(r) {
 }
 
 // The rules of a university typed by hand (no partner portal): from its table of entry requirements, English, fees (one row per
-// course level), so the finder misses no university of the Fact File.
+// course level), so the finder misses no university in Universities.
 function rulesFromPage(u) {
   const lines = (t) => String(t || '').split('\n').map((x) => x.replace(/^[\s•*-]+/, '').trim()).filter(Boolean);
   return rulesFrom({

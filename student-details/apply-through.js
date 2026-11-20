@@ -6,7 +6,7 @@
 //   and Navitas. Such an entry has `direct: true` and only that one partner.
 //   Where only one partner offers a place there is nothing to choose either.
 //   The Apply through page lists only the places two or more B2B partners offer, with no direct route; Admin chooses the partner
-//   there, and every change is written in Activity. The Application Team sees the list and the Fact File shows the chosen partner on
+//   there, and every change is written in Activity. The Application Team sees the list and Universities shows the chosen partner on
 //   the university's page (Admin and the Application Team only).
 //
 // The starting list is apply-through-seed.json: the partners' UK lists read on 20 Nov 2026 (Real Dreams through Route2Uni, Adventus,
@@ -23,7 +23,7 @@ const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').rep
 const tidy = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 // Two or more partners and no direct route: the owner chooses.
 const choosable = (e) => !e.direct && Array.isArray(e.options) && e.options.length > 1;
-// Other names the Fact File uses for a place in the list.
+// Other names Universities uses for a place in the list.
 const ALIASES = { uwebristol: 'University of the West of England', healthscienceuniversity: 'Health Sciences University', universityofroehampton: 'Roehampton University', ravensbourneuniversitylondon: 'Ravensbourne University', bathspa: 'Bath Spa University' };
 
 function clean(e) {
@@ -69,7 +69,7 @@ function createApplyThrough(dir, { wanted = () => false } = {}) {
     all: () => read(),
     // The places the owner chooses for, A to Z, universities first.
     choices: () => read().filter(choosable).sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'university' ? -1 : 1)),
-    // The entry for a university's name as the Fact File writes it, or null. Universities are preferred to colleges.
+    // The entry for a university's name as Universities writes it, or null. Universities are preferred to colleges.
     find(name) {
       const key = squash(ALIASES[squash(name)] || name);
       if (!key) return null;

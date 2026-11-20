@@ -1,4 +1,4 @@
-// The Fact File: one page of facts per university (entry requirements, language test, courses, location,
+// Universities: one page of facts per university (entry requirements, language test, courses, location,
 // intakes and the application process) that every team can read and Admin edits. Kept in fact-file.json
 // in the data folder, written whole and atomically (it is small), with a one-time starting list.
 
@@ -18,7 +18,7 @@ const { mergeEntry, newReport, unifyCourses, dedupeCourses } = require('./fact-m
 // Each university's page as its partner gives it for the January 2027 intake (the owner, 20 Nov 2026): logo, pictures and video, the
 // requirements per level, the January 2027 courses only, the deadlines and the documents. Read from the partner the university is
 // applied through (Real Dreams through Route2Uni, Adventus or Apply Board; the pictures and video from Apply Board's school page) by
-// seed-tools on 20 Nov 2026. Put on the matching page once per version, or a page of its own when the Fact File has none.
+// seed-tools on 20 Nov 2026. Put on the matching page once per version, or a page of its own when Universities has none.
 const PARTNERS = require('./fact-seed-partners.json');
 
 // The hand-written pages (from each university's own fact file or flyer). The January 2027 sheet adds an intake to them.
@@ -46,7 +46,7 @@ Object.keys(STARTER_DETAILS).forEach((key) => { STARTER_DETAILS[key] = dedupeCou
 // A page that kept a course list for each intake shows its courses once, under the levels (see unifyCourses).
 ['university of west london'].forEach((key) => { if (STARTER_DETAILS[key]) STARTER_DETAILS[key] = unifyCourses(JSON.parse(JSON.stringify(STARTER_DETAILS[key]))); });
 
-// What the OIEG sheets add to each page. A university that is not in the Fact File yet gets a page of its own.
+// What the OIEG sheets add to each page. A university that is not in Universities yet gets a page of its own.
 const OIEG_REPORT = newReport();
 // Differences between a page and a sheet that the owner has decided (5 November 2026). The two Excel sheets he gave are the
 // updated ones, so a sheet figure wins unless he chose the page figure.
@@ -142,16 +142,20 @@ function clean(input, old = {}) {
 }
 const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
 const url = (v) => (/^https:\/\/[^\s"'<>]+$/.test(String(v || '')) ? String(v).slice(0, 600) : '');
+// A logo can also be a small picture kept in the page itself (data:image/..., at most about 200 KB).
+const logoUrl = (v) => (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(String(v || '')) && String(v).length < 280000 ? String(v) : url(v));
 function cleanProfile(p) {
   if (!p || typeof p !== 'object') return null;
   const t = (v, max = LIMITS.short) => str(v == null ? '' : String(v), max).trim();
   const lines = (a, n, max) => (Array.isArray(a) ? a : []).slice(0, n).map((x) => t(x, max)).filter(Boolean);
   return {
     type: p.type === 'college' ? 'college' : 'university',
-    from: t(p.from, 60), at: t(p.at, 20), intake: t(p.intake, 60) || 'January 2027',
-    logo: url(p.logo), banner: url(p.banner), photos: (Array.isArray(p.photos) ? p.photos : []).map(url).filter(Boolean).slice(0, 8),
+    // own: the courses, requirements and dates are the page's own (a direct route, or nothing for January 2027 at the partner); the
+    // profile then gives only the pictures, the video, the logo and the short about.
+    own: Boolean(p.own), intake: t(p.intake, 60) || 'January 2027',
+    logo: logoUrl(p.logo), banner: url(p.banner), photos: (Array.isArray(p.photos) ? p.photos : []).map(url).filter(Boolean).slice(0, 8),
     video: /^https:\/\/www\.youtube(-nocookie)?\.com\/embed\/[\w-]{6,20}/.test(String(p.video || '')) ? url(p.video) : '',
-    about: t(p.about, 2000), website: url(p.website) || t(p.website, 300), city: t(p.city), founded: t(p.founded, 20), students: t(p.students, 20), international: t(p.international, 20),
+    about: t(p.about, 2000), keyPoints: lines(p.keyPoints, 8, 160), website: url(p.website) || t(p.website, 300), city: t(p.city),
     deadlines: lines(p.deadlines, 14, 400),
     levels: (Array.isArray(p.levels) ? p.levels : []).slice(0, 8).map((L) => ({
       level: LEVEL_ORDER.includes(L && L.level) ? L.level : 'Other courses',
@@ -161,11 +165,10 @@ function cleanProfile(p) {
       name: t(c && c.name, 300), level: LEVEL_ORDER.includes(c && c.level) ? c.level : 'Other courses', start: t(c && c.start, 40), deadline: t(c && c.deadline, 40),
       fee: t(c && c.fee, 80), duration: t(c && c.duration, 60), campus: t(c && c.campus, 200),
     })).filter((c) => c.name),
-    documents: lines(p.documents, 30, 300), documentsUsual: Boolean(p.documentsUsual),
   };
 }
 // The page a partner profile belongs to: the same name (ignoring "the", "of", "university", brackets and punctuation), or a name the
-// Fact File writes differently (a university is never matched to its international college: "college" and "international" count).
+// Universities writes differently (a university is never matched to its international college: "college" and "international" count).
 const PROFILE_ALIASES = {
   'health sciences university': 'Health Science University', 'regent college': 'Regent College London', 'roehampton university': 'University of Roehampton',
   'ravensbourne university': 'University of Ravensbourne', 'university of winchester': 'Winchester University', 'university of the west of scotland': 'University of West of Scotland',
@@ -244,10 +247,10 @@ function glance(u) {
 }
 const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: u.intakes.map((i) => i.name), updatedAt: u.updatedAt, kind: (u.profile && u.profile.type === 'college') || PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u),
   // A page with the partner's January 2027 details counts only those courses, and shows the university's logo on its card.
-  ...(u.profile ? { courseCount: u.profile.courses.length, logo: u.profile.logo || '', deadline: u.profile.deadlines[0] || '', profileCity: u.profile.city || '' } : {}) });
+  ...(u.profile ? { ...(u.profile.own ? {} : { courseCount: u.profile.courses.length, deadline: u.profile.deadlines[0] || '' }), logo: u.profile.logo || '', cover: u.profile.banner || u.profile.photos[0] || '', profileCity: u.profile.city || '' } : {}) });
 
 // Course lines of a page: the course list and each intake's, without the "## " sub-headings.
-const courseLines = (u) => (u.profile ? u.profile.courses.map((c) => c.name) : [u.courses, ...u.intakes.map((i) => i.courses)])
+const courseLines = (u) => (u.profile && !u.profile.own ? u.profile.courses.map((c) => c.name) : [u.courses, ...u.intakes.map((i) => i.courses)])
   .join('\n').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('##') && !/^The course list is under/.test(l));
 
 // The matching courses of a page, each with its level (the "## " heading above it) and the intake it is listed under, so a course
@@ -272,7 +275,7 @@ function matchingCourses(u, words) {
     });
   };
   // A page with the partner's January 2027 details lists only those courses (the owner, 20 Nov 2026).
-  if (u.profile) {
+  if (u.profile && !u.profile.own) {
     u.profile.courses.forEach((c) => { const t = c.name.toLowerCase(); if (words.every((w) => t.includes(w)) && !seen.has(t)) { seen.add(t); out.push({ course: c.name, level: c.level, intakes: [u.profile.intake] }); } });
     return out;
   }
@@ -300,14 +303,14 @@ function searchIn(universities, q) {
 const listIn = (universities, q = '') => (String(q).trim() ? searchIn(universities, q) : universities.map(summary).sort((a, b) => a.name.localeCompare(b.name)));
 // Pages saved before the overview and fees table existed come back with those empty.
 const getIn = (universities, id) => { const u = universities.find((x) => x.id === id); return u ? { overview: '', programs: [], ...u } : null; };
-// Read only list and pages of a given set of universities (a backup), with the same shape and search as the live Fact File.
+// Read only list and pages of a given set of universities (a backup), with the same shape and search as the live Universities.
 const viewFacts = (universities) => ({ list: (q) => listIn(universities, q), get: (id) => getIn(universities, id) });
 
 function createFacts(dir, { now = () => new Date() } = {}) {
   const file = path.join(dir, 'fact-file.json');
 
   // The list is kept in memory and only re-read if the file changed on disk, so opening a page doesn't
-  // parse (and check) the whole Fact File every time.
+  // parse (and check) the whole Universities every time.
   let cache = null; // { mtimeMs, size, data }
   function read() {
     let stat;
@@ -342,6 +345,7 @@ function createFacts(dir, { now = () => new Date() } = {}) {
       };
       // Only an installation that works with these partners (it holds their universities) gets their pages (see applyProfiles).
       applyProfiles(data);
+      removeNotPromoted(data);
       write(data);
     } else {
       // A university with starter details is refreshed from them only while nobody has edited its page (still
@@ -373,6 +377,7 @@ function createFacts(dir, { now = () => new Date() } = {}) {
         changed = true;
       }
       if (data.partnersApplied !== PARTNERS.version) { applyProfiles(data); changed = true; }
+      if (removeNotPromoted(data)) changed = true;
       data.universities = data.universities.map((u) => {
         if (!hasStarter(u.name) || !(isBlank(u) || !u.updatedBy)) return u;
         const fresh = { ...withStarterDetails(u), id: u.id, updatedAt: u.updatedAt, updatedBy: u.updatedBy || '' };
@@ -385,17 +390,26 @@ function createFacts(dir, { now = () => new Date() } = {}) {
     return data;
   }
 
+  // Universities the consultancy does not promote are taken off once (the owner, 20 Nov 2026: Buckinghamshire New University, BNU).
+  // Removed once: if Admin adds one back later, it stays.
+  function removeNotPromoted(data) {
+    const done = data.removedOnce || [];
+    if (done.includes('bnu-2026-11-20')) return false;
+    data.universities = data.universities.filter((u) => !/^(buckinghamshire new university|bnu)\b/i.test(String(u.name).trim()));
+    data.removedOnce = [...done, 'bnu-2026-11-20'];
+    return true;
+  }
   // The partners' January 2027 pages, once per version: each on its own page (matched by name), or a new page when there is none.
-  // Only on an installation whose Fact File already holds several of these universities, so another consultancy gets nothing added.
+  // Only on an installation whose Universities already holds several of these universities, so another consultancy gets nothing added.
   function applyProfiles(data) {
     const entries = Object.values(PARTNERS.profiles || {});
     const known = entries.filter((p) => pageFor(data.universities, p.name)).length;
     if (known >= 5) {
       entries.forEach((p) => {
         const profile = cleanProfile(p);
-        if (!profile.courses.length && !profile.levels.length) return; // nothing for January 2027 at the partner: the page stays as it is
         const hit = pageFor(data.universities, p.name);
         if (hit) { hit.profile = profile; return; }
+        if (profile.own || (!profile.courses.length && !profile.levels.length)) return; // only pictures: no page of its own
         data.universities.push({ ...clean({ name: p.name, city: profile.city, website: profile.website, intakes: [{ name: 'January 2027' }], process: STARTER_STEPS.map((title) => ({ title })), profile }), id: newId(), updatedAt: now().toISOString(), updatedBy: '' });
       });
     }
@@ -468,7 +482,7 @@ function createFacts(dir, { now = () => new Date() } = {}) {
     },
     // Puts back a whole list from a backup (each page checked and cleaned like any save).
     restoreAll(universities) {
-      if (!Array.isArray(universities)) return { error: 'The backup has no Fact File in it.' };
+      if (!Array.isArray(universities)) return { error: 'The backup has no Universities in it.' };
       const data = load();
       const restored = universities.filter((u) => u && /^[a-f0-9]{12}$/.test(u.id) && u.name).map((u) => ({
         ...clean(u, { id: u.id, name: u.name }), id: u.id, updatedAt: u.updatedAt || now().toISOString(), updatedBy: typeof u.updatedBy === 'string' ? u.updatedBy : '',

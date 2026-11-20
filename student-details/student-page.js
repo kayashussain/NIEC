@@ -755,9 +755,9 @@
   }
 
   // ---- University options ----
-  // The shortlist (the owner, 17 Nov 2026): the courses shortlisted from the Fact File or added here, numbered 1, 2, 3 in the order to
-  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from the Fact File by themselves. "Share options" (emails these
-  // options, a short word so the row stays tidy) and "Assign to the Application Team" open the same windows as on the Fact File (fact-finder.js): the second asks, for every course,
+  // The shortlist (the owner, 17 Nov 2026): the courses shortlisted from Universities or added here, numbered 1, 2, 3 in the order to
+  // apply. Nothing is typed: the fee, scholarship, deposit and course page come from Universities by themselves. "Share options" (emails these
+  // options, a short word so the row stays tidy) and "Assign to the Application Team" open the same windows as on Universities (fact-finder.js): the second asks, for every course,
   // through which partner it goes, and for notes. Up and Down change the order before assigning.
   const refreshCard = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
   let sendOrder = null; // option ids not yet sent, in the order chosen on this page
@@ -778,7 +778,7 @@
     ids.forEach((x) => { if (!sendOrder.includes(x)) sendOrder.push(x); });
     return sendOrder.map((x) => waiting.find((o) => o.id === x));
   }
-  // One shortlisted or applied course: its name, university, partner and what the Fact File says.
+  // One shortlisted or applied course: its name, university, partner and what Universities says.
   function optionItem(o, waiting) {
     const item = el('li', 'p-chosen-item');
     const i = waiting.indexOf(o);
@@ -797,7 +797,7 @@
       const move = (d) => () => { const j = i + d; if (j < 0 || j >= sendOrder.length) return; [sendOrder[i], sendOrder[j]] = [sendOrder[j], sendOrder[i]]; render(); };
       tools.append(h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'), h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === waiting.length - 1, onclick: move(1) }, '↓'));
     }
-    // Taken off the shortlist right here (the owner, 17 Nov 2026: no going back to the Fact File), until an application is recorded.
+    // Taken off the shortlist right here (the owner, 17 Nov 2026: no going back to Universities), until an application is recorded.
     const answered = o.applied || o.offer || o.refused || o.withdrawn || o.skipped;
     if (can() && o.id && !answered) {
       tools.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => {
@@ -822,7 +822,7 @@
     if (o.applied && !o.offer && !o.refused && !o.withdrawn) sub.append(el('span', 'p-applied is-sent', 'Waiting for the answer'));
     if (sub.children.length) item.append(sub);
     if (o.reason && (o.refused || o.withdrawn || o.skipped)) item.append(el('p', 'p-muted p-small', `Reason: ${o.reason}`));
-    // What the Fact File says, read only (the owner, 17 Nov 2026: "I don't want to fill any details").
+    // What Universities says, read only (the owner, 17 Nov 2026: "I don't want to fill any details").
     const facts = el('dl', 'p-chosen-facts');
     [['Tuition fee', o.fee], ['Scholarship', o.scholarship], ['Deposit', o.deposit]].forEach(([k, v]) => { if (v) { const d = el('div'); d.append(el('dt', '', k), el('dd', '', v)); facts.append(d); } });
     if (o.link) { const d = el('div'); const a = el('a', '', 'Course page'); a.href = o.link; a.target = '_blank'; a.rel = 'noopener'; const dd = el('dd'); dd.append(a); d.append(el('dt', '', 'Link'), dd); facts.append(d); }
@@ -920,8 +920,8 @@
     const waiting = waitingOptions();
     { const t = el('h2', '', 'Shortlist'); t.append(el('span', 'p-tl-count', String(waiting.length))); head.append(t); }
     const acts = el('div', 'p-card-acts');
-    // Straight to the Fact File with this student already chosen, so the team shortlists without searching for the student again.
-    // target _top: from the half card (an iframe on All Students) the Fact File opens as the whole page, not inside the card.
+    // Straight to Universities with this student already chosen, so the team shortlists without searching for the student again.
+    // target _top: from the half card (an iframe on All Students) Universities opens as the whole page, not inside the card.
     if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id), target: '_top' }, 'Find course'));
     if (data.card.options.length) {
       acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Share options'));
@@ -929,7 +929,7 @@
     }
     if (acts.children.length) head.append(acts);
     box.append(head);
-    if (!waiting.length) box.append(el('p', 'p-muted', 'No course waiting to be assigned. Press "Find course" to open the Fact File with this student chosen.'));
+    if (!waiting.length) box.append(el('p', 'p-muted', 'No course waiting to be assigned. Press "Find course" to open Universities with this student chosen.'));
     else { const list = el('ol', 'p-chosen'); waiting.forEach((o) => list.append(optionItem(o, waiting))); box.append(list); }
     return box;
   }
@@ -980,7 +980,7 @@
     return box;
   }
   // University options (the owner, 17 Nov 2026): the Shortlist (courses waiting to be assigned, with Find course, which opens the
-  // whole Fact File page with this student chosen, and Assign to the Application Team), then Applications: every university assigned
+  // whole university page with this student chosen, and Assign to the Application Team), then Applications: every university assigned
   // or applied to, with the course, the day it was submitted and the answer (offer, refused or withdrawn with the reason).
   function optionsTab() {
     const wrap = el('div', 'p-apps');

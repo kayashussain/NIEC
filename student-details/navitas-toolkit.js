@@ -1,8 +1,8 @@
-// The Navitas product toolkit in the Fact File (the owner, 17 Nov 2026): Navitas keeps a public Google Sheet for Nepal ("Nepal
+// The Navitas product toolkit in Universities (the owner, 17 Nov 2026): Navitas keeps a public Google Sheet for Nepal ("Nepal
 // UK/Europe Navitas product toolkit") with, for each of its pathway colleges, the entry requirements, the course list, fees,
 // scholarships and deadlines, sample interview questions, the Flywire payment and refund links, the application process,
 // accommodation links, tips and key selling points. Twice a week (Monday and Thursday from 2 a.m. office time)
-// ISR reads that sheet and writes each UK college into its own Fact File page. Only UK colleges: the German and Dutch ones
+// ISR reads that sheet and writes each UK college into its own university page. Only UK colleges: the German and Dutch ones
 // are left out, and so is a college the sheet puts on hold or the owner has closed (Manchester Metropolitan University
 // International College).
 //
@@ -262,7 +262,7 @@ function readToolkit(tabs) {
   return { colleges, interview: interview.text, process: processSteps, payNotes, accNotes };
 }
 
-// ---- one college as a Fact File page ----
+// ---- one college as a university page ----
 
 // The levels a line names (Foundation, International Year One, Pre-Masters).
 const LEVEL_RES = { fdn: /foundation|fdn/i, iy1: /year one|iy1|iyo|\bug\b|undergrad|integrated|first year/i, pg: /pre[- ]?master|pmp|\bpg\b|postgrad|masters/i };
@@ -364,14 +364,14 @@ function pageFrom(c, kit) {
   };
 }
 
-// ---- into the Fact File ----
+// ---- into Universities ----
 
 // Every field of a college's page comes from the sheet (nobody edits a page by hand, the owner, 17 Nov 2026), except the dates of the
 // intakes, which the team may correct (mergeIntakeDates in facts.js).
 const FIELDS = ['city', 'website', 'overview', 'location', 'programs', 'entryRequirements', 'languageTests', 'courses', 'interview', 'notes', 'process', 'rules'];
 const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
 
-// Writes a reading into the Fact File. Returns { updated, added, unchanged }.
+// Writes a reading into Universities. Returns { updated, added, unchanged }.
 function syncToolkit(facts, reading, { clean = (x) => x } = {}) {
   const out = { updated: 0, added: 0, unchanged: 0 };
   if (!reading || !Array.isArray(reading.pages)) return out;
@@ -414,7 +414,7 @@ function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImp
   const write = (d) => { cache = d; fs.mkdirSync(dir, { recursive: true }); writeFileAtomic(file, JSON.stringify(d, null, 2)); };
   const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}`;
   async function get(url) {
-    const res = await fetchImpl(url, { headers: { 'User-Agent': 'ISR Fact File' }, signal: AbortSignal.timeout(60000) });
+    const res = await fetchImpl(url, { headers: { 'User-Agent': 'ISR Universities' }, signal: AbortSignal.timeout(60000) });
     if (!res.ok) throw new Error(`The toolkit sheet answered ${res.status}${res.status === 401 || res.status === 403 ? ': it must be shared as "Anyone with the link can view".' : '.'}`);
     return res.text();
   }
@@ -433,10 +433,10 @@ function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImp
         if (!kit.colleges.length) throw new Error('No UK college found in the toolkit sheet (has its layout changed?).');
         const pages = kit.colleges.map((c) => pageFrom(c, kit));
         const fetchedAt = now().toISOString();
-        if (!facts) throw new Error('No Fact File to write into.');
+        if (!facts) throw new Error('No Universities to write into.');
         const synced = syncToolkit(facts, { pages, fetchedAt }, { clean });
         write({ fetchedAt, colleges: pages.map((p) => p.name), runs: [{ at: fetchedAt, started, by, ok: true, colleges: pages.length, updated: synced.updated, added: synced.added }, ...(d.runs || [])].slice(0, 20) });
-        console.log(`[navitas toolkit] ${pages.length} UK colleges read; the Fact File: ${synced.updated} updated, ${synced.added} added, ${synced.unchanged} unchanged`);
+        console.log(`[navitas toolkit] ${pages.length} UK colleges read; Universities: ${synced.updated} updated, ${synced.added} added, ${synced.unchanged} unchanged`);
         return { colleges: pages.length, updated: synced.updated, added: synced.added, unchanged: synced.unchanged };
       } catch (e) {
         write({ ...d, runs: [{ at: now().toISOString(), started, by, ok: false, error: e.message }, ...(d.runs || [])].slice(0, 20) });

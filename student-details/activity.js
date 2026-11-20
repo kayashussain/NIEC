@@ -138,7 +138,7 @@
     const td = el('td'); td.colSpan = 6;
     td.append(el('b', '', `Restore from ${b.id}`));
     const box = el('div', 'filter-row'); box.style.marginTop = '8px';
-    const parts = [['students', `Students${b.counts && b.counts.students != null ? ` (${b.counts.students})` : ''}`], ['facts', `Fact File${b.counts && b.counts.facts != null ? ` (${b.counts.facts})` : ''}`], ['partners', `Partner Universities${b.counts && b.counts.partners != null ? ` (${b.counts.partners})` : ''}`]];
+    const parts = [['students', `Students${b.counts && b.counts.students != null ? ` (${b.counts.students})` : ''}`], ['facts', `Universities${b.counts && b.counts.facts != null ? ` (${b.counts.facts})` : ''}`], ['partners', `Partner Universities${b.counts && b.counts.partners != null ? ` (${b.counts.partners})` : ''}`]];
     const boxes = parts.map(([key, label]) => {
       const l = el('label'); l.style.flexDirection = 'row'; l.style.gap = '6px'; l.style.alignItems = 'center';
       const c = el('input'); c.type = 'checkbox'; c.checked = true; c.value = key; c.style.width = 'auto';
@@ -152,7 +152,7 @@
     go.addEventListener('click', async () => {
       const chosen = boxes.filter((c) => c.checked).map((c) => c.value);
       if (!chosen.length) { restoreSay('Tick at least one thing to restore.', true); return; }
-      const yes = await NiecUI.confirm(`The ${chosen.map((k) => ({ students: 'students', facts: 'Fact File', partners: 'Partner Universities' }[k])).join(', ')} will be replaced with the copy saved as ${b.id}. Today’s data is saved first, so it can be undone.`,
+      const yes = await NiecUI.confirm(`The ${chosen.map((k) => ({ students: 'students', facts: 'Universities', partners: 'Partner Universities' }[k])).join(', ')} will be replaced with the copy saved as ${b.id}. Today’s data is saved first, so it can be undone.`,
         { title: 'Restore this backup?', confirmText: 'Restore', danger: true });
       if (!yes) return;
       go.disabled = true; restoreSay('Restoring...');
@@ -191,7 +191,7 @@
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
       const n = json.now;
-      $('restoreNow').textContent = `Right now: ${n.students == null ? '?' : n.students} students, ${n.facts} universities in the Fact File, ${n.partners} Partner Universities.`;
+      $('restoreNow').textContent = `Right now: ${n.students == null ? '?' : n.students} students, ${n.facts} universities in Universities, ${n.partners} Partner Universities.`;
       const body = $('backupRows');
       if (!json.backups.length) { body.replaceChildren(Object.assign(el('tr'), {})); const td = el('td', 'muted', 'No backups yet.'); td.colSpan = 6; body.firstChild.append(td); return; }
       body.replaceChildren(...json.backups.map((b) => {

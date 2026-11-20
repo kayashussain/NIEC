@@ -1,4 +1,4 @@
-// The Navitas product toolkit read into the Fact File (student-details/navitas-toolkit.js). Google is never called here: a made-up
+// The Navitas product toolkit read into Universities (student-details/navitas-toolkit.js). Google is never called here: a made-up
 // sheet answers (made-up colleges, figures, links and questions, written by Claude for this test), so the test checks the reading
 // of merged cells, the UK colleges only (no German college, no closed college), each college's page, that a text the team changed
 // is kept, and the twice-a-week schedule.
@@ -90,7 +90,7 @@ test('merged cells are read on every row they cover, across several tables', () 
   assert.ok(!sameCollege('Keele University International College (KUIC)', 'Brunel University London Pathway College'));
 });
 
-test('each UK college gets its own Fact File page, the closed and non-UK ones none', async () => {
+test('each UK college gets its own university page, the closed and non-UK ones none', async () => {
   const dir = tmp();
   const facts = createFacts(dir);
   const google = fakeGoogle(sheet());

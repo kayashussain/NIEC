@@ -1,4 +1,4 @@
-// The Fact File list: every university as a card, and a search box that also finds courses ("cyber security" shows who teaches it).
+// Universities list: every university as a card, and a search box that also finds courses ("cyber security" shows who teaches it).
 // The list is kept by the automatic readings only (the owner, 17 Nov 2026): nobody adds a university here.
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -97,21 +97,22 @@
     if (u.logo) { const i = el('img'); i.src = u.logo; i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); m.classList.remove('has-logo'); m.textContent = monogram(u.name); }); m.append(i); }
     return m;
   }
-  let applyMap = {};
-  fetch('/api/apply-through/map', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && d.map) { applyMap = d.map; if (loadedOnce) render(); } }).catch(() => {});
   function card(u) {
     const courses = query && u.courses && u.courses.length ? u.courses : null;
     if (courses) return boardCard(u, courses);
     // A card: the badge and the name with the city, the intakes, the next deadline when one is open, then how many courses.
-    const a = el('a', 'uni-card uc-card' + (kindOf(u) === 'pathway' ? ' is-pathway' : ''));
+    const a = el('a', 'uni-card uc-card has-cover' + (kindOf(u) === 'pathway' ? ' is-pathway' : ''));
     a.href = uniHref(u);
+    // A wide picture of the university at the top of its card (the owner, 20 Nov 2026: big, engaging cards); a soft colour where there is none.
+    const cover = el('div', 'uc-cover' + (u.cover ? '' : ' is-blank'));
+    if (u.cover) { const i = el('img'); i.src = u.cover; i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); cover.classList.add('is-blank'); }); cover.append(i); }
+    a.append(cover);
     const head = el('div', 'uc-head');
     const title = el('div', 'uc-title');
     title.append(el('h2', '', u.name), el('div', 'city', u.city || u.profileCity || 'Details not added yet'));
     head.append(mono(u), title);
     a.append(head);
-    // Who it is applied through (Admin and the Application Team only, the owner, 20 Nov 2026).
-    if (applyMap[u.id]) { const v = el('div', 'uc-via'); v.append(el('span', '', 'Apply through'), el('b', '', applyMap[u.id])); a.append(v); }
+
     if (u.intakes.length) {
       const chips = el('div', 'chips');
       u.intakes.forEach((n) => chips.append(el('span', 'chip', n)));
@@ -212,7 +213,7 @@
       render();
     } catch (e) {
       if (seq !== searchSeq) return;
-      $('msg').textContent = 'Could not load the Fact File. Please reload the page.';
+      $('msg').textContent = 'Could not load Universities. Please reload the page.';
       $('msg').className = 'msg error';
       if (!loadedOnce) $('cards').replaceChildren();
     }
@@ -239,7 +240,7 @@
   // The option finder for a student, above the list (not on an earlier backup, which is only looked at).
   skeletons();
   load();
-  // Who can go where (finder.js): at the top of the Fact File, for the team and for a student's own login.
+  // Who can go where (finder.js): at the top of Universities, for the team and for a student's own login.
   if (window.Finder && !BACKUP) {
     const box = document.createElement('div');
     box.id = 'finderBox';

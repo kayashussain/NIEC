@@ -257,7 +257,7 @@ function completeness(students) {
     row('Where exactly (on the card)', students, (s) => s.detail, 'Which platform, event or partner inside a source works: "Social Media" alone cannot be acted on.'),
     row('First inquiry day (the day the student was added)', students, (s) => s.dates.inquiry, 'How long it takes to turn an inquiry into an application.'),
     row('Study level wanted', students, (s) => s.level, 'Which levels to promote, and which universities are missing from the portfolio.'),
-    row('Grade and English score', students, (s) => s.grade && s.english, 'Lets the Fact File assistant name the universities each student is eligible for.'),
+    row('Grade and English score', students, (s) => s.grade && s.english, 'Lets Universities assistant name the universities each student is eligible for.'),
     row('Why the student did not go on', lost, (s) => s.lostReason, 'What to fix: price, speed, the portfolio, or the preparation of the students.'),
     row('Application submitted day', applied, (s) => s.dates.applied, 'The month charts, the speed of each university and the latest safe day to apply.'),
   ];
@@ -292,7 +292,7 @@ function workBack(visas, r) {
   return { visas, paid, offers, applications, inquiries };
 }
 // The working-back schedule: each step with the weeks before the start by which it should be done. Rules of thumb for
-// a UK intake from Nepal; a university's own deadline in the Fact File always comes first.
+// a UK intake from Nepal; a university's own deadline in Universities always comes first.
 const SCHEDULE = [
   { key: 'leads', label: 'Lead generation at full strength (adverts, school and college visits)', from: 30, to: 12 },
   { key: 'event1', label: 'Main event or education fair', from: 24, to: 20 },
@@ -479,7 +479,7 @@ function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b
     add(uniConcentration.applications.topShare >= 60 ? 'P1' : 'P2', 'Universities', `${uniConcentration.applications.topShare}% of applications rest on one university`,
       [`${uniConcentration.applications.top}: ${uniConcentration.applications.topShare}% of ${uniConcentration.applications.total} applications.`, `The top three universities hold ${uniConcentration.applications.top3Share}%. Students are placed at ${uniConcentration.applications.count} universities in all.`],
       'If that university changes its entry rules, its agents in Nepal or its deposit, most of the intake is hit at once. you cannot control that decision.',
-      'Keep the partnership strong, and open a second and third option for the same kind of student: pick two universities from the Fact File with similar entry rules and fees, and offer them first in every new counseling this month.',
+      'Keep the partnership strong, and open a second and third option for the same kind of student: pick two universities from Universities with similar entry rules and fees, and offer them first in every new counseling this month.',
       'Share of applications at the biggest university, aiming below 40%.', 'High');
   }
   if (partnerConcentration.applications.total >= MIN_SAMPLE && partnerConcentration.applications.topShare >= 50) {
@@ -565,12 +565,12 @@ function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b
       'Chose another consultancy': 'Look at the speed of the first reply and the first offer: call three of these students and ask what the other consultancy did better.',
       'Applied by themselves': 'Show what you add that a student cannot do alone (interview preparation, visa file check, scholarship follow-up) in the first counseling and the first email.',
       'Chose another country': 'Find out which country and why (cost, work rights, visa odds), and answer exactly that point in the counseling.',
-      'Fees or deposit too high': 'Lead with the lower-fee universities and the scholarships in the Fact File, and send the options email with fee and scholarship side by side on the first day.',
+      'Fees or deposit too high': 'Lead with the lower-fee universities and the scholarships in Universities, and send the options email with fee and scholarship side by side on the first day.',
       'Funds or bank balance not ready': 'Start the funds talk at the first counseling, not after the offer: explain the 28-day rule and the loan route early.',
       'English score not enough': 'Offer the language class and the universities with an internal test or MOI route; follow up after the next test date.',
       'Grades or study gap not accepted': 'Use the option finder for universities that accept a lower grade or a longer gap, before saying no.',
       'Course or university not available with us': 'This is a portfolio gap: list the courses asked for and seek a partner for the most asked one.',
-      'University rejected the application': 'Check the entry rules in the Fact File before applying, and ask the university for the reason of each rejection.',
+      'University rejected the application': 'Check the entry rules in Universities before applying, and ask the university for the reason of each rejection.',
       'Failed the credibility or Pre-CAS interview': 'More mock interviews before the real one, and a second mock for anyone who scores low in the first.',
       'Visa refused': 'Review each refusal letter and add the missing check before the CAS is requested.',
       'Family or personal decision': 'Invite the parents to the counseling; many of these decisions are made by the family.',
