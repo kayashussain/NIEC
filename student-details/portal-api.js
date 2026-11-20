@@ -443,7 +443,7 @@ function createPortalApi({
     'CONTACT NUMBER': (v) => { const t = text(v).slice(0, 40); return phoneOk(t) ? t : null; }, 'UNIVERSITY NAME': (v) => text(v).slice(0, 160), 'COURSE NAME': (v) => text(v).slice(0, 240),
     'APPLICATION SUBMISSION DATE': (v) => realDay(v),
     'OFFER RECEIVED DATE': (v) => realDay(v),
-    // Filled in from Data to fix (the owner, 17 Nov 2026): a real day only, never emptied from here (emptying is done on the sheet).
+    // A real day only, never emptied from here (emptying is done on the sheet).
     'LANGUAGE TEST DATE': (v) => realDay(v) || null,
   };
   // ---- finishing a task: asked, checked by the team, then written (the owner, 16 Nov 2026) ----
@@ -1150,96 +1150,6 @@ function createPortalApi({
     };
   }
 
-  // ---- Data to fix: every gap in the students a person sees, each filled in where it is listed (the owner, 17 Nov 2026) ----
-  // One page instead of opening card after card: a language test chosen as "Test Date" with no day, a step on the sheet with no
-  // day, an applied student with no university, the passport details, a missing phone, email or source, and the details that do
-  // not add up ("Details to check"). Each team sees the gaps that are its own work; Admin, the Manager and a branch see them all.
-  // Each item says what to fill in ({ kind: 'date' | 'text', on: 'sheet' | 'profile', field }) or that the card must be opened.
-  const FIX_GROUPS = [
-    { key: 'check', title: 'Details that do not add up', hint: 'Dates out of order, or filled in before answers were checked. Open the card to correct or confirm.' },
-    { key: 'langDate', title: 'Language test date missing', hint: 'The test is chosen as "Test Date", but no day is picked.', fix: { kind: 'date', on: 'sheet', field: 'LANGUAGE TEST DATE', label: 'Test date' } },
-    // Recorded per university on the card's Applications (the owner, 17 Nov 2026), so these open the card.
-    { key: 'appDate', title: 'Application date missing', hint: 'Past Application Stage, but no university has a submission day. Open the card: Applications.' },
-    { key: 'offerDate', title: 'Offer date missing', hint: 'At Payment Stage or later, but no university has an offer day. Open the card: Applications.' },
-    { key: 'noUni', title: 'University or course missing', hint: 'Applied, but the university or the course is empty.' },
-    { key: 'dob', title: 'Date of birth missing', hint: 'Needed from Application Stage on.', fix: { kind: 'date', on: 'profile', field: 'dob', label: 'Date of birth' } },
-    { key: 'passportNo', title: 'Passport number missing', hint: 'Needed from Application Stage on.', fix: { kind: 'text', on: 'profile', field: 'passportNo', label: 'Passport number', max: 20, upper: true } },
-    { key: 'address', title: 'Passport address missing', hint: 'Needed from Application Stage on, as written in the passport.', fix: { kind: 'text', on: 'profile', field: 'address', label: 'Address', max: 200 } },
-    { key: 'phone', title: 'Phone number missing', hint: 'A student who cannot be called or sent a WhatsApp message.', fix: { kind: 'text', on: 'sheet', field: 'CONTACT NUMBER', label: 'Phone number', max: 40 } },
-    { key: 'email', title: 'Email missing', hint: 'Applied, but no email to send the university\'s messages to.', fix: { kind: 'text', on: 'sheet', field: 'EMAIL', label: 'Email', max: 120 } },
-    { key: 'noSource', title: 'Student source missing', hint: 'Where the student came from, so the Dashboard counts them. Open the card to choose it.' },
-  ];
-  const FIX_FOR = {
-    application: ['check', 'langDate', 'appDate', 'offerDate', 'noUni', 'dob', 'passportNo', 'address', 'email'],
-    mock: ['langDate', 'offerDate', 'phone'],
-    followup: ['phone', 'email', 'noSource'],
-  };
-  const APPLIED_STAGES = ['Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
-  const OFFER_STAGES = ['Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
-  function fixKeysFor(user) {
-    const kind = homeKind(user);
-    if (FIX_FOR[kind]) return FIX_FOR[kind];
-    if (kind === 'team') { const keys = new Set(teamsOf(user).flatMap((t) => FIX_FOR[t] || [])); if (keys.size) return FIX_GROUPS.map((g) => g.key).filter((k) => keys.has(k)); }
-    return FIX_GROUPS.map((g) => g.key);
-  }
-  function dataToFix(user) {
-    const all = cards.all();
-    const keys = fixKeysFor(user);
-    const groups = FIX_GROUPS.filter((g) => keys.includes(g.key)).map((g) => ({ ...g, students: [] }));
-    const by = Object.fromEntries(groups.map((g) => [g.key, g]));
-    const wb = getWorkbook();
-    for (const { sheet, row } of visibleStudents(user)) {
-      const stage = text(row[STATUS]);
-      const card = all[row._id] || { notes: [], profile: {} };
-      const pp = card.profile || {};
-      const found = { sheet: wb.sheets.find((x) => x.id === sheet.id) || sheet, row };
-      const editable = canChange(user, found);
-      const add = (key, detail, fix) => {
-        if (!by[key]) return;
-        const g = by[key];
-        const f = fix || g.fix || null;
-        const canFix = Boolean(f) && editable && (f.on !== 'sheet' || Teams.canEdit(user, f.field, row));
-        g.students.push({ id: row._id, name: nameOf(row), stage, intake: sheet.name, university: text(row['UNIVERSITY NAME']), detail, fix: canFix ? f : null });
-      };
-      const wrong = checksOf(row, card);
-      if (wrong.length) add('check', wrong.map((c) => c.text).join(' '));
-      if (['Withdrawn', 'Visa Rejected'].includes(stage)) continue; // nothing more to do for them
-      // A student who already has the visa: only the sheet's own steps are asked for (the passport details and the test day are
-      // history by then, and would bury the gaps of the students still on their way).
-      const finished = stage === 'Visa Issued';
-      const lang = text(row['LANGUAGE TEST DATE']);
-      if (lang === 'Test Date' && !finished) add('langDate', 'Test Date, no day yet');
-      const applied = isoDate(row['APPLICATION SUBMISSION DATE']);
-      if (APPLIED_STAGES.includes(stage) && !applied) add('appDate', `At ${stage}`);
-      if (OFFER_STAGES.includes(stage) && !isoDate(row['OFFER RECEIVED DATE'])) add('offerDate', `At ${stage}`);
-      const uni = text(row['UNIVERSITY NAME']); const course = text(row['COURSE NAME']);
-      if ((applied || APPLIED_STAGES.includes(stage)) && (!uni || !course)) {
-        add('noUni', !uni ? 'No university' : 'No course', !uni
-          ? { kind: 'text', on: 'sheet', field: 'UNIVERSITY NAME', label: 'University', max: 160 }
-          : { kind: 'text', on: 'sheet', field: 'COURSE NAME', label: 'Course', max: 240 });
-      }
-      if (stage && !finished && stage !== 'Inquiry' && stage !== 'Hold' && stage !== 'Defer') {
-        if (!text(pp.dob)) add('dob', `At ${stage}`);
-        if (!text(pp.passportNo)) add('passportNo', `At ${stage}`);
-        if (!text(pp.address)) add('address', `At ${stage}`);
-      }
-      if (!text(row['CONTACT NUMBER'])) add('phone', stage || 'No stage');
-      if ((applied || APPLIED_STAGES.includes(stage)) && !text(row.EMAIL)) add('email', `At ${stage}`);
-      if (!text(row['STUDENT SOURCE'])) add('noSource', stage || 'No stage');
-    }
-    // Most urgent first inside a group: the further on the student is, the more the gap matters.
-    const order = ['Visa Issued', 'Visa Lodge', 'CAS Issued', 'CAS Stage', 'Payment Stage', 'Mock Stage', 'Application Stage', 'Inquiry'];
-    const rank = (st) => { const i = order.indexOf(st); return i === -1 ? order.length : i; };
-    groups.forEach((g) => g.students.sort((a, b) => rank(a.stage) - rank(b.stage) || a.name.localeCompare(b.name)));
-    return {
-      today: cards.today(),
-      total: groups.reduce((n, g) => n + g.students.length, 0),
-      students: new Set(groups.flatMap((g) => g.students.map((x) => x.id))).size,
-      readOnly: Teams.isReadOnly(user),
-      groups: groups.map(({ fix, ...g }) => ({ ...g, count: g.students.length })),
-    };
-  }
-
   // ---- The weekly summary (the owner, 17 Nov 2026): one page for Admin and the Manager, the last 7 days against the 7 before ----
   // Every intake counts: what moved on the sheet (applications, offers, payments, CAS, visas lodged and received, each on its own
   // day), the new students by the day they first asked, the work of the teams (tasks given and done, notes, messages), who reached
@@ -1296,7 +1206,6 @@ function createPortalApi({
       teams: Object.entries(teams).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n),
       sources: Object.entries(sources).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n),
       openTasks: open,
-      toFix: dataToFix(user).total,
     };
   }
 
@@ -2992,7 +2901,6 @@ function createPortalApi({
       sendJSON(res, 200, weeklyFor(req.user, ago));
       return true;
     }
-    if (urlPath === '/api/data-to-fix' && req.method === 'GET') { sendJSON(res, 200, dataToFix(req.user)); return true; }
     if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user) }); return true; }
     if (urlPath === '/api/activities' && req.method === 'GET') {
       if (!managers(req, res, 'Events and marketing')) return true;

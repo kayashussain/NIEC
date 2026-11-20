@@ -86,7 +86,7 @@
     d.work.forEach((x) => wt.append(tile(x.label, x.now, x.before)));
     work.append(wt);
     const still = el('p', 'wk-still');
-    still.append(`Open now: ${d.openTasks} ${d.openTasks === 1 ? 'task' : 'tasks'}, and `, h('a', { href: '/data-to-fix' }, `${d.toFix} ${d.toFix === 1 ? 'gap' : 'gaps'} in Data to fix`), '.');
+    still.append(`Open now: ${d.openTasks} ${d.openTasks === 1 ? 'task' : 'tasks'}.`);
     work.append(still);
     page.append(work);
 

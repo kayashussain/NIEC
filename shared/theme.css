@@ -2348,46 +2348,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-checks li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; font-size: 14.5px; line-height: 1.45; }
 .p-checks .p-muted { margin: 0; }
 
-/* 🔴 CSS CHANGED (2026-11-17): Data to fix, a new page (data-fix-page.js) | from: no such page; gaps were found one card at a time | to: the page in the site's look: a small grey heading line, the big "Data to fix" title and one line saying how many gaps; grey pills for each kind of gap with its number (the chosen one dark); then one off-white rounded panel per kind of gap, its title with a grey count, a grey hint, and a row per student: the name in semibold (a link to the card), the stage pill, intake and university in grey, what is missing, then a box to fill in and a blue Save; a filled row fades out; "All clear" with a green tick when nothing is left */
-.df-page { max-width: 1100px; margin: 0 auto; }
-.df-top { margin: 6px 0 18px; }
-.df-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #5f5f64; }
-.df-top h1 { margin: 4px 0 6px; font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
-.df-lead { margin: 0; max-width: 720px; font-size: 17px; line-height: 1.45; color: var(--text-dim); }
-.df-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
-.df-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #e8e8ed; color: var(--ink); font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: background .2s; }
-.df-pill:hover { background: #dcdce2; }
-.df-pill.on { background: var(--ink); color: #fff; }
-.df-pill-n { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .07); font-size: 12.5px; font-weight: 600; text-align: center; }
-.df-pill.on .df-pill-n { background: rgba(255, 255, 255, .2); }
-.df-group { margin: 0 0 16px; padding: 20px 22px 12px; }
-.df-group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.df-group-title { display: flex; align-items: center; gap: 10px; }
-.df-group-title h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.015em; color: var(--ink); }
-.df-count { padding: 2px 10px; border-radius: 999px; background: #f0f0f3; color: #48484e; font-size: 13px; font-weight: 600; }
-.df-hint { margin: 4px 0 10px; font-size: 14.5px; color: #5f5f64; }
-.df-list { margin: 0; padding: 0; list-style: none; }
-.df-row { display: grid; grid-template-columns: minmax(200px, 1.3fr) minmax(120px, 1fr) minmax(260px, auto); align-items: center; gap: 8px 18px; padding: 12px 0; border-top: 1px solid var(--border); transition: opacity .35s ease, transform .35s ease; }
-.df-row.is-done { opacity: 0; transform: translateX(14px); }
-.df-who { min-width: 0; }
-.df-name { display: block; overflow: hidden; color: var(--ink); font-size: 16px; font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.df-name:hover { color: var(--link); }
-.df-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 3px; font-size: 13px; color: #5f5f64; }
-.df-detail { font-size: 14.5px; color: var(--text-dim); }
-.df-fix { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-.df-fix .df-input, .df-fix .p-date { width: 200px; }
-.df-fix .df-input { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--edit-bg); font: inherit; font-size: 15px; }
-.df-fix .df-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
-.df-more { margin: 8px 0 4px; }
-.df-clear { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 20px; text-align: center; }
-.df-clear b { font-size: 18px; color: var(--ink); }
-.df-clear-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--green-bg); color: var(--green-fg); font-size: 22px; font-weight: 700; }
-@media (max-width: 760px) {
-  .df-top h1 { font-size: 32px; }
-  .df-row { grid-template-columns: 1fr; gap: 6px; }
-  .df-fix { justify-content: flex-start; }
-  .df-fix .df-input, .df-fix .p-date { flex: 1; width: auto; min-width: 0; }
-}
+/* 🔴 CSS CHANGED (2026-11-20): Data to fix page removed (all .df- rules in this file) | from: the Data to fix page and its look | to: no such page, so no styling for it */
 
 /* 🔴 CSS CHANGED (2026-11-17): the student card, fewer clicks (student-page.js) | from: only Send a message, Edit details and Assign a task at the top; to reach the next student of a list, back to the list each time | to: (1) when the card is opened from a list, a slim off-white bar above the card: "Back to the list", "3 of 12" in semibold with the list's name in grey, then a grey "Previous" and a blue "Next" pill; (2) under the card, a row of soft grey pill buttons with a small icon: Call, WhatsApp (green icon), Email, Copy number; (3) a soft blue panel "Next step" with the step in semibold, why in grey, and a date box with a blue Save (or a blue "Add them" for the passport details) */
 .p-queue { position: sticky; top: 8px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; padding: 8px 10px 8px 16px; border-radius: 16px; background: rgba(251, 251, 253, .9); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); box-shadow: 0 6px 24px -14px rgba(0, 0, 0, .35), 0 0 0 .5px rgba(0, 0, 0, .08); }
@@ -2588,15 +2549,14 @@ html body .page, html body .p-page { max-width: 1320px; padding-left: 28px; padd
 html body .p-page.bp-page, html body .p-page.pu-page, html body .p-page.ev-page { max-width: 1480px; }
 html body .page { padding-top: 32px; }
 html body .p-page { padding-top: 32px; }
-html body .df-page, html body .td-page, html body .wk-page { padding-left: 0; padding-right: 0; }
-html body .df-page { max-width: none; }
+html body .td-page, html body .wk-page { padding-left: 0; padding-right: 0; }
 /* All Students keeps its title in the tool bar (a working page): the same weight, a little smaller so the bar stays one line. */
 html body:has(#sheet) h1.sheet-title { font-size: 34px; font-weight: 700; letter-spacing: -.025em; }
 /* One page title. */
-html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .df-top h1, html body .wk-top h1, html body h1.sheet-title {
+html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .wk-top h1, html body h1.sheet-title {
   font-size: 38px; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; color: var(--ink);
 }
-html body .page-head h1 + p, html body .page-head > div > p, html body .p-head > div > p, html body .td-hello > p, html body .df-top p, html body .wk-top p {
+html body .page-head h1 + p, html body .page-head > div > p, html body .p-head > div > p, html body .td-hello > p, html body .wk-top p {
   font-size: 17px; line-height: 1.45; color: var(--text-dim);
 }
 /* One panel. */
@@ -2621,7 +2581,7 @@ html body .md-kpi b, html body .p-kpi b, html body .wk-tile-n, html body table t
 *::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .32) padding-box; }
 @media (max-width: 700px) {
   html body .page, html body .p-page { padding-left: 16px; padding-right: 16px; padding-top: 20px; }
-  html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .df-top h1, html body .wk-top h1, html body h1.sheet-title { font-size: 30px; }
+  html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .wk-top h1, html body h1.sheet-title { font-size: 30px; }
 }
 @media (prefers-reduced-motion: reduce) { html body a.uni-card:hover, html body .uni-card:hover { transform: none; } }
 /* A switched-off line of the Dashboard chart: its key stays readable (grey words, a faded line) instead of the whole key at 40% (too faint
@@ -3296,19 +3256,6 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 .pc-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 @media (max-width: 640px) { .pc-pair { grid-template-columns: minmax(0, 1fr); justify-items: center; } .pc-side { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .pc-dot, .pc-done.is-new .pc-check { animation: none; } }
-
-/* 🔴 CSS CHANGED (2026-11-17): Data to fix: By gap | By student | from: the gap pills alone above the lists; a student missing three details listed three times, one box each | to: the pills on the left and a segmented switch "By gap | By student" on the right of the same row; By student shows one panel "Students with gaps" with each student once: the name, stage and intake on the left, a small grey label above each box they are missing (Date of birth, Passport number, Address) side by side in the middle, and one blue Save on the right; the boxes look like the ones of By gap (rounded, 12px inside, the blue focus ring) */
-.df-bar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; margin: 0 0 18px; }
-.df-bar .df-pills { margin: 0; }
-.df-mode { flex: none; }
-.df-row.df-row-student { grid-template-columns: minmax(200px, 1fr) minmax(280px, 2fr) auto; }
-.df-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
-.df-field { display: grid; gap: 4px; flex: 1 1 170px; min-width: 0; }
-.df-field > span { color: #5f5f64; font-size: 12.5px; font-weight: 600; }
-.df-field .df-input, .df-field .p-date { width: 100%; }
-.df-field .df-input { min-height: 38px; padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--edit-bg); font: inherit; font-size: 15px; }
-.df-field .df-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-dim); }
-@media (max-width: 760px) { .df-row.df-row-student { grid-template-columns: 1fr; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): the team's Dashboard, Needs attention: "+16 more" | from: grey words "+16 more" that did nothing | to: the same grey words as a button (blue on hover, underlined) that shows every other name in place, as the same grey name pills */
 button.md-todo-more { border: 0; background: none; font: inherit; font-size: 13.5px; cursor: pointer; border-radius: 6px; }
