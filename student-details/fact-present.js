@@ -355,33 +355,58 @@
   // ---- a university's January 2027 courses and requirements in one shape (the owner, 20 Nov 2026) ----
   // The page, Assign task (university, intake, level, location, course) and the server all read a university the same way: the
   // partner's January 2027 profile, or, for a direct route (`own`), the page's own figures, with each course's level and campus.
-  const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
-  function levelOf(text) {
-    const n = String(text || '').toLowerCase();
-    if (/pre-?\s?master|graduate diploma|incorporated master/.test(n)) return 'Pre-Masters';
-    if (/\bmres\b|\bmphil\b|\bphd\b|by research|doctor/.test(n)) return 'Masters by Research';
-    if (/year one|year 1\b|first year|\biy1\b|international year/.test(n)) return 'International Year One';
-    if (/foundation(?! degree)|\bify\b|year zero/.test(n) && !/master/.test(n)) return 'International Foundation Year';
-    if (/postgraduate|\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b|\bpg\b|\bpgcert|\bpgdip/.test(n)) return 'Postgraduate';
-    if (/undergraduate|\bbachelor|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bhnd\b|top[- ]?up|\bug\b|\bmeng\b|\bmsci\b|nursing/.test(n)) return 'Undergraduate';
+  // The levels in the owner's order (20 Nov 2026): foundation, year one, undergraduate, postgraduate, pre-masters (and pre-masters with
+  // masters), extended masters (and enhanced extended masters, a category of its own), masters by research, PhD.
+  const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Extended Masters', 'Masters by Research', 'PhD', 'Other courses'];
+  // A course's level from its name (and the partner's level name, `hint`). A pathway ("Foundation Certificate ... transfer to Master of
+  // Science ...") is read by what the student starts with, the part before "leading to" or "transfer to"; a foundation that leads to a
+  // master's degree is a pre-masters.
+  function levelOf(name, hint = '') {
+    const full = String(name || '').toLowerCase();
+    const parts = full.split(/\b(?:leading to|transfer(?:ring)? to|progress(?:ing|ion)? to)\b/);
+    const head = `${parts[0]} ${String(hint || '').toLowerCase()}`;
+    const tail = parts.slice(1).join(' ');
+    if (/\bphd\b|doctor|doctorate|\bdba\b|\bmphil\b|\bedd\b/.test(head)) return 'PhD';
+    if (/\bmres\b|by research|master of research/.test(head)) return 'Masters by Research';
+    if (/extended master|enhanced extended|master'?s?\s*\(extended\)/.test(head)) return 'Extended Masters';
+    if (/pre-?\s?master|graduate diploma|incorporated master|\bimm\b|\bpmp\b|\bimp\b/.test(head)) return 'Pre-Masters';
+    if (/year one|year 1\b|first year|\biy1\b|international year|stage one|level 4 diploma/.test(head)) return 'International Year One';
+    if (/foundation(?! degree)|\bify\b|year zero|\biyz\b/.test(head)) return /master/.test(tail) || /master/.test(head) ? 'Pre-Masters' : 'International Foundation Year';
+    if (/postgraduate|masters_degree|\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b|\bpg\b|\bpgcert|\bpgdip|\bmed\b|\bmpa\b|\bmph\b|graduate_certificate|post_graduate/.test(head)) return 'Postgraduate';
+    if (/undergraduate|bachelors_degree|\bbachelor|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bhnd\b|top[- ]?up|\bug\b|foundation degree|\bfda\b|\bfdsc\b|\bmeng\b|\bmsci\b|nursing|associate_degree/.test(head)) return 'Undergraduate';
     return '';
   }
-  const JAN = /\b(jan(uary)?|feb(ruary)?)\s*2027\b/i;
+  const JAN = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i; // January, February and March 2027 (the owner, 20 Nov 2026)
+  const Q1 = ['January', 'February', 'March'];
+  const q1Of = (s) => Q1.findIndex((m) => new RegExp(`^${m.slice(0, 3)}`, 'i').test(String(s || '').trim()));
+  const sortIntakes = (list) => [...new Set(list.map((x) => String(x).trim()).filter(Boolean))].sort((a, b) => q1Of(a) - q1Of(b));
+  // "January and February 2027" from the courses' intakes.
+  function intakeLabel(starts) {
+    const ms = Q1.filter((m, i) => starts.some((s) => q1Of(s) === i));
+    if (!ms.length) return '';
+    return `${ms.length > 1 ? `${ms.slice(0, -1).join(', ')} and ${ms[ms.length - 1]}` : ms[0]} 2027`;
+  }
   function pageData(u) {
     const P = u.profile;
     if (P && !P.own) return { intake: P.intake || 'January 2027', levels: P.levels || [], courses: P.courses || [] };
     const view = present(u);
     const levels = view.programs.map((p) => ({ level: p.name, academic: p.academic, english: p.english, tuition: p.tuition, scholarship: p.scholarship, extra: [p.duration && `Duration: ${p.duration}`, p.deposit && `Deposit: ${p.deposit}`].filter(Boolean).join('\n') }));
-    // A course with no intake written beside it belongs to the page's intakes: kept when the page has the January 2027 intake.
-    const janPage = view.intakeNames.some((n) => JAN.test(n));
+    // A course with no intake written beside it belongs to the page's intakes: kept when the page has a January, February or March
+    // 2027 intake, and shown with those intakes. A course with no campus is taught in the page's city.
+    const pageIntakes = sortIntakes(view.intakeNames.filter((n) => JAN.test(n)));
+    const town = String((P && P.city) || u.city || '').split(/,|\/| and /)[0].trim();
+    const SPECIAL = ['International Foundation Year', 'International Year One', 'Pre-Masters', 'Extended Masters', 'Masters by Research', 'PhD'];
     const courses = view.courses.filter((c) => !/course list and fees are under|^the .* list/i.test(c.course) && !/:$/.test(c.course))
-      .filter((c) => (c.intakes.length ? c.intakes.some((x) => JAN.test(x)) : janPage))
+      .filter((c) => (c.intakes.length ? c.intakes.some((x) => JAN.test(x)) : pageIntakes.length))
       .map((c) => {
         const m = /^(.*?):\s*(£[\d,]+.*)$/.exec(c.course);
         const name = m ? m[1].trim() : c.course;
-        return { name, level: levelOf(c.group) || levelOf(name) || 'Other courses', start: c.intakes.find((x) => JAN.test(x)) || 'January 2027', fee: m ? m[2] : '', full: c.full || c.course, campus: '' };
+        const byName = levelOf(name);
+        const level = SPECIAL.includes(byName) ? byName : (levelOf(c.group) || byName || 'Other courses');
+        const starts = c.intakes.length ? sortIntakes(c.intakes.filter((x) => JAN.test(x))) : pageIntakes;
+        return { name, level, start: starts.join(', '), fee: m ? m[2] : '', full: c.full || c.course, campus: town };
       });
-    return { intake: 'January 2027', levels, courses };
+    return { intake: intakeLabel(courses.flatMap((c) => c.start.split(', '))) || 'January 2027', levels, courses };
   }
   // The places a university teaches (a course's campus, else the page's city written as "London, Birmingham" or "York and London").
   function campusesOf(u, courses) {

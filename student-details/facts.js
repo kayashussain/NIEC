@@ -140,7 +140,7 @@ function clean(input, old = {}) {
     profile: input.profile !== undefined ? cleanProfile(input.profile) : (old.profile || null),
   };
 }
-const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
+const LEVEL_ORDER = require('./fact-present').LEVEL_ORDER;
 const url = (v) => (/^https:\/\/[^\s"'<>]+$/.test(String(v || '')) ? String(v).slice(0, 600) : '');
 // A logo can also be a small picture kept in the page itself (data:image/..., at most about 200 KB).
 const logoUrl = (v) => (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(String(v || '')) && String(v).length < 280000 ? String(v) : url(v));

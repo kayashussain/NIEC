@@ -17,7 +17,8 @@ const path = require('path');
 const { writeFileAtomic, localDate } = require('../shared/server-utils');
 
 const TIME_ZONE = 'Asia/Kathmandu';
-const LEVELS = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research'];
+const FP = require('./fact-present');
+const LEVELS = FP.LEVEL_ORDER.filter((l) => l !== 'Other courses');
 const OTHER = 'Other courses';
 const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, '');
 const tidy = (s) => String(s == null ? '' : s).replace(/[\u2013\u2014]/g, '-').replace(/ /g, ' ').replace(/[\t ]+/g, ' ').replace(/ *\n */g, '\n').trim();
@@ -26,19 +27,12 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 const day = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${Number(m[3])} ${MON[m[2] - 1]} ${m[1]}` : ''; };
 const month = (iso) => { const m = /^(\d{4})-(\d{2})/.exec(iso || ''); return m ? `${MON[m[2] - 1]} ${m[1]}` : ''; };
 const money = (n, cur = 'GBP') => (n ? `${cur === 'GBP' ? '£' : `${cur} `}${Number(n).toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '');
-const isJan = (s) => /^(jan|feb)(uary)?\s*2027|^2027-0[12]/i.test(String(s || '').trim());
+// The intakes kept (the owner, 20 Nov 2026): January, February and March 2027.
+const isJan = (s) => /^(jan|feb|mar)(uary|ch)?\s*2027|^2027-0[123]/i.test(String(s || '').trim());
 const mode = (list) => { const c = {}; list.filter(Boolean).forEach((x) => { c[x] = (c[x] || 0) + 1; }); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [''])[0]; };
 const range = (nums, cur) => { const v = nums.filter((x) => x > 0); if (!v.length) return ''; const lo = Math.min(...v); const hi = Math.max(...v); return lo === hi ? `${money(lo, cur)} a year` : `${money(lo, cur)} to ${money(hi, cur)} a year`; };
-function levelOf(name, hint = '') {
-  const n = `${name} ${hint}`.toLowerCase();
-  if (/pre-?\s?master|pre masters|graduate diploma|\bpmp\b|\bimp\b|incorporated master/.test(n)) return 'Pre-Masters';
-  if (/\bmres\b|\bmphil\b|\bphd\b|by research|doctor/.test(n)) return 'Masters by Research';
-  if (/year one|year 1\b|first year|\biy1\b|international year|stage one|level 4 diploma|diploma.*leading to bachelor/.test(n)) return 'International Year One';
-  if (/foundation(?! degree)|\bify\b|year zero|\biyz\b/.test(n) && !/master/.test(n)) return 'International Foundation Year';
-  if (/postgraduate|\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b|\bpgcert|\bpgdip|\bmed\b|\bmpa\b|\bmph\b/.test(n)) return 'Postgraduate';
-  if (/undergraduate|\bbachelor|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bhnd\b|top[- ]?up|foundation degree|\bfda\b|\bfdsc\b|\bmeng\b|\bmsci\b|nursing/.test(n)) return 'Undergraduate';
-  return OTHER;
-}
+// The level of a course: the same reading as the page (fact-present.js), in the owner's order (20 Nov 2026).
+const levelOf = (name, hint = '') => FP.levelOf(name, hint) || OTHER;
 const order = (l) => { const i = LEVELS.indexOf(l); return i < 0 ? 99 : i; };
 const finish = (levels, courses, deadlines) => {
   const seen = new Set();
@@ -50,7 +44,7 @@ const finish = (levels, courses, deadlines) => {
 };
 
 // ---- Route2Uni (Real Dreams): one university's page, as the portal gives it ----
-const r2uLevel = (n) => ({ "Enhanced Extended Master's": 'Postgraduate', 'Doctor of Business Administration (DBA)': 'Masters by Research', Nursing: 'Undergraduate' }[n] || (LEVELS.includes(n) ? n : levelOf(n)));
+const r2uLevel = (n) => ({ "Enhanced Extended Master's": 'Extended Masters', 'Doctor of Business Administration (DBA)': 'PhD', Nursing: 'Undergraduate' }[n] || (LEVELS.includes(n) ? n : levelOf(n)));
 function fromRoute2Uni(u) {
   const per = {};
   const L = (n) => { const k = r2uLevel(n); per[k] = per[k] || { level: k }; return per[k]; };

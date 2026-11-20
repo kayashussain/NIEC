@@ -277,7 +277,7 @@
   // The levels, their order and each course's level are read the same way here, in Assign task and on the server (fact-present.js).
   const { LEVEL_ORDER, levelOf } = P;
   // A short key for a level's colour on the page.
-  const lv0 = (name) => ({ 'International Foundation Year': 'ify', 'International Year One': 'iy1', Undergraduate: 'ug', Postgraduate: 'pg', 'Pre-Masters': 'pm', 'Masters by Research': 'mr' }[LEVEL_ORDER.includes(name) ? name : levelOf(name)] || 'other');
+  const lv0 = (name) => ({ 'International Foundation Year': 'ify', 'International Year One': 'iy1', Undergraduate: 'ug', Postgraduate: 'pg', 'Pre-Masters': 'pm', 'Extended Masters': 'em', 'Masters by Research': 'mr', PhD: 'phd' }[LEVEL_ORDER.includes(name) ? name : levelOf(name)] || 'other');
   function img(src, cls, alt = '') { const i = el('img', cls); i.src = src; i.alt = alt; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); }); return i; }
   function copyBtn(value, label) {
     const b = el('button', 'up-copy no-print', label || 'Copy');
