@@ -465,7 +465,7 @@
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   // One count-up only (the owner, 17 Nov 2026): a second one ran on the same figures, each stopped when it saw the other write, and
   // a figure could stay half way (Events and marketing showed 4 inquiries for 106). Never add another.
-  const SEL = '.ov-kpi-value, .md-kpi b, .bp-band b, .td-stat b, .td-team-num b, .bp-funnel-step b, .ev-band b, .tile-value, .pu-num, .bp-num';
+  const SEL = '.ov-kpi-value, .md-kpi b, .bp-band b, .td-stat b, .td-team-num b, .bp-funnel-step b, .ev-band b, .tile-value, .pu-num, .bp-num, .sc-num';
   const started = Date.now();
   const WINDOW_MS = 6000; // only while the page is first coming in
   const seen = new WeakSet();
