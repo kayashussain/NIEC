@@ -15,7 +15,8 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 > - Type: Apple's scale (17px body, line height 1.47, letter spacing -0.022em; headings weight 600 with tighter spacing). Sharp
 >   and large; never thin, never pale.
 > - Space: generous. Sections separated by space and a hairline, never by boxes inside boxes.
-> - Motion: short and quiet, Apple's own timings (colour 0.32s, background 0.1s, fade-in 0.4s, curve cubic-bezier(.4, 0, .6, 1)).
+> - Motion: short and quiet: hovers and presses on Apple's timings (colour 0.32s, background 0.1s, curve cubic-bezier(.4, 0, .6, 1));
+>   things that appear glide in over 0.5s on cubic-bezier(.16, 1, .3, 1) (the curve of the award-winning sites).
 >   No bounce, no confetti, no pop-ups or notifications that the person did not ask for, nothing that follows the mouse, nothing
 >   sticky that slides in.
 > - Every action still answers: a button says what it is doing (Saving..., then Saved with a tick), a mistake shows a short red
@@ -57,7 +58,7 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 | Text rendering | antialiased | antialiased, optimizeLegibility |
 | Colour change on hover | 0.32s cubic-bezier(.4, 0, .6, 1) | the same |
 | Background change on hover or press | 0.1s linear | the same; a pressed button dims to 85% |
-| Items appearing (menus) | opacity and 8 to 12px movement, 0.24 to 0.32s, 80ms apart | 0.4s, 8px, 40ms apart |
+| Items appearing (menus) | opacity and 8 to 12px movement, 0.24 to 0.32s, 80ms apart | 0.5s on the ease-out-expo glide (section 2a), 8px, 40ms apart |
 | Tile hover | a slight scale over 0.3s cubic-bezier(0, 0, .5, 1) | only on picture tiles; never on text panels |
 | Page change | none (the new page simply appears) | a 0.2s fade |
 | Bounce, glow, confetti, light under the mouse | none | none |
@@ -72,6 +73,22 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 - Fewer words: titles, numbers and short labels.
 - **Desktop and laptop first** (until the owner asks for phones). Phone styles already in the code stay as they are.
 
+## 2a. What the owner's award-winning reference sites teach (studied 20 Nov 2026)
+
+The owner sent Awwwards winners as references: Lusion, KPR, Mana, Mammut, Wix Studio, Synchronized, Noomo, Rouser, The Year of
+Greta, 5S, Amanda Braga, Cappen (and Ed, Superhero Cheesecake, Plink, Autumn, Chungi Yoo, Prometheus Fuels, which did not open
+from the cloud). Measured in a browser:
+- **One font family, one or two weights.** Every one of them. Character comes from size and space, not from many styles.
+- **Almost no colour in text:** black or white (Lusion, Cappen, KPR, Mammut); one accent at most (KPR's lime, Rouser's yellow).
+- **The glide:** things appear on an ease-out-expo curve, a fast start and a long soft stop, over 0.5 to 0.9s
+  (Lusion `cubic-bezier(.4, 0, .1, 1)`, Mammut `cubic-bezier(.19, 1, .22, 1)`, 5S `cubic-bezier(.075, .82, .165, 1)`,
+  Cappen `cubic-bezier(.25, 1, .5, 1)`). This is what makes them feel smooth and expensive. ISR uses `cubic-bezier(.16, 1, .3, 1)`
+  over 0.5s for things that appear, and Apple's 0.1 to 0.32s for hovers and presses.
+- **Small, exact hover reactions:** an arrow nudges, a line grows, a colour changes; never a big jump.
+- **Lots of space and a strict grid;** text set large and quiet.
+- What ISR does **not** take: 3D scenes, loaders, illustration overload, scroll shows. They are for marketing pages; ISR is a tool
+  people work in all day, and must stay fast and calm.
+
 ## 3. The motion kit (use it; do not reinvent it)
 
 `shared/motion.js` is loaded on every page by `header.js`. Its styles are the "ISR motion kit" section of `shared/theme.css`,
@@ -79,7 +96,7 @@ set to Apple's timings above.
 
 | Piece | How to use it | What it does |
 |---|---|---|
-| Rise in | `Motion.reveal(container, '.selector')` | the elements fade in and rise 8px, 40ms apart, each once |
+| Rise in | `Motion.reveal(container, '.selector')` | the elements fade in and rise 8px with the glide (0.5s), 40ms apart, each once |
 | Count up | `Motion.countUp(el, number, { format })` | a number counts up; the final text is always exact |
 | Celebrate | `Motion.celebrate(x, y, big)` | confetti; only where the owner asked for it (finishing work on Today), never on opening a page |
 | Progress ring | `Motion.ring(done, total, { size, stroke, label })` | an SVG ring that fills |
