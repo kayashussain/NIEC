@@ -2372,53 +2372,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-next-act .p-date { width: 190px; }
 @media (max-width: 600px) { .p-next-act { width: 100%; } .p-next-act .p-date { flex: 1; width: auto; } .p-queue-gap { display: none; } }
 
-/* 🔴 CSS CHANGED (2026-11-17): the weekly summary, a new page (weekly-page.js), and a blue "Weekly summary" pill on the Dashboard beside the intake | from: no such page | to: a grey heading line ("This week"), the big "Weekly summary" title, the dates in grey, grey "Earlier week" and "Later week" pills and a blue Print; the week in one large sentence; off-white tiles (seven of the same size in one row: label in grey, the number large, then "3 more than the week before" in green or "2 fewer" in orange); panels listing who received a visa, an offer, paid or applied (day in grey, name as a link, the stage pill); the teams' work as small tiles; soft blue bars for tasks done by team and new students by source. Printed: no menu, no buttons, panels kept whole */
-.wk-page { max-width: 1180px; margin: 0 auto; }
-.wk-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 6px 0 14px; }
-.wk-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #5f5f64; }
-.wk-top h1 { margin: 4px 0 6px; font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
-.wk-lead { margin: 0; font-size: 16px; color: var(--text-dim); }
-.wk-nav { display: flex; flex-wrap: wrap; gap: 8px; }
-.wk-headline { margin: 6px 0 18px; font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: var(--ink); }
-.wk-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; margin: 0 0 16px; }
-.wk-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 0 0 .5px rgba(0, 0, 0, .06); }
-.wk-tile-label { font-size: 14px; font-weight: 500; color: #5f5f64; }
-.wk-tile-n { font-size: 38px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.wk-tiles.is-small { margin: 4px 0 6px; }
-.wk-tiles.is-small .wk-tile { background: #f5f5f7; box-shadow: none; }
-.wk-tiles.is-small .wk-tile-n { font-size: 28px; }
-.wk-change { font-size: 12.5px; font-weight: 500; }
-.wk-change.up { color: var(--green-fg); }
-.wk-change.down { color: var(--orange); }
-.wk-change.same { color: #66666b; }
-.wk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 0 0 16px; }
-.wk-card { margin: 0; padding: 20px 22px; }
-.wk-grid .wk-card { margin: 0; }
-.wk-page > .wk-card { margin: 0 0 16px; }
-.wk-card h2 { margin: 0 0 10px; font-size: 19px; font-weight: 650; letter-spacing: -.015em; color: var(--ink); }
-.wk-empty { margin: 0; color: #66666b; font-size: 14.5px; }
-.wk-people { margin: 0; padding: 0; list-style: none; }
-.wk-people li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
-.wk-people li:first-child { border-top: 0; }
-.wk-day { font-size: 13px; color: #5f5f64; font-variant-numeric: tabular-nums; }
-.wk-who { display: flex; flex-direction: column; min-width: 0; }
-.wk-who a { overflow: hidden; color: var(--ink); font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.wk-who a:hover { color: var(--link); }
-.wk-meta { overflow: hidden; font-size: 13px; color: #5f5f64; text-overflow: ellipsis; white-space: nowrap; }
-.wk-still { margin: 8px 0 0; font-size: 15px; color: var(--text-dim); }
-.wk-bar { display: grid; grid-template-columns: minmax(110px, 160px) 1fr 36px; align-items: center; gap: 12px; padding: 6px 0; font-size: 14.5px; }
-.wk-bar-label { overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
-.wk-track { height: 10px; border-radius: 999px; background: #f0f0f3; overflow: hidden; }
-.wk-track i { display: block; height: 100%; border-radius: 999px; background: #6fa8ec; }
-.wk-bar b { text-align: right; font-variant-numeric: tabular-nums; }
-.wk-foot { margin: 4px 0 24px; font-size: 13px; color: #66666b; }
-@media (max-width: 600px) { .wk-top h1 { font-size: 32px; } .wk-headline { font-size: 21px; } .wk-grid { grid-template-columns: 1fr; } }
-@media print {
-  .niec-header, .no-print { display: none !important; }
-  .wk-card, .wk-tile { break-inside: avoid; box-shadow: none; border: 1px solid #e3e3e8; }
-  .wk-page { max-width: none; }
-}
-
+/* 🔴 CSS CHANGED (2026-11-20): Weekly summary removed (all .wk- rules) | from: the Weekly summary page and its blue pill on the Dashboard, with their look | to: no such page and no pill */
 /* 🔴 CSS CHANGED (2026-11-17): Follow-up, "Your setup for sending" (new) and the Message chip in a student's history (new) | from: nothing (the email, signature and WhatsApp were set up on the My email page; the history showed notes and tasks only) | to: one off-white panel at the top of Follow-up with three rows (Your email, Your signature, Your WhatsApp), each with a round mark (green tick when ready, orange ! when missing, grey when optional), the state in plain words and one small pill button, the form opening right under its row; a soft violet "Message" chip in the history */
 .ss-card { margin: 0 0 18px; }
 .ss-head h2 { margin: 0 0 2px; }
@@ -2549,18 +2503,18 @@ html body .page, html body .p-page { max-width: 1320px; padding-left: 28px; padd
 html body .p-page.bp-page, html body .p-page.pu-page, html body .p-page.ev-page { max-width: 1480px; }
 html body .page { padding-top: 32px; }
 html body .p-page { padding-top: 32px; }
-html body .td-page, html body .wk-page { padding-left: 0; padding-right: 0; }
+html body .td-page { padding-left: 0; padding-right: 0; }
 /* All Students keeps its title in the tool bar (a working page): the same weight, a little smaller so the bar stays one line. */
 html body:has(#sheet) h1.sheet-title { font-size: 34px; font-weight: 700; letter-spacing: -.025em; }
 /* One page title. */
-html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .wk-top h1, html body h1.sheet-title {
+html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body h1.sheet-title {
   font-size: 38px; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; color: var(--ink);
 }
-html body .page-head h1 + p, html body .page-head > div > p, html body .p-head > div > p, html body .td-hello > p, html body .wk-top p {
+html body .page-head h1 + p, html body .page-head > div > p, html body .p-head > div > p, html body .td-hello > p {
   font-size: 17px; line-height: 1.45; color: var(--text-dim);
 }
 /* One panel. */
-html body .p-card, html body .page .card, html body .md-card, html body .bp-card, html body .pu-card, html body .ov-card, html body .wk-card, html body .fd-card,
+html body .p-card, html body .page .card, html body .md-card, html body .bp-card, html body .pu-card, html body .ov-card, html body .fd-card,
 html body .ss-card, html body .sl-card, html body .uni-card, html body .md-kpi, html body .p-kpi {
   border: 0; border-radius: var(--pl-radius); background: var(--panel); box-shadow: var(--pl-shadow);
 }
@@ -2572,7 +2526,7 @@ html body .btn, html body button.btn, html body a.btn { font-weight: 600; letter
 html body :focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; border-radius: 10px; }
 html body input:focus-visible, html body select:focus-visible, html body textarea:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18); border-color: #0071e3; }
 /* Figures line up. */
-html body .md-kpi b, html body .p-kpi b, html body .wk-tile-n, html body table td, html body .kpi-value, html body .fd-money b { font-variant-numeric: tabular-nums; }
+html body .md-kpi b, html body .p-kpi b, html body table td, html body .kpi-value, html body .fd-money b { font-variant-numeric: tabular-nums; }
 ::selection { background: rgba(0, 113, 227, .18); }
 /* Quiet scrollbars. */
 * { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, .22) transparent; }
@@ -2581,7 +2535,7 @@ html body .md-kpi b, html body .p-kpi b, html body .wk-tile-n, html body table t
 *::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .32) padding-box; }
 @media (max-width: 700px) {
   html body .page, html body .p-page { padding-left: 16px; padding-right: 16px; padding-top: 20px; }
-  html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body .wk-top h1, html body h1.sheet-title { font-size: 30px; }
+  html body .page-head h1, html body .p-head h1, html body .td-hello h1, html body h1.sheet-title { font-size: 30px; }
 }
 @media (prefers-reduced-motion: reduce) { html body a.uni-card:hover, html body .uni-card:hover { transform: none; } }
 /* A switched-off line of the Dashboard chart: its key stays readable (grey words, a faded line) instead of the whole key at 40% (too faint
@@ -2599,7 +2553,6 @@ html body .td-hello:has(.td-bell-wrap) > :not(.td-bell-wrap) { padding-right: 56
 
 /* 🔴 CSS CHANGED (2026-11-17): small text readable everywhere (the accessibility check, and the owner's "easy on older eyes") | from: small grey words in #86868b, #8e8e93 and #6e6e73 and small orange words in #c45c00 (contrast 3.0 to 4.4 against the panels, under the 4.5 the standard asks for); the "Every source"/"Everyone" choice of a box and "Choose a date" in the same pale grey; the switched-off lines of the Dashboard chart at 40% | to: the greys darkened to #66666b and #5f5f64 and the orange to #a84d00 wherever they colour text (98 places; backgrounds and borders unchanged), so every small word reaches at least 4.5 to 1; the University options' titles are headings of the right level, looking the same */
 html body .p-option h3, html body .p-chosen-item h3 { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-html body .wk-change.down { color: #a84d00; }
 html body .page .count { color: #515154; }
 html body:has(.p-embed-bar) .p-option h3 { color: var(--ink); font-size: 16px; font-weight: 650; }
 html body h1.p-error-title { margin: 0 0 8px; font-size: 24px; font-weight: 650; }

@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-20 · shared/theme.css, student-details/dashboard.html · Weekly summary removed (every `.wk-` rule, and the blue "Weekly summary" pill beside the Intake filter on the Dashboard) · from: the Dashboard had a blue "Weekly summary" button that opened a page with its own tiles, bars and print look · to: no button and no page; everything else looks as before · why: the owner does not want a weekly summary**
+
 - **2026-11-20 · shared/theme.css · Data to fix page removed (every `.df-` rule, and `.df-page`, `.df-top` taken out of the shared page and title rules) · from: the Data to fix page had its own look: heading, gap pills, By gap | By student switch, group boxes and fill-in rows · to: no such page, so no styling for it; every other page looks exactly as before · why: the owner asked to remove Data to fix from the system**
 
 - **2026-11-20 · shared/theme.css · the add boxes on the partner pages removed · from: a white rounded "name + Add" pill ("+ Add university", "+ Add partner", "+ Add agent") at the top right of Universities, B2B partners and Agents, and a soft blue "N not set up yet / Set up all" band above the B2B cards · to: neither is there; the cards start right under the heading · why: the owner asked that partners are not added by hand on these pages (20 Nov 2026). The new Apply through page uses the existing table, tab and dropdown styles, so it adds no CSS.**

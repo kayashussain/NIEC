@@ -477,7 +477,7 @@ function createPortalApi({
   }
   // The application and offer days live per university on the card (the owner, 17 Nov 2026: a student applies to many). All
   // Students no longer shows the two columns; they stay in the file and ISR keeps them as the first application and the first offer,
-  // so the Dashboard, the weekly summary and Incentive count as before. A student with no day on the card keeps what the columns hold;
+  // so the Dashboard and Incentive count as before. A student with no day on the card keeps what the columns hold;
   // the columns' own university joins the card first, so nothing recorded before is lost.
   function syncApplicationDays(req, rowId) {
     const found = rowIndex().get(rowId);
@@ -1147,65 +1147,6 @@ function createPortalApi({
       // How many different students wait in these lists: a student in two lists (no passport details and not applied yet) counts once.
       waiting: new Set(space.sections.flatMap((k) => by[k].rows.map((r) => r.id))).size,
       sections: space.sections.map((k) => by[k]).map((x) => ({ key: x.key, title: x.title, hint: x.hint, stage: x.stage, count: x.rows.length, students: x.rows.sort((a, b) => b.waited - a.waited).slice(0, x.key === 'check' ? 100 : perList) })),
-    };
-  }
-
-  // ---- The weekly summary (the owner, 17 Nov 2026): one page for Admin and the Manager, the last 7 days against the 7 before ----
-  // Every intake counts: what moved on the sheet (applications, offers, payments, CAS, visas lodged and received, each on its own
-  // day), the new students by the day they first asked, the work of the teams (tasks given and done, notes, messages), who reached
-  // a visa or an offer, and what is still open. "ago" goes back a week at a time.
-  function weeklyFor(user, ago) {
-    const wb = getWorkbook();
-    const today = cards.today();
-    const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
-    const isoOf = (n) => new Date(n * 86400000).toISOString().slice(0, 10);
-    const end = dayNo(today) - 7 * ago; const start = end - 6; const pStart = start - 7; const pEnd = start - 1;
-    const week = (iso) => { if (!iso) return 0; const n = dayNo(iso); return n >= start && n <= end ? 1 : n >= pStart && n <= pEnd ? 2 : 0; };
-    const stampDay = (at) => { const t = Date.parse(at || ''); return Number.isNaN(t) ? '' : localDate(new Date(t)); };
-    const STEPS = [['inquiries', 'New students'], ['applications', 'Applications submitted'], ['offers', 'Offers received'], ['payments', 'Deposits paid'], ['cas', 'CAS received'], ['lodged', 'Visas lodged'], ['visas', 'Visas received']];
-    const COLS = { applications: 'APPLICATION SUBMISSION DATE', offers: 'OFFER RECEIVED DATE', payments: 'PAYMENT DATE', cas: 'CAS RECEIVED DATE', lodged: 'VISA LODGE DATE', visas: 'VISA RECEIVED DATE' };
-    const now = {}; const before = {}; const people = {};
-    STEPS.forEach(([k]) => { now[k] = 0; before[k] = 0; people[k] = []; });
-    const work = { given: [0, 0], done: [0, 0], notes: [0, 0], messages: [0, 0] };
-    const teams = {};
-    const sources = {};
-    const plan = planning.all();
-    const all = cards.all();
-    for (const sheet of (wb ? wb.sheets : [])) {
-      for (const row of sheet.rows) {
-        if (!row || !isStudent(row)) continue;
-        const card = all[row._id] || { profile: {}, notes: [], messages: [], tasks: [] };
-        const p = card.profile || {};
-        const who = { id: row._id, name: nameOf(row), intake: sheet.name, university: text(row['UNIVERSITY NAME']), stage: text(row[STATUS]) };
-        const count = (k, iso) => {
-          const w = week(iso);
-          if (w === 1) { now[k] += 1; people[k].push({ ...who, day: iso }); } else if (w === 2) before[k] += 1;
-          return w;
-        };
-        if (count('inquiries', /^\d{4}-\d{2}-\d{2}$/.test(p.inquiryDate || '') ? p.inquiryDate : '') === 1) {
-          const [group] = sourceOf(row, card, plan);
-          sources[group] = (sources[group] || 0) + 1;
-        }
-        Object.entries(COLS).forEach(([k, col]) => count(k, isoDate(row[col])));
-        for (const t of card.tasks || []) {
-          const g = week(stampDay(t.at)); if (g) work.given[g - 1] += 1;
-          const d = t.done ? week(stampDay(t.doneAt)) : 0;
-          if (d) { work.done[d - 1] += 1; if (d === 1) { const label = teamLabel(t.team); teams[label] = (teams[label] || 0) + 1; } }
-        }
-        for (const n of card.notes || []) { if (n.by === 'ISR (automatic)') continue; const w = week(stampDay(n.at)); if (w) work.notes[w - 1] += 1; }
-        for (const m of card.messages || []) { const w = week(stampDay(m.at)); if (w) work.messages[w - 1] += 1; }
-      }
-    }
-    Object.values(people).forEach((list) => list.sort((a, b) => b.day.localeCompare(a.day) || a.name.localeCompare(b.name)));
-    const open = Object.values(all).reduce((n, c) => n + (c.tasks || []).filter((t) => !t.done).length, 0);
-    return {
-      today, ago, from: isoOf(start), to: isoOf(end), prevFrom: isoOf(pStart), prevTo: isoOf(pEnd),
-      steps: STEPS.map(([key, label]) => ({ key, label, now: now[key], before: before[key] })),
-      people: { visas: people.visas.slice(0, 40), offers: people.offers.slice(0, 40), payments: people.payments.slice(0, 40), applications: people.applications.slice(0, 40) },
-      work: [['Tasks given', work.given], ['Tasks done', work.done], ['Notes written', work.notes], ['Messages sent', work.messages]].map(([label, [a, b]]) => ({ label, now: a, before: b })),
-      teams: Object.entries(teams).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n),
-      sources: Object.entries(sources).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n),
-      openTasks: open,
     };
   }
 
@@ -2893,12 +2834,6 @@ function createPortalApi({
     if (urlPath === '/api/my-dashboard' && req.method === 'GET') {
       if (Teams.isAdmin(req.user) || (Teams.isManager(req.user) && Teams.isReadOnly(req.user))) { sendJSON(res, 403, { error: 'Admin and the Manager have the full Dashboard.' }); return true; }
       sendJSON(res, 200, myDashboard(req.user));
-      return true;
-    }
-    if (urlPath === '/api/weekly' && req.method === 'GET') {
-      if (!managers(req, res, 'The weekly summary')) return true;
-      const ago = Math.max(0, Math.min(104, Number.parseInt(query().get('ago') || '0', 10) || 0));
-      sendJSON(res, 200, weeklyFor(req.user, ago));
       return true;
     }
     if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user) }); return true; }

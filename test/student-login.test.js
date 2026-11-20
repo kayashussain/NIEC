@@ -47,7 +47,7 @@ test('a student login sees the Fact File only, and the courses it chooses reach 
   assert.strictEqual((await stu('POST', '/api/login/new-password', { password: 'Student-Strong-2026' })).status, 200);
 
   // Everything but the Fact File is refused.
-  for (const page of ['/', '/today', '/students', '/student?id=' + sita, '/dashboard', '/my-dashboard', '/users', '/activity', '/bulk', '/b2b-partners', '/agents', '/partner-universities', '/events', '/weekly', '/incentive/', '/index.html', '/users.html', '/today.html']) {
+  for (const page of ['/', '/today', '/students', '/student?id=' + sita, '/dashboard', '/my-dashboard', '/users', '/activity', '/bulk', '/b2b-partners', '/agents', '/partner-universities', '/events', '/incentive/', '/index.html', '/users.html', '/today.html']) {
     const r = await stu('GET', page);
     assert.strictEqual(r.status, 302, `${page} is not for a student`);
     assert.strictEqual(r.location, '/fact-file', `${page} goes to the Fact File`);
