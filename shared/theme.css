@@ -4050,3 +4050,14 @@ body:has(#sheet) .topbar :is(#undoBtn, #redoBtn):disabled { color: #6e6e73; opac
 /* 🔴 CSS CHANGED (2026-11-20): two layout fixes from the page-by-page review | from: on Apply through, a long partner name ("Real Dreams Educational Consultancy") broke onto two lines inside its choice box; on Users, "Student (own portal)" sat alone in one narrow column with a dashed line, its words in six lines | to: the choice box keeps one line (at least 280px wide, a long name ends in "..."); "Student (own portal)" takes the whole row with a plain border like the others */
 body:has(.niec-header[data-page="apply-through"]) #rows td select { min-width: 280px; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; }
 .access .check-student { grid-column: 1 / -1; border-top: 0; padding-top: 0; }
+
+/* 🔴 CSS CHANGED (2026-11-20): the student card, final review | from: the Assign a task window running off the bottom of a laptop screen when Application was chosen (its corners and buttons cut); window and form buttons 36px at 15px; "Student source" written twice while the source was being changed; the panels with different inner margins (44px in the main card, about 30px in the others); in the half card, the email broken over two lines and the step labels touching | to: every window at most as tall as the screen, its inside scrolling; window and form buttons 44px at 17px; one "Student source" while changing it; one inner margin (44px) for every panel of the card; in the half card, the email on one line (ending in "..." when very long) and 13px step labels */
+dialog.p-dialog[open] { display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
+dialog.p-dialog:has(.p-assign)[open] { max-height: calc(92vh - 24px); }
+dialog.p-dialog .p-dialog-body { min-height: 0; overflow-y: auto; }
+dialog.p-dialog .btn, #view .sc-edit .p-bar .btn, #view .sc-source .p-bar .btn { min-height: 44px; padding: 0 22px; font-size: 17px; font-weight: 400; letter-spacing: -.022em; }
+.sc-source.is-editing .sc-eyebrow { display: none; }
+#view .sc-checks, #view .sc-next { padding-left: 44px; padding-right: 44px; }
+#view .sc-tl-page > .p-card { padding-left: 44px; padding-right: 44px; }
+body.p-embed .sc-fact-value a { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+body.p-embed #view .sc-step-label { font-size: 13px; letter-spacing: -.01em; }

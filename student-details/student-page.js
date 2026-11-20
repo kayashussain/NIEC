@@ -1156,13 +1156,14 @@
       b.addEventListener('click', () => select(key));
       tabs.append(b);
     });
-    // A quiet "Keys" link at the end of the tabs opens the list of keys (the same as pressing ?).
-    const keysBtn = h('button', { class: 'sc-keys-btn', type: 'button', title: 'Keys for this card (?)', onclick: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' })) }, 'Keys');
+    // A quiet "Shortcuts" link at the end of the tabs opens the list of shortcuts (the same as pressing ?); All Students says Shortcuts too.
+    const keysBtn = h('button', { class: 'sc-keys-btn', type: 'button', title: 'Shortcuts for this card (?)', onclick: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' })) }, 'Shortcuts');
     const tabRow = el('div', 'sc-tabrow');
     tabRow.append(tabs, keysBtn);
     frag.append(tabRow);
     frag.append(tab === 'options' ? optionsTab() : details());
     view.replaceChildren(frag);
+    focusForm();
     // The first drawing (and a change of filter) animates; other redraws (a saved note, a tab) do not replay the entrance.
     if (intro) { view.classList.add('sc-entering'); setTimeout(() => view.classList.remove('sc-entering'), 1200); }
     intro = false;
@@ -1170,7 +1171,7 @@
 
   // Keys for the card (the owner, 20 Nov 2026), when nothing is being typed and no window is open: N a note (above), E Edit details,
   // A Assign a task, 1 and 2 the tabs, ? the list of keys. Ctrl+K (quick search) and the arrow keys (the next student) are kept.
-  const KEYS = [['N', 'Write a note'], ['E', 'Edit details'], ['A', 'Assign a task'], ['1', 'Timeline'], ['2', 'Applications'], ['← →', 'Previous or next student (from All Students)'], ['Ctrl K', 'Quick search'], ['?', 'These keys']];
+  const KEYS = [['N', 'Write a note'], ['E', 'Edit details'], ['A', 'Assign a task'], ['1', 'Timeline'], ['2', 'Applications'], ['← →', 'Previous or next student (from All Students)'], ['Ctrl K', 'Quick search'], ['?', 'These shortcuts']];
   document.addEventListener('keydown', (e) => {
     if (!data || e.ctrlKey || e.metaKey || e.altKey) return;
     const a = document.activeElement;
@@ -1182,7 +1183,7 @@
     else if (k === '1' || k === '2') { e.preventDefault(); select(k === '1' ? 'details' : 'options'); }
     else if (e.key === '?') {
       e.preventDefault();
-      dialog('Keys for this card', (body, close) => {
+      dialog('Shortcuts for this card', (body, close) => {
         const list = el('dl', 'sc-keys');
         KEYS.forEach(([key, what]) => { const d = el('div'); const dt = el('dt'); key.split(' ').forEach((x) => dt.append(el('kbd', '', x))); d.append(dt, el('dd', '', what)); list.append(d); });
         const foot = el('div', 'p-dialog-foot');
@@ -1192,6 +1193,13 @@
     }
   });
 
+  // An open form inside the card (Edit details, the source): Escape cancels it, as Cancel does (the owner, 20 Nov 2026: one way out
+  // everywhere), and the cursor starts in its first box.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !(editingHero || editingOrigin) || document.querySelector('dialog[open], .p-dialog[open]')) return;
+    e.preventDefault(); editingHero = false; editingOrigin = false; render();
+  });
+  const focusForm = () => { if (!(editingHero || editingOrigin)) return; const f = view.querySelector('.sc-edit input, .sc-edit select, .sc-source.is-editing select, .sc-source.is-editing input'); if (f && !view.contains(document.activeElement)) f.focus({ preventScroll: true }); };
   async function start() {
     if (!id) { view.replaceChildren(el('div', 'p-card', 'Choose a student from the sheet first.')); return; }
     try {

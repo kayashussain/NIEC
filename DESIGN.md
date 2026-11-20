@@ -138,7 +138,7 @@ set to Apple's timings above.
 
 | Page | Done | Still to come |
 |---|---|---|
-| Student card | rebuilt as one calm system on the measured values: grey monogram, 40px name, grey contact pills, black progress dots with one blue "now", details as a three-column list, the Student Source as a section of the main card, plain Next step and Details to check panels, a quiet Timeline; a grey loading outline; Saving..., then Saved with a tick; a gentle shake on a mistake; keys N, E, A, 1, 2, ?; no notification, confetti or sticky bar | |
+| Student card | rebuilt as one calm system on the measured values: grey monogram, 40px name, grey contact pills, black progress dots with one blue "now", details as a three-column list, the Student Source as a section of the main card, plain Next step and Details to check panels, a quiet Timeline; a grey loading outline; Saving..., then Saved with a tick; a gentle shake on a mistake; shortcuts N, E, A, 1, 2, ? (and Escape to cancel a form); no notification, confetti or sticky bar | |
 | Every page | the kit at Apple's timings: quick colour on press, 0.2s page fade, no mouse light, no spring | each page brought to the calm system, one at a time |
 | Today | the greeting, a progress ring of the day, counting numbers, rising rows, confetti for finished tasks | the greeting shine and the confetti to be checked against the calm rule with the owner |
 | Universities (university pages) | cover slideshow with pause, gallery fades, rising cards, counting amounts | moving to the calm system |
