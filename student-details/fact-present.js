@@ -403,7 +403,9 @@
         const name = m ? m[1].trim() : c.course;
         const byName = levelOf(name);
         const level = SPECIAL.includes(byName) ? byName : (levelOf(c.group) || byName || 'Other courses');
-        const starts = c.intakes.length ? sortIntakes(c.intakes.filter((x) => JAN.test(x))) : pageIntakes;
+        // "BSc ... (February 2027 intake only)": that intake only.
+        const only = /\((january|february|march) 2027 intake only\)/i.exec(name);
+        const starts = only ? [`${only[1][0].toUpperCase()}${only[1].slice(1).toLowerCase()} 2027`] : c.intakes.length ? sortIntakes(c.intakes.filter((x) => JAN.test(x))) : pageIntakes;
         return { name, level, start: starts.join(', '), fee: m ? m[2] : '', full: c.full || c.course, campus: town };
       });
     return { intake: intakeLabel(courses.flatMap((c) => c.start.split(', '))) || 'January 2027', levels, courses };

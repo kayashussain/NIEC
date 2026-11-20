@@ -230,7 +230,7 @@
       const fill = (f, list, keep) => { const was = keep ? f.input.value : ''; f.input.replaceChildren(h('option', { value: '' }, 'Choose\u2026'), ...list.map((x) => h('option', { value: x }, x))); f.input.value = list.includes(was) ? was : list.length === 1 ? list[0] : ''; };
       let choices = null;
       let unis = [];
-      const coursesNow = () => (choices ? choices.courses.filter((c) => (!level.input.value || c.level === level.input.value) && (!place.input.value || !c.campus || c.campus === place.input.value)) : []);
+      const coursesNow = () => (choices ? choices.courses.filter((c) => (!intake.input.value || !c.start || c.start.includes(intake.input.value)) && (!level.input.value || c.level === level.input.value) && (!place.input.value || !c.campus || c.campus === place.input.value)) : []);
       const refreshCourses = () => { fill(course, [...new Set(coursesNow().map((c) => c.name))].sort((a, b) => a.localeCompare(b)), true); };
       uni.input.addEventListener('change', async () => {
         choices = null; [intake, level, place, course].forEach((f) => fill(f, []));
@@ -240,6 +240,7 @@
         place.wrap.hidden = choices.campuses.length < 2; // one place: nothing to choose
         refreshCourses();
       });
+      intake.input.addEventListener('change', refreshCourses);
       level.input.addEventListener('change', refreshCourses);
       place.input.addEventListener('change', refreshCourses);
       api('/api/facts').then((list) => { unis = list.sort((a, b) => a.name.localeCompare(b.name)); uni.input.replaceChildren(h('option', { value: '' }, 'Choose\u2026'), ...unis.map((u) => h('option', { value: u.id }, u.name))); }).catch(() => {});

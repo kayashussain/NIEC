@@ -15,7 +15,7 @@
   // Two lists only, Universities and Pathway colleges, never both mixed (the owner, 17 Nov 2026: "remove All"). A choice of "all"
   // kept in a browser from before becomes Universities.
   const KINDS = ['university', 'pathway'];
-  const filters = (() => { try { return { kind: 'university', intake: '', sort: 'az', ...JSON.parse(localStorage.getItem(FKEY) || '{}') }; } catch (e) { return { kind: 'university', intake: '', sort: 'az' }; } })();
+  const filters = (() => { try { return { kind: 'university', intake: '', ...JSON.parse(localStorage.getItem(FKEY) || '{}') }; } catch (e) { return { kind: 'university', intake: '' }; } })();
   if (!KINDS.includes(filters.kind)) filters.kind = 'university';
   const kindOf = (u) => (u.kind === 'pathway' ? 'pathway' : 'university');
   const saveFilters = () => { try { localStorage.setItem(FKEY, JSON.stringify(filters)); } catch (e) { /* kept for this page only */ } };
@@ -34,7 +34,8 @@
   }
   function shown() {
     let out = list.filter((u) => kindOf(u) === filters.kind && (!filters.intake || (u.intakes || []).includes(filters.intake)));
-    if (filters.sort === 'soon') out = out.slice().sort((a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name));
+    // Always the nearest deadline first (the owner, 20 Nov 2026: no Sort menu).
+    if (!query) out = out.slice().sort((a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name));
     return out;
   }
   function drawBar() {
@@ -50,22 +51,16 @@
     });
     const sel = $('ffIntake');
     const names = [...new Set(all.flatMap((u) => u.intakes || []))].sort((a, b) => intakeOrder(a) - intakeOrder(b) || a.localeCompare(b));
-    if (filters.intake && !names.includes(filters.intake)) names.push(filters.intake);
+    if (filters.intake && !names.includes(filters.intake)) filters.intake = '';
     sel.replaceChildren(new Option('Any intake', ''), ...names.map((n) => new Option(n, n)));
     sel.value = filters.intake;
-    $('ffSort').value = filters.sort;
-    $('ffClear').hidden = !filters.intake && filters.sort === 'az';
+    $('ffClear').hidden = !filters.intake;
     // How many deadlines of this list close in the next two weeks, with one click to see them first.
     const soon = all.filter((u) => kindOf(u) === filters.kind && u.next && u.next.days <= 14);
     const word = filters.kind === 'pathway' ? ['pathway college closes', 'pathway colleges close'] : ['university closes', 'universities close'];
     const box = $('ffSoon');
-    box.hidden = !soon.length || query !== '' || filters.sort === 'soon';
-    if (!box.hidden) {
-      const go = el('button', 'p-link', 'Show them first');
-      go.type = 'button';
-      go.addEventListener('click', () => { filters.sort = 'soon'; saveFilters(); render(); });
-      box.replaceChildren(el('span', 'ff-soon-dot'), el('span', '', `${soon.length} ${word[soon.length === 1 ? 0 : 1]} applications in the next 14 days.`), go);
-    }
+    box.hidden = !soon.length || query !== '';
+    if (!box.hidden) box.replaceChildren(el('span', 'ff-soon-dot'), el('span', '', `${soon.length} ${word[soon.length === 1 ? 0 : 1]} applications in the next 14 days.`));
   }
   let all = []; // every university (the list without a search), for the intake menu and the closing-soon line
 
@@ -226,8 +221,7 @@
   });
   $('ffKind').addEventListener('click', (e) => { const b = e.target.closest('button[data-k]'); if (!b) return; filters.kind = b.dataset.k; saveFilters(); render(); });
   $('ffIntake').addEventListener('change', () => { filters.intake = $('ffIntake').value; saveFilters(); render(); });
-  $('ffSort').addEventListener('change', () => { filters.sort = $('ffSort').value; saveFilters(); render(); });
-  $('ffClear').addEventListener('click', () => { Object.assign(filters, { intake: '', sort: 'az' }); saveFilters(); render(); });
+  $('ffClear').addEventListener('click', () => { Object.assign(filters, { intake: '' }); saveFilters(); render(); });
   // Esc in the search box clears it.
   $('search').addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('search').value) { $('search').value = ''; query = ''; load(); } });
   // "/" jumps to the search box, like on most sites.

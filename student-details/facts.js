@@ -247,14 +247,33 @@ function glance(u) {
   let value = { next: null, courseCount: 0 };
   try {
     const view = FactPresent.present(u);
-    const open = view.deadlines.filter((d) => d.applyBy && !d.applyBy.closed && typeof d.applyBy.days === 'number' && d.applyBy.days >= 0)
+    // Only the January, February and March 2027 intakes count (the owner, 20 Nov 2026).
+    const open = view.deadlines.filter((d) => Q1_2027.test(d.name) && d.applyBy && !d.applyBy.closed && typeof d.applyBy.days === 'number' && d.applyBy.days >= 0)
       .sort((a, b) => a.applyBy.days - b.applyBy.days)[0];
-    value = { next: open ? { intake: open.name, when: open.applyBy.when, days: open.applyBy.days } : null, courseCount: view.courses.length };
+    let next = open ? { intake: open.name, when: open.applyBy.when, days: open.applyBy.days } : null;
+    // A partner's page: its first "Apply by" date.
+    if (u.profile && !u.profile.own) {
+      next = null;
+      for (const line of u.profile.deadlines || []) {
+        const d = FactPresent.parseDate(line);
+        if (!d) continue;
+        const days = FactPresent.daysLeft(d.date);
+        if (days >= 0) { next = { intake: u.profile.intake || 'January 2027', when: d.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }), days }; break; }
+      }
+    }
+    value = { next, courseCount: view.courses.length };
   } catch (e) { /* the card shows without it */ }
   glanceMemo.set(u, { day, value });
   return value;
 }
-const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: u.intakes.map((i) => i.name), updatedAt: u.updatedAt, kind: (u.profile && u.profile.type === 'college') || PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u),
+const Q1_2027 = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i;
+// The intakes a card offers: January, February and March 2027 only (the owner, 20 Nov 2026), from a partner's courses or the page's own.
+const q1Intakes = (u) => {
+  const names = u.profile && !u.profile.own ? u.profile.courses.flatMap((c) => String(c.start || '').split(/,\s*/)) : u.intakes.map((i) => i.name);
+  const month = (n) => ['jan', 'feb', 'mar'].indexOf(String(n).trim().slice(0, 3).toLowerCase());
+  return [...new Set(names.map((n) => String(n).trim()).filter((n) => Q1_2027.test(n)).map((n) => `${['January', 'February', 'March'][month(n)]} 2027`))].sort((a, b) => month(a) - month(b));
+};
+const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: q1Intakes(u), updatedAt: u.updatedAt, kind: (u.profile && u.profile.type === 'college') || PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u),
   // A page with the partner's January 2027 details counts only those courses, and shows the university's logo on its card.
   ...(u.profile ? { ...(u.profile.own ? {} : { courseCount: u.profile.courses.length, deadline: u.profile.deadlines[0] || '' }), logo: u.profile.logo || '', cover: u.profile.banner || u.profile.photos[0] || '', profileCity: u.profile.city || '' } : {}) });
 
@@ -309,7 +328,9 @@ function searchIn(universities, q) {
 }
 
 
-const listIn = (universities, q = '') => (String(q).trim() ? searchIn(universities, q) : universities.map(summary).sort((a, b) => a.name.localeCompare(b.name)));
+// The list is ordered by the nearest open deadline, then A to Z (the owner, 20 Nov 2026: no Sort menu).
+const byDeadline = (a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name);
+const listIn = (universities, q = '') => (String(q).trim() ? searchIn(universities, q) : universities.map(summary).sort(byDeadline));
 // Pages saved before the overview and fees table existed come back with those empty.
 const getIn = (universities, id) => { const u = universities.find((x) => x.id === id); return u ? { overview: '', programs: [], ...u } : null; };
 // Read only list and pages of a given set of universities (a backup), with the same shape and search as the live Universities.

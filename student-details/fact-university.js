@@ -276,6 +276,9 @@
   // (`own`), the university page's own figures. Nothing says which partner it is applied through: that is only in the Apply window.
   // The levels, their order and each course's level are read the same way here, in Assign task and on the server (fact-present.js).
   const { LEVEL_ORDER, levelOf } = P;
+  const Q1 = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i;
+  // "January 2027, February 2027" -> "Jan, Feb 2027".
+  const shortIntake = (s) => { const ms = String(s || '').split(/,\s*/).map((x) => x.trim().slice(0, 3)).filter(Boolean); return ms.length ? `${ms.join(', ')} 2027` : ''; };
   // A short key for a level's colour on the page.
   const lv0 = (name) => ({ 'International Foundation Year': 'ify', 'International Year One': 'iy1', Undergraduate: 'ug', Postgraduate: 'pg', 'Pre-Masters': 'pm', 'Extended Masters': 'em', 'Masters by Research': 'mr', PhD: 'phd' }[LEVEL_ORDER.includes(name) ? name : levelOf(name)] || 'other');
   function img(src, cls, alt = '') { const i = el('img', cls); i.src = src; i.alt = alt; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); }); return i; }
@@ -346,15 +349,16 @@
     const data = P.pageData(uni);
     const doc = el('article', 'doc up-doc');
     const city = P0.city || uni.city;
-    const startMonth = (() => { const c = {}; data.courses.forEach((x) => { if (x.start) c[x.start] = (c[x.start] || 0) + 1; }); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [''])[0]; })();
+    const campuses = P.campusesOf(uni, data.courses);
     const fees = [...data.courses.flatMap((c) => money(c.fee)), ...data.levels.flatMap((l) => money(l.tuition))];
-    const deadline = P0.own ? (view.deadlines.find((d) => d.applyBy && /\b(jan(uary)?|feb(ruary)?)\s*2027\b/i.test(d.name)) || view.deadlines.find((d) => d.applyBy) || null) : null;
+    const deadline = P0.own ? (view.deadlines.find((d) => d.applyBy && Q1.test(d.name)) || view.deadlines.find((d) => d.applyBy) || null) : null;
     const deadlineText = deadline ? deadline.applyBy.when : (P0.deadlines[0] || '').replace(/^application deadline\s*[-:]\s*/i, '').replace(/^apply by\s*/i, '').replace(/\s*\(most courses\)/, '');
 
     // the top: picture, logo, name, place, Apply now
     const hero = el('header', 'up-hero' + (P0.banner ? '' : ' no-pic'));
-    // The top pictures slide one into the next, slowly zooming (the owner, 20 Nov 2026: a page that moves, not a static page).
+    // The top pictures slide one into the next on their own (the owner, 20 Nov 2026: sliding, not zooming).
     clearInterval(heroTimer);
+    clearInterval(galleryTimer);
     const slides = [P0.banner, ...P0.photos].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).slice(0, 5);
     slides.forEach((src, k) => { const im = img(src, 'up-hero-img' + (k === 0 ? ' is-on' : ''), ''); if (k) im.loading = 'eager'; hero.append(im); });
     if (slides.length > 1) {
@@ -362,7 +366,7 @@
       slides.forEach((_, k) => { const d = el('button', k === 0 ? 'is-on' : ''); d.type = 'button'; d.setAttribute('aria-label', `Picture ${k + 1}`); d.addEventListener('click', () => show(k)); dots.append(d); });
       hero.append(dots);
       let at = 0;
-      const show = (k) => { at = k; hero.querySelectorAll('.up-hero-img').forEach((x, n) => x.classList.toggle('is-on', n === k)); dots.querySelectorAll('button').forEach((x, n) => x.classList.toggle('is-on', n === k)); };
+      const show = (k) => { const last = at; at = k; hero.querySelectorAll('.up-hero-img').forEach((x, n) => { x.classList.toggle('is-on', n === k); x.classList.toggle('is-out', n === last && n !== k); }); dots.querySelectorAll('button').forEach((x, n) => x.classList.toggle('is-on', n === k)); };
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show((at + 1) % hero.querySelectorAll('.up-hero-img').length); }, 5500);
     }
     const inner = el('div', 'up-hero-inner');
@@ -374,7 +378,7 @@
     words.append(el('h1', '', uni.name));
     const sub = el('div', 'up-sub');
     if (has(city)) sub.append(el('span', 'up-place', city));
-    sub.append(el('span', 'up-chip', P0.type === 'college' ? 'International college' : 'University'), el('span', 'up-chip', `${P0.intake} intake`));
+    sub.append(el('span', 'up-chip', P0.type === 'college' ? 'International college' : 'University'), el('span', 'up-chip', `${data.intake} intake`));
     words.append(sub);
     id.append(logo, words);
     inner.append(id);
@@ -386,52 +390,75 @@
     const facts = el('section', 'up-facts up-reveal');
     const fact = (label, value, small) => { const f = el('div', 'up-fact'); f.append(el('span', 'up-fact-label', label), el('b', '', value || 'Not given')); if (small) f.append(el('small', '', small)); facts.append(f); };
     fact('Location', city);
-    fact('Intake', P0.intake, startMonth && startMonth !== P0.intake ? `Most courses start ${startMonth}` : null);
+    fact('Intake', data.intake, campuses.length > 1 ? `${campuses.length} campuses` : null);
     fact('Apply by', deadlineText, deadline && typeof deadline.applyBy.days === 'number' && deadline.applyBy.days >= 0 ? `${deadline.applyBy.days} days left` : null);
     fact('Tuition from', fees.length ? `${pretty(Math.min(...fees))} a year` : '', data.courses.length ? `${data.courses.length} courses` : null);
     doc.append(facts);
 
-    // video and pictures: one large frame that never cuts a picture (the whole picture over a soft blurred copy of it), arrows and
-    // small pictures under it to move between them; the video is the first.
-    const pics = P0.photos.filter((x) => x !== P0.banner);
-    const items = [...(P0.video ? [{ video: P0.video }] : []), ...[P0.banner, ...pics].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).map((src) => ({ src }))];
-    if (items.length > 1 || P0.video) {
+    // video and pictures (the owner, 20 Nov 2026): the pictures fill one large frame edge to edge (no blurred bands) and fade one into
+    // the next on their own, with a bar under each that fills while it is shown; a click on a bar goes to it, the mouse over the frame
+    // holds it. The video has its own frame beside them and plays only when pressed.
+    const pics = [P0.banner, ...P0.photos].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k);
+    if (pics.length > 1 || P0.video) {
       const m = el('section', 'up-section up-gallery no-print up-reveal');
-      m.append(el('h2', '', P0.video ? 'Video and pictures' : 'Pictures'));
-      const stage = el('div', 'up-stage');
-      const thumbs = el('div', 'up-thumbs');
-      let at = 0;
-      const open = (k) => {
-        at = (k + items.length) % items.length;
-        const it = items[at];
-        stage.querySelectorAll('.up-slide').forEach((x) => x.remove());
-        const slide = el('div', 'up-slide');
-        if (it.video) {
-          const f = el('iframe', 'up-video');
-          f.src = it.video.replace('www.youtube.com', 'www.youtube-nocookie.com') + '?rel=0&modestbranding=1';
-          f.title = `${uni.name} video`; f.allow = 'accelerometer; encrypted-media; picture-in-picture'; f.allowFullscreen = true; f.referrerPolicy = 'strict-origin-when-cross-origin';
-          slide.append(f);
-        } else {
-          slide.style.setProperty('--bg', `url("${String(it.src).replace(/"/g, '%22')}")`);
-          slide.append(img(it.src, 'up-slide-img', uni.name));
-        }
-        stage.prepend(slide);
-        thumbs.querySelectorAll('button').forEach((b, n) => b.classList.toggle('is-on', n === at));
-      };
-      if (items.length > 1) {
-        const prev = el('button', 'up-arrow is-prev'); prev.type = 'button'; prev.setAttribute('aria-label', 'Previous'); prev.addEventListener('click', () => open(at - 1));
-        const next = el('button', 'up-arrow is-next'); next.type = 'button'; next.setAttribute('aria-label', 'Next'); next.addEventListener('click', () => open(at + 1));
-        stage.append(prev, next);
-        items.forEach((it, k) => {
-          const b = el('button', it.video ? 'is-video' : ''); b.type = 'button'; b.setAttribute('aria-label', it.video ? 'Video' : `Picture ${k + 1}`);
-          if (it.video) { const id2 = (it.video.match(/embed\/([\w-]{11})/) || [])[1]; if (id2) b.append(img(`https://i.ytimg.com/vi/${id2}/mqdefault.jpg`, '', '')); } else b.append(img(it.src, '', ''));
-          b.addEventListener('click', () => open(k));
-          thumbs.append(b);
+      m.append(el('h2', '', P0.video ? 'See the campus' : 'Pictures'));
+      const row = el('div', 'up-media' + (P0.video && pics.length > 1 ? ' has-both' : ''));
+      if (pics.length > 1) {
+        const film = el('div', 'up-film');
+        const bars = el('div', 'up-bars');
+        const count = el('span', 'up-count', `1 / ${pics.length}`);
+        pics.forEach((src, k) => {
+          const f = img(src, 'up-frame' + (k === 0 ? ' is-on' : ''), `${uni.name}, picture ${k + 1}`);
+          f.loading = k < 2 ? 'eager' : 'lazy';
+          f.addEventListener('error', () => { f.remove(); bars.children[k] && (bars.children[k].hidden = true); });
+          film.append(f);
+          const b = el('button', k === 0 ? 'is-on' : ''); b.type = 'button'; b.setAttribute('aria-label', `Picture ${k + 1}`);
+          b.append(el('i'));
+          b.addEventListener('click', () => { go(k); restart(); });
+          bars.append(b);
         });
+        let at = 0;
+        const go = (k) => {
+          const frames = [...film.querySelectorAll('.up-frame')];
+          if (!frames.length) return;
+          at = (k + frames.length) % frames.length;
+          frames.forEach((x, n) => x.classList.toggle('is-on', n === at));
+          [...bars.children].filter((x) => !x.hidden).forEach((x, n) => { x.classList.remove('is-on'); if (n === at) { void x.offsetWidth; x.classList.add('is-on'); } });
+          count.textContent = `${at + 1} / ${frames.length}`;
+        };
+        const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const restart = () => { clearInterval(galleryTimer); if (!still) galleryTimer = setInterval(() => { if (!document.hidden && !film.matches(':hover')) go(at + 1); }, GALLERY_MS); };
+        film.addEventListener('mouseenter', () => film.classList.add('is-held'));
+        film.addEventListener('mouseleave', () => { film.classList.remove('is-held'); go(at); restart(); });
+        // a swipe on a phone moves too
+        let x0 = null;
+        film.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+        film.addEventListener('touchend', (e) => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) { go(at + (dx < 0 ? 1 : -1)); restart(); } x0 = null; });
+        film.append(count);
+        const wrap = el('div', 'up-film-wrap');
+        wrap.style.setProperty('--dur', `${GALLERY_MS}ms`);
+        wrap.append(film, bars);
+        row.append(wrap);
+        restart();
       }
-      m.append(stage);
-      if (items.length > 1) m.append(thumbs);
-      open(0);
+      if (P0.video) {
+        const id2 = (P0.video.match(/embed\/([\w-]{11})/) || [])[1];
+        const v = el('button', 'up-watch');
+        v.type = 'button';
+        v.setAttribute('aria-label', `Play the ${uni.name} video`);
+        if (id2) v.append(img(`https://i.ytimg.com/vi/${id2}/hqdefault.jpg`, 'up-watch-img', ''));
+        v.append(el('span', 'up-play'), el('span', 'up-watch-label', 'Watch the video'));
+        v.addEventListener('click', () => {
+          const f = el('iframe', 'up-video');
+          f.src = P0.video.replace('www.youtube.com', 'www.youtube-nocookie.com') + '?rel=0&modestbranding=1&autoplay=1';
+          f.title = `${uni.name} video`; f.allow = 'accelerometer; autoplay; encrypted-media; picture-in-picture'; f.allowFullscreen = true; f.referrerPolicy = 'strict-origin-when-cross-origin';
+          const box = el('div', 'up-watch is-playing');
+          box.append(f);
+          v.replaceWith(box);
+        });
+        row.append(v);
+      }
+      m.append(row);
       doc.append(m);
     }
     // a short about and the key points
@@ -457,7 +484,10 @@
         const head = el('div', 'up-level-head');
         const lv = LEVEL_ORDER.includes(L.level) ? L.level : (levelOf(L.level) || '');
         const n = data.courses.filter((c) => c.level === lv).length;
-        head.append(el('h3', '', L.level));
+        // The level by its category in the owner's order, with the university's own name for it under it when different.
+        const h3 = el('h3', '', lv && lv !== 'Other courses' ? lv : L.level);
+        if (lv && lv !== L.level && lv !== 'Other courses') h3.append(el('small', 'up-level-own', L.level));
+        head.append(h3);
         if (n) { const a = el('a', 'up-level-link no-print', `${n} course${n === 1 ? '' : 's'}`); a.href = '#lvl-' + (lv || L.level).replace(/\W+/g, '-'); head.append(a); }
         card.append(head);
         const money2 = el('div', 'up-money');
@@ -490,7 +520,7 @@
     if (data.courses.length) {
       const sec = el('section', 'up-section up-courses');
       const top = el('div', 'up-courses-head');
-      top.append(el('h2', '', `Courses for ${P0.intake}`));
+      top.append(el('h2', '', `Courses for ${data.intake}`));
       const box = el('input', 'search no-print');
       box.type = 'search'; box.placeholder = `Search ${data.courses.length} courses`; box.setAttribute('aria-label', 'Search the courses');
       top.append(box);
@@ -512,13 +542,17 @@
           card.style.setProperty('--d', `${(grid.children.length % 6) * 50}ms`);
           card.dataset.name = c.name.toLowerCase();
           card.append(el('b', 'up-course-name', c.name));
+          // Every course says when it starts and where (the owner, 20 Nov 2026), then its length and fee.
+          const where = el('div', 'up-course-where');
+          where.append(el('span', 'up-c-intake', shortIntake(c.start || data.intake)), el('span', 'up-c-campus', c.campus || campuses[0] || uni.city || 'UK'));
+          card.append(where);
           const meta = el('div', 'up-course-meta');
-          [c.start && c.start !== P0.intake ? `Starts ${c.start}` : '', c.duration, c.fee, c.campus].filter(Boolean).forEach((x) => meta.append(el('span', '', x)));
+          [c.duration, c.fee].filter(Boolean).forEach((x) => meta.append(el('span', '', x)));
           if (meta.children.length) card.append(meta);
           const foot = el('div', 'up-course-foot');
           if (c.deadline) foot.append(el('span', 'up-course-deadline', `Apply by ${c.deadline}`));
-          if (team() && window.ShortlistFor) foot.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.name, intake: P0.intake, level: g }));
-          else if (student() && window.Shortlist && window.Shortlist.isLinked()) foot.append(window.Shortlist.button(uni, c.full || c.name, P0.intake));
+          if (team() && window.ShortlistFor) foot.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.name, intake: String(c.start || data.intake).split(', ')[0], level: g }));
+          else if (student() && window.Shortlist && window.Shortlist.isLinked()) foot.append(window.Shortlist.button(uni, c.full || c.name, String(c.start || data.intake).split(', ')[0]));
           if (foot.children.length) card.append(foot);
           grid.append(card);
         });
@@ -543,7 +577,7 @@
     if (!P0.own && P0.deadlines.length && !teamDates) {
       const sec = el('section', 'up-section');
       const head = el('div', 'up-courses-head');
-      head.append(el('h2', '', `Deadlines for ${P0.intake}`));
+      head.append(el('h2', '', `Deadlines for ${data.intake}`));
       sec.append(head);
       const ul = el('ul', 'up-deadlines');
       P0.deadlines.forEach((d) => ul.append(el('li', '', d)));
@@ -551,7 +585,8 @@
       doc.append(sec);
     } else {
       const wrap = el('div', 'up-section');
-      renderDeadlines(wrap, view);
+      // Only the January, February and March 2027 intakes (the owner, 20 Nov 2026).
+      renderDeadlines(wrap, { ...view, deadlines: view.deadlines.filter((d) => Q1.test(d.name)) });
       doc.append(wrap);
     }
     $('view').replaceChildren(doc);
@@ -570,6 +605,8 @@
   // the four tiles count up once. Nothing moves for a reader who asked for less motion; anything not yet shown appears after a moment
   // anyway, so the page is never left half empty (printing shows everything).
   let heroTimer = null;
+  let galleryTimer = null;
+  const GALLERY_MS = 4500; // how long each picture of the gallery is shown
   function motion(doc) {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const parts = [...doc.querySelectorAll('.up-reveal')];
@@ -591,7 +628,7 @@
     const P0 = uni.profile;
     const out = [`*${uni.name}*${has(P0.city || uni.city) ? ` (${P0.city || uni.city})` : ''}`];
     if (has(P0.website)) out.push(String(P0.website));
-    out.push(`${P0.intake} intake`);
+    out.push(`${data.intake} intake`);
     P0.deadlines.slice(0, 3).forEach((d) => out.push(d));
     data.levels.forEach((L) => {
       out.push('', `*${L.level}*`);

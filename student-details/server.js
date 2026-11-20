@@ -39,7 +39,7 @@ const { createCourseSitemaps } = require('./course-sitemap');
 const { createNavitasToolkit } = require('./navitas-toolkit');
 const { createPartnerRefresh } = require('./partner-refresh');
 const { studentFrom, checkLevel, rulesFromPage, ourLevel: eligLevel } = require('./eligibility');
-const { parseCourses: parseFactCourses } = require('./course-index');
+const FP = require('./fact-present'); // a university page's courses and requirements, as the page shows them
 const { tidyPartners, tidyOfficialRep, tidyNov20 } = require('./partner-tidy');
 const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
@@ -730,10 +730,10 @@ async function handleFacts(req, res, urlPath) {
     if (id && urlPath.endsWith('/choices')) {
       const u = facts.get(id);
       if (!u) return sendJSON(res, 404, { error: 'No such university.' });
-      const FP = require('./fact-present');
       const d = FP.pageData(u);
       const levels = FP.LEVEL_ORDER.filter((l) => d.courses.some((c) => c.level === l));
-      return sendJSON(res, 200, { name: u.name, intakes: [d.intake], levels, campuses: FP.campusesOf(u, d.courses), courses: d.courses.map((c) => ({ name: c.name, level: c.level, campus: c.campus || '' })) });
+      const intakes = ['January', 'February', 'March'].map((m) => `${m} 2027`).filter((m) => d.courses.some((c) => String(c.start || '').includes(m)));
+      return sendJSON(res, 200, { name: u.name, intakes: intakes.length ? intakes : [d.intake], levels, campuses: FP.campusesOf(u, d.courses), courses: d.courses.map((c) => ({ name: c.name, level: c.level, campus: c.campus || '', start: c.start || '' })) });
     }
     if (!id) return sendJSON(res, 200, facts.list((new URL(req.url, 'http://x').searchParams.get('q') || '').slice(0, 100)));
     const uni = facts.get(id);
@@ -1226,30 +1226,40 @@ const server = http.createServer(async (req, res) => {
       if (!s.level) return sendJSON(res, 400, { error: 'Choose the study level first.' });
       const words = s.subject.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !['and', 'the', 'with', 'hons', 'bsc', 'msc'].includes(w));
       const results = []; const without = [];
+      // The finder works on what the university page shows (the owner, 20 Nov 2026): the partner's January to March 2027 courses
+      // and requirements, or the page's own; each course with its intake and campus, and the university's nearest open deadline.
+      const glance = new Map(facts.list().map((x) => [x.id, x]));
+      const links = courseLinks.all(facts.all());
+      const topUp = s.level === 'Top-up (final year)';
       for (const u of facts.all()) {
-        // Every university: its rules kept from the partner portal, or read from its own table (typed by hand), so none is missed.
-        const rules = u.rules && u.rules.length ? u.rules : rulesFromPage(u);
+        const data = FP.pageData(u);
+        const partner = u.profile && !u.profile.own;
+        const rules = partner
+          ? rulesFromPage({ programs: data.levels.map((l) => ({ name: l.level, academic: [l.academic, l.extra].filter(Boolean).join('\n'), english: l.english })) })
+          : (u.rules && u.rules.length ? u.rules : rulesFromPage(u));
         if (!rules.length) { without.push(u.name); continue; }
-        const r = checkLevel(rules, s);
+        // A top-up student is checked against the undergraduate rules when no top-up rules are written.
+        const r = checkLevel(rules, s) || (topUp ? checkLevel(rules, { ...s, level: 'Undergraduate' }) : null);
         if (!r) continue;
-        // The page's own course lists (Route2Uni was removed, the owner, 17 Nov 2026).
-        const pageCourses = () => [...parseFactCourses(u.courses).map((c) => ({ name: c.course, level: c.group || '', campus: '', intake: '' })), ...(u.intakes || []).flatMap((i) => parseFactCourses(i.courses).map((c) => ({ name: c.course, level: c.group || '', campus: '', intake: i.name })))];
-        const all = pageCourses().filter((c) => (eligLevel(c.level) || eligLevel(c.name)) === s.level);
+        const levelOfCourse = (c) => { const byName = eligLevel(c.name); return byName === 'Top-up (final year)' ? byName : (eligLevel(c.level) || byName); };
+        const all = data.courses.filter((c) => { const l = levelOfCourse(c); return l === s.level || (topUp && l === 'Undergraduate' && /top[- ]?up/i.test(c.name)); });
         const courses = words.length ? all.filter((c) => words.every((w) => c.name.toLowerCase().includes(w))) : all;
         if (words.length && !courses.length) continue; // nothing in that subject here
         const seen = new Set();
-        const list = courses.filter((c) => { const k = `${c.name}|${c.intake}`.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
-        const row = (u.programs || []).find((p) => eligLevel(p.name) === s.level) || {};
-        const open = (u.intakes || []).find((i) => i.deadlines || i.deadline) || (u.intakes || [])[0] || null;
-        const links = courseLinks.all(facts.all());
-        // Copies with their link, never changed here.
-        const linked = list.map((c) => ({ ...c, link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
-        results.push({ id: u.id, name: u.name, city: u.city || (u.profile && u.profile.city) || '', logo: (u.profile && u.profile.logo) || '', cover: (u.profile && (u.profile.banner || u.profile.photos[0])) || '', status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit: row.deposit || '',
-          intake: open ? { name: open.name, deadline: open.deadline || '' } : null, courses: linked.slice(0, 40), more: Math.max(0, linked.length - 40), total: linked.length });
+        const list = courses.filter((c) => { const k = c.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+          .map((c) => ({ name: c.full || c.name, level: c.level, campus: c.campus || '', intake: String(c.start || data.intake).split(/,\s*/)[0], intakes: c.start || data.intake, fee: c.fee || '', deadline: c.deadline || '', link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
+        const row = data.levels.find((l) => eligLevel(l.level) === s.level) || (topUp ? data.levels.find((l) => eligLevel(l.level) === 'Undergraduate') : null) || {};
+        const g = glance.get(u.id) || {};
+        const deposit = (/Deposit[^:]*:\s*(.+)/i.exec(row.extra || '') || [])[1] || '';
+        results.push({ id: u.id, name: u.name, city: (u.profile && u.profile.city) || u.city || '', logo: g.logo || '', cover: g.cover || '', kind: g.kind || 'university',
+          status: r.status, reasons: r.reasons, fee: row.tuition || '', scholarship: row.scholarship || '', deposit,
+          intake: { name: data.intake, deadline: g.next ? g.next.when : '', days: g.next ? g.next.days : null },
+          campuses: FP.campusesOf(u, data.courses), courses: list.slice(0, 40), more: Math.max(0, list.length - 40), total: list.length });
       }
       const order = { yes: 0, check: 1, no: 2 };
       const feeOf = (x) => { const m = /£\s?([\d,]+)/.exec(x.fee); return m ? Number(m[1].replace(/,/g, '')) : 1e9; };
-      results.sort((a, b) => order[a.status] - order[b.status] || feeOf(a) - feeOf(b) || a.name.localeCompare(b.name));
+      const daysOf = (x) => (x.intake && typeof x.intake.days === 'number' ? x.intake.days : 1e6);
+      results.sort((a, b) => order[a.status] - order[b.status] || daysOf(a) - daysOf(b) || feeOf(a) - feeOf(b) || a.name.localeCompare(b.name));
       const counts = { yes: results.filter((x) => x.status === 'yes').length, check: results.filter((x) => x.status === 'check').length, no: results.filter((x) => x.status === 'no').length };
       return sendJSON(res, 200, { results, counts, without: without.length, readAt: '' });
     }

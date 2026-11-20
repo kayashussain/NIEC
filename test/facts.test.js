@@ -326,3 +326,22 @@ test('a partner page is put on an existing page by its name as Universities writ
   const saved = facts.update('aaaaaaaaaaa0', { ...winchester, notes: 'checked' }, 'Kayas');
   assert.ok(saved.university.profile, 'a save keeps the partner page');
 });
+
+test('levels in the owner order: Extended Masters and PhD are their own, "Research Methods" is not research (20 Nov 2026)', () => {
+  const FP = require('../student-details/fact-present');
+  assert.deepStrictEqual(FP.LEVEL_ORDER.slice(0, 8), ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Extended Masters', 'Masters by Research', 'PhD']);
+  assert.strictEqual(FP.levelOf('Enhanced Extended PG'), 'Extended Masters');
+  assert.strictEqual(FP.levelOf('MSc Data Science (Extended Masters)'), 'Extended Masters');
+  assert.strictEqual(FP.levelOf('Doctor of Philosophy in Nursing'), 'PhD');
+  assert.strictEqual(FP.levelOf('MRes Management'), 'Masters by Research');
+  assert.strictEqual(FP.levelOf('MSc Applied Social Research Methods'), 'Postgraduate');
+  assert.strictEqual(FP.levelOf('Foundation Certificate for Business - Transfer to Master of Science'), 'Pre-Masters');
+});
+
+test('the Universities list offers only January, February and March 2027, nearest deadline first', () => {
+  const facts = createFacts(fs.mkdtempSync(path.join(os.tmpdir(), 'isr-q1-')));
+  const list = facts.list();
+  assert.ok(list.every((u) => u.intakes.every((i) => /^(January|February|March) 2027$/.test(i))));
+  const days = list.map((u) => (u.next ? u.next.days : 1e6));
+  assert.deepStrictEqual(days, [...days].sort((a, b) => a - b));
+});
