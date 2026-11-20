@@ -3973,3 +3973,37 @@ body:has(.p-embed-bar) #view .sc-tl-page .p-tasks .p-card-head { margin-bottom: 
   #view .sc-tl-day { margin-left: 0; }
   .sc-tl-time { margin-left: 0; }
 }
+
+/* 🔴 CSS CHANGED (2026-11-20): the ISR motion kit, on every page (shared/motion.js, DESIGN.md) | from: pages that sat still between clicks, buttons with no press feel, a hard cut between pages | to: cards and rows rise in one after another as a page opens; a soft blue light follows the mouse over cards; buttons, pills and tabs press in with a little spring; pages cross-fade into each other (in browsers that can); a burst of confetti for a finished task; a progress ring that fills; everything still for anyone who asked for less motion */
+:root { --mo-spring: cubic-bezier(.34, 1.56, .64, 1); --mo-out: cubic-bezier(.2, .8, .2, 1); }
+html.mo-on .mo-rise { opacity: 0; transform: translateY(18px) scale(.985); }
+html.mo-on .mo-rise.mo-in { animation: mo-rise .62s var(--mo-out) both; animation-delay: calc(var(--mo-i, 0) * 42ms); }
+@keyframes mo-rise { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+html.mo-on .mo-lit { background-image: radial-gradient(420px circle at var(--mo-x, 50%) var(--mo-y, 50%), rgba(0, 113, 227, .075), rgba(0, 113, 227, 0) 60%); }
+html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button) { transition: transform .22s var(--mo-spring), background-color .2s ease, color .2s ease, box-shadow .2s ease; }
+html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button):active:not(:disabled) { transform: scale(.955); }
+html.mo-on .btn-primary:hover:not(:disabled) { box-shadow: 0 8px 22px -10px rgba(0, 113, 227, .65); }
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: mo-page-out .2s ease both; }
+::view-transition-new(root) { animation: mo-page-in .32s var(--mo-out) both; }
+@keyframes mo-page-out { to { opacity: 0; } }
+@keyframes mo-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.mo-confetti { position: fixed; inset: 0; z-index: 9999; width: 100vw; height: 100vh; pointer-events: none; }
+.mo-ring { position: relative; flex: none; width: var(--mo-size, 104px); height: var(--mo-size, 104px); }
+.mo-ring svg { display: block; width: 100%; height: 100%; }
+.mo-ring-track { stroke: #e8e8ed; }
+.mo-ring-fill { stroke: url(#mo-ring-g); transition: stroke-dashoffset 1.3s var(--mo-out); filter: drop-shadow(0 2px 6px rgba(10, 132, 255, .25)); }
+.mo-ring-mid { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.mo-ring-mid b { color: #1d1d1f; font-size: 24px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+.mo-ring-mid span { color: #6e6e73; font-size: 11.5px; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root) { animation: none; } html.mo-on .mo-rise { opacity: 1; transform: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-20): Today, the first page on the motion kit | from: a greeting in plain black, the day at a glance as words and two grey number tiles | to: the person's first name in a slow blue-to-violet shine; the day at a glance opens with a progress ring that fills to "62% done today" (green to blue), the numbers count up, the panel lifts slightly under the mouse; "Everything for today is done. Well done!" in green when nothing is left; task rows rise in one after another; confetti when a task is finished, and a big burst once a day when the last one is done */
+.td-hello h1 .td-name { background: linear-gradient(100deg, #0071e3 0%, #5e5ce6 35%, #bf5af2 55%, #0071e3 80%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: td-shine 6s ease-in-out infinite alternate; }
+@keyframes td-shine { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+html body .td-pulse.has-ring { grid-template-columns: auto 1fr auto auto; gap: 24px; padding: 22px 28px; transition: transform .35s var(--mo-out), box-shadow .35s ease; }
+html body .td-pulse.has-ring:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 18px 40px -22px rgba(0, 0, 0, .25); }
+html body .td-pulse .td-stat { transition: transform .3s var(--mo-spring); }
+html body .td-pulse .td-stat:hover { transform: translateY(-3px) scale(1.03); }
+.td-cheer { color: #1f8a3c !important; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .td-hello h1 .td-name { animation: none; } }

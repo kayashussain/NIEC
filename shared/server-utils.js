@@ -247,6 +247,7 @@ const SHARED_FILES = {
   '/header.js': 'text/javascript; charset=utf-8',
   '/header.css': 'text/css; charset=utf-8',
   '/ui.js': 'text/javascript; charset=utf-8',
+  '/motion.js': 'text/javascript; charset=utf-8', // the motion kit every page loads (header.js)
   '/ui.css': 'text/css; charset=utf-8',
   '/theme.css': 'text/css; charset=utf-8',
   '/login.html': 'text/html; charset=utf-8',
