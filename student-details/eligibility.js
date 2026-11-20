@@ -14,7 +14,7 @@ const num = (s) => { if (String(s === null || s === undefined ? '' : s).trim() =
 // Our study levels from the portal's names ("International Year One", "Upper Tier UG Course (YORK Campus)", "Top-up").
 function ourLevel(name) {
   const t = String(name || '').toLowerCase();
-  if (/top[- ]?up|level 6/.test(t)) return 'Top-up (final year)';
+  if (/top\s*-?\s*up|level 6/.test(t)) return 'Top-up (final year)';
   if (/nursing|midwif/.test(t)) return 'Undergraduate';
   if (/pre[- ]?master/.test(t)) return 'Pre-Masters';
   if (/year one|year 1|iy1|\biyo\b/.test(t)) return 'International Year 1';

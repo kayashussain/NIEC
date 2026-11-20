@@ -158,7 +158,7 @@ function cleanProfile(p) {
     own: Boolean(p.own), intake: t(p.intake, 60) || 'January 2027',
     // Which partner record the courses come from, read again every Thursday (partner-refresh.js), and when they were last read.
     key: t(p.key, 160), source: cleanSource2(p.source), readAt: t(p.readAt, 40),
-    // The other partners that offer the same university: what the first one does not give is filled in from them (the owner, 21 Nov 2026).
+    // The other partners that offer the same university: what the first one does not give is filled in from them (the owner, 20 Nov 2026).
     others: (Array.isArray(p.others) ? p.others : []).slice(0, 4).map(cleanSource2).filter(Boolean),
     logo: logoUrl(p.logo), banner: url(p.banner), photos: (Array.isArray(p.photos) ? p.photos : []).map(url).filter(Boolean).slice(0, 8),
     video: /^https:\/\/www\.youtube(-nocookie)?\.com\/embed\/[\w-]{6,20}/.test(String(p.video || '')) ? url(p.video) : '',

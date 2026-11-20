@@ -127,7 +127,7 @@
       if (money.children.length) c.append(money);
       if (r.courses.length) {
         // The three most relevant courses (those matching the subject when one is typed) are shown; "See all" opens the university's
-        // page with its own search set to the subject (the owner, 21 Nov 2026: three, not seven).
+        // page with its own search set to the subject (the owner, 20 Nov 2026: three, not seven, the best matches first).
         const box = el('div', 'fd-course-box');
         const head = el('div', 'fd-course-head');
         head.append(el('b', '', values().subject ? `${r.total} matching course${r.total === 1 ? '' : 's'}` : `${r.total} course${r.total === 1 ? '' : 's'}`));
@@ -137,7 +137,9 @@
           const li = el('li');
           const words = el('div', 'fd-course-words');
           // The course's own page on the university's website, when known (course-sitemap.js).
-          words.append(co.link ? h('a', { class: 'fd-course', href: co.link, target: '_blank', rel: 'noopener' }, co.name) : el('span', 'fd-course', co.name));
+          // Shown without the partner's code at the end ("(NN41)", "(CID921)"); the shortlist keeps the full name.
+          const shown = String(co.name).replace(/\s*\((?:CID)?[A-Z]{0,4}\d{2,4}[A-Z]?\)\s*$/, '').trim();
+          words.append(co.link ? h('a', { class: 'fd-course', href: co.link, target: '_blank', rel: 'noopener' }, shown) : el('span', 'fd-course', shown));
           const chips = el('div', 'fd-chips');
           chips.append(el('span', 'fd-cal', String(co.intakes || co.intake || '').split(/,\s*/).map((x) => x.slice(0, 3)).join(', ') + ' 2027'));
           if (co.campus) chips.append(el('span', 'fd-pin', co.campus));
@@ -154,7 +156,7 @@
         });
         box.append(list);
         if (r.total > 3) {
-          const more = h('a', { class: 'fd-see-all', href: `/fact-file?u=${encodeURIComponent(r.id)}${values().subject ? `&q=${encodeURIComponent(values().subject)}` : ''}#courses` }, `See all ${r.total} courses`);
+          const more = h('a', { class: 'fd-see-all', href: `/fact-file?u=${encodeURIComponent(r.id)}&level=${encodeURIComponent(values().level)}${values().subject ? `&q=${encodeURIComponent(values().subject)}` : ''}#courses` }, `See all ${r.total} courses`);
           if (onAdd) { more.target = '_blank'; more.rel = 'noopener'; }
           box.append(more);
         }

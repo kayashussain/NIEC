@@ -368,11 +368,14 @@
     const tail = parts.slice(1).join(' ');
     if (/\bphd\b|doctor|doctorate|\bdba\b|\bmphil\b|\bedd\b/.test(head)) return 'PhD';
     if (/\bmres\b|by research|master of research/.test(head)) return 'Masters by Research';
-    if (/extended master|enhanced extended|master'?s?\s*\(extended\)/.test(head)) return 'Extended Masters';
-    if (/pre-?\s?master|graduate diploma|incorporated master|\bimm\b|\bpmp\b|\bimp\b/.test(head)) return 'Pre-Masters';
+    if (/extended master|enhanced extended|master'?s?\s*\(extended\)/.test(head) || (/\(extended\)/.test(head) && /\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b/.test(head))) return 'Extended Masters';
+    // "Graduate Diploma in Law" is a postgraduate law conversion, not a pathway.
+    if (/pre-?\s?master|graduate diploma(?! in law)|incorporated master|\bimm\b|\bpmp\b|\bimp\b/.test(head)) return 'Pre-Masters';
+    if (/year zero|\biyz\b/.test(head)) return 'International Foundation Year';
     if (/year one|year 1\b|first year|\biy1\b|international year|stage one|level 4 diploma/.test(head)) return 'International Year One';
-    if (/foundation(?! degree)|\bify\b|year zero|\biyz\b/.test(head)) return /master/.test(tail) || /master/.test(head) ? 'Pre-Masters' : 'International Foundation Year';
-    if (/postgraduate|masters_degree|\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b|\bpg\b|\bpgcert|\bpgdip|\bmed\b|\bmpa\b|\bmph\b|graduate_certificate|post_graduate/.test(head)) return 'Postgraduate';
+    // "BA Business with Foundation Year" is a degree with a first foundation year (undergraduate), not a foundation programme.
+    if (/foundation(?! degree)|\bify\b|year zero|\biyz\b/.test(head) && !/with (an? )?(integrated )?foundation year/.test(head)) return /master/.test(tail) || /master/.test(head) ? 'Pre-Masters' : 'International Foundation Year';
+    if (/postgraduate|graduate diploma in law|masters_degree|\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b|\bpg\b|\bpgcert|\bpgdip|\bmed\b|\bmpa\b|\bmph\b|graduate_certificate|post_graduate/.test(head)) return 'Postgraduate';
     if (/undergraduate|bachelors_degree|\bbachelor|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bhnd\b|top[- ]?up|\bug\b|foundation degree|\bfda\b|\bfdsc\b|\bmeng\b|\bmsci\b|nursing|associate_degree/.test(head)) return 'Undergraduate';
     return '';
   }

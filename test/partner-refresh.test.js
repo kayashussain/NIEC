@@ -72,7 +72,7 @@ test('without a login on the B2B card nothing is read and Activity says why', as
   assert.ok(lines.some((l) => /Real Dreams: no login/.test(l)) && lines.some((l) => /Adventus: no login/.test(l)) && lines.some((l) => /Apply Board/.test(l)));
 });
 
-test('a course is the same course at every partner, however its name is written (21 Nov 2026)', () => {
+test('a course is the same course at every partner, however its name is written (20 Nov 2026)', () => {
   const { courseKey } = require('../student-details/partner-refresh');
   assert.strictEqual(courseKey('Bachelor of Arts (Honours) - Accounting and Finance (NN41)'), courseKey('BA (Hons) Accounting and Finance'));
   assert.strictEqual(courseKey('Bachelor of Science (Hons) in Accounting and Financial Systems'), courseKey('BSc (Hons) Accounting and Financial Systems'));

@@ -3622,7 +3622,7 @@ html body .page:has(.up-doc), html body .page:has(#cards) { max-width: 1560px; }
 html body .td-page { max-width: 1480px; }
 html body .td-page.is-board { max-width: 1680px; }
 .up-hero { overflow: hidden; }
-/* 🔴 CSS CHANGED (2026-11-21): the cover pictures at the top slide, they no longer zoom | from: each picture faded in and slowly zoomed in | to: each picture slides in from the right while the one before slides out to the left, with no zoom */
+/* 🔴 CSS CHANGED (2026-11-20): the cover pictures at the top slide, they no longer zoom | from: each picture faded in and slowly zoomed in | to: each picture slides in from the right while the one before slides out to the left, with no zoom */
 .up-hero-img { transform: translateX(100%); transition: transform 1.1s cubic-bezier(.77, 0, .18, 1); object-position: center 30%; }
 .up-hero-img:not(.is-on):not(.is-out) { transition: none; }
 .up-hero-img.is-on { transform: translateX(0); }
@@ -3635,10 +3635,10 @@ html body .td-page.is-board { max-width: 1680px; }
 html body .up-apply { transition: transform .2s ease, box-shadow .2s ease; }
 html body .up-apply:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 12px 28px rgba(0, 113, 227, .5); }
 .up-gallery h2 { margin-bottom: 14px; }
-/* 🔴 CSS CHANGED (2026-11-21): the gallery of a university page | from: one frame showing each whole picture over a blurred copy of it (blurred bands at the top and bottom), arrows and small pictures to click, the video inside the same frame | to: the pictures fill the frame edge to edge and fade one into the next on their own, a thin bar under each fills while it is shown (click a bar to go to it, the mouse over the frame holds it), a small "2 / 6" counter on frosted glass; the video has its own frame beside the pictures with a large frosted play button and plays only when pressed */
+/* 🔴 CSS CHANGED (2026-11-20): the gallery of a university page | from: one frame showing each whole picture over a blurred copy of it (blurred bands at the top and bottom), arrows and small pictures to click, the video inside the same frame | to: the pictures fill the frame edge to edge and fade one into the next on their own, a thin bar under each fills while it is shown (click a bar to go to it, the mouse over the frame holds it), a small "2 / 6" counter on frosted glass; the video has its own frame beside the pictures with a large frosted play button and plays only when pressed */
 .up-media { display: grid; gap: 18px; }
 .up-media.has-both { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); align-items: stretch; }
-/* 🔴 CSS CHANGED (2026-11-21): the gallery moves one second faster | from: 4.5 seconds a picture | to: 3.5 seconds a picture (the cover pictures: 4.5 seconds instead of 5.5) */
+/* 🔴 CSS CHANGED (2026-11-20): the gallery moves one second faster | from: 4.5 seconds a picture | to: 3.5 seconds a picture (the cover pictures: 4.5 seconds instead of 5.5) */
 .up-film-wrap { --dur: 3500ms; min-width: 0; }
 .up-film { position: relative; aspect-ratio: 16 / 9; border-radius: 28px; overflow: hidden; background: #1d1d1f; box-shadow: 0 18px 50px -24px rgba(0, 0, 0, .45); isolation: isolate; }
 .up-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; opacity: 0; transition: opacity 1.2s ease; }
@@ -3677,7 +3677,7 @@ html.up-motion .up-reveal.is-in { opacity: 1; transform: none; }
 .up-level[data-level="pg"] { --lv: #30b0c7; }
 .up-level[data-level="pm"] { --lv: #34c759; }
 .up-level[data-level="mr"] { --lv: #5e5ce6; }
-/* 🔴 CSS CHANGED (2026-11-21): colours for the two new levels, and every course card says when and where | from: Extended Masters and PhD had no level of their own; a course card showed its length and fee only (the start month only when it differed) | to: Extended Masters in pink and PhD in bronze; the level's own name at the university in small grey under the level; each course card has a blue "Jan, Feb 2027" chip with a calendar mark and a grey campus chip with a pin mark, above the length and fee */
+/* 🔴 CSS CHANGED (2026-11-20): colours for the two new levels, and every course card says when and where | from: Extended Masters and PhD had no level of their own; a course card showed its length and fee only (the start month only when it differed) | to: Extended Masters in pink and PhD in bronze; the level's own name at the university in small grey under the level; each course card has a blue "Jan, Feb 2027" chip with a calendar mark and a grey campus chip with a pin mark, above the length and fee */
 .up-level[data-level="em"] { --lv: #ff375f; }
 .up-level[data-level="phd"] { --lv: #a2845e; }
 html body .up-level-head h3 .up-level-own { display: block; margin-top: 2px; color: #6e6e73; font-size: 13px; font-weight: 500; letter-spacing: 0; }
@@ -3702,7 +3702,7 @@ html body a.uni-card.uc-card { transition: transform .25s ease, box-shadow .25s 
 html body a.uni-card.uc-card:hover { transform: translateY(-4px); }
 .uc-cover img { object-position: center 30%; }
 @media (max-width: 1200px) { html body #cards.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-/* 🔴 CSS CHANGED (2026-11-21): the old gallery frame's phone and less-motion rules removed | from: rules for the old frame and zoom | to: none (the new gallery has its own) */
+/* 🔴 CSS CHANGED (2026-11-20): the old gallery frame's phone and less-motion rules removed | from: rules for the old frame and zoom | to: none (the new gallery has its own) */
 @media (max-width: 700px) { html body #cards.cards { grid-template-columns: 1fr; } .up-dots { right: 16px; } }
 @media (prefers-reduced-motion: reduce) {
   .up-hero.no-pic, html body .sl-pick.is-on { animation: none; }
@@ -3725,7 +3725,7 @@ html body .fd-form { display: grid; grid-template-columns: repeat(auto-fit, minm
 html body .fd-bar { margin-top: 14px; }
 @media (max-width: 600px) { html body .p-assign-app { grid-template-columns: 1fr; } }
 
-/* 🔴 CSS CHANGED (2026-11-21): Find universities for a student, redesigned | from: a Level dropdown among seven boxes, a Find button under them, four small filter pills, results as tall cards with a thin picture, a long list of courses always open | to: the level is one row of large pills to tap (it searches at once), the other boxes sit in one row with a blue Find pill at the end; the answer is three large tiles (Eligible in green, To check in amber, Not eligible in grey) that also filter; results are a grid of picture cards: the photo with the answer on frosted glass and the logo on a white tile, the name, a pin line with the campuses and a calendar line with the intakes, a "Apply by ... · 12 days left" strip, the reasons with round tick, question and cross marks, three money tiles, and the courses folded behind "12 courses · Show", each course with its intake and campus chips; cards rise in one after another; the results dim while searching */
+/* 🔴 CSS CHANGED (2026-11-20): Find universities for a student, redesigned | from: a Level dropdown among seven boxes, a Find button under them, four small filter pills, results as tall cards with a thin picture, a long list of courses always open | to: the level is one row of large pills to tap (it searches at once), the other boxes sit in one row with a blue Find pill at the end; the answer is three large tiles (Eligible in green, To check in amber, Not eligible in grey) that also filter; results are a grid of picture cards: the photo with the answer on frosted glass and the logo on a white tile, the name, a pin line with the campuses and a calendar line with the intakes, a "Apply by ... · 12 days left" strip, the reasons with round tick, question and cross marks, three money tiles, and the courses folded behind "12 courses · Show", each course with its intake and campus chips; cards rise in one after another; the results dim while searching */
 html body .fd-card { padding: 26px 28px 28px; border-radius: 26px; }
 html body .fd-head h2 { margin: 0 0 16px; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
 .fd-levels { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
@@ -3808,7 +3808,7 @@ html body .fd-more-courses .fd-courses li:first-child { border-top: 0; }
 @media (max-width: 600px) { html body .fd-card { padding: 18px 16px 20px; } html body .fd-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fd-tiles { gap: 8px; } .fd-tile { padding: 12px 14px; } .fd-tile b { font-size: 26px; } .fd-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { html body .fd-uni { animation: none; } }
 
-/* 🔴 CSS CHANGED (2026-11-21): every course card says when, where, how long, what it costs and its scholarship, and its own requirement | from: a name with intake and campus chips, then length and fee as small grey text | to: three chips (blue calendar intake, grey pin campus, grey clock duration), two soft tiles side by side (Tuition fee in dark type, Scholarship in green), "Not given" in light grey when a partner gives nothing, and an amber "Course requirement" panel listing the English or entry rule when the course asks more or differently than its level's general requirement */
+/* 🔴 CSS CHANGED (2026-11-20): every course card says when, where, how long, what it costs and its scholarship, and its own requirement | from: a name with intake and campus chips, then length and fee as small grey text | to: three chips (blue calendar intake, grey pin campus, grey clock duration), two soft tiles side by side (Tuition fee in dark type, Scholarship in green), "Not given" in light grey when a partner gives nothing, and an amber "Course requirement" panel listing the English or entry rule when the course asks more or differently than its level's general requirement */
 .up-c-time { background: #f2f2f5; color: #3a3a3c; --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Cpath d='M8 4.5V8l2.5 1.6' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); }
 .up-course-money { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .up-cm { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 9px 12px; border-radius: 12px; background: #f5f5f7; }
@@ -3823,8 +3823,8 @@ html body .fd-more-courses .fd-courses li:first-child { border-top: 0; }
 .up-req-line { display: flex; gap: 8px; color: #3a3a3c; font-size: 13.5px; line-height: 1.4; }
 .up-req-line b { flex: none; min-width: 52px; color: #9a5b00; font-weight: 700; }
 
-/* 🔴 CSS CHANGED (2026-11-21): Find universities shows the courses at once | from: the courses folded behind "N courses · Show" | to: up to seven courses (those matching the subject) listed in a soft grey panel, each with intake, campus and fee chips, and a blue "See all N courses" pill that opens the university's page on its course list */
-/* 🔴 CSS CHANGED (2026-11-21): Find universities result cards are wider | from: at least 340px each (three to a row, course names squeezed) | to: at least 420px each (two to a row on a laptop), so each course and its chips sit on one or two lines */
+/* 🔴 CSS CHANGED (2026-11-20): Find universities shows the courses at once | from: the courses folded behind "N courses · Show" | to: up to three courses (the best matches for the subject) listed in a soft grey panel, each with intake, campus and fee chips, and a blue "See all N courses" pill that opens the university's page on its course list */
+/* 🔴 CSS CHANGED (2026-11-20): Find universities result cards are wider | from: at least 340px each (three to a row, course names squeezed) | to: at least 420px each (two to a row on a laptop), so each course and its chips sit on one or two lines */
 .fd-grid { grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); }
 @media (max-width: 600px) { .fd-grid { grid-template-columns: 1fr; } }
 .fd-course-box { margin-top: 14px; padding: 4px 0 0; border-top: 1px solid rgba(0, 0, 0, .08); }
@@ -3837,7 +3837,7 @@ html body .fd-course-box .fd-courses li:first-child { border-top: 0; }
 .fd-see-all:hover { background: #0077ed; transform: translateX(2px); }
 html body .fd-chips .fd-fee { background: #fff; color: #1d1d1f; }
 
-/* 🔴 CSS CHANGED (2026-11-21): the sliders get Apple-style controls | from: cover dots that only changed width; a gallery with no pause | to: the active cover dot is a white pill that fills while its picture is shown; the gallery has a round frosted pause and play button at its bottom left, pauses by itself when scrolled out of sight, moves with the arrow keys and shows a blue focus ring when it has the keyboard focus */
+/* 🔴 CSS CHANGED (2026-11-20): the sliders get Apple-style controls | from: cover dots that only changed width; a gallery with no pause | to: the active cover dot is a white pill that fills while its picture is shown; the gallery has a round frosted pause and play button at its bottom left, pauses by itself when scrolled out of sight, moves with the arrow keys and shows a blue focus ring when it has the keyboard focus */
 .up-dots button { position: relative; overflow: hidden; }
 .up-dots button.is-on { width: 34px; background: rgba(255, 255, 255, .45); }
 .up-dots button.is-on::after { content: ""; position: absolute; inset: 0; width: 0; border-radius: inherit; background: #fff; animation: up-fill var(--dur, 4500ms) linear forwards; }
@@ -3851,8 +3851,53 @@ html body .fd-chips .fd-fee { background: #fff; color: #1d1d1f; }
 .up-film:focus-visible { outline: 3px solid #0071e3; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .up-dots button.is-on::after { animation: none; width: 100%; } }
 
-/* 🔴 CSS CHANGED (2026-11-21): a level card says when some of its courses ask more; an empty scholarship is grey | from: nothing on the level card; "Not given" on a green scholarship tile | to: an amber pill "12 courses ask more" beside the level's course count (it jumps to those courses); a scholarship tile with nothing given is plain grey, so green always means a real scholarship */
+/* 🔴 CSS CHANGED (2026-11-20): a level card says when some of its courses ask more; an empty scholarship is grey | from: nothing on the level card; "Not given" on a green scholarship tile | to: an amber pill "12 courses ask more" beside the level's course count (it jumps to those courses); a scholarship tile with nothing given is plain grey, so green always means a real scholarship */
 .up-level-more { margin-left: auto; padding: 4px 11px; border-radius: 999px; background: #fff1d6; color: #9a5b00; font-size: 13px; font-weight: 700; text-decoration: none; transition: background .2s ease; }
 .up-level-more:hover { background: #ffe6b3; }
 .up-level-more + .up-level-link, .up-level-head .up-level-more ~ a { margin-left: 0; }
 .up-cm.is-sch.is-none { background: #f5f5f7; }
+
+/* 🔴 CSS CHANGED (2026-11-20): the final review of the Universities pages (an independent reviewer went through 45 university pages, the list, the finder and phone width) | from: white names that could sit on a bright sky, dots too small to tap, a cover that could not be paused, logos small inside large white tiles, "Not given" in large headline type and pale grey, an orange "Apply by" on every course whatever the date, course names as small as their figures, a lone "N courses ask more" pill beside the count, the finder's course rows squeezed on a phone, the Universities switch cut off on a phone, a double margin on phone pages and a low gallery frame there | to: a deeper shade at the foot of the cover so the name always reads; dots with a 44px tap area and a small frosted pause button beside them (the dot stops filling while paused); logos filling their tile; "Not given" in calm 15px grey that passes contrast; "Apply by" grey when far, orange within 14 days, struck grey "Closed" when past; course names at 17px; one pill "39 courses · 1 asks more" with the amber part inside; a grey "Showing Undergraduate only · Show every level" line when opened from the finder; a lone tuition tile filling the card when no scholarship exists at that level; finder rows that wrap, wider tap targets, quieter empty tiles; on a phone the switch fits, the page uses the full width, facts sit two to a row and the gallery is 4:3 */
+html body .up-hero::after { background: linear-gradient(0deg, rgba(0, 0, 0, .62) 0%, rgba(0, 0, 0, .22) 48%, rgba(0, 0, 0, 0) 72%), linear-gradient(180deg, rgba(0, 0, 0, .18), rgba(0, 0, 0, 0) 28%); }
+html body .up-dots { align-items: center; gap: 10px; }
+html body .up-dots .up-dot { position: relative; overflow: visible; }
+html body .up-dots .up-dot::before { content: ""; position: absolute; inset: -17px -6px; }
+html body .up-dots .up-dot.is-on::after { overflow: hidden; }
+html body .up-dots.is-held .up-dot.is-on::after { animation-play-state: paused; }
+html body .up-dots .up-hero-play { position: relative; inset: auto; width: 30px; height: 30px; margin-right: 4px; border-radius: 50%; background: rgba(29, 29, 31, .38); }
+html body .up-dots .up-hero-play::before, html body .up-dots .up-hero-play::after { top: 9px; width: 3px; height: 12px; }
+html body .up-dots .up-hero-play::before { left: 10px; }
+html body .up-dots .up-hero-play::after { left: 16px; }
+html body .up-dots .up-hero-play.is-paused::before { left: 11.5px; top: 8.5px; width: 0; height: 0; border-width: 6.5px 0 6.5px 10px; }
+html body .up-play-toggle:not(.up-hero-play) { width: 44px; height: 44px; }
+html body .up-play-toggle:not(.up-hero-play)::before, html body .up-play-toggle:not(.up-hero-play)::after { top: 16px; }
+html body .up-play-toggle:not(.up-hero-play)::before { left: 16.5px; }
+html body .up-play-toggle:not(.up-hero-play)::after { left: 24px; }
+html body .up-play-toggle:not(.up-hero-play).is-paused::before { left: 17px; top: 15px; }
+html body .uni-mono.has-logo { padding: 5px; }
+html body .up-logo { padding: 9px; }
+html body .up-logo img { width: 100%; height: 100%; }
+html body .up-money-v.is-none, html body .up-cm.is-none b { color: #6e6e73; font-size: 15px; font-weight: 500; letter-spacing: 0; }
+html body .up-course-deadline { color: #6e6e73; font-weight: 600; }
+html body .up-course-deadline.is-soon { color: #b25000; }
+html body .up-course-deadline.is-closed { color: #86868b; text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .25); }
+html body .up-course-name { color: #1d1d1f; font-size: 17px; font-weight: 600; line-height: 1.32; letter-spacing: -.012em; }
+html body .up-cm b { font-size: 16px; }
+.up-course-money.is-one { grid-template-columns: 1fr; }
+html body .up-level-link { display: inline-flex; align-items: center; gap: 8px; }
+html body .up-level-link .up-level-more { margin: 0; padding: 2px 9px; border-radius: 999px; background: #fff1d6; color: #9a5b00; font-size: 12.5px; font-style: normal; font-weight: 700; }
+.up-level-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: -4px 0 14px; padding: 10px 14px; border-radius: 14px; background: #eef4fd; color: #1d1d1f; font-size: 14.5px; font-weight: 600; }
+.up-level-note .p-link { font-weight: 600; }
+html body .fd-card { padding-bottom: 24px; }
+html body .fd-grid { align-items: start; }
+html body .fd-tile:disabled { opacity: .6; }
+@media (max-width: 600px) {
+  html body .fd-course-box .fd-courses li { flex-wrap: wrap; }
+  html body .fd-course-box .fd-course-words { flex: 1 1 100%; }
+  html body .ff-kind { max-width: 100%; }
+  html body .ff-kind button { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; }
+  html body .up-doc { padding-left: 0; padding-right: 0; }
+  html body .up-facts { grid-template-columns: 1fr 1fr; }
+  html body .up-film { aspect-ratio: 4 / 3; }
+}
+html body .ui-empty { margin: 48px auto; max-width: 420px; text-align: center; }

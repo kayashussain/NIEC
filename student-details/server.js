@@ -153,6 +153,9 @@ const courseLinks = createCourseLinks(DATA_DIR);
 // The university pages' pictures, fetched once and kept in the data folder (media-cache.js).
 const { createMediaCache, pictureAddresses } = require('./media-cache');
 const media = createMediaCache({ dir: DATA_DIR, allowed: () => pictureAddresses(facts.all()) });
+// Pictures no page uses any more are taken out of the folder a minute after start and then once a day.
+setTimeout(() => { try { media.prune(); } catch (e) { /* tried again tomorrow */ } }, 60000).unref();
+setInterval(() => { try { media.prune(); } catch (e) { /* tried again tomorrow */ } }, 24 * 3600 * 1000).unref();
 const sourceOptions = createSourceOptions(DATA_DIR);
 const b2b = createB2b(DATA_DIR);
 const agents = createB2b(DATA_DIR, { file: 'agents.json', filesFolder: 'agent-files', what: 'agent' });
@@ -1246,12 +1249,12 @@ const server = http.createServer(async (req, res) => {
         const r = checkLevel(rules, s) || (topUp ? checkLevel(rules, { ...s, level: 'Undergraduate' }) : null);
         if (!r) continue;
         const levelOfCourse = (c) => { const byName = eligLevel(c.name); return byName === 'Top-up (final year)' ? byName : (eligLevel(c.level) || byName); };
-        const all = data.courses.filter((c) => { const l = levelOfCourse(c); return l === s.level || (topUp && l === 'Undergraduate' && /top[- ]?up/i.test(c.name)); });
+        const all = data.courses.filter((c) => { const l = levelOfCourse(c); return l === s.level || (topUp && l === 'Undergraduate' && /top\s*-?\s*up/i.test(c.name)); });
         const courses = words.length ? all.filter((c) => words.every((w) => c.name.toLowerCase().includes(w))) : all;
         if (words.length && !courses.length) continue; // nothing in that subject here
         const seen = new Set();
         // The most relevant first when a subject is typed: the whole subject in the name, then a name that starts with it, then the
-        // shortest (the plainest course), so the three shown are the best matches (the owner, 21 Nov 2026).
+        // shortest (the plainest course), so the three shown are the best matches (the owner, 20 Nov 2026).
         const phrase = s.subject.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
         const score = (c) => { const n = c.name.toLowerCase(); return (phrase && n.includes(phrase) ? 4 : 0) + (words.length && words.some((w) => new RegExp(`(^|[^a-z])${w}`).test(n.replace(/^(ba|bsc|ma|msc|mba|llb|llm|beng|meng|mres|pgdip|pgcert)\b[^a-z]*(\(hons\))?\s*/, ''))) ? 2 : 0); };
         if (words.length) courses.sort((x, y) => score(y) - score(x) || x.name.length - y.name.length);

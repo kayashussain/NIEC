@@ -276,8 +276,13 @@
   // (`own`), the university page's own figures. Nothing says which partner it is applied through: that is only in the Apply window.
   // The levels, their order and each course's level are read the same way here, in Assign task and on the server (fact-present.js).
   const { LEVEL_ORDER, levelOf } = P;
+  const PATHWAY_RE = /international college|\bISC\b|study centre|oncampus|pathway|\bINTO\b|\bKaplan\b/i;
   const Q1 = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i;
   // "January 2027, February 2027" -> "Jan, Feb 2027".
+  // A course's name without the partner's code at its end: "(NN41)", "(CID921)".
+  const cleanName = (n) => String(n || '').replace(/\s*\((?:CID)?[A-Z]{0,4}\d{2,4}[A-Z]?\)\s*$/, '').trim();
+  // "£2,000/- per year", "upto £5,000", "Gross Fee £16,020": written plainly.
+  const tidyMoney = (v) => String(v || '').replace(/\/-/g, '').replace(/\bupto\b/gi, 'Up to').replace(/^gross fee:?\s*/i, '').replace(/\s{2,}/g, ' ').trim();
   const firstLine = (v) => String(v || '').split('\n').map((x) => x.trim()).filter(Boolean)[0] || '';
   // Read as numbers: "IELTS: 6 overall (no band below 5.5)" and "IELTS: 6.0 overall (5.5 in each component)" are the same rule.
   const TESTS = [['IELTS UKVI', /ielts\s*ukvi/i], ['IELTS', /ielts/i], ['PTE', /\bpte\b/i], ['TOEFL', /toefl/i], ['Duolingo', /duolingo/i]];
@@ -291,8 +296,9 @@
     });
     return out;
   };
-  const pctOf = (v) => Math.min(...(String(v || '').match(/(\d{2})\s*%/g) || ['999%']).map((x) => parseInt(x, 10)));
-  // A course's own requirement is shown when it asks more than its level's general one (the owner, 21 Nov 2026: "IELTS 6.0 with
+  // The grade asked: the first percentage of each line (after its label), the lowest of the lines ("Grade 12: 60%, no subject below 40%" is 60).
+  const pctOf = (v) => Math.min(...String(v || '').split('\n').map((line) => { const m = /(\d{2})\s*%/.exec(line.replace(/^[^:]*:/, '')); return m ? parseInt(m[1], 10) : 999; }));
+  // A course's own requirement is shown when it asks more than its level's general one (the owner, 20 Nov 2026: "IELTS 6.0 with
   // no band below 5.5 for the level, but 7.0 with no band below 7.0 for one course"): a higher overall score, a higher lowest band
   // where both give one, or a higher percentage. When the level gives none, the course's own is shown.
   const differs = (mine, general, kind) => {
@@ -386,30 +392,46 @@
     const levelFor = (g) => data.levels.find((l) => l.level === g) || data.levels.find((l) => (levelOf(l.level) || '') === g) || {};
     const fees = [...data.courses.flatMap((c) => money(c.fee)), ...data.levels.flatMap((l) => money(l.tuition))];
     const deadline = P0.own ? (view.deadlines.find((d) => d.applyBy && Q1.test(d.name)) || view.deadlines.find((d) => d.applyBy) || null) : null;
-    const deadlineText = deadline ? deadline.applyBy.when : (P0.deadlines[0] || '').replace(/^application deadline\s*[-:]\s*/i, '').replace(/^apply by\s*/i, '').replace(/\s*\(most courses\)/, '');
+    // The next date still open (a date that has passed is never shown as "Apply by"), else "Closed".
+    const nextPartner = (() => { for (const line of P0.deadlines || []) { const d = P.parseDate(line); if (d && P.daysLeft(d.date) >= 0) return { when: d.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }), days: P.daysLeft(d.date) }; } return null; })();
+    const openOwn = deadline && deadline.applyBy && !deadline.applyBy.closed && typeof deadline.applyBy.days === 'number' && deadline.applyBy.days >= 0 ? deadline : (P0.own ? view.deadlines.find((d) => Q1.test(d.name) && d.applyBy && !d.applyBy.closed && d.applyBy.days >= 0) : null);
+    const shortDate = (t) => String(t || '').replace(/\b(January|February|March|April|June|July|August|September|October|November|December)\b/g, (m) => m.slice(0, 3));
+    const anyDate = P0.own ? view.deadlines.some((d) => d.applyBy) : (P0.deadlines || []).length > 0;
+    const deadlineText = openOwn ? shortDate(openOwn.applyBy.when) : nextPartner ? nextPartner.when : (anyDate ? 'Closed' : '');
+    const daysText = openOwn ? openOwn.applyBy.days : nextPartner ? nextPartner.days : null;
 
     // the top: picture, logo, name, place, Apply now
     const hero = el('header', 'up-hero' + (P0.banner ? '' : ' no-pic'));
     // The top pictures slide one into the next on their own (the owner, 20 Nov 2026: sliding, not zooming).
     clearInterval(heroTimer);
     clearInterval(galleryTimer);
-    const slides = [P0.banner, ...P0.photos].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).slice(0, 5);
+    // The cover takes the first three pictures and the gallery the others, so no picture is shown twice (the reviewer, 20 Nov 2026).
+    const allPics = [P0.banner, ...P0.photos].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k);
+    const slides = allPics.slice(0, 3);
     // A picture that does not load, or is too small to fill the cover sharply, leaves the cover with its dot; with none left the
-    // cover shows its blue colour. So no slide is ever empty, black or white (the owner, 21 Nov 2026).
+    // cover shows its blue colour. So no slide is ever empty, black or white (the owner, 20 Nov 2026).
     const dots = el('div', 'up-dots no-print');
     dots.style.setProperty('--dur', `${HERO_MS}ms`);
     let at = 0;
+    const dotList = () => [...dots.querySelectorAll('.up-dot')];
     const heroImgs = () => [...hero.querySelectorAll('.up-hero-img')];
     const show = (k) => {
       const all = heroImgs(); if (!all.length) return;
       const last = at; at = (k + all.length) % all.length;
       all.forEach((x, n) => { x.classList.toggle('is-on', n === at); x.classList.toggle('is-out', n === last && n !== at); });
-      [...dots.children].forEach((x, n) => { x.classList.remove('is-on'); if (n === at) { void x.offsetWidth; x.classList.add('is-on'); } });
+      dotList().forEach((x, n) => { x.classList.remove('is-on'); x.removeAttribute('aria-current'); if (n === at) { void x.offsetWidth; x.classList.add('is-on'); x.setAttribute('aria-current', 'true'); } });
     };
-    const tick = () => { clearInterval(heroTimer); if (heroImgs().length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show(at + 1); }, HERO_MS); };
+    // A pause button beside the dots (moving pictures must be stoppable); paused, the dot stops filling.
+    let heroPaused = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const heroPlay = el('button', 'up-play-toggle up-hero-play no-print');
+    heroPlay.type = 'button';
+    const showHeroPlay = () => { heroPlay.classList.toggle('is-paused', heroPaused); heroPlay.setAttribute('aria-label', heroPaused ? 'Play the cover pictures' : 'Pause the cover pictures'); dots.classList.toggle('is-held', heroPaused); };
+    heroPlay.addEventListener('click', () => { heroPaused = !heroPaused; showHeroPlay(); show(at); tick(); });
+    showHeroPlay();
+    const tick = () => { clearInterval(heroTimer); if (heroImgs().length > 1 && !heroPaused) heroTimer = setInterval(() => { if (!document.hidden) show(at + 1); }, HERO_MS); };
     const drop = (im) => {
       const n = heroImgs().indexOf(im); if (n < 0) return;
-      im.remove(); if (dots.children[n]) dots.children[n].remove();
+      im.remove(); if (dotList()[n]) dotList()[n].remove();
       if (!heroImgs().length) { hero.classList.add('no-pic'); dots.remove(); clearInterval(heroTimer); return; }
       dots.hidden = heroImgs().length < 2;
       if (n === at || at >= heroImgs().length) { at = 0; show(0); } else if (n < at) at -= 1;
@@ -421,11 +443,11 @@
       im.addEventListener('error', () => drop(im));
       im.addEventListener('load', () => { if (im.naturalWidth < 640) drop(im); });
       hero.append(im);
-      const d = el('button', k === 0 ? 'is-on' : ''); d.type = 'button'; d.setAttribute('aria-label', `Picture ${k + 1}`);
-      d.addEventListener('click', () => { show([...dots.children].indexOf(d)); tick(); });
+      const d = el('button', `up-dot${k === 0 ? ' is-on' : ''}`); d.type = 'button'; d.setAttribute('aria-label', `Picture ${k + 1}`);
+      d.addEventListener('click', () => { show(dotList().indexOf(d)); tick(); });
       dots.append(d);
     });
-    if (slides.length > 1) hero.append(dots);
+    if (slides.length > 1) { dots.prepend(heroPlay); hero.append(dots); }
     tick();
     const inner = el('div', 'up-hero-inner');
     const id = el('div', 'up-id');
@@ -436,7 +458,7 @@
     words.append(el('h1', '', uni.name));
     const sub = el('div', 'up-sub');
     if (has(city)) sub.append(el('span', 'up-place', city));
-    sub.append(el('span', 'up-chip', P0.type === 'college' ? 'International college' : 'University'), el('span', 'up-chip', `${data.intake} intake`));
+    sub.append(el('span', 'up-chip', P0.type === 'college' ? 'International college' : 'University'));
     words.append(sub);
     id.append(logo, words);
     inner.append(id);
@@ -449,14 +471,14 @@
     const fact = (label, value, small) => { const f = el('div', 'up-fact'); f.append(el('span', 'up-fact-label', label), el('b', '', value || 'Not given')); if (small) f.append(el('small', '', small)); facts.append(f); };
     fact('Location', city);
     fact('Intake', data.intake, campuses.length > 1 ? `${campuses.length} campuses` : null);
-    fact('Apply by', deadlineText, deadline && typeof deadline.applyBy.days === 'number' && deadline.applyBy.days >= 0 ? `${deadline.applyBy.days} days left` : null);
+    fact('Apply by', deadlineText, typeof daysText === 'number' ? (daysText === 0 ? 'Today' : daysText === 1 ? '1 day left' : `${daysText} days left`) : null);
     fact('Tuition from', fees.length ? `${pretty(Math.min(...fees))} a year` : '', data.courses.length ? `${data.courses.length} courses` : null);
     doc.append(facts);
 
     // video and pictures (the owner, 20 Nov 2026): the pictures fill one large frame edge to edge (no blurred bands) and fade one into
     // the next on their own, with a bar under each that fills while it is shown; a click on a bar goes to it, the mouse over the frame
     // holds it. The video has its own frame beside them and plays only when pressed.
-    const pics = [...P0.photos, P0.banner].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k);
+    const pics = allPics.slice(3);
     if (pics.length > 1 || P0.video) {
       const m = el('section', 'up-section up-gallery no-print up-reveal');
       m.append(el('h2', '', P0.video ? 'See the campus' : 'Pictures'));
@@ -483,7 +505,7 @@
             go(at); restart();
           };
           f.addEventListener('error', dropF);
-          f.addEventListener('load', () => { if (f.naturalWidth < 560) dropF(); });
+          f.addEventListener('load', () => { if (f.naturalWidth < 560 || f.naturalWidth / f.naturalHeight > 2.3) dropF(); });
           film.append(f);
           bars.append(b);
         });
@@ -575,17 +597,17 @@
         head.append(h3);
         // How many of the level's courses ask more than this card (each says so on its own card).
         const more = data.courses.filter((c) => c.level === lv && (differs(c.english, L.english, 'English') || differs(c.academic, L.academic, 'Entry'))).length;
-        if (more && L.english) { const n2 = el('a', 'up-level-more no-print', `${more} course${more === 1 ? ' asks' : 's ask'} more`); n2.href = '#lvl-' + (lv || L.level).replace(/\W+/g, '-'); n2.title = 'Each of these courses shows its own requirement on its card'; head.append(n2); }
-        if (n) { const a = el('a', 'up-level-link no-print', `${n} course${n === 1 ? '' : 's'}`); a.href = '#lvl-' + (lv || L.level).replace(/\W+/g, '-'); head.append(a); }
+        // One pill: the number of courses, and how many of them ask more than this card (each says so on its own card).
+        if (n) { const a = el('a', 'up-level-link no-print'); a.append(el('span', '', `${n} course${n === 1 ? '' : 's'}`)); if (more && L.english) { a.append(el('em', 'up-level-more', `${more} ask${more === 1 ? 's' : ''} more`)); a.title = 'Each course that asks more shows its own requirement on its card'; } a.href = '#lvl-' + (lv || L.level).replace(/\W+/g, '-'); head.append(a); }
         card.append(head);
         const money2 = el('div', 'up-money');
         [['Tuition fee', L.tuition], ['Scholarship', L.scholarship]].forEach(([k, v]) => {
           const t = el('div', 'up-money-tile');
           t.append(el('span', 'up-money-k', k));
           const amounts = money(v);
-          t.append(el('b', 'up-money-v', amounts.length ? (k === 'Tuition fee' && amounts.length > 1 ? `${pretty(Math.min(...amounts))} to ${pretty(Math.max(...amounts))}` : pretty(k === 'Tuition fee' ? Math.min(...amounts) : Math.max(...amounts))) : (has(v) ? '' : 'Not given')));
+          t.append(el('b', `up-money-v${amounts.length || has(v) ? '' : ' is-none'}`, amounts.length ? (k === 'Tuition fee' && amounts.length > 1 ? `${pretty(Math.min(...amounts))} to ${pretty(Math.max(...amounts))}` : pretty(k === 'Tuition fee' ? Math.min(...amounts) : Math.max(...amounts))) : (has(v) ? '' : 'Not given')));
           // The words under the amount, without a line that only repeats the amount.
-          const extra = uniq(String(v || '').split('\n')).filter((line) => !/^(gross fee:?\s*)?£\s?[\d,]+(\s*(a|per|each)\s*year)?\.?$/i.test(line.replace(/^[-*•]\s+/, '').trim()));
+          const extra = uniq(String(v || '').split('\n').map(tidyMoney)).filter((line) => !/^(gross fee:?\s*|ranges from\s*|up to\s*|scholarship (of|upto|up to)?\s*)?£\s?[\d,]+(\s*(to|-)\s*£\s?[\d,]+)?(\s*(a|per|each)\s*year)?\.?$/i.test(line.replace(/^[-*•]\s+/, '').trim()));
           if (extra.length) { const d = el('div', 'up-money-d'); extra.slice(0, 4).forEach((line) => d.append(el('p', '', line.replace(/^[-*•]\s+/, '')))); t.append(d); }
           money2.append(t);
         });
@@ -614,6 +636,7 @@
       box.type = 'search'; box.placeholder = `Search ${data.courses.length} courses`; box.setAttribute('aria-label', 'Search the courses');
       top.append(box);
       sec.append(top);
+      let onlyLevels = null; // set when opened from Find universities for one level
       const groups = LEVEL_ORDER.filter((g) => data.courses.some((c) => c.level === g));
       const jump = el('div', 'up-jump no-print');
       groups.forEach((g) => { const a = el('a', '', `${g} · ${data.courses.filter((c) => c.level === g).length}`); a.href = '#lvl-' + g.replace(/\W+/g, '-'); jump.append(a); });
@@ -621,6 +644,7 @@
       groups.forEach((g) => {
         const items = data.courses.filter((c) => c.level === g).sort((x, y) => x.name.localeCompare(y.name));
         const block = el('div', 'up-group');
+        block.dataset.level = g;
         block.id = 'lvl-' + g.replace(/\W+/g, '-');
         const gh = el('div', 'up-group-head');
         gh.append(el('h3', '', g), el('span', '', `${items.length} course${items.length === 1 ? '' : 's'}`));
@@ -630,24 +654,27 @@
           const card = el('div', 'up-course up-reveal');
           card.style.setProperty('--d', `${(grid.children.length % 6) * 50}ms`);
           card.dataset.name = c.name.toLowerCase();
-          card.append(el('b', 'up-course-name', c.name));
-          // Every course says when it starts, where, how long, what it costs and its scholarship (the owner, 21 Nov 2026), and its own
+          card.append(el('b', 'up-course-name', cleanName(c.name)));
+          // Every course says when it starts, where, how long, what it costs and its scholarship (the owner, 20 Nov 2026), and its own
           // requirement when it asks more than the level's general one (a 7.0 IELTS where the level asks 6.0).
           const L = levelFor(g);
           const where = el('div', 'up-course-where');
           where.append(el('span', 'up-c-intake', shortIntake(c.start || data.intake)), el('span', 'up-c-campus', c.campus || campuses[0] || uni.city || 'UK'));
           if (c.duration) where.append(el('span', 'up-c-time', years(c.duration)));
           card.append(where);
-          const fee = c.fee || firstLine(L.tuition);
+          const fee = tidyMoney(c.fee || firstLine(L.tuition));
           // "Scholarship of £4,000" in the Scholarship tile reads "£4,000"; "Upto" reads "Up to".
-          const sch = (c.scholarship || firstLine(L.scholarship)).replace(/^scholarships?\s*(of|:|-)?\s*/i, '').replace(/\bupto\b/gi, 'Up to');
+          const sch = tidyMoney(c.scholarship || firstLine(L.scholarship)).replace(/^scholarships?\s*(of|:|-)?\s*/i, '');
+          const levelHasSch = has(L.scholarship) || data.courses.some((x) => x.level === g && has(x.scholarship));
           const money2 = el('div', 'up-course-money');
           const tile = (k, v, cls) => { const t = el('div', `up-cm ${cls}`); t.append(el('span', '', k), el('b', '', v || 'Not given')); if (!v) t.classList.add('is-none'); money2.append(t); return t; };
           tile('Tuition fee', fee, 'is-fee');
-          const st = tile('Scholarship', sch, 'is-sch');
-          if (sch && !c.scholarship && L.scholarship) st.title = L.scholarship;
+          // No scholarship tile on a level where no partner gives any (it would say "Not given" on every card).
+          if (levelHasSch) { const st = tile('Scholarship', sch, 'is-sch'); if (sch && !c.scholarship && L.scholarship) st.title = L.scholarship; } else money2.classList.add('is-one');
           card.append(money2);
-          const own = [['English', c.english, L.english], ['Entry', c.academic, L.academic]].filter(([k, mine, general]) => differs(mine, general, k));
+          // Only what asks more: the English tests whose score or band is higher than the level's, the grade when higher.
+          const higherTests = (mine, general) => { if (!String(general || '').trim()) return String(mine || '').split('\n').filter(Boolean); const b = testsOf(general); return String(mine || '').split('\n').filter((line) => { const a = testsOf(line); return Object.keys(a).some((k) => b[k] && (a[k][0] > b[k][0] || (a[k].length > 1 && b[k].length > 1 && a[k][1] > b[k][1]))); }); };
+          const own = [['English', higherTests(c.english, L.english).join('\n'), L.english], ['Entry', c.academic, L.academic]].filter(([k, mine, general]) => differs(mine, general, k));
           if (own.length) {
             const req = el('div', 'up-course-req');
             req.append(el('span', 'up-req-tag', 'Course requirement'));
@@ -655,7 +682,10 @@
             card.append(req);
           }
           const foot = el('div', 'up-course-foot');
-          if (c.deadline) foot.append(el('span', 'up-course-deadline', `Apply by ${c.deadline}`));
+          if (c.deadline) {
+            const d = P.parseDate(c.deadline); const left = d ? P.daysLeft(d.date) : null;
+            foot.append(el('span', `up-course-deadline${left !== null && left < 0 ? ' is-closed' : left !== null && left <= 14 ? ' is-soon' : ''}`, left !== null && left < 0 ? `Closed ${c.deadline.replace(/ \d{4}$/, '')}` : `Apply by ${c.deadline}`));
+          }
           if (team() && window.ShortlistFor) foot.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.name, intake: String(c.start || data.intake).split(', ')[0], level: g }));
           else if (student() && window.Shortlist && window.Shortlist.isLinked()) foot.append(window.Shortlist.button(uni, c.full || c.name, String(c.start || data.intake).split(', ')[0]));
           if (foot.children.length) card.append(foot);
@@ -670,12 +700,26 @@
       box.addEventListener('input', () => {
         const words = box.value.toLowerCase().split(/\s+/).filter(Boolean);
         let shown = 0;
-        sec.querySelectorAll('.up-group').forEach((b) => { let n = 0; b.querySelectorAll('.up-course').forEach((c) => { const hit = words.every((w) => c.dataset.name.includes(w)); c.hidden = !hit; if (hit) n += 1; }); b.hidden = n === 0; shown += n; });
-        sec.querySelectorAll('.up-jump').forEach((x) => { x.hidden = words.length > 0; });
+        sec.querySelectorAll('.up-group').forEach((b) => { let n = 0; const inLevel = !onlyLevels || onlyLevels.includes(b.dataset.level); b.querySelectorAll('.up-course').forEach((c) => { const hit = inLevel && words.every((w) => c.dataset.name.includes(w)); c.hidden = !hit; if (hit) n += 1; }); b.hidden = n === 0; shown += n; });
+        sec.querySelectorAll('.up-jump').forEach((x) => { x.hidden = words.length > 0 || Boolean(onlyLevels); });
+        levelNote.hidden = !onlyLevels;
         none.hidden = shown > 0;
       });
       // Opened from Find universities with a subject ("See all"): the search is set to it and the courses come into view.
       const asked = new URLSearchParams(location.search).get('q');
+      // ... and only the level the student was checked for (the finder's levels are the student card's).
+      const LEVEL_MAP = { Foundation: ['International Foundation Year'], 'International Year 1': ['International Year One'], 'Top-up (final year)': ['Undergraduate'], Undergraduate: ['Undergraduate'], 'Pre-Masters': ['Pre-Masters'], Postgraduate: ['Postgraduate', 'Extended Masters'], 'Masters by Research or PhD': ['Masters by Research', 'PhD'] };
+      onlyLevels = LEVEL_MAP[new URLSearchParams(location.search).get('level')] || null;
+      const levelNote = el('div', 'up-level-note no-print');
+      levelNote.hidden = true;
+      if (onlyLevels) {
+        const all = el('button', 'p-link', 'Show every level');
+        all.type = 'button';
+        all.addEventListener('click', () => { onlyLevels = null; box.dispatchEvent(new Event('input')); });
+        levelNote.append(el('span', '', `Showing ${onlyLevels.join(' and ')} only`), all);
+        top.after(levelNote);
+      }
+      if (onlyLevels && !asked) { box.dispatchEvent(new Event('input')); setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400); }
       if (asked) { box.value = asked.replace(/[^\w\s-]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80); box.dispatchEvent(new Event('input')); setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400); }
       doc.append(sec);
     }
@@ -714,10 +758,10 @@
   // anyway, so the page is never left half empty (printing shows everything).
   let heroTimer = null;
   let galleryTimer = null;
-  // 🔴 CSS CHANGED (2026-11-21): how long each gallery picture is shown (the bar under it fills in the same time) | from: 4.5 seconds | to: 3.5 seconds
-  // 🔴 CSS CHANGED (2026-11-21): the cover dots fill in this time (set as --dur from here) | from: plain dots | to: the active dot fills like a progress bar over 4.5 seconds
-  const HERO_MS = 4500; // each cover picture (one second faster, the owner, 21 Nov 2026)
-  const GALLERY_MS = 3500; // how long each picture of the gallery is shown (the owner, 21 Nov 2026: one second faster)
+  // 🔴 CSS CHANGED (2026-11-20): how long each gallery picture is shown (the bar under it fills in the same time) | from: 4.5 seconds | to: 3.5 seconds
+  // 🔴 CSS CHANGED (2026-11-20): the cover dots fill in this time (set as --dur from here) | from: plain dots | to: the active dot fills like a progress bar over 4.5 seconds
+  const HERO_MS = 4500; // each cover picture (one second faster, the owner, 20 Nov 2026)
+  const GALLERY_MS = 3500; // how long each picture of the gallery is shown (the owner, 20 Nov 2026: one second faster)
   function motion(doc) {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const parts = [...doc.querySelectorAll('.up-reveal')];
@@ -750,7 +794,12 @@
 
   // ---- the page ----
   function render() {
-    if (uni.profile && !BACKUP) { renderProfile(); return; }
+    // Every university in the one page layout (the owner, 20 Nov 2026): a page with no partner profile gets an empty one of its own,
+    // so its own requirements, courses and dates show the same way.
+    if (!BACKUP) {
+      if (!uni.profile) uni.profile = { own: true, type: PATHWAY_RE.test(uni.name) ? 'college' : 'university', intake: 'January 2027', logo: '', banner: '', photos: [], video: '', about: '', keyPoints: [], website: uni.website || '', city: uni.city || '', deadlines: [], levels: [], courses: [] };
+      renderProfile(); return;
+    }
     const view = P.present(uni);
     const doc = el('article', 'doc');
     const top = el('header', 'doc-head');

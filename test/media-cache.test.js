@@ -1,4 +1,4 @@
-// The university pages' pictures kept on our own server (the owner, 21 Nov 2026: no empty slides, a system that lasts). No real
+// The university pages' pictures kept on our own server (the owner, 20 Nov 2026: no empty slides, a system that lasts). No real
 // site is reached here: the answers are made up.
 const test = require('node:test');
 const assert = require('node:assert');
@@ -50,4 +50,26 @@ test('only the pictures written on the pages are fetched, and a page, a tiny ima
 test('the addresses come from the logos, covers, pictures and video stills of the pages', () => {
   const set = pictureAddresses([{ profile: { logo: 'data:image/png;base64,AAAA', banner: 'https://a.example.org/1.jpg', photos: ['https://a.example.org/2.jpg'], video: 'https://www.youtube.com/embed/abcdefghijk' } }, { name: 'no profile' }]);
   assert.deepStrictEqual([...set].sort(), ['https://a.example.org/1.jpg', 'https://a.example.org/2.jpg', 'https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg']);
+});
+
+test('a redirect to our own network is refused, an SVG logo is served as a picture only, and unused pictures are taken away', async () => {
+  const dir = tmp();
+  const LOGO = 'https://pictures.example.org/logo.svg';
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><rect width="200" height="60" fill="#06c"/><text x="10" y="40">Made-up University</text></svg>';
+  const answers = {
+    [PIC]: () => new Response(null, { status: 302, headers: { location: 'https://192.168.1.10/inside.png' } }),
+    [LOGO]: () => new Response(svg + ' '.repeat(400), { status: 200, headers: { 'content-type': 'image/svg+xml' } }),
+  };
+  const asked = [];
+  let pages = new Set(Object.keys(answers));
+  const m = createMediaCache({ dir, allowed: () => pages, fetchImpl: async (u) => { asked.push(u); return answers[u](); } });
+  assert.strictEqual(await m.get(PIC), null);
+  assert.ok(!asked.includes('https://192.168.1.10/inside.png'), 'never fetched');
+  const res = { head: null, body: null, writeHead(code, h) { this.head = { code, ...h }; }, end(b) { this.body = b; } };
+  await m.serve({ url: `/api/media?u=${encodeURIComponent(LOGO)}` }, res);
+  assert.strictEqual(res.head.code, 200);
+  assert.match(res.head['Content-Security-Policy'], /default-src 'none'/);
+  pages = new Set([PIC]);
+  await new Promise((r) => setTimeout(r, 5));
+  assert.ok(m.prune() >= 2, 'the logo and its note are taken away once no page uses it');
 });

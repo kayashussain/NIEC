@@ -54,19 +54,22 @@ const finish = (levels, courses, deadlines) => {
 };
 const sortStarts = (s) => String(s || '').split(/,\s*/).filter(Boolean).sort((a, b) => FULL.indexOf(a.split(' ')[0]) - FULL.indexOf(b.split(' ')[0])).join(', ');
 
-// ---- filling in from another partner (the owner, 21 Nov 2026) ----
+// ---- filling in from another partner (the owner, 20 Nov 2026) ----
 // What a counsellor needs to decide must never be missing: where the partner a university is read from does not give an entry
 // requirement, an English test, a fee or a scholarship, another partner that offers the same university fills the gap. The courses
 // stay those of the first partner; only empty places are filled, nothing written is replaced.
 const DEGREE = [[/bachelor of arts/g, 'ba'], [/bachelor of science/g, 'bsc'], [/bachelor of engineering/g, 'beng'], [/bachelor of laws/g, 'llb'], [/master of science/g, 'msc'], [/master of arts/g, 'ma'], [/master of business administration/g, 'mba'], [/master of laws/g, 'llm'], [/master of engineering/g, 'meng'], [/master of research/g, 'mres'], [/master of public health/g, 'mph']];
 // "Bachelor of Arts (Honours) - Accounting and Finance (NN41)" and "BA (Hons) Accounting and Finance" are the same course.
 function courseKey(name) {
-  let t = String(name || '').toLowerCase().replace(/\(top[- ]?up\)/g, ' top up ').replace(/\([^)]*\)/g, ' ');
+  // Only brackets that carry no meaning go: "(Hons)", a partner's code such as "(NN41)" or "(CID921)". "(Extended)", "(Distance
+  // Learning)", "(2 Term)" or "(Top-up)" make another course and stay.
+  let t = String(name || '').replace(/\((?:hons|honours)\)/gi, ' ').replace(/\((?:[A-Z]{1,4}\d{2,4}|[A-Z0-9]{3,6})\)/g, ' ').toLowerCase().replace(/top\s*-?\s*up/g, ' top up ').replace(/[()]/g, ' ');
   DEGREE.forEach(([re, to]) => { t = t.replace(re, to); });
   return t.replace(/\bhonours\b|\bhons\b|&/g, ' ').replace(/\b(and|in|of)\b/g, ' ').replace(/[^a-z0-9]+/g, '');
 }
 const FIELDS_L = ['academic', 'english', 'tuition', 'scholarship', 'extra'];
-const FIELDS_C = ['fee', 'duration', 'campus', 'scholarship', 'english', 'academic', 'deadline'];
+// A deadline is the partner's own, so it is never taken from another partner.
+const FIELDS_C = ['fee', 'duration', 'campus', 'scholarship', 'english', 'academic'];
 function fillIn(base, extra) {
   if (!extra) return base;
   const levels = (base.levels || []).map((L) => ({ ...L }));

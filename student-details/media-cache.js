@@ -1,9 +1,9 @@
-// The pictures of the university pages, kept on our own server (the owner, 21 Nov 2026: no black, white or empty slides, a system
+// The pictures of the university pages, kept on our own server (the owner, 20 Nov 2026: no black, white or empty slides, a system
 // that lasts for years). A cover picture, a gallery picture or a logo comes from a partner or a university's website; such a site
 // can be slow, limit how often it answers, block other sites from showing its pictures, or remove a picture. So each picture is
 // fetched once by the server, checked (a real picture of a sensible size, not a page or a tiny icon) and kept in the data folder
-// (media-cache/), then served from there to every browser. A picture that cannot be fetched is answered with "not found", and the
-// page leaves that slide out; it is tried again a day later.
+// (media-cache/), then served from there to every browser. A picture the server cannot fetch is left to the browser at its own
+// address, and the page leaves that slide out if it fails there too; the server tries it again a day later.
 //
 // Only the pictures written on the university pages are fetched (never any address a browser asks for), so this is not an open
 // door to the internet. The folder is a cache: deleting it only means each picture is fetched again the next time it is shown.
@@ -13,9 +13,14 @@ const path = require('path');
 const crypto = require('crypto');
 
 const MAX = 8 * 1024 * 1024; // larger than any sensible web picture
+const KEEP_MAX = 3 * 1024 * 1024; // a larger picture is not kept (the browser is sent to its own address), so the folder stays small
 const RETRY_MS = 24 * 3600 * 1000;
+const BUSY_RETRY_MS = 3600 * 1000; // a site that was busy (429, 5xx) is asked again after an hour
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36';
-const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
+const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif', 'image/svg+xml': 'svg' };
+// An address on our own network or this computer is never fetched (a page's picture can only be on the public internet).
+const PRIVATE = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|\[?::1\]?$|\[?f[cd][0-9a-f]{2}:|\[?fe80:)/i;
+const publicHttps = (u) => { try { const x = new URL(u); return x.protocol === 'https:' && !PRIVATE.test(x.hostname) && !/\.(local|internal|lan)$/i.test(x.hostname); } catch (e) { return false; } };
 
 // The width and height written in a picture's first bytes (PNG, JPEG, GIF, WebP), or null.
 function sizeOf(buf) {
@@ -53,30 +58,48 @@ function createMediaCache({ dir, allowed, fetchImpl = (...a) => fetch(...a), now
   };
   async function fetchOne(u, key) {
     const failFile = path.join(folder, `${key}.fail`);
-    try { if (now() - fs.statSync(failFile).mtimeMs < RETRY_MS) return null; } catch (e) { /* never failed */ }
+    try { const f = fs.statSync(failFile); const busyFail = /^(429|5\d\d) /.test(fs.readFileSync(failFile, 'utf8')); if (now() - f.mtimeMs < (busyFail ? BUSY_RETRY_MS : RETRY_MS)) return null; } catch (e) { /* never failed */ }
     const fail = (why) => { try { fs.mkdirSync(folder, { recursive: true }); fs.writeFileSync(failFile, why); } catch (e) { /* the next try asks again */ } return null; };
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000); // the whole fetch, the picture's bytes included
     try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 20000);
-      const res = await fetchImpl(u, { headers: { 'User-Agent': UA, Accept: 'image/avif,image/webp,image/png,image/jpeg,image/*' }, redirect: 'follow', signal: ctrl.signal });
-      clearTimeout(timer);
+      // Redirects are followed by hand, each new address checked again (never to our own network).
+      let at = u; let res = null;
+      for (let hop = 0; hop < 4; hop += 1) {
+        if (!publicHttps(at)) return fail('not a public address');
+        res = await fetchImpl(at, { headers: { 'User-Agent': UA, Accept: 'image/avif,image/webp,image/png,image/jpeg,image/svg+xml,image/*' }, redirect: 'manual', signal: ctrl.signal });
+        if (res.status >= 300 && res.status < 400 && res.headers.get('location')) { at = new URL(res.headers.get('location'), at).href; continue; }
+        break;
+      }
       const type = String(res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
       if (!res.ok || !TYPES[type]) return fail(`${res.status} ${type}`);
+      const declared = Number(res.headers.get('content-length') || 0);
+      if (declared > MAX) return fail(`size ${declared}`);
       const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.length < 600 || buf.length > MAX) return fail(`size ${buf.length}`);
-      const size = sizeOf(buf);
-      // A picture smaller than an icon is not a picture to show (a tracking pixel, a broken image).
-      if (size && (size.w < 48 || size.h < 48)) return fail(`tiny ${size.w}x${size.h}`);
+      if (buf.length < 300 || buf.length > MAX) return fail(`size ${buf.length}`);
+      const size = type === 'image/svg+xml' ? null : sizeOf(buf);
+      // A picture smaller than an icon is not a picture to show (a tracking pixel, a broken image); a wide logo (262 x 45) is fine.
+      if (size && (size.w * size.h < 48 * 48 || Math.max(size.w, size.h) < 64)) return fail(`tiny ${size.w}x${size.h}`);
+      if (buf.length > KEEP_MAX) return fail('too large to keep'); // shown from its own address instead
       fs.mkdirSync(folder, { recursive: true });
       fs.writeFileSync(path.join(folder, key), buf);
       fs.writeFileSync(path.join(folder, `${key}.json`), JSON.stringify({ url: u, type, w: size && size.w, h: size && size.h, at: new Date(now()).toISOString() }));
       try { fs.unlinkSync(failFile); } catch (e) { /* none */ }
       return { buf, type };
-    } catch (e) { return fail(e.name === 'AbortError' ? 'timeout' : e.message); }
+    } catch (e) { return fail(e.name === 'AbortError' ? 'timeout' : e.message); } finally { clearTimeout(timer); }
+  }
+  // Takes away the kept pictures no page uses any more (run now and then; the folder never grows without end).
+  function prune() {
+    let names = [];
+    try { names = fs.readdirSync(folder); } catch (e) { return 0; }
+    const keep = new Set([...allowed()].map(keyOf));
+    let removed = 0;
+    names.forEach((name) => { const key = name.replace(/\.(json|fail)$/, ''); if (!keep.has(key)) { try { fs.unlinkSync(path.join(folder, name)); removed += 1; } catch (e) { /* already gone */ } } });
+    return removed;
   }
   // The picture for an address of a university page: { buf, type } or null.
   async function get(u) {
-    if (!/^https:\/\/[^\s"'<>]+$/.test(String(u || '')) || !isAllowed(u)) return null;
+    if (!/^https:\/\/[^\s"'<>]+$/.test(String(u || '')) || !isAllowed(u) || !publicHttps(u)) return null;
     const key = keyOf(u);
     try {
       const meta = JSON.parse(fs.readFileSync(path.join(folder, `${key}.json`), 'utf8'));
@@ -89,11 +112,18 @@ function createMediaCache({ dir, allowed, fetchImpl = (...a) => fetch(...a), now
   async function serve(req, res) {
     const u = new URL(req.url, 'http://x').searchParams.get('u') || '';
     const got = await get(u);
-    if (!got) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }); res.end('No such picture'); return; }
-    res.writeHead(200, { 'Content-Type': got.type, 'Content-Length': got.buf.length, 'Cache-Control': 'private, max-age=2592000, immutable', 'X-Content-Type-Options': 'nosniff' });
+    if (!got) {
+      // Not kept: an address that is not on a page is refused; a picture the server could not fetch is left to the browser at its own
+      // address (some sites answer browsers but not servers), and the page drops the slide if that fails too.
+      if (/^https:\/\/[^\s"'<>]+$/.test(u) && isAllowed(u) && publicHttps(u)) { res.writeHead(302, { Location: u, 'Cache-Control': 'no-store' }); res.end(); return; }
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }); res.end('No such picture'); return;
+    }
+    // An SVG logo is a picture only: no script of it may run, opened on its own or not.
+    const svg = got.type === 'image/svg+xml' ? { 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox", 'Content-Disposition': 'inline' } : {};
+    res.writeHead(200, { 'Content-Type': got.type, 'Content-Length': got.buf.length, 'Cache-Control': 'private, max-age=2592000, immutable', 'X-Content-Type-Options': 'nosniff', ...svg });
     res.end(got.buf);
   }
-  return { get, serve, sizeOf };
+  return { get, serve, prune, sizeOf };
 }
 
 // Every picture address written on the university pages.
