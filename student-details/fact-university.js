@@ -7,6 +7,7 @@
 //   the courses, grouped by level, each with Shortlist (for the student chosen at the top; the shortlist waits in the tray at the
 //   bottom, see fact-finder.js) and an amber warning when the automatic
 //   check found no page for it on the university's website
+//   under the name, "Apply through" and the partner, for Admin and the Application Team (apply-through.js)
 //   then the overview, the application steps, the interview (the team only), location, payments and notes, when there are any.
 //
 // Everything is put on the page as text, never as HTML. Printing gives a clean document.
@@ -20,6 +21,9 @@
   let me = {};
   let courseData = null;
   let watch = { warnings: [], admin: false };
+  // Which partner this university is applied through (Apply through, the owner, 20 Nov 2026): only Admin and the Application Team
+  // are told; for everyone else the server answers 403 and nothing is shown.
+  let applyVia = null;
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -333,6 +337,7 @@
     const sub = el('div', 'doc-sub');
     if (has(view.city)) sub.append(el('span', '', view.city));
     if (has(view.website)) { const a = el('a', '', view.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')); a.href = view.website; a.target = '_blank'; a.rel = 'noopener'; sub.append(a); }
+    if (applyVia) sub.append(el('span', '', `Apply through: ${applyVia.partner}`));
     if (sub.children.length) titles.append(sub);
     top.append(titles);
     doc.append(top);
@@ -430,6 +435,7 @@
     if (window.Shortlist) await window.Shortlist.ready;
     if (!BACKUP) { try { const r = await fetch('/api/fact-courses?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) courseData = await r.json(); } catch (e) { courseData = null; } }
     if (!BACKUP && !student()) { try { const r = await fetch('/api/course-watch?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) watch = await r.json(); } catch (e) { /* the page works without it */ } }
+    if (!BACKUP && !student()) { try { const r = await fetch('/api/apply-through/find?name=' + encodeURIComponent(uni.name || ''), { cache: 'no-store' }); if (r.ok) applyVia = (await r.json()).entry; } catch (e) { applyVia = null; } }
     if (team() && window.ShortlistFor) { await window.ShortlistFor.ready(); window.ShortlistFor.onChange(render); window.ShortlistFor.tray(); }
     render();
   }

@@ -10,10 +10,12 @@
     { id: 'direct', href: '/partner-universities', label: 'Universities', api: '/api/direct', hint: 'Universities you hold a direct agreement with' },
     { id: 'b2b', href: '/b2b-partners', label: 'B2B partners', api: '/api/b2b', hint: 'Businesses you send applications through' },
     { id: 'agents', href: '/agents', label: 'Agents', api: '/api/agents', hint: 'Businesses that send you their students' },
+    // Admin and the Application Team (the owner, 20 Nov 2026): the places two or more B2B partners offer, and which one to use.
+    { id: 'applyThrough', page: 'apply-through', href: '/apply-through', label: 'Apply through', api: '/api/apply-through', hint: 'Which B2B partner each university is applied through, where more than one offers it' },
   ];
   const get = (url) => fetch(url, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   // The same total as the list's own "N in the list": those set up, and on B2B Partners the names on the sheet not set up yet.
-  const count = (x) => (Array.isArray(x) ? x.length : x && Array.isArray(x.partners) ? x.partners.length + (x.onSheet || []).length : null);
+  const count = (x) => (Array.isArray(x) ? x.length : x && Array.isArray(x.partners) ? x.partners.length + (x.onSheet || []).length : x && typeof x.choosable === 'number' ? x.choosable : null);
 
   const bar = document.createElement('div');
   bar.className = 'pt-bar';
@@ -30,7 +32,7 @@
       const a = document.createElement('a');
       a.href = t.href;
       a.title = t.hint;
-      if (t.id === here) a.setAttribute('aria-current', 'page');
+      if ((t.page || t.id) === here) a.setAttribute('aria-current', 'page');
       a.innerHTML = `<span>${t.label}</span><span class="pt-n" hidden></span>`;
       nav.append(a);
       get(t.api).then((d) => { const n = count(d); if (n === null) return; const b = a.querySelector('.pt-n'); b.textContent = n; b.hidden = false; });

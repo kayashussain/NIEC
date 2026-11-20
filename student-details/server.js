@@ -32,13 +32,14 @@ const { createPlanning } = require('./planning');
 const { createSourceOptions } = require('./source-options');
 const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
+const { createApplyThrough } = require('./apply-through');
 const { createPortalApi } = require('./portal-api');
 const { createPush } = require('./push');
 const { createCourseSitemaps } = require('./course-sitemap');
 const { createNavitasToolkit } = require('./navitas-toolkit');
 const { studentFrom, checkLevel, rulesFromPage, ourLevel: eligLevel } = require('./eligibility');
 const { parseCourses: parseFactCourses } = require('./course-index');
-const { tidyPartners, tidyOfficialRep } = require('./partner-tidy');
+const { tidyPartners, tidyOfficialRep, tidyNov20 } = require('./partner-tidy');
 const { tidyData } = require('./data-tidy');
 const { partnerAccess, shapeDirect, seesLogins } = require('./partner-access');
 const { createUserMail } = require('./user-mail');
@@ -118,6 +119,8 @@ const STATIC_FILES = {
   '/agents.html': 'text/html; charset=utf-8',
   '/b2b-page.js': 'text/javascript; charset=utf-8',
   '/partners-switch.js': 'text/javascript; charset=utf-8',
+  '/apply-through.html': 'text/html; charset=utf-8',
+  '/apply-through-page.js': 'text/javascript; charset=utf-8',
   '/dashboard-insights.js': 'text/javascript; charset=utf-8',
   '/fact-finder.js': 'text/javascript; charset=utf-8',
   '/fact-present.js': 'text/javascript; charset=utf-8',
@@ -154,6 +157,9 @@ const sourceOptions = createSourceOptions(DATA_DIR);
 const b2b = createB2b(DATA_DIR);
 const agents = createB2b(DATA_DIR, { file: 'agents.json', filesFolder: 'agent-files', what: 'agent' });
 const planning = createPlanning(DATA_DIR);
+// Which partner each university is applied through (apply-through.js). The starting list is only for an installation that works
+// with Real Dreams, Adventus or Apply Board.
+const applyThrough = createApplyThrough(DATA_DIR, { wanted: () => b2b.all().some((p) => /^(real dreams|adventus|apply ?board)$/i.test(String(p.name).trim())) });
 // Daily backups (6 p.m., kept 30 days) and Admin's restore (see backups.js). `current` is the students, held in memory below.
 const backups = createBackups(DATA_DIR, () => ({
   students: current, facts: facts.all(), partners: direct.all(),
@@ -208,7 +214,7 @@ const advisor = createAdvisorMcp({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/events', '/data-to-fix', '/weekly']);
+  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/apply-through', '/events', '/data-to-fix', '/weekly']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -871,6 +877,11 @@ try {
     record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
   });
   if (rep.changes && rep.changes.length) console.log('[startup] The Official Representative:', rep.changes.join('; '));
+  const nov20 = tidyNov20({
+    b2b, planning,
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+  });
+  if (nov20.changes && nov20.changes.length) console.log('[startup] partners tidied (20 Nov):', nov20.changes.join('; '));
 } catch (e) {
   console.error('[startup] partner tidy-up failed:', e.message);
 }
@@ -1090,7 +1101,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       const page = {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
-        '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/events': 'events.html',
+        '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/events': 'events.html',
         '/data-to-fix': 'data-fix.html', '/weekly': 'weekly.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
@@ -1119,7 +1130,7 @@ const server = http.createServer(async (req, res) => {
         // Every account opens the sheet and a student card (each shows only the students the account sees); the Dashboard is for
         // Admin and the Manager; the partner pages as partner-access.js says; the rest is Admin's.
         const access = partnerAccess(req.user);
-        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents }[urlPath];
+        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/apply-through': access.applyThrough }[urlPath];
         const allowed = Boolean(shared) || ['/students', '/student', '/wa', '/today', '/my-dashboard', '/data-to-fix'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events', '/weekly'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
         if (!allowed) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
         req.url = '/' + page;
@@ -1129,6 +1140,30 @@ const server = http.createServer(async (req, res) => {
     if (urlPath === '/api/demo' && req.method === 'GET') return sendJSON(res, 200, { demo: process.env.ISR_DEMO === '1' });
     // What this account sees of the partner pages (the pages hide what is not theirs to change).
     if (urlPath === '/api/partner-access' && req.method === 'GET') return sendJSON(res, 200, partnerAccess(req.user));
+    // Apply through (apply-through.js): the list for Admin and the Application Team; only Admin changes a partner.
+    if (urlPath === '/api/apply-through' || urlPath.startsWith('/api/apply-through/')) {
+      const level = partnerAccess(req.user).applyThrough;
+      if (!level) return sendJSON(res, 403, { error: 'Apply through is for Admin and the Application Team.' });
+      if (urlPath === '/api/apply-through/find' && req.method === 'GET') {
+        const e = applyThrough.find(new URL(req.url, 'http://x').searchParams.get('name') || '');
+        return sendJSON(res, 200, { entry: e ? { name: e.name, partner: e.partner, direct: Boolean(e.direct) } : null });
+      }
+      if (urlPath === '/api/apply-through' && req.method === 'GET') {
+        const choices = applyThrough.choices();
+        return sendJSON(res, 200, { canChange: level === 'full', choices, choosable: choices.length });
+      }
+      const id = (urlPath.match(/^\/api\/apply-through\/([a-z0-9-]{1,160})$/) || [])[1];
+      if (id && req.method === 'POST') {
+        if (level !== 'full') return sendJSON(res, 403, { error: 'Only Admin changes the partner.' });
+        let body;
+        try { body = await readJSONBody(req, 4096); } catch (e) { return sendJSON(res, 400, { error: 'Could not read the request.' }); }
+        const out = applyThrough.choose(id, body.partner, req.user.label);
+        if (out.error) return sendJSON(res, 400, { error: out.error });
+        if (out.from !== out.entry.partner) activity.record(req, req.user, 'Edited partners', { app: 'Apply through', changes: [`${out.entry.name}: apply through ${out.entry.partner} (was ${out.from})`] });
+        return sendJSON(res, 200, out.entry);
+      }
+      return sendJSON(res, 404, { error: 'Not found' });
+    }
     if (urlPath === '/api/dashboard' && req.method === 'GET') {
       if (!isAdmin(req.user) && !isManager(req.user)) return sendJSON(res, 403, { error: 'The dashboard is for Admin and the Manager.' });
       if (!current) return sendJSON(res, 500, { error: 'Could not read the data file' });

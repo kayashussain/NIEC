@@ -5,7 +5,8 @@
 //   Application and Mock Team Partner Universities, B2B Partners and Agents without the commission: no slabs, payment terms,
 //                             commission lists, agreement files or notes.
 //   B2B Partners, set up      the Application Team also sets B2B partners up (the owner, 15 Nov 2026): it sees the whole list with the
-//                             names on the sheet that are not set up yet, presses Set up or Not a partner and adds a new partner;
+//                             names on the sheet that are not set up yet and presses Not a partner (nothing is added by hand any
+//                             more, the owner, 20 Nov 2026);
 //                             on a partner it changes only how to submit: the portal link (or email), its username and its password.
 //                             Everything else (name, status, agreement, contacts, commission lists, notes, removing) stays Admin's.
 //   Portal logins             the username and password of a portal are for Admin and the Application Team only (the owner,
@@ -29,9 +30,10 @@ function appTeam(user) {
   return Boolean(user && user.taskTeam === 'application');
 }
 
+// Apply through (the owner, 20 Nov 2026): Admin chooses the partner; the Application Team looks; nobody else sees it.
 function partnerAccess(user) {
   const w = Teams.who(user);
-  if (w.role === 'admin') return { direct: 'full', b2b: 'full', agents: 'full' };
+  if (w.role === 'admin') return { direct: 'full', b2b: 'full', agents: 'full', applyThrough: 'full' };
   const manager = w.role === 'manager';
   const appMock = w.departments.some((d) => d === 'application' || d === 'mock');
   const branch = w.departments.some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source);
@@ -41,6 +43,7 @@ function partnerAccess(user) {
     direct: manager ? 'commission' : (appMock || branch ? 'team' : null),
     b2b: manager ? 'commission' : application ? 'setup' : team,
     agents: manager ? 'commission' : team,
+    applyThrough: application ? 'view' : null,
   };
 }
 

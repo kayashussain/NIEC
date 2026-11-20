@@ -153,7 +153,7 @@
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];
     // Follow-up and Add many students belong to All Students in a menu that has no link of their own.
-    const menuPage = ['direct', 'b2b', 'agents'].includes(header.dataset.page) ? 'partners' : header.dataset.page;
+    const menuPage = ['direct', 'b2b', 'agents', 'apply-through'].includes(header.dataset.page) ? 'partners' : header.dataset.page;
     const page = links.some(([id]) => id === menuPage) || !['bulk', 'bulkadd'].includes(menuPage) ? menuPage : 'sheet';
     header.querySelector('.niec-nav').innerHTML = links
       .map(([id, href, label]) => `<a href="${href}" title="${label}"${id === page ? ' aria-current="page"' : ''}><span class="niec-ico" aria-hidden="true">${ICONS[id] || ''}</span><span class="niec-lbl">${label}</span></a>`).join('')

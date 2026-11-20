@@ -394,28 +394,15 @@
     window.scrollTo({ top: 0 });
   }
 
-  if (BACKUP) $('addForm').hidden = true;
-  // Everyone but Admin looks only: no Add box, and the heading says so.
+  // Everyone but Admin looks only, and the heading says so. Universities are not added by hand (the owner, 20 Nov 2026).
   async function setLevel() {
     if (BACKUP) return;
     try { level = (await api('/api/partner-access')).direct || 'team'; } catch (e) { level = 'team'; }
     if (!viewer()) { $('adminOnly').hidden = true; return; } // other accounts now look at this page too, so it is no longer "Admin only"
-    $('addForm').hidden = true;
     $('adminOnly').textContent = 'View only';
     document.querySelector('.pu-intro').textContent = level === 'commission'
       ? 'Where to apply, contacts, agreements and commission. View only; Admin edits.'
       : 'Where to apply, campuses, contacts and agreements. View only; Admin edits.';
   }
-  $('addForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      const made = await api('/api/direct', { name: $('addName').value });
-      $('addName').value = '';
-      say('addMsg', '');
-      await loadList();
-      openEditor(made.id);
-    } catch (err) { say('addMsg', err.message, true); }
-  });
-
   setLevel().then(loadList);
 })();

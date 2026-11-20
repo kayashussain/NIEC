@@ -1857,12 +1857,7 @@ select option { color: #1d1d1f; }
 }
 @media (prefers-reduced-motion: reduce) { .td-menu, .td-inbox, .td-task.is-flash { animation: none; } }
 
-/* 🔴 CSS CHANGED (2026-11-15): B2B Partners and Agents, "Set up all" (new) | from: each name from the sheet had to be set up one by one with its own "Set up" button | to: above the cards, a soft blue rounded panel across the full width: "N partners named on the sheet are not set up yet" in semibold, a grey line under it, and a blue "Set up all N" pill at the right (under the words on a phone) */
-.bp-setup-all { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 16px 20px; border-radius: 16px; background: #eef4fd; }
-.bp-setup-all > div { flex: 1 1 320px; min-width: 0; }
-.bp-setup-all b { display: block; color: #1d1d1f; font-size: 15.5px; font-weight: 600; }
-.bp-setup-all span { display: block; margin-top: 2px; color: #515154; font-size: 14px; }
-.bp-setup-all .btn { flex: none; }
+/* 🔴 CSS CHANGED (2026-11-20): B2B Partners and Agents, "Set up all" removed | from: a soft blue band with "N not set up yet" and a blue "Set up all" button above the cards | to: no band (nothing is added by hand any more) */
 
 /* 🔴 CSS CHANGED (2026-11-15): an edited task | from: a changed task looked like it was always so | to: a small grey "Edited" after the date, with who changed it and when on hover */
 .td-route .td-edited { color: #66666b; font-style: normal; }
@@ -3487,11 +3482,7 @@ html body .p-tl-page .p-tasks .tk-compose textarea.tk-input { background: transp
 html body .bp-page .p-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px 28px; flex-wrap: wrap; margin-bottom: 26px; }
 html body .bp-page .p-head h1 { margin: 0 0 6px; }
 html body .bp-page .p-head > div > p { margin: 0; color: #5f5f64; font-size: 16px; }
-.pt-add { display: flex; align-items: center; gap: 0; padding: 4px; border-radius: 999px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 6px 18px -12px rgba(0, 0, 0, .25); transition: box-shadow .2s; }
-.pt-add:focus-within { box-shadow: 0 0 0 2px #0071e3, 0 6px 18px -12px rgba(0, 113, 227, .45); }
-.pt-add[hidden] { display: none; }
-html body .pt-add input { width: 300px; max-width: 100%; height: 42px; padding: 0 14px 0 18px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; outline: none; color: #1d1d1f; font: 400 15.5px var(--font); }
-html body .pt-add .btn { min-height: 42px; padding: 0 20px; border-radius: 999px; white-space: nowrap; }
+/* 🔴 CSS CHANGED (2026-11-20): the "name + Add" box on Universities, B2B partners and Agents removed | from: a white rounded pill with a name box and a blue "+ Add" button at the top right | to: nothing there (the owner: no adding by hand) */
 html body .bp-page .bp-band { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 0 0 22px; padding: 0; border: 0 !important; background: transparent; box-shadow: none; overflow: visible; }
 html body .bp-page .bp-band > div { position: relative; padding: 20px 22px 18px; border: 0; border-radius: 18px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 8px 24px -18px rgba(0, 0, 0, .3); overflow: hidden; }
 html body .bp-page .bp-band > div::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #0071e3, #5ac8fa); }
@@ -3529,9 +3520,7 @@ html body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.bt
 html body .bp-page .bp-empty { padding: 56px 24px; border: 0; border-radius: 22px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); font-size: 16px; }
 @media (max-width: 700px) {
   html body .bp-page .p-head { align-items: stretch; }
-  /* 🔴 CSS CHANGED (2026-11-18): the 'name + Add' box on Universities, B2B partners and Agents on a phone (a bug fix) | from: the Add button dropped under the name box inside a round pill, which looked broken | to: name box and Add button stay on one row inside the pill */
-  .pt-add { width: 100%; flex-wrap: nowrap; }
-  html body .pt-add input { flex: 1 1 auto; width: auto; min-width: 0; }
+  /* 🔴 CSS CHANGED (2026-11-20): the phone rules of the removed 'name + Add' box removed | from: the box full width on a phone | to: no box */
   html body .bp-page .bp-grid { grid-template-columns: minmax(0, 1fr); }
   html body .bp-page .bp-band { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   html body .bp-page .bp-band > div { padding: 16px; border: 0; }

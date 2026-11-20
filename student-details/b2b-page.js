@@ -77,20 +77,8 @@
     hiddenBtn.textContent = `${hidden.length} hidden`;
     hiddenBtn.hidden = !hidden.length || viewer();
     if (!total) { $('list').replaceChildren(el('div', 'bp-empty', `No ${WORD.one}s yet.`)); return; }
-    // Every name on the sheet not set up yet, set up at once (Admin, and the Application Team on B2B Partners): each gets its own card
-    // now and its details are filled in later.
+    // Nothing is added by hand any more, not one name and not all at once (the owner, 20 Nov 2026).
     const lead = [];
-    if (sheet.length > 1 && !viewer() && (KIND === 'b2b' || !settingUp())) {
-      const bar = el('div', 'bp-setup-all');
-      const words = el('div');
-      words.append(el('b', '', `${number(sheet.length)} not set up yet`));
-      const go = btn('btn btn-primary', `Set up all ${number(sheet.length)}`, async () => {
-        go.disabled = true;
-        try { const r = await api(`${API}/setup-all`, {}); say(`${number(r.made)} set up.`); await load(); } catch (e) { say(e.message, true); go.disabled = false; }
-      });
-      bar.append(words, go);
-      lead.push(bar);
-    }
     const items = [...shown.map((p) => ({ p })), ...shownSheet.map((x) => ({ x }))];
     const ordered = items.sort(busiest);
     $('list').replaceChildren(...lead, ...ordered.map((it) => (it.p ? card(it.p) : sheetCard(it.x))));
@@ -109,8 +97,8 @@
     });
   }
 
-  // A partner named in the University Partner column but not set up yet: set it up (to add how to submit and the commission list),
-  // or mark it as not a B2B partner (it is then hidden here and in the dropdown, and can be shown again).
+  // A partner named in the University Partner column but not set up yet: it can be marked as not a B2B partner (it is then hidden here
+  // and in the dropdown, and can be shown again). It is no longer set up from here (the owner, 20 Nov 2026: no adding by hand).
   function sheetCard(x) {
     const st = stats(x.name);
     const c = el('article', 'bp-card bp-card-new');
@@ -123,7 +111,7 @@
     foot.append(btn('btn', notWord, async () => {
       if (!(await window.NiecUI.confirm(`${x.name} is not ${KIND === 'agents' ? 'an agent' : 'a B2B partner'}? It is hidden from the list. You can show it again.`, { confirmText: notWord }))) return;
       await api(`${API}/not-partner`, { name: x.name }); say(`${x.name} hidden`); load();
-    }), btn('btn btn-primary', 'Set up →', async () => { try { const made = await api(API, { name: x.name }); await load(); open(made.id, { editSubmit: true }); } catch (e) { say(e.message, true); } }));
+    }));
     c.append(head, foot);
     return c;
   }
@@ -448,18 +436,11 @@
   }
   function closeEditor() { $('editor').hidden = true; $('editor').replaceChildren(); $('listView').hidden = false; window.scrollTo({ top: 0 }); }
 
-  // ---- add one: type the name and press Add (no dialog, no list to pick from: the owner, 17 Nov 2026) ----
-  async function addOne(e) {
-    e.preventDefault();
-    const box = $('addName');
-    try { const made = await api(API, { name: box.value }); box.value = ''; await load(); edit(made.id); } catch (err) { say(err.message, true); }
-  }
   async function load() {
     data = await api(API);
     if (!viewer()) { const c = document.querySelector('#pageTitle .p-chip'); if (c) c.hidden = true; } // others look at it too now
     if (settingUp()) $('intro').textContent = 'How to apply and who to contact.';
     if (viewer()) {
-      $('addForm').hidden = true;
       const chip = document.querySelector('#pageTitle .p-chip'); if (chip) chip.textContent = 'View only';
       $('intro').textContent = data.access === 'commission'
         ? 'How to apply, contacts and commission. View only.'
@@ -472,6 +453,5 @@
       justSaved = '';
     }
   }
-  $('addForm').addEventListener('submit', addOne);
   load().catch((e) => { $('list').replaceChildren(h('div', { class: 'p-notice bad' }, e.message)); });
 })();

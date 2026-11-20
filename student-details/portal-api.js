@@ -2525,23 +2525,7 @@ function createPortalApi({
     }));
     return [...found.values()].sort((x, y) => y.students - x.students || x.name.localeCompare(y.name));
   }
-  // Set up every name on the sheet that is not set up yet, in one go (the owner, 15 Nov 2026: "set up all of them, I will fill the
-  // details later"). Each becomes a card of its own with only its name; names marked as not a partner stay hidden.
-  function setUpAll(req, res, store, names, label) {
-    const made = [];
-    for (const name of names) {
-      const r = store.create(name, req.user.label);
-      if (!r.error) made.push(r.university.name);
-    }
-    if (made.length) activity.record(req, req.user, 'Edited partners', { app: label, changes: [`Set up ${made.length} at once: ${made.join(', ').slice(0, 400)}`] });
-    sendJSON(res, 200, { made: made.length });
-    return true;
-  }
   async function handleB2b(req, res, urlPath) {
-    if (urlPath === '/api/b2b/setup-all' && req.method === 'POST') {
-      if (partnerAccess(req.user).b2b !== 'setup' && !adminOnly(req, res, 'B2B Partners')) return true;
-      return setUpAll(req, res, b2b, sheetPartners().map((x) => x.name), 'B2B Partners');
-    }
     if (urlPath === '/api/b2b/not-partner' && req.method === 'POST') {
       // Admin, and the Application Team, who sets B2B partners up too (the owner, 15 Nov 2026).
       if (partnerAccess(req.user).b2b !== 'setup' && !adminOnly(req, res, 'B2B Partners')) return true;
@@ -2556,10 +2540,6 @@ function createPortalApi({
       return true;
     } return handlePartnerStore(req, res, urlPath, { store: b2b, prefix: 'b2b', label: 'B2B Partners', kind: 'b2b' }); }
   async function handleAgents(req, res, urlPath) {
-    if (urlPath === '/api/agents/setup-all' && req.method === 'POST') {
-      if (!adminOnly(req, res, 'Agents')) return true;
-      return setUpAll(req, res, agents, sheetAgents().map((x) => x.name), 'Agents');
-    }
     if (urlPath === '/api/agents/not-partner' && req.method === 'POST') {
       if (!adminOnly(req, res, 'Agents')) return true;
       const body = await bodyOf(req, res, 4096);

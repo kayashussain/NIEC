@@ -142,4 +142,37 @@ function tidyOfficialRep({ getWorkbook, writeWorkbook, b2b, planning, record = (
   return { changes };
 }
 
-module.exports = { tidyPartners, tidyOfficialRep, TIDY_ID, TIDY_ID2, squash };
+// The third step (the owner, 20 Nov 2026), once:
+//   "Leeds Beckett University" is a university, not a B2B partner: its B2B card is removed (kept as Ended when it has files).
+//   OIEG ("OIG") is a direct university, not a B2B partner: it is no longer in the hidden list of B2B Partners.
+//   Nisus Educational Consultancy is a new B2B partner (University of Wolverhampton is applied through it): its card is added, on an
+//   installation that works with Real Dreams, Adventus or Apply Board only, so another consultancy gets nothing added.
+// Partners are no longer added by hand on the partner pages (the owner, 20 Nov 2026), so a new partner the owner asks for is added here.
+const TIDY_ID3 = 'partners-2026-11-20';
+const NOT_B2B = ['Leeds Beckett University'];
+const NEW_B2B = ['Nisus Educational Consultancy'];
+function tidyNov20({ b2b, planning, record = () => {} }) {
+  const settings = planning.all().settings;
+  if ((settings.tidied || []).includes(TIDY_ID3)) return { skipped: true };
+  const changes = [];
+  const gone = new Set(NOT_B2B.map(squash));
+  b2b.all().filter((p) => gone.has(squash(p.name)) && p.status !== 'Ended').forEach((p) => {
+    if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'ISR tidy-up'); changes.push(`${p.name}: B2B card marked Ended (it is a university, not a B2B partner; its files are kept)`); }
+    else { b2b.remove(p.id); changes.push(`${p.name}: removed from B2B Partners (it is a university, not a B2B partner)`); }
+  });
+  const isOieg = (n) => /^(oig|oieg|oiegroup|oxfordinternational)/.test(squash(n));
+  const notPartners = (settings.notPartners || []).filter((n) => !isOieg(n));
+  if (notPartners.length !== (settings.notPartners || []).length) changes.push('OIEG is no longer in the hidden list of B2B Partners (it is a direct university)');
+  if (b2b.all().some((p) => /^(realdreams|adventus|applyboard)$/.test(squash(p.name)))) {
+    NEW_B2B.forEach((name) => {
+      if (b2b.all().some((p) => squash(p.name) === squash(name))) return;
+      const made = b2b.create(name, 'ISR tidy-up');
+      if (!made.error) changes.push(`${name}: added to B2B Partners`);
+    });
+  }
+  planning.saveSettings({ notPartners, tidied: [...(settings.tidied || []), TIDY_ID3] });
+  if (changes.length) record(changes);
+  return { changes };
+}
+
+module.exports = { tidyPartners, tidyOfficialRep, tidyNov20, TIDY_ID, TIDY_ID2, TIDY_ID3, squash };

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Apply through · ISR</title>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="stylesheet" href="header.css" />
+<link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="portal.css" />
+<link rel="stylesheet" href="theme.css" />
+<!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
+<link rel="expect" href="#isr-ready" blocking="render" />
+</head>
+<body class="p-body">
+  <header class="niec-header" data-page="apply-through"></header>
+  <main class="p-page">
+    <div class="p-head">
+      <div>
+        <h1>Apply through <span class="p-chip" id="chip" hidden>View only</span></h1>
+        <p id="intro">The universities and international colleges that two or more B2B partners offer, and the partner each one is applied through. Places with a direct route (your own agreement, OIEG or Navitas) or only one partner are not listed: there is nothing to choose.</p>
+      </div>
+      <div class="p-actions"><input id="q" class="p-input" type="search" placeholder="Find a university" aria-label="Find a university" /></div>
+    </div>
+    <div class="p-tabs" role="tablist" id="tabs">
+      <button type="button" role="tab" data-type="university" aria-selected="true">Universities <span class="p-count" id="nUni"></span></button>
+      <button type="button" role="tab" data-type="college" aria-selected="false">International colleges <span class="p-count" id="nCol"></span></button>
+    </div>
+    <div class="p-card">
+      <div class="p-table-wrap">
+        <table class="p-table">
+          <thead><tr><th>University or college</th><th>Offered by</th><th>Apply through</th><th>Last changed</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="4" class="p-empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="p-msg" id="msg" role="status"></p>
+    </div>
+  </main>
+<script src="session.js"></script>
+<script src="ui.js"></script>
+<script src="header.js"></script>
+<script src="partners-switch.js"></script>
+<script src="portal-ui.js"></script>
+<script src="apply-through-page.js"></script>
+<span id="isr-ready" hidden></span>
+</body>
+</html>
