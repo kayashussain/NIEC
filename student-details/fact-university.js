@@ -224,7 +224,6 @@
   function renderCourses(doc, view) {
     if (!view.courses.length) return;
     section(doc, `Courses (${view.courses.length})`, (s) => {
-      if (team() && window.ShortlistFor) s.append(window.ShortlistFor.bar());
       // A filter for a long list: "nursing" shows only those courses, every group opened (the owner, 17 Nov 2026).
       if (view.courses.length > 12) {
         const wrap = el('div', 'course-filter no-print');
@@ -244,11 +243,9 @@
         const items = view.courses.filter((c) => c.group === g);
         if (view.groups.length > 1 || g !== 'Courses') s.append(el('h3', 'course-group', `${g} (${items.length})`));
         const ul = el('ul', 'course-list');
-        const LONG = 12;
-        items.forEach((c, n) => {
+        items.forEach((c) => {
           const li = el('li');
           li.dataset.name = `${c.course} ${c.intakes.join(' ')}`.toLowerCase();
-          if (n >= LONG) { li.hidden = true; li.dataset.folded = '1'; }
           const { link, notFound } = linkOf(c.full || c.course);
           const name = el(link ? 'a' : 'span', 'course-name', c.course);
           if (link) { name.href = link; name.target = '_blank'; name.rel = 'noopener'; }
@@ -276,16 +273,10 @@
         });
         ul.dataset.group = g;
         s.append(ul);
-        if (items.length > LONG) {
-          const more = el('button', 'p-link no-print course-more', `Show all ${items.length} courses`);
-          more.type = 'button';
-          more.addEventListener('click', () => { ul.dataset.open = '1'; ul.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
-          s.append(more);
-        }
       });
     });
   }
-  // Shows only the courses with every word typed; with nothing typed, the list as it was (12 per group, then Show all).
+  // Shows only the courses with every word typed; with nothing typed, every course (no Show all: the owner, 20 Nov 2026).
   let courseQuery = '';
   function filterCourses(s, info) {
     const words = courseQuery.toLowerCase().split(/\s+/).filter(Boolean);
@@ -294,7 +285,7 @@
       let inGroup = 0;
       ul.querySelectorAll('li').forEach((li) => {
         const hit = words.every((w) => li.dataset.name.includes(w));
-        li.hidden = words.length ? !hit : li.dataset.folded === '1' && !ul.dataset.open;
+        li.hidden = words.length ? !hit : false;
         if (hit) inGroup += 1;
       });
       count += inGroup;
@@ -327,8 +318,234 @@
     try { await navigator.clipboard.writeText(summaryText(view)); window.NiecUI.toast('Summary copied. Paste it into WhatsApp or an email.', { type: 'success' }); } catch (e) { window.NiecUI.toast('Could not copy.', { type: 'error' }); }
   }
 
+
+  // ---- the partner's January 2027 page (the owner, 20 Nov 2026) ----
+  // A university or international college read from the partner it is applied through: a picture at the top with the logo, the name,
+  // where it is and the Apply button (the partner's portal); four facts (location, intake, apply through, next deadline); the video and
+  // pictures; about; one wide card per level (entry, English, fee, scholarship, more) in the order foundation, year one, undergraduate,
+  // postgraduate, pre-masters, masters by research; every January 2027 course by level, each with Shortlist, with a picture between the
+  // levels; the documents needed to apply; the deadlines; and where the details came from.
+  const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
+  function img(src, cls, alt = '') { const i = el('img', cls); i.src = src; i.alt = alt; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); }); return i; }
+  function copyBtn(value, label) {
+    const b = el('button', 'up-copy no-print', label || 'Copy');
+    b.type = 'button';
+    b.addEventListener('click', async () => { try { await navigator.clipboard.writeText(value); window.NiecUI.toast('Copied', { type: 'success' }); } catch (e) { window.NiecUI.toast('Could not copy.', { type: 'error' }); } });
+    return b;
+  }
+  function applyButton(cls) {
+    if (!applyVia) return null;
+    if (applyVia.portal) { const a = el('a', `btn btn-primary ${cls || ''}`, `Apply through ${applyVia.direct ? 'the portal' : applyVia.partner}`); a.href = applyVia.portal; a.target = '_blank'; a.rel = 'noopener'; return a; }
+    if (applyVia.email) { const a = el('a', `btn btn-primary ${cls || ''}`, `Apply by email to ${applyVia.partner}`); a.href = 'mailto:' + applyVia.email; return a; }
+    return null;
+  }
+  function renderProfile() {
+    const P0 = uni.profile;
+    const doc = el('article', 'doc up-doc');
+    const startMonth = (() => { const c = {}; P0.courses.forEach((x) => { if (x.start) c[x.start] = (c[x.start] || 0) + 1; }); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [''])[0]; })();
+    const city = P0.city || uni.city;
+
+    // the top: picture, logo, name, place, Apply
+    const hero = el('header', 'up-hero');
+    const pic = P0.banner || P0.photos[0];
+    if (pic) hero.append(img(pic, 'up-hero-img'));
+    const inner = el('div', 'up-hero-inner');
+    const id = el('div', 'up-id');
+    const logo = el('div', 'up-logo');
+    const initials = () => el('span', '', (uni.name.match(/\b[A-Z]/g) || ['U']).slice(0, 3).join(''));
+    if (P0.logo) { const l = img(P0.logo, '', `${uni.name} logo`); l.addEventListener('error', () => logo.append(initials())); logo.append(l); } else logo.append(initials());
+    const words = el('div', 'up-titles');
+    words.append(el('h1', '', uni.name));
+    const sub = el('div', 'up-sub');
+    if (has(city)) sub.append(el('span', '', city));
+    sub.append(el('span', 'up-chip', P0.type === 'college' ? 'International college' : 'University'), el('span', 'up-chip', `${P0.intake} intake`));
+    words.append(sub);
+    id.append(logo, words);
+    inner.append(id);
+    const go = applyButton('up-apply');
+    if (go) inner.append(go);
+    hero.append(inner);
+    doc.append(hero);
+
+    // four facts
+    const facts = el('section', 'up-facts');
+    const fact = (label, value, extra) => { const f = el('div', 'up-fact'); f.append(el('span', 'up-fact-label', label), el('b', '', value || 'Not given')); if (extra) f.append(extra); facts.append(f); return f; };
+    fact('Location', city);
+    fact('Current intake', P0.intake, startMonth ? el('small', '', `Most courses start ${startMonth}`) : null);
+    if (applyVia) {
+      const more = el('div', 'up-fact-more');
+      if (applyVia.portal) { const a = el('a', '', 'Open the portal'); a.href = applyVia.portal; a.target = '_blank'; a.rel = 'noopener'; more.append(a); }
+      if (applyVia.email) { more.append(el('span', '', applyVia.email), copyBtn(applyVia.email)); }
+      if (applyVia.login) {
+        if (applyVia.login.user) { const r = el('div', 'up-login'); r.append(el('span', '', `User: ${applyVia.login.user}`), copyBtn(applyVia.login.user)); more.append(r); }
+        if (applyVia.login.password) { const r = el('div', 'up-login'); r.append(el('span', '', 'Password: ••••••••'), copyBtn(applyVia.login.password, 'Copy password')); more.append(r); }
+      }
+      fact('Apply through', applyVia.direct ? `${applyVia.partner} (direct)` : applyVia.partner, more);
+    }
+    fact('Next deadline', P0.deadlines[0] ? P0.deadlines[0].replace(/^application deadline\s*[-:]\s*/i, '') : '', P0.deadlines.length > 1 ? el('small', '', 'Every date is below') : null);
+    doc.append(facts);
+
+    if (applyVia && applyVia.contacts && applyVia.contacts.length) {
+      const c = el('section', 'up-section up-contacts');
+      c.append(el('h2', '', `Contact at ${applyVia.partner}`));
+      const list = el('div', 'up-contact-list');
+      applyVia.contacts.forEach((p) => { const d = el('div', 'up-contact'); d.append(el('b', '', p.name || 'Contact')); if (p.email) { const a = el('a', '', p.email); a.href = 'mailto:' + p.email; d.append(a); } if (p.phone) d.append(el('span', '', p.phone)); list.append(d); });
+      c.append(list);
+      doc.append(c);
+    }
+
+    // video and pictures
+    const pics = P0.photos.filter((x) => x !== pic);
+    if (P0.video || pics.length) {
+      const m = el('section', 'up-media no-print');
+      if (P0.video) {
+        const f = el('iframe', 'up-video');
+        f.src = P0.video.replace('www.youtube.com', 'www.youtube-nocookie.com');
+        f.title = `${uni.name} video`; f.loading = 'lazy'; f.allow = 'accelerometer; encrypted-media; picture-in-picture'; f.allowFullscreen = true; f.referrerPolicy = 'strict-origin-when-cross-origin';
+        m.append(f);
+      }
+      if (pics.length) { const g = el('div', 'up-photos'); pics.slice(0, P0.video ? 4 : 6).forEach((x) => g.append(img(x, '', `${uni.name}`))); m.append(g); }
+      doc.append(m);
+    }
+    if (has(P0.about)) {
+      const a = el('section', 'up-section up-about');
+      a.append(el('h2', '', `About ${uni.name}`));
+      const t = el('div', 'up-about-text');
+      P0.about.split('\n').filter(Boolean).forEach((l) => t.append(el('p', '', l)));
+      a.append(t);
+      const meta = [P0.founded && `Founded ${P0.founded}`, P0.students && `${Number(P0.students).toLocaleString('en-GB')} students`, P0.international && `${Number(P0.international).toLocaleString('en-GB')} international students`].filter(Boolean);
+      if (meta.length) a.append(el('p', 'up-about-meta', meta.join(' · ')));
+      if (has(P0.website)) { const w = el('a', 'up-web', String(P0.website).replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')); w.href = /^https?:/.test(P0.website) ? P0.website : 'https://' + P0.website; w.target = '_blank'; w.rel = 'noopener'; a.append(w); }
+      doc.append(a);
+    }
+
+    // entry requirements: one wide card per level, in the owner's order
+    const levels = [...P0.levels].sort((x, y) => LEVEL_ORDER.indexOf(x.level) - LEVEL_ORDER.indexOf(y.level));
+    if (levels.length) {
+      const sec = el('section', 'up-section');
+      sec.append(el('h2', '', 'Entry requirements'));
+      levels.forEach((L) => {
+        const card = el('div', 'up-level');
+        const head = el('div', 'up-level-head');
+        const n = P0.courses.filter((c) => c.level === L.level).length;
+        head.append(el('h3', '', L.level), el('span', 'up-count', n ? `${n} course${n === 1 ? '' : 's'} in ${P0.intake}` : 'No course listed for this intake'));
+        card.append(head);
+        const grid = el('dl', 'up-level-grid');
+        [['Entry requirement', L.academic], ['English', L.english], ['Tuition fee', L.tuition], ['Scholarship', L.scholarship], ['Additional details', L.extra]].forEach(([k, v]) => {
+          const d = el('div');
+          d.append(el('dt', '', k));
+          const dd = el('dd');
+          if (has(v)) v.split('\n').filter(Boolean).forEach((line) => dd.append(el('p', '', line))); else dd.append(el('span', 'dim', 'Not given'));
+          d.append(dd);
+          grid.append(d);
+        });
+        card.append(grid);
+        sec.append(card);
+      });
+      doc.append(sec);
+    }
+
+    // the January 2027 courses, every one, by level, a picture between the levels
+    if (P0.courses.length) {
+      const sec = el('section', 'up-section up-courses');
+      const top = el('div', 'up-courses-head');
+      top.append(el('h2', '', `Courses for ${P0.intake} (${P0.courses.length})`));
+      const box = el('input', 'search no-print');
+      box.type = 'search'; box.placeholder = 'Find a course, e.g. nursing'; box.setAttribute('aria-label', 'Find a course');
+      top.append(box);
+      sec.append(top);
+      const groups = LEVEL_ORDER.filter((g) => P0.courses.some((c) => c.level === g));
+      const between = [...pics];
+      groups.forEach((g, gi) => {
+        const items = P0.courses.filter((c) => c.level === g);
+        const block = el('div', 'up-group');
+        block.append(el('h3', 'up-group-head', `${g} (${items.length})`));
+        const grid = el('div', 'up-course-grid');
+        items.forEach((c) => {
+          const card = el('div', 'up-course');
+          card.dataset.name = c.name.toLowerCase();
+          card.append(el('b', 'up-course-name', c.name));
+          const meta = [c.start && `Starts ${c.start}`, c.duration, c.fee, c.campus].filter(Boolean);
+          if (meta.length) card.append(el('span', 'up-course-meta', meta.join(' · ')));
+          if (c.deadline) card.append(el('span', 'up-course-deadline', `Apply by ${c.deadline}`));
+          if (team() && window.ShortlistFor) card.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.name, intake: P0.intake, level: g }));
+          else if (student() && window.Shortlist && window.Shortlist.isLinked()) card.append(window.Shortlist.button(uni, c.name, P0.intake));
+          grid.append(card);
+        });
+        block.append(grid);
+        sec.append(block);
+        if (gi < groups.length - 1 && between.length) sec.append(img(between.shift(), 'up-band no-print', ''));
+      });
+      const none = el('p', 'up-none', 'No course matches.');
+      none.hidden = true;
+      sec.append(none);
+      box.addEventListener('input', () => {
+        const words = box.value.toLowerCase().split(/\s+/).filter(Boolean);
+        let shown = 0;
+        sec.querySelectorAll('.up-group').forEach((b) => { let n = 0; b.querySelectorAll('.up-course').forEach((c) => { const hit = words.every((w) => c.dataset.name.includes(w)); c.hidden = !hit; if (hit) n += 1; }); b.hidden = n === 0; shown += n; });
+        sec.querySelectorAll('.up-band').forEach((x) => { x.hidden = words.length > 0; });
+        none.hidden = shown > 0;
+      });
+      doc.append(sec);
+    }
+
+    // the documents needed to apply
+    if (P0.documents.length) {
+      const sec = el('section', 'up-section');
+      sec.append(el('h2', '', 'Documents needed for the application'));
+      if (P0.documentsUsual) sec.append(el('p', 'up-note', `The usual documents for a UK application. Check ${applyVia ? applyVia.partner : 'the partner'}'s portal for anything extra.`));
+      const ul = el('ul', 'up-docs');
+      P0.documents.forEach((d) => ul.append(el('li', '', d)));
+      sec.append(ul);
+      doc.append(sec);
+    }
+    // the deadlines: the partner's, or the dates the team changed (Change dates, the only thing the team edits on a page)
+    const teamDates = (uni.intakes || []).some((i) => i.editedAt && (i.deadline || i.deadlines));
+    if (P0.deadlines.length && !teamDates) {
+      const sec = el('section', 'up-section');
+      const head = el('div', 'up-courses-head');
+      head.append(el('h2', '', `Deadlines for ${P0.intake}`));
+      if (team()) { const edit = el('button', 'btn btn-sm no-print', 'Change dates'); edit.type = 'button'; edit.addEventListener('click', editDeadlines); head.append(edit); }
+      sec.append(head);
+      const ul = el('ul', 'up-deadlines');
+      P0.deadlines.forEach((d) => ul.append(el('li', '', d)));
+      sec.append(ul);
+      doc.append(sec);
+    } else {
+      const wrap = el('div', 'up-section');
+      renderDeadlines(wrap, P.present(uni));
+      doc.append(wrap);
+    }
+    if (go) { const end = el('div', 'up-end no-print'); end.append(applyButton('')); doc.append(end); }
+    doc.append(el('p', 'up-source', `Details from ${P0.from || 'the partner'}${P0.at ? `, read on ${when(P0.at)}` : ''}. Applied through ${applyVia ? applyVia.partner : 'the chosen partner'}.`));
+    $('view').replaceChildren(doc);
+    document.title = `${uni.name} · Fact File · ISR`;
+    const bar = $('toolbar');
+    const copy = el('button', 'btn', 'Copy summary');
+    copy.type = 'button';
+    copy.addEventListener('click', () => copyProfileSummary());
+    const print = el('button', 'btn', 'Print or save as PDF');
+    print.type = 'button';
+    print.addEventListener('click', () => window.print());
+    bar.replaceChildren(copy, print);
+  }
+  // The same short summary to paste into WhatsApp or an email as on the other pages, from the partner's details.
+  async function copyProfileSummary() {
+    const P0 = uni.profile;
+    const out = [`*${uni.name}*${has(P0.city) ? ` (${P0.city})` : ''}`];
+    if (has(P0.website)) out.push(String(P0.website));
+    out.push(`${P0.intake} intake`);
+    P0.deadlines.slice(0, 3).forEach((d) => out.push(d));
+    [...P0.levels].sort((x, y) => LEVEL_ORDER.indexOf(x.level) - LEVEL_ORDER.indexOf(y.level)).forEach((L) => {
+      out.push('', `*${L.level}*`);
+      [['Tuition fee', L.tuition], ['Scholarship', L.scholarship], ['Entry', L.academic], ['English', L.english]].forEach(([k, v]) => { if (has(v)) out.push(`${k}: ${flat(v)}`); });
+    });
+    try { await navigator.clipboard.writeText(out.join('\n')); window.NiecUI.toast('Summary copied. Paste it into WhatsApp or an email.', { type: 'success' }); } catch (e) { window.NiecUI.toast('Could not copy.', { type: 'error' }); }
+  }
+
   // ---- the page ----
   function render() {
+    if (uni.profile && !BACKUP) { renderProfile(); return; }
     const view = P.present(uni);
     const doc = el('article', 'doc');
     const top = el('header', 'doc-head');

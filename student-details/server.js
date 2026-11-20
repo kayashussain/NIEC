@@ -1146,7 +1146,24 @@ const server = http.createServer(async (req, res) => {
       if (!level) return sendJSON(res, 403, { error: 'Apply through is for Admin and the Application Team.' });
       if (urlPath === '/api/apply-through/find' && req.method === 'GET') {
         const e = applyThrough.find(new URL(req.url, 'http://x').searchParams.get('name') || '');
-        return sendJSON(res, 200, { entry: e ? { name: e.name, partner: e.partner, direct: Boolean(e.direct) } : null });
+        if (!e) return sendJSON(res, 200, { entry: null });
+        // Where to apply (the owner, 20 Nov 2026: the Apply button opens the partner's portal, with its contact people): the B2B
+        // partner's card, or the Partner University's for a direct route. Only Admin and the Application Team reach this, and both
+        // may see portal logins (partner-access.js).
+        const key = (x) => String(x || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, '');
+        const card = (e.direct ? direct.all() : b2b.all()).find((c) => key(c.name) === key(e.partner) || (key(e.partner).includes('oxfordinternational') && key(c.name) === 'oieg'));
+        const where = card ? {
+          portal: card.applyPortal || '', email: card.applyEmail || '',
+          contacts: (card.contacts || []).filter((c) => c && (c.name || c.email || c.phone)).slice(0, 6).map((c) => ({ name: c.name || '', email: c.email || '', phone: c.phone || '' })),
+          ...(seesLogins(req.user) && (card.applyUser || card.applyPassword) ? { login: { user: card.applyUser || '', password: card.applyPassword || '' } } : {}),
+        } : {};
+        return sendJSON(res, 200, { entry: { name: e.name, partner: e.partner, direct: Boolean(e.direct), ...where } });
+      }
+      // Each Fact File page's partner, for the cards of the Fact File list (the owner, 20 Nov 2026).
+      if (urlPath === '/api/apply-through/map' && req.method === 'GET') {
+        const map = {};
+        facts.all().forEach((u) => { const e = applyThrough.find(u.name); if (e) map[u.id] = !e.direct ? e.partner : /oxford international/i.test(e.partner) ? 'OIEG (direct)' : /navitas/i.test(e.partner) ? 'Navitas (direct)' : 'Direct'; });
+        return sendJSON(res, 200, { map });
       }
       if (urlPath === '/api/apply-through' && req.method === 'GET') {
         const choices = applyThrough.choices();

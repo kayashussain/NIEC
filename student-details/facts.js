@@ -15,6 +15,11 @@ const SHEET = require('./fact-seed-sheet.json');
 // Pathways), read by seed-tools/build_oieg_seed.py. Added to the pages without overwriting anything (see fact-merge.js).
 const OIEG = require('./fact-seed-oieg.json');
 const { mergeEntry, newReport, unifyCourses, dedupeCourses } = require('./fact-merge');
+// Each university's page as its partner gives it for the January 2027 intake (the owner, 20 Nov 2026): logo, pictures and video, the
+// requirements per level, the January 2027 courses only, the deadlines and the documents. Read from the partner the university is
+// applied through (Real Dreams through Route2Uni, Adventus or Apply Board; the pictures and video from Apply Board's school page) by
+// seed-tools on 20 Nov 2026. Put on the matching page once per version, or a page of its own when the Fact File has none.
+const PARTNERS = require('./fact-seed-partners.json');
 
 // The hand-written pages (from each university's own fact file or flyer). The January 2027 sheet adds an intake to them.
 const HAND_DETAILS = { 'university of west london': UWL_DETAILS, 'york st john university': YSJU_DETAILS, 'bangor university': BANGOR_DETAILS };
@@ -131,7 +136,53 @@ function clean(input, old = {}) {
     // rules in numbers for the eligibility finder (eligibility.js). A save from the page keeps them as they are.
     source: input.source !== undefined ? cleanSource(input.source) : (old.source || null),
     rules: input.rules !== undefined ? cleanRules(input.rules) : (old.rules || []),
+    // The partner's page for January 2027 (fact-seed-partners.json); a save from the page keeps it as it is.
+    profile: input.profile !== undefined ? cleanProfile(input.profile) : (old.profile || null),
   };
+}
+const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
+const url = (v) => (/^https:\/\/[^\s"'<>]+$/.test(String(v || '')) ? String(v).slice(0, 600) : '');
+function cleanProfile(p) {
+  if (!p || typeof p !== 'object') return null;
+  const t = (v, max = LIMITS.short) => str(v == null ? '' : String(v), max).trim();
+  const lines = (a, n, max) => (Array.isArray(a) ? a : []).slice(0, n).map((x) => t(x, max)).filter(Boolean);
+  return {
+    type: p.type === 'college' ? 'college' : 'university',
+    from: t(p.from, 60), at: t(p.at, 20), intake: t(p.intake, 60) || 'January 2027',
+    logo: url(p.logo), banner: url(p.banner), photos: (Array.isArray(p.photos) ? p.photos : []).map(url).filter(Boolean).slice(0, 8),
+    video: /^https:\/\/www\.youtube(-nocookie)?\.com\/embed\/[\w-]{6,20}/.test(String(p.video || '')) ? url(p.video) : '',
+    about: t(p.about, 2000), website: url(p.website) || t(p.website, 300), city: t(p.city), founded: t(p.founded, 20), students: t(p.students, 20), international: t(p.international, 20),
+    deadlines: lines(p.deadlines, 14, 400),
+    levels: (Array.isArray(p.levels) ? p.levels : []).slice(0, 8).map((L) => ({
+      level: LEVEL_ORDER.includes(L && L.level) ? L.level : 'Other courses',
+      academic: t(L && L.academic, 2000), english: t(L && L.english, 2000), tuition: t(L && L.tuition, 1000), scholarship: t(L && L.scholarship, 1000), extra: t(L && L.extra, 1000),
+    })),
+    courses: (Array.isArray(p.courses) ? p.courses : []).slice(0, 1200).map((c) => ({
+      name: t(c && c.name, 300), level: LEVEL_ORDER.includes(c && c.level) ? c.level : 'Other courses', start: t(c && c.start, 40), deadline: t(c && c.deadline, 40),
+      fee: t(c && c.fee, 80), duration: t(c && c.duration, 60), campus: t(c && c.campus, 200),
+    })).filter((c) => c.name),
+    documents: lines(p.documents, 30, 300), documentsUsual: Boolean(p.documentsUsual),
+  };
+}
+// The page a partner profile belongs to: the same name (ignoring "the", "of", "university", brackets and punctuation), or a name the
+// Fact File writes differently (a university is never matched to its international college: "college" and "international" count).
+const PROFILE_ALIASES = {
+  'health sciences university': 'Health Science University', 'regent college': 'Regent College London', 'roehampton university': 'University of Roehampton',
+  'ravensbourne university': 'University of Ravensbourne', 'university of winchester': 'Winchester University', 'university of the west of scotland': 'University of West of Scotland',
+  'ulster university london, birmingham and manchester (qa)': 'Ulster University', 'northumbria university (newcastle)': 'Northumbria University',
+  'anglia ruskin university college (aruc)': 'Anglia Ruskin University College (ARU College)', 'aston university oncampus centre': 'Aston University - OnCampus (UG ICAS)',
+  'brunel university london pathway college': 'Brunel University London Pathway College (BPC)', 'international college dundee (icd), university of dundee': 'International College of Dundee (ICD)-Scotland',
+  'international college at robert gordon university (icrgu)': 'International College Robert Gordon University (ICRGU)', 'keele university international college': 'Keele University International College (KUIC)',
+  'london south bank university oncampus centre': 'London South Bank University - OnCampus (UG ICAS)', 'university of hull oncampus centre': 'University of Hull - OnCampus (UG ICAS)',
+};
+const coreName = (n) => String(n || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').split(' ').filter((w) => w && !['the', 'of', 'university', 'at'].includes(w)).join('');
+function pageFor(universities, name) {
+  const alias = PROFILE_ALIASES[String(name).toLowerCase()];
+  if (alias) { const hit = universities.find((u) => u.name.toLowerCase() === alias.toLowerCase()); if (hit) return hit; }
+  const exact = universities.find((u) => u.name.toLowerCase() === String(name).toLowerCase());
+  if (exact) return exact;
+  const key = coreName(name);
+  return key ? universities.find((u) => coreName(u.name) === key) || null : null;
 }
 // Where the page's figures come from: the Navitas product toolkit (navitas-toolkit.js), or the Route2Uni portal for a page read before it was removed (17 Nov 2026).
 function cleanSource(v) {
@@ -191,10 +242,12 @@ function glance(u) {
   glanceMemo.set(u, { day, value });
   return value;
 }
-const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: u.intakes.map((i) => i.name), updatedAt: u.updatedAt, kind: PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u) });
+const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: u.intakes.map((i) => i.name), updatedAt: u.updatedAt, kind: (u.profile && u.profile.type === 'college') || PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u),
+  // A page with the partner's January 2027 details counts only those courses, and shows the university's logo on its card.
+  ...(u.profile ? { courseCount: u.profile.courses.length, logo: u.profile.logo || '', deadline: u.profile.deadlines[0] || '', profileCity: u.profile.city || '' } : {}) });
 
 // Course lines of a page: the course list and each intake's, without the "## " sub-headings.
-const courseLines = (u) => [u.courses, ...u.intakes.map((i) => i.courses)]
+const courseLines = (u) => (u.profile ? u.profile.courses.map((c) => c.name) : [u.courses, ...u.intakes.map((i) => i.courses)])
   .join('\n').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('##') && !/^The course list is under/.test(l));
 
 // The matching courses of a page, each with its level (the "## " heading above it) and the intake it is listed under, so a course
@@ -218,6 +271,11 @@ function matchingCourses(u, words) {
       out.push({ course: l, level, intakes: intake ? [intake] : [] });
     });
   };
+  // A page with the partner's January 2027 details lists only those courses (the owner, 20 Nov 2026).
+  if (u.profile) {
+    u.profile.courses.forEach((c) => { const t = c.name.toLowerCase(); if (words.every((w) => t.includes(w)) && !seen.has(t)) { seen.add(t); out.push({ course: c.name, level: c.level, intakes: [u.profile.intake] }); } });
+    return out;
+  }
   read(u.courses, '');
   (u.intakes || []).forEach((i) => read(i.courses, i.name));
   return out;
@@ -282,6 +340,8 @@ function createFacts(dir, { now = () => new Date() } = {}) {
         starterAdded: [...STARTER_UNIVERSITIES],
         oiegApplied: true, // a new list is built from the starter details, which already hold the OIEG facts
       };
+      // Only an installation that works with these partners (it holds their universities) gets their pages (see applyProfiles).
+      applyProfiles(data);
       write(data);
     } else {
       // A university with starter details is refreshed from them only while nobody has edited its page (still
@@ -312,6 +372,7 @@ function createFacts(dir, { now = () => new Date() } = {}) {
         data.oiegApplied = true;
         changed = true;
       }
+      if (data.partnersApplied !== PARTNERS.version) { applyProfiles(data); changed = true; }
       data.universities = data.universities.map((u) => {
         if (!hasStarter(u.name) || !(isBlank(u) || !u.updatedBy)) return u;
         const fresh = { ...withStarterDetails(u), id: u.id, updatedAt: u.updatedAt, updatedBy: u.updatedBy || '' };
@@ -322,6 +383,23 @@ function createFacts(dir, { now = () => new Date() } = {}) {
       if (changed) write(data);
     }
     return data;
+  }
+
+  // The partners' January 2027 pages, once per version: each on its own page (matched by name), or a new page when there is none.
+  // Only on an installation whose Fact File already holds several of these universities, so another consultancy gets nothing added.
+  function applyProfiles(data) {
+    const entries = Object.values(PARTNERS.profiles || {});
+    const known = entries.filter((p) => pageFor(data.universities, p.name)).length;
+    if (known >= 5) {
+      entries.forEach((p) => {
+        const profile = cleanProfile(p);
+        if (!profile.courses.length && !profile.levels.length) return; // nothing for January 2027 at the partner: the page stays as it is
+        const hit = pageFor(data.universities, p.name);
+        if (hit) { hit.profile = profile; return; }
+        data.universities.push({ ...clean({ name: p.name, city: profile.city, website: profile.website, intakes: [{ name: 'January 2027' }], process: STARTER_STEPS.map((title) => ({ title })), profile }), id: newId(), updatedAt: now().toISOString(), updatedBy: '' });
+      });
+    }
+    data.partnersApplied = PARTNERS.version;
   }
 
   return {

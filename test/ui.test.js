@@ -294,7 +294,7 @@ test('screens: log in, edit, delete, search, team rules, Fact File', { timeout: 
     await page.waitForSelector('.ui-toast.success');
     assert.match(await page.evaluate(() => navigator.clipboard.readText()), /^\*.+\*[\s\S]*\S$/, 'a WhatsApp-ready summary was copied');
     assert.strictEqual(await page.locator('button:has-text("Edit"), button:has-text("Delete"), button:has-text("Submit application"), button:has-text("Find the course page")').count(), 0, 'nothing to edit but the dates');
-    await page.click('.dl-head button:has-text("Change dates")');
+    await page.click('button:has-text("Change dates")');
     await page.waitForSelector('dialog.p-dialog[open]');
     assert.match(await page.textContent('.p-dialog h2'), /Change the dates/);
     await page.click('.p-dialog button:has-text("Cancel")');

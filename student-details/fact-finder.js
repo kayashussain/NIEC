@@ -1,13 +1,15 @@
-// Shortlisting from the Fact File for a student (the owner, 17 Nov 2026). The team chooses the student once (kept while the browser tab
-// is open), then presses Shortlist beside any course: on a university's page, in the search results ("nursing" lists every matching
+// Shortlisting from the Fact File for a student (the owner, 17 Nov 2026). The team presses Shortlist beside any course; the first time,
+// it asks for which student (there is no "Choose the student first" bar any more, the owner, 20 Nov 2026), and the student is kept
+// while the browser tab is open: on a university's page, in the search results ("nursing" lists every matching
 // course of every university) and in "Find universities for a student". Nobody leaves the Fact File: a tray at the bottom of the page
-// holds the student's shortlist, numbered 1, 2, 3 in the order to apply, with
+// holds the student's name and what is shortlisted on one line, the list numbered 1, 2, 3 in the order to apply (each with a ⋯ menu:
+// Move up, Move down, Remove), and one ⋯ menu for the rest (the owner, 20 Nov 2026):
 //
 //   Share options (by email)         the student gets the courses in one email (fee, scholarship, deposit and course page by themselves)
 //   Assign to the Application Team  asks, for every course, through which partner it goes (Direct or a B2B partner) and for notes,
 //                                   then gives the Application Team one task with the numbered list
 //   Open the card                   the student card in a new tab, so the Fact File stays where it was
-//   ✕ Stop                          ends the shortlisting: the bar and the tray go away; courses not yet given to the Application
+//   Stop shortlisting (in the ⋯ menu) ends the shortlisting: the tray goes away; courses not yet given to the Application
 //                                   Team can be kept on the student card or discarded (the owner, 17 Nov 2026)
 //
 // The chosen student is kept while moving between Fact File pages, but a refresh of the page starts clean, with no student chosen
@@ -123,20 +125,6 @@
     try { const u = new URL(location.href); if (u.searchParams.has('for')) { u.searchParams.delete('for'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) { /* the address stays */ }
     studentChanged();
   }
-  const stopButton = () => h('button', { class: 'btn btn-sm', type: 'button', title: 'Stop shortlisting for this student', 'aria-label': 'Stop shortlisting for this student', onclick: () => stop() }, '✕ Stop');
-
-  // "Shortlisting for Ram Sharma · Change", or the button to choose the student (above the courses).
-  function bar() {
-    const box = el('div', 'sl-for no-print');
-    if (!state.student) {
-      box.append(el('span', 'sl-for-text', 'Choose the student first, then press Shortlist beside each course.'), h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => choose() }, 'Choose the student'));
-      return box;
-    }
-    const t = el('span', 'sl-for-text');
-    t.append('Shortlisting for ', el('b', '', state.student.name));
-    box.append(t, h('button', { class: 'btn btn-sm', type: 'button', onclick: () => choose() }, 'Change student'), stopButton());
-    return box;
-  }
 
   // Shortlist / Shortlisted beside a course. The fee, scholarship, deposit and course page are added by the server from the Fact File.
   // The button changes the moment it is pressed and the server is told behind it; if the server refuses, the button goes back.
@@ -189,29 +177,30 @@
     if (!state.student) return;
     const list = waiting();
     const sent = state.options.filter(CardFields.WITH_TEAM).length;
+    const sid = encodeURIComponent(state.student.id);
     trayBox.replaceChildren();
+    // One line: the student, what is shortlisted (the latest course), and a ⋯ menu with everything else (the owner, 20 Nov 2026).
     const head = el('div', 'sl-tray-head');
     const who = el('button', 'sl-tray-who');
     who.type = 'button';
     who.setAttribute('aria-expanded', String(state.open));
     who.append(el('span', 'p-avatar sm', root.Portal.initials(state.student.name)));
     const words = el('span', 'sl-tray-words');
-    words.append(el('b', '', state.student.name), el('small', '', list.length ? `${list.length} course${list.length === 1 ? '' : 's'} shortlisted${sent ? `, ${sent} already with the Application Team` : ''}` : (sent ? `${sent} with the Application Team. Shortlist more below.` : 'Nothing shortlisted yet. Press Shortlist beside a course.')));
+    const last = list[list.length - 1];
+    words.append(el('b', '', state.student.name), el('small', '', list.length
+      ? `${list.length} shortlisted${last ? `: ${last.course || last.university}` : ''}${list.length > 1 ? ' and more' : ''}`
+      : (sent ? `${sent} with the Application Team` : 'Nothing shortlisted yet')));
     who.append(words, el('span', `sl-tray-chev${state.open ? ' is-open' : ''}`));
     who.addEventListener('click', () => { state.open = !state.open; drawTray(); });
-    const acts = el('div', 'sl-tray-acts');
-    acts.append(
-      h('button', { class: 'btn btn-sm', type: 'button', onclick: () => choose() }, 'Change student'),
-      h('a', { class: 'btn btn-sm', href: `/student?id=${encodeURIComponent(state.student.id)}#options`, target: '_blank', rel: 'noopener' }, 'Open the card'),
-    );
-    if (list.length) {
-      acts.append(
-        h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => emailOptions(state.student, list).then((r) => { if (r) loadOptions().then(changed); }) }, 'Share options'),
-        h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => assign(state.student, list).then((r) => { if (r) { state.order = null; loadOptions().then(changed); } }) }, 'Assign to the Application Team'),
-      );
-    }
-    acts.append(stopButton());
-    head.append(who, acts);
+    const menu = root.Portal.taskMenu([
+      ['Open the student card', () => window.open(`/student?id=${sid}#options`, '_blank', 'noopener')],
+      list.length ? ['Share options with the student', () => emailOptions(state.student, list).then((r) => { if (r) loadOptions().then(changed); })] : null,
+      list.length ? ['Assign to the Application Team', () => assign(state.student, list).then((r) => { if (r) { state.order = null; loadOptions().then(changed); } })] : null,
+      ['Change student', () => choose()],
+      ['Stop shortlisting', () => stop(), true],
+    ]);
+    if (menu) { const b = menu.querySelector('button'); if (b) { b.setAttribute('aria-label', 'More for this shortlist'); b.title = 'More'; } }
+    head.append(who, menu || '');
     trayBox.append(head);
     if (state.open && list.length) {
       const ol = el('ol', 'sl-tray-list');
@@ -221,13 +210,13 @@
         t.append(el('b', '', o.course || o.university), el('span', '', [o.course ? o.university : '', o.intake, o.fee].filter(Boolean).join(' · ')));
         if (o.pending) li.classList.add('is-pending');
         const move = (d) => () => { const j = i + d; if (j < 0 || j >= state.order.length) return; [state.order[i], state.order[j]] = [state.order[j], state.order[i]]; saveOrder(); drawTray(); };
-        const tools = el('div', 'sl-tray-tools');
-        tools.append(
-          h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move up', disabled: i === 0, onclick: move(-1) }, '↑'),
-          h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Move down', disabled: i === list.length - 1, onclick: move(1) }, '↓'),
-          h('button', { class: 'btn btn-sm', type: 'button', onclick: () => toggle(o) }, 'Remove'),
-        );
-        li.append(t, tools);
+        const m = root.Portal.taskMenu([
+          i > 0 ? ['Move up', move(-1)] : null,
+          i < list.length - 1 ? ['Move down', move(1)] : null,
+          ['Remove', () => toggle(o), true],
+        ]);
+        if (m) { const b = m.querySelector('button'); if (b) { b.setAttribute('aria-label', `More for ${o.course || o.university}`); b.title = 'More'; } }
+        li.append(t, m || '');
         ol.append(li);
       });
       trayBox.append(ol);
@@ -373,7 +362,7 @@
     await loadOptions();
     if (state.student) { remember(state.student); state.order = savedOrder(); if (asked) state.open = true; }
   };
-  root.ShortlistFor = { ready, bar, button, tray, onChange: (f) => state.listeners.push(f), current: () => state.student };
+  root.ShortlistFor = { ready, button, tray, onChange: (f) => state.listeners.push(f), current: () => state.student };
   root.OptionActions = { email: emailOptions, assign };
 
   // Looks the course page up on the university's website (the server does the search); resolves to a link or ''.

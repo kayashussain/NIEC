@@ -3568,3 +3568,99 @@ html body .p-dialog .p-form.p-assign .p-goes { margin-top: 6px; color: #86868b; 
 @media (max-width: 700px) {
   body:has(#sheet) .topbar .toolbar-group:has(#undoBtn) { margin-left: 0; }
 }
+
+/* 🔴 CSS CHANGED (2026-11-20): a university's Fact File page with its partner's January 2027 details, new look | from: a plain white document (name, deadlines, one table of requirements, a long course list folded at 12 with "Show all") | to: a large picture at the top with the university's logo, name, place and a blue Apply button; four fact tiles (location, intake, apply through with the portal and login, next deadline); the video and pictures; one wide card per level with five columns (entry, English, fee, scholarship, more); every course as a small rounded card in a two-column grid by level, a wide picture between levels; a checklist of documents; the deadlines. Light grey canvas, off-white panels, near-black text, blue #0071e3 as on the rest of the site */
+html body .up-doc { padding: 0 0 28px; overflow: hidden; background: #fbfbfd; }
+.up-hero { position: relative; min-height: 300px; display: flex; align-items: flex-end; background: linear-gradient(135deg, #1d1d1f, #3a3a3c); color: #fff; }
+.up-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.up-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .05) 20%, rgba(0, 0, 0, .72) 100%); }
+.up-hero-inner { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 24px; width: 100%; padding: 28px 36px; }
+.up-id { display: flex; align-items: flex-end; gap: 18px; min-width: 0; }
+.up-logo { flex: none; display: grid; place-items: center; width: 96px; height: 96px; padding: 10px; border-radius: 22px; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .25); color: #1d1d1f; font-weight: 700; font-size: 22px; }
+.up-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.up-titles { min-width: 0; }
+html body .up-titles h1 { margin: 0; color: #fff; font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; text-wrap: balance; }
+.up-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 8px; font-size: 16px; color: rgba(255, 255, 255, .92); }
+.up-chip { padding: 3px 11px; border-radius: 999px; background: rgba(255, 255, 255, .18); backdrop-filter: blur(8px); font-size: 14px; font-weight: 600; }
+html body .up-apply { min-height: 46px; padding: 0 24px; font-size: 16px; box-shadow: 0 6px 18px rgba(0, 113, 227, .35); }
+.up-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 22px 36px 6px; }
+.up-fact { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 16px 18px; border-radius: 16px; background: #f5f5f7; }
+.up-fact-label { color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.up-fact b { color: #1d1d1f; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.up-fact small { color: #515154; font-size: 14px; }
+.up-fact-more { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; font-size: 14px; }
+.up-fact-more a { color: #0066cc; font-weight: 600; text-decoration: none; }
+.up-login { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: #3a3a3c; }
+.up-copy { min-height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 600 13px var(--font); cursor: pointer; }
+.up-copy:hover { background: #dcdce1; }
+.up-section { padding: 26px 36px 4px; }
+html body .up-section h2 { margin: 0 0 14px; color: #1d1d1f; font-size: 24px; font-weight: 700; letter-spacing: -.015em; }
+.up-contact-list { display: flex; flex-wrap: wrap; gap: 12px; }
+.up-contact { display: flex; flex-direction: column; gap: 2px; min-width: 220px; padding: 14px 16px; border-radius: 14px; background: #f5f5f7; font-size: 15px; }
+.up-contact a { color: #0066cc; text-decoration: none; }
+.up-media { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; padding: 26px 36px 4px; }
+.up-media:not(:has(.up-video)) { grid-template-columns: 1fr; }
+.up-video { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 18px; background: #000; }
+.up-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.up-media:not(:has(.up-video)) .up-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.up-photos img { width: 100%; height: 100%; min-height: 120px; max-height: 220px; object-fit: cover; border-radius: 14px; }
+.up-about-text p { margin: 0 0 10px; max-width: 75ch; color: #3a3a3c; font-size: 16.5px; line-height: 1.6; }
+.up-about-meta { margin: 4px 0 6px; color: #6e6e73; font-size: 15px; }
+.up-web { color: #0066cc; font-weight: 600; text-decoration: none; }
+.up-level { margin: 0 0 14px; padding: 18px 20px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 6px 18px -12px rgba(0, 0, 0, .18); }
+.up-level-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; margin-bottom: 12px; }
+html body .up-level-head h3 { margin: 0; color: #1d1d1f; font-size: 19px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.up-count { color: #6e6e73; font-size: 14px; }
+.up-level-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 0; }
+.up-level-grid dt { margin: 0 0 6px; color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.up-level-grid dd { margin: 0; color: #1d1d1f; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+.up-level-grid dd p { margin: 0 0 4px; }
+.up-level-grid .dim { color: #8e8e93; }
+.up-courses-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 6px; }
+html body .up-courses-head h2 { margin: 0; }
+.up-courses-head .search { width: 300px; max-width: 100%; min-height: 42px; padding: 0 16px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; font: 15px var(--font); }
+html body .up-group-head { margin: 22px 0 10px; color: #1d1d1f; font-size: 18px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.up-course-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.up-course { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 14px 16px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
+.up-course[hidden], .up-group[hidden], .up-band[hidden] { display: none; }
+.up-course-name { color: #1d1d1f; font-size: 15.5px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.up-course-meta { color: #515154; font-size: 14px; }
+.up-course-deadline { color: #b25000; font-size: 13.5px; font-weight: 600; }
+html body .up-course .sl-pick { margin: 6px 0 0; }
+.up-band { display: block; width: 100%; height: 200px; margin: 22px 0 4px; object-fit: cover; border-radius: 18px; }
+.up-none { color: #6e6e73; }
+.up-note { margin: -6px 0 12px; color: #6e6e73; font-size: 15px; }
+.up-docs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; margin: 0; padding: 0; list-style: none; }
+.up-docs li { position: relative; padding: 10px 14px 10px 40px; border-radius: 12px; background: #f5f5f7; color: #1d1d1f; font-size: 15px; }
+.up-docs li::before { content: ""; position: absolute; left: 14px; top: 13px; width: 14px; height: 14px; border-radius: 4px; border: 2px solid #0071e3; }
+.up-deadlines { margin: 0; padding: 0; list-style: none; }
+.up-deadlines li { padding: 10px 0; border-bottom: 1px solid #e5e5ea; color: #1d1d1f; font-size: 15.5px; }
+.up-deadlines li:last-child { border-bottom: 0; }
+.up-end { display: flex; justify-content: center; padding: 26px 36px 0; }
+.up-source { margin: 22px 36px 0; color: #8e8e93; font-size: 13.5px; }
+/* the shortlist tray's ⋯ menus open upwards, as the tray sits at the bottom of the screen */
+.sl-tray .td-menu { top: auto; bottom: calc(100% + 6px); }
+.sl-tray-head .td-menu-wrap { flex: none; }
+.sl-tray-list li .td-menu-wrap { flex: none; margin-left: auto; }
+@media (max-width: 900px) {
+  .up-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .up-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .up-media { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .up-hero-inner, .up-facts, .up-section, .up-media, .up-end { padding-left: 16px; padding-right: 16px; }
+  .up-source { margin-left: 16px; margin-right: 16px; }
+  .up-id { flex-direction: column; align-items: flex-start; }
+  html body .up-titles h1 { font-size: 26px; }
+  .up-facts, .up-level-grid, .up-course-grid, .up-docs { grid-template-columns: 1fr; }
+  .up-photos, .up-media:not(:has(.up-video)) .up-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media print { .up-hero { min-height: 0; background: none; color: #000; } .up-hero-img, .up-hero::after { display: none; } html body .up-titles h1, .up-sub { color: #000; } }
+
+/* 🔴 CSS CHANGED (2026-11-20): the Fact File list cards show the university's logo, who it is applied through and its next deadline | from: a small grey circle with the initials, the name, city and intake chips | to: the logo in a white rounded square (52px) where the partner gives one (else the initials as before), a line "Apply through Adventus" in a soft grey pill (Admin and the Application Team only), and the January 2027 deadline in amber when the page has one */
+html body .uni-mono.has-logo { width: 52px; height: 52px; padding: 6px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 4px 12px -6px rgba(0, 0, 0, .2); }
+html body .uni-card:hover .uni-mono.has-logo { background: #fff; }
+.uni-mono.has-logo img { width: 100%; height: 100%; object-fit: contain; }
+.uc-via { display: inline-flex; align-items: center; gap: 6px; width: fit-content; margin-top: 8px; padding: 4px 12px; border-radius: 999px; background: #f0f0f3; color: #515154; font-size: 13.5px; }
+.uc-via b { color: #1d1d1f; font-weight: 600; }
+.uc-deadline { margin-top: 8px; color: #b25000; font-size: 14px; font-weight: 600; }

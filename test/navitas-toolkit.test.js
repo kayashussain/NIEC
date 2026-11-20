@@ -102,7 +102,8 @@ test('each UK college gets its own Fact File page, the closed and non-UK ones no
   const names = facts.all().map((u) => u.name);
   assert.ok(names.includes('Testford University International College (TUIC)'));
   assert.ok(names.includes('Sampleton University Pathway College (SPC)'));
-  assert.ok(!names.some((n) => /manchester metropolitan|example international/i.test(n)));
+  // (a partner page of 20 Nov 2026 may exist for a college: the toolkit itself adds none for a closed or non-UK one)
+  assert.ok(!facts.all().filter((u) => !u.profile).some((u) => /manchester metropolitan|example international/i.test(u.name)));
 
   const t = facts.all().find((u) => u.name.startsWith('Testford'));
   assert.strictEqual(t.city, 'Testford');

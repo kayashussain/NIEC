@@ -10,8 +10,11 @@ const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'niec-facts-'));
 test('the Fact File starts with a list of universities, each with the usual application steps', () => {
   const facts = createFacts(tmp());
   const list = facts.list();
-  assert.deepStrictEqual(list.map((u) => u.name), [...STARTER_UNIVERSITIES].sort((a, b) => a.localeCompare(b)));
-  const uni = facts.get(list[0].id);
+  // Every starting university is there; the partners' January 2027 pages add the universities the Fact File had no page for (20 Nov 2026).
+  const names = list.map((u) => u.name);
+  STARTER_UNIVERSITIES.forEach((n) => assert.ok(names.includes(n), n));
+  assert.ok(list.filter((u) => !STARTER_UNIVERSITIES.includes(u.name)).every((u) => facts.get(u.id).profile), 'every other page is a partner page');
+  const uni = facts.get(list.find((u) => STARTER_UNIVERSITIES.includes(u.name)).id);
   assert.deepStrictEqual(uni.process.slice(0, 3).map((s) => s.title), ['Application submitted', 'Offer letter received', 'Pre-CAS interview']);
 });
 
@@ -133,8 +136,9 @@ test('York St John University comes with its MRes February 2027 details, and is 
   assert.ok(added);
   assert.ok(!facts.remove(added.id).error);
   assert.ok(!createFacts(dir).list().some((u) => u.name === 'York St John University'));
-  // the university of York is a different place and is untouched
-  assert.ok(!facts.list().some((u) => u.name === 'University of York'));
+  // the University of York is a different place: it is never filled from York St John's details (it has a page of its own from its partner)
+  const york = facts.list().find((u) => u.name === 'University of York');
+  assert.ok(!york || (facts.get(york.id).profile && !/York St John/.test(facts.get(york.id).courses)));
 });
 
 test('every university from the January 2027 sheet has its criteria table, courses and no empty names', () => {
@@ -151,6 +155,7 @@ test('every university from the January 2027 sheet has its criteria table, cours
   for (const u of list) {
     const full = facts.get(u.id);
     if (full.name === 'University of York' || full.name === 'Northumbria University') continue;
+    if (!STARTER_UNIVERSITIES.includes(full.name)) continue; // a partner page (its own test below)
     const hasCourses = [full.courses, ...full.intakes.map((i) => i.courses)].some((t) => t.includes('\n'));
     assert.ok(full.programs.length > 0 && hasCourses, `${full.name} has its table and courses`);
     assert.ok(full.programs.every((p) => p.name), `${full.name} programs are named`);
@@ -284,4 +289,36 @@ test('each card of the list says the next open deadline, how many courses, and w
 test('the Fact File list is in two parts: ARU College and The College, Swansea University are pathway colleges (the owner, 17 Nov 2026)', () => {
   for (const name of ['Anglia Ruskin University College (ARU College)', 'The College, Swansea University', 'International College Portsmouth (ICP)', 'University of Hull - OnCampus (UG ICAS)']) assert.ok(PATHWAY.test(name), name);
   for (const name of ['University College Birmingham', 'Swansea University', 'Anglia Ruskin University', 'Bath Spa University']) assert.ok(!PATHWAY.test(name), name);
+});
+
+// The partners' January 2027 pages (the owner, 20 Nov 2026): each university read from the partner it is applied through.
+test('a partner page has its January 2027 courses in the level order, its requirement cards and its documents, and a college is never a university', () => {
+  const facts = createFacts(tmp());
+  const list = facts.list();
+  const ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
+  const uel = facts.get(list.find((u) => u.name === 'University of East London').id);
+  assert.ok(uel.profile && uel.profile.courses.length > 50, 'the courses are on the page');
+  assert.ok(uel.profile.courses.every((c) => /2027/.test(c.start)), 'January 2027 courses only');
+  const levels = uel.profile.levels.map((l) => l.level);
+  assert.deepStrictEqual(levels, [...levels].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)), 'the levels in the owner\'s order');
+  assert.ok(uel.profile.documents.length > 0);
+  const greenwich = list.find((u) => u.name === 'University of Greenwich');
+  const ugic = list.find((u) => u.name === 'University of Greenwich International College (UGIC)');
+  assert.ok(greenwich && ugic && greenwich.id !== ugic.id, 'two pages');
+  const g = facts.get(greenwich.id);
+  assert.ok(g.profile.courses.every((c) => !/international college|foundation/i.test(c.name) || c.level !== 'Postgraduate'));
+  assert.ok(list.every((u) => !u.logo || /^https:\/\//.test(u.logo)), 'logos are https addresses');
+  // the course search finds a partner page's courses
+  assert.ok(facts.list('Airline and Airport Management').some((u) => u.name === 'University of East London'));
+});
+test('a partner page is put on an existing page by its name as the Fact File writes it, once per version, and kept by a save', () => {
+  const dir = tmp();
+  fs.writeFileSync(path.join(dir, 'fact-file.json'), JSON.stringify({ universities: ['Winchester University', 'University of Ravensbourne', 'Health Science University', 'University of Roehampton', 'University of East London', 'Ulster University'].map((name, i) => ({ id: `aaaaaaaaaaa${i}`, name, city: '', intakes: [], process: [], updatedAt: '2026-01-01T00:00:00.000Z', updatedBy: 'Kayas' })) }));
+  const facts = createFacts(dir);
+  const winchester = facts.get('aaaaaaaaaaa0');
+  assert.ok(winchester.profile, 'Winchester University is the University of Winchester');
+  assert.ok(facts.get('aaaaaaaaaaa1').profile && facts.get('aaaaaaaaaaa2').profile);
+  assert.ok(!facts.list().some((u) => u.name === 'University of Winchester'), 'no second page');
+  const saved = facts.update('aaaaaaaaaaa0', { ...winchester, notes: 'checked' }, 'Kayas');
+  assert.ok(saved.university.profile, 'a save keeps the partner page');
 });

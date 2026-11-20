@@ -91,6 +91,14 @@
 
   // A university of the list. While searching a course ("nursing"), the card lists every matching course with its level and intake,
   // each with Shortlist for the team, so nobody opens university after university (the owner, 17 Nov 2026).
+  // The university's logo where its partner gives one (the owner, 20 Nov 2026), else its initials.
+  function mono(u) {
+    const m = el('span', 'uni-mono' + (u.logo ? ' has-logo' : ''), u.logo ? '' : monogram(u.name));
+    if (u.logo) { const i = el('img'); i.src = u.logo; i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); m.classList.remove('has-logo'); m.textContent = monogram(u.name); }); m.append(i); }
+    return m;
+  }
+  let applyMap = {};
+  fetch('/api/apply-through/map', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && d.map) { applyMap = d.map; if (loadedOnce) render(); } }).catch(() => {});
   function card(u) {
     const courses = query && u.courses && u.courses.length ? u.courses : null;
     if (courses) return boardCard(u, courses);
@@ -99,9 +107,11 @@
     a.href = uniHref(u);
     const head = el('div', 'uc-head');
     const title = el('div', 'uc-title');
-    title.append(el('h2', '', u.name), el('div', 'city', u.city || 'Details not added yet'));
-    head.append(el('span', 'uni-mono', monogram(u.name)), title);
+    title.append(el('h2', '', u.name), el('div', 'city', u.city || u.profileCity || 'Details not added yet'));
+    head.append(mono(u), title);
     a.append(head);
+    // Who it is applied through (Admin and the Application Team only, the owner, 20 Nov 2026).
+    if (applyMap[u.id]) { const v = el('div', 'uc-via'); v.append(el('span', '', 'Apply through'), el('b', '', applyMap[u.id])); a.append(v); }
     if (u.intakes.length) {
       const chips = el('div', 'chips');
       u.intakes.forEach((n) => chips.append(el('span', 'chip', n)));
@@ -109,9 +119,10 @@
     }
     const next = nextLine(u);
     if (next) a.append(next);
+    else if (u.deadline) a.append(el('div', 'uc-deadline', u.deadline));
     const foot = el('div', 'uc-foot');
     foot.append(el('span', 'uc-count', u.courseCount ? `${u.courseCount} course${u.courseCount === 1 ? '' : 's'}` : 'Courses not listed yet'));
-    if (!u.next) foot.append(el('span', 'uc-nodate', 'No open deadline'));
+    if (!u.next && !u.deadline) foot.append(el('span', 'uc-nodate', 'No open deadline'));
     a.append(foot);
     if (u.updatedAt && (Date.now() - new Date(u.updatedAt).getTime()) > 90 * 86400000) a.append(el('div', 'updated', 'Last updated ' + when(u.updatedAt) + ', check it'));
     return a;
@@ -123,7 +134,7 @@
     name.href = uniHref(u);
     const words = el('div', 'ub-words');
     words.append(name, el('span', 'city', [u.city, u.intakes.join(', ')].filter(Boolean).join(' · ')));
-    top.append(el('span', 'uni-mono', monogram(u.name)), words);
+    top.append(mono(u), words);
     const open = el('a', 'btn btn-sm ub-open', 'Open');
     open.href = uniHref(u);
     top.append(open);
@@ -183,8 +194,7 @@
     const board = Boolean(query) && rows.some((u) => u.courses && u.courses.length);
     box.classList.toggle('is-board', board);
     const out = rows.map(card);
-    // Above the board: who the courses are shortlisted for.
-    if (board && team) { const head = window.ShortlistFor.bar(); head.classList.add('ub-for'); out.unshift(head); }
+    // No "Choose the student first" bar (the owner, 20 Nov 2026): Shortlist asks for the student, and the shortlist sits at the bottom.
     box.replaceChildren(...out);
   }
 

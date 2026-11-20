@@ -65,7 +65,6 @@
         pills.append(b);
       });
       out.append(pills);
-      if (shortlist) out.append(window.ShortlistFor.bar());
       d.results.filter((r) => filter === 'all' || r.status === filter).forEach((r) => out.append(card(r)));
       out.append(el('p', 'p-muted p-small fd-foot', `A guide from the rules on each university's Fact File page; the university decides. ${d.without ? `${d.without} universities of the Fact File have no rules in numbers yet: see their pages.` : ''}`));
     }
