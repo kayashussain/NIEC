@@ -123,7 +123,9 @@
       r.reasons.forEach((x) => why.append(el('li', x.ok === true ? 'is-ok' : x.ok === false ? 'is-bad' : 'is-ask', x.text)));
       if (r.reasons.length) c.append(why);
       const money = el('div', 'fd-money');
-      [['Tuition', r.fee], ['Scholarship', r.scholarship], ['Deposit', r.deposit]].forEach(([k, v]) => { if (v) { const m = el('div'); m.append(el('span', '', k), el('b', '', v.split('\n')[0])); money.append(m); } });
+      // Written plainly: "Gross Fee £16,020" is £16,020, "£2,000/- per year" is £2,000 per year, "upto" is "Up to".
+      const tidyMoney = (v) => String(v || '').split('\n')[0].replace(/\/-/g, '').replace(/\bupto\b/gi, 'Up to').replace(/^gross fee:?\s*/i, '').replace(/^scholarships?\s*(of|:|-)?\s*/i, '').replace(/\s{2,}/g, ' ').trim();
+      [['Tuition', r.fee], ['Scholarship', r.scholarship], ['Deposit', r.deposit]].forEach(([k, v]) => { if (v) { const m = el('div'); const t = tidyMoney(v); m.append(el('span', '', k), el('b', '', t.length > 70 ? `${t.slice(0, 68)}...` : t)); if (t.length > 70) m.title = t; money.append(m); } });
       if (money.children.length) c.append(money);
       if (r.courses.length) {
         // The three most relevant courses (those matching the subject when one is typed) are shown; "See all" opens the university's
@@ -138,12 +140,12 @@
           const words = el('div', 'fd-course-words');
           // The course's own page on the university's website, when known (course-sitemap.js).
           // Shown without the partner's code at the end ("(NN41)", "(CID921)"); the shortlist keeps the full name.
-          const shown = String(co.name).replace(/\s*\((?:CID)?[A-Z]{0,4}\d{2,4}[A-Z]?\)\s*$/, '').trim();
+          const shown = String(co.name).replace(/\s*\((?:CID)?[A-Z]{1,4}\d{1,4}[A-Z]{0,2}\)/g, '').replace(/\s{2,}/g, ' ').trim();
           words.append(co.link ? h('a', { class: 'fd-course', href: co.link, target: '_blank', rel: 'noopener' }, shown) : el('span', 'fd-course', shown));
           const chips = el('div', 'fd-chips');
           chips.append(el('span', 'fd-cal', String(co.intakes || co.intake || '').split(/,\s*/).map((x) => x.slice(0, 3)).join(', ') + ' 2027'));
           if (co.campus) chips.append(el('span', 'fd-pin', co.campus));
-          if (co.fee) chips.append(el('span', 'fd-fee', co.fee));
+          if (co.fee) chips.append(el('span', 'fd-fee', String(co.fee).replace(/^gross fee:?\s*/i, '').replace(/\/-/g, '')));
           words.append(chips);
           li.append(words);
           if (onAdd) {

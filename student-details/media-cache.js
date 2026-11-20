@@ -11,6 +11,8 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const dns = require('dns');
+const net = require('net');
 
 const MAX = 8 * 1024 * 1024; // larger than any sensible web picture
 const KEEP_MAX = 3 * 1024 * 1024; // a larger picture is not kept (the browser is sent to its own address), so the folder stays small
@@ -20,6 +22,20 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif', 'image/svg+xml': 'svg' };
 // An address on our own network or this computer is never fetched (a page's picture can only be on the public internet).
 const PRIVATE = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|\[?::1\]?$|\[?f[cd][0-9a-f]{2}:|\[?fe80:)/i;
+// Every address a name points to is checked too (a public name can point inside, and an address can be written many ways).
+const BLOCK = new net.BlockList();
+[['10.0.0.0', 8], ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.168.0.0', 16], ['100.64.0.0', 10], ['0.0.0.0', 8], ['224.0.0.0', 4], ['240.0.0.0', 4]].forEach(([a, n]) => BLOCK.addSubnet(a, n, 'ipv4'));
+[['::1', 128], ['::', 128], ['fc00::', 7], ['fe80::', 10]].forEach(([a, n]) => BLOCK.addSubnet(a, n, 'ipv6'));
+async function reachable(u, lookup) {
+  let host;
+  try { host = new URL(u).hostname.replace(/^\[|\]$/g, ''); } catch (e) { return false; }
+  if (/^\d+$/.test(host) || /^0x/i.test(host) || /(^|\.)0x[0-9a-f]+/i.test(host)) return false; // 2130706433, 0x7f.0.0.1
+  let addrs;
+  try { addrs = net.isIP(host) ? [{ address: host, family: net.isIP(host) }] : await lookup(host, { all: true, verbatim: true }); } catch (e) { return false; }
+  // An IPv4 address written inside IPv6 (::ffff:127.0.0.1) is checked as the IPv4 address it is.
+  const plain = (a) => { const m = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(a.address); return m ? { address: m[1], family: 4 } : a; };
+  return addrs.length > 0 && addrs.map(plain).every((a) => !BLOCK.check(a.address, a.family === 6 ? 'ipv6' : 'ipv4'));
+}
 const publicHttps = (u) => { try { const x = new URL(u); return x.protocol === 'https:' && !PRIVATE.test(x.hostname) && !/\.(local|internal|lan)$/i.test(x.hostname); } catch (e) { return false; } };
 
 // The width and height written in a picture's first bytes (PNG, JPEG, GIF, WebP), or null.
@@ -47,7 +63,7 @@ function sizeOf(buf) {
 }
 
 // `allowed()`: the picture addresses on the university pages (a Set). `fetchImpl`: fetch, replaced in tests.
-function createMediaCache({ dir, allowed, fetchImpl = (...a) => fetch(...a), now = () => Date.now() }) {
+function createMediaCache({ dir, allowed, fetchImpl = (...a) => fetch(...a), now = () => Date.now(), lookup = dns.promises.lookup }) {
   const folder = path.join(dir, 'media-cache');
   const keyOf = (u) => crypto.createHash('sha1').update(u).digest('hex').slice(0, 32);
   const busy = new Map();
@@ -66,7 +82,7 @@ function createMediaCache({ dir, allowed, fetchImpl = (...a) => fetch(...a), now
       // Redirects are followed by hand, each new address checked again (never to our own network).
       let at = u; let res = null;
       for (let hop = 0; hop < 4; hop += 1) {
-        if (!publicHttps(at)) return fail('not a public address');
+        if (!publicHttps(at) || !(await reachable(at, lookup))) return fail('not a public address');
         res = await fetchImpl(at, { headers: { 'User-Agent': UA, Accept: 'image/avif,image/webp,image/png,image/jpeg,image/svg+xml,image/*' }, redirect: 'manual', signal: ctrl.signal });
         if (res.status >= 300 && res.status < 400 && res.headers.get('location')) { at = new URL(res.headers.get('location'), at).href; continue; }
         break;
@@ -92,7 +108,9 @@ function createMediaCache({ dir, allowed, fetchImpl = (...a) => fetch(...a), now
   function prune() {
     let names = [];
     try { names = fs.readdirSync(folder); } catch (e) { return 0; }
-    const keep = new Set([...allowed()].map(keyOf));
+    const list = [...allowed()];
+    if (!list.length) return 0; // the pages could not be read: keep everything rather than empty the folder
+    const keep = new Set(list.map(keyOf));
     let removed = 0;
     names.forEach((name) => { const key = name.replace(/\.(json|fail)$/, ''); if (!keep.has(key)) { try { fs.unlinkSync(path.join(folder, name)); removed += 1; } catch (e) { /* already gone */ } } });
     return removed;

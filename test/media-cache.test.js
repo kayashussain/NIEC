@@ -24,7 +24,7 @@ test('a picture of a university page is fetched once, kept, and served from the 
   let calls = 0;
   const body = png(800, 450);
   const fetchImpl = async () => { calls += 1; return new Response(body, { status: 200, headers: { 'content-type': 'image/png' } }); };
-  const m = createMediaCache({ dir, allowed: () => new Set([PIC]), fetchImpl });
+  const m = createMediaCache({ dir, allowed: () => new Set([PIC]), fetchImpl, lookup: async () => [{ address: '93.184.216.34', family: 4 }] });
   const a = await m.get(PIC);
   const b = await m.get(PIC);
   assert.strictEqual(a.type, 'image/png');
@@ -38,7 +38,7 @@ test('only the pictures written on the pages are fetched, and a page, a tiny ima
   const answers = { [PIC]: () => new Response('<html>blocked</html>', { status: 200, headers: { 'content-type': 'text/html' } }), 'https://pictures.example.org/dot.png': () => new Response(png(1, 1), { status: 200, headers: { 'content-type': 'image/png' } }) };
   const asked = [];
   const fetchImpl = async (u) => { asked.push(u); return answers[u](); };
-  const m = createMediaCache({ dir, allowed: () => new Set(Object.keys(answers)), fetchImpl });
+  const m = createMediaCache({ dir, allowed: () => new Set(Object.keys(answers)), fetchImpl, lookup: async () => [{ address: '93.184.216.34', family: 4 }] });
   assert.strictEqual(await m.get('https://elsewhere.example.org/secret.png'), null);
   assert.ok(!asked.includes('https://elsewhere.example.org/secret.png'), 'an address not on a page is never fetched');
   assert.strictEqual(await m.get(PIC), null, 'a web page instead of a picture');
@@ -62,7 +62,7 @@ test('a redirect to our own network is refused, an SVG logo is served as a pictu
   };
   const asked = [];
   let pages = new Set(Object.keys(answers));
-  const m = createMediaCache({ dir, allowed: () => pages, fetchImpl: async (u) => { asked.push(u); return answers[u](); } });
+  const m = createMediaCache({ dir, allowed: () => pages, fetchImpl: async (u) => { asked.push(u); return answers[u](); }, lookup: async () => [{ address: '93.184.216.34', family: 4 }] });
   assert.strictEqual(await m.get(PIC), null);
   assert.ok(!asked.includes('https://192.168.1.10/inside.png'), 'never fetched');
   const res = { head: null, body: null, writeHead(code, h) { this.head = { code, ...h }; }, end(b) { this.body = b; } };
@@ -72,4 +72,20 @@ test('a redirect to our own network is refused, an SVG logo is served as a pictu
   pages = new Set([PIC]);
   await new Promise((r) => setTimeout(r, 5));
   assert.ok(m.prune() >= 2, 'the logo and its note are taken away once no page uses it');
+});
+
+test('a public name that points inside our network, or an address written as a number, is never fetched; an empty page list prunes nothing', async () => {
+  const dir = tmp();
+  const INSIDE = 'https://looks-public.example.org/a.png';
+  const NUM = 'https://2130706433/a.png';
+  const asked = [];
+  const m = createMediaCache({ dir, allowed: () => new Set([INSIDE, NUM]), fetchImpl: async (u) => { asked.push(u); return new Response(png(400, 300), { status: 200, headers: { 'content-type': 'image/png' } }); }, lookup: async () => [{ address: '10.0.0.5', family: 4 }] });
+  assert.strictEqual(await m.get(INSIDE), null);
+  assert.strictEqual(await m.get(NUM), null);
+  assert.deepStrictEqual(asked, []);
+  fs.mkdirSync(path.join(dir, 'media-cache'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'media-cache', 'abc'), 'x');
+  const empty = createMediaCache({ dir, allowed: () => new Set() });
+  assert.strictEqual(empty.prune(), 0);
+  assert.ok(fs.existsSync(path.join(dir, 'media-cache', 'abc')), 'kept when the pages could not be read');
 });
