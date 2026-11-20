@@ -220,6 +220,8 @@
       add('meta', { name: 'apple-mobile-web-app-title', content: 'ISR' });
     }
     if (!window.PhoneLink && !document.querySelector('script[src^="/phone-link.js"]')) add('script', { src: '/phone-link.js', defer: '' });
+    // The motion kit (motion.js, DESIGN.md): every page moves the same way.
+    if (!window.Motion && !document.querySelector('script[src^="/motion.js"]')) add('script', { src: '/motion.js', defer: '' });
   })();
 
   // The menu is drawn at once from what this browser tab remembers from the last page (who is logged in), so moving from page

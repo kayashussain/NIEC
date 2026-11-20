@@ -486,6 +486,13 @@
 
   // The day at a glance, at the top: how many tasks are open, how many have waited 3 days or more and how many students wait for a
   // next step. "All caught up" when nothing is open.
+  // How many of today's tasks (the person's own, or the whole team's for Admin and the Manager) were finished today, office time.
+  function doneTodayOf(tasks) {
+    const mine = tasks.canAssign ? tasks.tasks : tasks.tasks.filter((x) => x.forMe);
+    const day = (iso) => { try { return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kathmandu' }); } catch (e) { return String(iso || '').slice(0, 10); } };
+    return mine.filter((x) => x.done && x.doneAt && day(x.doneAt) === tasks.today).length;
+  }
+  let firstDraw = true; // the first drawing of the page animates; the quiet refresh every minute does not
   function pulse(tasks, sections, waitingCount) {
     // Admin and the Manager see the whole team's work here, not only their own tasks. What is done is in the students' notes, so
     // nothing here counts it (the owner, 15 Nov 2026).
@@ -497,11 +504,19 @@
     const slow = openList.filter((x) => Date.now() - Date.parse(x.at) >= 3 * 86400000).length;
     const waiting = typeof waitingCount === 'number' ? waitingCount : sections.reduce((n, x) => n + x.count, 0);
     const box = el('section', 'td-pulse');
-    const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); x.append(el('b', '', String(n)), el('span', '', label)); return x; };
+    // The numbers count up as the day is shown (motion.js; the final number is always exact).
+    const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); const b = el('b', '', String(n)); x.append(b, el('span', '', label)); if (window.Motion && firstDraw) window.Motion.countUp(b, n); return x; };
+    // Today's progress as a ring that fills (the owner, 20 Nov 2026: work that feels like a game): what was finished today out of
+    // what was there today. A finished task is still not listed here, only counted.
+    const doneToday = doneTodayOf(tasks);
+    const ringBox = el('div', 'td-ring');
+    if (window.Motion) ringBox.append(window.Motion.ring(doneToday, doneToday + open, { size: 104, stroke: 10, label: doneToday + open ? 'done today' : 'nothing due' }));
     const words = el('div', 'td-pulse-words');
     words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} ${tasks.canAssign ? 'open across the teams' : 'for today'}` : 'All caught up'));
     if (upcoming) words.append(el('p', '', `${upcoming} more on later days`));
-    box.append(words, stat(slow, 'waiting 3+ days', slow ? 'warn' : ''), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
+    if (!open && doneToday) words.append(el('p', 'td-cheer', 'Everything for today is done. Well done!'));
+    box.append(...(window.Motion ? [ringBox] : []), words, stat(slow, 'waiting 3+ days', slow ? 'warn' : ''), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
+    box.classList.toggle('has-ring', Boolean(window.Motion));
     return box;
   }
 
@@ -513,7 +528,9 @@
     const page = el('div', 'td-page');
     const head = el('header', 'td-hello');
     const first = String(d.name || '').split(/\s+/)[0] || '';
-    head.append(el('span', 'td-kicker', d.title), el('h1', '', `${greeting()}${first ? ', ' + first : ''}`),
+    const hi = el('h1', '', `${greeting()}${first ? ', ' : ''}`);
+    if (first) hi.append(el('span', 'td-name', first));
+    head.append(el('span', 'td-kicker', d.title), hi,
       el('p', '', new Date(d.today + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })));
     const slot = el('div');
     const top = el('div');
@@ -552,13 +569,31 @@
       drawPop();
       const own = ownTeamCard(tasks);
       page.classList.toggle('is-board', Boolean(tasks.canAssign));
+      const doneNow = doneTodayOf(tasks);
+      const openNow = (tasks.canAssign ? tasks.tasks : tasks.tasks.filter((x) => x.forMe)).filter((x) => !x.done && !(x.doOn && tasks.today && x.doOn > tasks.today)).length;
       top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections, d.waiting));
       slot.replaceChildren(tasksPanel(tasks, refresh));
+      if (window.Motion) {
+        if (firstDraw) { window.Motion.reveal(slot, '.td-list > *, .tb-col'); }
+        // A task finished since the last look: a burst of confetti from the ring; the last one of the day: a big one, once a day.
+        if (lastDone !== null && doneNow > lastDone) {
+          const r = top.querySelector('.td-ring');
+          const at = r ? r.getBoundingClientRect() : { left: innerWidth / 2, top: 140, width: 0, height: 0 };
+          const key = `isrAllDone:${tasks.today}`;
+          let shown = false; try { shown = localStorage.getItem(key) === '1'; } catch (e) { /* this time only */ }
+          if (!openNow && !shown) { window.Motion.celebrate(innerWidth / 2, innerHeight / 3, true); try { localStorage.setItem(key, '1'); } catch (e) { /* fine */ } }
+          else window.Motion.celebrate(at.left + at.width / 2, at.top + at.height / 2);
+        }
+      }
+      lastDone = doneNow;
+      firstDraw = false;
     };
+    let lastDone = null;
     refresh();
     // The day at a glance, then the tasks, then Needs attention, for everyone (the owner, 15 Nov 2026).
     page.append(head, top, slot, attention(d.sections));
     view.replaceChildren(page);
+    if (window.Motion) window.Motion.reveal(page, '.td-attn-row');
 
     // A student's name opens their card over Today (card-drawer.js), with ‹ › to go through every student on the page in order, so
     // nobody leaves Today and comes back (the owner, 17 Nov 2026: less work). Closing it brings the tasks up to date. A Ctrl or
