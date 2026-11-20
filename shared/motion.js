@@ -111,7 +111,7 @@
   }
 
   // ---- the light that follows the mouse over a card ----
-  const GLOW = '.p-card, .td-tasks, .td-stat, .td-pulse, .uc-card, .up-course, .up-level, .up-fact, .fd-uni, .tb-tile, .td-row, .p-task, .sc-hero';
+  const GLOW = '.p-card, .td-tasks, .td-stat, .td-pulse, .uc-card, .up-course, .up-level, .up-fact, .fd-uni, .tb-tile, .td-row, .p-task, .sc-hero, .sc-fact, .sc-reach-btn, .sc-tl-body';
   document.addEventListener('pointermove', (e) => {
     if (reduced()) return;
     const card = e.target.closest && e.target.closest(GLOW);

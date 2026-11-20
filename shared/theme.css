@@ -4040,10 +4040,6 @@ html body .td-pulse .td-stat:hover { transform: translateY(-3px) scale(1.03); }
 /* the stage glow drifts very slowly */
 #view .sc-hero::before { animation: sc-drift 18s ease-in-out infinite alternate; }
 @keyframes sc-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(4%, 6px, 0) scale(1.04); } }
-/* a soft light that follows the mouse */
-#view .sc-hero::after, .sc-fact::after, .sc-reach-btn::after, .sc-tl-body::after, .sc-source::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(0, 113, 227, .09), transparent 65%); opacity: 0; transition: opacity .25s; pointer-events: none; }
-#view .sc-hero::after { background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, .55), transparent 60%); }
-#view .sc-hero:hover::after, .sc-fact:hover::after, .sc-reach-btn:hover::after, .sc-tl-body:hover::after, .sc-source:hover::after { opacity: 1; }
 .sc-fact, .sc-reach-btn, .sc-tl-body, .sc-source { position: relative; }
 .sc-fact:hover { transform: translateY(-2px); }
 .sc-fact-ico { transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
@@ -4074,10 +4070,6 @@ html body .td-pulse .td-stat:hover { transform: translateY(-3px) scale(1.03); }
 @keyframes sc-draw { to { stroke-dashoffset: 0; } }
 /* a checked detail flies away */
 .sc-checks li.is-leaving { opacity: 0; transform: translateX(60px) scale(.96); transition: opacity .35s ease, transform .35s cubic-bezier(.5, 0, .75, 0); }
-/* confetti for a milestone */
-.sc-confetti { position: fixed; inset: 0; z-index: 10050; overflow: hidden; pointer-events: none; }
-.sc-confetti i { position: absolute; top: -20px; width: 9px; height: 14px; border-radius: 2px; animation: sc-fall 2.4s cubic-bezier(.25, .6, .45, 1) both; }
-@keyframes sc-fall { 0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0); } 85% { opacity: 1; } 100% { opacity: 0; transform: translate3d(var(--x), 105vh, 0) rotate(var(--r)); } }
 /* Timeline entries arrive one after another; later ones rise in when scrolled to */
 .sc-tl-item { animation-delay: calc(var(--i, 0) * 45ms); }
 .sc-tl-item.sc-later { opacity: 0; transform: translateY(14px); animation: none; transition: opacity .45s var(--ease, ease), transform .45s var(--ease, ease); }
@@ -4181,7 +4173,6 @@ body.p-embed #view { padding-bottom: 90px; }
 @media (prefers-reduced-motion: reduce) { #view.sc-entering *, .sc-tl-days.is-anim .sc-tl-item, #view .sc-steps li.is-now .sc-step-dot { animation: none !important; } }
 
 /* 🔴 CSS CHANGED (2026-11-20): the student card, second review round | from: a white light over the main card that washed out the words under the mouse; the frosted bar cutting a name short in the half card; the task's Post button blue even when there was nothing to post; the Assign tags wrapping "Other" onto its own line; a keycap row 6px out of line; the task tick and its ⋯ button and the update box under 44px; the Timeline card hidden until scrolled to; the half card's "3 of 116" pill over the card's words | to: no white light over the main card (the soft blue light on the tiles, buttons and source stays, under the words' strength); the name in the frosted bar shows in full up to 32 letters; Post grey with grey words until something is typed; the six tags on one line (14px apart side padding, 6px gaps); keycaps in a column wide enough for "Ctrl K"; 44px touch areas on the tick and ⋯, a 44px update box; the Timeline card always shown (its entries arrive one by one instead); the half card's page stops above the pill (the card ends in a soft fade there); a detail just filled in flashes green with a tick that draws itself; the Record offer window's University, Course and Answer across the whole width */
-#view .sc-hero::after { content: none; }
 .sc-mini b { flex-shrink: 0; max-width: 32ch; }
 .sc-mini { max-width: min(860px, calc(100vw - 24px)); }
 body:has(.p-embed-bar) #view .p-card.p-tasks .btn.btn-primary.tk-send:disabled { opacity: 1; background: #e8e8ed; color: #6e6e73; box-shadow: none; }
@@ -4201,3 +4192,24 @@ body.p-embed #view { padding-bottom: 24px; }
 .sc-fact-tick { width: 20px; height: 20px; flex: none; margin-left: auto; fill: none; stroke: #1b8a3e; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes sc-filled { 0% { box-shadow: 0 0 0 2px #34c759; background: #eefbf2; } 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); background: #fdfdfe; } }
 @media (prefers-reduced-motion: reduce) { .sc-fact.is-filled { animation: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-20): the student card, third review round, and on the shared motion kit | from: the card's own confetti and mouse light (a layer over each tile, button, bubble and the source) beside the kit's light; the chosen Assign tag growing wider (bold words and a tick) so "Other" jumped to a second line; a loading outline about 70px shorter than the card; a filled-in detail staying bright green; a new note only tinted; the source saved with no sign on it; the Record offer window's two days 120px wide between full-width fields; the frosted bar flat over the card | to: the shared kit's confetti (big burst) and one mouse light, the kit's (DESIGN.md), now also on the tiles, contact buttons and Timeline bubbles; every tag keeps a slot for its tick and the same weight, so choosing one changes no width; the outline as tall as the card (steps 104px, source 120px); a filled-in detail glows green, then settles back over 0.6 seconds and keeps a small tick at 60%; a new note slides down from the note box into place, its tint fading over 1.5 seconds; the source panel glows green with a tick that draws itself after a save; the Record offer days side by side; the frosted bar with a deeper shadow so it floats */
+.p-assign .td-tag-pick :is(.td-tag, .td-prio) { font-weight: 600; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)::before { content: "\2713"; display: inline-block; width: 14px; margin-right: 4px; font-weight: 800; opacity: 0; transform: scale(.4); transition: opacity .15s, transform .25s var(--mo-spring, cubic-bezier(.34, 1.56, .64, 1)); }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { font-weight: 600; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"]::before { content: "\2713"; margin-right: 4px; opacity: 1; transform: none; }
+.sc-skel i.sc-skel-steps { height: 104px; }
+.sc-skel i.sc-skel-src { height: 120px; }
+.sc-fact.is-filled { animation: sc-filled 1.8s ease both; }
+@keyframes sc-filled { 0%, 65% { box-shadow: 0 0 0 2px #34c759; background: #eefbf2; } 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); background: #fdfdfe; } }
+.sc-fact-tick { animation: sc-settle .6s ease 1.2s forwards; }
+@keyframes sc-settle { to { opacity: .6; } }
+.sc-tl-item.is-new { animation: sc-drop .26s cubic-bezier(.2, .8, .2, 1) both; }
+.sc-tl-item.is-new .sc-tl-body { animation: sc-glow 1.5s ease both; }
+@keyframes sc-drop { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+@keyframes sc-glow { 0%, 20% { background: #eaf3ff; } 100% { background: #f7f7f9; } }
+.sc-source.is-saved { animation: sc-saved 1.8s ease both; }
+@keyframes sc-saved { 0%, 60% { box-shadow: inset 0 0 0 2px #34c759; } 100% { box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .1); } }
+.sc-source-tick { width: 22px; height: 22px; fill: none; stroke: #1b8a3e; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; animation: sc-settle .6s ease 1.2s forwards; }
+.sc-mini { box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 14px 34px -10px rgba(0, 0, 0, .3); }
+@media (prefers-reduced-motion: reduce) { .sc-tl-item.is-new, .sc-tl-item.is-new .sc-tl-body, .sc-source.is-saved, .sc-fact-tick, .sc-source-tick, .p-assign .td-tag-pick :is(.td-tag, .td-prio)::before { animation: none; transition: none; } }

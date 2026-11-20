@@ -138,35 +138,10 @@
     }
   }
   // Confetti for a milestone (an offer, a visa): soft coloured pieces fall from the top for a moment; only transform and opacity move.
-  /* 🔴 CSS CHANGED (2026-11-20): confetti styles set here | from: none | to: each piece placed at random across the top, coloured, with its own drift, spin, delay and fall time */
-  function confetti() {
-    if (calm()) return;
-    const box = el('div', 'sc-confetti');
-    box.setAttribute('aria-hidden', 'true');
-    const colours = ['#0071e3', '#34c759', '#ff9f0a', '#af52de', '#ff375f', '#5ac8fa', '#ffd60a'];
-    for (let i = 0; i < 90; i += 1) {
-      const d = el('i');
-      d.style.left = `${Math.random() * 100}%`;
-      d.style.background = colours[i % colours.length];
-      d.style.setProperty('--x', `${(Math.random() - 0.5) * 220}px`);
-      d.style.setProperty('--r', `${(Math.random() - 0.5) * 1080}deg`);
-      d.style.animationDelay = `${Math.random() * 0.5}s`;
-      d.style.animationDuration = `${1.8 + Math.random() * 1.4}s`;
-      if (i % 3 === 0) d.style.borderRadius = '50%';
-      box.append(d);
-    }
-    document.body.append(box);
-    setTimeout(() => box.remove(), 4000);
-  }
-  // A light that follows the mouse over the tiles, buttons and the main card.
-  /* 🔴 CSS CHANGED (2026-11-20): --mx and --my set here | from: none | to: the mouse position inside the tile, read by the soft light in theme.css */
-  document.addEventListener('pointermove', (e) => {
-    const t = e.target.closest && e.target.closest('.sc-fact, .sc-reach-btn, .sc-hero, .sc-tl-body, .sc-source');
-    if (!t) return;
-    const r = t.getBoundingClientRect();
-    t.style.setProperty('--mx', `${e.clientX - r.left}px`);
-    t.style.setProperty('--my', `${e.clientY - r.top}px`);
-  }, { passive: true });
+  // Confetti for a milestone (an offer, a visa): the shared motion kit's big burst (motion.js, DESIGN.md).
+  const confetti = () => { if (window.Motion) window.Motion.celebrate(innerWidth / 2, innerHeight / 4, true); };
+  // The light that follows the mouse is the shared motion kit's (motion.js), on the tiles, contact buttons and Timeline bubbles too.
+  let sourceSaved = false; // the source was just saved: its panel glows green with a tick once
   let justFilled = new Set(); // tiles filled in by the last Edit details: they flash green once
   let animateList = false; // the Timeline entries arrive again one by one after a change of filter
   let intro = true; // the first drawing of the card: its parts arrive one after another; later redraws do not replay it
@@ -465,6 +440,7 @@
       if (!g && can()) words.append(el('span', 'sc-source-hint', 'Where did this student come from? Add it once and it is counted on the Dashboard.'));
       if (rows.children.length) words.append(rows);
       box.append(ico, words);
+      if (sourceSaved) { sourceSaved = false; box.classList.add('is-saved'); box.append(icon('check', 'sc-source-tick sc-tick')); }
       if (can()) {
         const b = h('button', { class: `btn btn-sm${g ? '' : ' btn-primary'}`, type: 'button', onclick: () => { editingOrigin = true; render(); } });
         b.append(icon(g ? 'pencil' : 'plus', 'sc-btn-ico'), g ? 'Edit' : 'Add source');
@@ -484,7 +460,7 @@
         const missing = picker.check();
         if (missing) { say(missing, true); shake(form); return; }
         await morph(btn, () => saveSource(picker.value()));
-        editingOrigin = false; render();
+        editingOrigin = false; sourceSaved = true; render();
       } catch (e) { /* shown */ }
     } }, 'Save'), h('button', { class: 'btn', type: 'button', onclick: () => { editingOrigin = false; render(); } }, 'Cancel'));
     words.append(bar);
@@ -879,14 +855,14 @@
       const now = o.skipped ? 'skipped' : o.refused ? 'refused' : o.withdrawn ? 'withdrawn' : o.offer ? (o.offerType || 'offer') : '';
       const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: now, wide: true });
       const when2 = field('Day of the answer', { kind: 'date', value: o.skipped || o.refused || o.withdrawn || o.offer || '' });
-      const reason = field('Reason', { max: 300, value: o.reason || '', placeholder: 'e.g. Grades below the entry requirement, course full' });
+      const reason = field('Reason', { wide: true, max: 300, value: o.reason || '', placeholder: 'e.g. Grades below the entry requirement, course full' });
       [applied, when2].forEach((f) => { f.input.max = todayIso; });
       const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; when2.wrap.querySelector('.p-label').textContent = r === 'skipped' ? 'Decided on' : 'Day of the answer'; };
       // Opened from Next step "Record offer": the answer is set to an offer, and the day is next.
       if (forOffer && !now) { result.input.value = 'offer'; setTimeout(() => when2.input.focus(), 50); }
       result.input.addEventListener('change', show);
       show();
-      form.append(uniF.wrap, courseF.wrap, applied.wrap, result.wrap, when2.wrap, reason.wrap);
+      form.append(uniF.wrap, courseF.wrap, result.wrap, applied.wrap, when2.wrap, reason.wrap);
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');

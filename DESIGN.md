@@ -137,6 +137,7 @@ drag with physics, or shared-element transitions.
 
 | Page | What is done | Still to come |
 |---|---|---|
+| Student card | a shimmering outline while loading; badge, name, buttons, steps and tiles arrive in about 0.7 s, only the first time; the progress line fills; the kit's mouse light on the card, tiles, contact buttons and Timeline bubbles; buttons say Saving..., then show a drawn tick (local `morph`); mistakes shake (local `shake`); a filled detail and a saved source flash green; the kit's big confetti the first time a person opens a student with an offer or a visa; a frosted mini bar after scrolling; keys N, E, A, 1, 2, ? | the skeleton and the Saving/Saved button join the kit when a second page needs them |
 | Today | the greeting shine; a progress ring of the day; numbers count up; task rows rise in; confetti for each finished task, and a big burst once a day when everything is done | |
 | Universities (university pages) | cover slideshow with pause; gallery fades; course and level cards rise in; amounts count up | moving to the shared kit |
 | Every page | the cursor light on cards, the press spring, page cross-fades | |
