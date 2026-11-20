@@ -1,5 +1,5 @@
-// The Add student window on the sheet: the student's name and contact, where the student came from (always tagged with the same
-// words, a missing platform or event can be added on the spot), and a first note. The student is added to the sheet the person is
+// The Add student window on the sheet: the student's name and contact, and where the student came from (always tagged with the same
+// words, a missing platform or event can be added on the spot). The student is added to the sheet the person is
 // on, and the rest of what is known stays on the student card.
 // window.NewStudent.open({ me, activeSheetId, defaultStage }) resolves with { id } once the student is added, or undefined.
 (function (root) {
@@ -15,37 +15,24 @@
     return dialog(where ? `New student for ${where}` : 'New student', (body, close) => {
       const inputs = {};
       const form = el('div');
-      // Many students at once (from an Excel or CSV file) is its own page: offered here, at the top of Add student.
-      const many = el('div', 'ns-many');
-      many.append(el('span', '', 'Adding many students at once?'), h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { close(); location.href = '/bulk-add'; } }, 'Add many students'));
-      body.append(many);
       const group = (title, ...fields) => { form.append(el('h3', '', title)); const g = el('div', 'p-form p-form-2'); fields.forEach((x) => g.append(x.wrap)); form.append(g); };
       const make = (key, label, opts) => { const x = field(label, opts); inputs[key] = x.input; return x; };
 
-      // The order the owner asked for (14 Nov 2026): where the student starts, then the student as in the passport, then where they
-      // came from, then remarks.
-      const rest = [];
-      if (admin) rest.push(make('stage', 'Stage', { kind: 'select', choices: lists.stages.length ? lists.stages : [defaultStage], value: defaultStage }));
-      else if (lists.departments.length > 1) rest.push(make('dept', 'Add the student for', { kind: 'select', choices: lists.departments.map((d) => [d.id, `${d.label} (starts at ${d.start})`]), value: lists.departments[0].id }));
-      if (rest.length) group('Where the student starts', ...rest);
-
-      group('The student', make('FIRST NAME', 'First name', { max: 80, required: true }), make('LAST NAME', 'Last name', { max: 80 }),
-        make('EMAIL', 'Email', { max: 254, placeholder: 'student@example.com' }), make('CONTACT NUMBER', 'WhatsApp number', { required: true, max: 40, placeholder: '98XXXXXXXX' }),
-        make('dob', 'Date of birth', { kind: 'date' }), make('passportNo', 'Passport number', { max: 20, placeholder: 'e.g. PA1234567' }),
-        make('address', 'Address (as in the passport)', { max: 200, wide: true, placeholder: 'e.g. Butwal-11, Rupandehi' }),
-        make('nationality', 'Nationality', { kind: 'select', choices: F.NATIONALITIES, value: 'Nepali' }));
+      // Short and to the point (the owner, 20 Nov 2026): the student, then the source. Required, with a red *: first and last name, email,
+      // WhatsApp number and the source. No nationality, no note, no explanations; a new student starts at the Application stage.
+      const stage = admin ? [make('stage', 'Stage', { kind: 'select', choices: lists.stages.length ? lists.stages : [defaultStage], value: lists.stages.includes(defaultStage) || !lists.stages.length ? defaultStage : lists.stages[0] })]
+        : lists.departments.length > 1 ? [make('dept', 'Team', { kind: 'select', choices: lists.departments.map((d) => [d.id, d.label]), value: lists.departments[0].id })] : [];
+      group('Student', make('FIRST NAME', 'First name', { max: 80, required: true }), make('LAST NAME', 'Last name', { max: 80, required: true }),
+        make('EMAIL', 'Email', { max: 254, required: true, placeholder: 'student@example.com' }), make('CONTACT NUMBER', 'WhatsApp number', { required: true, max: 40, placeholder: '98XXXXXXXX' }),
+        make('dob', 'Date of birth', { kind: 'date' }), make('passportNo', 'Passport number', { max: 20, placeholder: 'PA1234567' }),
+        make('address', 'Address', { max: 200, placeholder: 'Butwal-11, Rupandehi' }), ...stage);
       inputs.dob.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10); // a date of birth is never in the future; the calendar's years end this year
-      // Only the name is needed to add a student (the owner, 16 Nov 2026): everything else can be filled in later on the student card.
-      form.append(el('p', 'p-muted p-small ns-passport-note', 'Fields marked * are needed: the name, the WhatsApp number and where the student came from. The rest can be added later on the student card.'));
 
       // Where the student came from: the source, then exactly which (the branch, the agent, the event ...). The choices are shared: a missing one is added once.
       // A branch account adds its own students, so the source is not asked: the server tags them with the branch.
       const branchOnly = !admin && lists.departments.length > 0 && lists.departments.every((d) => d.source);
       const picker = branchOnly ? null : root.SourcePicker.create({ lists, hideBranch: !admin, required: true });
-      if (picker) { form.append(el('h3', '', 'Where the student came from')); const g = el('div', 'p-form p-form-2'); picker.nodes.forEach((n) => g.append(n)); form.append(g); }
-
-      const note = make('note', 'Note on the student card (optional)', { kind: 'area', wide: true, max: 2000, placeholder: 'What was discussed at the first contact.' });
-      form.append(note.wrap);
+      if (picker) { form.append(el('h3', '', 'Source')); const g = el('div', 'p-form p-form-2'); picker.nodes.forEach((n) => g.append(n)); form.append(g); }
       body.append(form);
 
       const msg = el('div', 'p-msg'); msg.setAttribute('role', 'alert'); // read out by a screen reader
@@ -53,16 +40,17 @@
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save student');
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
       body.append(msg, foot);
-      let nationalityTouched = false; inputs.nationality.addEventListener('change', () => { nationalityTouched = true; });
       let allowDuplicate = false; // set by "Add anyway (a different person)"
       form.addEventListener('input', () => { allowDuplicate = false; });
       ok.addEventListener('click', async () => {
         const v = (k) => (inputs[k] ? inputs[k].value : '');
-        if (!v('FIRST NAME').trim() && !v('LAST NAME').trim()) { msg.textContent = "Please enter the student's name."; msg.className = 'p-msg error'; inputs['FIRST NAME'].focus(); return; }
+        const need = [['FIRST NAME', 'First name'], ['LAST NAME', 'Last name'], ['EMAIL', 'Email']].find(([k]) => !v(k).trim());
+        if (need) { msg.textContent = `${need[1]} is needed.`; msg.className = 'p-msg error'; inputs[need[0]].focus(); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('EMAIL').trim())) { msg.textContent = 'That email does not look right.'; msg.className = 'p-msg error'; inputs.EMAIL.focus(); return; }
         // Where the student came from must be complete (the event, or the campaign answer), so the student counts in its cost.
         // Needed so every student can be reached and counted (the owner, 18 Nov 2026): a WhatsApp number and where the student came from.
-        if (!v('CONTACT NUMBER').trim()) { msg.textContent = "Please enter the student's WhatsApp number."; msg.className = 'p-msg error'; inputs['CONTACT NUMBER'].focus(); return; }
-        if (picker && !picker.value().source) { msg.textContent = 'Choose where the student came from.'; msg.className = 'p-msg error'; return; }
+        if (!v('CONTACT NUMBER').trim()) { msg.textContent = 'WhatsApp number is needed.'; msg.className = 'p-msg error'; inputs['CONTACT NUMBER'].focus(); return; }
+        if (picker && !picker.value().source) { msg.textContent = 'Source is needed.'; msg.className = 'p-msg error'; return; }
         const missing = picker ? picker.check() : '';
         if (missing) { msg.textContent = missing; msg.className = 'p-msg error'; return; }
         ok.disabled = true;
@@ -74,7 +62,7 @@
         const pick = picker ? picker.value() : { source: '', detail: '', remarks: '' };
         fields['STUDENT SOURCE'] = pick.source;
         try {
-          const r = await api('/api/students/new', { fields, profile: { sourceDetail: pick.detail, sourceRemarks: pick.remarks, sourcePlatform: pick.platform || '', sourceWay: pick.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim(), nationality: v('nationality') }, stage: v('stage'), sheetId: activeSheetId, dept: v('dept'), note: v('note'), allowDuplicate, strict: true });
+          const r = await api('/api/students/new', { fields, profile: { sourceDetail: pick.detail, sourceRemarks: pick.remarks, sourcePlatform: pick.platform || '', sourceWay: pick.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim() }, stage: v('stage'), sheetId: activeSheetId, dept: v('dept'), allowDuplicate, strict: true });
           close(r);
         } catch (e) {
           const dup = e.body && e.body.duplicate;
@@ -92,11 +80,11 @@
           if (dup.canFill) {
             row.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: async () => {
               try {
-                // What is in the form now (it may have been edited since the warning), and the nationality only if it was chosen on purpose.
+                // What is in the form now (it may have been edited since the warning).
                 const now = {}; ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER'].forEach((k) => { now[k] = v(k); });
                 const p2 = picker ? picker.value() : { source: '', detail: '', remarks: '' };
                 now['STUDENT SOURCE'] = p2.source;
-                const r = await api('/api/students/merge', { id: dup.id, fields: now, profile: { sourceDetail: p2.detail, sourceRemarks: p2.remarks, sourcePlatform: p2.platform || '', sourceWay: p2.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim(), ...(nationalityTouched ? { nationality: v('nationality') } : {}) }, note: v('note') });
+                const r = await api('/api/students/merge', { id: dup.id, fields: now, profile: { sourceDetail: p2.detail, sourceRemarks: p2.remarks, sourcePlatform: p2.platform || '', sourceWay: p2.way || '', dob: v('dob'), passportNo: v('passportNo').trim().toUpperCase(), address: v('address').trim() } });
                 window.NiecUI.toast(r.filled.length ? `Filled in ${r.filled.length} missing detail${r.filled.length === 1 ? '' : 's'} on ${dup.name}${r.differs.length ? '; the different ones are in a note on the card' : ''}.` : `Nothing was missing on ${dup.name}${r.differs.length ? '; the different details are in a note on the card' : ''}.`, { type: 'success' });
                 close({ id: dup.id, merged: true });
               } catch (err) { msg.textContent = err.message; msg.className = 'p-msg error'; }

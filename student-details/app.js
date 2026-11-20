@@ -2435,7 +2435,8 @@
     for (let i = 0; i < 40 && (dirty || saving) && !conflicted; i++) { await saveData(); if (saving) await new Promise((r) => setTimeout(r, 150)); }
     if (conflicted) { NiecUI.toast('The sheet changed somewhere else. Reload the page before adding a student.', { type: 'error' }); return; }
     // With a filter on a dropdown column (say Application Stage), the new student starts at that value and stays in the filtered list.
-    let defaultStage = isTeam() ? '' : 'Inquiry';
+    // A new student starts at the Application stage (the owner, 20 Nov 2026); the Stage dropdown can still change it.
+    let defaultStage = isTeam() ? '' : 'Application Stage';
     const filtered = columnFilters['APPLICATION STATUS'];
     if (filtered && !isTeam()) { const first = [...filtered].find((v) => v !== ''); if (first) defaultStage = first; }
     const here = sheets.find((x) => x.id === activeSheetId);

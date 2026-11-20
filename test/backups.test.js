@@ -130,7 +130,7 @@ test('Admin can back up and restore; nobody else can; a restore saves the data a
   const same = (await admin('GET', `/api/restore/compare?id=${manual}`)).json;
   assert.deepStrictEqual([same.facts.comeBack, same.facts.lost, same.facts.changed], [0, 0, 0], 'right after a backup nothing would change');
   assert.strictEqual((await admin('GET', '/api/restore/compare?id=../../x')).status, 400);
-  // Nobody adds a page by hand any more (the owner, 17 Nov 2026); the team changes an intake's dates, and a restore puts them back.
+  // Nobody adds a page by hand any more (the owner, 17 Nov 2026); Admin can still put an intake's date right (no button), and a restore puts it back.
   assert.strictEqual((await admin('POST', '/api/facts', { name: 'Temporary Mistake University' })).status, 405, 'no page is added by hand');
   const target = factList.find((u) => u.intakes.length);
   const dated = await admin('POST', `/api/facts/${target.id}/deadlines`, { intakes: [{ name: target.intakes[0], deadline: '1 January 2030' }] });

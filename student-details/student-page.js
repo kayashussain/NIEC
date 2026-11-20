@@ -192,7 +192,7 @@
       // task's comments, and ticks it when it is done.
       // A team, or Admin (named with their title): the teams and branches can give Admin a task too.
       const targets = (data.assignTeams || data.taskTeams || []).map((t) => [t.id, t.label]);
-      const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : '' });
+      const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : '', required: true });
       // Exactly who gets it (the owner, 15 Nov 2026): the people whose own team it is.
       const goes = el('div', 'p-goes');
       const showGoes = () => {
@@ -206,31 +206,74 @@
       team.wrap.append(goes);
       team.input.addEventListener('change', showGoes);
       showGoes();
-      const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Submit the application to Coventry University.' });
-      // How important it is, and what it is about: the tag is chosen by hand by whoever gives the task (NOC, Medical, Application,
-      // Documents and the rest), never set by the system (the owner, 15 Nov 2026).
-      // Which university it is for (the owner, 17 Nov 2026): one of the student's applications, the priority one first; its name and
-      // course go in front of the task, so a NOC, a medical or a mock is given for that university.
-      const apps = liveApps();
-      const uniF = apps.length ? field('For which university?', { kind: 'select', choices: [['', 'Not about one university'], ...apps.map((o) => [o.id, appName(o)])], value: (apps.find(isGoingAhead) || {}).id || '' }) : null;
+      // What it is about first, required (the owner, 20 Nov 2026). An Application task then asks, each required with a red *: the
+      // university (every university in Universities), the intake, the course level, the location (when it teaches in more than one
+      // place) and the course, from the university's own list; then optional comments. Any other task asks what should be done.
       const tag = window.Portal.tagPicker('');
       const tagWrap = el('div', 'p-field p-wide');
-      tagWrap.append(el('span', 'p-label', 'What is it about?'), tag.node);
+      const tagLabel = el('span', 'p-label', 'What is it about?');
+      tagLabel.append(window.Portal.requiredMark());
+      tagWrap.append(tagLabel, tag.node);
+      const text = field('What should they do?', { kind: 'area', max: 2000, wide: true, required: true, placeholder: 'e.g. Ask for the bank statement.' });
+      const apps = liveApps();
+      const uniF = apps.length ? field('For which university?', { kind: 'select', choices: [['', 'Not about one university'], ...apps.map((o) => [o.id, appName(o)])], value: (apps.find(isGoingAhead) || {}).id || '' }) : null;
+      // The application fields.
+      const appBox = el('div', 'p-form p-assign-app p-wide');
+      const uni = field('University', { kind: 'select', choices: [], required: true });
+      const intake = field('Intake', { kind: 'select', choices: [], required: true });
+      const level = field('Course level', { kind: 'select', choices: [], required: true });
+      const place = field('Location', { kind: 'select', choices: [], required: true });
+      const course = field('Course', { kind: 'select', choices: [], required: true });
+      const comments = field('Comments', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Please submit the application to this university.' });
+      comments.input.rows = 2;
+      appBox.append(uni.wrap, intake.wrap, level.wrap, place.wrap, course.wrap, comments.wrap);
+      const fill = (f, list, keep) => { const was = keep ? f.input.value : ''; f.input.replaceChildren(h('option', { value: '' }, 'Choose\u2026'), ...list.map((x) => h('option', { value: x }, x))); f.input.value = list.includes(was) ? was : list.length === 1 ? list[0] : ''; };
+      let choices = null;
+      let unis = [];
+      const coursesNow = () => (choices ? choices.courses.filter((c) => (!level.input.value || c.level === level.input.value) && (!place.input.value || !c.campus || c.campus === place.input.value)) : []);
+      const refreshCourses = () => { fill(course, [...new Set(coursesNow().map((c) => c.name))].sort((a, b) => a.localeCompare(b)), true); };
+      uni.input.addEventListener('change', async () => {
+        choices = null; [intake, level, place, course].forEach((f) => fill(f, []));
+        if (!uni.input.value) return;
+        try { choices = await api(`/api/facts/${encodeURIComponent(uni.input.value)}/choices`); } catch (e) { choices = { intakes: ['January 2027'], levels: [], campuses: [], courses: [] }; }
+        fill(intake, choices.intakes); fill(level, choices.levels); fill(place, choices.campuses);
+        place.wrap.hidden = choices.campuses.length < 2; // one place: nothing to choose
+        refreshCourses();
+      });
+      level.input.addEventListener('change', refreshCourses);
+      place.input.addEventListener('change', refreshCourses);
+      api('/api/facts').then((list) => { unis = list.sort((a, b) => a.name.localeCompare(b.name)); uni.input.replaceChildren(h('option', { value: '' }, 'Choose\u2026'), ...unis.map((u) => h('option', { value: u.id }, u.name))); }).catch(() => {});
+      const isApp = () => tag.value() === 'application';
+      const showKind = () => { const a = isApp(); appBox.hidden = !a; text.wrap.hidden = a; if (uniF) uniF.wrap.hidden = a; };
+      tag.node.addEventListener('click', () => setTimeout(showKind, 0));
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Assign');
       ok.addEventListener('click', async () => {
-        if (!team.input.value) { msg.textContent = 'Choose who should do it.'; msg.className = 'p-msg error'; return; }
-        if (!text.input.value.trim()) { msg.textContent = 'Write what should be done.'; msg.className = 'p-msg error'; return; }
-        if (!tag.value()) { msg.textContent = 'Choose what the task is about.'; msg.className = 'p-msg error'; return; }
+        const stop = (t) => { msg.textContent = t; msg.className = 'p-msg error'; };
+        if (!team.input.value) return stop('Choose who should do it.');
+        if (!tag.value()) return stop('Choose what it is about.');
+        let payload;
+        if (isApp()) {
+          const need = [[uni, 'the university'], [intake, 'the intake'], [level, 'the course level'], ...(place.wrap.hidden ? [] : [[place, 'the location']]), [course, 'the course']].find(([f]) => !f.input.value);
+          if (need) return stop(`Choose ${need[1]}.`);
+          const uName = (unis.find((u) => u.id === uni.input.value) || {}).name || '';
+          const loc = place.input.value || (choices && choices.campuses.length === 1 ? choices.campuses[0] : '');
+          const app = { university: uName, universityId: uni.input.value, intake: intake.input.value, level: level.input.value, location: loc, course: course.input.value };
+          const line = [uName, app.intake, app.level, loc, app.course].filter(Boolean).join(' · ');
+          payload = { team: team.input.value, tag: 'application', app, text: `Submit the application: ${line}${comments.input.value.trim() ? `\n${comments.input.value.trim()}` : ''}` };
+        } else {
+          if (!text.input.value.trim()) return stop('Write what should be done.');
+          const u2 = uniF && apps.find((o) => o.id === uniF.input.value);
+          payload = { team: team.input.value, text: (u2 ? `${appName(u2)}: ` : '') + text.input.value, tag: tag.value() };
+        }
         ok.disabled = true;
-        const uni = uniF && apps.find((o) => o.id === uniF.input.value);
-        try { await save('tasks', { team: team.input.value, text: (uni ? `${appName(uni)}: ` : '') + text.input.value, tag: tag.value() }, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
+        try { await save('tasks', payload, 'Task assigned'); close(true); } catch (e) { ok.disabled = false; }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form p-assign'); g.append(team.wrap, ...(uniF ? [uniF.wrap] : []), text.wrap, tagWrap);
+      const g = el('div', 'p-form p-assign'); g.append(team.wrap, tagWrap, appBox, ...(uniF ? [uniF.wrap] : []), text.wrap);
       body.append(g, msg, foot);
-      setTimeout(() => text.input.focus(), 0);
+      showKind();
     }).then((done) => { if (done) render(); });
   }
   // The tasks about this student, in the same look as Today, each with its comments: shown only when there is one (the "Assign a

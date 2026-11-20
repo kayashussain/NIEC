@@ -728,7 +728,7 @@ body.p-embed .p-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 520px) { body:has(.p-embed-bar) .p-hero .p-hero-top h1 { font-size: 26px; } .p-hero-source { white-space: normal; } }
 body.p-embed .p-fact dd, body.p-embed .p-fact dd a { overflow-wrap: break-word; word-break: normal; }
 @media (max-width: 460px) { body.p-embed .p-facts { grid-template-columns: minmax(0, 1fr); } }
-.ns-many { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; margin: 0 0 18px; padding: 12px 16px; color: var(--text-dim); }
+/* 🔴 CSS CHANGED (2026-11-20): Add student no longer offers "Add many students" at its top | from: a soft grey band "Adding many students at once?" with a button | to: no band */
 
 /* 🔴 CSS CHANGED (2026-11-13): the student card, a calm and clean premium look (the card that opens from All Students, and the same page opened on its own) | from: first a light panel with a blue stripe, a bright blue button and grey pill tabs; then a heavy deep navy band with ivory text, champagne links and a bronze button | to: a light, calm top panel (soft off-white with a fine bronze line along its top), the name in a large navy serif, the initials in a soft navy circle with a thin bronze ring, the stage as a soft navy tag and the source as a fine outlined tag, a slim progress line of the student's journey (navy for steps done, bronze for where the student is now, grey for what is still to come, with "Step 3 of 8, Mock Stage" under it, or a calm amber note for Withdrawn, Hold, Defer and Visa Rejected), the details as a quiet two-column list, a navy "Send a message" and an outlined "Edit details"; tabs with a bronze line under the open one; panels with fine borders and roomy spacing, navy "Add note" and similar buttons, bronze timeline dots and quiet underlined "Remove" links */
 body:has(.p-embed-bar) .p-embed-bar { justify-content: flex-end; margin-bottom: 14px; padding-bottom: 0; border-bottom: 0; }
@@ -1230,7 +1230,6 @@ dialog.p-dialog.is-closing::backdrop { animation: isr-fade-out .16s ease-in both
 .p-dialog-foot { border-top: 0 !important; }
 /* 🔴 CSS CHANGED (2026-11-16): the Cancel / Save buttons at the bottom of a long window (Add a student, Edit details, Mark as done) | from: the buttons stayed 24px above the window's bottom edge, so the form scrolled through that gap underneath them (half a heading, "Where the student came from", showed cut off below the buttons) | to: the button bar reaches the bottom edge and covers the gap; the buttons stay where they were */
 .p-dialog-body > .p-dialog-foot { bottom: -24px; margin-bottom: -24px; padding-bottom: 24px; }
-.ns-many { border: 0; border-radius: 14px; background: #f0f0f3; }
 /* toasts: Mac-style notifications */
 .ui-toast { border: 0; border-radius: 16px; background: rgba(251, 251, 253, .92); color: #1d1d1f; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 12px 40px -12px rgba(0, 0, 0, .3), 0 0 0 .5px rgba(0, 0, 0, .08); }
 /* press and hover feedback */
@@ -3499,14 +3498,6 @@ html body .up-apply { min-height: 50px; padding: 0 30px; border-radius: 999px; f
 .up-section { padding: 30px 40px 4px; }
 html body .up-section h2 { margin: 0 0 16px; padding: 0; border: 0; color: #1d1d1f; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
 html body .up-section h2::before { display: none; }
-.up-media { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 28px 40px 4px; }
-.up-media.has-video { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
-.up-video { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 20px; background: #000; }
-.up-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; grid-column: span 3; }
-.up-media.has-video .up-photos { grid-column: auto; }
-.up-media:not(.has-video) .up-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.up-media:not(.has-video) .up-photos img:first-child { grid-column: span 2; grid-row: span 2; }
-.up-photos img { width: 100%; height: 100%; min-height: 130px; object-fit: cover; border-radius: 16px; }
 .up-about { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: start; }
 .up-about-text { margin: 0 0 10px; color: #3a3a3c; font-size: 17px; line-height: 1.6; }
 .up-web { color: #0066cc; font-weight: 600; text-decoration: none; }
@@ -3548,14 +3539,12 @@ html body .up-group-head h3 { margin: 0; color: #1d1d1f; font-size: 20px; font-w
 .up-course-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .up-course { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px 18px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); transition: box-shadow .18s ease, transform .18s ease; }
 .up-course:hover { box-shadow: 0 0 0 1px rgba(0, 113, 227, .25), 0 10px 24px -16px rgba(0, 0, 0, .3); }
-.up-course[hidden], .up-group[hidden], .up-band[hidden], .up-jump[hidden] { display: none; }
-.up-course-name { color: #1d1d1f; font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.up-course[hidden], .up-group[hidden], .up-course-name { color: #1d1d1f; font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
 .up-course-meta { display: flex; flex-wrap: wrap; gap: 6px; }
 .up-course-meta span { padding: 3px 10px; border-radius: 999px; background: #f2f2f5; color: #515154; font-size: 13px; }
 .up-course-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
 .up-course-deadline { color: #b25000; font-size: 13.5px; font-weight: 600; }
 html body .up-course .sl-pick { margin: 0 0 0 auto; }
-.up-band { display: block; width: 100%; height: 220px; margin: 26px 0 4px; object-fit: cover; border-radius: 20px; }
 .up-none { color: #6e6e73; }
 .up-deadlines { margin: 0; padding: 4px 18px; list-style: none; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); }
 .up-deadlines li { padding: 12px 0; border-bottom: 1px solid #ececf0; color: #1d1d1f; font-size: 15.5px; }
@@ -3578,7 +3567,7 @@ html body .up-contacts h3 { margin: 0 0 10px; font-size: 15px; text-transform: n
 .up-contact { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 0; font-size: 14.5px; }
 .up-contact a { color: #0066cc; text-decoration: none; }
 /* the Universities list: wide cards with a cover picture, two to a row */
-html body #cards.cards { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 18px; }
+
 html body a.uni-card.uc-card.has-cover { padding: 0 0 18px; overflow: hidden; }
 html body a.uni-card.uc-card.has-cover > :not(.uc-cover) { margin-left: 22px; margin-right: 22px; }
 .uc-cover { height: 170px; margin: 0 0 4px; overflow: hidden; background: #e8e8ed; }
@@ -3611,18 +3600,15 @@ html body .sl-tray-list li { border-radius: 14px; }
 html body .sl-tray-list li:hover { background: rgba(0, 0, 0, .03); }
 @media (max-width: 980px) {
   .up-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .up-media.has-video, .up-about { grid-template-columns: 1fr; }
-  html body .fd-out { grid-template-columns: 1fr; }
+    html body .fd-out { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
   .up-hero { min-height: 300px; }
-  .up-hero-inner, .up-facts, .up-section, .up-media { padding-left: 16px; padding-right: 16px; }
-  .up-id { flex-direction: column; align-items: flex-start; }
+  .up-hero-inner, .up-facts, .up-section,   .up-id { flex-direction: column; align-items: flex-start; }
   .up-logo { width: 84px; height: 84px; border-radius: 20px; }
   html body .up-titles h1 { font-size: 28px; }
   .up-facts, .up-money, .up-reqs, .up-course-grid { grid-template-columns: 1fr; }
-  .up-media:not(.has-video) .up-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  html body #cards.cards { grid-template-columns: 1fr; }
+    html body #cards.cards { grid-template-columns: 1fr; }
 }
 @media print { .up-hero { min-height: 0; background: none; color: #000; } .up-hero-img, .up-hero::after { display: none; } html body .up-titles h1, .up-sub { color: #000; text-shadow: none; } }
 /* 🔴 CSS CHANGED (2026-11-20): the fee and scholarship amounts in large type, and a coloured cover for a university card without a picture | from: the amount in the body size; a card without a picture had a white gap where the picture was | to: the amount at 26px bold; a deep blue to light blue gradient (purple for a pathway college) in place of the picture */
@@ -3630,3 +3616,88 @@ html body .up-money-tile .up-money-v { margin: 6px 0 4px; color: #1d1d1f; font-s
 html body .up-money-tile .up-money-v:empty { display: none; }
 .uc-cover.is-blank { background: linear-gradient(135deg, #0b3a75 0%, #0071e3 60%, #5ab0ff 100%); }
 html body .uc-card.is-pathway .uc-cover.is-blank { background: linear-gradient(135deg, #3b1f73 0%, #7a52c7 60%, #b79cf0 100%); }
+
+/* 🔴 CSS CHANGED (2026-11-20): the university page moves, and nothing is cut | from: one still cover picture, a mosaic of pictures cut to fill their boxes (heads cut off), pictures between the course levels, cards that sat still, two university cards to a row and narrow pages | to: the cover pictures fade one into the next with a slow zoom and small dots to pick one; one large gallery frame that shows each whole picture over a soft blurred copy of it, with arrows and small pictures under it (the video first); no pictures between the levels; sections and cards rise and fade in as the page is scrolled, cards lift a little under the mouse, each level has its own colour; the amounts count up; three university cards to a row; the Today page and the university pages use more of the screen width; the Apply window shows the student and the shortlisted courses */
+html body .page:has(.up-doc), html body .page:has(#cards) { max-width: 1560px; }
+html body .td-page { max-width: 1480px; }
+html body .td-page.is-board { max-width: 1680px; }
+.up-hero { overflow: hidden; }
+.up-hero-img { opacity: 0; transition: opacity 1.4s ease; object-position: center 30%; }
+.up-hero-img.is-on { opacity: 1; animation: up-zoom 9s ease-out both; }
+@keyframes up-zoom { from { transform: scale(1.0); } to { transform: scale(1.08); } }
+.up-dots { position: absolute; z-index: 2; right: 40px; top: 22px; display: flex; gap: 8px; }
+.up-dots button { width: 9px; height: 9px; padding: 0; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .55); cursor: pointer; transition: width .3s ease, background .3s ease; }
+.up-dots button.is-on { width: 26px; background: #fff; }
+.up-hero.no-pic { background: linear-gradient(120deg, #0b3a75, #0071e3, #34a1ff, #0b3a75); background-size: 300% 300%; animation: up-flow 14s ease infinite; }
+@keyframes up-flow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+html body .up-apply { transition: transform .2s ease, box-shadow .2s ease; }
+html body .up-apply:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 12px 28px rgba(0, 113, 227, .5); }
+.up-gallery h2 { margin-bottom: 14px; }
+.up-stage { position: relative; aspect-ratio: 16 / 8; border-radius: 22px; overflow: hidden; background: #1d1d1f; }
+.up-slide { position: absolute; inset: 0; display: grid; place-items: center; animation: up-fade .5s ease both; }
+.up-slide::before { content: ""; position: absolute; inset: -30px; background: var(--bg) center / cover no-repeat; filter: blur(28px) brightness(.75); }
+.up-slide-img { position: relative; max-width: 100%; max-height: 100%; object-fit: contain; }
+.up-slide .up-video { position: relative; width: 100%; height: 100%; border: 0; }
+@keyframes up-fade { from { opacity: 0; transform: scale(1.01); } to { opacity: 1; transform: none; } }
+.up-arrow { position: absolute; z-index: 2; top: 50%; width: 44px; height: 44px; margin-top: -22px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .85); box-shadow: 0 4px 14px rgba(0, 0, 0, .25); cursor: pointer; transition: transform .2s ease, background .2s ease; }
+.up-arrow:hover { background: #fff; transform: scale(1.08); }
+.up-arrow::before { content: ""; display: block; width: 10px; height: 10px; margin: auto; border-top: 2.5px solid #1d1d1f; border-right: 2.5px solid #1d1d1f; transform: rotate(45deg); margin-left: 14px; }
+.up-arrow.is-prev { left: 14px; }
+.up-arrow.is-prev::before { transform: rotate(-135deg); margin-left: 18px; }
+.up-arrow.is-next { right: 14px; }
+.up-thumbs { display: flex; gap: 10px; margin-top: 12px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.up-thumbs button { position: relative; flex: none; width: 112px; height: 70px; padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: #e8e8ed; opacity: .6; cursor: pointer; transition: opacity .2s ease, transform .2s ease, box-shadow .2s ease; }
+.up-thumbs button:hover { opacity: .9; transform: translateY(-2px); }
+.up-thumbs button.is-on { opacity: 1; box-shadow: 0 0 0 3px #0071e3; }
+.up-thumbs img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+.up-thumbs button.is-video::after { content: ""; position: absolute; left: 50%; top: 50%; width: 0; height: 0; margin: -9px 0 0 -6px; border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent #fff; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .5)); }
+html.up-motion .up-reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease var(--d, 0ms), transform .6s cubic-bezier(.2, .8, .3, 1) var(--d, 0ms); }
+html.up-motion .up-reveal.is-in { opacity: 1; transform: none; }
+.up-fact { transition: transform .25s ease, box-shadow .25s ease; }
+.up-fact:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 16px 30px -18px rgba(0, 0, 0, .35); }
+.up-level { position: relative; overflow: hidden; transition: transform .25s ease, box-shadow .25s ease; }
+.up-level::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--lv, #0071e3); }
+.up-level:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 20px 36px -22px rgba(0, 0, 0, .4); }
+.up-level[data-level="ify"] { --lv: #ff9f0a; }
+.up-level[data-level="iy1"] { --lv: #bf5af2; }
+.up-level[data-level="ug"] { --lv: #0071e3; }
+.up-level[data-level="pg"] { --lv: #30b0c7; }
+.up-level[data-level="pm"] { --lv: #34c759; }
+.up-level[data-level="mr"] { --lv: #5e5ce6; }
+.up-level .up-money-tile { transition: background .25s ease; }
+.up-level:hover .up-money-tile { background: linear-gradient(180deg, #f2f7ff, #e9f1fd); }
+html body .up-course:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 113, 227, .3), 0 16px 30px -20px rgba(0, 0, 0, .4); }
+html body .sl-pick.is-on { animation: up-pop .35s ease; }
+@keyframes up-pop { 0% { transform: scale(1); } 50% { transform: scale(1.12); } 100% { transform: scale(1); } }
+.up-jump a { transition: background .2s ease, transform .2s ease; }
+.up-jump a:hover { transform: translateY(-1px); }
+.up-apply-for { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: #eef5fe; }
+.up-apply-for > div { display: flex; flex-direction: column; min-width: 0; }
+.up-apply-for b { color: #1d1d1f; font-size: 15.5px; }
+.up-apply-for span:not(.p-avatar) { color: #3a3a3c; font-size: 14px; overflow-wrap: anywhere; }
+html body #cards.cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+html body a.uni-card.uc-card { transition: transform .25s ease, box-shadow .25s ease; }
+html body a.uni-card.uc-card:hover { transform: translateY(-4px); }
+.uc-cover img { object-position: center 30%; }
+@media (max-width: 1200px) { html body #cards.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { html body #cards.cards { grid-template-columns: 1fr; } .up-stage { aspect-ratio: 4 / 3; } .up-dots { right: 16px; } }
+@media (prefers-reduced-motion: reduce) {
+  .up-hero-img.is-on, .up-hero.no-pic, .up-slide, html body .sl-pick.is-on { animation: none; }
+  html.up-motion .up-reveal { opacity: 1; transform: none; transition: none; }
+}
+@media print { html.up-motion .up-reveal { opacity: 1; transform: none; } .up-dots, .up-gallery { display: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-20): clearer tasks, the application fields in Assign task, and a tidier Find universities form | from: an Offer request or an application written as one long sentence, Assign task as a short form with a free text box, the finder's seven boxes squeezed with long labels | to: a task headline in bold ("Ask for the offer letter", "Submit the application") with the university as a blue chip and the course, level, intake and location as grey chips under it; in Assign task, University, Intake, Course level, Location and Course as dropdowns in two columns with Comments under them; in Mark as done, the same chips under the university; the finder's boxes in one even row of short labels with the Find button at its end */
+.td-task-text.is-structured { display: flex; flex-direction: column; gap: 6px; }
+.td-task-title { color: #1d1d1f; font-size: 15.5px; font-weight: 650; }
+.td-task-chips, .td-app-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+html body .td-task-chips span, html body .td-app-chips span { padding: 3px 10px; border-radius: 999px; background: #f2f2f5; color: #3a3a3c; font-size: 13px; font-weight: 500; }
+html body .td-task-chips span.is-uni { background: #e8f2fd; color: #0058b0; font-weight: 600; }
+.td-task-note { margin: 0; color: #515154; font-size: 14px; }
+.td-app-chips { margin-top: 6px; }
+html body .p-assign-app { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin: 2px 0 0; padding: 14px; border-radius: 14px; background: #f5f7fb; }
+html body .p-assign-app > .p-field:has(textarea) { grid-column: 1 / -1; }
+html body .p-assign-app[hidden] { display: none; }
+html body .fd-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; align-items: end; }
+html body .fd-bar { margin-top: 14px; }
+@media (max-width: 600px) { html body .p-assign-app { grid-template-columns: 1fr; } }

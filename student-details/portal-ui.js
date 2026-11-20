@@ -215,7 +215,9 @@
     const labelOf = (id) => (teams.find((t) => t.id === id) || { label: id === 'head' ? 'Admin' : id }).label;
     const box = el('div', 'tk-thread');
     const list = el('ol', 'tk-list');
-    const comments = () => (Array.isArray(task.comments) ? task.comments : []);
+    // A move to another day with nothing written is not an update (the owner, 20 Nov 2026: the thread was confusing): the day it waits
+    // for is the small blue pill on the task, so only real words are listed.
+    const comments = () => (Array.isArray(task.comments) ? task.comments : []).filter((c) => !(c.schedule && !String(c.text || '').trim()));
     // `pending`: everything new on the task for the reader (new comments, or the task itself just given to them); `fresh`: the new
     // comments among it, shown on the comments line.
     let pending = unread;
@@ -410,7 +412,8 @@
     const tag = tagOf(t, o.stage);
     const asks = ['application', 'offer', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
     return dialog('Mark as done?', (body, close) => {
-      body.append(el('p', 'td-done-task', `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
+      // An application task names its university and course below, so only the student is named here.
+      body.append(el('p', 'td-done-task', t.app ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
       const ask = el('div', 'td-done-step');
       const sure = el('div', 'td-done-step');
       sure.hidden = true;
@@ -450,22 +453,28 @@
         let onWhat = () => {}; // the answer chosen changes what the notes box asks
         const specificFrom = form.children.length; // everything added from here to the "What was done?" box belongs to the task's own question
         let check = () => '';
-        if (state && state.courseTask) {
-          // One task, one course (the owner, 18 Nov 2026): the university and course are here already; the answer is Applied (with its day) or
-          // Not applied (with why). The Offer request that follows is made by itself, so no follow-up question is asked.
-          const c = state.courseTask;
+        let noNotes = false; // the application window has no notes box (the owner, 20 Nov 2026)
+        if (t.app || (state && state.courseTask)) {
+          // One application, one university and course (the owner, 20 Nov 2026): what to apply for is shown, and the answer is one of
+          // three, with its day: Submitted, Not eligible, or Already applied through another agent (an agent change is not possible).
+          // No notes and no other university: a task is for one university at a time.
+          const c = t.app || state.courseTask;
           const who = el('div', 'p-wide td-course');
-          who.append(el('b', '', c.university), c.course ? el('span', 'td-sofar-course', c.course) : '', c.partner ? el('span', 'td-sofar-sheet', /^direct$/i.test(c.partner) ? 'Direct' : `Through ${c.partner}`) : '');
+          who.append(el('b', '', c.university), c.course ? el('span', 'td-sofar-course', c.course) : '');
+          const chips = [c.intake, c.level, c.location].filter(Boolean);
+          if (chips.length) { const cs = el('span', 'td-app-chips'); chips.forEach((x) => cs.append(el('span', '', x))); who.append(cs); }
           form.append(who);
-          const q = question('Did you apply to this university?', [['yes', 'Applied'], ['no', 'Not applied']], (v) => { show(dayF.wrap, v === 'yes'); onWhat(v); });
-          const dayF = field('Day you applied', { kind: 'date', value: today, required: true });
+          const q = question('Result', [['submitted', 'Application submitted'], ['noteligible', 'Not eligible'], ['agent', 'Already applied through another agent']]);
+          const dayF = field('Date', { kind: 'date', value: today, required: true });
           dayF.input.max = today;
           form.append(dayF.wrap);
-          q.set('yes'); show(dayF.wrap, true); // Applied and today to start with: one tap to save
-          onWhat = (v) => { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(v === 'no' ? 'Why was it not applied? (for example not eligible)' : 'Notes (optional)'); if (v === 'no') l.append(requiredMark()); };
-          read = () => (q.value() === 'yes' ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'submitted', date: dayF.input.value }] }
-            : q.value() === 'no' ? { app: 'record', date: today, unis: [{ university: c.university, course: c.course, what: 'notsubmitted', date: today }] } : {});
-          check = () => (!q.value() ? 'Choose Applied or Not applied.' : q.value() === 'yes' && !dayF.input.value ? 'Choose the day you applied.' : q.value() === 'no' && words.input.value.trim().length < minNote ? 'Write why it was not applied, in a few words.' : '');
+          q.set('submitted');
+          noNotes = true;
+          const NOTE = { noteligible: `Not eligible for ${c.university}.`, agent: `Already applied to ${c.university} through another agent; an agent change is not possible.` };
+          fallbackNote = () => NOTE[q.value()] || '';
+          read = () => (q.value() === 'submitted' ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'submitted', date: dayF.input.value }] }
+            : q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'notsubmitted', date: dayF.input.value }] } : {});
+          check = () => (!q.value() ? 'Choose the result.' : !dayF.input.value ? 'Choose the date.' : '');
         } else if (state && state.offerTask) {
           // The Offer request: has the university answered? An offer (with its day), a refusal (with why), or not yet (with the day to ask again,
           // which makes the next Offer request by itself).
@@ -631,15 +640,17 @@
           read = () => (q.value() && q.value() !== 'none' ? { step: q.value(), date: date.input.value } : {});
           check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Say why the visa was refused, in the note below.' : '');
         }
-        const simple = Boolean(state && (state.courseTask || state.offerTask)) || tag === 'noc' || tag === 'medical'; // few questions, then Save
+        const simple = Boolean(t.app || (state && (state.courseTask || state.offerTask))) || tag === 'noc' || tag === 'medical'; // few questions, then Save
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
         const minNote = (state && state.minNote) || 8;
         const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
         words.input.rows = 2; words.input.dataset.words = '1'; words.input.dataset.was = words.input.placeholder;
         form.append(words.wrap);
-        if (simple) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren('Notes (optional)'); words.input.placeholder = state && state.courseTask ? 'e.g. Application ID 12345.' : 'Anything the next person should know.'; }
+        if (simple) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren('Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
+        if (noNotes) words.wrap.hidden = true;
         // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
-        ask.append(msg, el('p', 'p-muted p-small', asks && !simple ? 'Nothing is saved until you check it on the next step.' : "Saved in the student's notes."));
+        ask.append(msg);
+        if (!noNotes) ask.append(el('p', 'p-muted p-small', asks && !simple ? 'Nothing is saved until you check it on the next step.' : "Saved in the student's notes."));
         const foot = el('div', 'p-dialog-foot');
         const next = h('button', { class: 'btn btn-primary', type: 'button' }, simple ? 'Save' : asks ? 'Next: check' : 'Yes, it is done');
         next.addEventListener('click', async () => {
@@ -718,6 +729,33 @@
   // when, in small grey type. The updates open under the task.
   //   o: { rowId, me, teams, mayTick, tickTitle, canWrite, canChange, unread, stage, student: { name, href } | null, fromName,
   //        toName, actions: [[label, onClick, danger]], onTick: async (done) => {}, onChanged }
+  // What to do, said plainly (the owner, 20 Nov 2026: the Offer request and Application tasks were confusing): an Offer request reads
+  // "Ask for the offer letter" with the university and course under it; an Application task "Submit the application" with the
+  // university, intake, level, location and course as small chips, then the comments of whoever gave it.
+  function taskText(t) {
+    const box = el('div', 'td-task-text');
+    const offer = /^Offer request: has the student received the offer letter from (.+?)(?: \((.+)\))?\?$/.exec(String(t.text || ''));
+    if (offer) {
+      box.classList.add('is-structured');
+      box.append(el('b', 'td-task-title', 'Ask for the offer letter'));
+      const what = el('div', 'td-task-chips'); what.append(el('span', 'is-uni', offer[1])); if (offer[2]) what.append(el('span', '', offer[2]));
+      box.append(what);
+      return box;
+    }
+    if (t.app) {
+      box.classList.add('is-structured');
+      box.append(el('b', 'td-task-title', 'Submit the application'));
+      const what = el('div', 'td-task-chips');
+      what.append(el('span', 'is-uni', t.app.university));
+      [t.app.course, t.app.level, t.app.intake, t.app.location].filter(Boolean).forEach((x) => what.append(el('span', '', x)));
+      box.append(what);
+      const extra = String(t.text || '').split('\n').slice(1).join(' ').trim();
+      if (extra) box.append(el('p', 'td-task-note', extra));
+      return box;
+    }
+    box.textContent = t.text;
+    return box;
+  }
   function taskCard(t, o) {
     const r = el('div', `td-task${t.done ? ' is-done' : ''}${o.unread ? ' has-unread' : ''}`);
     r.dataset.taskId = t.id;
@@ -755,7 +793,7 @@
       head.append(who);
       r.classList.add('has-student');
     }
-    head.append(el('div', 'td-task-text', t.text));
+    head.append(taskText(t));
     top.append(head);
     const side = el('div', 'td-side');
     top.append(side);

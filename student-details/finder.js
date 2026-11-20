@@ -16,19 +16,21 @@
     const wrap = el('section', 'p-card fd-card');
     const head = el('div', 'fd-head');
     const words = el('div');
-    words.append(el('h2', '', title), el('p', 'p-muted p-small', intro || 'Enter the student\'s details: every university in Universities is checked at once.'));
+    // One title and no explanation (the owner, 20 Nov 2026: short, one-word labels).
+    words.append(el('h2', '', title));
+    if (intro) words.append(el('p', 'p-muted p-small', intro));
     head.append(words);
     wrap.append(head);
     const form = el('div', 'fd-form');
-    const level = field('Study level', { kind: 'select', choices: [['', 'Choose...'], ...F.STUDY_LEVELS.map((x) => [x, x])], value: prefill.level || '' });
-    const grade = field('GPA or percentage', { value: prefill.grade || '', placeholder: 'e.g. 3.1 or 68%', max: 20 });
-    const gap = field('Study gap (years)', { value: prefill.gap || '', placeholder: 'e.g. 2', max: 3 });
+    const level = field('Level', { kind: 'select', choices: [['', 'Choose...'], ...F.STUDY_LEVELS.map((x) => [x, x])], value: prefill.level || '' });
+    const grade = field('Grade', { value: prefill.grade || '', placeholder: '3.1 or 68%', max: 20 });
+    const gap = field('Gap (years)', { value: prefill.gap || '', placeholder: '2', max: 3 });
     gap.input.inputMode = 'numeric';
     const test = field('English', { kind: 'select', choices: [['', 'Any'], ...F.ENGLISH_TESTS.map((x) => [x, x])], value: F.ENGLISH_TESTS.find((x) => x.toLowerCase() === String(prefill.test || '').toLowerCase()) || prefill.test || '' });
-    const score = field('Overall score', { value: prefill.score || '', placeholder: 'e.g. 6.5', max: 10 });
+    const score = field('Score', { value: prefill.score || '', placeholder: '6.5', max: 10 });
     // The lowest band of the four parts (the owner, 17 Nov 2026): a university asking 59 in each part refuses a 57 in one.
-    const band = field('Lowest band', { value: prefill.band || '', placeholder: 'e.g. 6.0', max: 10 });
-    const subject = field('Subject (optional)', { value: prefill.subject || '', placeholder: 'e.g. nursing, business, data', max: 80 });
+    const band = field('Lowest band', { value: prefill.band || '', placeholder: '6.0', max: 10 });
+    const subject = field('Subject', { value: prefill.subject || '', placeholder: 'Nursing, business', max: 80 });
     form.append(level.wrap, grade.wrap, gap.wrap, test.wrap, score.wrap, band.wrap, subject.wrap);
     const go = h('button', { class: 'btn btn-primary', type: 'button' }, 'Find');
     const bar = el('div', 'fd-bar');
@@ -47,16 +49,16 @@
     let last = null;
     async function run() {
       const v = values();
-      if (!v.level) { out.replaceChildren(el('p', 'p-muted', 'Choose the study level, then Find.')); level.input.focus(); return; }
+      if (!v.level) { out.replaceChildren(el('p', 'p-muted', 'Choose the level.')); level.input.focus(); return; }
       go.disabled = true;
-      out.replaceChildren(el('p', 'p-muted', 'Checking every university...'));
+      out.replaceChildren(el('p', 'p-muted', 'Checking...'));
       try { last = await api('/api/eligibility', v); draw(); } catch (e) { out.replaceChildren(el('div', 'p-notice bad', e.message)); }
       go.disabled = false;
     }
     function draw() {
       const d = last;
       out.replaceChildren();
-      if (!d.results.length) { out.append(el('p', 'p-muted', 'No university in Universities has this level' + (values().subject ? ' in this subject. Try another word, or leave the subject empty.' : '.'))); return; }
+      if (!d.results.length) { out.append(el('p', 'p-muted', 'No match.')); return; }
       const pills = el('div', 'fd-filter');
       pills.setAttribute('role', 'tablist');
       [['all', `All (${d.results.length})`], ['yes', `Eligible (${d.counts.yes})`], ['check', `To check (${d.counts.check})`], ['no', `Not eligible (${d.counts.no})`]].forEach(([k, label]) => {
@@ -66,7 +68,7 @@
       });
       out.append(pills);
       d.results.filter((r) => filter === 'all' || r.status === filter).forEach((r) => out.append(card(r)));
-      out.append(el('p', 'p-muted p-small fd-foot', `A guide from the rules on each university's university page; the university decides. ${d.without ? `${d.without} universities in Universities have no rules in numbers yet: see their pages.` : ''}`));
+
     }
     function card(r) {
       const c = el('article', `fd-uni ${STATUS[r.status][1]}`);

@@ -362,7 +362,9 @@
     await loadOptions();
     if (state.student) { remember(state.student); state.order = savedOrder(); if (asked) state.open = true; }
   };
-  root.ShortlistFor = { ready, button, tray, onChange: (f) => state.listeners.push(f), current: () => state.student };
+  // The courses shortlisted at one university for the chosen student (the Apply window shows them, the owner, 20 Nov 2026).
+  const shortlisted = (universityId) => (state.student ? state.options.filter((o) => o.universityId === universityId && CardFields.onShortlist(o)) : []);
+  root.ShortlistFor = { ready, button, tray, shortlisted, onChange: (f) => state.listeners.push(f), current: () => state.student };
   root.OptionActions = { email: emailOptions, assign };
 
   // Looks the course page up on the university's website (the server does the search); resolves to a link or ''.

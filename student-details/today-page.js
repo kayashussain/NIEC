@@ -19,7 +19,7 @@
   // something new first, then the one waiting longest. There are no priorities (the owner, 15 Nov 2026: they added a choice and
   // showed nowhere).
   let tagFilter = 'all';
-  let taskView = ''; // 'mine' (Today), 'upcoming', 'gave', 'others' or 'passed': which tasks are shown
+  let taskView = ''; // 'mine' (Today), 'upcoming', 'gave', or 'others': which tasks are shown
   // Search (the owner, 15 Nov 2026): a student's name, or any word of a task or its tag, narrows every list at once.
   let searchQ = '';
   const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -262,13 +262,12 @@
       return box;
     }
     // Which tasks to see (the owner, 15 Nov 2026): one list at a time, never mixed. The tasks for this person are split in two, Today
-    // and Upcoming (moved to a later day), then "You gave", and for Admin and the Manager "Given by others"; a team also "Reassigned"
-    // (handed on by it).
+    // and Upcoming (moved to a later day), then "You gave", and for Admin and the Manager "Given by others". A task handed on to another
+    // team is no longer listed here (the owner, 20 Nov 2026).
     const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
     const forMe = t.tasks.filter((x) => x.forMe);
     const gave = t.tasks.filter((x) => !x.forMe && (x.given || x.by === me));
     const others = t.canAssign ? t.tasks.filter((x) => !x.forMe && x.by !== me) : [];
-    const passed = t.canAssign ? [] : t.tasks.filter((x) => x.had && !x.forMe && !gave.includes(x));
     const showMine = t.isHead || !t.canAssign || forMe.length;
     const todayHint = '';
     const VIEWS = [
@@ -276,7 +275,6 @@
       ['upcoming', 'Upcoming', forMe, '', '', showMine && forMe.some((x) => !x.done && later(x)), 'upcoming'],
       ['gave', 'You gave', gave, '', 'Every task you gave is done.', t.canAssign || gave.length, ''],
       ['others', 'Given by others', others, '', 'All done.', others.length, ''],
-      ['passed', 'Reassigned', passed, '', 'All done.', passed.length, ''],
     ].filter((v) => v[5]);
     // The number on each switch: what is open in it (for Upcoming, the later ones; elsewhere, today's).
     const countOf = (v) => v[2].filter((x) => !x.done && (v[6] === 'upcoming' ? later(x) : !later(x))).length;
@@ -438,7 +436,7 @@
     closeInbox();
     // A done task is no longer on Today: it is on the student's card.
     if (x.done) { api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {}).then(() => { location.href = '/student?id=' + encodeURIComponent(x.studentId); }); return; }
-    taskView = x.forMe ? (!x.done && x.doOn && todayIso && x.doOn > todayIso ? 'upcoming' : 'mine') : (x.given || x.by === me) ? 'gave' : x.had && !canAssignAll ? 'passed' : 'others';
+    taskView = x.forMe ? (!x.done && x.doOn && todayIso && x.doOn > todayIso ? 'upcoming' : 'mine') : (x.given || x.by === me) ? 'gave' : 'others';
     tagFilter = 'all';
     searchQ = '';
     focusTask = x.id;

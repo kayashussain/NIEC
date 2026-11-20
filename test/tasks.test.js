@@ -119,8 +119,8 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.deepStrictEqual(moved.comments[moved.comments.length - 1].handoff, { from: 'mock', to: 'application' });
   const forApp = (await app('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id);
   assert.deepStrictEqual([forApp.forMe, forApp.unread > 0, forApp.routeLabels], [true, true, ['Mock Team']], 'the new team has it, marked new');
-  const forMock = (await mock('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id);
-  assert.deepStrictEqual([forMock.forMe, forMock.had, forMock.mayHand], [false, true, false], 'the team it was with still sees it');
+  // Once handed on it leaves the team's Today (the owner, 20 Nov 2026); the team can still comment on it from the student card.
+  assert.ok(!(await mock('GET', '/api/tasks')).json.tasks.some((x) => x.id === given2.id), 'a task handed on leaves the Today of the team that handed it on');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { comment: 'Feedback is on the card' })).status, 200, 'and comments');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'only the team it is with ticks it');
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 403, 'not to the team it is already with (its own team)');

@@ -2900,7 +2900,9 @@ function createPortalApi({
         c.tasks.forEach((t) => {
           const mine = forMe(req.user, t);
           const had = !mine && hadIt(req.user, t);
-          if (!everyone && !mine && !gaveIt(req.user, t) && !had) return;
+          // A task handed on to another team leaves this team's Today (the owner, 20 Nov 2026): it is the other team's now, and comes back
+          // only if it is handed back. It stays on the student card.
+          if (!everyone && !mine && !gaveIt(req.user, t)) return;
           out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
         });
       }

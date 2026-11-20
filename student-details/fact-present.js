@@ -352,5 +352,44 @@
     };
   }
 
-  return { present, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, parseCourseText, levelGroup, compact };
+  // ---- a university's January 2027 courses and requirements in one shape (the owner, 20 Nov 2026) ----
+  // The page, Assign task (university, intake, level, location, course) and the server all read a university the same way: the
+  // partner's January 2027 profile, or, for a direct route (`own`), the page's own figures, with each course's level and campus.
+  const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
+  function levelOf(text) {
+    const n = String(text || '').toLowerCase();
+    if (/pre-?\s?master|graduate diploma|incorporated master/.test(n)) return 'Pre-Masters';
+    if (/\bmres\b|\bmphil\b|\bphd\b|by research|doctor/.test(n)) return 'Masters by Research';
+    if (/year one|year 1\b|first year|\biy1\b|international year/.test(n)) return 'International Year One';
+    if (/foundation(?! degree)|\bify\b|year zero/.test(n) && !/master/.test(n)) return 'International Foundation Year';
+    if (/postgraduate|\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b|\bpg\b|\bpgcert|\bpgdip/.test(n)) return 'Postgraduate';
+    if (/undergraduate|\bbachelor|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bhnd\b|top[- ]?up|\bug\b|\bmeng\b|\bmsci\b|nursing/.test(n)) return 'Undergraduate';
+    return '';
+  }
+  const JAN = /\b(jan(uary)?|feb(ruary)?)\s*2027\b/i;
+  function pageData(u) {
+    const P = u.profile;
+    if (P && !P.own) return { intake: P.intake || 'January 2027', levels: P.levels || [], courses: P.courses || [] };
+    const view = present(u);
+    const levels = view.programs.map((p) => ({ level: p.name, academic: p.academic, english: p.english, tuition: p.tuition, scholarship: p.scholarship, extra: [p.duration && `Duration: ${p.duration}`, p.deposit && `Deposit: ${p.deposit}`].filter(Boolean).join('\n') }));
+    // A course with no intake written beside it belongs to the page's intakes: kept when the page has the January 2027 intake.
+    const janPage = view.intakeNames.some((n) => JAN.test(n));
+    const courses = view.courses.filter((c) => !/course list and fees are under|^the .* list/i.test(c.course) && !/:$/.test(c.course))
+      .filter((c) => (c.intakes.length ? c.intakes.some((x) => JAN.test(x)) : janPage))
+      .map((c) => {
+        const m = /^(.*?):\s*(£[\d,]+.*)$/.exec(c.course);
+        const name = m ? m[1].trim() : c.course;
+        return { name, level: levelOf(c.group) || levelOf(name) || 'Other courses', start: c.intakes.find((x) => JAN.test(x)) || 'January 2027', fee: m ? m[2] : '', full: c.full || c.course, campus: '' };
+      });
+    return { intake: 'January 2027', levels, courses };
+  }
+  // The places a university teaches (a course's campus, else the page's city written as "London, Birmingham" or "York and London").
+  function campusesOf(u, courses) {
+    const fromCourses = [...new Set(courses.map((c) => String(c.campus || '').trim()).filter(Boolean))];
+    if (fromCourses.length) return fromCourses;
+    const city = (u.profile && u.profile.city) || u.city || '';
+    return [...new Set(String(city).split(/,|\/| and /).map((x) => x.trim()).filter((x) => x && x.length < 40))];
+  }
+
+  return { present, pageData, campusesOf, levelOf, LEVEL_ORDER, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, parseCourseText, levelGroup, compact };
 }));

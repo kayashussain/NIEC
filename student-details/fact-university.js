@@ -2,7 +2,7 @@
 // the intakes, which the team may correct. What is shown and in which section is decided in fact-present.js (nothing twice, nothing
 // extra); this file draws it:
 //
-//   the deadlines first, highlighted, each date with the days left (and "Change dates" for the team)
+//   the deadlines first, highlighted, each date with the days left (read automatically: nobody changes them, the owner, 20 Nov 2026)
 //   one table: entry requirements, English, tuition fee, scholarship, deposit, one row per level
 //   the courses, grouped by level, each with Shortlist (for the student chosen at the top; the shortlist waits in the tray at the
 //   bottom, see fact-finder.js) and an amber warning when the automatic
@@ -83,12 +83,6 @@
     box.setAttribute('aria-label', 'Deadlines');
     const head = el('div', 'dl-head');
     head.append(el('h2', '', 'Deadlines'));
-    if (team()) {
-      const edit = el('button', 'btn btn-sm no-print', 'Change dates');
-      edit.type = 'button';
-      edit.addEventListener('click', editDeadlines);
-      head.append(edit);
-    }
     box.append(head);
     if (!view.deadlines.some((d) => d.applyBy || d.dates.length)) { box.append(el('p', 'dl-none', 'No dates yet.')); doc.append(box); return; }
     const grid = el('div', 'dl-grid');
@@ -126,53 +120,6 @@
     [...grid.children].filter((c) => c.classList.contains('is-over')).forEach((c) => grid.append(c));
     box.append(grid);
     doc.append(box);
-  }
-
-  // The team corrects the dates: per intake, "Apply by" and the other dates, one per line ("CAS deadline: 27 November 2026").
-  function editDeadlines() {
-    window.Portal.dialog('Change the dates', (body, close) => {
-      body.append(el('p', 'p-muted p-small', 'One date per line, for example "CAS deadline: 27 November 2026". The automatic reading keeps your dates until the university changes its own.'));
-      const rows = (uni.intakes || []).map((i) => ({ id: i.id, name: i.name, deadline: i.deadline || '', deadlines: i.deadlines || '' }));
-      const forms = [];
-      const list = el('div', 'dl-edit');
-      const add = (r) => {
-        const block = el('fieldset', 'dl-edit-block');
-        const name = window.Portal.field('Intake', { value: r.name, max: 120, placeholder: 'e.g. September 2027' });
-        name.input.disabled = Boolean(r.id);
-        const by = window.Portal.field('Apply by', { value: r.deadline, max: 120, placeholder: 'e.g. 30 June 2027' });
-        const dates = window.Portal.field('Other dates', { kind: 'area', value: r.deadlines, max: 4000, placeholder: 'Deposit deadline: 15 July 2027\nCAS deadline: 1 August 2027' });
-        dates.input.rows = 4;
-        block.append(name.wrap, by.wrap, dates.wrap);
-        forms.push({ id: r.id, name, by, dates });
-        list.append(block);
-      };
-      rows.forEach(add);
-      const more = el('button', 'btn btn-sm', 'Add an intake');
-      more.type = 'button';
-      more.addEventListener('click', () => add({ name: '', deadline: '', deadlines: '' }));
-      const msg = el('div', 'p-msg');
-      const foot = el('div', 'p-dialog-foot');
-      const save = el('button', 'btn btn-primary', 'Save the dates');
-      save.type = 'button';
-      save.addEventListener('click', async () => {
-        save.disabled = true;
-        try {
-          const intakes = forms.map((f) => ({ id: f.id, name: f.name.input.value.trim(), deadline: f.by.input.value.trim(), deadlines: f.dates.input.value.trim() })).filter((x) => x.id || x.name);
-          const res = await fetch(`/api/facts/${uni.id}/deadlines`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ intakes }) });
-          const json = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(json.error || 'Could not save the dates.');
-          uni = json;
-          close(true);
-          render();
-          window.NiecUI.toast('Dates saved. Everyone sees them now.', { type: 'success' });
-        } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; save.disabled = false; }
-      });
-      const cancel = el('button', 'btn', 'Cancel');
-      cancel.type = 'button';
-      cancel.addEventListener('click', () => close());
-      foot.append(cancel, save);
-      body.append(list, more, msg, foot);
-    }, { wide: true });
   }
 
   // ---- entry requirements and fees: one card per level ----
@@ -327,33 +274,10 @@
   // order foundation, year one, undergraduate, postgraduate, pre-masters, masters by research; every January 2027 course by level, each
   // with Shortlist; and the deadlines. The courses and requirements are the partner's January 2027 figures, or, for a direct route
   // (`own`), the university page's own figures. Nothing says which partner it is applied through: that is only in the Apply window.
-  const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Masters by Research', 'Other courses'];
-  function levelOf(text) {
-    const n = String(text || '').toLowerCase();
-    if (/pre-?\s?master|graduate diploma|incorporated master/.test(n)) return 'Pre-Masters';
-    if (/\bmres\b|\bmphil\b|\bphd\b|by research|doctor/.test(n)) return 'Masters by Research';
-    if (/year one|year 1\b|first year|\biy1\b|international year/.test(n)) return 'International Year One';
-    if (/foundation(?! degree)|\bify\b|year zero/.test(n) && !/master/.test(n)) return 'International Foundation Year';
-    if (/postgraduate|\bmaster|\bmsc\b|\bma\b|\bmba\b|\bllm\b|\bpg\b|\bpgcert|\bpgdip|\bmres\b/.test(n)) return 'Postgraduate';
-    if (/undergraduate|\bbachelor|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bhnd\b|top[- ]?up|\bug\b|\bmeng\b|\bmsci\b|nursing/.test(n)) return 'Undergraduate';
-    return '';
-  }
-  const JAN = /\b(jan(uary)?|feb(ruary)?)\s*2027\b/i;
-  // The page's own figures in the same shape as a partner's (a direct route): requirement cards from the fees table, the January 2027
-  // courses from the course lists (a course with a fee written after it, "Accounting BSc: £19,000", gets the fee on its card).
-  function ownData(view) {
-    const levels = view.programs.map((p) => ({ level: p.name, academic: p.academic, english: p.english, tuition: p.tuition, scholarship: p.scholarship, extra: [p.duration && `Duration: ${p.duration}`, p.deposit && `Deposit: ${p.deposit}`].filter(Boolean).join('\n') }));
-    const janOnly = view.intakeNames.length === 1 && JAN.test(view.intakeNames[0]);
-    const courses = view.courses.filter((c) => !/course list and fees are under|^the .* list/i.test(c.course) && !/:$/.test(c.course))
-      .filter((c) => (c.intakes.length ? c.intakes.some((x) => JAN.test(x)) : janOnly))
-      .map((c) => {
-        const m = /^(.*?):\s*(£[\d,]+.*)$/.exec(c.course);
-        const name = m ? m[1].trim() : c.course;
-        const level = levelOf(c.group) || levelOf(name) || 'Other courses';
-        return { name, level, start: c.intakes.find((x) => JAN.test(x)) || 'January 2027', fee: m ? m[2] : '', full: c.full || c.course };
-      });
-    return { levels, courses };
-  }
+  // The levels, their order and each course's level are read the same way here, in Assign task and on the server (fact-present.js).
+  const { LEVEL_ORDER, levelOf } = P;
+  // A short key for a level's colour on the page.
+  const lv0 = (name) => ({ 'International Foundation Year': 'ify', 'International Year One': 'iy1', Undergraduate: 'ug', Postgraduate: 'pg', 'Pre-Masters': 'pm', 'Masters by Research': 'mr' }[LEVEL_ORDER.includes(name) ? name : levelOf(name)] || 'other');
   function img(src, cls, alt = '') { const i = el('img', cls); i.src = src; i.alt = alt; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); }); return i; }
   function copyBtn(value, label) {
     const b = el('button', 'up-copy no-print', label || 'Copy');
@@ -372,13 +296,13 @@
       const steps = el('ol', 'up-steps');
       const step = (title, ...rest) => { const li = el('li'); const t = el('div', 'up-step-text'); t.append(el('b', '', title), ...rest); li.append(t); steps.append(li); return li; };
       if (A.portal) {
-        const go = el('a', 'btn btn-primary', 'Open the application portal'); go.href = A.portal; go.target = '_blank'; go.rel = 'noopener';
-        step('Open the portal', el('span', 'up-step-sub', `${A.partner}: ${A.portal.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}`), go);
+        const go = el('a', 'btn btn-primary', 'Open the portal'); go.href = A.portal; go.target = '_blank'; go.rel = 'noopener';
+        step(A.partner, go);
       } else if (A.email) {
         const row = el('div', 'up-cred'); row.append(el('span', '', A.email), copyBtn(A.email));
-        step('Send the application by email', el('span', 'up-step-sub', `To ${A.partner}`), row);
+        step(`Send the application to ${A.partner}`, row);
       } else {
-        step('Ask Admin for the portal', el('span', 'up-step-sub', `No portal or email is saved for ${A.partner} yet. Admin adds it on Partners.`));
+        step(A.partner, el('span', 'up-step-sub', 'No portal saved yet (Partners).'));
       }
       if (A.login && (A.login.user || A.login.password)) {
         const box = el('div', 'up-creds');
@@ -392,7 +316,17 @@
         }
         step('Log in', box);
       }
-      step(`Find ${uni.name}`, el('span', 'up-step-sub', `Choose the course for the ${uni.profile.intake} intake and add the student's documents, as the portal asks.`));
+      // The student being shortlisted and their courses here, so the application goes in for the right one.
+      const who = window.ShortlistFor && window.ShortlistFor.current();
+      const mine = who && window.ShortlistFor.shortlisted ? window.ShortlistFor.shortlisted(uni.id) : [];
+      if (who) {
+        const st = el('div', 'up-apply-for');
+        st.append(el('span', 'p-avatar sm', window.Portal.initials(who.name)));
+        const t = el('div');
+        t.append(el('b', '', who.name), el('span', '', mine.length ? mine.map((o) => o.course).join(' · ') : 'No course shortlisted here yet'));
+        st.append(t);
+        body.append(st);
+      }
       body.append(steps);
       if (A.contacts && A.contacts.length) {
         const c = el('div', 'up-contacts');
@@ -409,17 +343,28 @@
   function renderProfile() {
     const P0 = uni.profile;
     const view = P.present(uni);
-    const data = P0.own ? ownData(view) : { levels: P0.levels, courses: P0.courses };
+    const data = P.pageData(uni);
     const doc = el('article', 'doc up-doc');
     const city = P0.city || uni.city;
     const startMonth = (() => { const c = {}; data.courses.forEach((x) => { if (x.start) c[x.start] = (c[x.start] || 0) + 1; }); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [''])[0]; })();
     const fees = [...data.courses.flatMap((c) => money(c.fee)), ...data.levels.flatMap((l) => money(l.tuition))];
-    const deadline = P0.own ? (view.deadlines.find((d) => d.applyBy && JAN.test(d.name)) || view.deadlines.find((d) => d.applyBy) || null) : null;
+    const deadline = P0.own ? (view.deadlines.find((d) => d.applyBy && /\b(jan(uary)?|feb(ruary)?)\s*2027\b/i.test(d.name)) || view.deadlines.find((d) => d.applyBy) || null) : null;
     const deadlineText = deadline ? deadline.applyBy.when : (P0.deadlines[0] || '').replace(/^application deadline\s*[-:]\s*/i, '').replace(/^apply by\s*/i, '').replace(/\s*\(most courses\)/, '');
 
     // the top: picture, logo, name, place, Apply now
     const hero = el('header', 'up-hero' + (P0.banner ? '' : ' no-pic'));
-    if (P0.banner) hero.append(img(P0.banner, 'up-hero-img'));
+    // The top pictures slide one into the next, slowly zooming (the owner, 20 Nov 2026: a page that moves, not a static page).
+    clearInterval(heroTimer);
+    const slides = [P0.banner, ...P0.photos].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).slice(0, 5);
+    slides.forEach((src, k) => { const im = img(src, 'up-hero-img' + (k === 0 ? ' is-on' : ''), ''); if (k) im.loading = 'eager'; hero.append(im); });
+    if (slides.length > 1) {
+      const dots = el('div', 'up-dots no-print');
+      slides.forEach((_, k) => { const d = el('button', k === 0 ? 'is-on' : ''); d.type = 'button'; d.setAttribute('aria-label', `Picture ${k + 1}`); d.addEventListener('click', () => show(k)); dots.append(d); });
+      hero.append(dots);
+      let at = 0;
+      const show = (k) => { at = k; hero.querySelectorAll('.up-hero-img').forEach((x, n) => x.classList.toggle('is-on', n === k)); dots.querySelectorAll('button').forEach((x, n) => x.classList.toggle('is-on', n === k)); };
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show((at + 1) % hero.querySelectorAll('.up-hero-img').length); }, 5500);
+    }
     const inner = el('div', 'up-hero-inner');
     const id = el('div', 'up-id');
     const logo = el('div', 'up-logo');
@@ -438,7 +383,7 @@
     doc.append(hero);
 
     // four facts
-    const facts = el('section', 'up-facts');
+    const facts = el('section', 'up-facts up-reveal');
     const fact = (label, value, small) => { const f = el('div', 'up-fact'); f.append(el('span', 'up-fact-label', label), el('b', '', value || 'Not given')); if (small) f.append(el('small', '', small)); facts.append(f); };
     fact('Location', city);
     fact('Intake', P0.intake, startMonth && startMonth !== P0.intake ? `Most courses start ${startMonth}` : null);
@@ -446,22 +391,52 @@
     fact('Tuition from', fees.length ? `${pretty(Math.min(...fees))} a year` : '', data.courses.length ? `${data.courses.length} courses` : null);
     doc.append(facts);
 
-    // video and pictures
+    // video and pictures: one large frame that never cuts a picture (the whole picture over a soft blurred copy of it), arrows and
+    // small pictures under it to move between them; the video is the first.
     const pics = P0.photos.filter((x) => x !== P0.banner);
-    if (P0.video || pics.length) {
-      const m = el('section', 'up-media no-print' + (P0.video ? ' has-video' : ''));
-      if (P0.video) {
-        const f = el('iframe', 'up-video');
-        f.src = P0.video.replace('www.youtube.com', 'www.youtube-nocookie.com') + '?rel=0&modestbranding=1';
-        f.title = `${uni.name} video`; f.loading = 'lazy'; f.allow = 'accelerometer; encrypted-media; picture-in-picture'; f.allowFullscreen = true; f.referrerPolicy = 'strict-origin-when-cross-origin';
-        m.append(f);
+    const items = [...(P0.video ? [{ video: P0.video }] : []), ...[P0.banner, ...pics].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).map((src) => ({ src }))];
+    if (items.length > 1 || P0.video) {
+      const m = el('section', 'up-section up-gallery no-print up-reveal');
+      m.append(el('h2', '', P0.video ? 'Video and pictures' : 'Pictures'));
+      const stage = el('div', 'up-stage');
+      const thumbs = el('div', 'up-thumbs');
+      let at = 0;
+      const open = (k) => {
+        at = (k + items.length) % items.length;
+        const it = items[at];
+        stage.querySelectorAll('.up-slide').forEach((x) => x.remove());
+        const slide = el('div', 'up-slide');
+        if (it.video) {
+          const f = el('iframe', 'up-video');
+          f.src = it.video.replace('www.youtube.com', 'www.youtube-nocookie.com') + '?rel=0&modestbranding=1';
+          f.title = `${uni.name} video`; f.allow = 'accelerometer; encrypted-media; picture-in-picture'; f.allowFullscreen = true; f.referrerPolicy = 'strict-origin-when-cross-origin';
+          slide.append(f);
+        } else {
+          slide.style.setProperty('--bg', `url("${String(it.src).replace(/"/g, '%22')}")`);
+          slide.append(img(it.src, 'up-slide-img', uni.name));
+        }
+        stage.prepend(slide);
+        thumbs.querySelectorAll('button').forEach((b, n) => b.classList.toggle('is-on', n === at));
+      };
+      if (items.length > 1) {
+        const prev = el('button', 'up-arrow is-prev'); prev.type = 'button'; prev.setAttribute('aria-label', 'Previous'); prev.addEventListener('click', () => open(at - 1));
+        const next = el('button', 'up-arrow is-next'); next.type = 'button'; next.setAttribute('aria-label', 'Next'); next.addEventListener('click', () => open(at + 1));
+        stage.append(prev, next);
+        items.forEach((it, k) => {
+          const b = el('button', it.video ? 'is-video' : ''); b.type = 'button'; b.setAttribute('aria-label', it.video ? 'Video' : `Picture ${k + 1}`);
+          if (it.video) { const id2 = (it.video.match(/embed\/([\w-]{11})/) || [])[1]; if (id2) b.append(img(`https://i.ytimg.com/vi/${id2}/mqdefault.jpg`, '', '')); } else b.append(img(it.src, '', ''));
+          b.addEventListener('click', () => open(k));
+          thumbs.append(b);
+        });
       }
-      if (pics.length) { const g = el('div', 'up-photos'); pics.slice(0, P0.video ? 4 : 5).forEach((x) => g.append(img(x, '', uni.name))); m.append(g); }
+      m.append(stage);
+      if (items.length > 1) m.append(thumbs);
+      open(0);
       doc.append(m);
     }
     // a short about and the key points
     if (has(P0.about) || P0.keyPoints.length) {
-      const a = el('section', 'up-section up-about');
+      const a = el('section', 'up-section up-about up-reveal');
       const left = el('div');
       left.append(el('h2', '', 'About'));
       if (has(P0.about)) P0.about.split('\n').filter(Boolean).slice(0, 2).forEach((l) => left.append(el('p', 'up-about-text', l)));
@@ -477,7 +452,8 @@
       const sec = el('section', 'up-section');
       sec.append(el('h2', '', 'Entry requirements'));
       levels.forEach((L) => {
-        const card = el('div', 'up-level');
+        const card = el('div', 'up-level up-reveal');
+        card.dataset.level = lv0(L.level);
         const head = el('div', 'up-level-head');
         const lv = LEVEL_ORDER.includes(L.level) ? L.level : (levelOf(L.level) || '');
         const n = data.courses.filter((c) => c.level === lv).length;
@@ -523,8 +499,7 @@
       const jump = el('div', 'up-jump no-print');
       groups.forEach((g) => { const a = el('a', '', `${g} · ${data.courses.filter((c) => c.level === g).length}`); a.href = '#lvl-' + g.replace(/\W+/g, '-'); jump.append(a); });
       if (groups.length > 1) sec.append(jump);
-      const between = [...pics.slice(P0.video ? 4 : 5), ...pics];
-      groups.forEach((g, gi) => {
+      groups.forEach((g) => {
         const items = data.courses.filter((c) => c.level === g).sort((x, y) => x.name.localeCompare(y.name));
         const block = el('div', 'up-group');
         block.id = 'lvl-' + g.replace(/\W+/g, '-');
@@ -533,7 +508,8 @@
         block.append(gh);
         const grid = el('div', 'up-course-grid');
         items.forEach((c) => {
-          const card = el('div', 'up-course');
+          const card = el('div', 'up-course up-reveal');
+          card.style.setProperty('--d', `${(grid.children.length % 6) * 50}ms`);
           card.dataset.name = c.name.toLowerCase();
           card.append(el('b', 'up-course-name', c.name));
           const meta = el('div', 'up-course-meta');
@@ -548,7 +524,6 @@
         });
         block.append(grid);
         sec.append(block);
-        if (gi < groups.length - 1 && between[gi]) sec.append(img(between[gi], 'up-band no-print', ''));
       });
       const none = el('p', 'up-none', 'No course matches.');
       none.hidden = true;
@@ -557,19 +532,18 @@
         const words = box.value.toLowerCase().split(/\s+/).filter(Boolean);
         let shown = 0;
         sec.querySelectorAll('.up-group').forEach((b) => { let n = 0; b.querySelectorAll('.up-course').forEach((c) => { const hit = words.every((w) => c.dataset.name.includes(w)); c.hidden = !hit; if (hit) n += 1; }); b.hidden = n === 0; shown += n; });
-        sec.querySelectorAll('.up-band, .up-jump').forEach((x) => { x.hidden = words.length > 0; });
+        sec.querySelectorAll('.up-jump').forEach((x) => { x.hidden = words.length > 0; });
         none.hidden = shown > 0;
       });
       doc.append(sec);
     }
 
-    // the deadlines for the intake (the partner's, or the page's own; Change dates for the team, as before)
+    // the deadlines for the intake (the partner's, or the page's own; read automatically, nobody changes them)
     const teamDates = (uni.intakes || []).some((i) => i.editedAt && (i.deadline || i.deadlines));
     if (!P0.own && P0.deadlines.length && !teamDates) {
       const sec = el('section', 'up-section');
       const head = el('div', 'up-courses-head');
       head.append(el('h2', '', `Deadlines for ${P0.intake}`));
-      if (team()) { const edit = el('button', 'btn btn-sm no-print', 'Change dates'); edit.type = 'button'; edit.addEventListener('click', editDeadlines); head.append(edit); }
       sec.append(head);
       const ul = el('ul', 'up-deadlines');
       P0.deadlines.forEach((d) => ul.append(el('li', '', d)));
@@ -581,6 +555,7 @@
       doc.append(wrap);
     }
     $('view').replaceChildren(doc);
+    motion(doc);
     document.title = `${uni.name} · Universities · ISR`;
     const bar = $('toolbar');
     const copy = el('button', 'btn', 'Copy summary');
@@ -590,6 +565,26 @@
     print.type = 'button';
     print.addEventListener('click', () => window.print());
     bar.replaceChildren(copy, print);
+  }
+  // Things come into view as the page is scrolled (each card rises and fades in, a little after the one before), and the amounts in
+  // the four tiles count up once. Nothing moves for a reader who asked for less motion; anything not yet shown appears after a moment
+  // anyway, so the page is never left half empty (printing shows everything).
+  let heroTimer = null;
+  function motion(doc) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const parts = [...doc.querySelectorAll('.up-reveal')];
+    if (reduce || !('IntersectionObserver' in window)) { parts.forEach((x) => x.classList.add('is-in')); return; }
+    document.documentElement.classList.add('up-motion');
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    parts.forEach((x) => io.observe(x));
+    window.addEventListener('beforeprint', () => parts.forEach((x) => x.classList.add('is-in')));
+    doc.querySelectorAll('.up-fact b').forEach((b) => {
+      const m = /^£([\d,]+)(.*)$/.exec(b.textContent);
+      if (!m) return;
+      const end = Number(m[1].replace(/,/g, '')); const rest = m[2]; const t0 = performance.now();
+      const step = (t) => { const k = Math.min(1, (t - t0) / 900); b.textContent = `£${Math.round(end * (1 - Math.pow(1 - k, 3))).toLocaleString('en-GB')}${rest}`; if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
   }
   // The same short summary to paste into WhatsApp or an email as on the other pages.
   async function copyProfileSummary(data) {

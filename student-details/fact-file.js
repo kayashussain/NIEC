@@ -257,7 +257,7 @@
       }
       window.Finder.mount(box, student
         ? { title: 'Find the universities you can go to', intro: 'Enter your level, your grade, your study gap and your English test. Press "I am interested" on the courses you like.' }
-        : { title: 'Find universities for a student', intro: 'Enter the student\'s level, grade, study gap and English: every university is checked at once, with what the student would need.', shortlist: Boolean(window.ShortlistFor) && !(window.TeamRules && window.TeamRules.isReadOnly(me)) });
+        : { title: 'Find universities for a student', shortlist: Boolean(window.ShortlistFor) && !(window.TeamRules && window.TeamRules.isReadOnly(me)) });
       const shortlist = document.getElementById('shortlist');
       if (shortlist) box.before(shortlist); // a student's welcome and shortlist first
     }).catch(() => {});

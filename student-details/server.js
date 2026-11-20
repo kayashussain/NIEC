@@ -37,6 +37,7 @@ const { createPortalApi } = require('./portal-api');
 const { createPush } = require('./push');
 const { createCourseSitemaps } = require('./course-sitemap');
 const { createNavitasToolkit } = require('./navitas-toolkit');
+const { createPartnerRefresh } = require('./partner-refresh');
 const { studentFrom, checkLevel, rulesFromPage, ourLevel: eligLevel } = require('./eligibility');
 const { parseCourses: parseFactCourses } = require('./course-index');
 const { tidyPartners, tidyOfficialRep, tidyNov20 } = require('./partner-tidy');
@@ -725,12 +726,23 @@ async function handlePresence(req, res) {
 async function handleFacts(req, res, urlPath) {
   const id = (urlPath.match(/^\/api\/facts\/([a-f0-9]{12})/) || [])[1];
   if (req.method === 'GET') {
+    // Assign task (the owner, 20 Nov 2026): one university's intake, course levels, locations and courses for its dropdowns.
+    if (id && urlPath.endsWith('/choices')) {
+      const u = facts.get(id);
+      if (!u) return sendJSON(res, 404, { error: 'No such university.' });
+      const FP = require('./fact-present');
+      const d = FP.pageData(u);
+      const levels = FP.LEVEL_ORDER.filter((l) => d.courses.some((c) => c.level === l));
+      return sendJSON(res, 200, { name: u.name, intakes: [d.intake], levels, campuses: FP.campusesOf(u, d.courses), courses: d.courses.map((c) => ({ name: c.name, level: c.level, campus: c.campus || '' })) });
+    }
     if (!id) return sendJSON(res, 200, facts.list((new URL(req.url, 'http://x').searchParams.get('q') || '').slice(0, 100)));
     const uni = facts.get(id);
     return uni ? sendJSON(res, 200, uni) : sendJSON(res, 404, { error: 'No such university.' });
   }
   if (req.method !== 'POST' || !id || !urlPath.endsWith('/deadlines')) return sendJSON(res, 405, { error: 'Universities is kept up to date by itself. Only the dates of an intake can be changed.' });
-  if (isReadOnly(req.user)) return sendJSON(res, 403, { error: 'Your account can only look.' });
+  // The dates are read automatically and nobody changes them on the page (the owner, 20 Nov 2026); Admin only, with no button, to put a
+  // date right in an emergency.
+  if (!isAdmin(req.user)) return sendJSON(res, 403, { error: 'The dates are read automatically.' });
   let body;
   try { body = await readJSONBody(req, 64 * 1024); } catch (e) { return sendJSON(res, e.statusCode || 400, { error: e.message }); }
   const saved = facts.setDeadlines(id, body && body.intakes, req.user.label);
@@ -1241,7 +1253,7 @@ const server = http.createServer(async (req, res) => {
       const counts = { yes: results.filter((x) => x.status === 'yes').length, check: results.filter((x) => x.status === 'check').length, no: results.filter((x) => x.status === 'no').length };
       return sendJSON(res, 200, { results, counts, without: without.length, readAt: '' });
     }
-    if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/deadlines)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
+    if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/deadlines|\/choices)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
     // The student cards and the pages around them (portal-api.js).
     if (await portal.handle(req, res, urlPath)) return;
     if (urlPath === '/api/direct' || /^\/api\/direct\/[a-f0-9]{12}(\/delete|\/files(\/[a-f0-9]{12}(\/delete)?)?)?$/.test(urlPath)) return await handleDirect(req, res, urlPath);
@@ -1299,6 +1311,14 @@ server.listen(PORT, process.env.HOST || undefined, () => {
 portalRef = portal;
 // The Navitas toolkit: looked at every half hour whether a reading is due (Monday and Thursday from 2 a.m.), the first look three
 // minutes after the server starts (so a new installation fills in the Navitas colleges at once).
+// Every Thursday from 2 a.m. office time, the universities' January 2027 courses, requirements and dates are read again from Real Dreams
+// (Route2Uni) and Adventus with the logins on their B2B cards (partner-refresh.js). PARTNER_REFRESH=off switches it off.
+const partnerRefresh = createPartnerRefresh({ dir: DATA_DIR, facts, b2b, enabled: process.env.PARTNER_REFRESH !== 'off',
+  record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited universities', { app: 'Thursday refresh', changes }) });
+if (partnerRefresh.enabled()) {
+  setTimeout(() => partnerRefresh.tick(), 5 * 60 * 1000).unref();
+  setInterval(() => partnerRefresh.tick(), 30 * 60 * 1000).unref();
+}
 if (navitas.enabled()) {
   setTimeout(() => navitas.tick(), 3 * 60 * 1000).unref();
   setInterval(() => navitas.tick(), 30 * 60 * 1000).unref();

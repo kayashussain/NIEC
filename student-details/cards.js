@@ -291,7 +291,11 @@ function createCards(dir, { now = () => new Date() } = {}) {
         const tag = Fields.TASK_TAG_IDS.includes(input && input.tag) ? input.tag : '';
         // How important it is: Priority unless Super priority or Medium was chosen.
         const priority = Fields.TASK_PRIORITY_IDS.includes(input && input.priority) ? input.priority : 'high';
-        task = { id: newId(), team, text, ...(tag ? { tag } : {}), priority, by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
+        // An application task carries what to apply for (the owner, 20 Nov 2026): university, intake, level, location and course, so the
+        // Application Team sees it at a glance and ticks it with one choice.
+        const a = input && input.app && typeof input.app === 'object' ? input.app : null;
+        const app = a && str(a.university, 160) && str(a.course, 300) ? { university: str(a.university, 160), universityId: str(a.universityId, 20), intake: str(a.intake, 60), level: str(a.level, 60), location: str(a.location, 120), course: str(a.course, 300) } : null;
+        task = { id: newId(), team, text, ...(tag ? { tag } : {}), ...(app ? { app } : {}), priority, by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
         card.tasks = [...card.tasks, task].slice(-LIMITS.tasks);
       });
       return out.error ? out : { ...out, task };

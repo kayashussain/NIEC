@@ -153,6 +153,8 @@ function cleanProfile(p) {
     // own: the courses, requirements and dates are the page's own (a direct route, or nothing for January 2027 at the partner); the
     // profile then gives only the pictures, the video, the logo and the short about.
     own: Boolean(p.own), intake: t(p.intake, 60) || 'January 2027',
+    // Which partner record the courses come from, read again every Thursday (partner-refresh.js), and when they were last read.
+    key: t(p.key, 160), source: cleanSource2(p.source), readAt: t(p.readAt, 40),
     logo: logoUrl(p.logo), banner: url(p.banner), photos: (Array.isArray(p.photos) ? p.photos : []).map(url).filter(Boolean).slice(0, 8),
     video: /^https:\/\/www\.youtube(-nocookie)?\.com\/embed\/[\w-]{6,20}/.test(String(p.video || '')) ? url(p.video) : '',
     about: t(p.about, 2000), keyPoints: lines(p.keyPoints, 8, 160), website: url(p.website) || t(p.website, 300), city: t(p.city),
@@ -166,6 +168,13 @@ function cleanProfile(p) {
       fee: t(c && c.fee, 80), duration: t(c && c.duration, 60), campus: t(c && c.campus, 200),
     })).filter((c) => c.name),
   };
+}
+function cleanSource2(v) {
+  if (!v || typeof v !== 'object' || !['Real Dreams', 'Adventus', 'Apply Board'].includes(v.partner)) return null;
+  const out = { partner: v.partner };
+  if (Number.isInteger(v.r2u)) out.r2u = v.r2u;
+  if (Array.isArray(v.adv)) out.adv = v.adv.slice(0, 10).filter((a) => a && Number.isInteger(a.id)).map((a) => ({ id: a.id, name: str(a.name, 200), institution_address: a.institution_address && typeof a.institution_address === 'object' ? { city: str(a.institution_address.city, 80), country_name: str(a.institution_address.country_name, 120), country_id: Number(a.institution_address.country_id) || 247 } : { country_id: 247 }, is_drive_member: Boolean(a.is_drive_member) }));
+  return out;
 }
 // The page a partner profile belongs to: the same name (ignoring "the", "of", "university", brackets and punctuation), or a name the
 // Universities writes differently (a university is never matched to its international college: "college" and "international" count).
@@ -479,6 +488,21 @@ function createFacts(dir, { now = () => new Date() } = {}) {
       if (!uni) return { error: 'No such university.' };
       write({ ...data, universities: data.universities.filter((u) => u.id !== id) });
       return { removed: uni };
+    },
+    // The pages read from partners, for the Thursday refresh: [{ id, key, source }].
+    refreshable: () => load().universities.filter((u) => u.profile && !u.profile.own && u.profile.source).map((u) => ({ id: u.id, name: u.name, key: u.profile.key, source: u.profile.source, courses: u.profile.courses.length })),
+    // The partner's fresh January 2027 courses, requirements and dates for one page (partner-refresh.js). The pictures, the about and
+    // everything the team wrote stay as they are.
+    refreshProfile(id, fresh) {
+      const data = load();
+      const i = data.universities.findIndex((u) => u.id === id);
+      if (i === -1 || !data.universities[i].profile) return { error: 'No such page.' };
+      const u = data.universities[i];
+      const profile = cleanProfile({ ...u.profile, levels: fresh.levels, courses: fresh.courses, deadlines: fresh.deadlines, readAt: now().toISOString() });
+      const universities = [...data.universities];
+      universities[i] = { ...u, profile, updatedAt: now().toISOString() };
+      write({ ...data, universities });
+      return { university: universities[i] };
     },
     // Puts back a whole list from a backup (each page checked and cleaned like any save).
     restoreAll(universities) {

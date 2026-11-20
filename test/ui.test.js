@@ -277,7 +277,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.close();
   });
 
-  await t.test('Universities finds a course; a page is read only, the team changes only the dates', async () => {
+  await t.test('Universities finds a course; a page is read only, nobody changes the dates', async () => {
     const page = await open(admin, '/fact-file');
     await page.waitForSelector('.uni-card:not(.skeleton)');
     assert.strictEqual(await page.locator('#addForm').count(), 0, 'no university is added by hand');
@@ -293,11 +293,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.click('button:has-text("Copy summary")');
     await page.waitForSelector('.ui-toast.success');
     assert.match(await page.evaluate(() => navigator.clipboard.readText()), /^\*.+\*[\s\S]*\S$/, 'a WhatsApp-ready summary was copied');
-    assert.strictEqual(await page.locator('button:has-text("Edit"), button:has-text("Delete"), button:has-text("Submit application"), button:has-text("Find the course page")').count(), 0, 'nothing to edit but the dates');
-    await page.click('button:has-text("Change dates")');
-    await page.waitForSelector('dialog.p-dialog[open]');
-    assert.match(await page.textContent('.p-dialog h2'), /Change the dates/);
-    await page.click('.p-dialog button:has-text("Cancel")');
+    assert.strictEqual(await page.locator('button:has-text("Edit"), button:has-text("Delete"), button:has-text("Submit application"), button:has-text("Find the course page"), button:has-text("Change dates")').count(), 0, 'nothing to edit, not even the dates (read automatically)');
     assert.deepStrictEqual(page.errors, []);
     await page.close();
   });
@@ -745,14 +741,18 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.waitForSelector('dialog.p-dialog[open]');
     await page.fill('.p-dialog-body input >> nth=0', 'Newly');
     await page.fill('.p-dialog-body input >> nth=1', 'Added');
+    // The email is needed too (the owner, 20 Nov 2026); without it, Save says so.
+    await page.click('.p-dialog-foot .btn-primary');
+    assert.match(await page.textContent('.p-dialog .p-msg'), /Email is needed/);
+    await page.fill('.p-dialog-body input[placeholder="student@example.com"]', 'newly.added@example.org');
     // The WhatsApp number and where the student came from are needed (the owner, 18 Nov 2026).
     await page.click('.p-dialog-foot .btn-primary');
     assert.match(await page.textContent('.p-dialog .p-msg'), /WhatsApp number/);
     await page.fill('.p-dialog-body input[placeholder="98XXXXXXXX"]', '9800055501');
     await page.click('.p-dialog-foot .btn-primary');
-    assert.match(await page.textContent('.p-dialog .p-msg'), /where the student came from/);
-    await page.selectOption('.p-dialog-body select >> nth=2', { label: 'Visitor' });
-    // Only the name is needed, at any stage (the owner, 16 Nov 2026): the rest is added later on the student card.
+    assert.match(await page.textContent('.p-dialog .p-msg'), /Source is needed/);
+    await page.selectOption('.p-dialog-body select >> nth=1', { label: 'Visitor' }); // the Stage, then the Source (no Nationality any more)
+    // Name, email, WhatsApp and source are needed (the owner, 20 Nov 2026): the rest is added later on the student card.
     await page.click('.p-dialog-foot .btn-primary');
     await page.waitForFunction(() => document.querySelectorAll('#body tr:not(.pad-row)').length === 3);
     await page.waitForSelector('.ui-toast:has-text("Student saved")');
