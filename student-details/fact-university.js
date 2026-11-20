@@ -312,7 +312,8 @@
   const shortIntake = (s) => { const ms = String(s || '').split(/,\s*/).map((x) => x.trim().slice(0, 3)).filter(Boolean); return ms.length ? `${ms.join(', ')} 2027` : ''; };
   // A short key for a level's colour on the page.
   const lv0 = (name) => ({ 'International Foundation Year': 'ify', 'International Year One': 'iy1', Undergraduate: 'ug', Postgraduate: 'pg', 'Pre-Masters': 'pm', 'Extended Masters': 'em', 'Masters by Research': 'mr', PhD: 'phd' }[LEVEL_ORDER.includes(name) ? name : levelOf(name)] || 'other');
-  function img(src, cls, alt = '') { const i = el('img', cls); i.src = src; i.alt = alt; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); }); return i; }
+  const media = (u) => (/^https:\/\//.test(String(u || '')) ? `/api/media?u=${encodeURIComponent(u)}` : u); // the server's kept copy (media-cache.js)
+  function img(src, cls, alt = '') { const i = el('img', cls); i.src = media(src); i.alt = alt; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); }); return i; }
   function copyBtn(value, label) {
     const b = el('button', 'up-copy no-print', label || 'Copy');
     b.type = 'button';
@@ -393,19 +394,39 @@
     clearInterval(heroTimer);
     clearInterval(galleryTimer);
     const slides = [P0.banner, ...P0.photos].filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).slice(0, 5);
-    slides.forEach((src, k) => { const im = img(src, 'up-hero-img' + (k === 0 ? ' is-on' : ''), ''); if (k) im.loading = 'eager'; hero.append(im); });
-    if (slides.length > 1) {
-      const dots = el('div', 'up-dots no-print');
-      dots.style.setProperty('--dur', `${HERO_MS}ms`);
-      slides.forEach((_, k) => { const d = el('button', k === 0 ? 'is-on' : ''); d.type = 'button'; d.setAttribute('aria-label', `Picture ${k + 1}`); d.addEventListener('click', () => show(k)); dots.append(d); });
-      hero.append(dots);
-      let at = 0;
-      const show = (k) => { const last = at; at = k; hero.querySelectorAll('.up-hero-img').forEach((x, n) => { x.classList.toggle('is-on', n === k); x.classList.toggle('is-out', n === last && n !== k); }); dots.querySelectorAll('button').forEach((x, n) => { x.classList.remove('is-on'); if (n === k) { void x.offsetWidth; x.classList.add('is-on'); } }); };
-      // A press on a dot starts that picture's full time again, so the dot and the picture stay together.
-      const tick = () => { clearInterval(heroTimer); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show((at + 1) % hero.querySelectorAll('.up-hero-img').length); }, HERO_MS); };
-      dots.addEventListener('click', tick);
+    // A picture that does not load, or is too small to fill the cover sharply, leaves the cover with its dot; with none left the
+    // cover shows its blue colour. So no slide is ever empty, black or white (the owner, 21 Nov 2026).
+    const dots = el('div', 'up-dots no-print');
+    dots.style.setProperty('--dur', `${HERO_MS}ms`);
+    let at = 0;
+    const heroImgs = () => [...hero.querySelectorAll('.up-hero-img')];
+    const show = (k) => {
+      const all = heroImgs(); if (!all.length) return;
+      const last = at; at = (k + all.length) % all.length;
+      all.forEach((x, n) => { x.classList.toggle('is-on', n === at); x.classList.toggle('is-out', n === last && n !== at); });
+      [...dots.children].forEach((x, n) => { x.classList.remove('is-on'); if (n === at) { void x.offsetWidth; x.classList.add('is-on'); } });
+    };
+    const tick = () => { clearInterval(heroTimer); if (heroImgs().length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show(at + 1); }, HERO_MS); };
+    const drop = (im) => {
+      const n = heroImgs().indexOf(im); if (n < 0) return;
+      im.remove(); if (dots.children[n]) dots.children[n].remove();
+      if (!heroImgs().length) { hero.classList.add('no-pic'); dots.remove(); clearInterval(heroTimer); return; }
+      dots.hidden = heroImgs().length < 2;
+      if (n === at || at >= heroImgs().length) { at = 0; show(0); } else if (n < at) at -= 1;
       tick();
-    }
+    };
+    slides.forEach((src, k) => {
+      const im = img(src, 'up-hero-img' + (k === 0 ? ' is-on' : ''), '');
+      im.loading = 'eager';
+      im.addEventListener('error', () => drop(im));
+      im.addEventListener('load', () => { if (im.naturalWidth < 640) drop(im); });
+      hero.append(im);
+      const d = el('button', k === 0 ? 'is-on' : ''); d.type = 'button'; d.setAttribute('aria-label', `Picture ${k + 1}`);
+      d.addEventListener('click', () => { show([...dots.children].indexOf(d)); tick(); });
+      dots.append(d);
+    });
+    if (slides.length > 1) hero.append(dots);
+    tick();
     const inner = el('div', 'up-hero-inner');
     const id = el('div', 'up-id');
     const logo = el('div', 'up-logo');
@@ -442,16 +463,28 @@
       const row = el('div', 'up-media' + (P0.video && pics.length > 1 ? ' has-both' : ''));
       if (pics.length > 1) {
         const film = el('div', 'up-film');
+        const wrap = el('div', 'up-film-wrap');
         const bars = el('div', 'up-bars');
         const count = el('span', 'up-count', `1 / ${pics.length}`);
         pics.forEach((src, k) => {
           const f = img(src, 'up-frame' + (k === 0 ? ' is-on' : ''), `${uni.name}, picture ${k + 1}`);
           f.loading = k < 2 ? 'eager' : 'lazy';
-          f.addEventListener('error', () => { f.remove(); bars.children[k] && (bars.children[k].hidden = true); });
-          film.append(f);
           const b = el('button', k === 0 ? 'is-on' : ''); b.type = 'button'; b.setAttribute('aria-label', `Picture ${k + 1}`);
           b.append(el('i'));
-          b.addEventListener('click', () => { go(k); restart(); });
+          b.addEventListener('click', () => { go([...bars.children].indexOf(b)); restart(); });
+          // A picture that does not load or is too small to fill the frame sharply leaves with its bar (no empty slide).
+          const dropF = () => {
+            const n = [...film.querySelectorAll('.up-frame')].indexOf(f); if (n < 0) return;
+            f.remove(); b.remove();
+            const left = film.querySelectorAll('.up-frame').length;
+            if (!left) { wrap.remove(); row.classList.remove('has-both'); if (!row.children.length) m.remove(); return; }
+            bars.hidden = count.hidden = left < 2;
+            if (n <= at) at = Math.max(0, at - 1);
+            go(at); restart();
+          };
+          f.addEventListener('error', dropF);
+          f.addEventListener('load', () => { if (f.naturalWidth < 560) dropF(); });
+          film.append(f);
           bars.append(b);
         });
         let at = 0;
@@ -460,7 +493,7 @@
           if (!frames.length) return;
           at = (k + frames.length) % frames.length;
           frames.forEach((x, n) => x.classList.toggle('is-on', n === at));
-          [...bars.children].filter((x) => !x.hidden).forEach((x, n) => { x.classList.remove('is-on'); if (n === at) { void x.offsetWidth; x.classList.add('is-on'); } });
+          [...bars.children].forEach((x, n) => { x.classList.remove('is-on'); if (n === at) { void x.offsetWidth; x.classList.add('is-on'); } });
           count.textContent = `${at + 1} / ${frames.length}`;
         };
         const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -488,7 +521,6 @@
         film.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
         film.addEventListener('touchend', (e) => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) { go(at + (dx < 0 ? 1 : -1)); restart(); } x0 = null; });
         film.append(count);
-        const wrap = el('div', 'up-film-wrap');
         wrap.style.setProperty('--dur', `${GALLERY_MS}ms`);
         wrap.append(film, bars);
         row.append(wrap);

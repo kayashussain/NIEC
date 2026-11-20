@@ -65,3 +65,6 @@ live-data/
 **/task-seen.json
 # Each person's own email signature picture.
 **/user-signatures/
+
+# The university pages' pictures, fetched by the server and kept with the data (media-cache.js): a cache, never in git.
+**/media-cache/

@@ -150,6 +150,9 @@ const direct = createDirect(DATA_DIR);
 const cards = createCards(DATA_DIR);
 const messages = createMessages(DATA_DIR);
 const courseLinks = createCourseLinks(DATA_DIR);
+// The university pages' pictures, fetched once and kept in the data folder (media-cache.js).
+const { createMediaCache, pictureAddresses } = require('./media-cache');
+const media = createMediaCache({ dir: DATA_DIR, allowed: () => pictureAddresses(facts.all()) });
 const sourceOptions = createSourceOptions(DATA_DIR);
 const b2b = createB2b(DATA_DIR);
 const agents = createB2b(DATA_DIR, { file: 'agents.json', filesFolder: 'agent-files', what: 'agent' });
@@ -1006,6 +1009,7 @@ async function studentGate(req, res, urlPath) {
   }
   if (get && (STUDENT_PAGES.has(urlPath) || (STATIC_FILES[urlPath] && !/html/.test(STATIC_FILES[urlPath])) || (SHARED_FILES[urlPath] && !/html/.test(SHARED_FILES[urlPath])))) return false;
   if (get && urlPath === '/api/demo') return false;
+  if (get && urlPath === '/api/media') return false; // the university pages' pictures
   if (get && (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}$/.test(urlPath))) {
     const id = (urlPath.match(/^\/api\/facts\/([a-f0-9]{12})$/) || [])[1];
     if (!id) { sendJSON(res, 200, facts.list((new URL(req.url, 'http://x').searchParams.get('q') || '').slice(0, 100))); return true; }
@@ -1246,6 +1250,11 @@ const server = http.createServer(async (req, res) => {
         const courses = words.length ? all.filter((c) => words.every((w) => c.name.toLowerCase().includes(w))) : all;
         if (words.length && !courses.length) continue; // nothing in that subject here
         const seen = new Set();
+        // The most relevant first when a subject is typed: the whole subject in the name, then a name that starts with it, then the
+        // shortest (the plainest course), so the three shown are the best matches (the owner, 21 Nov 2026).
+        const phrase = s.subject.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const score = (c) => { const n = c.name.toLowerCase(); return (phrase && n.includes(phrase) ? 4 : 0) + (words.length && words.some((w) => new RegExp(`(^|[^a-z])${w}`).test(n.replace(/^(ba|bsc|ma|msc|mba|llb|llm|beng|meng|mres|pgdip|pgcert)\b[^a-z]*(\(hons\))?\s*/, ''))) ? 2 : 0); };
+        if (words.length) courses.sort((x, y) => score(y) - score(x) || x.name.length - y.name.length);
         const list = courses.filter((c) => { const k = c.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
           .map((c) => ({ name: c.name, full: c.full || c.name, level: c.level, campus: c.campus || '', intake: String(c.start || data.intake).split(/,\s*/)[0], intakes: c.start || data.intake, fee: c.fee || '', scholarship: c.scholarship || '', deadline: c.deadline || '', link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
         const row = data.levels.find((l) => eligLevel(l.level) === s.level) || (topUp ? data.levels.find((l) => eligLevel(l.level) === 'Undergraduate') : null) || {};
@@ -1263,6 +1272,7 @@ const server = http.createServer(async (req, res) => {
       const counts = { yes: results.filter((x) => x.status === 'yes').length, check: results.filter((x) => x.status === 'check').length, no: results.filter((x) => x.status === 'no').length };
       return sendJSON(res, 200, { results, counts, without: without.length, readAt: '' });
     }
+    if (urlPath === '/api/media' && req.method === 'GET') return await media.serve(req, res);
     if (urlPath === '/api/facts' || /^\/api\/facts\/[a-f0-9]{12}(\/deadlines|\/choices)?$/.test(urlPath)) return await handleFacts(req, res, urlPath);
     // The student cards and the pages around them (portal-api.js).
     if (await portal.handle(req, res, urlPath)) return;

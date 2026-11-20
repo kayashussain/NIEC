@@ -17,6 +17,7 @@
   const KINDS = ['university', 'pathway'];
   const filters = (() => { try { return { kind: 'university', ...JSON.parse(localStorage.getItem(FKEY) || '{}'), intake: '' }; } catch (e) { return { kind: 'university' }; } })();
   if (!KINDS.includes(filters.kind)) filters.kind = 'university';
+  const media = (u) => (/^https:\/\//.test(String(u || '')) ? `/api/media?u=${encodeURIComponent(u)}` : u); // the server's kept copy (media-cache.js)
   const kindOf = (u) => (u.kind === 'pathway' ? 'pathway' : 'university');
   const saveFilters = () => { try { localStorage.setItem(FKEY, JSON.stringify(filters)); } catch (e) { /* kept for this page only */ } };
   const urgency = (days) => (days <= 7 ? 'is-urgent' : days <= 30 ? 'is-soon' : '');
@@ -82,7 +83,7 @@
   // The university's logo where its partner gives one (the owner, 20 Nov 2026), else its initials.
   function mono(u) {
     const m = el('span', 'uni-mono' + (u.logo ? ' has-logo' : ''), u.logo ? '' : monogram(u.name));
-    if (u.logo) { const i = el('img'); i.src = u.logo; i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); m.classList.remove('has-logo'); m.textContent = monogram(u.name); }); m.append(i); }
+    if (u.logo) { const i = el('img'); i.src = media(u.logo); i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); m.classList.remove('has-logo'); m.textContent = monogram(u.name); }); m.append(i); }
     return m;
   }
   function card(u) {
@@ -93,7 +94,7 @@
     a.href = uniHref(u);
     // A wide picture of the university at the top of its card (the owner, 20 Nov 2026: big, engaging cards); a soft colour where there is none.
     const cover = el('div', 'uc-cover' + (u.cover ? '' : ' is-blank'));
-    if (u.cover) { const i = el('img'); i.src = u.cover; i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); cover.classList.add('is-blank'); }); cover.append(i); }
+    if (u.cover) { const i = el('img'); i.src = media(u.cover); i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer'; i.addEventListener('error', () => { i.remove(); cover.classList.add('is-blank'); }); cover.append(i); }
     a.append(cover);
     const head = el('div', 'uc-head');
     const title = el('div', 'uc-title');

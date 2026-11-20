@@ -90,7 +90,8 @@
       d.results.filter((r) => filter === 'all' || r.status === filter).forEach((r, i) => { const c = card(r); c.style.setProperty('--i', String(Math.min(i, 12))); grid.append(c); });
       out.append(grid);
     }
-    const imgOf = (src, cls) => { const im = el('img', cls || ''); im.src = src; im.alt = ''; im.loading = 'lazy'; im.referrerPolicy = 'no-referrer'; return im; };
+    const media = (u) => (/^https:\/\//.test(String(u || '')) ? `/api/media?u=${encodeURIComponent(u)}` : u); // the server's kept copy (media-cache.js)
+    const imgOf = (src, cls) => { const im = el('img', cls || ''); im.src = media(src); im.alt = ''; im.loading = 'lazy'; im.referrerPolicy = 'no-referrer'; return im; };
     const initials = (name) => (String(name).match(/\b[A-Z]/g) || ['U']).slice(0, 3).join('');
     function card(r) {
       const c = el('article', `fd-uni ${STATUS[r.status][1]}`);
@@ -125,14 +126,14 @@
       [['Tuition', r.fee], ['Scholarship', r.scholarship], ['Deposit', r.deposit]].forEach(([k, v]) => { if (v) { const m = el('div'); m.append(el('span', '', k), el('b', '', v.split('\n')[0])); money.append(m); } });
       if (money.children.length) c.append(money);
       if (r.courses.length) {
-        // The first seven courses (the ones that match the subject when one is typed) are shown; "See all" opens the university's
-        // page with its own search set to the subject (the owner, 21 Nov 2026).
+        // The three most relevant courses (those matching the subject when one is typed) are shown; "See all" opens the university's
+        // page with its own search set to the subject (the owner, 21 Nov 2026: three, not seven).
         const box = el('div', 'fd-course-box');
         const head = el('div', 'fd-course-head');
         head.append(el('b', '', values().subject ? `${r.total} matching course${r.total === 1 ? '' : 's'}` : `${r.total} course${r.total === 1 ? '' : 's'}`));
         box.append(head);
         const list = el('ul', 'fd-courses');
-        r.courses.slice(0, 7).forEach((co) => {
+        r.courses.slice(0, 3).forEach((co) => {
           const li = el('li');
           const words = el('div', 'fd-course-words');
           // The course's own page on the university's website, when known (course-sitemap.js).
@@ -152,7 +153,7 @@
           list.append(li);
         });
         box.append(list);
-        if (r.total > 7) {
+        if (r.total > 3) {
           const more = h('a', { class: 'fd-see-all', href: `/fact-file?u=${encodeURIComponent(r.id)}${values().subject ? `&q=${encodeURIComponent(values().subject)}` : ''}#courses` }, `See all ${r.total} courses`);
           if (onAdd) { more.target = '_blank'; more.rel = 'noopener'; }
           box.append(more);
