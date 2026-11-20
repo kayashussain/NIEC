@@ -4079,3 +4079,91 @@ body:has(.p-embed-bar) #view .sc-tl-page .p-tasks .p-card-head { margin-bottom: 
   .sc-tl-item.sc-later, .sc-mini, .sc-checks li.is-leaving, .sc-fact, .sc-fact-ico { transition: none; }
   .sc-fact:hover, .sc-fact:hover .sc-fact-ico { transform: none; }
 }
+
+/* 🔴 CSS CHANGED (2026-11-20): the student card after an independent design review | from: the entrance took about 2 seconds and played again after every save, tab or filter; the outline while loading was shorter than the card; the progress line took over a second; tiles could not lift (the entrance held them); white bubbles, tiles and note box; tabs, filter buttons, tag pills and the task's Post button under 44px; unchosen tags faded to 55% (hard to read), the chosen one shown by a thin ring only; the Assign window jumped up and down as fields appeared; the keys sheet had a wide gap; the source form turned white; the frosted bar sat on the red demo band; the "3 of 116" pill covered the last lines of the card; its "Next:" name at 11.5px | to: the entrance done in about 0.7 seconds and only the first time (and the Timeline entries again after a change of filter); the outline as tall as the card (steps, six tiles, source); the line fills in 0.45 seconds with the dots 40ms apart; tiles lift 2px on hover; tiles, bubbles and note box in soft off-white (#fdfdfe, Timeline bubbles #f7f7f9); tabs, filters, tags and Post at least 44px; tags at full strength, the chosen one with a bold ring, a tick and a small lift; a field left empty glows red and shakes; the Assign window stays put near the top; keycaps and words close together; the source form keeps its soft blue; the frosted bar sits below the demo band; room at the bottom of the half card for the pill; the "Next:" name at 13px; tiles three to a row with no empty holes (the last tile takes the rest of its row) */
+#view .sc-hero, #view .sc-checks, #view .sc-next, #view .sc-tl-page > .p-card, .sc-tl-item { animation: none; }
+#view.sc-entering .sc-hero { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) both; }
+#view.sc-entering .sc-checks, #view.sc-entering .sc-next { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) .12s both; }
+#view.sc-entering .sc-tl-page > .p-card { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) .18s both; }
+#view.sc-entering .sc-tl-item, .sc-tl-days.is-anim .sc-tl-item { animation: sc-rise .3s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.2s + var(--i, 0) * 35ms); }
+.sc-tl-days.is-anim .sc-tl-item { animation-delay: calc(var(--i, 0) * 35ms); }
+.sc-tl-item.sc-later { animation: none; }
+.sc-tl-item.is-new .sc-tl-body { animation: sc-glow 2.4s ease both; }
+@keyframes sc-in { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.sc-hero.is-intro .sc-avatar, .sc-hero.is-intro .sc-name, .sc-hero.is-intro .sc-meta, .sc-hero.is-intro .sc-reach, .sc-hero.is-intro .sc-actions, .sc-hero.is-intro .sc-steps-box, .sc-hero.is-intro .sc-steps li .sc-step-dot, .sc-hero.is-intro .sc-fact, .sc-hero.is-intro .sc-gaps, .sc-hero.is-intro .sc-source, .sc-hero.is-intro .sc-steps::after { animation: none; }
+#view.sc-entering .sc-hero.is-intro .sc-avatar { animation: sc-pop .45s cubic-bezier(.34, 1.56, .64, 1) both; }
+#view.sc-entering .sc-hero.is-intro .sc-name { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .04s both; }
+#view.sc-entering .sc-hero.is-intro .sc-meta { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .08s both; }
+#view.sc-entering .sc-hero.is-intro .sc-reach, #view.sc-entering .sc-hero.is-intro .sc-actions { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .12s both; }
+#view.sc-entering .sc-hero.is-intro .sc-steps-box { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .16s both; }
+#view.sc-entering .sc-hero.is-intro .sc-steps li .sc-step-dot { animation: sc-pop .35s cubic-bezier(.34, 1.56, .64, 1) both; animation-delay: calc(.18s + var(--i, 0) * 40ms); }
+#view .sc-steps li.is-now .sc-step-dot, #view.sc-entering .sc-hero.is-intro .sc-steps li.is-now .sc-step-dot { animation: sc-pulse 2.4s ease-in-out .8s infinite; }
+#view.sc-entering .sc-hero.is-intro .sc-steps::after { animation: sc-fill .45s ease-out .18s both; }
+#view.sc-entering .sc-hero.is-intro .sc-fact { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.22s + var(--i, 0) * 30ms); }
+#view.sc-entering .sc-hero.is-intro .sc-source { animation: sc-in .3s cubic-bezier(.2, .8, .2, 1) .4s both; }
+/* the outline while loading, as tall as the card */
+.sc-skel i.sc-skel-steps { height: 100px; }
+.sc-skel-tiles i { height: 72px; }
+.sc-skel i.sc-skel-src { height: 96px; margin-top: 16px; border-radius: 18px; }
+.sc-skel-reach { display: flex; gap: 8px; margin-top: 4px; }
+.sc-skel-reach i { width: 110px; height: 44px; border-radius: 980px; }
+/* tiles: three to a row, no holes, they lift */
+.sc-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sc-facts > :last-child:nth-child(3n + 1) { grid-column: span 3; }
+.sc-facts > :last-child:nth-child(3n + 2) { grid-column: span 2; }
+.sc-fact { background: #fdfdfe; transition: transform .18s ease, box-shadow .18s ease; }
+.sc-fact:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 10px 24px -12px rgba(0, 0, 0, .18); }
+.sc-fact-value a { overflow-wrap: break-word; }
+.sc-reach-btn { background: #fdfdfe; }
+/* soft off-white instead of white */
+.sc-tl-body { background: #f7f7f9; box-shadow: 0 0 0 1px rgba(0, 0, 0, .04); }
+.sc-tl-item:hover .sc-tl-body { background: #f4f4f7; }
+.sc-tl-compose-field { background: #fdfdfe; }
+/* 44px targets */
+body:has(.p-embed-bar) .p-tabs.sc-tabs button { min-height: 44px; padding: 0 20px; }
+.sc-tl-seg-btn { min-height: 44px; padding: 0 16px; }
+.sc-tl-act { min-height: 44px; }
+.sc-tl-acts { margin-top: 0; }
+#view .p-tasks .tk-send { min-height: 44px; }
+#view .p-tasks .tk-send:disabled { opacity: 1; background: #e8e8ed; color: #6e6e73; }
+#view .p-tasks .td-check { position: relative; }
+#view .p-tasks .td-check::after { content: ""; position: absolute; inset: -10px; }
+/* the Assign window: clear tags, it stays put, an empty field glows red */
+dialog.p-dialog:has(.p-assign) { margin-top: 8vh; margin-bottom: auto; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio) { min-height: 44px; padding: 0 18px; line-height: 44px; opacity: 1; font-size: 15px; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), background .15s, color .15s; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { font-weight: 700; box-shadow: inset 0 0 0 2px currentColor, 0 6px 14px -8px rgba(0, 0, 0, .35); transform: translateY(-1px); }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"]::before { content: "\2713"; margin-right: 6px; font-weight: 800; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio):active { transform: scale(.95); }
+.p-assign .sc-bad :is(input, select, textarea), .p-assign .sc-bad .td-tag-pick { border-radius: 12px; box-shadow: 0 0 0 2px #d70015; }
+/* the keys sheet, the source form, the frosted bar, the half card */
+.sc-keys div { grid-template-columns: auto minmax(0, 1fr); gap: 16px; }
+.sc-keys dt { min-width: 72px; }
+.sc-source.is-editing { background: linear-gradient(135deg, #eef5ff, #f6f1fd); box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .14); }
+.sc-source.is-editing .p-bar { margin-top: 12px; }
+.sc-mini { top: var(--sc-mini-y, 12px); }
+.sc-mini b { max-width: 40ch; }
+body.p-embed #view { padding-bottom: 90px; }
+.p-drawer-nav .p-drawer-where small { font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { #view.sc-entering *, .sc-tl-days.is-anim .sc-tl-item, #view .sc-steps li.is-now .sc-step-dot { animation: none !important; } }
+
+/* 🔴 CSS CHANGED (2026-11-20): the student card, second review round | from: a white light over the main card that washed out the words under the mouse; the frosted bar cutting a name short in the half card; the task's Post button blue even when there was nothing to post; the Assign tags wrapping "Other" onto its own line; a keycap row 6px out of line; the task tick and its ⋯ button and the update box under 44px; the Timeline card hidden until scrolled to; the half card's "3 of 116" pill over the card's words | to: no white light over the main card (the soft blue light on the tiles, buttons and source stays, under the words' strength); the name in the frosted bar shows in full up to 32 letters; Post grey with grey words until something is typed; the six tags on one line (14px apart side padding, 6px gaps); keycaps in a column wide enough for "Ctrl K"; 44px touch areas on the tick and ⋯, a 44px update box; the Timeline card always shown (its entries arrive one by one instead); the half card's page stops above the pill (the card ends in a soft fade there); a detail just filled in flashes green with a tick that draws itself; the Record offer window's University, Course and Answer across the whole width */
+#view .sc-hero::after { content: none; }
+.sc-mini b { flex-shrink: 0; max-width: 32ch; }
+.sc-mini { max-width: min(860px, calc(100vw - 24px)); }
+body:has(.p-embed-bar) #view .p-card.p-tasks .btn.btn-primary.tk-send:disabled { opacity: 1; background: #e8e8ed; color: #6e6e73; box-shadow: none; }
+.p-assign .td-tag-pick { gap: 6px; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio) { padding: 0 14px; }
+.sc-keys dt { min-width: 88px; }
+#view .p-tasks .td-more-btn { position: relative; }
+#view .p-tasks .td-more-btn::after { content: ""; position: absolute; inset: -7px; }
+#view .p-tasks .tk-compose textarea.tk-input { min-height: 44px; }
+#view .sc-tl-page .isr-reveal { opacity: 1; transform: none; }
+.p-drawer iframe { height: calc(100% - 78px); }
+.p-drawer { background: var(--bg); }
+body.p-embed #view { padding-bottom: 24px; }
+.sc-facts { align-items: stretch; }
+.sc-fact.is-filled { animation: sc-filled 1.6s ease both; }
+.sc-fact.is-filled .sc-fact-ico { background: #dff6e6; color: #1b8a3e; }
+.sc-fact-tick { width: 20px; height: 20px; flex: none; margin-left: auto; fill: none; stroke: #1b8a3e; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes sc-filled { 0% { box-shadow: 0 0 0 2px #34c759; background: #eefbf2; } 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); background: #fdfdfe; } }
+@media (prefers-reduced-motion: reduce) { .sc-fact.is-filled { animation: none; } }

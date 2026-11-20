@@ -84,6 +84,8 @@
         const sheetChanged = Object.fromEntries(Object.entries(inputs).filter(([k, i]) => i.value !== startedSheet[k]).map(([k, i]) => [k, i.value]));
         if (Object.keys(sheetChanged).length) await api(`/api/cards/${id}/sheet`, { fields: sheetChanged });
         data = await api('/api/cards/' + encodeURIComponent(id));
+        // The details just filled in flash green with a tick on their tiles (a small reward).
+        justFilled = new Set(Object.entries({ dob: 'Date of birth', passportNo: 'Passport number', address: 'Address (passport)' }).filter(([k]) => !started[k] && profile()[k]).map(([, v]) => v));
         editingHero = false; say('Saved on the sheet'); render();
       } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; shake(msg); throw e; }
     };
@@ -124,10 +126,11 @@
     btn.disabled = true; btn.classList.add('is-busy');
     btn.replaceChildren(el('span', 'sc-spin'), busy);
     try {
-      const out = await work();
+      // "Saving..." stays long enough to be read, and the tick long enough to be seen.
+      const [out] = await Promise.all([work(), new Promise((r) => setTimeout(r, calm() ? 0 : 320))]);
       btn.classList.remove('is-busy'); btn.classList.add('is-done');
       btn.replaceChildren(icon('check', 'sc-btn-ico sc-tick'), done);
-      await new Promise((r) => setTimeout(r, calm() ? 0 : 650));
+      await new Promise((r) => setTimeout(r, calm() ? 0 : 1000));
       return out;
     } catch (e) {
       btn.classList.remove('is-busy'); btn.disabled = false; btn.replaceChildren(...was); shake(btn);
@@ -164,6 +167,8 @@
     t.style.setProperty('--mx', `${e.clientX - r.left}px`);
     t.style.setProperty('--my', `${e.clientY - r.top}px`);
   }, { passive: true });
+  let justFilled = new Set(); // tiles filled in by the last Edit details: they flash green once
+  let animateList = false; // the Timeline entries arrive again one by one after a change of filter
   let intro = true; // the first drawing of the card: its parts arrive one after another; later redraws do not replay it
   const icon = (name, cls) => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); if (cls) sv.setAttribute('class', cls); sv.innerHTML = ICONS[name] || ''; return sv; };
 
@@ -216,7 +221,7 @@
     if (s.intake) { const ch = el('span', 'sc-chip'); ch.append(icon('calendar'), s.intake); meta.append(ch); }
     if (pp.nationality && pp.nationality !== 'Nepali') { const ch = el('span', 'sc-chip'); ch.append(icon('globe'), pp.nationality); meta.append(ch); }
     // A milestone the team can see at a glance: the student holds an offer.
-    if (appStats().offers) { const ch = el('span', 'sc-chip is-offer'); ch.append(icon('star'), appStats().offers > 1 ? `${appStats().offers} offers received` : 'Offer received'); meta.append(ch); }
+    if (appStats().offers && !['CAS Issued', 'Visa Lodge', 'Visa Issued'].includes(s.stage)) { const ch = el('span', 'sc-chip is-offer'); ch.append(icon('star'), appStats().offers > 1 ? `${appStats().offers} offers received` : 'Offer received'); meta.append(ch); }
     who.append(name, meta);
     const reach = contactBar();
     if (reach) who.append(reach);
@@ -238,16 +243,17 @@
       txt.append(el('span', 'sc-fact-label', k));
       const val = el('span', 'sc-fact-value');
       if (missing) val.append(el('span', 'p-missing', 'Missing'));
-      else if (href) { const a2 = el('a', '', v); a2.href = href; val.append(a2); }
+      else if (href) { const a2 = el('a'); a2.href = href; const at = String(v).indexOf('@'); if (at > 0) a2.append(v.slice(0, at), document.createElement('wbr'), v.slice(at)); else a2.textContent = v; val.append(a2); }
       else val.textContent = v;
       val.title = missing ? '' : v;
       txt.append(val);
       t.append(ic, txt);
       if (onClick) t.append(icon('arrow', 'sc-fact-go'));
+      if (justFilled.has(k)) { t.classList.add('is-filled'); t.append(icon('check', 'sc-fact-tick sc-tick')); justFilled.delete(k); }
       facts.append(t);
       return t;
     };
-    if (s.email) tile('mail', 'Email', s.email, { href: 'mailto:' + s.email, wide: s.email.length > 26 });
+    if (s.email) tile('mail', 'Email', s.email, { href: 'mailto:' + s.email });
     if (s.phone) {
       const wa = F.whatsappNumber(s.phone);
       const t = tile('whatsapp', 'WhatsApp', s.phone, { href: wa ? 'https://wa.me/' + wa : '' });
@@ -258,26 +264,17 @@
     tile('cake', 'Date of birth', pp.dob ? day(pp.dob) : '', { missing: !pp.dob });
     tile('passport', 'Passport number', pp.passportNo, { missing: !pp.passportNo });
     tile('pin', 'Address (passport)', pp.address, { missing: !pp.address });
-    // How many universities were applied to and how many offers, from Applications (one student applies to many); a press opens them.
+    // How many universities were applied to and how many offers, from Applications (one student applies to many; the tab below has them).
     {
       const ap = appStats();
-      const t = tile('cap', 'Applications', 'None yet', { onClick: () => select('options') });
-      t.setAttribute('aria-label', `Applications: ${ap.submitted} submitted, ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}. Open Applications`);
+      const t = tile('cap', 'Applications', 'None yet');
       // The two numbers count up when the card opens (ui.js, the one count-up of ISR).
       if (ap.submitted || ap.offers) t.querySelector('.sc-fact-value').replaceChildren(el('b', 'sc-num', String(ap.submitted)), ' submitted · ', el('b', 'sc-num', String(ap.offers)), ` ${ap.offers === 1 ? 'offer' : 'offers'}`);
     }
     /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: each tile's number, so the tiles cascade in */
     [...facts.children].forEach((t, i) => t.style.setProperty('--i', String(i)));
     c.append(facts);
-    // What is still missing, named in one line with one button that opens the form (the owner, 17 Nov 2026: less work for the team).
-    const gaps = [['Date of birth', pp.dob], ['Passport number', pp.passportNo], ['Address', pp.address]].filter(([, v]) => !v).map(([k]) => k);
-    if (gaps.length && can()) {
-      const bar = el('div', 'sc-gaps');
-      const ic = el('span', 'sc-gaps-ico'); ic.append(icon('alert'));
-      bar.append(ic, el('span', 'sc-gaps-text', `${gaps.length === 1 ? '1 detail' : `${gaps.length} details`} missing: ${gaps.join(', ')}`),
-        h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => { editingHero = true; render(); } }, gaps.length === 1 ? 'Fill it in' : 'Fill them in'));
-      c.append(bar);
-    }
+    // What is missing shows as Missing on its tile; Edit details above opens the form (the owner, 17 Nov 2026: one button per action).
     // Where the student came from, inside the main card (the owner, 20 Nov 2026: not a separate panel under the tabs).
     c.append(origin());
     return c;
@@ -356,13 +353,13 @@
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Assign');
       ok.addEventListener('click', async () => {
-        const stop = (t) => { msg.textContent = t; msg.className = 'p-msg error'; shake(msg); };
-        if (!team.input.value) return stop('Choose who should do it.');
-        if (!tag.value()) return stop('Choose what it is about.');
+        const stop = (t, f) => { msg.textContent = t; msg.className = 'p-msg error'; shake(msg); if (f) { f.classList.add('sc-bad'); shake(f); const off = () => f.classList.remove('sc-bad'); f.addEventListener('change', off, { once: true }); f.addEventListener('click', off, { once: true }); } };
+        if (!team.input.value) return stop('Choose who should do it.', team.wrap);
+        if (!tag.value()) return stop('Choose what it is about.', tagWrap);
         let payload;
         if (isApp()) {
           const need = [[uni, 'the university'], [intake, 'the intake'], [level, 'the course level'], ...(place.wrap.hidden ? [] : [[place, 'the location']]), [course, 'the course']].find(([f]) => !f.input.value);
-          if (need) return stop(`Choose ${need[1]}.`);
+          if (need) return stop(`Choose ${need[1]}.`, need[0].wrap);
           const uName = (unis.find((u) => u.id === uni.input.value) || {}).name || '';
           const loc = place.input.value || (choices && choices.campuses.length === 1 ? choices.campuses[0] : '');
           const app = { university: uName, universityId: uni.input.value, intake: intake.input.value, level: level.input.value, location: loc, course: course.input.value };
@@ -370,7 +367,7 @@
           payload = { team: team.input.value, tag: 'application', app, text: `Submit the application: ${line}${comments.input.value.trim() ? `\n${comments.input.value.trim()}` : ''}` };
         } else {
           const words = text.input.value.trim();
-          if (!words && tag.value() === 'other') return stop('Write what should be done.');
+          if (!words && tag.value() === 'other') return stop('Write what should be done.', text.wrap);
           // No comments: the task is named by what it is about ("Mock interview"), so the team still sees what to do.
           payload = { team: team.input.value, text: words || window.Portal.tagLabel(tag.value()), tag: tag.value() };
         }
@@ -708,7 +705,7 @@
       seg.setAttribute('role', 'tablist');
       [['all', 'All'], ['note', 'Notes'], ['task', 'Tasks'], ['message', 'Messages']].filter(([k]) => k === 'all' || present.has(k)).forEach(([k, label]) => {
         const b = h('button', { class: 'sc-tl-seg-btn', type: 'button', role: 'tab', 'aria-selected': String(historyFilter === k) }, label);
-        b.addEventListener('click', () => { historyFilter = k; render(); });
+        b.addEventListener('click', () => { historyFilter = k; animateList = true; render(); });
         seg.append(b);
       });
       top.append(seg);
@@ -717,7 +714,8 @@
     const remark = data.student.remarks && data.student.remarks !== data.card.autoRemark ? data.student.remarks : '';
     const LIMIT = 8;
     let revealFrom = tlRevealFrom; tlRevealFrom = 0;
-    const days = el('div', 'sc-tl-days');
+    const days = el('div', `sc-tl-days${animateList ? ' is-anim' : ''}`);
+    animateList = false;
     const moreBtn = h('button', { class: 'sc-tl-all', type: 'button' });
     function fill() {
       const all = events.filter((e) => historyFilter === 'all' || kindOfEvent(e) === historyFilter);
@@ -747,7 +745,7 @@
         // The entries arrive one after another (the first ten); the rest rise in as they are scrolled to.
         /* 🔴 CSS CHANGED (2026-11-20): --i set here | from: none | to: each Timeline entry's number (up to 10), so they arrive one after another */
         li.style.setProperty('--i', String(Math.min(i, 10)));
-        if (i >= 10) li.classList.add('sc-later');
+        if (i >= 10 && (intro || days.classList.contains('is-anim'))) li.classList.add('sc-later');
         list.append(li);
         prev = e;
       });
@@ -863,7 +861,7 @@
   // line in the Timeline, and the first submission and first offer are kept in All Students' own (hidden) columns by the server.
   const RESULTS = [['', 'Waiting for the answer'], ['offer', 'Offer (type not known)'], ['Conditional', 'Conditional offer'], ['Unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['skipped', 'Not submitted (for example not eligible)']];
   const WITH_REASON = ['refused', 'withdrawn', 'skipped'];
-  async function updateApplication(o) {
+  async function updateApplication(o, { offer: forOffer } = {}) {
     const wasSheet = Boolean(o.fromSheet);
     if (o.fromSheet) {
       // Kept in University options first (with the days All Students has), then updated like any other.
@@ -875,15 +873,17 @@
     const saved = await dialog(`${o.university}${o.course ? ': ' + o.course : ''}`, (body, close) => {
       const form = el('div', 'p-form');
       // The university and the course can be corrected here too (a wrong name, or a course changed), not only the answer.
-      const uniF = field('University', { value: o.university || '', max: 160, required: true });
-      const courseF = field('Course', { value: o.course || '', max: 240 });
+      const uniF = field('University', { value: o.university || '', max: 160, required: true, wide: true });
+      const courseF = field('Course', { value: o.course || '', max: 240, wide: true });
       const applied = field('Application submitted on', { kind: 'date', value: o.applied || '' });
       const now = o.skipped ? 'skipped' : o.refused ? 'refused' : o.withdrawn ? 'withdrawn' : o.offer ? (o.offerType || 'offer') : '';
-      const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: now });
+      const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: now, wide: true });
       const when2 = field('Day of the answer', { kind: 'date', value: o.skipped || o.refused || o.withdrawn || o.offer || '' });
       const reason = field('Reason', { max: 300, value: o.reason || '', placeholder: 'e.g. Grades below the entry requirement, course full' });
       [applied, when2].forEach((f) => { f.input.max = todayIso; });
       const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; when2.wrap.querySelector('.p-label').textContent = r === 'skipped' ? 'Decided on' : 'Day of the answer'; };
+      // Opened from Next step "Record offer": the answer is set to an offer, and the day is next.
+      if (forOffer && !now) { result.input.value = 'offer'; setTimeout(() => when2.input.focus(), 50); }
       result.input.addEventListener('change', show);
       show();
       form.append(uniF.wrap, courseF.wrap, applied.wrap, result.wrap, when2.wrap, reason.wrap);
@@ -1113,10 +1113,10 @@
     let step = null;
     if (String(row['LANGUAGE TEST DATE'] || '').trim() === 'Test Date') step = { title: 'Pick the language test day', why: 'The test is chosen as "Test Date", but no day is on the sheet.', col: 'LANGUAGE TEST DATE', label: 'Test date' };
     // The application and the offer are recorded per university, under Applications (the owner, 17 Nov 2026).
-    else if (s.stage === 'Application Stage' && !applied && data.card.options.some((o) => o.sent && !o.applied && !o.skipped)) step = { title: 'Record the applications', why: 'When the Application Team submits, record the day for each university.', apps: true };
+    else if (s.stage === 'Application Stage' && !applied && data.card.options.some((o) => o.sent && !o.applied && !o.skipped)) step = { title: 'Record the applications', why: 'When the Application Team submits, record the day for each university.', apps: true, act: 'Record submission', pick: () => { const w = data.card.options.filter((o) => o.sent && !o.applied && !o.skipped); return w.length === 1 ? w[0] : null; } };
     else if (applied && !iso(row['OFFER RECEIVED DATE']) && ['Application Stage', 'Mock Stage'].includes(s.stage)) {
       const waited = Math.max(0, Math.round((Date.parse(data.today || new Date().toISOString().slice(0, 10)) - Date.parse(applied)) / 86400000));
-      step = { title: 'Record the offer', why: `First application ${day(applied)}, ${waited} ${waited === 1 ? 'day' : 'days'} ago. When an offer comes, record it on that university.`, apps: true };
+      step = { title: 'Record the offer', why: `First application ${day(applied)}, ${waited} ${waited === 1 ? 'day' : 'days'} ago. When an offer comes, record it on that university.`, apps: true, act: 'Record offer', pick: () => { const w = data.card.options.filter((o) => o.id && o.applied && !o.offer && !o.refused && !o.withdrawn && !o.skipped); return w.length === 1 ? w[0] : null; } };
     } else if (s.stage && !['Inquiry', 'Visa Issued', ...F.LOST_STAGES].includes(s.stage) && (!pp.dob || !pp.passportNo || !pp.address)) {
       const gone = [['date of birth', pp.dob], ['passport number', pp.passportNo], ['address', pp.address]].filter(([, v]) => !v).map(([k]) => k);
       step = { title: 'Add the passport details', why: `Still missing: ${gone.join(', ')}.`, edit: true };
@@ -1127,7 +1127,10 @@
     const words = el('div', 'sc-next-words');
     words.append(el('span', 'sc-eyebrow', 'Next step'), el('b', '', step.title), el('span', 'sc-next-why', step.why));
     const act = el('div', 'sc-next-act');
-    if (step.apps) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('options') }, 'Open Applications'));
+    // One university to record: the button does it at once; several: it opens Applications to choose.
+    const one = step.apps ? step.pick() : null;
+    if (one) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => updateApplication(one, { offer: step.act === 'Record offer' }) }, step.act));
+    else if (step.apps) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('options') }, 'Open Applications'));
     else if (step.edit) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { editingHero = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 'Add them'));
     else {
       const input = h('input', { type: 'date', 'aria-label': step.label });
@@ -1192,6 +1195,8 @@
     frag.append(tabRow);
     frag.append(tab === 'options' ? optionsTab() : details());
     view.replaceChildren(frag);
+    // The first drawing (and a change of filter) animates; other redraws (a saved note, a tab) do not replay the entrance.
+    if (intro) { view.classList.add('sc-entering'); setTimeout(() => view.classList.remove('sc-entering'), 1200); }
     miniBar();
     watchLater();
     if (intro) { intro = false; milestones(); }
@@ -1224,7 +1229,7 @@
     if (!head || !('IntersectionObserver' in window)) { mini.classList.remove('is-on'); return; }
     /* 🔴 CSS CHANGED (2026-11-20): --sc-mini-x set here | from: none | to: the middle of the card, so the frosted bar sits over the card */
     // Centred over the card, not the window (the menu is on the left).
-    const place = () => { const r = view.getBoundingClientRect(); mini.style.setProperty('--sc-mini-x', `${r.left + r.width / 2}px`); };
+    const place = () => { const r = view.getBoundingClientRect(); mini.style.setProperty('--sc-mini-x', `${r.left + r.width / 2}px`); const demo = document.querySelector('.niec-demo'); mini.style.setProperty('--sc-mini-y', `${(demo ? demo.getBoundingClientRect().bottom : 0) + 10}px`); };
     place();
     if (!miniBar.placed) { miniBar.placed = true; window.addEventListener('resize', place); }
     miniObs = new IntersectionObserver(([en]) => { place(); mini.classList.toggle('is-on', !en.isIntersecting && en.boundingClientRect.top < 0); });
