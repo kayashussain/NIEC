@@ -49,8 +49,11 @@
   const HERO_FIELDS = [['FIRST NAME', 'First name'], ['LAST NAME', 'Last name'], ['EMAIL', 'Email'], ['CONTACT NUMBER', 'Contact number'], ['UNIVERSITY NAME', 'University'], ['COURSE NAME', 'Course']];
   // The application and offer days are not here (the owner, 17 Nov 2026): they are kept per university under Applications.
   function heroEdit() {
-    const c = el('section', 'p-card');
-    c.append(el('h2', '', 'Change the details'));
+    const c = el('section', 'p-card sc-edit');
+    // The student stays in view while the details are changed: the monogram and the name above the form.
+    const who = el('div', 'sc-edit-who');
+    who.append(el('div', 'sc-avatar', initials(data.student.name)), el('div', 'sc-edit-name', data.student.name));
+    c.append(who, el('h2', '', 'Change the details'));
     c.append(el('p', 'p-muted p-small', 'Changes here also update All Students.'));
     const form = el('div', 'p-form');
     const inputs = {};
@@ -937,7 +940,7 @@
     const box = el('section', 'p-card');
     const offers = apps.filter((o) => o.offer).length;
     const submitted = apps.filter((o) => o.applied).length;
-    { const t = el('h2', '', 'Universities Applied To'); t.append(el('span', 'sc-tl-count', String(apps.length))); box.append(t); }
+    { const t = el('h2', '', 'Universities applied to'); t.append(el('span', 'sc-tl-count', String(apps.length))); box.append(t); }
     if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses above and press "Assign to the Application Team".')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
     box.append(el('p', 'p-apps-summary', [`${submitted} submitted`, `${offers} ${offers === 1 ? 'offer' : 'offers'}`, waitingTeam ? `${waitingTeam} with the Application Team` : ''].filter(Boolean).join(' · ')));
@@ -1153,9 +1156,8 @@
       b.addEventListener('click', () => select(key));
       tabs.append(b);
     });
-    // A quiet key symbol at the end of the tabs opens the list of keys (the same as pressing ?).
-    const keysBtn = h('button', { class: 'sc-keys-btn', type: 'button', title: 'Keys for this card (?)', 'aria-label': 'Keys for this card', onclick: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' })) });
-    keysBtn.append(icon('keys'));
+    // A quiet "Keys" link at the end of the tabs opens the list of keys (the same as pressing ?).
+    const keysBtn = h('button', { class: 'sc-keys-btn', type: 'button', title: 'Keys for this card (?)', onclick: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' })) }, 'Keys');
     const tabRow = el('div', 'sc-tabrow');
     tabRow.append(tabs, keysBtn);
     frag.append(tabRow);

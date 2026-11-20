@@ -161,6 +161,10 @@
       document.body.append(d);
       build(body, close);
       d.showModal();
+      // The cursor starts in the first box to fill (as on a Mac), not on the close button; a date box is skipped (it would open its
+      // calendar), and a window with nothing to fill starts on its main button.
+      const first = body.querySelector('input:not([type="hidden"]):not([type="date"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled])') || body.querySelector('.btn-primary:not([disabled])');
+      if (first && !body.contains(document.activeElement)) { try { first.focus({ preventScroll: true }); } catch (e) { /* not focusable */ } }
     });
   }
 

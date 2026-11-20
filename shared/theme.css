@@ -1081,7 +1081,8 @@ body:has(#sheet) .stat-card .stat-value, body:has(#sheet) .stat-card.stat-total 
 body:has(#sheet) .stat-card .stat-label, body:has(#sheet) .stat-card.stat-total .stat-label { color: #5f5f64; font-size: 13.5px !important; font-weight: 500; }
 body:has(#sheet) .stat-card.stat-total { box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
 body:has(#sheet) .stat-card.stat-rate { box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
-body:has(#sheet) .stat-card.stat-rate .stat-value { color: #248a3d; }
+/* 🔴 CSS CHANGED (2026-11-20): All Students, Show numbers | from: the Conversion Rate figure in green | to: in near-black like every other figure (calm, as Apple) */
+body:has(#sheet) .stat-card.stat-rate .stat-value { color: #1d1d1f; }
 /* pop-ups: Mac-style sheets */
 dialog.p-dialog, dialog.ui-dialog { border: 0; border-radius: 22px; background: var(--panel, #fbfbfd); color: #1d1d1f; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .35), 0 0 0 .5px rgba(0, 0, 0, .08); }
 dialog.p-dialog[open], dialog.ui-dialog[open] { animation: isr-sheet-in .36s cubic-bezier(.32, .72, 0, 1) both; }
@@ -2082,7 +2083,8 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-tile:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
 .tb-tile.is-new { border-left-color: #0071e3; }
 .tb-tile-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.tb-student { overflow: hidden; font-size: 15px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+/* 🔴 CSS CHANGED (2026-11-20): Today's board, student names | from: cut to about 106px with "..." ("Sarita Shres...") | to: the whole name, onto a second line when long */
+.tb-student { overflow-wrap: anywhere; font-size: 15px; font-weight: 600; }
 .tb-stage { flex: none; color: #66666b; font-size: 12.5px; }
 .tb-text { display: -webkit-box; overflow: hidden; color: #3a3a3c; font-size: 14px; line-height: 1.4; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .tb-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
@@ -3094,13 +3096,10 @@ html body .bp-page .p-head > div > p { margin: 0; color: #5f5f64; font-size: 16p
 /* 🔴 CSS CHANGED (2026-11-20): the "name + Add" box on Universities, B2B partners and Agents removed | from: a white rounded pill with a name box and a blue "+ Add" button at the top right | to: nothing there (the owner: no adding by hand) */
 html body .bp-page .bp-band { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 0 0 22px; padding: 0; border: 0 !important; background: transparent; box-shadow: none; overflow: visible; }
 html body .bp-page .bp-band > div { position: relative; padding: 20px 22px 18px; border: 0; border-radius: 18px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 8px 24px -18px rgba(0, 0, 0, .3); overflow: hidden; }
-html body .bp-page .bp-band > div::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #0071e3, #5ac8fa); }
-html body .bp-page .bp-band > div:nth-child(2)::before { background: linear-gradient(90deg, #34c759, #30d158); }
-html body .bp-page .bp-band > div:nth-child(3)::before { background: linear-gradient(90deg, #5856d6, #af52de); }
-html body .bp-page .bp-band > div:nth-child(4)::before { background: linear-gradient(90deg, #ff9500, #ffcc00); }
-html body .bp-page .bp-band span { color: #5f5f64; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+/* 🔴 CSS CHANGED (2026-11-20): Partners figures calmed | from: a coloured bar on top of each figure (blue, green, purple, orange) and labels in grey capitals | to: no coloured bars, labels in plain 14px grey (#6e6e73) words, the small lines in the same grey */
+html body .bp-page .bp-band span { color: #6e6e73; font-size: 14px; font-weight: 600; letter-spacing: -.016em; }
 html body .bp-page .bp-band b { margin-top: 8px; color: #1d1d1f; font-family: var(--font); font-size: 34px; font-weight: 600; letter-spacing: -.025em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-html body .bp-page .bp-band small { margin-top: 6px; color: #66666b; font-size: 13.5px; }
+html body .bp-page .bp-band small { margin-top: 6px; color: #6e6e73; font-size: 14px; }
 /* 🔴 CSS CHANGED (2026-11-17): Partners: the search box taken off (the owner asked) | from: a frosted search bar with a magnifier that stayed at the top while scrolling, the count beside it | to: no search bar; only the small grey "N in the list" pill (and "N hidden" for Admin) on the right above the cards */
 html body .bp-page .bp-tools { justify-content: flex-end; margin: 0 0 14px; }
 html body .bp-page .bp-tools #count:not(:empty) { margin-left: auto; padding: 5px 12px; border-radius: 999px; background: rgba(0, 0, 0, .05); color: #515154; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -3121,7 +3120,8 @@ html body .bp-page .bp-funnel-step.is-visa i { background: linear-gradient(90deg
 html body .bp-page .bp-card .bp-facts { display: flex; flex-wrap: wrap; gap: 14px 18px; padding-top: 16px; }
 html body .bp-page .bp-card .bp-fact { display: grid; flex: 1 1 140px; gap: 4px; align-content: start; min-width: 0; }
 html body .bp-page .bp-card .bp-fact:has(a[href^="mailto:"]) { flex-grow: 1.8; }
-html body .bp-page .bp-card .bp-facts dt { color: #6e6e73; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+/* 🔴 CSS CHANGED (2026-11-20): partner card labels | from: 12px grey capitals (COMMISSION, CONTACT, AGREEMENT) | to: 14px grey words in sentence case */
+html body .bp-page .bp-card .bp-facts dt { color: #6e6e73; font-size: 14px; font-weight: 400; letter-spacing: -.016em; text-transform: none; }
 html body .bp-page .bp-foot { justify-content: flex-end; margin-top: auto; padding-top: 4px; }
 html body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.btn-primary) { min-height: 34px; padding: 0 4px; border: 0; background: none; box-shadow: none; color: #0066cc; font-weight: 600; }
 html body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.btn-primary)::after { content: "\203A"; margin-left: 5px; font-size: 18px; line-height: 1; }
@@ -3779,8 +3779,8 @@ html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button
 @media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root) { animation: none; } html.mo-on .mo-rise { opacity: 1; transform: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-20): Today, the first page on the motion kit | from: a greeting in plain black, the day at a glance as words and two grey number tiles | to: the person's first name in a slow blue-to-violet shine; the day at a glance opens with a progress ring that fills to "62% done today" (green to blue), the numbers count up, the panel lifts slightly under the mouse; "Everything for today is done. Well done!" in green when nothing is left; task rows rise in one after another; confetti when a task is finished, and a big burst once a day when the last one is done */
-.td-hello h1 .td-name { background: linear-gradient(100deg, #0071e3 0%, #5e5ce6 35%, #bf5af2 55%, #0071e3 80%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: td-shine 6s ease-in-out infinite alternate; }
-@keyframes td-shine { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+/* 🔴 CSS CHANGED (2026-11-20): Today's greeting calmed | from: the person's first name in a moving blue-to-violet shine | to: the name in the same near-black as the greeting (calm, as Apple) */
+.td-hello h1 .td-name { color: inherit; }
 html body .td-pulse.has-ring { grid-template-columns: auto 1fr auto auto; gap: 24px; padding: 22px 28px; transition: transform .35s var(--mo-out), box-shadow .35s ease; }
 html body .td-pulse.has-ring:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 18px 40px -22px rgba(0, 0, 0, .25); }
 html body .td-pulse .td-stat { transition: transform .3s var(--mo-spring); }
@@ -3968,7 +3968,7 @@ body:has(.p-embed-bar) #view .p-card.p-tasks .btn.btn-primary.tk-send:disabled {
 .sc-tl-empty b { color: #1d1d1f; font-size: 17px; font-weight: 600; }
 .sc-tl-empty-ico { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 4px; border-radius: 50%; background: #e8e8ed; color: #6e6e73; }
 .sc-tl-empty-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-#view .sc-tl-page .isr-reveal { opacity: 1; transform: none; }
+#view .isr-reveal { opacity: 1; transform: none; }
 /* the outline while loading (grey, shaped like the card) */
 .sc-skel i { display: block; border-radius: 10px; background: linear-gradient(90deg, #ececf0 0%, #f5f5f7 45%, #ececf0 90%); background-size: 200% 100%; animation: sc-shimmer 1.4s linear infinite; }
 .sc-skel-head { display: flex; gap: 24px; align-items: flex-start; }
@@ -3992,3 +3992,59 @@ body:has(.p-embed-bar) #view .p-card.p-tasks .btn.btn-primary.tk-send:disabled {
   #view .sc-hero { padding: 32px 32px 30px; }
 }
 @media (prefers-reduced-motion: reduce) { #view.sc-entering > *, .sc-skel i, .sc-spin, .sc-tick path, .sc-fact.is-filled .sc-fact-value, .sc-fact-tick, .sc-source-tick, .sc-tl-item.is-new .sc-tl-body { animation: none; } .sc-tick path { stroke-dashoffset: 0; } }
+
+/* 🔴 CSS CHANGED (2026-11-20): the student card and every page, after the review against apple.com | from: on the card, twelve text sizes (13 to 26px) and weights 550, 650 and 700; a lighter grey monogram; a blue stage pill, blue counts and blue "Application" chips; the Applications tab with a blue monogram, a blue-tinted priority row, a filled blue "Priority" chip, green, blue and red status chips and Title Case; the tasks as boxes inside the Tasks panel; Assign tags in six pastel colours; a round key symbol; a 16px gap above Next step; across pages, disabled main buttons in pale blue on some pages and grey on others, Undo and Redo almost invisible when there is nothing to undo | to: on the card, Apple's set of sizes (40, 24, 21, 17, 14px) and two weights (400 and 600), letter spacing matched to each size; a darker grey monogram (#8e8e93 to #6e6e73) that reads clearly; a grey stage pill, grey counts and grey "Application" words; Applications in the same calm look (grey monograms, no tinted rows, Priority and every status as grey words joined by dots, an offer in black, a refusal in red words); the tasks as plain rows with a hairline; Assign tags as grey pills, the chosen one black with white words; a "Keys" text link; 24px between panels; on every page, a disabled main button is grey (#e8e8ed with #6e6e73 words) and Undo and Redo stay readable at half strength; on the card, every panel is shown at once (none waits to be scrolled to), and "Application ·" keeps its space */
+#view .sc-hero, #view .sc-checks, #view .sc-next { margin-bottom: 24px; }
+.sc-avatar { background: linear-gradient(180deg, #8e8e93, #6e6e73); }
+.sc-edit-who { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.sc-edit-who .sc-avatar { width: 48px; height: 48px; font-size: 18px; }
+.sc-edit-name { color: #1d1d1f; font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+.sc-meta .p-pill { background: #e8e8ed; color: #1d1d1f; }
+#view :is(.sc-fact-label, .sc-eyebrow, .sc-tl-kind, .sc-tl-time, .sc-checks-foot, .sc-source-rows div, .sc-next-why, .sc-tl-act, .sc-tl-more) { font-size: 14px; letter-spacing: -.016em; }
+#view .sc-tl-who { font-size: 17px; font-weight: 600; letter-spacing: -.022em; }
+#view .sc-tl-av, #view .sc-tl-seg-btn { letter-spacing: -.005em; }
+#view .sc-step-label { font-size: 14px; letter-spacing: -.016em; }
+#view .sc-fact-value .p-missing { font-weight: 400; }
+#view .sc-num { font-weight: 600; }
+#view .p-count, #view .sc-tabs .p-count { background: transparent; color: #6e6e73; font-weight: 400; }
+body:has(.p-embed-bar) #view .p-tabs.sc-tabs button { color: #1d1d1f; font-weight: 400; }
+body:has(.p-embed-bar) #view .p-tabs.sc-tabs button[aria-selected="true"] { font-weight: 600; }
+#view .td-tag { background: transparent; color: #6e6e73; padding: 0; font-weight: 400; }
+#view .td-tag::before { content: none; }
+#view .sc-tl-text .td-tag::after { content: "\00a0\00b7"; }
+.sc-keys-btn { width: auto; height: 44px; padding: 0 4px; border-radius: 0; background: none; color: #0066cc; font: 400 14px var(--font); letter-spacing: -.016em; }
+.sc-keys-btn:hover { background: none; text-decoration: underline; }
+/* the tasks: plain rows */
+#view .p-tasks .td-task { margin-top: 0; padding: 16px 0; border: 0; border-top: 1px solid #e8e8ed; border-radius: 0; background: transparent; box-shadow: none; }
+#view .p-tasks .td-task:hover { transform: none; }
+#view .p-tasks .td-task-text { font-size: 17px; letter-spacing: -.022em; }
+#view .p-tasks .td-menu-item { font-size: 14px; }
+/* Applications, in the same calm look */
+html body #view .p-apps .p-card h2 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+html body #view .p-apps ol.p-chosen > li.p-chosen-item::before, html body #view .p-apps ol.p-chosen.is-apps > li.p-chosen-item::before, html body #view .p-apps ol.p-chosen.is-apps > li.p-chosen-item.is-priority::before { background: #e8e8ed; color: #1d1d1f; font-weight: 600; }
+html body #view .p-apps ol.p-chosen.is-apps > li.p-chosen-item.is-priority { background: transparent; }
+html body #view .p-apps .p-chosen-item h3 { font-size: 17px; font-weight: 600; letter-spacing: -.022em; }
+html body #view .p-apps .p-chosen-course { font-size: 14px; color: #6e6e73; }
+html body #view .p-apps .p-chosen-sub { display: flex; flex-wrap: wrap; gap: 0; margin-top: 6px; }
+html body #view .p-apps .p-chosen-sub :is(.p-applied, .p-chosen-partner) { margin: 0; padding: 0; border-radius: 0; background: transparent; color: #6e6e73; font-size: 14px; font-weight: 400; letter-spacing: -.016em; }
+html body #view .p-apps .p-chosen-sub > * + *::before { content: "\00b7"; margin: 0 8px; color: #6e6e73; }
+html body #view .p-apps .p-chosen-sub .p-applied.is-priority { color: #1d1d1f; font-weight: 600; }
+html body #view .p-apps .p-chosen-sub .p-applied.is-offer { color: #1d1d1f; }
+html body #view .p-apps .p-chosen-sub .p-applied.is-refused { color: #b42318; }
+html body #view .p-apps .p-chosen-facts dt { color: #6e6e73; font-size: 14px; }
+html body #view .p-apps .p-chosen-facts dd { font-size: 17px; font-weight: 400; }
+html body #view .p-apps .p-priority-text small { color: #6e6e73; font-size: 14px; }
+html body #view .p-apps .p-apps-summary { color: #6e6e73; font-size: 17px; }
+html body #view .p-apps .btn { min-height: 36px; padding: 0 16px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font: 400 15px var(--font); box-shadow: none; }
+html body #view .p-apps .btn.btn-primary { background: #0071e3; color: #fff; }
+/* the Assign tags: grey, the chosen one black */
+.p-assign .td-tag-pick :is(.td-tag, .td-prio) { background: #e8e8ed; color: #1d1d1f; font-weight: 400; box-shadow: none; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)::after, .p-assign .td-tag-pick :is(.td-tag, .td-prio) i { display: none; }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { background: #1d1d1f; color: #fff; box-shadow: none; }
+/* every page: one disabled look for the main button; Undo and Redo readable */
+html body .btn.btn-primary:disabled, html body .btn.btn-primary[disabled] { background: #e8e8ed !important; color: #6e6e73 !important; opacity: 1 !important; box-shadow: none !important; border-color: transparent !important; }
+body:has(#sheet) .topbar :is(#undoBtn, #redoBtn):disabled { color: #6e6e73; opacity: .5; }
+
+/* 🔴 CSS CHANGED (2026-11-20): two layout fixes from the page-by-page review | from: on Apply through, a long partner name ("Real Dreams Educational Consultancy") broke onto two lines inside its choice box; on Users, "Student (own portal)" sat alone in one narrow column with a dashed line, its words in six lines | to: the choice box keeps one line (at least 280px wide, a long name ends in "..."); "Student (own portal)" takes the whole row with a plain border like the others */
+body:has(.niec-header[data-page="apply-through"]) #rows td select { min-width: 280px; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; }
+.access .check-student { grid-column: 1 / -1; border-top: 0; padding-top: 0; }
