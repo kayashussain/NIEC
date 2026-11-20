@@ -278,6 +278,37 @@
   const { LEVEL_ORDER, levelOf } = P;
   const Q1 = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i;
   // "January 2027, February 2027" -> "Jan, Feb 2027".
+  const firstLine = (v) => String(v || '').split('\n').map((x) => x.trim()).filter(Boolean)[0] || '';
+  // Read as numbers: "IELTS: 6 overall (no band below 5.5)" and "IELTS: 6.0 overall (5.5 in each component)" are the same rule.
+  const TESTS = [['IELTS UKVI', /ielts\s*ukvi/i], ['IELTS', /ielts/i], ['PTE', /\bpte\b/i], ['TOEFL', /toefl/i], ['Duolingo', /duolingo/i]];
+  const testsOf = (v) => {
+    const out = {};
+    String(v || '').split('\n').forEach((line) => {
+      const t = TESTS.find(([, re]) => re.test(line));
+      if (!t || out[t[0]]) return;
+      const nums = (line.replace(/^[^:]*:/, '').match(/\d+(?:\.\d+)?/g) || []).map(Number);
+      if (nums.length) out[t[0]] = nums.slice(0, 2);
+    });
+    return out;
+  };
+  const pctOf = (v) => Math.min(...(String(v || '').match(/(\d{2})\s*%/g) || ['999%']).map((x) => parseInt(x, 10)));
+  // A course's own requirement is shown when it asks more than its level's general one (the owner, 21 Nov 2026: "IELTS 6.0 with
+  // no band below 5.5 for the level, but 7.0 with no band below 7.0 for one course"): a higher overall score, a higher lowest band
+  // where both give one, or a higher percentage. When the level gives none, the course's own is shown.
+  const differs = (mine, general, kind) => {
+    if (!String(mine || '').trim()) return false;
+    if (!String(general || '').trim()) return true;
+    if (kind === 'English') { const a = testsOf(mine); const b = testsOf(general); return Object.keys(a).some((k) => b[k] && (a[k][0] > b[k][0] || (a[k].length > 1 && b[k].length > 1 && a[k][1] > b[k][1]))); }
+    const a = pctOf(mine); const b = pctOf(general);
+    return a < 999 && b < 999 && a > b;
+  };
+  // "36 months" -> "3 years", "42 months" -> "3 years 6 months", "12 months" -> "1 year".
+  const years = (d) => {
+    const m = /^(\d+)\s*months?$/i.exec(String(d).trim());
+    if (!m || +m[1] < 12) return String(d);
+    const y = Math.floor(+m[1] / 12); const r = +m[1] % 12;
+    return `${y} year${y === 1 ? '' : 's'}${r ? ` ${r} month${r === 1 ? '' : 's'}` : ''}`;
+  };
   const shortIntake = (s) => { const ms = String(s || '').split(/,\s*/).map((x) => x.trim().slice(0, 3)).filter(Boolean); return ms.length ? `${ms.join(', ')} 2027` : ''; };
   // A short key for a level's colour on the page.
   const lv0 = (name) => ({ 'International Foundation Year': 'ify', 'International Year One': 'iy1', Undergraduate: 'ug', Postgraduate: 'pg', 'Pre-Masters': 'pm', 'Extended Masters': 'em', 'Masters by Research': 'mr', PhD: 'phd' }[LEVEL_ORDER.includes(name) ? name : levelOf(name)] || 'other');
@@ -350,6 +381,8 @@
     const doc = el('article', 'doc up-doc');
     const city = P0.city || uni.city;
     const campuses = P.campusesOf(uni, data.courses);
+    // The general requirement card of a level (by its category), for the course cards.
+    const levelFor = (g) => data.levels.find((l) => l.level === g) || data.levels.find((l) => (levelOf(l.level) || '') === g) || {};
     const fees = [...data.courses.flatMap((c) => money(c.fee)), ...data.levels.flatMap((l) => money(l.tuition))];
     const deadline = P0.own ? (view.deadlines.find((d) => d.applyBy && Q1.test(d.name)) || view.deadlines.find((d) => d.applyBy) || null) : null;
     const deadlineText = deadline ? deadline.applyBy.when : (P0.deadlines[0] || '').replace(/^application deadline\s*[-:]\s*/i, '').replace(/^apply by\s*/i, '').replace(/\s*\(most courses\)/, '');
@@ -363,11 +396,15 @@
     slides.forEach((src, k) => { const im = img(src, 'up-hero-img' + (k === 0 ? ' is-on' : ''), ''); if (k) im.loading = 'eager'; hero.append(im); });
     if (slides.length > 1) {
       const dots = el('div', 'up-dots no-print');
+      dots.style.setProperty('--dur', `${HERO_MS}ms`);
       slides.forEach((_, k) => { const d = el('button', k === 0 ? 'is-on' : ''); d.type = 'button'; d.setAttribute('aria-label', `Picture ${k + 1}`); d.addEventListener('click', () => show(k)); dots.append(d); });
       hero.append(dots);
       let at = 0;
-      const show = (k) => { const last = at; at = k; hero.querySelectorAll('.up-hero-img').forEach((x, n) => { x.classList.toggle('is-on', n === k); x.classList.toggle('is-out', n === last && n !== k); }); dots.querySelectorAll('button').forEach((x, n) => x.classList.toggle('is-on', n === k)); };
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show((at + 1) % hero.querySelectorAll('.up-hero-img').length); }, 4500); // one second faster (the owner, 21 Nov 2026)
+      const show = (k) => { const last = at; at = k; hero.querySelectorAll('.up-hero-img').forEach((x, n) => { x.classList.toggle('is-on', n === k); x.classList.toggle('is-out', n === last && n !== k); }); dots.querySelectorAll('button').forEach((x, n) => { x.classList.remove('is-on'); if (n === k) { void x.offsetWidth; x.classList.add('is-on'); } }); };
+      // A press on a dot starts that picture's full time again, so the dot and the picture stay together.
+      const tick = () => { clearInterval(heroTimer); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show((at + 1) % hero.querySelectorAll('.up-hero-img').length); }, HERO_MS); };
+      dots.addEventListener('click', tick);
+      tick();
     }
     const inner = el('div', 'up-hero-inner');
     const id = el('div', 'up-id');
@@ -427,9 +464,25 @@
           count.textContent = `${at + 1} / ${frames.length}`;
         };
         const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const restart = () => { clearInterval(galleryTimer); if (!still) galleryTimer = setInterval(() => { if (!document.hidden && !film.matches(':hover')) go(at + 1); }, GALLERY_MS); };
+        // It moves only while it can be seen, is not paused with the button, and the mouse is not resting on it.
+        let paused = still; let seen = true;
+        const held = () => paused || !seen || film.matches(':hover');
+        const restart = () => { clearInterval(galleryTimer); film.classList.toggle('is-held', held()); if (!held()) galleryTimer = setInterval(() => { if (!document.hidden && !held()) go(at + 1); }, GALLERY_MS); };
         film.addEventListener('mouseenter', () => film.classList.add('is-held'));
-        film.addEventListener('mouseleave', () => { film.classList.remove('is-held'); go(at); restart(); });
+        film.addEventListener('mouseleave', () => { go(at); restart(); });
+        const play = el('button', 'up-play-toggle no-print');
+        play.type = 'button';
+        const showPlay = () => { play.classList.toggle('is-paused', paused); play.setAttribute('aria-label', paused ? 'Play the pictures' : 'Pause the pictures'); };
+        play.addEventListener('click', (e) => { e.stopPropagation(); paused = !paused; showPlay(); go(at); restart(); });
+        showPlay();
+        film.append(play);
+        // The arrow keys move between the pictures once the frame has the focus.
+        film.tabIndex = 0;
+        film.setAttribute('role', 'region');
+        film.setAttribute('aria-roledescription', 'carousel');
+        film.setAttribute('aria-label', `${uni.name} pictures`);
+        film.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); go(at + (e.key === 'ArrowRight' ? 1 : -1)); restart(); } });
+        if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => { seen = en.isIntersecting; if (seen) go(at); restart(); }, { threshold: 0.35 }).observe(film);
         // a swipe on a phone moves too
         let x0 = null;
         film.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
@@ -488,6 +541,9 @@
         const h3 = el('h3', '', lv && lv !== 'Other courses' ? lv : L.level);
         if (lv && lv !== L.level && lv !== 'Other courses') h3.append(el('small', 'up-level-own', L.level));
         head.append(h3);
+        // How many of the level's courses ask more than this card (each says so on its own card).
+        const more = data.courses.filter((c) => c.level === lv && (differs(c.english, L.english, 'English') || differs(c.academic, L.academic, 'Entry'))).length;
+        if (more && L.english) { const n2 = el('a', 'up-level-more no-print', `${more} course${more === 1 ? ' asks' : 's ask'} more`); n2.href = '#lvl-' + (lv || L.level).replace(/\W+/g, '-'); n2.title = 'Each of these courses shows its own requirement on its card'; head.append(n2); }
         if (n) { const a = el('a', 'up-level-link no-print', `${n} course${n === 1 ? '' : 's'}`); a.href = '#lvl-' + (lv || L.level).replace(/\W+/g, '-'); head.append(a); }
         card.append(head);
         const money2 = el('div', 'up-money');
@@ -519,6 +575,7 @@
     // every January 2027 course, by level
     if (data.courses.length) {
       const sec = el('section', 'up-section up-courses');
+      sec.id = 'courses';
       const top = el('div', 'up-courses-head');
       top.append(el('h2', '', `Courses for ${data.intake}`));
       const box = el('input', 'search no-print');
@@ -542,13 +599,29 @@
           card.style.setProperty('--d', `${(grid.children.length % 6) * 50}ms`);
           card.dataset.name = c.name.toLowerCase();
           card.append(el('b', 'up-course-name', c.name));
-          // Every course says when it starts and where (the owner, 20 Nov 2026), then its length and fee.
+          // Every course says when it starts, where, how long, what it costs and its scholarship (the owner, 21 Nov 2026), and its own
+          // requirement when it asks more than the level's general one (a 7.0 IELTS where the level asks 6.0).
+          const L = levelFor(g);
           const where = el('div', 'up-course-where');
           where.append(el('span', 'up-c-intake', shortIntake(c.start || data.intake)), el('span', 'up-c-campus', c.campus || campuses[0] || uni.city || 'UK'));
+          if (c.duration) where.append(el('span', 'up-c-time', years(c.duration)));
           card.append(where);
-          const meta = el('div', 'up-course-meta');
-          [c.duration, c.fee].filter(Boolean).forEach((x) => meta.append(el('span', '', x)));
-          if (meta.children.length) card.append(meta);
+          const fee = c.fee || firstLine(L.tuition);
+          // "Scholarship of £4,000" in the Scholarship tile reads "£4,000"; "Upto" reads "Up to".
+          const sch = (c.scholarship || firstLine(L.scholarship)).replace(/^scholarships?\s*(of|:|-)?\s*/i, '').replace(/\bupto\b/gi, 'Up to');
+          const money2 = el('div', 'up-course-money');
+          const tile = (k, v, cls) => { const t = el('div', `up-cm ${cls}`); t.append(el('span', '', k), el('b', '', v || 'Not given')); if (!v) t.classList.add('is-none'); money2.append(t); return t; };
+          tile('Tuition fee', fee, 'is-fee');
+          const st = tile('Scholarship', sch, 'is-sch');
+          if (sch && !c.scholarship && L.scholarship) st.title = L.scholarship;
+          card.append(money2);
+          const own = [['English', c.english, L.english], ['Entry', c.academic, L.academic]].filter(([k, mine, general]) => differs(mine, general, k));
+          if (own.length) {
+            const req = el('div', 'up-course-req');
+            req.append(el('span', 'up-req-tag', 'Course requirement'));
+            own.forEach(([k, v]) => { const line = el('div', 'up-req-line'); line.append(el('b', '', k), el('span', '', String(v).split('\n').slice(0, 2).join(' · '))); req.append(line); });
+            card.append(req);
+          }
           const foot = el('div', 'up-course-foot');
           if (c.deadline) foot.append(el('span', 'up-course-deadline', `Apply by ${c.deadline}`));
           if (team() && window.ShortlistFor) foot.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.name, intake: String(c.start || data.intake).split(', ')[0], level: g }));
@@ -569,6 +642,9 @@
         sec.querySelectorAll('.up-jump').forEach((x) => { x.hidden = words.length > 0; });
         none.hidden = shown > 0;
       });
+      // Opened from Find universities with a subject ("See all"): the search is set to it and the courses come into view.
+      const asked = new URLSearchParams(location.search).get('q');
+      if (asked) { box.value = asked.replace(/[^\w\s-]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80); box.dispatchEvent(new Event('input')); setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400); }
       doc.append(sec);
     }
 
@@ -607,6 +683,8 @@
   let heroTimer = null;
   let galleryTimer = null;
   // 🔴 CSS CHANGED (2026-11-21): how long each gallery picture is shown (the bar under it fills in the same time) | from: 4.5 seconds | to: 3.5 seconds
+  // 🔴 CSS CHANGED (2026-11-21): the cover dots fill in this time (set as --dur from here) | from: plain dots | to: the active dot fills like a progress bar over 4.5 seconds
+  const HERO_MS = 4500; // each cover picture (one second faster, the owner, 21 Nov 2026)
   const GALLERY_MS = 3500; // how long each picture of the gallery is shown (the owner, 21 Nov 2026: one second faster)
   function motion(doc) {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

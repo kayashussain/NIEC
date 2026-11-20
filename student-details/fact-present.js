@@ -418,5 +418,5 @@
     return [...new Set(String(city).split(/,|\/| and /).map((x) => x.trim()).filter((x) => x && x.length < 40))];
   }
 
-  return { present, pageData, campusesOf, levelOf, LEVEL_ORDER, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, parseCourseText, levelGroup, compact };
+  return { present, pageData, campusesOf, levelOf, intakeLabel, LEVEL_ORDER, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, parseCourseText, levelGroup, compact };
 }));

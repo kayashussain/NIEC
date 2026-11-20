@@ -1247,7 +1247,7 @@ const server = http.createServer(async (req, res) => {
         if (words.length && !courses.length) continue; // nothing in that subject here
         const seen = new Set();
         const list = courses.filter((c) => { const k = c.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
-          .map((c) => ({ name: c.full || c.name, level: c.level, campus: c.campus || '', intake: String(c.start || data.intake).split(/,\s*/)[0], intakes: c.start || data.intake, fee: c.fee || '', deadline: c.deadline || '', link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
+          .map((c) => ({ name: c.name, full: c.full || c.name, level: c.level, campus: c.campus || '', intake: String(c.start || data.intake).split(/,\s*/)[0], intakes: c.start || data.intake, fee: c.fee || '', scholarship: c.scholarship || '', deadline: c.deadline || '', link: links[`${u.id}|${c.name.toLowerCase()}`] || links[`${u.id}|${c.name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase()}`] || '' }));
         const row = data.levels.find((l) => eligLevel(l.level) === s.level) || (topUp ? data.levels.find((l) => eligLevel(l.level) === 'Undergraduate') : null) || {};
         const g = glance.get(u.id) || {};
         const deposit = (/Deposit[^:]*:\s*(.+)/i.exec(row.extra || '') || [])[1] || '';

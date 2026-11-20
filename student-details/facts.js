@@ -144,6 +144,9 @@ const LEVEL_ORDER = require('./fact-present').LEVEL_ORDER;
 const url = (v) => (/^https:\/\/[^\s"'<>]+$/.test(String(v || '')) ? String(v).slice(0, 600) : '');
 // A logo can also be a small picture kept in the page itself (data:image/..., at most about 200 KB).
 const logoUrl = (v) => (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(String(v || '')) && String(v).length < 280000 ? String(v) : url(v));
+// "Jan 2027, Feb 2027" is written "January 2027, February 2027".
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const fullStarts = (s) => String(s || '').split(/,\s*/).filter(Boolean).map((x) => { const m = /^([A-Za-z]{3})[a-z]*\.?\s+(\d{4})$/.exec(x.trim()); const i = m ? MONTH_NAMES.findIndex((n) => n.slice(0, 3).toLowerCase() === m[1].toLowerCase()) : -1; return i >= 0 ? `${MONTH_NAMES[i]} ${m[2]}` : x.trim(); }).join(', ');
 function cleanProfile(p) {
   if (!p || typeof p !== 'object') return null;
   const t = (v, max = LIMITS.short) => str(v == null ? '' : String(v), max).trim();
@@ -155,6 +158,8 @@ function cleanProfile(p) {
     own: Boolean(p.own), intake: t(p.intake, 60) || 'January 2027',
     // Which partner record the courses come from, read again every Thursday (partner-refresh.js), and when they were last read.
     key: t(p.key, 160), source: cleanSource2(p.source), readAt: t(p.readAt, 40),
+    // The other partners that offer the same university: what the first one does not give is filled in from them (the owner, 21 Nov 2026).
+    others: (Array.isArray(p.others) ? p.others : []).slice(0, 4).map(cleanSource2).filter(Boolean),
     logo: logoUrl(p.logo), banner: url(p.banner), photos: (Array.isArray(p.photos) ? p.photos : []).map(url).filter(Boolean).slice(0, 8),
     video: /^https:\/\/www\.youtube(-nocookie)?\.com\/embed\/[\w-]{6,20}/.test(String(p.video || '')) ? url(p.video) : '',
     about: t(p.about, 2000), keyPoints: lines(p.keyPoints, 8, 160), website: url(p.website) || t(p.website, 300), city: t(p.city),
@@ -164,8 +169,10 @@ function cleanProfile(p) {
       academic: t(L && L.academic, 2000), english: t(L && L.english, 2000), tuition: t(L && L.tuition, 1000), scholarship: t(L && L.scholarship, 1000), extra: t(L && L.extra, 1000),
     })),
     courses: (Array.isArray(p.courses) ? p.courses : []).slice(0, 1200).map((c) => ({
-      name: t(c && c.name, 300), level: LEVEL_ORDER.includes(c && c.level) ? c.level : 'Other courses', start: t(c && c.start, 40), deadline: t(c && c.deadline, 40),
+      name: t(c && c.name, 300), level: LEVEL_ORDER.includes(c && c.level) ? c.level : 'Other courses', start: fullStarts(t(c && c.start, 80)), deadline: t(c && c.deadline, 40),
       fee: t(c && c.fee, 80), duration: t(c && c.duration, 60), campus: t(c && c.campus, 200),
+      // the course's own scholarship and requirements, when a partner gives them course by course
+      scholarship: t(c && c.scholarship, 600), english: t(c && c.english, 600), academic: t(c && c.academic, 600),
     })).filter((c) => c.name),
   };
 }
@@ -511,7 +518,7 @@ function createFacts(dir, { now = () => new Date() } = {}) {
       return { removed: uni };
     },
     // The pages read from partners, for the Thursday refresh: [{ id, key, source }].
-    refreshable: () => load().universities.filter((u) => u.profile && !u.profile.own && u.profile.source).map((u) => ({ id: u.id, name: u.name, key: u.profile.key, source: u.profile.source, courses: u.profile.courses.length })),
+    refreshable: () => load().universities.filter((u) => u.profile && !u.profile.own && u.profile.source).map((u) => ({ id: u.id, name: u.name, key: u.profile.key, source: u.profile.source, others: u.profile.others || [], courses: u.profile.courses.length, courseList: u.profile.courses, levels: u.profile.levels, deadlines: u.profile.deadlines })),
     // The partner's fresh January 2027 courses, requirements and dates for one page (partner-refresh.js). The pictures, the about and
     // everything the team wrote stay as they are.
     refreshProfile(id, fresh) {
@@ -519,7 +526,8 @@ function createFacts(dir, { now = () => new Date() } = {}) {
       const i = data.universities.findIndex((u) => u.id === id);
       if (i === -1 || !data.universities[i].profile) return { error: 'No such page.' };
       const u = data.universities[i];
-      const profile = cleanProfile({ ...u.profile, levels: fresh.levels, courses: fresh.courses, deadlines: fresh.deadlines, readAt: now().toISOString() });
+      const starts = (fresh.courses || []).flatMap((c) => String(c.start || '').split(/,\s*/));
+      const profile = cleanProfile({ ...u.profile, levels: fresh.levels, courses: fresh.courses, deadlines: fresh.deadlines, intake: FactPresent.intakeLabel(starts) || u.profile.intake, readAt: now().toISOString() });
       const universities = [...data.universities];
       universities[i] = { ...u, profile, updatedAt: now().toISOString() };
       write({ ...data, universities });

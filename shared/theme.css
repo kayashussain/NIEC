@@ -3807,3 +3807,52 @@ html body .fd-more-courses .fd-courses li:first-child { border-top: 0; }
 @media (max-width: 1100px) { html body .fd-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } html body .fd-go { grid-column: 1 / -1; } }
 @media (max-width: 600px) { html body .fd-card { padding: 18px 16px 20px; } html body .fd-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fd-tiles { gap: 8px; } .fd-tile { padding: 12px 14px; } .fd-tile b { font-size: 26px; } .fd-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { html body .fd-uni { animation: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-21): every course card says when, where, how long, what it costs and its scholarship, and its own requirement | from: a name with intake and campus chips, then length and fee as small grey text | to: three chips (blue calendar intake, grey pin campus, grey clock duration), two soft tiles side by side (Tuition fee in dark type, Scholarship in green), "Not given" in light grey when a partner gives nothing, and an amber "Course requirement" panel listing the English or entry rule when the course asks more or differently than its level's general requirement */
+.up-c-time { background: #f2f2f5; color: #3a3a3c; --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.5' fill='none' stroke='black' stroke-width='1.6'/%3E%3Cpath d='M8 4.5V8l2.5 1.6' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); }
+.up-course-money { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.up-cm { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 9px 12px; border-radius: 12px; background: #f5f5f7; }
+.up-cm span { color: #6e6e73; font-size: 12px; font-weight: 600; letter-spacing: .01em; }
+.up-cm b { color: #1d1d1f; font-size: 15px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.up-cm.is-sch { background: #eaf7ee; }
+.up-cm.is-sch b { color: #1b7a36; }
+.up-cm.is-none b { color: #a1a1a6; font-weight: 500; }
+.up-cm[title] { cursor: help; }
+.up-course-req { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border-radius: 12px; background: #fff6e5; box-shadow: inset 0 0 0 1px rgba(255, 159, 10, .28); }
+.up-req-tag { align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: #ff9f0a; color: #fff; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+.up-req-line { display: flex; gap: 8px; color: #3a3a3c; font-size: 13.5px; line-height: 1.4; }
+.up-req-line b { flex: none; min-width: 52px; color: #9a5b00; font-weight: 700; }
+
+/* 🔴 CSS CHANGED (2026-11-21): Find universities shows the courses at once | from: the courses folded behind "N courses · Show" | to: up to seven courses (those matching the subject) listed in a soft grey panel, each with intake, campus and fee chips, and a blue "See all N courses" pill that opens the university's page on its course list */
+/* 🔴 CSS CHANGED (2026-11-21): Find universities result cards are wider | from: at least 340px each (three to a row, course names squeezed) | to: at least 420px each (two to a row on a laptop), so each course and its chips sit on one or two lines */
+.fd-grid { grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); }
+@media (max-width: 600px) { .fd-grid { grid-template-columns: 1fr; } }
+.fd-course-box { margin-top: 14px; padding: 4px 0 0; border-top: 1px solid rgba(0, 0, 0, .08); }
+.fd-course-head { padding: 10px 0 8px; font-size: 15px; }
+html body .fd-course-box .fd-courses { margin: 0; padding: 2px 12px; border-radius: 14px; background: #f5f5f7; list-style: none; }
+html body .fd-course-box .fd-courses li { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid rgba(0, 0, 0, .06); }
+html body .fd-course-box .fd-courses li:first-child { border-top: 0; }
+.fd-see-all { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 9px 16px; border-radius: 999px; background: #0071e3; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; transition: background .2s ease, transform .15s ease; }
+.fd-see-all::after { content: ""; width: 7px; height: 7px; border-top: 2px solid currentColor; border-right: 2px solid currentColor; transform: rotate(45deg); }
+.fd-see-all:hover { background: #0077ed; transform: translateX(2px); }
+html body .fd-chips .fd-fee { background: #fff; color: #1d1d1f; }
+
+/* 🔴 CSS CHANGED (2026-11-21): the sliders get Apple-style controls | from: cover dots that only changed width; a gallery with no pause | to: the active cover dot is a white pill that fills while its picture is shown; the gallery has a round frosted pause and play button at its bottom left, pauses by itself when scrolled out of sight, moves with the arrow keys and shows a blue focus ring when it has the keyboard focus */
+.up-dots button { position: relative; overflow: hidden; }
+.up-dots button.is-on { width: 34px; background: rgba(255, 255, 255, .45); }
+.up-dots button.is-on::after { content: ""; position: absolute; inset: 0; width: 0; border-radius: inherit; background: #fff; animation: up-fill var(--dur, 4500ms) linear forwards; }
+.up-play-toggle { position: absolute; z-index: 3; left: 16px; bottom: 14px; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: rgba(29, 29, 31, .45); -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%); cursor: pointer; transition: background .2s ease, transform .15s ease; }
+.up-play-toggle:hover { background: rgba(29, 29, 31, .65); transform: scale(1.06); }
+.up-play-toggle::before, .up-play-toggle::after { content: ""; position: absolute; top: 12px; width: 3.5px; height: 12px; border-radius: 2px; background: #fff; }
+.up-play-toggle::before { left: 12.5px; }
+.up-play-toggle::after { left: 20px; }
+.up-play-toggle.is-paused::after { display: none; }
+.up-play-toggle.is-paused::before { left: 14px; top: 11px; width: 0; height: 0; border-radius: 0; background: none; border-style: solid; border-width: 7px 0 7px 11px; border-color: transparent transparent transparent #fff; }
+.up-film:focus-visible { outline: 3px solid #0071e3; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .up-dots button.is-on::after { animation: none; width: 100%; } }
+
+/* 🔴 CSS CHANGED (2026-11-21): a level card says when some of its courses ask more; an empty scholarship is grey | from: nothing on the level card; "Not given" on a green scholarship tile | to: an amber pill "12 courses ask more" beside the level's course count (it jumps to those courses); a scholarship tile with nothing given is plain grey, so green always means a real scholarship */
+.up-level-more { margin-left: auto; padding: 4px 11px; border-radius: 999px; background: #fff1d6; color: #9a5b00; font-size: 13px; font-weight: 700; text-decoration: none; transition: background .2s ease; }
+.up-level-more:hover { background: #ffe6b3; }
+.up-level-more + .up-level-link, .up-level-head .up-level-more ~ a { margin-left: 0; }
+.up-cm.is-sch.is-none { background: #f5f5f7; }

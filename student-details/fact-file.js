@@ -15,12 +15,10 @@
   // Two lists only, Universities and Pathway colleges, never both mixed (the owner, 17 Nov 2026: "remove All"). A choice of "all"
   // kept in a browser from before becomes Universities.
   const KINDS = ['university', 'pathway'];
-  const filters = (() => { try { return { kind: 'university', intake: '', ...JSON.parse(localStorage.getItem(FKEY) || '{}') }; } catch (e) { return { kind: 'university', intake: '' }; } })();
+  const filters = (() => { try { return { kind: 'university', ...JSON.parse(localStorage.getItem(FKEY) || '{}'), intake: '' }; } catch (e) { return { kind: 'university' }; } })();
   if (!KINDS.includes(filters.kind)) filters.kind = 'university';
   const kindOf = (u) => (u.kind === 'pathway' ? 'pathway' : 'university');
   const saveFilters = () => { try { localStorage.setItem(FKEY, JSON.stringify(filters)); } catch (e) { /* kept for this page only */ } };
-  const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-  const intakeOrder = (n) => { const m = /([A-Za-z]{3,9})\s+(\d{4})/.exec(n || ''); return m ? +m[2] * 12 + Math.max(0, MONTHS.indexOf(m[1].slice(0, 3).toLowerCase())) : 1e9; };
   const urgency = (days) => (days <= 7 ? 'is-urgent' : days <= 30 ? 'is-soon' : '');
   const left = (days) => (days === 0 ? 'Today' : days === 1 ? '1 day left' : `${days} days left`);
   // The next deadline, on a card: "Apply by 4 Dec 2026 · January 2027" and the days left.
@@ -33,7 +31,7 @@
     return n;
   }
   function shown() {
-    let out = list.filter((u) => kindOf(u) === filters.kind && (!filters.intake || (u.intakes || []).includes(filters.intake)));
+    let out = list.filter((u) => kindOf(u) === filters.kind);
     // Always the nearest deadline first (the owner, 20 Nov 2026: no Sort menu).
     if (!query) out = out.slice().sort((a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name));
     return out;
@@ -49,12 +47,7 @@
       const n = list.filter((u) => kindOf(u) === b.dataset.k).length;
       b.replaceChildren(el('span', '', b.dataset.k === 'pathway' ? 'Pathway colleges' : 'Universities'), el('span', 'ff-n', String(n)));
     });
-    const sel = $('ffIntake');
-    const names = [...new Set(all.flatMap((u) => u.intakes || []))].sort((a, b) => intakeOrder(a) - intakeOrder(b) || a.localeCompare(b));
-    if (filters.intake && !names.includes(filters.intake)) filters.intake = '';
-    sel.replaceChildren(new Option('Any intake', ''), ...names.map((n) => new Option(n, n)));
-    sel.value = filters.intake;
-    $('ffClear').hidden = !filters.intake;
+    // No Intake menu: every page has only the January, February and March 2027 intakes (the owner, 21 Nov 2026).
     // How many deadlines of this list close in the next two weeks, with one click to see them first.
     const soon = all.filter((u) => kindOf(u) === filters.kind && u.next && u.next.days <= 14);
     const word = filters.kind === 'pathway' ? ['pathway college closes', 'pathway colleges close'] : ['university closes', 'universities close'];
@@ -62,7 +55,7 @@
     box.hidden = !soon.length || query !== '';
     if (!box.hidden) box.replaceChildren(el('span', 'ff-soon-dot'), el('span', '', `${soon.length} ${word[soon.length === 1 ? 0 : 1]} applications in the next 14 days.`));
   }
-  let all = []; // every university (the list without a search), for the intake menu and the closing-soon line
+  let all = []; // every university (the list without a search), for the closing-soon line
 
   const when = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   function el(tag, cls, text) {
@@ -176,9 +169,9 @@
     const box = $('cards');
     drawBar();
     const rows = shown();
-    const filtered = Boolean(filters.intake) || rows.length !== list.length;
+    const filtered = rows.length !== list.length;
     const noun = (n) => (filters.kind === 'pathway' ? (n === 1 ? 'pathway college' : 'pathway colleges') : (n === 1 ? 'university' : 'universities'));
-    $('count').textContent = loadedOnce && list.length ? `${rows.length} ${noun(rows.length)}${query ? (rows.length === 1 ? ' matches' : ' match') : ''}${filters.intake ? ' with a ' + filters.intake + ' intake' : ''}` : '';
+    $('count').textContent = loadedOnce && list.length ? `${rows.length} ${noun(rows.length)}${query ? (rows.length === 1 ? ' matches' : ' match') : ''}` : '';
     if (!rows.length) {
       const empty = el('div', 'ui-empty');
       const why = filtered && list.length;
@@ -220,8 +213,6 @@
     searchTimer = setTimeout(load, 180);
   });
   $('ffKind').addEventListener('click', (e) => { const b = e.target.closest('button[data-k]'); if (!b) return; filters.kind = b.dataset.k; saveFilters(); render(); });
-  $('ffIntake').addEventListener('change', () => { filters.intake = $('ffIntake').value; saveFilters(); render(); });
-  $('ffClear').addEventListener('click', () => { Object.assign(filters, { intake: '' }); saveFilters(); render(); });
   // Esc in the search box clears it.
   $('search').addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('search').value) { $('search').value = ''; query = ''; load(); } });
   // "/" jumps to the search box, like on most sites.

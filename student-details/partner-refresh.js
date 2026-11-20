@@ -25,7 +25,8 @@ const tidy = (s) => String(s == null ? '' : s).replace(/[\u2013\u2014]/g, '-').r
 const strip = (html) => tidy(String(html || '').replace(/<\/(p|div|li|h\d)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#39;|&rsquo;/g, "'").replace(/&quot;/g, '"').replace(/&[a-z]+;/g, ' ')).replace(/\n{2,}/g, '\n');
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const day = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${Number(m[3])} ${MON[m[2] - 1]} ${m[1]}` : ''; };
-const month = (iso) => { const m = /^(\d{4})-(\d{2})/.exec(iso || ''); return m ? `${MON[m[2] - 1]} ${m[1]}` : ''; };
+const FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const month = (iso) => { const m = /^(\d{4})-(\d{2})/.exec(iso || ''); return m ? `${FULL[m[2] - 1]} ${m[1]}` : ''; };
 const money = (n, cur = 'GBP') => (n ? `${cur === 'GBP' ? '£' : `${cur} `}${Number(n).toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '');
 // The intakes kept (the owner, 20 Nov 2026): January, February and March 2027.
 const isJan = (s) => /^(jan|feb|mar)(uary|ch)?\s*2027|^2027-0[123]/i.test(String(s || '').trim());
@@ -35,13 +36,59 @@ const range = (nums, cur) => { const v = nums.filter((x) => x > 0); if (!v.lengt
 const levelOf = (name, hint = '') => FP.levelOf(name, hint) || OTHER;
 const order = (l) => { const i = LEVELS.indexOf(l); return i < 0 ? 99 : i; };
 const finish = (levels, courses, deadlines) => {
-  const seen = new Set();
-  const list = courses.filter((c) => { const k = c.name.toLowerCase(); if (!c.name || seen.has(k)) return false; seen.add(k); return true; })
-    .sort((x, y) => order(x.level) - order(y.level) || x.name.localeCompare(y.name));
+  // One line per course: the same course at two campuses or two intakes is one course with both.
+  const byName = new Map();
+  courses.filter((c) => c.name).forEach((c) => {
+    const k = c.name.toLowerCase();
+    const was = byName.get(k);
+    if (!was) { byName.set(k, { ...c }); return; }
+    const join = (a, b) => [...new Set([...String(a || '').split(/,\s*/), ...String(b || '').split(/,\s*/)].filter(Boolean))].join(', ');
+    was.campus = join(was.campus, c.campus);
+    was.start = sortStarts(join(was.start, c.start));
+    Object.keys(c).forEach((f) => { if (!was[f] && c[f]) was[f] = c[f]; });
+  });
+  const list = [...byName.values()].sort((x, y) => order(x.level) - order(y.level) || x.name.localeCompare(y.name));
   const lv = Object.values(levels).filter((x) => list.some((c) => c.level === x.level) || LEVELS.includes(x.level)).sort((x, y) => order(x.level) - order(y.level))
     .map((x) => ({ level: x.level, academic: x.academic || '', english: x.english || '', tuition: x.tuition || '', scholarship: x.scholarship || '', extra: x.extra || '' }));
   return { levels: lv, courses: list, deadlines: deadlines.slice(0, 12) };
 };
+const sortStarts = (s) => String(s || '').split(/,\s*/).filter(Boolean).sort((a, b) => FULL.indexOf(a.split(' ')[0]) - FULL.indexOf(b.split(' ')[0])).join(', ');
+
+// ---- filling in from another partner (the owner, 21 Nov 2026) ----
+// What a counsellor needs to decide must never be missing: where the partner a university is read from does not give an entry
+// requirement, an English test, a fee or a scholarship, another partner that offers the same university fills the gap. The courses
+// stay those of the first partner; only empty places are filled, nothing written is replaced.
+const DEGREE = [[/bachelor of arts/g, 'ba'], [/bachelor of science/g, 'bsc'], [/bachelor of engineering/g, 'beng'], [/bachelor of laws/g, 'llb'], [/master of science/g, 'msc'], [/master of arts/g, 'ma'], [/master of business administration/g, 'mba'], [/master of laws/g, 'llm'], [/master of engineering/g, 'meng'], [/master of research/g, 'mres'], [/master of public health/g, 'mph']];
+// "Bachelor of Arts (Honours) - Accounting and Finance (NN41)" and "BA (Hons) Accounting and Finance" are the same course.
+function courseKey(name) {
+  let t = String(name || '').toLowerCase().replace(/\(top[- ]?up\)/g, ' top up ').replace(/\([^)]*\)/g, ' ');
+  DEGREE.forEach(([re, to]) => { t = t.replace(re, to); });
+  return t.replace(/\bhonours\b|\bhons\b|&/g, ' ').replace(/\b(and|in|of)\b/g, ' ').replace(/[^a-z0-9]+/g, '');
+}
+const FIELDS_L = ['academic', 'english', 'tuition', 'scholarship', 'extra'];
+const FIELDS_C = ['fee', 'duration', 'campus', 'scholarship', 'english', 'academic', 'deadline'];
+function fillIn(base, extra) {
+  if (!extra) return base;
+  const levels = (base.levels || []).map((L) => ({ ...L }));
+  const used = new Set(levels.map((L) => L.level));
+  (extra.levels || []).forEach((E) => {
+    const L = levels.find((x) => x.level === E.level);
+    if (L) FIELDS_L.forEach((f) => { if (!String(L[f] || '').trim() && String(E[f] || '').trim()) L[f] = E[f]; });
+    else if ((base.courses || []).some((c) => c.level === E.level) && !used.has(E.level)) levels.push({ ...E });
+  });
+  levels.sort((x, y) => order(x.level) - order(y.level));
+  const index = new Map();
+  (extra.courses || []).forEach((c) => { const k = courseKey(c.name); if (k && !index.has(k)) index.set(k, c); });
+  const courses = (base.courses || []).map((c) => {
+    const e = index.get(courseKey(c.name));
+    if (!e) return c;
+    const out = { ...c };
+    FIELDS_C.forEach((f) => { if (!String(out[f] || '').trim() && String(e[f] || '').trim()) out[f] = e[f]; });
+    return out;
+  });
+  const deadlines = (base.deadlines || []).length ? base.deadlines : (extra.deadlines || []);
+  return { ...base, levels, courses, deadlines };
+}
 
 // ---- Route2Uni (Real Dreams): one university's page, as the portal gives it ----
 const r2uLevel = (n) => ({ "Enhanced Extended Master's": 'Extended Masters', 'Doctor of Business Administration (DBA)': 'PhD', Nursing: 'Undergraduate' }[n] || (LEVELS.includes(n) ? n : levelOf(n)));
@@ -62,14 +109,22 @@ function fromRoute2Uni(u) {
 // ---- Adventus: the January and February 2027 courses of the university's campuses ----
 const advEnglish = (reqs) => {
   const lang = (reqs || []).find((r) => r.type === 'language'); if (!lang) return '';
-  return (lang.meta || []).map((m) => { const [k, v] = Object.entries(m)[0] || []; if (!v || !v.overall_score) return ''; const name = { ielts_academic: 'IELTS', ielts_ukvi: 'IELTS UKVI', toefl: 'TOEFL', pte: 'PTE', duolingo: 'Duolingo' }[k] || String(k).toUpperCase(); const c = v.language_score_conditions; return `${name}: ${v.overall_score.score} overall${c && c.score ? ` (no band below ${c.score})` : ''}`; }).filter(Boolean).join('\n');
+  return (lang.meta || []).map((m) => {
+    const [k, v] = Object.entries(m)[0] || []; if (!v || !v.overall_score) return '';
+    const name = { ielts_academic: 'IELTS', ielts_ukvi: 'IELTS UKVI', toefl: 'TOEFL', pte: 'PTE', duolingo: 'Duolingo' }[k] || String(k).toUpperCase();
+    const c = v.language_score_conditions || v.score_conditions;
+    // The lowest part: the condition when written, else the lowest of the four parts when each is given.
+    const parts = ['reading', 'writing', 'speaking', 'listening'].map((x) => Number(v[x] && v[x].score)).filter((x) => x > 0);
+    const low = c && c.score ? c.score : parts.length === 4 ? String(Math.min(...parts)) : '';
+    return `${name}: ${v.overall_score.score} overall${low ? ` (no band below ${low})` : ''}`;
+  }).filter(Boolean).join('\n');
 };
 const advAcademic = (reqs) => {
   const ed = (reqs || []).find((r) => r.type === 'education'); if (!ed) return '';
   return (ed.meta || []).map((m) => { const [k, v] = Object.entries(m)[0] || []; const g = v && v.grade_requirements && v.grade_requirements.grade; if (!g) return ''; return `${{ pg: "Bachelor's degree", ug: 'Grade 12', grade_12th: 'Grade 12', diploma: 'Diploma' }[k] || String(k).replace(/_/g, ' ')}: ${g}%`; }).filter(Boolean).join('\n');
 };
 function fromAdventus(list) {
-  const rows = list.map((c) => ({ c, lvl: levelOf(c.course_name, c.studylevel_filter_group === 'Other' ? '' : c.studylevel_filter_group), ik: (c.intakes || []).find((i) => isJan(i.name)) || {} })).filter((x) => x.ik.name);
+  const rows = list.map((c) => ({ c, lvl: levelOf(c.course_name, c.studylevel_filter_group === 'Other' ? '' : c.studylevel_filter_group), ik: (c.intakes || []).find((i) => isJan(i.name)) || {}, iks: (c.intakes || []).filter((i) => isJan(i.name)) })).filter((x) => x.ik.name);
   const per = {};
   rows.forEach(({ c, lvl }) => { (per[lvl] = per[lvl] || { level: lvl, cs: [] }).cs.push(c); });
   Object.values(per).forEach((x) => {
@@ -82,7 +137,8 @@ function fromAdventus(list) {
     if (dep) x.extra = `Deposit for CAS: ${dep}`;
   });
   const close = mode(rows.map(({ ik }) => ik.application_close).filter(Boolean));
-  const courses = rows.map(({ c, lvl, ik }) => ({ name: tidy(c.course_name), level: lvl, start: month(ik.term_start) || tidy(String(ik.name || '').replace(/ - .*$/, '')), deadline: day(ik.application_close), fee: c.cost_amount ? `${money(c.cost_amount, c.course_cost_currency)} a ${c.course_cost_unit || 'year'}` : '', duration: c.course_duration ? `${c.course_duration} ${c.course_duration_unit}` : '', campus: tidy((c.campuses || []).map((x) => x.name).join(', ')) }));
+  const courses = rows.map(({ c, lvl, ik, iks }) => ({ name: tidy(c.course_name), level: lvl, start: sortStarts([...new Set(iks.map((i) => month(i.term_start) || tidy(String(i.name || '').replace(/ - .*$/, ''))))].join(', ')), deadline: day(ik.application_close), fee: c.cost_amount ? `${money(c.cost_amount, c.course_cost_currency)} a ${c.course_cost_unit || 'year'}` : '', duration: c.course_duration ? `${c.course_duration} ${c.course_duration_unit}` : '', campus: tidy((c.campuses || []).map((x) => x.name).join(', ')),
+    scholarship: tidy(typeof c.scholarship === 'string' ? strip(c.scholarship) : ''), english: advEnglish(c.entry_requirement), academic: advAcademic(c.entry_requirement) }));
   return finish(per, courses, close ? [`Apply by ${day(close)} (most courses)`] : []);
 }
 
@@ -159,34 +215,62 @@ function createPartnerRefresh({ dir, facts, b2b, record = () => {}, fetchImpl = 
     running = (async () => {
       const started = now().toISOString();
       const pages = facts.refreshable();
-      const out = { read: 0, kept: 0, failed: [], skipped: [] };
-      const step = async (list, open, readOne, transform) => {
-        if (!list.length) return;
-        let session;
-        try { session = await open(); } catch (e) { out.failed.push(e.message); return; }
-        for (const p of list) {
-          try {
-            const fresh = transform(await readOne(session, p));
-            if (!fresh.courses.length && p.courses) { out.kept += 1; continue; } // nothing now: keep the last courses
-            facts.refreshProfile(p.id, fresh);
-            out.read += 1;
-          } catch (e) { out.failed.push(`${p.name}: ${e.message}`); }
-        }
+      const out = { read: 0, kept: 0, filled: 0, failed: [], skipped: [] };
+      // One session per partner, opened the first time it is needed; a partner without a login or that refuses it is not asked again.
+      const sessions = {};
+      const OPEN = {
+        'Real Dreams': (l) => route2uniSession(fetchImpl, l.user, l.pass),
+        Adventus: (l) => adventusSession(fetchImpl, l.user, l.pass),
       };
-      const rd = login('Real Dreams');
-      const r2uPages = pages.filter((p) => p.source.partner === 'Real Dreams' && p.source.r2u);
-      if (r2uPages.length && !rd) out.skipped.push('Real Dreams: no login saved on its B2B card');
-      else await step(r2uPages, () => route2uniSession(fetchImpl, rd.user, rd.pass), (s, p) => s(p.source.r2u), fromRoute2Uni);
-      const ad = login('Adventus');
-      const advPages = pages.filter((p) => p.source.partner === 'Adventus' && (p.source.adv || []).length);
-      if (advPages.length && !ad) out.skipped.push('Adventus: no login saved on its B2B card');
-      else await step(advPages, () => adventusSession(fetchImpl, ad.user, ad.pass), (s, p) => s(p.source.adv), fromAdventus);
+      const READ = {
+        'Real Dreams': async (sess, src) => (src.r2u ? fromRoute2Uni(await sess(src.r2u)) : null),
+        Adventus: async (sess, src) => ((src.adv || []).length ? fromAdventus(await sess(src.adv)) : null),
+      };
+      const notes = new Set();
+      async function readFrom(src) {
+        if (!src || !READ[src.partner]) return null; // Apply Board cannot be read (its sign-in asks a person to prove they are not a robot)
+        if (!(src.partner in sessions)) {
+          const l = login(src.partner);
+          if (!l) { sessions[src.partner] = null; notes.add(`${src.partner}: no login saved on its B2B card`); }
+          else { try { sessions[src.partner] = await OPEN[src.partner](l); } catch (e) { sessions[src.partner] = null; out.failed.push(e.message); } }
+        }
+        if (!sessions[src.partner]) return null;
+        return READ[src.partner](sessions[src.partner], src);
+      }
+      const filled = (x) => x.levels.reduce((n, L) => n + ['academic', 'english', 'tuition', 'scholarship'].filter((f) => String(L[f] || '').trim()).length, 0)
+        + x.courses.reduce((n, c) => n + ['fee', 'duration', 'scholarship', 'english', 'academic'].filter((f) => String(c[f] || '').trim()).length, 0);
+      for (const p of pages) {
+        try {
+          // The partner the page is read from first; when it has nothing (or cannot be read), the page keeps what it has.
+          let fresh = null;
+          try { fresh = await readFrom(p.source); } catch (e) { out.failed.push(`${p.name} (${p.source.partner}): ${e.message}`); }
+          const usedPrimary = Boolean(fresh && fresh.courses.length);
+          let page = usedPrimary ? fresh : { levels: p.levels || [], courses: p.courseList || [], deadlines: p.deadlines || [] };
+          const before = filled(page);
+          // Then every other partner that offers the same university fills what is still empty (and gives the courses when the page
+          // has none at all).
+          for (const src of p.others || []) {
+            let extra = null;
+            try { extra = await readFrom(src); } catch (e) { out.failed.push(`${p.name} (${src.partner}): ${e.message}`); }
+            if (!extra) continue;
+            page = page.courses.length ? fillIn(page, extra) : fillIn(extra, page);
+          }
+          const gained = filled(page) - before;
+          if (!usedPrimary && gained <= 0) { if (p.courses) out.kept += 1; continue; }
+          facts.refreshProfile(p.id, page);
+          if (usedPrimary) out.read += 1;
+          if (gained > 0 && (p.others || []).length) out.filled += 1;
+        } catch (e) { out.failed.push(`${p.name}: ${e.message}`); }
+      }
+      out.skipped.push(...notes);
       const ab = pages.filter((p) => p.source.partner === 'Apply Board').length;
-      if (ab) out.skipped.push(`Apply Board: ${ab} universities keep what was read on 20 Nov 2026 (its sign-in asks a person to prove they are not a robot)`);
-      const ok = out.read > 0 || (!out.failed.length && !r2uPages.length && !advPages.length);
+      if (ab) out.skipped.push(`Apply Board: ${ab} universities keep the courses read on 20 Nov 2026 (its sign-in asks a person to prove they are not a robot); their missing details come from the other partners`);
+      const r2uPages = pages.filter((p) => p.source.partner === 'Real Dreams');
+      const advPages = pages.filter((p) => p.source.partner === 'Adventus');
+      const ok = out.read > 0 || out.filled > 0 || (!out.failed.length && !r2uPages.length && !advPages.length);
       const d = read();
       write({ runs: [{ at: now().toISOString(), started, by, ok, read: out.read, kept: out.kept, failed: out.failed.slice(0, 20) }, ...(d.runs || [])].slice(0, 20) });
-      record([`Read again from the partners: ${out.read} universities updated${out.kept ? `, ${out.kept} kept as they were (no January 2027 course listed now)` : ''}`, ...out.failed.slice(0, 10).map((x) => `Could not read: ${x}`), ...out.skipped]);
+      record([`Read again from the partners: ${out.read} universities updated${out.filled ? `, ${out.filled} with missing details filled in from another partner` : ''}${out.kept ? `, ${out.kept} kept as they were (nothing new listed now)` : ''}`, ...out.failed.slice(0, 10).map((x) => `Could not read: ${x}`), ...out.skipped]);
       console.log(`[partner refresh] ${out.read} updated, ${out.kept} kept, ${out.failed.length} failed`);
       return out;
     })().finally(() => { running = null; });
@@ -197,4 +281,4 @@ function createPartnerRefresh({ dir, facts, b2b, record = () => {}, fetchImpl = 
   return { run, due, tick, enabled: () => enabled, lastRun: () => (read().runs || [])[0] || null };
 }
 
-module.exports = { createPartnerRefresh, fromRoute2Uni, fromAdventus, thursdayDue, levelOf };
+module.exports = { createPartnerRefresh, fromRoute2Uni, fromAdventus, thursdayDue, levelOf, fillIn, courseKey };

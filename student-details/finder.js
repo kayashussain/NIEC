@@ -125,37 +125,39 @@
       [['Tuition', r.fee], ['Scholarship', r.scholarship], ['Deposit', r.deposit]].forEach(([k, v]) => { if (v) { const m = el('div'); m.append(el('span', '', k), el('b', '', v.split('\n')[0])); money.append(m); } });
       if (money.children.length) c.append(money);
       if (r.courses.length) {
-        const det = el('details', 'fd-more-courses');
-        const sum = el('summary', '');
-        sum.append(el('b', '', `${r.total} course${r.total === 1 ? '' : 's'}`), el('span', '', 'Show'));
-        det.append(sum);
+        // The first seven courses (the ones that match the subject when one is typed) are shown; "See all" opens the university's
+        // page with its own search set to the subject (the owner, 21 Nov 2026).
+        const box = el('div', 'fd-course-box');
+        const head = el('div', 'fd-course-head');
+        head.append(el('b', '', values().subject ? `${r.total} matching course${r.total === 1 ? '' : 's'}` : `${r.total} course${r.total === 1 ? '' : 's'}`));
+        box.append(head);
         const list = el('ul', 'fd-courses');
-        const show = (n) => {
-          list.replaceChildren(...r.courses.slice(0, n).map((co) => {
-            const li = el('li');
-            const words = el('div', 'fd-course-words');
-            // The course's own page on the university's website, when known (course-sitemap.js).
-            words.append(co.link ? h('a', { class: 'fd-course', href: co.link, target: '_blank', rel: 'noopener' }, co.name) : el('span', 'fd-course', co.name));
-            const chips = el('div', 'fd-chips');
-            chips.append(el('span', 'fd-cal', String(co.intakes || co.intake || '').split(/,\s*/).map((x) => x.slice(0, 3)).join(', ') + ' 2027'));
-            if (co.campus) chips.append(el('span', 'fd-pin', co.campus));
-            if (co.fee) chips.append(el('span', '', co.fee));
-            words.append(chips);
-            li.append(words);
-            if (onAdd) {
-              const add = h('button', { class: 'btn btn-sm', type: 'button' }, addLabel);
-              add.addEventListener('click', async () => { add.disabled = true; try { await onAdd(r, co); add.textContent = 'Added ✓'; } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); add.disabled = false; } });
-              li.append(add);
-            } else if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button({ id: r.id, name: r.name }, co.name, co.intake || ''));
-            else if (shortlist) li.append(window.ShortlistFor.button({ universityId: r.id, university: r.name, course: co.name, intake: co.intake || (r.intake && r.intake.name) || '', level: values().level, link: co.link || '', fee: (co.fee || r.fee || '').split('\n')[0], scholarship: (r.scholarship || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0] }));
-            return li;
-          }));
-          if (n < r.courses.length) list.append(h('li', { class: 'fd-more' }, h('button', { class: 'p-link', type: 'button', onclick: () => show(n + 40) }, `Show ${Math.min(40, r.courses.length - n)} more`)));
-        };
-        show(Math.min(8, r.courses.length));
-        det.append(list);
-        det.addEventListener('toggle', () => { sum.lastChild.textContent = det.open ? 'Hide' : 'Show'; });
-        c.append(det);
+        r.courses.slice(0, 7).forEach((co) => {
+          const li = el('li');
+          const words = el('div', 'fd-course-words');
+          // The course's own page on the university's website, when known (course-sitemap.js).
+          words.append(co.link ? h('a', { class: 'fd-course', href: co.link, target: '_blank', rel: 'noopener' }, co.name) : el('span', 'fd-course', co.name));
+          const chips = el('div', 'fd-chips');
+          chips.append(el('span', 'fd-cal', String(co.intakes || co.intake || '').split(/,\s*/).map((x) => x.slice(0, 3)).join(', ') + ' 2027'));
+          if (co.campus) chips.append(el('span', 'fd-pin', co.campus));
+          if (co.fee) chips.append(el('span', 'fd-fee', co.fee));
+          words.append(chips);
+          li.append(words);
+          if (onAdd) {
+            const add = h('button', { class: 'btn btn-sm', type: 'button' }, addLabel);
+            add.addEventListener('click', async () => { add.disabled = true; try { await onAdd(r, co); add.textContent = 'Added ✓'; } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); add.disabled = false; } });
+            li.append(add);
+          } else if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button({ id: r.id, name: r.name }, co.full || co.name, co.intake || ''));
+          else if (shortlist) li.append(window.ShortlistFor.button({ universityId: r.id, university: r.name, course: co.full || co.name, intake: co.intake || (r.intake && r.intake.name) || '', level: values().level, link: co.link || '', fee: (co.fee || r.fee || '').split('\n')[0], scholarship: (co.scholarship || r.scholarship || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0] }));
+          list.append(li);
+        });
+        box.append(list);
+        if (r.total > 7) {
+          const more = h('a', { class: 'fd-see-all', href: `/fact-file?u=${encodeURIComponent(r.id)}${values().subject ? `&q=${encodeURIComponent(values().subject)}` : ''}#courses` }, `See all ${r.total} courses`);
+          if (onAdd) { more.target = '_blank'; more.rel = 'noopener'; }
+          box.append(more);
+        }
+        c.append(box);
       }
       return c;
     }
