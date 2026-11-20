@@ -367,7 +367,7 @@
       hero.append(dots);
       let at = 0;
       const show = (k) => { const last = at; at = k; hero.querySelectorAll('.up-hero-img').forEach((x, n) => { x.classList.toggle('is-on', n === k); x.classList.toggle('is-out', n === last && n !== k); }); dots.querySelectorAll('button').forEach((x, n) => x.classList.toggle('is-on', n === k)); };
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show((at + 1) % hero.querySelectorAll('.up-hero-img').length); }, 5500);
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroTimer = setInterval(() => { if (!document.hidden) show((at + 1) % hero.querySelectorAll('.up-hero-img').length); }, 4500); // one second faster (the owner, 21 Nov 2026)
     }
     const inner = el('div', 'up-hero-inner');
     const id = el('div', 'up-id');
@@ -606,7 +606,8 @@
   // anyway, so the page is never left half empty (printing shows everything).
   let heroTimer = null;
   let galleryTimer = null;
-  const GALLERY_MS = 4500; // how long each picture of the gallery is shown
+  // 🔴 CSS CHANGED (2026-11-21): how long each gallery picture is shown (the bar under it fills in the same time) | from: 4.5 seconds | to: 3.5 seconds
+  const GALLERY_MS = 3500; // how long each picture of the gallery is shown (the owner, 21 Nov 2026: one second faster)
   function motion(doc) {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const parts = [...doc.querySelectorAll('.up-reveal')];

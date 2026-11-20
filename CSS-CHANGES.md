@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-21 · shared/theme.css, student-details/fact-university.js · the pictures move one second faster · from: gallery 4.5 seconds a picture, cover pictures 5.5 seconds · to: gallery 3.5 seconds, cover pictures 4.5 seconds · why: the owner, 21 Nov 2026: "a little fast, 1 second reduced"**
+
 - **2026-11-21 · shared/theme.css · Find universities for a student redesigned · from: a Level dropdown among seven boxes, small filter pills, tall result cards with a thin picture and every course always listed · to: the level as one row of large pills (it searches at once), the other boxes in one grey row with a blue Find pill, three large tiles (Eligible, To check, Not eligible) that also filter, a grid of picture cards with the answer on frosted glass, the logo tile, campus and intake chips, an "Apply by ... days left" strip, round tick, question and cross marks, money tiles, and the courses folded behind "N courses · Show", each with intake and campus chips · why: the owner, 20 Nov 2026: "the front end is still bad, redesign it"**
 
 - **2026-11-21 · shared/theme.css · course cards say when and where; two new level colours · from: a course card showed length and fee only; no Extended Masters or PhD level · to: a blue calendar chip ("Jan, Feb 2027") and a grey pin chip (campus) on every course; Extended Masters in pink, PhD in bronze, with the university's own name for the level in small grey under it · why: the owner, 20 Nov 2026: every course must show its intake and campus; extended masters and PhD are their own categories**

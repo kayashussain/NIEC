@@ -3638,7 +3638,8 @@ html body .up-apply:hover { transform: translateY(-2px) scale(1.02); box-shadow:
 /* 🔴 CSS CHANGED (2026-11-21): the gallery of a university page | from: one frame showing each whole picture over a blurred copy of it (blurred bands at the top and bottom), arrows and small pictures to click, the video inside the same frame | to: the pictures fill the frame edge to edge and fade one into the next on their own, a thin bar under each fills while it is shown (click a bar to go to it, the mouse over the frame holds it), a small "2 / 6" counter on frosted glass; the video has its own frame beside the pictures with a large frosted play button and plays only when pressed */
 .up-media { display: grid; gap: 18px; }
 .up-media.has-both { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); align-items: stretch; }
-.up-film-wrap { --dur: 4500ms; min-width: 0; }
+/* 🔴 CSS CHANGED (2026-11-21): the gallery moves one second faster | from: 4.5 seconds a picture | to: 3.5 seconds a picture (the cover pictures: 4.5 seconds instead of 5.5) */
+.up-film-wrap { --dur: 3500ms; min-width: 0; }
 .up-film { position: relative; aspect-ratio: 16 / 9; border-radius: 28px; overflow: hidden; background: #1d1d1f; box-shadow: 0 18px 50px -24px rgba(0, 0, 0, .45); isolation: isolate; }
 .up-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; opacity: 0; transition: opacity 1.2s ease; }
 .up-frame.is-on { opacity: 1; z-index: 1; }
