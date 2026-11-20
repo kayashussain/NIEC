@@ -161,7 +161,7 @@ test('on the real Student Details app the SAME address answers student and incen
   assert.strictEqual(students.total, 2, 'the student tools still work');
   const inc = JSON.parse((await ask('get_incentives', {})).content[0].text);
   assert.strictEqual(inc.matched, 1, 'only the Visa Issued student');
-  assert.strictEqual(inc.students[0].universityPartner, 'Real Dreams');
+  assert.strictEqual(inc.students[0].universityPartner, 'Real Dreams Educational Consultancy', 'the full partner name (partner-names.js) is written on the sheet at start');
   assert.strictEqual(inc.students[0].uniCommissionAmountGbp, 2000, '20% of 10,000, from the Incentive data folder next to this app');
   assert.strictEqual(inc.students[0].enrollmentIncentiveNpr, 7000);
   // Changing the incentive file shows at once (live).

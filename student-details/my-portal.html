@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>My portal · ISR</title>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="stylesheet" href="header.css" />
+<link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="portal.css" />
+<link rel="stylesheet" href="theme.css" />
+<link rel="expect" href="#isr-ready" blocking="render" />
+</head>
+<body class="p-body">
+  <header class="niec-header" data-page="portal"></header>
+  <main class="p-page mp-page">
+    <section class="mp-hero">
+      <p class="mp-kicker" id="intake"></p>
+      <h1 id="hello">Hi</h1>
+      <p class="mp-lede">Your applications, where you are, and your mock interview preparation, all in one place.</p>
+    </section>
+    <section class="mp-section" aria-labelledby="progressTitle">
+      <h2 id="progressTitle" class="mp-h2">Where you are</h2>
+      <ol class="mp-progress" id="progress"></ol>
+    </section>
+    <section class="mp-section" aria-labelledby="appsTitle">
+      <h2 id="appsTitle" class="mp-h2">Your applications</h2>
+      <div class="mp-apps" id="apps"><p class="p-muted">Loading…</p></div>
+    </section>
+    <section class="mp-section" aria-labelledby="mockTitle">
+      <h2 id="mockTitle" class="mp-h2">Mock interviews</h2>
+      <div class="mp-tiles">
+        <article class="mp-tile mp-tile-book">
+          <span class="mp-tile-icon" aria-hidden="true"></span>
+          <h3>Book your mock interview</h3>
+          <p>Our Mock Interview Team runs your mocks on MS Teams, about 40 minutes each, up to four. Booking opens here soon: you will pick a time that suits you and join from this page.</p>
+          <span class="mp-soon">Opening soon</span>
+        </article>
+        <article class="mp-tile mp-tile-held">
+          <h3>Your mocks so far</h3>
+          <div id="mocks"></div>
+        </article>
+      </div>
+    </section>
+    <section class="mp-section" aria-labelledby="guideTitle">
+      <h2 id="guideTitle" class="mp-h2">Your interview guide</h2>
+      <p class="mp-sub" id="guideSub">Read it phase by phase. Each phase opens when you finish the one before.</p>
+      <div class="mp-switch" id="switch" role="tablist" aria-label="Choose a university"></div>
+      <div id="guide" class="mp-guide"></div>
+    </section>
+  </main>
+<script src="session.js"></script>
+<script src="ui.js"></script>
+<script src="header.js"></script>
+<script src="portal-ui.js"></script>
+<script src="guide-view.js"></script>
+<script src="my-portal-page.js"></script>
+<span id="isr-ready" hidden></span>
+</body>
+</html>

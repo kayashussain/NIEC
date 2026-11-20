@@ -50,7 +50,7 @@ test('a student is checked with reasons: eligible, to check, or not eligible wit
   assert.strictEqual(check({ level: 'Pre-Masters', grade: '3.0' }), null, 'no rules for that level');
 });
 
-test('on the server: the finder answers the team and a student, and courses are shortlisted', { timeout: 120000 }, async (t) => {
+test('on the server: the finder answers the team (not a student), and courses are shortlisted', { timeout: 120000 }, async (t) => {
   const net = require('node:net');
   const { spawn } = require('node:child_process');
   const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
@@ -78,12 +78,12 @@ test('on the server: the finder answers the team and a student, and courses are 
   assert.strictEqual(all.status, 200);
   assert.ok(all.json.results.length > 10, 'the pages typed by hand are checked');
   assert.strictEqual((await admin('POST', '/api/eligibility', { grade: '3' })).status, 400, 'the level is needed');
-  // A student's own login uses the finder too.
+  // A student's own login has no finder any more: it opens its own portal only (the owner, 20 Nov 2026).
   const sid = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000131' } })).json.id;
   const made = (await admin('POST', '/api/users', { username: 'mina', name: 'Mina Demo', email: '', role: 'student', studentRow: sid })).json;
   const stu = person();
   await stu('POST', '/api/login', { username: 'mina', password: made.temporaryPassword }); await stu('POST', '/api/login/new-password', { password: 'Student-Strong-2026' });
-  assert.strictEqual((await stu('POST', '/api/eligibility', { level: 'Postgraduate', grade: '40%' })).status, 200, 'a student uses the finder');
+  assert.strictEqual((await stu('POST', '/api/eligibility', { level: 'Postgraduate', grade: '40%' })).status, 403, 'a student has no finder');
   // No "Submit application" any more (the owner, 17 Nov 2026): the team shortlists courses on the card and sends them, numbered, to
   // the Application Team in one go.
   assert.notStrictEqual((await admin('POST', '/api/apply', { universityId: page.id, course: 'MSc Data Science', studentId: sid })).status, 200);

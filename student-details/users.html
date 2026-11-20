@@ -59,6 +59,16 @@
         </table>
         <div class="msg" id="usersMsg" role="status"></div>
       </div>
+
+      <!-- Students' own logins, kept apart from the team (the owner, 20 Nov 2026). -->
+      <div class="card" id="studentsCard" hidden>
+        <div class="card-head"><h2>Students</h2></div>
+        <p>Each student's own login: it opens their own portal only.</p>
+        <table>
+          <thead><tr><th>Student</th><th>Access</th><th>Status</th><th>Last login</th><th>Devices</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="studentUsers"></tbody>
+        </table>
+      </div>
     </section>
 
     <section id="panel-devices" role="tabpanel" aria-labelledby="tab-devices" hidden>

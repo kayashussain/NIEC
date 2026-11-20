@@ -62,6 +62,10 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
     assert.strictEqual((await p('GET', '/partner-universities')).status, 200);
     assert.strictEqual((await p('GET', '/message-templates')).status, 302, 'Message templates is gone: it leads to Follow-up');
   }
+  // A university, a Partner University or its short form (OIG, OIEG) is never listed on B2B Partners, not even as hidden (the owner, 20 Nov 2026).
+  await admin('POST', '/api/direct', { name: 'Oxford International Education Group' });
+  for (const n of ['OIG', 'OIEG', 'Leeds Beckett University', 'Made Up Partner']) await admin('POST', '/api/b2b/not-partner', { name: n });
+  assert.deepStrictEqual((await admin('GET', '/api/b2b')).json.notPartners, ['Made Up Partner'], 'only a real partner name can be hidden');
   for (const [who, p] of [['asha', asha], ['bikram', bikram]]) {
     const b = await p('GET', '/api/b2b');
     assert.strictEqual(b.json.access, who === 'asha' ? 'setup' : 'team');

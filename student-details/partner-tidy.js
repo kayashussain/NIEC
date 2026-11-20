@@ -10,6 +10,7 @@
 //   same partner as TOR and The Official Rep (a second step, below, for installations where the first one already ran).
 // Names are compared ignoring capitals, spaces and punctuation.
 
+const { RENAMES, samePartner } = require('./partner-names');
 const TIDY_ID = 'partners-2026-11-15';
 const DIRECT = ['Navitas', 'OIEG'];
 // [the name to use when there is no B2B card yet, every spelling of it]
@@ -150,7 +151,7 @@ function tidyOfficialRep({ getWorkbook, writeWorkbook, b2b, planning, record = (
 // Partners are no longer added by hand on the partner pages (the owner, 20 Nov 2026), so a new partner the owner asks for is added here.
 const TIDY_ID3 = 'partners-2026-11-20';
 const NOT_B2B = ['Leeds Beckett University'];
-const NEW_B2B = ['Nisus Educational Consultancy'];
+const NEW_B2B = ['Nissus International Education Foundation']; // first added as "Nisus Educational Consultancy"; renamed by the fourth step
 function tidyNov20({ b2b, planning, record = () => {} }) {
   const settings = planning.all().settings;
   if ((settings.tidied || []).includes(TIDY_ID3)) return { skipped: true };
@@ -163,9 +164,9 @@ function tidyNov20({ b2b, planning, record = () => {} }) {
   const isOieg = (n) => /^(oig|oieg|oiegroup|oxfordinternational)/.test(squash(n));
   const notPartners = (settings.notPartners || []).filter((n) => !isOieg(n));
   if (notPartners.length !== (settings.notPartners || []).length) changes.push('OIEG is no longer in the hidden list of B2B Partners (it is a direct university)');
-  if (b2b.all().some((p) => /^(realdreams|adventus|applyboard)$/.test(squash(p.name)))) {
+  if (b2b.all().some((p) => /^(realdreams|realdreamseducationalconsultancy|adventus|applyboard)$/.test(squash(p.name)))) {
     NEW_B2B.forEach((name) => {
-      if (b2b.all().some((p) => squash(p.name) === squash(name))) return;
+      if (b2b.all().some((p) => samePartner(p.name, name))) return;
       const made = b2b.create(name, 'ISR tidy-up');
       if (!made.error) changes.push(`${name}: added to B2B Partners`);
     });
@@ -175,4 +176,59 @@ function tidyNov20({ b2b, planning, record = () => {} }) {
   return { changes };
 }
 
-module.exports = { tidyPartners, tidyOfficialRep, tidyNov20, TIDY_ID, TIDY_ID2, TIDY_ID3, squash };
+// The fourth step (the owner, 20 Nov 2026), once: the partners' full names (partner-names.js). "Real Dreams" becomes Real Dreams
+// Educational Consultancy and "Nisus Educational Consultancy" becomes Nissus International Education Foundation: the B2B card, the
+// University Partner column on the sheet and the partner on each student's shortlist. The old spellings stay known as other names, so
+// nothing saved before loses its meaning, and they never show as a partner of their own.
+const TIDY_ID4 = 'partners-2026-11-20-names';
+function tidyNames({ getWorkbook, writeWorkbook, b2b, cards, planning, record = () => {} }) {
+  const settings = planning.all().settings;
+  if ((settings.tidied || []).includes(TIDY_ID4)) return { skipped: true };
+  const changes = [];
+  RENAMES.forEach(([target, old]) => {
+    const olds = new Set(old.map(squash));
+    const isOld = (v) => olds.has(squash(v)) && String(v).trim() !== target;
+    // The card: renamed; a second card of the same partner (both spellings saved) is ended or removed, as in the second step.
+    const mine = b2b.all().filter((p) => samePartner(p.name, target));
+    const main = mine.find((p) => p.name === target && p.status !== 'Ended') || mine.find((p) => p.status !== 'Ended') || null;
+    if (main && main.name !== target) {
+      const out = b2b.update(main.id, { ...main, name: target }, 'ISR tidy-up');
+      if (!out || !out.error) changes.push(`${main.name}: B2B card renamed to ${target}`);
+    }
+    mine.filter((p) => p !== main && p.status !== 'Ended').forEach((p) => {
+      if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'ISR tidy-up'); changes.push(`${p.name}: B2B card marked Ended (the same partner as ${target})`); }
+      else { b2b.remove(p.id); changes.push(`${p.name}: B2B card removed (the same partner as ${target})`); }
+    });
+    // The sheet.
+    const wb = getWorkbook();
+    if (wb) {
+      let n = 0;
+      const sheets = wb.sheets.map((sh) => ({ ...sh, rows: sh.rows.map((row) => {
+        if (!row || !isOld(row[COLUMN])) return row;
+        n += 1;
+        return { ...row, [COLUMN]: target };
+      }) }));
+      if (n) { writeWorkbook({ ...wb, sheets, revision: (Number(wb.revision) || 0) + 1 }); changes.push(`University Partner → ${target}: ${n} student${n === 1 ? '' : 's'}`); }
+    }
+    // The shortlists.
+    if (cards) {
+      let n = 0;
+      Object.entries(cards.all() || {}).forEach(([rowId, card]) => (card.options || []).forEach((o) => {
+        if (o.partner && isOld(o.partner) && !cards.updateOption(rowId, o.id, { partner: target }, 'ISR tidy-up').error) n += 1;
+      }));
+      if (n) changes.push(`Shortlists → ${target}: ${n} course${n === 1 ? '' : 's'}`);
+    }
+    // The other names, and the hidden list.
+    const now = planning.all().settings;
+    const aliases = { ...(now.partnerAliases || {}) };
+    Object.keys(aliases).forEach((k) => { if (olds.has(squash(aliases[k]))) aliases[k] = target; });
+    old.forEach((sp) => { if (squash(sp) !== squash(target)) aliases[sp] = target; });
+    const notPartners = (now.notPartners || []).filter((x) => !olds.has(squash(x)) && squash(x) !== squash(target));
+    planning.saveSettings({ partnerAliases: aliases, notPartners });
+  });
+  planning.saveSettings({ tidied: [...(planning.all().settings.tidied || []), TIDY_ID4] });
+  if (changes.length) record(changes);
+  return { changes };
+}
+
+module.exports = { tidyPartners, tidyOfficialRep, tidyNov20, tidyNames, TIDY_ID, TIDY_ID2, TIDY_ID3, TIDY_ID4, squash };

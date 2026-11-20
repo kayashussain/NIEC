@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const { writeFileAtomic } = require('../shared/server-utils');
+const { partnerName } = require('./partner-names');
 
 const SEED = path.join(__dirname, 'apply-through-seed.json');
 const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, '');
@@ -24,15 +25,32 @@ const tidy = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, ma
 // Two or more partners and no direct route: the owner chooses.
 const choosable = (e) => !e.direct && Array.isArray(e.options) && e.options.length > 1;
 // Other names Universities uses for a place in the list.
-const ALIASES = { uwebristol: 'University of the West of England', healthscienceuniversity: 'Health Sciences University', universityofroehampton: 'Roehampton University', ravensbourneuniversitylondon: 'Ravensbourne University', bathspa: 'Bath Spa University' };
+// The pages whose name is written differently from the list (the owner, 20 Nov 2026: each page must show its partner).
+const ALIASES = {
+  uwebristol: 'University of the West of England', healthscienceuniversity: 'Health Sciences University', universityofroehampton: 'Roehampton University', ravensbourneuniversitylondon: 'Ravensbourne University', bathspa: 'Bath Spa University',
+  universityofwestofscotland: 'University of the West of Scotland',
+  universityofravensbourne: 'Ravensbourne University',
+  winchesteruniversity: 'University of Winchester',
+  internationalcollegeofdundeescotland: 'International College Dundee (ICD), University of Dundee',
+  internationalcollegerobertgordonuniversity: 'International College at Robert Gordon University (ICRGU)',
+  regentcollegelondon: 'Regent College',
+  astonuniversityoncampus: 'Aston University ONCAMPUS Centre',
+  londonsouthbankuniversityoncampus: 'London South Bank University ONCAMPUS Centre',
+  universityofhulloncampus: 'University of Hull ONCAMPUS Centre',
+};
+// Places added to the starting list after it was first written (the owner, 20 Nov 2026: the three ISC pathways); an installation
+// that already has its list gets them once, with the owner's choice.
+const ADDED = ['london-metropolitan-university-isc-progression-degree-for-pathway', 'university-of-cumbria-isc-progression-degree-for-pathway', 'university-of-wolverhampton-isc-progression-degree-for-pathway'];
 
 function clean(e) {
   if (!e || typeof e !== 'object') return null;
-  const options = (Array.isArray(e.options) ? e.options : []).map((o) => tidy(o, 120)).filter(Boolean);
+  // A partner's short or old spelling is read as its full name (partner-names.js).
+  const options = [...new Set((Array.isArray(e.options) ? e.options : []).map((o) => tidy(partnerName(tidy(o, 120)), 120)).filter(Boolean))];
   const name = tidy(e.name, 160);
   const id = tidy(e.id, 160).toLowerCase().replace(/[^a-z0-9-]/g, '');
   if (!name || !id || !options.length) return null;
-  const partner = options.includes(tidy(e.partner, 120)) ? tidy(e.partner, 120) : options[0];
+  const chosen = tidy(partnerName(tidy(e.partner, 120)), 120);
+  const partner = options.includes(chosen) ? chosen : options[0];
   return {
     id, name, type: e.type === 'college' ? 'college' : 'university', options, partner,
     ...(e.direct ? { direct: true } : {}),
@@ -57,6 +75,14 @@ function createApplyThrough(dir, { wanted = () => false } = {}) {
     try {
       const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
       const entries = (Array.isArray(raw.entries) ? raw.entries : []).map(clean).filter(Boolean);
+      // A list made from the starting list (it has entries) gets the places added to it since, once.
+      const have = new Set(entries.map((e) => e.id));
+      if (entries.length && ADDED.some((id) => !have.has(id))) {
+        let seed = [];
+        try { seed = JSON.parse(fs.readFileSync(SEED, 'utf8')).map(clean).filter(Boolean); } catch (e) { seed = []; }
+        const more = seed.filter((e) => ADDED.includes(e.id) && !have.has(e.id));
+        if (more.length) { save([...entries, ...more]); return [...entries, ...more]; }
+      }
       cache = { mtimeMs: stat.mtimeMs, size: stat.size, entries };
       return entries;
     } catch (e) { return cache ? cache.entries : []; }
