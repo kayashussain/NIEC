@@ -440,7 +440,11 @@
       if (!g && can()) words.append(el('span', 'sc-source-hint', 'Where did this student come from? Add it once and it is counted on the Dashboard.'));
       if (rows.children.length) words.append(rows);
       box.append(ico, words);
-      if (sourceSaved) { sourceSaved = false; box.classList.add('is-saved'); box.append(icon('check', 'sc-source-tick sc-tick')); }
+      if (sourceSaved) {
+        sourceSaved = false; box.classList.add('is-saved');
+        const tick = icon('check', 'sc-source-tick sc-tick'); box.append(tick);
+        setTimeout(() => { box.classList.remove('is-saved'); tick.remove(); }, calm() ? 0 : 1800);
+      }
       if (can()) {
         const b = h('button', { class: `btn btn-sm${g ? '' : ' btn-primary'}`, type: 'button', onclick: () => { editingOrigin = true; render(); } });
         b.append(icon(g ? 'pencil' : 'plus', 'sc-btn-ico'), g ? 'Edit' : 'Add source');
@@ -459,7 +463,8 @@
       try {
         const missing = picker.check();
         if (missing) { say(missing, true); shake(form); return; }
-        await morph(btn, () => saveSource(picker.value()));
+        const cancel = btn.nextElementSibling; if (cancel) cancel.disabled = true;
+        await morph(btn, () => saveSource(picker.value())).catch((e) => { if (cancel) cancel.disabled = false; throw e; });
         editingOrigin = false; sourceSaved = true; render();
       } catch (e) { /* shown */ }
     } }, 'Save'), h('button', { class: 'btn', type: 'button', onclick: () => { editingOrigin = false; render(); } }, 'Cancel'));

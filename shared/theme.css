@@ -4213,3 +4213,11 @@ body.p-embed #view { padding-bottom: 24px; }
 .sc-source-tick { width: 22px; height: 22px; fill: none; stroke: #1b8a3e; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; animation: sc-settle .6s ease 1.2s forwards; }
 .sc-mini { box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 14px 34px -10px rgba(0, 0, 0, .3); }
 @media (prefers-reduced-motion: reduce) { .sc-tl-item.is-new, .sc-tl-item.is-new .sc-tl-body, .sc-source.is-saved, .sc-fact-tick, .sc-source-tick, .p-assign .td-tag-pick :is(.td-tag, .td-prio)::before { animation: none; transition: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-20): the student card, final review round | from: after saving the source, its tick took the Edit button's place (Edit dropped to the bottom and the panel grew) until a reload; the Assign tags in two uneven lines (four, then two); the frosted bar sitting over the note box while writing | to: the tick floats at the top right of the source panel without moving anything and leaves after 1.8 seconds; the six tags as an even grid, three to a row; the frosted bar steps aside while the note box is being written in, and the note box stops below it when the N key brings it into view */
+.sc-source { position: relative; }
+.sc-source-tick { position: absolute; top: 18px; right: 96px; }
+.p-assign .td-tag-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.p-assign .td-tag-pick :is(.td-tag, .td-prio) { justify-content: center; text-align: center; }
+body:has(.sc-tl-input:focus) .sc-mini { opacity: 0; transform: translate(-50%, -16px) scale(.97); }
+.sc-tl-compose { scroll-margin-top: 110px; }
