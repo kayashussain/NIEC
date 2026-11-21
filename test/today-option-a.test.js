@@ -124,5 +124,18 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   assert.strictEqual((await app('GET', '/today')).status, 200);
   assert.strictEqual((await app('GET', '/api/apply-through/find?name=Nowhere')).status, 200, 'Apply now still asks for the partner');
   assert.strictEqual((await admin('GET', '/apply-through')).status, 200, 'Admin keeps Apply through');
+  // In both teams: the own team decides (the owner, 21 Nov 2026).
+  const both = async (username, taskTeam) => {
+    const u = (await admin('POST', '/api/users', { username, name: username, email: '', departments: ['application', 'mock'], taskTeam })).json;
+    const p = person();
+    await p('POST', '/api/login', { username, password: u.temporaryPassword }); await p('POST', '/api/login/new-password', { password: 'Team-Strong-2026x' });
+    return p;
+  };
+  const ownApp = await both('sanu', 'application');
+  assert.strictEqual((await ownApp('GET', '/mock-guides')).status, 302, 'own team Application: no Mock interviews');
+  assert.strictEqual((await ownApp('GET', '/partners')).status, 302, 'own team Application: no Partners');
+  const ownMock = await both('rita', 'mock');
+  assert.strictEqual((await ownMock('GET', '/mock-guides')).status, 200, 'own team Mock: keeps Mock interviews');
+  assert.notStrictEqual((await ownMock('GET', '/partners')).location, '/today', 'own team Mock: keeps Partners');
   assert.strictEqual((await admin('GET', '/api/apply-through')).json.canChange, true);
 });

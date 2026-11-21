@@ -1005,6 +1005,14 @@ try {
   console.error('[startup] data tidy-up failed:', e.message);
 }
 
+// The B2B partners a place can be applied through (Apply through's dropdown): every B2B partner card, A to Z, without the names Admin
+// marked as not a B2B partner.
+function b2bPartnerNames() {
+  const key = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const hidden = new Set(((planning.all().settings || {}).notPartners || []).map(key));
+  return [...new Set(b2b.all().map((p) => String(p.name || '').trim()).filter((n) => n && !hidden.has(key(n))))].sort((a, b) => a.localeCompare(b));
+}
+
 // Whether a person's own team is the Application Team: chosen as their own team, or the only team they are in (never Admin or the
 // Manager). The menu (shared/header.js) uses the same rule.
 function ownTeamApplication(u) {
@@ -1272,7 +1280,7 @@ const server = http.createServer(async (req, res) => {
       if (urlPath === '/api/apply-through' && req.method === 'GET') {
         const choices = applyThrough.choices();
         // Every B2B partner, for each place's dropdown (the owner, 21 Nov 2026: any place can move to any partner).
-        const partners = [...new Set(b2b.all().map((p) => String(p.name || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        const partners = b2bPartnerNames();
         return sendJSON(res, 200, { canChange: level === 'full', choices, choosable: choices.length, partners });
       }
       const id = (urlPath.match(/^\/api\/apply-through\/([a-z0-9-]{1,160})$/) || [])[1];
@@ -1280,7 +1288,7 @@ const server = http.createServer(async (req, res) => {
         if (level !== 'full') return sendJSON(res, 403, { error: 'Only Admin changes the partner.' });
         let body;
         try { body = await readJSONBody(req, 4096); } catch (e) { return sendJSON(res, 400, { error: 'Could not read the request.' }); }
-        const out = applyThrough.choose(id, body.partner, req.user.label, b2b.all().map((p) => p.name));
+        const out = applyThrough.choose(id, body.partner, req.user.label, b2bPartnerNames());
         if (out.error) return sendJSON(res, 400, { error: out.error });
         if (out.from !== out.entry.partner) activity.record(req, req.user, 'Edited partners', { app: 'Apply through', changes: [`${out.entry.name}: apply through ${out.entry.partner} (was ${out.from})`] });
         return sendJSON(res, 200, out.entry);

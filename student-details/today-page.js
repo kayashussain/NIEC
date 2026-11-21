@@ -500,6 +500,7 @@
     // The kinds (Application, Mock interview ...) of the tasks in this view, each with how many are for TODAY. A kind whose tasks are
     // all moved to later days says "2 later" in blue, so a count never promises tasks that are not under Today.
     const openAll = inView.filter((x) => !x.done && matches(x) && (view[6] === 'upcoming' ? later(x) : view[6] === 'today' ? !later(x) : true));
+    if (!openAll.length) tagFilter = 'all'; // nothing open here: no kind is left chosen
     if (openAll.length) {
       const now = {}; const after = {};
       openAll.forEach((x) => { const k = tagOf(x, x.stage); if (later(x)) after[k] = (after[k] || 0) + 1; else now[k] = (now[k] || 0) + 1; });
