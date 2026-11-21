@@ -592,11 +592,14 @@
             return noWhat ? `Choose what happened with ${noWhat.university}.` : noName ? 'Name the university on each line.' : noCourse ? `Write the course for ${noCourse.university}.` : f.find((x) => !x.date && !on.input.value) ? `Choose the day for ${f.find((x) => !x.date && !on.input.value).university}.` : needsWhy && !why ? 'Say why in the note below (not submitted, refused or withdrawn).' : '';
           };
         } else if (tag === 'noc') {
-          // Only the status: Pending or Received (the owner, 18 Nov 2026); no number, no day.
-          nowLine(['NOC']);
-          const q = question('NOC', [['Pending', 'Pending'], ['Received', 'Received']]);
-          read = () => (q.value() ? { noc: q.value() } : {});
-          check = () => (!q.value() ? 'Choose Pending or Received.' : '');
+          // Pending or Received; Received asks for the NOC number, the NOC account's login number (the owner, 21 Nov 2026). Then comments.
+          nowLine(['NOC', 'NOC NUMBER']);
+          const q = question('NOC', [['Pending', 'Pending'], ['Received', 'Received']], (v) => show(num.wrap, v === 'Received'));
+          const num = field('NOC number (the NOC account login number)', { max: 60, required: true, value: (state && state.sheet && state.sheet['NOC NUMBER']) || '', placeholder: 'e.g. NOC-123456' });
+          form.append(num.wrap);
+          show(num.wrap, false);
+          read = () => (q.value() ? { noc: q.value(), ...(q.value() === 'Received' ? { nocNumber: num.input.value.trim() } : {}) } : {});
+          check = () => (!q.value() ? 'Choose Pending or Received.' : q.value() === 'Received' && !num.input.value.trim() ? 'Write the NOC number.' : '');
         } else if (tag === 'mock') {
           nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW']);
           const q = question('What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
@@ -653,7 +656,7 @@
         const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
         words.input.rows = 2; words.input.dataset.words = '1'; words.input.dataset.was = words.input.placeholder;
         form.append(words.wrap);
-        if (simple) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren('Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
+        if (simple) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(tag === 'noc' || tag === 'medical' ? 'Comments (optional)' : 'Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
         if (noNotes) words.wrap.hidden = true;
         // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
         ask.append(msg);

@@ -766,10 +766,12 @@ function createPortalApi({
         }
       }
     } else if (kind === 'noc' && f.noc) {
-      // The NOC is Pending or Received (the owner, 18 Nov 2026); no day and no number are needed. An older "Submitted" counts as Received.
+      // The NOC is Pending or Received (the owner, 18 Nov 2026); no day. An older "Submitted" counts as Received.
       const status = ['Received', 'Submitted'].includes(f.noc) ? 'Received' : f.noc === 'Pending' ? 'Pending' : '';
       if (!status) return { error: 'Choose Pending or Received for the NOC.' };
       const number = text(f.nocNumber).slice(0, 60);
+      // Received asks for the NOC number, the NOC account's login number (the owner, 21 Nov 2026), unless All Students already has it.
+      if (status === 'Received' && !number && !text(row['NOC NUMBER'])) return { error: 'Write the NOC number.' };
       // A NOC already Received never goes back to Pending.
       const was = text(row.NOC);
       const gotIt = status === 'Received' || was === 'Submitted' || was === 'Received';

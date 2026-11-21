@@ -60,14 +60,17 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   const opts = (await admin('GET', `/api/cards/${id}`)).json.card.options.map((o) => [o.university, o.applied]);
   assert.deepStrictEqual(opts.sort(), [['Backup University', today], ['Example University', add(-1)]]);
 
-  // NOC: Pending, then Received (no day and no number needed; an older "Submitted" counts as Received).
+  // NOC: Pending, then Received, which asks for the NOC number (the NOC account login number, the owner, 21 Nov 2026); no day.
+  // An older "Submitted" counts as Received.
   const n1 = await give('Make the NOC account', 'noc');
   assert.strictEqual((await finish(n1, { noc: 'maybe' })).status, 400);
   assert.strictEqual((await finish(n1, { noc: 'Pending', note: 'Account created' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Pending');
   const n2 = await give('Submit the NOC', 'noc');
-  assert.strictEqual((await finish(n2, { noc: 'Received' })).status, 200);
+  if (!(await row())['NOC NUMBER']) assert.strictEqual((await finish(n2, { noc: 'Received' })).status, 400, 'Received needs the NOC number');
+  assert.strictEqual((await finish(n2, { noc: 'Received', nocNumber: 'NOC-123456' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Received');
+  assert.strictEqual((await row())['NOC NUMBER'], 'NOC-123456');
 
   // Mock: the next empty Mock Schedule, and the feedback reminder waiting for that day.
   const m1 = await give('Set the first mock', 'mock');
