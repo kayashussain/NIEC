@@ -1271,7 +1271,7 @@ const server = http.createServer(async (req, res) => {
       activity.record(req, req.user, 'Downloaded backup', { changes: [which === 'students' ? 'Downloaded a copy of all students' : 'Downloaded a copy of Universities'] });
       return send(res, 200, JSON.stringify(data, null, 1), {
         'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store',
-        'Content-Disposition': `attachment; filename="uk-student-niec-${which}-${localDate()}.json"`,
+        'Content-Disposition': `attachment; filename="ISR-backup-${which}-${localDate()}.json"`,
       });
     }
     // Who can go where (eligibility.js): one student's level, grade, gap and English against every university in Universities that

@@ -2629,7 +2629,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `uk-student-niec-${sheetName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.xlsx`;
+    a.download = `ISR-students-${sheetName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();

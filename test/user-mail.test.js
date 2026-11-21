@@ -83,3 +83,14 @@ test('a team member emails from their own mailbox, signed with their own name, a
   assert.strictEqual((await asha('POST', '/api/my-mail/delete', {})).status, 200);
   assert.strictEqual((await asha('GET', '/api/my-mail')).json.set, false);
 });
+
+test('a mailbox setting can never point the server inside its own network', async () => {
+  const { pointsInside } = require('../student-details/media-cache');
+  const fake = (addrs) => async () => addrs;
+  assert.strictEqual(await pointsInside('mail.example.org', fake([{ address: '127.0.0.1', family: 4 }])), true);
+  assert.strictEqual(await pointsInside('mail.example.org', fake([{ address: '10.1.2.3', family: 4 }])), true);
+  assert.strictEqual(await pointsInside('mail.example.org', fake([{ address: '93.184.216.34', family: 4 }])), false);
+  assert.strictEqual(await pointsInside('mail.example.org', async () => { throw new Error('ENOTFOUND'); }), false);
+  const store = require('../student-details/user-mail').createUserMail(require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'um-')));
+  assert.ok(store.clean({ from: 'a@example.org', password: 'x', host: 'mail.example.org', port: 6379 }, {}, () => true).error, 'not a mail port');
+});

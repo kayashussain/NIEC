@@ -10,7 +10,7 @@
 
   function emailForm(d, done) {
     const wrap = el('div', 'ss-form');
-    const from = field('Your email address', { value: d.from || '', placeholder: 'e.g. asha@niecedu.com.np', max: 254 });
+    const from = field('Your email address', { value: d.from || '', placeholder: 'e.g. name@yourcompany.com', max: 254 });
     from.input.type = 'email'; from.input.autocomplete = 'email';
     const pass = field('The password of that mailbox', { placeholder: d.set ? 'Type it again to change anything' : '', max: 300 });
     pass.input.type = 'password'; pass.input.autocomplete = 'new-password';
@@ -112,8 +112,8 @@
       },
       {
         key: 'signature', title: 'Your signature',
-        state: d.admin ? 'Your emails end with the office signature' : d.signature ? 'Your picture ends every email' : 'No picture yet: your name and team are written instead',
-        action: d.admin ? '' : d.signature ? 'Change' : 'Upload', form: () => signatureForm(d, () => reload('')), soft: !d.admin && !d.signature,
+        state: d.signature ? 'Your picture ends every email' : d.admin ? 'Your emails end with the office signature' : 'No picture yet: your name and team are written instead',
+        action: d.signature ? 'Change' : 'Upload', form: () => signatureForm(d, () => reload('')), soft: !d.admin && !d.signature,
       },
       {
         key: 'whatsapp', title: 'Your WhatsApp',

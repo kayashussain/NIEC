@@ -290,7 +290,7 @@ function renderEmail({ subject, body, values, signature, options = [], documents
 <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#ffffff;border-radius:12px;border-top:4px solid #00adef">
 ${banner}${logo}<tr><td style="padding:${logo ? '12px' : '26px'} 28px 6px;font-size:15px;line-height:1.6">
 ${html.join('\n')}
-${signatureSrc ? `<p style="margin:22px 0 0"><img src="${esc(signatureSrc)}" alt="${esc(text(signature && signature.name) || COMPANY)}" width="600" style="display:block;border:0;max-width:100%;height:auto"></p>` : `<div style="margin:18px 0 18px;padding:12px 0 0 14px;border-left:3px solid #fc6e1f;font-size:13px;line-height:1.55;color:#4f5b69">${sigHtml}</div>`}
+${signatureSrc ? `<p style="margin:22px 0 0"><img src="${esc(signatureSrc)}" alt="${esc(text(signature && signature.name) || text(signature && signature.company) || 'Signature')}" width="600" style="display:block;border:0;max-width:100%;height:auto"></p>` : `<div style="margin:18px 0 18px;padding:12px 0 0 14px;border-left:3px solid #fc6e1f;font-size:13px;line-height:1.55;color:#4f5b69">${sigHtml}</div>`}
 </td></tr>
 </table></td></tr></table></body></html>`;
   return { subject: subj, text: plain, html: page, missing: [...missing].map((k) => FIELD_LABEL[k] || k) };

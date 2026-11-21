@@ -59,3 +59,11 @@ test('a row can never be given the name of a built-in (toString, __proto__): it 
     assert.ok(ids.includes('row-ok'));
   }
 });
+
+test('a CSV file is split on its own separator only: a semicolon inside a comment does not move the email', () => {
+  const SF = studentFile();
+  const rows = SF.csvRows('Full name,Comments,Email,Phone\nSita Rai,Wants MBA; January intake,sita@example.com,9800000001\n');
+  assert.deepStrictEqual(rows[1], ['Sita Rai', 'Wants MBA; January intake', 'sita@example.com', '9800000001']);
+  const semi = SF.csvRows('Name;Email;Phone\nRam Thapa;ram@example.com;9800000002\n');
+  assert.deepStrictEqual(semi[1], ['Ram Thapa', 'ram@example.com', '9800000002']);
+});

@@ -13,16 +13,28 @@
     return out;
   }
   // A whole CSV file to rows of cells. A cell in quotes may hold commas and line breaks, and "" inside it is one quote (a Facebook or Meta
-  // export with a comment on two lines is one row, not two). A comma, semicolon or tab separates cells.
+  // export with a comment on two lines is one row, not two). A comma, semicolon or tab separates cells: whichever the first line uses.
+  // The one character a file separates its cells with, chosen from its first line (outside quotes): Excel and Google Sheets quote only
+  // the cells holding that character, so a comment such as "Wants MBA; January intake" in a comma file must not split there.
+  function delimiterOf(src) {
+    const counts = { ',': 0, ';': 0, '\t': 0 }; let q = false;
+    for (const ch of src) {
+      if (ch === '"') q = !q;
+      else if (!q && (ch === '\n' || ch === '\r')) break;
+      else if (!q && ch in counts) counts[ch] += 1;
+    }
+    return Object.keys(counts).reduce((a, b) => (counts[b] > counts[a] ? b : a), ',');
+  }
   function csvRows(text) {
     const rows = []; let row = []; let cur = ''; let q = false;
     const src = String(text).replace(/^\uFEFF/, '');
+    const sep = delimiterOf(src);
     for (let i = 0; i < src.length; i += 1) {
       const ch = src[i];
       if (q) {
         if (ch === '"') { if (src[i + 1] === '"') { cur += '"'; i += 1; } else q = false; } else cur += ch;
       } else if (ch === '"') q = true;
-      else if (ch === ',' || ch === ';' || ch === '\t') { row.push(cur); cur = ''; }
+      else if (ch === sep) { row.push(cur); cur = ''; }
       else if (ch === '\n' || ch === '\r') { if (ch === '\r' && src[i + 1] === '\n') i += 1; row.push(cur); cur = ''; rows.push(row); row = []; }
       else cur += ch;
     }

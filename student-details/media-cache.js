@@ -158,4 +158,15 @@ function pictureAddresses(universities) {
   return set;
 }
 
-module.exports = { createMediaCache, pictureAddresses, sizeOf };
+// A server name that points inside (this computer, the office network, the cloud's own addresses), so nothing set up by a person may
+// make the server connect there. A name that cannot be looked up is not called inside: connecting to it fails by itself.
+async function pointsInside(host, lookup = dns.promises.lookup) {
+  const h = String(host || '').trim();
+  if (!h) return false;
+  if (net.isIP(h)) return !(await reachable(`https://${h.includes(':') ? `[${h}]` : h}/`, lookup));
+  let addrs;
+  try { addrs = await lookup(h, { all: true, verbatim: true }); } catch (e) { return false; }
+  return addrs.length > 0 && !(await reachable(`https://${h}/`, async () => addrs));
+}
+
+module.exports = { createMediaCache, pictureAddresses, sizeOf, pointsInside };

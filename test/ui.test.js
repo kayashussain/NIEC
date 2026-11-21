@@ -687,7 +687,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
   await t.test('Admin can download a backup of the students and Universities; a team member cannot', async () => {
     const students = await admin.request.get('/api/backup/students.json');
     assert.ok(students.ok());
-    assert.match(students.headers()['content-disposition'], /attachment; filename="uk-student-niec-students-\d{4}-\d{2}-\d{2}\.json"/);
+    assert.match(students.headers()['content-disposition'], /attachment; filename="ISR-backup-students-\d{4}-\d{2}-\d{2}\.json"/);
     assert.ok(Array.isArray((await students.json()).sheets), 'the whole workbook is in the file');
     const facts = await (await admin.request.get('/api/backup/fact-file.json')).json();
     assert.ok(facts.universities.length > 50);

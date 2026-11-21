@@ -78,13 +78,14 @@ function createUserMail(dir) {
     // Returns { error } or { box } (the box to try before it is saved).
     clean(input, defaults, isAddress) {
       const from = str(input && input.from, 254).toLowerCase();
-      if (!isAddress(from)) return { error: 'Type your own email address, for example asha@niecedu.com.np.' };
+      if (!isAddress(from)) return { error: 'Type your own email address, for example name@yourcompany.com.' };
       const pass = String((input && input.password) ?? '').replace(/[\r\n]/g, '').slice(0, 300);
       if (!pass) return { error: 'Type the password of that mailbox.' };
       const host = str(input && input.host, 200) || defaults.host;
       if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host) || /(^|\.)(localhost|localdomain|local|internal|intranet|lan|home|corp)$/i.test(host)) return { error: 'The mail server name does not look right.' };
       const port = Number(input && input.port) || Number(defaults.port) || 465;
-      if (!Number.isInteger(port) || port < 1 || port > 65535) return { error: 'The port must be a number such as 465 or 587.' };
+      // Only the ports mail servers use: a mailbox setting is never a way to make the server knock on any other door.
+      if (![25, 465, 587, 2525].includes(port)) return { error: 'The port must be one a mail server uses: 465 or 587 (or 25 or 2525).' };
       const security = SECURITIES.includes(input && input.security) ? input.security : (port === 587 ? 'starttls' : (defaults.security || 'ssl'));
       // Their own phone or WhatsApp number, for the signature of the emails they send (optional, not secret).
       const phone = str(input && input.phone, 40);

@@ -79,8 +79,8 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   // it changes only the portal link (or email), its username and its password; the name, status, contacts, commission lists and notes
   // stay as Admin left them, the files stay closed, and only Admin removes a partner.
   assert.ok(Array.isArray((await asha('GET', '/api/b2b')).json.onSheet), 'the Application Team sees the names not set up yet');
-  const made = await asha('POST', '/api/b2b', { name: 'Set Up By Team' });
-  assert.strictEqual(made.status, 200);
+  // Nothing is added by hand any more (the owner, 20 Nov 2026): the team hides a name that is not a partner, it never adds one.
+  assert.strictEqual((await asha('POST', '/api/b2b', { name: 'Set Up By Team' })).status, 403, 'the Application Team does not add partners');
   const before = (await admin('GET', `/api/b2b/${partner.id}`)).json;
   const changed = await asha('POST', `/api/b2b/${partner.id}`, { name: 'Renamed by the team', status: 'Ended', city: 'Elsewhere', contacts: [{ name: 'New contact' }], commissions: [], notes: 'changed by the team', apply: 'https://portal.example.org/new', applyUser: 'team-user', applyPassword: 'team-pass' });
   assert.strictEqual(changed.status, 200);
@@ -90,7 +90,7 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   assert.deepStrictEqual([after.name, after.status, after.city, after.contacts], [before.name, before.status, before.city, before.contacts], 'the details stay as Admin left them');
   assert.strictEqual(after.commissions[0].intake, 'Jan Intake 2027', 'the commission list is kept');
   assert.strictEqual(after.notes, before.notes, 'the notes are kept');
-  assert.strictEqual((await asha('POST', `/api/b2b/${made.json.id}/delete`, {})).status, 403, 'only Admin removes a partner');
+  assert.strictEqual((await asha('POST', `/api/b2b/${partner.id}/delete`, {})).status, 403, 'only Admin removes a partner');
   assert.strictEqual((await bikram('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 403);
   assert.strictEqual((await asha('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 200, 'the Application Team marks Not a partner');
   // Set up all is gone (the owner, 20 Nov 2026: nothing is added by hand on the partner pages): the names on the sheet stay as they are.

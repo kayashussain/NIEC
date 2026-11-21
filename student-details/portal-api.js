@@ -17,6 +17,7 @@ const mailer = require('../shared/mailer');
 const Fields = require('./card-fields');
 const { eventLabel, eventFor } = require('./source-options');
 const { ROW_ID } = require('./cards');
+const { pointsInside } = require('./media-cache');
 const Messages = require('./messages');
 const { buildIndex, searchCourses, linkKey, parseCourses } = require('./course-index');
 const { hostsOf, onHosts } = require('./university-websites');
@@ -262,7 +263,8 @@ function createPortalApi({
     const sig = messages.signature();
     // Admin sending from the office mailbox signs with the office picture. Everyone else signs as themselves, also before their own
     // mailbox is set up (the owner, 15 Nov 2026: a team member's preview ended with Admin's signature picture and name).
-    if (Teams.isAdmin(user)) return { sig, picture: officePicture() };
+    // Admin's own uploaded picture comes first (any Admin, any consultancy); the office picture is only the starting one.
+    if (Teams.isAdmin(user)) return { sig, picture: (userMail && userMail.picture(user.id)) || officePicture() };
     const own = userMail ? userMail.picture(user.id) : null;
     const team = teamsOf(user).map((d) => (Teams.DEPARTMENTS[d] ? Teams.DEPARTMENTS[d].label : '')).filter(Boolean).join(', ');
     const box = userMail ? userMail.info(user.id) : {};
@@ -2462,8 +2464,9 @@ function createPortalApi({
     // Admin changes the list; the Manager (with the commission) and the Application and Mock Teams (without it) look at it.
     const level = partnerAccess(req.user)[kind];
     const reading = req.method === 'GET' && !/\/delete$/.test(urlPath);
-    // 'setup' (the Application Team on B2B Partners): adds a partner and changes its details, never its files or removes it.
-    const settingUp = level === 'setup' && req.method === 'POST' && !/\/delete$/.test(urlPath) && !/\/files(\/|$)/.test(urlPath);
+    // 'setup' (the Application Team on B2B Partners): changes an existing partner's details, never its files, never removes it, and never
+    // adds one (partners come from the students' sheet, nothing is added by hand: the owner, 20 Nov 2026).
+    const settingUp = level === 'setup' && req.method === 'POST' && new RegExp(`^/api/${prefix}/[a-f0-9]{12}$`).test(urlPath);
     if (!level || (level !== 'full' && !reading && !settingUp)) { if (!adminOnly(req, res, level ? `Changing ${label}` : label)) return true; }
     const id = (urlPath.match(new RegExp(`^/api/${prefix}/([a-f0-9]{12})`)) || [])[1];
     const record = (line) => activity.record(req, req.user, 'Edited partners', { app: label, changes: [line] });
@@ -2742,6 +2745,7 @@ function createPortalApi({
       if (!body) return true;
       const made = userMail.clean(body, officeMailSettings(), mailer.isAddress);
       if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
+      if (await pointsInside(made.box.host)) { sendJSON(res, 400, { error: 'That mail server name points to a private address. Use the mail server your email provider gives you.' }); return true; }
       if (tooManySends(req.user.id)) { sendJSON(res, 429, { error: 'Too many tries in a short time. Please wait a few minutes.' }); return true; }
       try {
         await mailer.sendMail({ ...made.box, fromName: req.user.name }, { to: made.box.from, subject: 'ISR: your email is set up', text: `Hello ${req.user.name},\n\nYour mailbox works with ISR. Emails you send to students from ISR now go from ${made.box.from}.\n`, auto: true });
