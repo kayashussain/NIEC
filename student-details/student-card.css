@@ -534,7 +534,6 @@ tr.is-unseen .lg-kind::before { content: ""; display: inline-block; width: 7px; 
 .lg-form-group:first-child { padding-top: 0; border-top: 0; }
 .lg-form-field.is-wide { grid-column: 1 / -1; }
 .lg-form-label { display: block; margin-bottom: 6px; color: #3d3e42; font-size: 14px; font-weight: 600; }
-.lg-form select.lg-input { appearance: auto; }
 .lg-form-note { grid-column: 1 / -1; margin: 4px 0 0; padding: 10px 12px; border-radius: 8px; background: #eef0f3; color: #3d3e42; font-size: 14px; font-weight: 500; }
 .lg-form .p-dialog-foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
 .lg-form-saved { margin-right: auto; color: #5f6066; font-size: 13px; font-weight: 500; }

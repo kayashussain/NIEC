@@ -32,6 +32,8 @@
       toastBox.setAttribute('aria-live', 'polite');
       document.body.appendChild(toastBox);
     }
+    // The same message already showing is not shown twice (the owner, 21 Nov 2026: two "Shortlisted" messages stacked up).
+    if ([...toastBox.querySelectorAll('.ui-toast-text')].some((x) => x.textContent === String(message))) return;
     const el = document.createElement('div');
     el.className = 'ui-toast ' + type;
     const text = document.createElement('div');

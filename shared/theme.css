@@ -3975,3 +3975,12 @@ dialog.p-dialog .td-tag-pick :is(.td-tag, .td-prio)::before { background: none !
 dialog.p-dialog .td-answer { opacity: 1; border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; color: #111; }
 dialog.p-dialog .td-answer[aria-checked="true"], dialog.p-dialog .td-answer.is-on { border-color: #111; background: #111; color: #fff; }
 dialog.p-dialog .td-done-task:empty { display: none; }
+/* 🔴 CSS CHANGED (2026-11-21): the reviewers' fixes on the pages in the solid look | from: the bell's picture invisible while its panel is open (white on white); the Tasks panel on Today with no inner space (its title, search and pills touching the border); the "Are you sure?" and Shortcuts windows with round pill buttons; the Dashboard cards and the Show numbers tiles keeping their soft 20px look; column titles on All Students running into their filter arrow; messages appearing over the search box at the top right | to: the open bell black with a white picture; the Tasks panel with 18px inside; every window's buttons 8px rectangles; the Dashboard cards and Show numbers tiles with the firm grey border and 10px corners; column titles with less letter spacing so the arrow has room; messages at the bottom right, clear of the page's controls */
+body:has(.td-tasks) .td-bell[aria-expanded="true"] { border-color: #111; background: #111; color: #fff; }
+body:has(.td-tasks) .td-tasks { padding: 16px 18px 18px; }
+dialog.ui-dialog .ui-ok, dialog.ui-dialog button { border-radius: 8px; }
+dialog.ui-dialog button:not(.ui-ok):not(.ui-danger) { border: 1px solid #c9ccd2; background: #fff; color: #111; }
+body:has(.ov-card) :is(.ov-card, .ov-kpi), body:has(#sheet) .stat-card { border: 1px solid var(--lg-line) !important; border-radius: 10px; box-shadow: none; }
+body:has(#sheet) .stat-card { background: var(--lg-panel); }
+html body:has(#sheet) #headerRow th { letter-spacing: .02em; }
+.ui-toasts, body:has(.niec-demo) .ui-toasts { top: auto; bottom: 24px; }
