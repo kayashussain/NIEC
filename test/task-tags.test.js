@@ -61,3 +61,17 @@ test('a task is given with Application, Mock interview, Documents, NOC, Medical 
   assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'documents', 'noc', 'medical', 'other']);
   ['offer', 'payment', 'visa'].forEach((k) => assert.ok(F.TASK_TAG_IDS.includes(k), `${k} is still a known tag, so stored tasks keep it`));
 });
+
+test('the card keeps a passport expiry (a future day) and a gender from its list; the studies and English stay as before (the owner, 21 Nov 2026)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-profile-'));
+  const cards = createCards(dir);
+  const row = 'row-proftest01';
+  cards.setProfile(row, { passportExpiry: '2031-05-04', gender: 'female', qualification: '+2 or Grade 12', grade: '3.1', englishTest: 'IELTS UKVI', englishScore: '6.5' }, 'Admin');
+  const p = cards.get(row).profile;
+  assert.strictEqual(p.passportExpiry, '2031-05-04', 'a passport expiry in the future is kept');
+  assert.strictEqual(p.gender, 'Female', 'the gender is one of its choices, whatever the letter case');
+  assert.strictEqual(p.grade, '3.1');
+  cards.setProfile(row, { gender: 'Robot' }, 'Admin');
+  assert.strictEqual(cards.get(row).profile.gender, undefined, 'a gender outside the list is not kept');
+  assert.strictEqual(cards.get(row).profile.passportExpiry, '2031-05-04', 'other details are kept when one changes');
+});

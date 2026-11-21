@@ -241,9 +241,20 @@
         window.ShortlistFor.onChange(render);
         if (loadedOnce) render();
       }
+      // Opened with "Find course" from a student's card (?for=ID): the finder is filled with that student's level, grade, study gap,
+      // English test and subject from the card, and searches at once (the owner, 21 Nov 2026: eligibility in one press).
+      let prefill = {};
+      const forId = new URLSearchParams(location.search).get('for');
+      if (!student && forId) {
+        try {
+          const c = await (await fetch('/api/cards/' + encodeURIComponent(forId), { cache: 'no-store' })).json();
+          const pp = (c && c.card && c.card.profile) || {};
+          prefill = { level: pp.studyLevel || '', grade: pp.grade || '', gap: pp.gapYears || '', test: pp.englishTest || '', score: pp.englishScore || '', band: pp.englishBand || '', subject: pp.subject || '' };
+        } catch (e) { prefill = {}; }
+      }
       window.Finder.mount(box, student
         ? { title: 'Find the universities you can go to', intro: 'Enter your level, your grade, your study gap and your English test. Press "I am interested" on the courses you like.' }
-        : { title: 'Find universities for a student', shortlist: Boolean(window.ShortlistFor) && !(window.TeamRules && window.TeamRules.isReadOnly(me)) });
+        : { title: 'Find universities for a student', prefill, shortlist: Boolean(window.ShortlistFor) && !(window.TeamRules && window.TeamRules.isReadOnly(me)) });
       const shortlist = document.getElementById('shortlist');
       if (shortlist) box.before(shortlist); // a student's welcome and shortlist first
     }).catch(() => {});

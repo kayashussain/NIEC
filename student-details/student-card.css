@@ -347,3 +347,8 @@ dialog.p-dialog:has(.p-assign)[open] { max-height: calc(92vh - 24px); }
   .sc-tl-list::before { transform: none; }
   .sc-tick path { stroke-dashoffset: 0; }
 }
+
+/* 🔴 CSS CHANGED (2026-11-21): the Profile column's new sections (the owner: "make ISR stronger than Route2Uni") | from: Contact and Passport only, no passport expiry, gender, studies or English test on the card | to: Passport with expiry and gender, and two new sections, Academic and Study plans, in the same quiet rows changed where they are; a passport running out within six months shows its date in orange with the days left (or "expired"); a dropdown opens with "Choose..." when nothing is chosen */
+.sc-row.is-warn .sc-row-value { color: var(--sc-orange-ink); }
+.sc-row-note { color: var(--sc-orange-ink); font-size: 14px; font-weight: 600; }
+.sc-row select.sc-input { appearance: auto; padding-right: 8px; }

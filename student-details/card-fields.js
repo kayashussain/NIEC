@@ -53,6 +53,8 @@
     const town = Object.keys(TOWNS).find((k) => new RegExp(`\\b${k}\\b`).test(t));
     return town ? TOWNS[town] : '';
   }
+  // As written in the passport (the owner, 21 Nov 2026: as Route2Uni keeps it); optional.
+  const GENDERS = ['Female', 'Male', 'Other'];
   const NATIONALITIES = ['Nepali', 'Indian', 'Chinese', 'Bangladeshi', 'Bhutanese', 'Sri Lankan', 'Pakistani', 'Other'];
   const SOURCE_WAYS = ['Organic', 'Advert'];
   // The study levels offered (the owner, 14 Nov 2026: an MBA is postgraduate). The two older ones a card may still hold stay readable.
@@ -120,6 +122,9 @@
     { key: 'passportNo', label: 'Passport number', max: 20 },
     { key: 'address', label: 'Address (as in the passport)', max: 200 },
     { key: 'nationality', label: 'Nationality', list: 'NATIONALITIES' },
+    // Also from the passport (the owner, 21 Nov 2026): when it runs out (a visa needs six months or more left), and the gender. Optional.
+    { key: 'passportExpiry', label: 'Passport expiry', type: 'date' },
+    { key: 'gender', label: 'Gender', list: 'GENDERS' },
     // How a Social Media student came: the platform, and whether by itself or from an advert (the advert is the campaign in
     // sourceDetail, so it is counted in its cost).
     { key: 'sourcePlatform', label: 'Platform', max: 40 },
@@ -207,6 +212,6 @@
   return {
     TASK_TAGS, TASK_TAG_IDS, TASK_TAGS_CHOOSABLE, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
-    OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, SHEET_SECTIONS, columnLabel, whatsappNumber,
+    OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, GENDERS, SHEET_SECTIONS, columnLabel, whatsappNumber,
   };
 });

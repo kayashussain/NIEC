@@ -58,13 +58,29 @@
     { key: 'passportNo', on: 'profile', label: 'Passport number', get: () => profile().passportNo, upper: true, max: 20 },
     { key: 'address', on: 'profile', label: 'Address (passport)', get: () => profile().address, max: 200 },
     { key: 'nationality', on: 'profile', label: 'Nationality', type: 'select', get: () => profile().nationality || 'Nepali', choices: () => F.NATIONALITIES },
+    // As Route2Uni keeps them (the owner, 21 Nov 2026), optional: the passport's expiry (a visa needs six months or more left) and the gender.
+    { key: 'passportExpiry', on: 'profile', label: 'Passport expiry', type: 'date', future: true, get: () => profile().passportExpiry, show: (v) => day(v), optional: true },
+    { key: 'gender', on: 'profile', label: 'Gender', type: 'select', get: () => profile().gender, choices: () => F.GENDERS, optional: true },
+    // The student's studies and English (kept on the card since 14 Nov 2026, shown and changed here from 21 Nov 2026): they also fill
+    // the Universities finder when "Find course" is pressed, so it answers at once which courses the student can apply to.
+    { key: 'qualification', on: 'profile', label: 'Highest qualification', type: 'select', get: () => profile().qualification, choices: () => F.QUALIFICATIONS },
+    { key: 'grade', on: 'profile', label: 'GPA or percentage', get: () => profile().grade, max: 40 },
+    { key: 'passedYear', on: 'profile', label: 'Year passed', get: () => profile().passedYear, max: 10, optional: true },
+    { key: 'gapYears', on: 'profile', label: 'Study gap (years)', get: () => profile().gapYears, max: 4, optional: true },
+    { key: 'englishTest', on: 'profile', label: 'English test', type: 'select', get: () => profile().englishTest, choices: () => F.ENGLISH_TESTS },
+    { key: 'englishScore', on: 'profile', label: 'English score (overall)', get: () => profile().englishScore, max: 60, optional: true },
+    { key: 'englishBand', on: 'profile', label: 'Lowest band', get: () => profile().englishBand, max: 10, optional: true },
+    { key: 'studyLevel', on: 'profile', label: 'Study level wanted', type: 'select', get: () => profile().studyLevel, choices: () => F.STUDY_LEVELS, optional: true },
+    { key: 'subject', on: 'profile', label: 'Subject or course wanted', get: () => profile().subject, max: 160, optional: true },
+    { key: 'location', on: 'profile', label: 'Where in the UK', get: () => profile().location, max: 120, optional: true },
+    { key: 'budget', on: 'profile', label: 'Budget for the first year (GBP)', get: () => profile().budget, max: 60, optional: true },
   ];
   async function saveField(f, raw) {
     let v = String(raw || '').trim();
     if (f.upper) v = v.toUpperCase();
     if (v === String(f.get() || '')) { editingField = ''; render(); return; }
     if (f.type === 'email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { say('That email does not look right.', true); shake(view.querySelector('.sc-row.is-editing')); return; }
-    if (f.type === 'date' && v && v > today()) { say('A date of birth cannot be in the future.', true); shake(view.querySelector('.sc-row.is-editing')); return; }
+    if (f.type === 'date' && !f.future && v && v > today()) { say('A date of birth cannot be in the future.', true); shake(view.querySelector('.sc-row.is-editing')); return; }
     const row = view.querySelector('.sc-row.is-editing'); if (row) row.classList.add('is-saving');
     try {
       if (f.on === 'sheet') await api(`/api/cards/${id}/sheet`, { fields: { [f.key]: v } });
@@ -74,7 +90,7 @@
     } catch (e) { if (row) row.classList.remove('is-saving'); say(e.message, true); shake(row); }
   }
   // The first detail still missing (for the E key, "2 to add" and Next step), or the email when nothing is missing.
-  const firstMissing = () => (FIELDS.find((f) => !f.get()) || FIELDS[0]).key;
+  const firstMissing = () => (FIELDS.find((f) => !f.optional && !f.get()) || FIELDS[0]).key;
   function openField(key) { editingOrigin = false; editingHero = false; editingField = key; render(); const r = view.querySelector('.sc-row.is-editing'); if (r) r.scrollIntoView({ block: 'nearest', behavior: calm() ? 'auto' : 'smooth' }); }
 
   // ---- small line pictures for the card (drawn in lines, as Apple's own symbols are) ----
@@ -172,7 +188,7 @@
   // What is needed for a complete student, and what is still missing.
   function profileGaps() {
     const s = data.student;
-    const items = [...FIELDS.filter((f) => f.key !== 'nationality').map((f) => [f.label, f.get()]), ['Student source', F.sourceGroup(s.source)]];
+    const items = [...FIELDS.filter((f) => f.key !== 'nationality' && !f.optional).map((f) => [f.label, f.get()]), ['Student source', F.sourceGroup(s.source)]];
     return { total: items.length, missing: items.filter(([, v]) => !v).map(([k]) => k) };
   }
 
@@ -254,7 +270,8 @@
       FIELDS.filter((f) => keys.includes(f.key)).forEach((f) => sec.append(fieldRow(f)));
       return sec;
     };
-    side.append(group('Contact', ['EMAIL', 'CONTACT NUMBER']), group('Passport', ['dob', 'passportNo', 'address', 'nationality']));
+    side.append(group('Contact', ['EMAIL', 'CONTACT NUMBER']), group('Passport', ['dob', 'passportNo', 'passportExpiry', 'address', 'nationality', 'gender']),
+      group('Academic', ['qualification', 'grade', 'passedYear', 'gapYears', 'englishTest', 'englishScore', 'englishBand']), group('Study plans', ['studyLevel', 'subject', 'location', 'budget']));
     // How many universities and offers (the Applications tab has them).
     const ap = appStats();
     const apps = el('section', 'sc-group');
@@ -275,8 +292,8 @@
     row.append(el('span', 'sc-row-label', f.label));
     if (open) {
       let input;
-      if (f.type === 'select') { input = el('select', 'sc-input'); f.choices().forEach((c) => { const o = el('option', '', c); o.value = c; input.append(o); }); input.value = v || ''; }
-      else { input = h('input', { class: 'sc-input', type: f.type === 'date' ? 'date' : f.type || 'text', value: v || '' }); if (f.max) input.maxLength = f.max; if (f.type === 'date') input.max = today(); }
+      if (f.type === 'select') { input = el('select', 'sc-input'); [['', 'Choose\u2026'], ...f.choices().map((c) => [c, c])].forEach(([c, t]) => { const o = el('option', '', t); o.value = c; input.append(o); }); input.value = v || ''; }
+      else { input = h('input', { class: 'sc-input', type: f.type === 'date' ? 'date' : f.type || 'text', value: v || '' }); if (f.max) input.maxLength = f.max; if (f.type === 'date' && !f.future) input.max = today(); }
       input.setAttribute('aria-label', f.label);
       let done = false;
       const commit = () => { if (done) return; done = true; saveField(f, input.value); };
@@ -284,7 +301,10 @@
         if (e.key === 'Enter') { e.preventDefault(); commit(); }
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done = true; editingField = ''; render(); }
       });
-      if (f.type === 'select') input.addEventListener('change', commit); else input.addEventListener('blur', () => setTimeout(() => { if (!done && document.activeElement !== input) commit(); }, 120));
+      // A choice or a day saves as soon as it is picked (the calendar takes the focus away while it is open, so leaving the box is not the
+      // end for a day); typed words save on Enter or on leaving the box.
+      if (f.type === 'select' || f.type === 'date') input.addEventListener('change', () => { if (input.value || f.type === 'select') commit(); });
+      else input.addEventListener('blur', () => setTimeout(() => { if (!done && document.activeElement !== input) commit(); }, 120));
       const val = el('div', 'sc-row-edit'); val.append(input, el('span', 'sc-row-hint', 'Enter to save · Esc to cancel'));
       row.append(val);
       return row;
@@ -300,6 +320,8 @@
         val.append(a);
       } else val.textContent = shown;
       val.title = shown;
+      // A passport that runs out within six months is a visa risk: its date shows in orange with how long is left.
+      if (f.key === 'passportExpiry') { const left = Math.round((Date.parse(v + 'T00:00:00Z') - todayUtc()) / 86400000); if (Number.isFinite(left) && left < 183) { row.classList.add('is-warn'); val.append(el('span', 'sc-row-note', left < 0 ? ' \u00b7 expired' : ` \u00b7 ${left} days left`)); } }
     } else val.append(el('span', 'sc-row-add', can() ? `Add ${f.label.toLowerCase()}` : 'Not added'));
     row.append(val);
     if (justSaved === f.key) { row.append(icon('check', 'sc-row-tick sc-tick')); justSaved = ''; }
