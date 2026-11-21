@@ -352,3 +352,72 @@ dialog.p-dialog:has(.p-assign)[open] { max-height: calc(92vh - 24px); }
 .sc-row.is-warn .sc-row-value { color: var(--sc-orange-ink); }
 .sc-row-note { color: var(--sc-orange-ink); font-size: 14px; font-weight: 600; }
 .sc-row select.sc-input { appearance: auto; padding-right: 8px; }
+
+/* ---- the premium pass (the owner, 21 Nov 2026: "it looks black and white and feels off; go beyond Apple: Nike's type, Dior's and
+   Louis Vuitton's restraint; few words, big and confident") ---- */
+/* 🔴 CSS CHANGED (2026-11-21): the student card's type, colour and Profile column, after Nike, Dior and Louis Vuitton | from: thin 400-weight text at 13 to 16px in #1d1d1f, a 30px name, a grey monogram, a grey stage pill, a plain bar, the Profile as one long list (a grey label over each value, 340px wide) with "Add passport expiry" and the like in orange for every empty detail, small sentence-case section names, 19px section titles | to: text in a medium weight (500, as Nike's site) in a deeper near-black (#111), which stays crisp on a modest laptop screen; a 42px name; a monogram and a stage pill in a soft tint of the logo's blue; a very light wash of that blue behind the profile bar; the Profile 380px wide as a spec sheet, short details two to a line and long ones (email, WhatsApp, address, qualification, subject, budget) across, values at 17px; an empty detail says just "Add" (orange when it is needed, grey when it is optional); section names in small spaced capitals (as Dior's and Louis Vuitton's labels); section titles at 24px; the day lines of the Timeline in small spaced capitals; every button in the medium weight */
+:root { --sc-ink: #111; --sc-brand: #00a8ec; --sc-brand-ink: #00679a; --sc-brand-soft: rgba(0, 168, 236, .12); }
+#view { color: var(--sc-ink); font-size: 17px; font-weight: 450; }
+
+/* the profile bar */
+#view .sc-hero { padding: 26px 40px 16px; background: linear-gradient(180deg, rgba(0, 168, 236, .07) 0%, rgba(0, 168, 236, 0) 78%), var(--sc-panel); }
+.sc-head { gap: 22px; }
+.sc-avatar { width: 72px; height: 72px; background: var(--sc-brand-soft); color: var(--sc-brand-ink); font: 600 24px/1 var(--font); letter-spacing: -.01em; }
+#view .sc-name { font: 650 42px/1.08 var(--font); letter-spacing: -.035em; }
+.sc-meta { gap: 6px 14px; margin-top: 8px; }
+.sc-meta .p-pill { padding: 4px 12px; background: rgba(0, 113, 227, .09); color: #0058b0; font-size: 14px; font-weight: 600; }
+.sc-meta-text { font-size: 15.5px; font-weight: 500; }
+.sc-reach-btn { min-height: 42px; padding: 0 18px 0 14px; font-size: 15.5px; font-weight: 500; }
+#view :is(.sc-hero, .sc-side, .sc-main) .btn { font-weight: 500; font-size: 15.5px; }
+#view :is(.sc-hero, .sc-side, .sc-main) .btn.btn-primary { font-weight: 600; }
+.sc-steps-head { font-size: 15.5px; }
+.sc-steps-head .sc-eyebrow, .sc-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.sc-step-label { font-size: 14px; font-weight: 500; }
+
+/* the Profile, a spec sheet */
+.sc-layout { grid-template-columns: 380px minmax(0, 1fr); }
+.sc-skel-cols { grid-template-columns: 380px minmax(0, 1fr); }
+.sc-side { padding: 24px 22px 36px; }
+#view .sc-side h2 { font-size: 22px; font-weight: 650; letter-spacing: -.025em; }
+.sc-side-pct { font-size: 14.5px; font-weight: 500; }
+.sc-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 4px; margin-top: 14px; padding-top: 14px; }
+#view .sc-group h3 { grid-column: 1 / -1; margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.sc-row.is-wide, .sc-row.is-editing, .sc-group > .sc-row.is-link { grid-column: 1 / -1; }
+.sc-row { padding: 8px; row-gap: 2px; }
+.sc-row-label { font-size: 13.5px; font-weight: 450; line-height: 1.3; }
+.sc-row-value { font-size: 17px; font-weight: 500; letter-spacing: -.02em; }
+.sc-row-add { color: var(--sc-orange-ink); font-size: 16px; font-weight: 500; }
+.sc-row.is-optional .sc-row-add { color: var(--sc-grey); }
+.sc-source-name { font-size: 17px; }
+.sc-source-rows dd { font-size: 16px; font-weight: 500; }
+
+/* the work */
+.sc-main { gap: 24px; padding: 26px 40px 56px; }
+.sc-next-words b { font-size: 19px; font-weight: 650; letter-spacing: -.025em; }
+.sc-next-why { font-size: 15px; }
+#view .sc-checks h2 { font-size: 19px; font-weight: 650; }
+body:has(.p-embed-bar) #view .p-tabs.sc-tabs button { min-height: 40px; font-size: 16px; font-weight: 500; }
+#view .sc-tl-page .p-card > h2, #view .sc-tl-page .p-card-head h2, .sc-tl-top h2, html body #view .p-apps .p-card h2 { font-size: 24px; font-weight: 650; letter-spacing: -.03em; }
+#view .p-tasks .td-task-text { font-size: 17px; font-weight: 500; }
+#view .sc-tl-day { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.sc-tl-who { font-size: 15.5px; }
+.sc-tl-text { font-size: 17px; }
+.sc-tl-input { font-size: 17px; }
+html body #view .p-apps .p-chosen-item h3 { font-size: 18px; font-weight: 650; letter-spacing: -.02em; }
+html body #view .p-apps .p-chosen-course { font-size: 15px; }
+html body #view#view .sc-tab-body :is(.p-card-head, .sc-tl-top, .p-card) > h2 { font-size: 24px; font-weight: 650; letter-spacing: -.03em; }
+.sc-group > .sc-row:not(.is-editing) { align-content: end; }
+/* 🔴 CSS CHANGED (2026-11-21): the independent reviewer's finishing touches on the premium pass | from: the small grey words under each task and in the Timeline at 13px, a hairline under the Tasks title, the Next step strip with a blue edge and a blue icon tile, Call, WhatsApp and Email as grey pills that faded into the blue wash, an optional empty detail's "Add" in the same weight as a value | to: those small words at 14px in a medium weight (the Timeline's initials 12.5px); no line under the Tasks title; the Next step strip without its blue edge and with a soft grey icon tile, so only its blue button speaks; Call, WhatsApp and Email as soft off-white pills with a faint outline; an optional "Add" in the regular weight and a needed one in orange at 600 */
+#view .p-tasks .td-task :is(.td-from-who, .td-route-meta, .td-waiting) { font-size: 14px; font-weight: 500; }
+#view .p-tasks .td-task .td-tag { font-size: 13.5px; }
+.sc-tl-kind, .sc-tl-time { font-size: 14px; font-weight: 500; }
+.sc-tl-av { font-size: 12.5px; }
+#view .p-tasks .td-task:first-of-type, #view .p-tasks .p-card-head + .td-task { border-top: 0; }
+#view .sc-next { background: rgba(0, 113, 227, .05); }
+#view .sc-next::before { display: none; }
+.sc-next-ico { background: #e9ebef; color: var(--sc-ink); }
+.sc-reach-btn { background: #fbfbfd; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
+.sc-reach-btn:hover { background: #f1f2f5; }
+.sc-row-add { font-weight: 600; }
+.sc-row.is-optional .sc-row-add { font-weight: 400; }
+.sc-keys-btn { color: var(--sc-grey); font-weight: 500; }

@@ -267,11 +267,11 @@
     const group = (title, keys) => {
       const sec = el('section', 'sc-group');
       sec.append(el('h3', '', title));
-      FIELDS.filter((f) => keys.includes(f.key)).forEach((f) => sec.append(fieldRow(f)));
+      keys.map((k) => FIELDS.find((f) => f.key === k)).filter(Boolean).forEach((f) => sec.append(fieldRow(f)));
       return sec;
     };
-    side.append(group('Contact', ['EMAIL', 'CONTACT NUMBER']), group('Passport', ['dob', 'passportNo', 'passportExpiry', 'address', 'nationality', 'gender']),
-      group('Academic', ['qualification', 'grade', 'passedYear', 'gapYears', 'englishTest', 'englishScore', 'englishBand']), group('Study plans', ['studyLevel', 'subject', 'location', 'budget']));
+    side.append(group('Contact', ['EMAIL', 'CONTACT NUMBER']), group('Passport', ['passportNo', 'passportExpiry', 'dob', 'gender', 'nationality', 'address']),
+      group('Academic', ['qualification', 'grade', 'passedYear', 'englishTest', 'englishScore', 'englishBand', 'gapYears']), group('Study plans', ['studyLevel', 'location', 'subject', 'budget']));
     // How many universities and offers (the Applications tab has them).
     const ap = appStats();
     const apps = el('section', 'sc-group');
@@ -288,7 +288,9 @@
   function fieldRow(f) {
     const v = f.get();
     const open = editingField === f.key && can();
-    const row = el('div', `sc-row${v ? '' : ' is-empty'}${open ? ' is-editing' : ''}${justSaved === f.key ? ' is-saved' : ''}`);
+    // Long details take the whole width of the Profile column; the short ones sit two to a line, as a spec sheet (the owner, 21 Nov 2026).
+    const wide = ['EMAIL', 'CONTACT NUMBER', 'address', 'qualification', 'subject', 'budget'].includes(f.key);
+    const row = el('div', `sc-row${v ? '' : ' is-empty'}${wide ? ' is-wide' : ''}${f.optional ? ' is-optional' : ''}${open ? ' is-editing' : ''}${justSaved === f.key ? ' is-saved' : ''}`);
     row.append(el('span', 'sc-row-label', f.label));
     if (open) {
       let input;
@@ -322,7 +324,7 @@
       val.title = shown;
       // A passport that runs out within six months is a visa risk: its date shows in orange with how long is left.
       if (f.key === 'passportExpiry') { const left = Math.round((Date.parse(v + 'T00:00:00Z') - todayUtc()) / 86400000); if (Number.isFinite(left) && left < 183) { row.classList.add('is-warn'); val.append(el('span', 'sc-row-note', left < 0 ? ' \u00b7 expired' : ` \u00b7 ${left} days left`)); } }
-    } else val.append(el('span', 'sc-row-add', can() ? `Add ${f.label.toLowerCase()}` : 'Not added'));
+    } else val.append(el('span', 'sc-row-add', can() ? 'Add' : 'Not added'));
     row.append(val);
     if (justSaved === f.key) { row.append(icon('check', 'sc-row-tick sc-tick')); justSaved = ''; }
     else if (can()) row.append(icon('pencil', 'sc-row-pen'));

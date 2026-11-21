@@ -78,6 +78,12 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   Pages inside the card drawer are not zoomed twice (`data-size="framed"`). Because of the zoom: place any menu or popup with
   `isrPos` (`shared/ui.js`), never with raw `getBoundingClientRect` or `innerWidth`; write a full-height size as
   `calc(100vh / var(--isr-z, 1))` or with `inset`, never plain `100vh`.
+- **Beyond Apple: Nike's type, Dior's restraint (the owner, 21 Nov 2026).** Text that people read in a medium weight (500; long
+  reading text 450) in a deep near-black #111, which stays crisp on a modest laptop screen; big confident titles (the student's name
+  42px, section titles 24px, weight 650, tight letter spacing); labels of sections and days in small spaced capitals (12px, weight 600,
+  0.08em, grey); few words: a detail is a label and its value, an empty one says just "Add"; details laid out as a spec sheet, two to a
+  line. Warmth from the logo's blue, softly: a light tint behind a monogram and the stage, a very light wash behind the profile bar;
+  never more colours.
 - **Less glare (the owner, 21 Nov 2026):** canvas #eef0f3, panels #f8f9fb (a cool off-white, never cream or yellow); on the student
   card the Profile column #f1f3f6 and edit boxes #fdfdfe. Screens of work are flat: surfaces meet edge to edge with hairlines, not
   cards floating with margins on every side.
