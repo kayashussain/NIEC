@@ -85,8 +85,7 @@ wrong passwords lock the account for 15 minutes.
 
 - **First start:** while there are no accounts, the server makes a one-time **setup code**, prints it
   in the app's log and saves it in `first-admin-code.txt` in the Student Details data folder. The
-  login page asks for it to create the first Admin account; you then choose your own password and
-  and the code is deleted. Do this straight after deploying.
+  login page asks for it to create the first Admin account; you then choose your own password and the code is deleted. Do this straight after deploying.
 - **Intakes:** Admin and the Manager see every intake sheet. The Application, Mock and Follow-up teams see only the newest sheet, so when you start a new intake the earlier one leaves their screens by itself. There is no sheet password.
 - **Adding people:** Admin → **Users** → *Add a person*: name, username (not case sensitive), email, and
   what they can do. Tick any mix of Application, Mock, Follow-up, Chitwan Branch, Pokhara Branch and Manager (a Manager who also ticks a team can change that team's students in the current intake). They are emailed a link and a temporary
@@ -120,9 +119,10 @@ students, columns and moves of every team they hold.
 
 **Partner pages** (rules in `student-details/partner-access.js`; the server strips what an account may
 not see before sending anything): Admin sees and changes everything. The **Manager** looks at Partner Universities, B2B Partners
-and Agents **with the commission** (no portal login), and at Events and marketing. The **Application and
-Mock Teams** look at Partner Universities, B2B Partners and Agents **without the commission** (no commission slabs, payment terms,
-commission lists, agreement files, notes or portal login). **Branches** look at Partner Universities
+and Agents **with the commission** (no portal login), and at Events and marketing. The **Mock
+Team** looks at Partner Universities, B2B Partners and Agents **without the commission** (no commission slabs, payment terms,
+commission lists, agreement files, notes or portal login). The **Application Team** works from Today, All Students and Universities
+instead (the owner, 21 Nov 2026); **Apply now** on a university shows it how to apply. **Branches** look at Partner Universities
 the same way (without the commission). The **Follow-up Team** has none of these pages. A **branch** can
 give a task about its own student to the Application Team or the Mock Team (Assign a task on the student card), sees on Today
 whether it is done, talks it through in the task's comments, and removes only the tasks it gave.
@@ -145,9 +145,9 @@ node scripts/email.js setup
 node scripts/email.js test someone@example.com
 ```
 
-`setup` asks for the mailbox (for example `kayas@niecedu.com.np`) and its password, and saves them in
+`setup` asks for the mailbox (for example `name@yourcompany.com`) and its password, and saves them in
 `mail.json` in the Student Details data folder (never in git, never served, private to the server user).
-`setup` also asks for the mail server (it suggests `mail.` plus the mailbox's domain, for example `mail.niecedu.com.np`); the port defaults to 465 with SSL, change it when asked (587 means
+`setup` also asks for the mail server (it suggests `mail.` plus the mailbox's domain, for example `mail.yourcompany.com`); the port defaults to 465 with SSL, change it when asked (587 means
 STARTTLS). `test` sends a message and says what went wrong if it fails. From then on, adding a person (or
 resetting a password) emails them their link, username and temporary password. If email is not set up, or a
 message cannot be sent, the temporary password is shown to Admin instead so it can be given in person.
