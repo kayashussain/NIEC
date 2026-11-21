@@ -70,6 +70,33 @@ The owner does not want old versions, copies or rewrites lying around, because a
 - Every change must work with the data that already exists on the live server: stored values keep their meaning (for example a
   student's Student Source stays "Chitwan Branch"), and new fields are optional.
 
+## The ISR colours (the owner accepted these, 21 Nov 2026; every page uses them, nothing else)
+
+| Use | Colour |
+|---|---|
+| Page (canvas) | #e6e6e6 |
+| Side menu, the student card's Profile column | #ececec |
+| Cards and panels | #f3f3f3, 1px border #9a9a9a, 10px corners, no shadow |
+| Tiles inside a card, title bars | #e2e2e2, 1px border #b8b8b8, 8px corners |
+| Boxes, fields and grey buttons | #f7f7f7, field border #6f6f6f (never pure white) |
+| Text | #000, semi-bold (600); titles 700 |
+| Second text (labels, hints) | #333 (nothing lighter) |
+| Main button, "where you are now" | blue #0071e3 with white words |
+| Links | #0050aa |
+| Missing or needs attention | orange #b85300 (dot #d9650b) |
+| Done, visa granted | green #1e8e4a |
+| Error, rejected | red #b42318 |
+| Logo blue (soft tints only) | #00a8ec |
+| Charts (Dashboard and every chart, in this order) | blue #0071e3, orange #d9650b, green #1e8e4a, purple #6e47d1, teal #0b8a95, pink #c2255c, amber #b7791f, slate #52606d, light blue #4aa3f0, olive #6b8e23 |
+| The same stage, the same colour on every chart | Inquiries teal, Applied and Students blue, Offers purple, Paid orange, CAS amber, Visas green |
+
+- The Dashboard is the one page in colour: each number tile has its stage colour as a band across its top and in its little chart.
+  Every other page stays black, grey and one blue, with colour only where it means something.
+- Text size: every page opens at Large; Small and Medium are in the account menu.
+- Every card on every page looks the same (the row above). Cards side by side end on the same line.
+- The CSS that holds this is the "One system on every page" block at the end of `shared/theme.css`. A new page uses these colours and
+  that card; it never brings its own.
+
 ## Other standing decisions (the owner's wishes)
 
 - **No em dashes and no en dashes anywhere** (pages, emails, documents, code comments, this file). Use a comma, a colon, a

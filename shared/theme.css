@@ -41,12 +41,13 @@
   --focus-strong: #c6dffa;
   --range-tint: rgba(0, 113, 227, .08);
   --navy: #000;
-  --navy-2: #3a3a3c;
+  /* 🔴 CSS CHANGED (2026-11-21): three second ink colours missed in the first Strong contrast pass | from: #3a3a3c | to: black #000 (--navy-2, --brand-navy-2, --lux-ink-2) */
+  --navy-2: #000;
   --gold: #0071e3;
   --gold-deep: #0050aa;
   --gold-soft: #eef2f7;
   --brand-navy: #000;
-  --brand-navy-2: #3a3a3c;
+  --brand-navy-2: #000;
   --brand-bronze: #0071e3;
   --brand-champagne: #ffffff;
   --brand-ivory: #ffffff;
@@ -63,7 +64,7 @@
   --orange: #c45a00;
   --niec-orange: #c45a00;
   --lux-ink: #000;
-  --lux-ink-2: #3a3a3c;
+  --lux-ink-2: #000;
   --lux-bronze: #0071e3;
   --lux-line: #b8b8b8;
 
@@ -3503,7 +3504,8 @@ html body .fd-more-courses .fd-courses li:first-child { border-top: 0; }
 .up-cm b { color: #000; font-size: 15px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
 .up-cm.is-sch { background: #eaf7ee; }
 .up-cm.is-sch b { color: #1b7a36; }
-.up-cm.is-none b { color: #a1a1a6; font-weight: 500; }
+/* 🔴 CSS CHANGED (2026-11-21): "none" in a university's commission readable | from: very pale grey #a1a1a6 | to: the firm grey #6f6f6f */
+.up-cm.is-none b { color: #6f6f6f; font-weight: 500; }
 .up-cm[title] { cursor: help; }
 .up-course-req { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border-radius: 12px; background: #fff6e5; box-shadow: inset 0 0 0 1px rgba(255, 159, 10, .28); }
 .up-req-tag { align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: #ff9f0a; color: #fff; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
@@ -3992,3 +3994,28 @@ body :is(h1, h2, h3, h4, b, strong, th) { font-weight: 700; }
 input::placeholder, textarea::placeholder { color: #555; opacity: 1; }
 /* 🔴 CSS CHANGED (2026-11-21): the side menu in option H | from: a light, see-through grey (about #edf0f3) | to: a solid soft grey (#ececec) with a firm line beside it (#b8b8b8), as in the chosen preview */
 html body .niec-header { background: #ececec; border-right-color: #b8b8b8; }
+
+/* ---- One system on every page (the owner, 21 Nov 2026: "the front end we decided should be used everywhere"). The colours of
+   option H and the solid look of the student card, Today and the Dashboard, now also on Partners (Universities, B2B partners, Agents,
+   Apply through), Events and marketing, Follow-up, Mock interviews, Add many students, Users, Activity, Admin and Incentive. ---- */
+/* 🔴 CSS CHANGED (2026-11-21): one card style on every page | from: two looks side by side: Today, Dashboard, All Students and Universities with firm 10px cards and a grey border, while Partners, Events, Follow-up, Mock interviews, Add many students, Users, Activity, Admin and Incentive had round 18 to 22px cards with no border and a soft shadow; the lines inside Today's team columns and the Universities cards still pale (#dcdee3) | to: every card and panel the same: 10px corners, a firm 1px grey border (#9a9a9a), the panel grey #f3f3f3, no shadow; tiles inside a card 8px corners, a lighter border (#b8b8b8) on #e2e2e2; Follow-up's bar at the foot solid #f3f3f3 instead of see-through near-white */
+:root { --lg-soft: #b8b8b8; --uv-soft: #b8b8b8; }
+html:root body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .mg-card, .p-card, .p-table-wrap, .card, .tile, .box) {
+  border: 1px solid #9a9a9a !important; border-radius: 10px !important; background: #f3f3f3 !important; box-shadow: none !important;
+}
+html:root body #summary .tile { border: 1px solid #9a9a9a !important; border-radius: 10px !important; background: #f3f3f3 !important; box-shadow: none !important; }
+html:root body .bp-band { border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html body :is(.bp-funnel, .bp-band .bp-funnel) { border: 1px solid #b8b8b8 !important; border-radius: 8px !important; background: #e2e2e2 !important; box-shadow: none !important; }
+html:root body :is(.fw-choice, .mg-card, .bp-card):hover { border-color: #6f6f6f !important; transform: none !important; }
+html:root body .fw-choice:is([aria-pressed="true"], [aria-checked="true"], .on, .is-on) { border-color: #0071e3 !important; box-shadow: 0 0 0 2px #0071e3 inset !important; }
+
+/* 🔴 CSS CHANGED (2026-11-21): a Dashboard in colour (the owner: "the dashboard can be much more colourful than black and white") | from: chart colours blue, grey and black (Applied black, Offers grey, Paid and CAS pale grey), a small 34px colour mark on each number tile | to: the ISR chart colours (CLAUDE.md): Students and Applied blue #0071e3, Offers purple #6e47d1, Paid orange #d9650b, Visas green #1e8e4a, Inquiries teal #0b8a95; each number tile has its colour as a 4px band across its top and in its little chart; the numbers stay black for reading */
+html:root { --s1: #0071e3; --s2: #d9650b; --s3: #1e8e4a; --s4: #6e47d1; --s5: #0b8a95; }
+html body:has(.ov-card) .ov-kpi { overflow: hidden; }
+html body:has(.ov-card) .ov-kpi::before { left: 0; right: 0; top: 0; width: auto; height: 4px; border-radius: 0; background: var(--accent, var(--s1)); }
+/* 🔴 CSS CHANGED (2026-11-21): the Universities cards line up | from: in a row of cards, a short card's "courses" bar sat in the middle with an empty grey space under it, so cards of one row looked big and small | to: the "courses" bar always at the foot of the card, so every card in a row ends on the same line */
+html body a.uni-card.uc-card .uc-foot { margin-top: auto; }
+/* 🔴 CSS CHANGED (2026-11-21): the university cards found by grade line up | from: two cards side by side ended at different heights (a card with fewer courses or no scholarship was short beside a long one), so the results looked like big and small cards | to: both cards of a row as tall as each other, the "See all courses" button at the foot of each card */
+html body .fd-grid { align-items: stretch; }
+html body .fd-uni .fd-see-all { margin-top: auto; }
+html body .fd-uni .fd-course-box { margin-bottom: 14px; }

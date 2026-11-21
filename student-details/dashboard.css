@@ -2,15 +2,16 @@
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 /* The dashboard: thin marks, hairline grid, text in ink colours. The chart colours (--s1 to --s5, Apple's system colours) are set in
    shared/theme.css. */
+/* 🔴 CSS CHANGED (2026-11-21): the Dashboard's second text colours and chart grid, missed in the first Strong contrast pass | from: brown-greys #52514e and #64635d for labels and hints, a beige grid #e1e0d9 and axis #c3c2b7 | to: dark grey #333 for labels and hints, a grey grid #cfcfcf and axis #9a9a9a */
 :root {
   color-scheme: light;
   --bg: #f3f3f3;
   --surface: #f7f7f7;
   --ink: #000;
-  --ink-2: #52514e;
-  --ink-3: #64635d;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
+  --ink-2: #333;
+  --ink-3: #333;
+  --grid: #cfcfcf;
+  --axis: #9a9a9a;
   --border: #b8b8b8;
   --brand: #00adef;
   --brand-text: #164a98;

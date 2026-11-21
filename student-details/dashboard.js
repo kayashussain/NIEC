@@ -230,7 +230,8 @@
   // shows the students behind it (a click on a name opens the card). A path at the top goes back up. ----
   // 🔴 CSS CHANGED (2026-11-14): the colours of the source donut | from: navy, bronze and muted blues | to: Apple's system colours (blue, orange, green, indigo, teal, pink, purple, yellow, grey, mint)
   /* 🔴 CSS CHANGED (2026-11-21): the colours of the source donut | from: ten bright system colours | to: calm, as Apple: blue, near-black and greys, with two lighter blues so neighbouring slices still part */
-  const PALETTE = ['#0071e3', '#1d1d1f', '#6e6e73', '#5ea2ef', '#a1a1a6', '#3a3a3c', '#b8d4f5', '#c7c7cc', '#2c5f9e', '#e0e0e5'];
+  /* 🔴 CSS CHANGED (2026-11-21): the colours of the source donut | from: blue, black and greys (slices hard to tell apart) | to: the ten ISR chart colours (CLAUDE.md), each slice its own colour */
+  const PALETTE = ['#0071e3', '#d9650b', '#1e8e4a', '#6e47d1', '#0b8a95', '#c2255c', '#b7791f', '#52606d', '#4aa3f0', '#6b8e23'];
   const share = (n, total) => (total ? Math.round((n / total) * 100) : 0);
   function donut(groups, onPick) {
     const total = groups.reduce((n, g) => n + g.students, 0) || 1;

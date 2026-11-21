@@ -94,6 +94,12 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   links #0050aa; the blue buttons stay #0071e3. This replaces the earlier near-black #111 / #1d1d1f and grey #6e6e73 values above. Screens of work are flat: surfaces meet edge to edge with hairlines, not
   cards floating with margins on every side.
 
+## 1b. The ISR colours
+
+The full table of the accepted colours (page, panels, text, buttons, status and the ten chart colours) is in CLAUDE.md, "The ISR
+colours". It is the one source; this file and the code follow it. The Dashboard is in colour (the owner, 21 Nov 2026: "the dashboard
+can be much more colourful than black and white"); every other page is black, grey and one blue.
+
 ## 1a. The owner's direction for screens of work (21 Nov 2026)
 
 - **A portal, not a brochure.** Use the whole width; one bar across the top, the profile on the left, the work on the right (as
