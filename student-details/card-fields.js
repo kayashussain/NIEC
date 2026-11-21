@@ -118,6 +118,10 @@
     { key: 'lostReason', label: 'Why the student did not go on', list: 'LOST_REASONS' },
     // From the passport (the owner, 14 Nov 2026): the date of birth, the passport number, the address as written in it and the
     // nationality. The address gives the district for the Dashboard's map; the nationality counts the students from outside Nepal.
+    // Who last saved the profile with Edit profile, and when (the owner, 21 Nov 2026: every change shows who saved it and when). Set
+    // by the server only, never typed.
+    { key: 'savedAt', label: 'Profile last saved', max: 40 },
+    { key: 'savedBy', label: 'Profile saved by', max: 80 },
     { key: 'dob', label: 'Date of birth', type: 'date' },
     { key: 'passportNo', label: 'Passport number', max: 20 },
     { key: 'address', label: 'Address (as in the passport)', max: 200 },

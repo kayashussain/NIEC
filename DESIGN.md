@@ -84,6 +84,9 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   0.08em, grey); few words: a detail is a label and its value, an empty one says just "Add"; details laid out as a spec sheet, two to a
   line. Warmth from the logo's blue, softly: a light tint behind a monogram and the stage, a very light wash behind the profile bar;
   never more colours.
+- **Solid, not floating (the owner, 21 Nov 2026: "a hard rock, not a river").** Screens of record (the student card first) are
+  solid panels and tables: a firm 1px grey border, a grey title bar, label and value in table rows, and no fading, sliding or rising
+  in. Every change says who saved it and when. A partner is named by its name only, never "Direct" or "B2B".
 - **Less glare (the owner, 21 Nov 2026):** canvas #eef0f3, panels #f8f9fb (a cool off-white, never cream or yellow); on the student
   card the Profile column #f1f3f6 and edit boxes #fdfdfe. Screens of work are flat: surfaces meet edge to edge with hairlines, not
   cards floating with margins on every side.
@@ -165,7 +168,7 @@ set to Apple's timings above.
 
 | Page | Done | Still to come |
 |---|---|---|
-| Student card | a working portal (the owner, 21 Nov 2026, as ApplyBoard): the whole width, a profile bar with the progress steps, the Profile on the left with every detail changed where it is shown (Enter saves with a tick, Escape cancels, "N to add" opens the next missing one), the work on the right; brand colours used sparingly (blue for actions and now, orange for missing); its own stylesheet `student-details/student-card.css` | waiting for the owner's approval before the other pages follow |
+| Student card | the Ledger design (the owner, 21 Nov 2026, chosen from three: closest to Route2Uni): solid off-white panels with a firm grey border and a grey title bar on a grey page; a top panel (name, intake, stage, Call, WhatsApp, Email, Assign a task, the progress line); the Profile as a two-column table with one Edit profile window and "Last saved ... by ..."; Student source; Next step, Applications, open tasks and a Timeline table (When, What, What happened, By, a "..." menu) that shows every event; nothing on the card moves; its own stylesheet `student-details/student-card.css` | the other pages follow once the owner approves |
 | Every page | the kit at Apple's timings: quick colour on press, 0.2s page fade, no mouse light, no spring | each page brought to the calm system, one at a time |
 | Today | the greeting, a progress ring of the day, counting numbers, rising rows, confetti for finished tasks | the greeting shine and the confetti to be checked against the calm rule with the owner |
 | Universities (university pages) | cover slideshow with pause, gallery fades, rising cards, counting amounts | moving to the calm system |

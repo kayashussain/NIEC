@@ -157,7 +157,14 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     const frame = page.frameLocator('.p-drawer iframe');
     await frame.locator('.sc-hero h1').waitFor();
     assert.match(await frame.locator('.sc-hero h1').textContent(), /Student/);
-    assert.ok(await frame.locator('.p-tabs button').count() === 2, 'two tabs only: Timeline and Applications (no Send a message, the owner, 17 Nov 2026)');
+    // The Ledger design (the owner, 21 Nov 2026): no tabs; Applications and the Timeline are panels one under another, the profile is a
+    // table with one Edit profile button, and the Timeline is a table that shows every event.
+    assert.strictEqual(await frame.locator('.p-tabs button').count(), 0, 'no tabs');
+    await frame.locator('.lg-apps').waitFor();
+    await frame.locator('.lg-timeline table').waitFor();
+    assert.strictEqual(await frame.getByRole('button', { name: 'Edit profile' }).count(), 1, 'one Edit profile for every detail');
+    assert.strictEqual(await frame.locator('.sc-row-pen, .sc-name.is-editable').count(), 0, 'no pencil on each line, the name is changed in Edit profile');
+    assert.strictEqual(await frame.locator('.sc-tl-all').count(), 0, 'no Show all: the Timeline is never cut short');
     assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp and Email are under the name')
     assert.strictEqual(await frame.getByRole('button', { name: 'Copy number' }).count(), 0, 'no Copy number (the owner, 17 Nov 2026)');
     // The card never opens a window asking where the student came from or for missing details (the owner, 20 Nov 2026): the source is
@@ -165,7 +172,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await frame.locator('.sc-side .sc-source').waitFor();
     await page.waitForTimeout(500);
     assert.strictEqual(await frame.locator('dialog.p-dialog').count(), 0, 'no pop-up when the card opens');
-    assert.strictEqual(await frame.locator('.sc-tl-page .sc-source').count(), 0, 'the source is not repeated under the tabs');
+    assert.strictEqual(await frame.locator('.sc-main .sc-source').count(), 0, 'the source is not repeated beside the work');
     await frame.locator('.sc-hero .sc-meta').click();
     // The keyboard is in the card now: typing must not reach the cell of the sheet hidden behind it.
     assert.strictEqual(await page.evaluate(() => document.activeElement && document.activeElement.tagName), 'IFRAME');

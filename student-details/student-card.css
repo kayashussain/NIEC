@@ -421,3 +421,147 @@ html body #view#view .sc-tab-body :is(.p-card-head, .sc-tl-top, .p-card) > h2 { 
 .sc-row-add { font-weight: 600; }
 .sc-row.is-optional .sc-row-add { font-weight: 400; }
 .sc-keys-btn { color: var(--sc-grey); font-weight: 500; }
+
+/* ---- the Ledger design (the owner, 21 Nov 2026: "solid panels and tables, closest to Route2Uni; it should feel like a hard rock, not
+   like flowing in a river") ---- */
+/* 🔴 CSS CHANGED (2026-11-21): the student card rebuilt as the Ledger design the owner chose | from: one flat surface with a light blue wash behind the name, the Profile as a soft grey sidebar of label-over-value rows with a pencil on each, Timeline and Applications as two tabs, the Timeline as a list with round badges and "Show all", things fading, sliding and rising in | to: solid off-white panels (#fbfbfc) with a firm grey border and 10px corners on a grey page, each with a grey title bar; the top panel holds a square monogram, the name at 32px, the intake and the stage, Call, WhatsApp and Email as white outlined buttons, Assign a task in blue, and the progress line under a rule; on the left (400px) the Profile as a two-column table (grey label, bold value, "Missing" in dark orange) with one black Edit profile button and "Last saved ... by ..." under it, and the Student source panel; on the right Next step, Applications, the open tasks and the Timeline, one under another; the Timeline is a table (When, What, What happened, By) with a grey header row, coloured kind labels (blue for tasks, green for done), every event shown, and a small "..." button that opens a menu; Edit profile is one window with every detail in two columns; nothing moves: no fading, sliding, rising or drawing anywhere on the card */
+#view { padding: 20px 28px 48px; background: #e9ebef; }
+html body:not(.p-embed) .p-page:has(#view) > .p-back { margin: 14px 28px 0; }
+#view *:not(.sc-spin), #view *::before, #view *::after { animation: none !important; transition: none !important; }
+#view .sc-tick path { stroke-dashoffset: 0; }
+#view .p-chosen-item, #view .sc-tl-item { opacity: 1 !important; transform: none !important; }
+
+.lg-box { position: relative; margin: 0; border: 1px solid #d4d6db; border-radius: 10px; background: #fbfbfc; }
+.lg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; padding: 11px 16px; border-bottom: 1px solid #d4d6db; border-radius: 10px 10px 0 0; background: #f1f2f5; }
+#view .lg-head h2 { margin: 0; color: #111; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.lg-head-sub { margin-left: 10px; color: #5f6066; font-size: 14px; font-weight: 500; letter-spacing: 0; }
+#view .lg-head .btn.lg-edit { min-height: 34px; padding: 0 14px; border-radius: 8px; background: #111; color: #fff; font-size: 14px; font-weight: 600; }
+#view .lg-head .btn.lg-edit:hover { background: #2b2c30; }
+.lg-foot { padding: 10px 16px; border-top: 1px solid #d4d6db; border-radius: 0 0 10px 10px; background: #f6f7f9; color: #5f6066; font-size: 13px; font-weight: 500; }
+
+/* the top panel */
+#view .sc-hero.lg-box { margin: 0; padding: 0; background: #fbfbfc; }
+#view .sc-hero .sc-head { padding: 20px 22px; }
+#view .sc-avatar { width: 64px; height: 64px; border-radius: 10px; background: #e2f4fc; color: #00679a; font: 700 22px/1 var(--font); }
+#view .sc-name { font: 700 32px/1.1 var(--font); letter-spacing: -.02em; cursor: default; }
+#view .sc-meta { gap: 6px 14px; margin-top: 8px; }
+#view .sc-meta-text { color: #3d3e42; font-size: 15px; font-weight: 600; }
+#view .sc-reach-btn { min-height: 40px; padding: 0 16px 0 13px; border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; box-shadow: none; font-size: 14.5px; font-weight: 500; }
+#view .sc-reach-btn:hover { background: #f1f2f5; }
+#view :is(.sc-hero, .sc-side, .sc-main) .btn { border-radius: 8px; }
+#view .sc-hero .sc-steps-box { margin: 0; padding: 14px 22px 18px; border-top: 1px solid #d4d6db; }
+
+/* two columns */
+#view .sc-layout { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 16px; }
+#view .sc-side { display: grid; gap: 16px; padding: 0; border: 0; background: none; }
+#view .sc-main { display: grid; gap: 16px; padding: 0; }
+
+/* the profile table */
+.lg-dl { display: grid; grid-template-columns: 150px minmax(0, 1fr); margin: 0; }
+.lg-dl dt, .lg-dl dd { margin: 0; padding: 11px 16px; border-top: 1px solid #dcdee3; }
+.lg-dl dt:first-of-type, .lg-dl dt:first-of-type + dd { border-top: 0; }
+.lg-dl dt { color: #5f6066; font-size: 14px; font-weight: 500; }
+.lg-dl dd { color: #111; font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+.lg-dl dd a { color: #0058b0; text-decoration: none; }
+.lg-dl dd a:hover { text-decoration: underline; }
+.lg-missing { color: #8a4600; font-weight: 700; }
+.lg-none { color: #5f6066; font-weight: 500; }
+
+/* the source panel */
+#view .lg-source .sc-source { margin: 0; padding: 14px 16px; border: 0; }
+#view .lg-source .sc-source .sc-eyebrow { display: none; }
+
+/* Next step and Details to check as solid panels */
+#view .sc-next { border: 1px solid #d4d6db; border-radius: 10px; background: #fbfbfc; }
+#view .sc-checks { border: 1px solid #e7c9a5; border-radius: 10px; background: #fff8f0; }
+
+/* Applications */
+#view .lg-apps .p-apps { display: grid; gap: 0; padding: 0 16px 8px; }
+html body #view#view .lg-apps .p-apps > .p-card { margin: 0; padding: 14px 0; border: 0; border-top: 1px solid #dcdee3; border-radius: 0; background: transparent; box-shadow: none; }
+html body #view#view .lg-apps .p-apps > .p-card:first-child { border-top: 0; }
+html body #view#view .lg-apps .p-card h2 { font-size: 15px; font-weight: 700; letter-spacing: 0; }
+html body #view .p-apps li.p-chosen-item { border-radius: 0; border-top: 1px solid #e3e5ea; }
+html body #view .p-apps li.p-chosen-item:hover { background: transparent; }
+html body #view .p-apps .p-chosen-sub .p-chosen-partner small { margin-right: 4px; color: #5f6066; font-size: 12px; font-weight: 500; }
+
+/* the open tasks */
+html body #view#view .sc-main > .p-card.lg-tasks { margin: 0; padding: 0; border: 1px solid #d4d6db; border-radius: 10px; background: #fbfbfc; box-shadow: none; }
+html body #view#view .lg-tasks > .p-card-head { margin: 0; padding: 11px 16px; border-bottom: 1px solid #d4d6db; border-radius: 10px 10px 0 0; background: #f1f2f5; }
+html body #view#view .lg-tasks > .p-card-head h2 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+#view .lg-tasks .td-list { padding: 0 16px 6px; }
+
+/* the Timeline table */
+.lg-compose { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-bottom: 1px solid #d4d6db; }
+.lg-input { box-sizing: border-box; width: 100%; height: 44px; padding: 0 12px; border: 1px solid #b9bcc3; border-radius: 8px; background: #fff; color: #111; font: 500 16px var(--font); outline: none; }
+.lg-input:focus { border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0, 113, 227, .18); }
+textarea.lg-input { flex: 1; height: auto; min-height: 44px; max-height: 300px; padding: 11px 12px; resize: vertical; field-sizing: content; line-height: 1.4; }
+#view .lg-compose .btn { min-height: 44px; }
+.lg-seg { display: inline-flex; overflow: hidden; border: 1px solid #c9ccd2; border-radius: 8px; }
+.lg-seg-btn { height: 32px; padding: 0 12px; border: 0; border-left: 1px solid #c9ccd2; background: #fff; color: #111; font: 500 13.5px var(--font); cursor: pointer; }
+.lg-seg-btn:first-child { border-left: 0; }
+.lg-seg-btn[aria-pressed="true"] { background: #111; color: #fff; font-weight: 600; }
+.lg-table { width: 100%; border-collapse: collapse; }
+.lg-table th { padding: 10px 16px; border-bottom: 1px solid #d4d6db; background: #eef0f3; color: #5f6066; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
+.lg-table td { padding: 12px 16px; border-top: 1px solid #dcdee3; color: #111; font-size: 15px; font-weight: 500; vertical-align: top; }
+.lg-table tbody tr:first-child td { border-top: 0; }
+.lg-table :is(th, td).is-when { width: 112px; }
+.lg-table td.is-when b { display: block; font-weight: 600; }
+.lg-table td.is-when span { display: block; color: #5f6066; font-size: 13px; }
+.lg-table :is(th, td).is-kind { width: 120px; }
+.lg-table :is(th, td).is-by { width: 140px; }
+.lg-table :is(th, td).is-more { position: relative; width: 44px; padding-left: 0; text-align: right; }
+.lg-kind { display: inline-block; padding: 3px 8px; border-radius: 4px; background: #eef0f3; color: #111; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.lg-kind.is-task, .lg-kind.is-update { background: #e6f0fd; color: #0058b0; }
+.lg-kind.is-done { background: #e7f6ec; color: #11602e; }
+.lg-kind.is-auto { color: #5f6066; }
+tr.is-unseen .lg-kind::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #0071e3; vertical-align: 1px; }
+.lg-ref { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.lg-lead { display: block; color: #3d3e42; font-size: 14px; }
+.lg-text { margin: 2px 0 0; white-space: pre-line; overflow-wrap: anywhere; line-height: 1.45; }
+.lg-text .td-tag { font-size: 12px; vertical-align: 1px; }
+.lg-empty { padding: 26px 16px !important; color: #5f6066; text-align: center; }
+.lg-more { width: 32px; height: 32px; border: 1px solid #c9ccd2; border-radius: 6px; background: #fff; color: #111; font: 700 14px/1 var(--font); cursor: pointer; }
+.lg-more:hover { background: #f1f2f5; }
+.lg-more:focus-visible, .lg-seg-btn:focus-visible, .lg-menu-item:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 1px; }
+.lg-menu { position: absolute; top: 46px; right: 12px; z-index: 20; display: grid; min-width: 190px; padding: 4px; border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); text-align: left; }
+.lg-menu-item { padding: 10px 12px; border: 0; border-radius: 6px; background: none; color: #111; font: 500 14.5px var(--font); text-align: left; cursor: pointer; }
+.lg-menu-item:hover { background: #eef0f3; }
+.lg-menu-item.is-danger { color: #b42318; }
+
+/* the Edit profile window */
+.lg-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.lg-form-group { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid #e3e5ea; color: #5f6066; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.lg-form-group:first-child { padding-top: 0; border-top: 0; }
+.lg-form-field.is-wide { grid-column: 1 / -1; }
+.lg-form-label { display: block; margin-bottom: 6px; color: #3d3e42; font-size: 14px; font-weight: 600; }
+.lg-form select.lg-input { appearance: auto; }
+.lg-form-note { grid-column: 1 / -1; margin: 4px 0 0; padding: 10px 12px; border-radius: 8px; background: #eef0f3; color: #3d3e42; font-size: 14px; font-weight: 500; }
+.lg-form .p-dialog-foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
+.lg-form-saved { margin-right: auto; color: #5f6066; font-size: 13px; font-weight: 500; }
+
+@media (max-width: 1100px) {
+  #view .sc-layout { grid-template-columns: minmax(0, 1fr); }
+  #view { padding: 14px 14px 40px; }
+}
+dialog .lg-form select.lg-input { font: 500 16px var(--font); }
+/* 🔴 CSS CHANGED (2026-11-21): the independent reviewer's fixes to the Ledger card | from: round pill buttons inside the panels (Find course, Share options, Update, Post, Cancel, Save changes), the Edit profile window with 16px corners, a large soft shadow and a blurred page behind it, rounded boxes inside the Applications panel (Priority University, each university), 12 to 13px column headings, footers and times, the "..." menu with a large soft shadow, the email breaking mid-word | to: every button an 8px rectangle, the grey ones white with a grey outline; the Edit profile window with 10px corners, a firm grey border, a small shadow, a plain dimmed page behind it and its title in a grey title bar; Applications as plain rows divided by lines; headings 13px, footers and times 14px, kind labels 13.5px; the menu with a small firm shadow; the email at 14.5px breaking only at its dots */
+#view :is(.sc-main, .sc-side) .btn, dialog:has(.lg-form) .btn { border-radius: 8px; }
+#view :is(.sc-main, .sc-side) .btn:not(.btn-primary):not(.lg-edit), dialog:has(.lg-form) .btn:not(.btn-primary) { border: 1px solid #c9ccd2; background: #fff; color: #111; }
+#view :is(.sc-main, .sc-side) .btn:not(.btn-primary):not(.lg-edit):hover:not(:disabled) { background: #f1f2f5; }
+html body #view#view :is(.lg-apps, .lg-tasks) .btn { border-radius: 8px; }
+html body #view#view :is(.lg-apps, .lg-tasks) .btn:not(.btn-primary):not(:disabled) { border: 1px solid #c9ccd2; background: #fff; color: #111; }
+dialog.p-dialog:has(.lg-form) { padding: 0; overflow: hidden; border: 1px solid #c9ccd2; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
+dialog.p-dialog:has(.lg-form)::backdrop { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(20, 22, 26, .35); }
+dialog.p-dialog:has(.lg-form) .p-dialog-head, dialog.p-dialog:has(.lg-form) > header { margin: 0; padding: 14px 20px; border-bottom: 1px solid #d4d6db; background: #f1f2f5; }
+dialog.p-dialog:has(.lg-form) .lg-form { padding: 18px 20px 20px; }
+html body #view .p-apps .p-priority { margin: 0; padding: 12px 0; border: 0; border-top: 1px solid #dcdee3; border-radius: 0; background: transparent; }
+html body #view .p-apps ol.p-chosen { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+html body #view .p-apps ol.p-chosen > li.p-chosen-item, html body #view .p-apps ol.p-chosen.is-apps > li.p-chosen-item { margin: 0; padding: 14px 0 14px 50px; border: 0; border-top: 1px solid #dcdee3; border-radius: 0; background: transparent; box-shadow: none; }
+html body #view .p-apps ol.p-chosen > li.p-chosen-item::before { left: 0; top: 14px; }
+.lg-table th, .lg-form-group { font-size: 13px; letter-spacing: .04em; }
+.lg-foot, .lg-form-saved, .lg-table td.is-when span { font-size: 14px; }
+.lg-kind { font-size: 13.5px; }
+.lg-menu { box-shadow: 0 2px 6px rgba(0, 0, 0, .12); }
+.lg-dl { grid-template-columns: 130px minmax(0, 1fr); }
+.lg-dl dd a[href^="mailto"] { font-size: 14.5px; overflow-wrap: break-word; word-break: normal; }
+html body #view#view .sc-main > .p-card.lg-tasks { border-color: #d4d6db !important; }

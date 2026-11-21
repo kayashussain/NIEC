@@ -1570,9 +1570,13 @@ function createPortalApi({
         if (!out.error) { cards.addNote(rowId, { kind: 'note', text: `Checked and correct: ${item.text}` }, by(req)); note(req, [`${who}: checked and correct: ${item.text}`]); out = { ...out, card: cards.get(rowId) }; }
       }
     } else if (part === 'profile') {
-      out = cards.setProfile(rowId, body, by(req));
+      // Edit profile (the student card, 21 Nov 2026) asks for "markSaved": the server then records who saved and when. Nobody types those.
+      const input = { ...body };
+      delete input.savedAt; delete input.savedBy;
+      if (body.markSaved) { input.savedAt = new Date().toISOString(); input.savedBy = String(by(req) || '').slice(0, 80); }
+      out = cards.setProfile(rowId, input, by(req));
       if (!out.error) {
-        const changed = Fields.PROFILE_FIELDS.filter((f) => (card.profile[f.key] || '') !== (out.card.profile[f.key] || ''))
+        const changed = Fields.PROFILE_FIELDS.filter((f) => f.key !== 'savedAt' && f.key !== 'savedBy' && (card.profile[f.key] || '') !== (out.card.profile[f.key] || ''))
           .map((f) => `${who} › ${f.label}: "${card.profile[f.key] || '(blank)'}" → "${out.card.profile[f.key] || '(blank)'}"`);
         if (changed.length) note(req, changed);
       }
