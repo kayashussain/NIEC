@@ -3876,3 +3876,98 @@ dialog.p-dialog[open] { max-height: calc(100vh / var(--isr-z, 1) - 48px); }
 .niec-menu .niec-size-seg button { display: block; width: auto; min-height: 30px; padding: 0 6px; border: 0; border-radius: 7px; background: transparent; color: #1d1d1f; font-size: 13px; text-align: center; }
 .niec-menu .niec-size-seg button:hover { background: rgba(255, 255, 255, .6); }
 .niec-menu .niec-size-seg button[aria-pressed="true"] { background: #fdfdfe; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+
+/* ---- the Ledger look on more pages (the owner, 21 Nov 2026): every window (Add student, Assign a task, Mark as done and the rest),
+   Today, Dashboard, All Students and the Universities finder. Only the look: what each page shows and does stays the same. ---- */
+/* 🔴 CSS CHANGED (2026-11-21): windows, Today, Dashboard, All Students and the Universities finder in the solid look of the student card | from: windows with 22px corners, a large soft shadow, a blurred page behind and a round grey close button; on Today a white summary card, round filter pills, soft team columns and tiles with 12 to 18px corners and shadows; on the Dashboard soft white cards and number tiles with large corners and shadows, round switches; on All Students round pill buttons, a soft table box and round intake tabs; in the finder soft cards with a coloured edge and round pills | to: windows with 10px corners, a firm grey border, a small shadow, a plainly dimmed page behind and the title in a grey title bar with a square close button; boxes and form fields with 8px corners and grey borders; on Today, the Dashboard, All Students and in the finder every card and panel off-white (#fbfbfc) with a firm grey border (#d4d6db) and 10px corners and no shadow, tiles and switches as 8px rectangles (the chosen one black), small tags as 4px labels, buttons as 8px rectangles (grey ones white with a grey outline), + Shortlist outlined in blue; nothing lifts or moves under the mouse */
+:root { --lg-line: #d4d6db; --lg-soft: #dcdee3; --lg-panel: #fbfbfc; --lg-bar: #f1f2f5; --lg-ink: #111; }
+
+/* every window */
+dialog.p-dialog, dialog.ui-dialog { padding: 0; border: 1px solid #c9ccd2; border-radius: 10px; background: var(--lg-panel); box-shadow: 0 2px 10px rgba(0, 0, 0, .14); }
+dialog.p-dialog::backdrop, dialog.ui-dialog::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(20, 22, 26, .35); }
+dialog.p-dialog .p-dialog-head { margin: 0; padding: 13px 20px; border-bottom: 1px solid var(--lg-line) !important; background: var(--lg-bar); }
+dialog.p-dialog .p-dialog-head h2 { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+dialog.p-dialog .p-dialog-body { padding: 18px 20px 20px; }
+dialog.p-dialog .p-x { border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; }
+dialog.p-dialog .p-x:hover { background: var(--lg-bar); }
+dialog.p-dialog .btn, dialog.ui-dialog .btn { border-radius: 8px; }
+dialog.p-dialog .btn:not(.btn-primary):not(.btn-danger), dialog.ui-dialog .btn:not(.btn-primary):not(.btn-danger) { border: 1px solid #c9ccd2; background: #fff; color: var(--lg-ink); }
+dialog.p-dialog .btn:not(.btn-primary):not(.btn-danger):hover:not(:disabled) { background: var(--lg-bar); }
+dialog.p-dialog :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border: 1px solid #b9bcc3; border-radius: 8px; background: #fff; box-shadow: none; }
+dialog.p-dialog :is(input, select, textarea):focus { border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0, 113, 227, .18); }
+dialog.p-dialog .td-tag-pick :is(.td-tag, .td-prio), .p-assign .td-tag-pick :is(.td-tag, .td-prio) { border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; }
+dialog.p-dialog .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"], .p-assign .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { border-color: var(--lg-ink); background: var(--lg-ink); color: #fff; }
+dialog.p-dialog :is(.td-done-task, .td-sofar-row, .p-assign-app, .p-notice) { border-radius: 8px; }
+dialog.p-dialog .td-sofar-row { border: 1px solid var(--lg-soft); }
+dialog.p-dialog .p-dialog-foot { background: var(--lg-panel); }
+
+/* Today */
+body:has(.td-tasks) :is(.td-pulse, .td-tasks, .td-attn) { border: 1px solid var(--lg-line); border-radius: 10px; background: var(--lg-panel); box-shadow: none; }
+body:has(.td-tasks) .td-stat { border: 1px solid var(--lg-soft); border-radius: 8px; background: var(--lg-bar); box-shadow: none; }
+body:has(.td-tasks) .td-search-input { border: 1px solid #b9bcc3; border-radius: 8px; background: #fff; }
+body:has(.td-tasks) .td-filter-pill { border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; box-shadow: none; }
+body:has(.td-tasks) .td-filter-pill:is(.on, .is-on, [aria-pressed="true"], [aria-selected="true"]) { border-color: var(--lg-ink); background: var(--lg-ink); color: #fff; }
+body:has(.td-tasks) .td-filter-n, body:has(.td-tasks) .tb-col-n, body:has(.td-tasks) .td-attn-count { border-radius: 4px; }
+body:has(.td-tasks) .tb-col { border: 1px solid var(--lg-soft); border-radius: 10px; background: var(--lg-bar); box-shadow: none; }
+body:has(.td-tasks) .tb-tile { border: 1px solid var(--lg-line); border-radius: 8px; background: var(--lg-panel); box-shadow: none; transform: none; }
+body:has(.td-tasks) .tb-tile:hover { border-color: #9a9ca3; box-shadow: none; transform: none; }
+body:has(.td-tasks) :is(.tb-tag, .td-tag) { border-radius: 4px; }
+body:has(.td-tasks) .td-task { border: 1px solid var(--lg-line); border-radius: 10px; background: var(--lg-panel); box-shadow: none; transform: none; }
+body:has(.td-tasks) .td-bell { border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; box-shadow: none; }
+body:has(.td-tasks) .btn { border-radius: 8px; }
+body:has(.td-tasks) .p-pill { border-radius: 4px; }
+
+/* Dashboard */
+body:has(.ov-card) :is(.ov-card, .ov-kpi) { border: 1px solid var(--lg-line); border-radius: 10px; background: var(--lg-panel); box-shadow: none; transform: none; }
+body:has(.ov-card) .ov-kpi:hover { border-color: #9a9ca3; box-shadow: none; transform: none; }
+body:has(.ov-card) :is(.tr-story, .tr-simple) { border: 1px solid var(--lg-soft); border-radius: 8px; background: var(--lg-bar); box-shadow: none; }
+body:has(.ov-card) .dd-switch { overflow: hidden; padding: 0; border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; }
+body:has(.ov-card) .dd-switch > button { border-radius: 0; }
+body:has(.ov-card) .dd-switch > .seg-thumb { border-radius: 0; background: var(--lg-ink); box-shadow: none; }
+body:has(.ov-card) .dd-switch > button:is(.on, [aria-pressed="true"], [aria-selected="true"]) { color: #fff; }
+body:has(.ov-card) .tr-key { border: 1px solid #c9ccd2; border-radius: 6px; background: #fff; }
+body:has(.ov-card) :is(.ov-funnel-track, .ov-funnel-fill, .ov-board-bar) { border-radius: 2px; }
+body:has(.ov-card) :is(select, input:not([type="checkbox"])) { border: 1px solid #b9bcc3; border-radius: 8px; background-color: #fff; }
+body:has(.ov-card) .btn { border-radius: 8px; }
+body:has(.ov-card) .p-pill { border-radius: 4px; }
+
+/* All Students */
+body:has(.table-wrap) .table-wrap { border: 1px solid var(--lg-line); border-radius: 10px; box-shadow: none; }
+body:has(.table-wrap) .btn { border-radius: 8px; box-shadow: none; }
+body:has(.table-wrap) .btn:not(.btn-primary):not(.btn-danger) { border: 1px solid #c9ccd2; background: #fff; }
+body:has(.table-wrap) .btn:not(.btn-primary):not(.btn-danger):hover:not(:disabled) { background: var(--lg-bar); }
+body:has(.table-wrap) .btn.btn-danger:not(:hover) { border: 1px solid #c9ccd2; background: #fff; }
+body:has(.table-wrap) :is(#search, select.came-from) { border: 1px solid #b9bcc3; border-radius: 8px; background-color: #fff; box-shadow: none; }
+body:has(.table-wrap) .badge, body:has(.table-wrap) .save-status { border-radius: 4px; }
+body:has(.table-wrap) .sheet-tabs-list { border-radius: 8px; }
+body:has(.table-wrap) .sheet-tabs-list > .seg-thumb { border-radius: 6px; box-shadow: 0 0 0 1px var(--lg-line); }
+body:has(.table-wrap) .sheet-tab-menu-btn, body:has(.table-wrap) .help-btn { border-radius: 6px; }
+
+/* the Universities finder */
+.fd-tile { border: 1px solid var(--lg-line); border-radius: 8px; background: var(--lg-panel); box-shadow: none; transform: none; }
+.fd-tile:is(.on, .is-on, [aria-pressed="true"]) { border-color: var(--lg-ink); }
+html body .fd-uni, html body .fd-uni.is-yes, html body .fd-uni.is-check { border: 1px solid var(--lg-line); border-radius: 10px; background: var(--lg-panel); box-shadow: none; transform: none; }
+html body .fd-uni:hover { border-color: #9a9ca3; box-shadow: none; transform: none; }
+.fd-status { border-radius: 4px; }
+.fd-logo { border-radius: 8px; }
+.fd-deadline { border: 1px solid var(--lg-soft); border-radius: 8px; background: var(--lg-bar); }
+.fd-deadline em { border-radius: 4px; }
+ul.fd-courses { border: 1px solid var(--lg-soft); border-radius: 8px; background: var(--lg-bar); }
+.fd-fee, .fd-pin, .fd-cal { border-radius: 4px; }
+.fd-out .sl-pick { border: 1px solid #0071e3; border-radius: 8px; background: #fff; color: #0058b0; font-weight: 600; }
+.fd-out .sl-pick:hover { background: #e6f0fd; }
+.fd-out .sl-pick.is-on { border-color: #b7dfc3; background: #e7f6ec; color: #11602e; }
+a.fd-see-all { border-radius: 8px; box-shadow: none; }
+html body:has(#sheet) .topbar :is(.btn, .toolbar-group .btn) { border-radius: 8px; }
+html body:has(#sheet) .topbar .toolbar-group .btn:not(.btn-primary):not(.btn-danger) { border: 1px solid #c9ccd2; background: #fff; }
+html body:has(#sheet) .topbar :is(#search, .came-from) { border: 1px solid #b9bcc3; border-radius: 8px; background-color: #fff; }
+html body dialog.p-dialog :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]), select, textarea) { border: 1px solid #b9bcc3; border-radius: 8px; background-color: #fff; }
+html body:has(.td-tasks) .td-search-field .td-search-input { border: 1px solid #b9bcc3; border-radius: 8px; background: #fff; }
+html body .fd-cover .fd-status, html body .fd-place span, html body .fd-chips span { border-radius: 4px; }
+html body .fd-courses, html body .fd-course-box .fd-courses { border-radius: 8px; }
+html body .fd-cover .fd-logo { border-radius: 8px; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); }
+html body:has(#sheet) #rows input.date-input, html body:has(#sheet) #body input.date-input { border-radius: 6px; }
+html body:has(#sheet) .table-wrap { box-shadow: none; }
+body:has(.td-tasks) :is(.td-pulse, .td-tasks, .td-attn) { border: 1px solid var(--lg-line) !important; }
+html body:has(#sheet) .topbar .btn.btn-danger:not(:hover) { border: 1px solid #c9ccd2; background: #fff; color: #111; }
+dialog.p-dialog .td-tag-pick :is(.td-tag, .td-prio)::before { background: none !important; box-shadow: none !important; }
