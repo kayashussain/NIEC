@@ -656,7 +656,8 @@ async function handleSave(req, res) {
     const base = history.get(parsed.baseRevision);
     if (!base) return sendJSON(res, 409, { error: 'conflict', revision: current.revision });
     // A cell someone else changed meanwhile to another value is never overwritten without a word: the page says so and reloads.
-    const clashes = cellClashes(base, current, mine).filter((c) => othersChanged(parsed.baseRevision, c.rowId, c.col, req.user && req.user.id));
+    // The worked-out fee columns are never typed by anyone, so they are never a clash.
+    const clashes = cellClashes(base, current, mine).filter((c) => !CALCULATED_COLUMNS.includes(c.col) && othersChanged(parsed.baseRevision, c.rowId, c.col, req.user && req.user.id));
     if (clashes.length) return sendJSON(res, 409, { error: 'conflict', revision: current.revision, clash: clashes.slice(0, 5) });
     const before = current;
     const merged = { revision: current.revision + 1, ...mergeWorkbooks(base, current, mine) };
