@@ -1556,6 +1556,8 @@ function createPortalApi({
             if (undone.undone.length || undone.left.length) cards.addNote(rowId, { kind: 'note', text: `Task "${task.text.slice(0, 80)}" reopened and what it recorded was put back. ${[...undone.undone, ...undone.left].join('. ')}.`.slice(0, 3900) }, by(req));
           }
           out = cards.setTask(rowId, sub, Boolean(body.done), by(req));
+          // Whoever marks a task done has read it: what was new on it is no longer new for them.
+          if (!out.error && body.done) cards.markSeen(req.user.username, [sub]);
           if (!out.error && undone) out = { ...out, undone };
           if (!out.error) note(req, [`${who2}: marked the task for ${teamLabel(task.team)} as ${body.done ? 'complete' : 'not complete'}${undone && undone.undone.length ? `, and put back: ${undone.undone.join('; ')}` : ''}`], 'Task');
         }
@@ -2952,7 +2954,10 @@ function createPortalApi({
       let count = 0;
       for (const { row } of rowIndex().values()) {
         const c = all[row._id];
-        (c && Array.isArray(c.tasks) ? c.tasks : []).forEach((t) => { count += unreadOf(req.user, t, seen); });
+        // The same tasks Today lists (a task handed on to another team has left this team's Today), so the red count in the menu can
+        // always be cleared on Today (the owner, 21 Nov 2026: the count stayed after Mark all as read).
+        const everyoneU = canAssign(req.user);
+        (c && Array.isArray(c.tasks) ? c.tasks : []).forEach((t) => { if (everyoneU || forMe(req.user, t) || gaveIt(req.user, t)) count += unreadOf(req.user, t, seen); });
       }
       sendJSON(res, 200, { count });
       return true;

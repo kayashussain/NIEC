@@ -225,7 +225,7 @@
     // `pending`: everything new on the task for the reader (new comments, or the task itself just given to them); `fresh`: the new
     // comments among it, shown on the comments line.
     let pending = unread;
-    let fresh = Math.min(unread, comments().filter((c) => c.by !== me).length);
+    let fresh = unread; // everything new on the task, as the bell counts it (the owner, 21 Nov 2026: the numbers must agree)
     const toggle = h('button', { class: 'tk-toggle', type: 'button', 'aria-expanded': 'false' });
     const body = el('div', 'tk-body');
     // The line is changed in place (never rebuilt), so a press on it is never lost while it is being clicked.

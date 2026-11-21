@@ -558,15 +558,22 @@
     }
     bell.addEventListener('click', () => setPop(!popOpen));
     closeInbox = () => setPop(false);
-    const refresh = async (reload) => {
-      if (reload) { try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ } }
-      todayIso = tasks.today || d.today || todayIso;
+    // The bell's number: everything new on the tasks for this person (the same count as the menu's red number).
+    const paintBell = () => {
       const fresh = tasks.tasks.reduce((n, x) => n + (x.history || []).filter((m) => m.isNew).length, 0);
       bellCount.textContent = fresh > 99 ? '99+' : String(fresh);
       bellCount.hidden = !fresh;
       bell.setAttribute('aria-label', fresh ? `Notifications, ${fresh > 99 ? '99+' : fresh} new` : 'Notifications');
       bell.classList.toggle('has-new', fresh > 0);
       drawPop();
+    };
+    // A task read on this page (its updates opened, an update written, Mark all as read): the bell follows at once, without redrawing
+    // the tasks (an update being typed is never lost). The owner, 21 Nov 2026: the bell stayed at 10 after reading.
+    window.addEventListener('isr-tasks-read', async () => { try { tasks = await api('/api/tasks'); } catch (e) { return; } paintBell(); });
+    const refresh = async (reload) => {
+      if (reload) { try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ } }
+      todayIso = tasks.today || d.today || todayIso;
+      paintBell();
       const own = ownTeamCard(tasks);
       page.classList.toggle('is-board', Boolean(tasks.canAssign));
       const doneNow = doneTodayOf(tasks);

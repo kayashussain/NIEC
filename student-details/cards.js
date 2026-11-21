@@ -191,10 +191,16 @@ function createCards(dir, { now = () => new Date() } = {}) {
   // When each person last read each task (its comments), for the red dots: { "<username>": { "<task id>": "<ISO time>" } }. Kept in
   // task-seen.json beside the cards, apart from them, so reading a task never changes a student's card.
   const seenFile = path.join(dir, 'task-seen.json');
-  let seenCache = null;
+  // Read again whenever the file changed (as the cards are), so a second server process, or a save from another process, is never
+  // missed: a "Mark all as read" in one process is seen by every process (the owner, 21 Nov 2026: the bell stayed at 10).
+  let seenCache = null; let seenStamp = '';
   const seenAll = () => {
-    if (seenCache) return seenCache;
-    try { const d = JSON.parse(fs.readFileSync(seenFile, 'utf8')); seenCache = d && typeof d === 'object' && !Array.isArray(d) ? d : {}; } catch (e) { seenCache = {}; }
+    let st = null;
+    try { st = fs.statSync(seenFile); } catch (e) { /* not saved yet */ }
+    const stamp = st ? `${st.mtimeMs}:${st.size}` : 'none';
+    if (seenCache && stamp === seenStamp) return seenCache;
+    try { const d = st ? JSON.parse(fs.readFileSync(seenFile, 'utf8')) : {}; seenCache = d && typeof d === 'object' && !Array.isArray(d) ? d : {}; } catch (e) { seenCache = seenCache || {}; }
+    seenStamp = stamp;
     return seenCache;
   };
 
@@ -240,7 +246,10 @@ function createCards(dir, { now = () => new Date() } = {}) {
       // Only the newest 2,000 reads a person made are kept.
       all[key] = Object.fromEntries(Object.entries(mine).sort((a, b) => b[1].localeCompare(a[1])).slice(0, 2000));
       seenCache = all;
-      try { fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); writeFileAtomic(seenFile, JSON.stringify(all)); } catch (e) { /* kept in memory until the next save */ }
+      try {
+        fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); writeFileAtomic(seenFile, JSON.stringify(all));
+        const st = fs.statSync(seenFile); seenStamp = `${st.mtimeMs}:${st.size}`;
+      } catch (e) { /* kept in memory until the next save */ }
     },
     // The card of a student (an empty one when nothing has been saved for them yet).
     get(rowId) {
