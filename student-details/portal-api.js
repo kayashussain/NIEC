@@ -163,9 +163,16 @@ function createPortalApi({
   const newsOf = (user, t, seen) => historyOf(user, t, seen).filter((n) => n.isNew).map(({ isNew, ...n }) => n);
   const unreadOf = (user, t, seen) => newsOf(user, t, seen).length;
   const hasTaskFor = (user, rowId) => { const mine = teamsOf(user); if (!mine.length) return false; const c = cards.has(rowId) ? cards.get(rowId) : null; const recent = Date.now() - 7 * 86400000; return Boolean(c && (c.tasks || []).some((t) => (mine.includes(t.team) || (Array.isArray(t.route) && t.route.some((x) => mine.includes(x)))) && (!t.done || Date.parse(t.doneAt) > recent))); };
+  // The Application Team also completes the details of Mock Stage students of the current intake (the owner, 21 Nov 2026): Missing
+  // details lists them and Fix it opens their card, where the team changes what it may change (its own columns, the profile, the
+  // universities). All Students still lists only Application Stage students for the team (Teams.viewFor is unchanged).
+  const APP_REACH = ['Application Stage', 'Mock Stage'];
+  const appReach = (user, found) => Boolean(found) && teamsOf(user).includes('application') && !Teams.isReadOnly(user) && !Teams.isManager(user)
+    && APP_REACH.includes(text(found.row[STATUS])) && (() => { const intake = currentIntake(); return Boolean(intake) && found.sheet.id === intake.id; })();
   function canSee(user, found) {
     if (!found) return false;
     if (Teams.isAdmin(user) || Teams.isManager(user)) return true;
+    if (appReach(user, found)) return true;
     // A team given a task about a student sees that student while the task is open and for 7 days after it is done (to undo a
     // mistaken tick), wherever the student is.
     if (hasTaskFor(user, found.row._id)) return true;
@@ -176,6 +183,7 @@ function createPortalApi({
     if (!found) return false;
     if (Teams.isAdmin(user)) return true;
     if (Teams.isReadOnly(user)) return false;
+    if (appReach(user, found)) return true;
     const intake = currentIntake();
     return Boolean(intake) && found.sheet.id === intake.id && Teams.seesRow(user, found.row) && Teams.canColor(user, found.row);
   }
@@ -1180,7 +1188,6 @@ function createPortalApi({
       // Details that do not add up, at any stage (see checksOf).
       const wrong = checksOf(row, card);
       if (wrong.length) add('check', wrong.map((c) => c.text).join(' '), wrong.length);
-      if (missing) missingOf(row, sheet, card, stage, wrong);
       if (stage === 'Defer') {
         totals.deferred += 1;
         if (lastDay === null || now - lastDay >= 14) add('defer', lastDay === null ? 'No contact recorded' : `Last contact ${now - lastDay} days ago`, lastDay === null ? 999 : now - lastDay);
@@ -1216,6 +1223,14 @@ function createPortalApi({
       if (offer && !text(row['PAYMENT DATE'])) add('offers', `Offer received ${Math.max(0, now - dayNo(offer))} days ago`, Math.max(0, now - dayNo(offer)));
       const cas = dateOf(row['CAS RECEIVED DATE']);
       if (cas && !text(row['VISA LODGE DATE'])) add('cas', `CAS received ${Math.max(0, now - dayNo(cas))} days ago`, Math.max(0, now - dayNo(cas)));
+    }
+    // Missing details covers every student the team can fix: Application Stage and Mock Stage of the current intake (see appReach).
+    if (missing) {
+      for (const found of rowIndex().values()) {
+        if (!appReach(user, found)) continue;
+        const c = all[found.row._id] || { notes: [], options: [], tasks: [] };
+        missingOf(found.row, found.sheet, c, text(found.row[STATUS]), checksOf(found.row, c));
+      }
     }
     // The medical step is the team's too, after Application Stage: a Medical task of this person whose test day has passed and whose report
     // is not recorded. It is fixed by finishing that task (it records the report), so the line points at the task.

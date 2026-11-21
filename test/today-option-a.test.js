@@ -97,4 +97,22 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   await admin('POST', `/api/cards/${id}/profile`, { dob: '2001-03-14', passportNo: 'PA0000001', address: 'Bharatpur-10, Chitwan' });
   const after = (await app('GET', '/api/today')).json.missing.find((m) => m.id === id);
   assert.ok(!after || !after.lines.some((l) => /passport/.test(l.text)));
+
+  // A Mock Stage student (the owner, 21 Nov 2026): listed in the team's Missing details, the card opens and the team fixes the details
+  // there, but All Students still shows the team only Application Stage students.
+  const mockId = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000082', 'STUDENT SOURCE': 'Visitor' } })).json.id;
+  const listed = (await app('GET', '/api/today')).json.missing.find((m) => m.id === mockId);
+  assert.ok(listed, 'a Mock Stage student is in Missing details');
+  assert.match(listed.lines.map((l) => l.text).join('\n'), /No date of birth, passport number or address\./);
+  const cardRes = await app('GET', `/api/cards/${mockId}`);
+  assert.strictEqual(cardRes.status, 200, 'Fix it opens the card');
+  assert.strictEqual((await app('POST', `/api/cards/${mockId}/profile`, { dob: '2002-01-02', passportNo: 'PA0000002', address: 'Pokhara-8, Kaski' })).status, 200, 'the team fills in the passport details');
+  assert.ok(!((await app('GET', '/api/today')).json.missing.find((m) => m.id === mockId)), 'the line leaves once fixed');
+  const sheetRows = (await app('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows);
+  assert.ok(!sheetRows.some((r) => r._id === mockId), 'All Students does not show the team the Mock Stage student');
+  assert.ok(sheetRows.some((r) => r._id === id), 'the Application Stage student is on All Students');
+  // A student at another stage stays closed to the team.
+  const casId = (await admin('POST', '/api/students/new', { stage: 'CAS Stage', fields: { 'FIRST NAME': 'Hari', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000083', 'STUDENT SOURCE': 'Visitor' } })).json.id;
+  assert.strictEqual((await app('GET', `/api/cards/${casId}`)).status, 404, 'a CAS Stage student is not the team\'s');
+  assert.ok(!((await app('GET', '/api/today')).json.missing.find((m) => m.id === casId)));
 });

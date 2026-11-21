@@ -114,7 +114,8 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   // comments, the route kept; the team it was with still sees it and comments; another team cannot hand it on.
   const relay = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Ram', 'LAST NAME': 'Thapa', 'CONTACT NUMBER': '9800000021' } })).json.id;
   const given2 = (await admin('POST', `/api/cards/${relay}/tasks`, { team: 'mock', text: 'Run the mock interview' })).json.card.tasks[0];
-  assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 404, 'a team that never had it cannot see it');
+  // The Application Team may open a Mock Stage student's card (Missing details, the owner, 21 Nov 2026) but not another team's task.
+  assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 403, 'a team that never had it cannot hand it on');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: '' })).status, 400, 'a reason is needed');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'nobody', reason: 'x' })).status, 400);
   const handed = await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'Mock passed, please send the CAS request' });
