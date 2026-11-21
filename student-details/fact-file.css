@@ -1,8 +1,9 @@
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* The university pages (fact-file.html: the list, fact-university.html: one university's page). The page
    of a university is laid out like a document so it prints (or saves as a PDF) cleanly. */
 :root {
   --blue: #00adef; --blue-text: #164a98; --blue-tint: #e8f7fe; --orange: #b86a00; --orange-tint: #fff0e5;
-  --bg: #f3f6fa; --panel: #ffffff; --border: #dfe3e8; --border-strong: #c7ccd4; --text: #1c2126; --dim: #5b6472; --danger: #dc2626;
+  --bg: #f3f3f3; --panel: #f7f7f7; --border: #b8b8b8; --border-strong: #9a9a9a; --text: #000; --dim: #333; --danger: #dc2626;
 }
 
 * { box-sizing: border-box; }
@@ -99,11 +100,11 @@ input:focus, textarea:focus { outline: 2px solid var(--blue); outline-offset: 1p
 /* On paper: only the document, in black on white. */
 @media print {
   @page { size: A4; margin: 16mm 14mm; }
-  body { background: #fff; color: #000; font-size: 11pt; }
+  body { background: #f7f7f7; color: #000; font-size: 11pt; }
   .niec-header, .page-head .toolbar, .no-print { display: none !important; }
   .page { max-width: none; padding: 0; }
   .page-head { display: none; }
-  .doc { border: none; padding: 0; border-radius: 0; background: #fff; }
+  .doc { border: none; padding: 0; border-radius: 0; background: #f7f7f7; }
   .doc h1 { font-size: 22pt; }
   .doc h2 { color: #000; border-bottom: 1px solid #999; }
   .programs th { background: #eee; color: #000; }

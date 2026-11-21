@@ -1,16 +1,17 @@
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 /* The dashboard: thin marks, hairline grid, text in ink colours. The chart colours (--s1 to --s5, Apple's system colours) are set in
    shared/theme.css. */
 :root {
   color-scheme: light;
-  --bg: #f3f6fa;
-  --surface: #ffffff;
-  --ink: #1c2126;
+  --bg: #f3f3f3;
+  --surface: #f7f7f7;
+  --ink: #000;
   --ink-2: #52514e;
   --ink-3: #64635d;
   --grid: #e1e0d9;
   --axis: #c3c2b7;
-  --border: #dfe3e8;
+  --border: #b8b8b8;
   --brand: #00adef;
   --brand-text: #164a98;
   --orange: #b86a00;
@@ -146,7 +147,7 @@ details.rates summary { cursor: pointer; color: var(--brand-text); font-weight: 
 
 /* Before the first numbers arrive: grey bars where the charts and tables will be (they fill in on their own). */
 .first-load :is(#attention, #speed, #notes, [id^="chart"]):empty {
-  min-height: 96px; margin: 4px 18px 18px; border-radius: 8px; background: linear-gradient(90deg, #dde2e9 25%, #eceff3 37%, #dde2e9 63%); background-size: 400% 100%; animation: dash-shimmer 1.4s ease infinite;
+  min-height: 96px; margin: 4px 18px 18px; border-radius: 8px; background: linear-gradient(90deg, #dde2e9 25%, #e6e6e6 37%, #dde2e9 63%); background-size: 400% 100%; animation: dash-shimmer 1.4s ease infinite;
 }
 
 @keyframes dash-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
@@ -191,7 +192,7 @@ details.rates summary { cursor: pointer; color: var(--brand-text); font-weight: 
 .plan-go p { margin: 4px 0 0; max-width: 60ch; }
 .btn-lg { min-height: 52px; padding: 0 26px; font-size: 17px; }
 /* The intake proposal: two A4 pages */
-.p-proposal { max-width: 860px; margin: 0 auto; background: #fff; }
+.p-proposal { max-width: 860px; margin: 0 auto; background: #f7f7f7; }
 .prop-page { padding: 8px 4px 24px; }
 .prop-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 12px; border-bottom: 3px solid var(--s1); }
 .prop-org { font-weight: 800; font-size: 18px; letter-spacing: -.01em; }
@@ -216,7 +217,7 @@ details.rates summary { cursor: pointer; color: var(--brand-text); font-weight: 
 @media (max-width: 1100px) { .ov-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media print {
   @page { size: A4; margin: 14mm; }
-  html, body { background: #fff !important; }
+  html, body { background: #f7f7f7 !important; }
   .page-head, #dashTabs, .no-print, .niec-header, .filters { display: none !important; }
   .page { max-width: none; padding: 0; }
   .p-proposal { max-width: none; border: 0; box-shadow: none; padding: 0; }
@@ -255,9 +256,9 @@ details.rates summary { cursor: pointer; color: var(--brand-text); font-weight: 
 .dd-switch { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); }
 .dd-switch button { min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--text-dim); cursor: pointer; }
 .dd-switch button.on { background: var(--brand-navy, #1d2f52); color: var(--brand-ivory, #f6f3ec); }
-.dd-path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 4px 0 14px; font-size: 14.5px; color: var(--brand-navy, #1d2f52); }
+.dd-path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 4px 0 14px; font-size: 14.5px; color: var(--brand-navy, #000); }
 .dd-crumb { padding: 0; border: 0; background: none; font: inherit; color: var(--text-dim); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.dd-crumb:hover { color: var(--brand-navy, #1d2f52); }
+.dd-crumb:hover { color: var(--brand-navy, #000); }
 .dd-sep { color: var(--brand-bronze, #9a7b4f); }
 .dd-body { animation: dd-in .25s ease both; }
 @keyframes dd-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -275,15 +276,15 @@ details.rates summary { cursor: pointer; color: var(--brand-text); font-weight: 
 .dd-legend-name { white-space: normal !important; }
 .dd-legend-row:hover, .dd-bar-row:not(.head):hover { background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 55%, transparent); }
 .dd-dot { width: 12px; height: 12px; border-radius: 50%; }
-.dd-legend-name { font-weight: 600; color: var(--brand-navy, #1d2f52); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-legend-name { font-weight: 600; color: var(--brand-navy, #000); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-legend-row b, .dd-legend-row small { text-align: right; font-variant-numeric: tabular-nums; }
 .dd-legend-row small { color: var(--text-dim); }
 .dd-go { color: var(--brand-bronze, #9a7b4f); font-size: 18px; text-align: right; }
 .dd-bar-row { grid-template-columns: minmax(0, 1fr) 76px 70px 56px; }
 .dd-bar-row.head { cursor: default; color: var(--text-dim); font-size: 14px; font-weight: 650; }
 .dd-bar-row .num { text-align: right; font-variant-numeric: tabular-nums; }
-.dd-bar-row .num.strong { font-weight: 700; color: var(--brand-navy, #1d2f52); }
-.dd-bar-name b { color: var(--brand-navy, #1d2f52); }
+.dd-bar-row .num.strong { font-weight: 700; color: var(--brand-navy, #000); }
+.dd-bar-name b { color: var(--brand-navy, #000); }
 .dd-bar-name small { margin-left: 8px; color: var(--text-dim); font-size: 13px; }
 .dd-track { position: relative; display: block; height: 8px; margin-top: 6px; border-radius: 4px; background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 60%, transparent); overflow: hidden; }
 .dd-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: #9fb0c9; }
@@ -292,5 +293,5 @@ details.rates summary { cursor: pointer; color: var(--brand-text); font-weight: 
 .dd-people { display: grid; gap: 4px; max-height: 420px; overflow: auto; }
 .dd-person { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; color: inherit; text-decoration: none; }
 .dd-person:hover { background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 55%, transparent); }
-.dd-person b { color: var(--brand-navy, #1d2f52); }
+.dd-person b { color: var(--brand-navy, #000); }
 .dd-person span { color: var(--text-dim); font-size: 14px; }

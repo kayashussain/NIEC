@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 
 /* ---- the page ---- */
@@ -188,12 +189,12 @@ body.p-embed .p-embed-bar { display: flex; }
 .p-proposal h2:first-of-type { margin-top: 18px; }
 .p-proposal h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 30px; letter-spacing: -.02em; }
 
-.doc-brand { font-weight: 800; font-size: 18px; letter-spacing: -.01em; color: var(--ink, #1a2230); }
+.doc-brand { font-weight: 800; font-size: 18px; letter-spacing: -.01em; color: var(--ink, #000); }
 .p-proposal p, .p-proposal li { max-width: 86ch; }
 .p-proposal ul { margin: 6px 0 10px; padding-left: 20px; }
 @media (max-width: 700px) { .p-proposal { padding: 20px 16px; } }
 @media print {
-  body.p-body { background: #fff; }
+  body.p-body { background: #f7f7f7; }
   .niec-header, .no-print, .p-tabs, .p-head { display: none !important; }
   .p-page { max-width: none; padding: 0; }
   .p-proposal { border: 0; box-shadow: none; padding: 0; }

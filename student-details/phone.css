@@ -1,8 +1,9 @@
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 /* The phone's own pages (the owner, 17 Nov 2026): the pairing page (/pair, from the code on the computer) and the page that opens a
    student's WhatsApp chat (/wa). They load before any login, so they carry their own few styles in the same look as ISR. */
 /* 🔴 CSS CHANGED (2026-11-17): the phone's own pages (new file) | from: the WhatsApp page used the main styles; there was no pairing page | to: a calm grey page with one centred off-white rounded panel: a small green "WHATSAPP" label, a large dark title, the words in grey, one big green pill button, numbered steps when an iPhone needs them, a green tick look when done */
-:root { --ink: #1d1d1f; --dim: #515154; --bg: #f5f5f7; --panel: #fbfbfd; --green: #25d366; --green-ink: #1f7a35; }
+:root { --ink: #000; --dim: #333; --bg: #e6e6e6; --panel: #f3f3f3; --green: #25d366; --green-ink: #1f7a35; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
@@ -17,27 +18,27 @@ html, body { margin: 0; }
 .ph-steps { padding-left: 22px; text-align: left; color: var(--ink); line-height: 1.6; }
 .ph-msg { margin: 8px 0 0; color: #b42318; font-size: 15px; }
 .wa-box .p-muted { color: var(--dim); font-size: 14px; }
-.wa-box .p-link { color: #0066cc; font-size: 15px; }
+.wa-box .p-link { color: #0050aa; font-size: 15px; }
 
 /* 🔴 CSS CHANGED (2026-11-17): the phone's own pages redesigned in the style of Apple's set-up screens (the owner asked for the best and most professional look) | from: a small green "WHATSAPP" label, the title, grey words, the iPhone steps as a plain numbered list and the green button; "Done ✓" turned the title green; the chat page with only the name and number | to: at the top the ISR app icon (a 72px rounded square with a soft shadow) with a small green chat bubble on its corner; "WHATSAPP ON THIS PHONE" in small grey capitals; the steps as soft grey rounded rows with blue numbered circles and Safari's Share icon drawn inside the step; the green button 58px tall with a soft green glow and a press; a quiet grey line under it ("Nothing is saved on this phone..."); when done, the icon gives way to a large green circle with a white tick that springs in; a run-out code shows a grey clock look; on the chat page a 72px soft green circle with the student's initials above the name. Safe areas of phones with a notch are respected */
 .ph-body, .wa-open { padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
 .ph-box, .wa-box { padding: 36px 24px 28px; border-radius: 26px; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04), 0 18px 40px -24px rgba(0, 0, 0, .25); }
 .ph-badge { position: relative; width: 72px; height: 72px; margin: 0 auto 18px; }
-.ph-app { display: block; width: 72px; height: 72px; border-radius: 17px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 6px 16px -6px rgba(0, 0, 0, .25); object-fit: cover; }
+.ph-app { display: block; width: 72px; height: 72px; border-radius: 17px; background: #f7f7f7; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 6px 16px -6px rgba(0, 0, 0, .25); object-fit: cover; }
 .ph-bubble { position: absolute; right: -8px; bottom: -6px; display: grid; place-items: center; width: 30px; height: 30px; border: 3px solid var(--panel); border-radius: 50%; background: var(--green); color: #fff; }
 .ph-bubble svg { width: 15px; height: 15px; }
-.ph-kicker, .wa-kicker { color: #6e6e73; font-size: 12.5px; letter-spacing: .07em; }
+.ph-kicker, .wa-kicker { color: #333; font-size: 12.5px; letter-spacing: .07em; }
 .ph-box h1, .wa-box h1 { font-size: 30px; letter-spacing: -.025em; line-height: 1.15; }
 .ph-words { font-size: 17px; line-height: 1.45; }
 .ph-steps { display: flex; flex-direction: column; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; }
-.ph-steps li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; margin: 0; padding: 14px; border-radius: 16px; background: #f0f0f3; text-align: left; }
+.ph-steps li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; margin: 0; padding: 14px; border-radius: 16px; background: #e6e6e6; text-align: left; }
 .ph-n { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 15px; font-weight: 650; }
 .ph-steps b { display: block; font-size: 17px; font-weight: 600; line-height: 1.3; }
 .ph-steps b + span { display: block; margin-top: 3px; color: var(--dim); font-size: 15px; line-height: 1.4; }
 .ph-share { width: 20px; height: 20px; margin-left: 2px; color: #0071e3; vertical-align: -3px; }
 .ph-go, .wa-box .wa-go { min-height: 58px; font-size: 18.5px; box-shadow: 0 10px 22px -12px rgba(37, 211, 102, .9); transition: transform .12s ease, opacity .2s ease; -webkit-tap-highlight-color: transparent; }
 .ph-go:active, .wa-box .wa-go:active { transform: scale(.97); }
-.ph-note { margin: 14px 0 0; color: #6e6e73; font-size: 13.5px; line-height: 1.45; }
+.ph-note { margin: 14px 0 0; color: #333; font-size: 13.5px; line-height: 1.45; }
 .is-done .ph-box h1 { color: var(--ink); }
 .is-done .ph-badge { width: 84px; height: 84px; border-radius: 50%; background: #34c759; box-shadow: 0 12px 26px -12px rgba(52, 199, 89, .8); animation: ph-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
 .is-done .ph-badge > * { display: none; }

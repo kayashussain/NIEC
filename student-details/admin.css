@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-21): one grey for secondary words in this file | from: several near-greys (#515154, #5f5f64, #66666b, #5c5c63, #86868b, #5b6472, #64635d, #525150, #48484e), some too pale to read | to: Apple's one grey, #6e6e73, everywhere a word is grey (only the colour of words changed; backgrounds untouched) */
 /* The Users & activity page (admin.html). Its own stylesheet, so the spreadsheet's table rules
    (fixed column widths, one-line cells) don't apply here. */
@@ -7,12 +8,12 @@
   --blue-tint: #e8f7fe;
   --orange: #b86a00;
   --orange-tint: #fff0e5;
-  --bg: #f3f6fa;
-  --panel: #ffffff;
-  --border: #dfe3e8;
-  --border-strong: #c7ccd4;
-  --text: #1c2126;
-  --dim: #5b6472;
+  --bg: #f3f3f3;
+  --panel: #f7f7f7;
+  --border: #b8b8b8;
+  --border-strong: #9a9a9a;
+  --text: #000;
+  --dim: #333;
   --danger: #dc2626;
   --ok-bg: #dcfce7; --ok: #166534;
   --wait-bg: #fef3c7; --wait: #92400e;
@@ -136,14 +137,14 @@ td[data-label="Last login"], td[data-label="Logged in"], td[data-label="Last act
 .check-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 8px; margin: 0 0 6px; }
 .check-group.off { opacity: .45; }
 /* 🔴 CSS CHANGED (2026-11-15): Users, "Their own team" (new; it replaces "Gets the tasks of") | from: nothing, then a grey "Gets the tasks of" panel with "All their teams" chosen at first | to: for a person ticked in two or more teams, a soft grey rounded panel "Their own team" with a line saying what it means and a dropdown that starts on "Choose their team..."; while it is not chosen the panel has a soft orange ring and the person cannot be saved; in the list of people their own team is a solid chip and every other team a light outlined "+ Mock Team" chip (extra access), and a person with two or more teams and no own team shows an orange "Own team not chosen" chip */
-.task-team { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin: 12px 0 4px; padding: 14px 16px; border-radius: 14px; background: #f0f0f3; box-shadow: inset 0 0 0 1px transparent; transition: box-shadow .2s, background-color .2s; }
+.task-team { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin: 12px 0 4px; padding: 14px 16px; border-radius: 14px; background: #e6e6e6; box-shadow: inset 0 0 0 1px transparent; transition: box-shadow .2s, background-color .2s; }
 .task-team[hidden] { display: none; }
 .task-team.is-missing { background: #fff6ec; box-shadow: inset 0 0 0 1.5px #ff9f0a; }
 .task-team > span { flex: 1 1 280px; min-width: 0; }
-.task-team b { display: block; color: #1d1d1f; font-size: 14.5px; font-weight: 600; }
-.task-team small { display: block; margin-top: 2px; color: #6e6e73; font-size: 13.5px; line-height: 1.4; }
+.task-team b { display: block; color: #000; font-size: 14.5px; font-weight: 600; }
+.task-team small { display: block; margin-top: 2px; color: #333; font-size: 13.5px; line-height: 1.4; }
 .task-team select { flex: 0 0 auto; min-width: 200px; }
-.chip.chip-extra { border: 1px solid #d2d2d7; background: transparent; color: #6e6e73; font-weight: 500; }
+.chip.chip-extra { border: 1px solid #9a9a9a; background: transparent; color: #333; font-weight: 500; }
 .chip.chip-warn { background: #fff1e0; color: #a35200; font-weight: 600; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--bg); color: var(--text); border: 1px solid var(--border); }

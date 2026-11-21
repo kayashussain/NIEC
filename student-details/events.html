@@ -12,101 +12,102 @@
 <link rel="stylesheet" href="portal.css" />
 <link rel="stylesheet" href="theme.css" />
 <style>
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
   /* 🔴 CSS CHANGED (2026-11-17): Events and marketing made clean and calm, in the Apple look, with only what the team needs | from: gold and navy figures, a calendar leaf in blue or orange on every row, red, amber and green follow-up pills on every row, a funnel panel with coloured bars, three coloured meters, seven coloured status tiles, a "Followed up by" bar, the list with five columns and a coloured status pill | to: near-black figures with small grey labels on one off-white band; each row the name in bold with a grey line under it (where it ran, dates, intake) and plain figures (Cost, Inquiries, To follow up, Visas, Per visa), "To follow up" with a small orange dot only when someone waits; on an event, the title, one band (Cost, Inquiries, Applied, Visas, Cost per visa), then one Students panel with a grey segmented switch (All, To follow up, Followed up, Applying, Visa, Inactive, each with its count) and a search pill, and a clean table: Student (name, phone in blue under it), Stage, Last contact (when and who, the words in grey, "Never contacted" or "Follow-up due" in orange), Remarks, and a grey "Note" pill; the upload panel under it in the same calm style | the old leaf, funnel, meter, tile, team and pill styles deleted */
   .ev-page { max-width: 1320px; }
-  .ev-band { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); margin: 8px 0 22px; border-radius: 18px; background: var(--panel, #fbfbfd); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); overflow: hidden; }
+  .ev-band { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); margin: 8px 0 22px; border-radius: 18px; background: var(--panel, #f3f3f3); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); overflow: hidden; }
   .ev-band > div { padding: 18px 22px; min-width: 0; }
   .ev-band > div + div { border-left: 1px solid rgba(0, 0, 0, .06); }
-  .ev-band span { display: block; color: #6e6e73; font-size: 13.5px; font-weight: 500; }
-  .ev-band b { display: block; margin-top: 4px; color: #1d1d1f; font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .ev-band span { display: block; color: #333; font-size: 13.5px; font-weight: 500; }
+  .ev-band b { display: block; margin-top: 4px; color: #000; font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
   /* 🔴 CSS CHANGED (2026-11-18): the small grey line under each figure on Events and marketing is easier to read (a bug fix) | from: #86868b, contrast 3.5 to 1, below the 4.5 to 1 needed | to: #6e6e73, contrast 4.9 to 1 */
-  .ev-band small { display: block; margin-top: 3px; color: #6e6e73; font-size: 13px; }
+  .ev-band small { display: block; margin-top: 3px; color: #333; font-size: 13px; }
   @media (max-width: 900px) { .ev-band { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ev-band > div + div { border-left: 0; } .ev-band > div { border-top: 1px solid rgba(0, 0, 0, .06); } .ev-band > div:first-child { grid-column: 1 / -1; border-top: 0; } }
-  .ev-note { margin: -8px 0 16px; color: #6e6e73; font-size: 14px; line-height: 1.5; }
+  .ev-note { margin: -8px 0 16px; color: #333; font-size: 14px; line-height: 1.5; }
   .ev-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
   .ev-bar-end { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .ev-pills { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 11px; background: #e8e8ed; }
-  .ev-pills button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 14px; font-weight: 500; color: #515154; cursor: pointer; transition: color .2s, background-color .2s; }
-  .ev-pills button.on { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 6px -3px rgba(0, 0, 0, .12); }
-  .ev-pills button i { margin-left: 6px; color: #86868b; font-style: normal; font-weight: 500; font-variant-numeric: tabular-nums; }
-  html body .ev-search { width: 280px; max-width: 100%; height: 38px; padding: 0 14px 0 36px; border: 0; border-radius: 980px; background: #e8e8ed url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 13px center; color: #1d1d1f; font: inherit; font-size: 15px; }
-  html body .ev-search:focus { background-color: #fdfdfe; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18), 0 0 0 1px #0071e3 inset !important; outline: none; }
-  .ev-intake { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #515154; }
-  .ev-intake select { min-height: 38px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 10px; background: #f5f5f7; color: #1d1d1f; font: inherit; font-size: 15px; font-weight: 500; max-width: 260px; cursor: pointer; }
+  .ev-pills { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 11px; background: #dcdcdc; }
+  .ev-pills button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 14px; font-weight: 500; color: #333; cursor: pointer; transition: color .2s, background-color .2s; }
+  .ev-pills button.on { background: #f7f7f7; color: #000; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 6px -3px rgba(0, 0, 0, .12); }
+  .ev-pills button i { margin-left: 6px; color: #333; font-style: normal; font-weight: 500; font-variant-numeric: tabular-nums; }
+  html body .ev-search { width: 280px; max-width: 100%; height: 38px; padding: 0 14px 0 36px; border: 0; border-radius: 980px; background: #dcdcdc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 13px center; color: #000; font: inherit; font-size: 15px; }
+  html body .ev-search:focus { background-color: #f3f3f3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18), 0 0 0 1px #0071e3 inset !important; outline: none; }
+  .ev-intake { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #333; }
+  .ev-intake select { min-height: 38px; padding: 0 12px; border: 1px solid #9a9a9a; border-radius: 10px; background: #e6e6e6; color: #000; font: inherit; font-size: 15px; font-weight: 500; max-width: 260px; cursor: pointer; }
   /* the list */
-  .ev-ledger, .ev-people { border-radius: 18px; background: var(--panel, #fbfbfd); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); overflow: hidden; }
+  .ev-ledger, .ev-people { border-radius: 18px; background: var(--panel, #f3f3f3); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); overflow: hidden; }
   .ev-lrow { display: grid; grid-template-columns: minmax(240px, 2.6fr) repeat(5, minmax(84px, 1fr)) 20px; gap: 12px; align-items: center; padding: 15px 22px; border-top: 1px solid rgba(0, 0, 0, .06); }
-  .ev-lrow.head, .ev-person.head { border-top: 0; padding-top: 11px; padding-bottom: 11px; color: #6e6e73; font-size: 13px; font-weight: 500; }
+  .ev-lrow.head, .ev-person.head { border-top: 0; padding-top: 11px; padding-bottom: 11px; color: #333; font-size: 13px; font-weight: 500; }
   .ev-lrow.item { cursor: pointer; transition: background-color .15s; }
   .ev-lrow.item:hover, .ev-lrow.item:focus-visible { background: rgba(0, 0, 0, .025); outline: none; }
   .ev-lrow.item:hover .ev-go { color: #0071e3; transform: translateX(2px); }
   .ev-lrow .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .ev-lrow.item .num { color: #1d1d1f; font-size: 15.5px; font-weight: 500; }
+  .ev-lrow.item .num { color: #000; font-size: 15.5px; font-weight: 500; }
   .ev-lrow.item .num.none { color: #a1a1a6; }
   .ev-lrow.item .num.wait::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #ff9500; transform: translateY(-2px); }
-  .ev-lname { color: #1d1d1f; font-size: 16px; font-weight: 600; }
-  .ev-lmeta { margin-top: 3px; color: #6e6e73; font-size: 14px; }
+  .ev-lname { color: #000; font-size: 16px; font-weight: 600; }
+  .ev-lmeta { margin-top: 3px; color: #333; font-size: 14px; }
   .ev-go { color: #c7c7cc; font-size: 17px; text-align: right; transition: transform .2s, color .2s; }
   @media (max-width: 1000px) {
     .ev-lrow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .ev-lrow.head { display: none; }
     .ev-lrow > :first-child { grid-column: 1 / -1; }
     .ev-lrow .num { text-align: left; }
-    .ev-lrow .num::after { content: attr(data-label); display: block; color: #86868b; font-size: 12.5px; font-weight: 400; }
+    .ev-lrow .num::after { content: attr(data-label); display: block; color: #333; font-size: 12.5px; font-weight: 400; }
     .ev-go { display: none; }
     .ev-bar-end { width: 100%; }
     html body .ev-search { flex: 1; width: auto; }
   }
-  .ev-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 52px 24px; text-align: center; color: #6e6e73; }
-  .ev-empty b { color: #1d1d1f; font-size: 18px; font-weight: 600; }
+  .ev-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 52px 24px; text-align: center; color: #333; }
+  .ev-empty b { color: #000; font-size: 18px; font-weight: 600; }
   .ev-empty p { margin: 0 0 10px; font-size: 15px; }
   .ev-empty.small { padding: 32px; }
   /* one event */
-  .ev-back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; color: #0066cc; cursor: pointer; }
+  .ev-back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; color: #0050aa; cursor: pointer; }
   .ev-back:hover { text-decoration: underline; }
   .ev-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .ev-head h2 { margin: 0; font-size: 32px; font-weight: 650; letter-spacing: -.025em; line-height: 1.15; color: #1d1d1f; }
+  .ev-head h2 { margin: 0; font-size: 32px; font-weight: 650; letter-spacing: -.025em; line-height: 1.15; color: #000; }
   .ev-head .ev-lmeta { margin-top: 8px; font-size: 15px; }
-  .ev-about { max-width: 760px; margin: 12px 0 0; color: #424245; font-size: 15px; line-height: 1.55; }
+  .ev-about { max-width: 760px; margin: 12px 0 0; color: #000; font-size: 15px; line-height: 1.55; }
   .ev-section { margin: 0 0 28px; }
   .ev-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
-  .ev-section-head h3 { margin: 0; color: #1d1d1f; font-size: 21px; font-weight: 650; letter-spacing: -.015em; }
-  .ev-section-head p { margin: 2px 0 0; color: #6e6e73; font-size: 14.5px; }
+  .ev-section-head h3 { margin: 0; color: #000; font-size: 21px; font-weight: 650; letter-spacing: -.015em; }
+  .ev-section-head p { margin: 2px 0 0; color: #333; font-size: 14.5px; }
   .ev-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px 12px; flex-wrap: wrap; margin: 0 0 12px; }
   .ev-person { display: grid; grid-template-columns: minmax(170px, 1.2fr) 150px minmax(0, 2fr) minmax(0, 1.6fr) 74px; gap: 14px; align-items: start; padding: 13px 20px; border-top: 1px solid rgba(0, 0, 0, .06); font-size: 15px; }
   .ev-person:not(.head):hover { background: rgba(0, 0, 0, .018); }
-  .ev-person .who { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: #1d1d1f; text-align: left; cursor: pointer; }
-  .ev-person .who:hover { color: #0066cc; }
+  .ev-person .who { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: #000; text-align: left; cursor: pointer; }
+  .ev-person .who:hover { color: #0050aa; }
   .ev-psub { margin-top: 2px; font-size: 13.5px; }
-  .ev-psub a { color: #0066cc; text-decoration: none; font-variant-numeric: tabular-nums; }
-  .ev-when { color: #1d1d1f; font-size: 14.5px; font-weight: 500; }
+  .ev-psub a { color: #0050aa; text-decoration: none; font-variant-numeric: tabular-nums; }
+  .ev-when { color: #000; font-size: 14.5px; font-weight: 500; }
   .ev-when.wait { color: #c25e00; }
-  .ev-words { margin-top: 2px; color: #6e6e73; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .ev-remark { color: #424245; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+  .ev-words { margin-top: 2px; color: #333; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ev-remark { color: #000; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
   .ev-none { color: #a1a1a6; }
   .ev-pact { text-align: right; }
-  .ev-pact .btn { min-height: 32px; padding: 0 14px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font-size: 14px; }
-  .ev-qnote { padding: 12px 20px 14px; border-top: 1px solid rgba(0, 0, 0, .06); background: #f5f5f7; }
-  .ev-qnote textarea { width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 12px; background: #fdfdfe; font: inherit; font-size: 15px; resize: vertical; }
+  .ev-pact .btn { min-height: 32px; padding: 0 14px; border: 0; border-radius: 980px; background: #dcdcdc; color: #000; font-size: 14px; }
+  .ev-qnote { padding: 12px 20px 14px; border-top: 1px solid rgba(0, 0, 0, .06); background: #e6e6e6; }
+  .ev-qnote textarea { width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid #9a9a9a; border-radius: 12px; background: #f3f3f3; font: inherit; font-size: 15px; resize: vertical; }
   .ev-qnote-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
   @media (max-width: 900px) { .ev-person { grid-template-columns: minmax(0, 1fr); gap: 6px; } .ev-person.head { display: none; } .ev-pact { text-align: left; } .ev-remark:has(.ev-none) { display: none; } .ev-panel-head .btn { margin-bottom: 14px; } }
   /* the upload */
-  .ev-panel { margin: 0 0 18px; padding: 22px 24px; border-radius: 18px; background: var(--panel, #fbfbfd); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); }
+  .ev-panel { margin: 0 0 18px; padding: 22px 24px; border-radius: 18px; background: var(--panel, #f3f3f3); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); }
   .ev-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
-  .ev-panel-head h3 { margin: 0 0 2px; color: #1d1d1f; font-size: 17px; font-weight: 650; }
-  .ev-panel-head p { margin: 0 0 14px; color: #6e6e73; font-size: 14.5px; }
+  .ev-panel-head h3 { margin: 0 0 2px; color: #000; font-size: 17px; font-weight: 650; }
+  .ev-panel-head p { margin: 0 0 14px; color: #333; font-size: 14.5px; }
   .ev-upload { display: flex; align-items: stretch; gap: 12px 16px; flex-wrap: wrap; }
-  .ev-upload > label:first-child { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; color: #515154; font-size: 14px; font-weight: 600; }
-  .ev-upload select { min-height: 44px; min-width: 220px; padding: 0 12px; border: 1px solid #d2d2d7; border-radius: 10px; background: #f5f5f7; font: inherit; font-size: 15px; }
-  .ev-upload label.ev-drop { position: relative; flex: 1 1 320px; display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 12px 18px; border: 1.5px dashed #c7c7cc; border-radius: 14px; background: transparent; color: #1d1d1f; cursor: pointer; transition: border-color .2s, background-color .2s; }
+  .ev-upload > label:first-child { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; color: #333; font-size: 14px; font-weight: 600; }
+  .ev-upload select { min-height: 44px; min-width: 220px; padding: 0 12px; border: 1px solid #9a9a9a; border-radius: 10px; background: #e6e6e6; font: inherit; font-size: 15px; }
+  .ev-upload label.ev-drop { position: relative; flex: 1 1 320px; display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 12px 18px; border: 1.5px dashed #9a9a9a; border-radius: 14px; background: transparent; color: #000; cursor: pointer; transition: border-color .2s, background-color .2s; }
   .ev-upload label.ev-drop:hover, .ev-upload label.ev-drop.over { border-color: #0071e3; background: rgba(0, 113, 227, .04); }
   .ev-drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-  .ev-drop-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font-size: 16px; }
+  .ev-drop-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #dcdcdc; color: #000; font-size: 16px; }
   .ev-drop-words { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
   .ev-drop-words b { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
-  .ev-drop-words span { color: #0066cc; font-size: 14px; }
+  .ev-drop-words span { color: #0050aa; font-size: 14px; }
   .ev-counts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 18px 0 10px; }
-  .ev-count { color: #424245; font-size: 14px; font-weight: 500; }
+  .ev-count { color: #000; font-size: 14px; font-weight: 500; }
   .ev-count::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #c7c7cc; transform: translateY(-1px); }
   .ev-count.new::before { background: #34c759; }
   .ev-count.link::before { background: #0071e3; }
@@ -115,30 +116,30 @@
   .ev-review { max-height: 420px; overflow: auto; border-radius: 12px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07); }
   .ev-rline { display: grid; grid-template-columns: 110px minmax(160px, 1.2fr) minmax(120px, 1fr) minmax(0, 2fr); gap: 12px; align-items: center; padding: 9px 14px; border-top: 1px solid rgba(0, 0, 0, .06); font-size: 14.5px; }
   .ev-rline:first-child { border-top: 0; }
-  .ev-rline .what { color: #424245; font-size: 13.5px; font-weight: 600; }
+  .ev-rline .what { color: #000; font-size: 13.5px; font-weight: 600; }
   .ev-rline .what.new { color: #1e7d34; }
-  .ev-rline .what.link { color: #0066cc; }
+  .ev-rline .what.link { color: #0050aa; }
   .ev-rline .what.other { color: #c25e00; }
   .ev-rline .what.problem { color: #d70015; }
-  .ev-rline .why { color: #6e6e73; }
+  .ev-rline .why { color: #333; }
   @media (max-width: 800px) { .ev-rline { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
   .ev-missing { margin: 0 0 12px; }
   .ev-missing-names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .ev-missing-name { padding: 4px 11px; border: 0; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #1d1d1f; font: inherit; font-size: 13.5px; cursor: pointer; }
-  .ev-missing-name:hover { background: rgba(0, 113, 227, .12); color: #0066cc; }
+  .ev-missing-name { padding: 4px 11px; border: 0; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #000; font: inherit; font-size: 13.5px; cursor: pointer; }
+  .ev-missing-name:hover { background: rgba(0, 113, 227, .12); color: #0050aa; }
   .ev-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
   /* the form */
   .ev-choices { display: flex; flex-wrap: wrap; gap: 8px; }
-  .ev-choices button { min-height: 38px; padding: 0 16px; border: 0; border-radius: 980px; background: #e8e8ed; font: inherit; font-size: 14.5px; font-weight: 500; color: #1d1d1f; cursor: pointer; transition: background-color .2s, color .2s; }
+  .ev-choices button { min-height: 38px; padding: 0 16px; border: 0; border-radius: 980px; background: #dcdcdc; font: inherit; font-size: 14.5px; font-weight: 500; color: #000; cursor: pointer; transition: background-color .2s, color .2s; }
   .ev-choices button.on, .ev-choices button.on:hover { background: #0071e3; color: #fff; }
   .ev-where { grid-column: 1 / -1; }
-  .ev-choice-label { display: block; margin-bottom: 8px; color: #515154; font-size: 14px; font-weight: 600; }
+  .ev-choice-label { display: block; margin-bottom: 8px; color: #333; font-size: 14px; font-weight: 600; }
   .ev-money-row { display: flex; align-items: center; gap: 8px; }
   .ev-money-row input { flex: 1; min-width: 0; }
-  .ev-cur { flex: none; display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: #e8e8ed; }
-  .ev-cur button { min-width: 36px; height: 30px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: #515154; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .ev-cur button.on { background: #fff; color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .1); }
-  .ev-conv { display: block; margin-top: 6px; color: #6e6e73; font-size: 13px; }
+  .ev-cur { flex: none; display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: #dcdcdc; }
+  .ev-cur button { min-width: 36px; height: 30px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: #333; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .ev-cur button.on { background: #f7f7f7; color: #000; box-shadow: 0 1px 2px rgba(0, 0, 0, .1); }
+  .ev-conv { display: block; margin-top: 6px; color: #333; font-size: 13px; }
 </style>
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />

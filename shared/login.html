@@ -8,9 +8,10 @@
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="icon" type="image/png" href="/favicon.png" />
 <style>
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
   /* 🔴 CSS CHANGED (2026-11-14): the login page rebuilt in the design language of Apple's sign-in page (the earlier styles of this page are replaced, not kept beside it) | from: two halves (a picture side with "Welcome back", three points and the logo with "UK" beside it; a sign-in box with a black button) | to: one calm centred column on Apple's light grey (#f5f5f7): the NIEC logo alone at the top (no "UK"), a large "Sign in" title, a short line under it, an off-white rounded panel with tall rounded fields (blue ring while typing) and a blue pill button (#0071e3), a quiet note at the foot; the system font (SF Pro on Apple devices, Inter elsewhere) */
   @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/fonts/inter-latin.woff2") format("woff2"); }
-  :root { --ink: #1d1d1f; --dim: #515154; --line: #d2d2d7; --bg: #f5f5f7; --panel: #fbfbfd; --blue: #0071e3; --blue-hover: #0077ed; --link: #0066cc; --danger: #b42318; --note-bg: #eef4fc; }
+  :root { --ink: #000; --dim: #333; --line: #9a9a9a; --bg: #e6e6e6; --panel: #f3f3f3; --blue: #0071e3; --blue-hover: #0077ed; --link: #0050aa; --danger: #b42318; --note-bg: #eef4fc; }
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
   body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; background: var(--bg); color: var(--ink);
@@ -28,7 +29,7 @@
   form { display: flex; flex-direction: column; gap: 6px; }
   form[hidden] { display: none; }
   label { margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--dim); }
-  input { font: inherit; height: 52px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+  input { font: inherit; height: 52px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #f7f7f7; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
   input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0, 113, 227, .2); }
   .note { margin: 0 0 6px; padding: 12px 14px; border-radius: 12px; background: var(--note-bg); font-size: 15px; }
   .note ol { margin: 4px 0 0; padding-left: 18px; }
@@ -47,7 +48,7 @@
   .caps[hidden] { display: none; }
   .link { margin-top: 12px; height: auto; padding: 0; background: none; color: var(--link); font-weight: 400; font-size: 15px; }
   .link:hover:not(:disabled) { background: none; text-decoration: underline; }
-  .footnote { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid #e3e3e8; font-size: 13px; color: #6e6e73; text-align: center; }
+  .footnote { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid #b8b8b8; font-size: 13px; color: #333; text-align: center; }
 </style>
 </head>
 <body>

@@ -3,6 +3,8 @@
 Every time the look of the site is changed through CSS, a line is added here (newest first), the change is marked in the
 code with a comment that starts with `🔴 CSS CHANGED`, and the owner is told at the top of the reply. See `CLAUDE.md`.
 
+- **2026-11-21 · every stylesheet (shared/theme.css, shared/header.css, shared/ui.css, student-details/*.css) and the style blocks of login.html, direct.html, events.html and the Incentive page, plus the starting text size in shared/header.js · the whole system in option H "Strong contrast" and Large text · from: near-black text (#1d1d1f, #111) in a regular or medium weight, grey words #6e6e73 and other light greys, white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2), links #0066cc, a see-through menu, every page opening at Small (67%) · to: black text (#000) in a semi-bold weight (600, titles 700), grey words #333, no pure white (boxes #f7f7f7, panels #f3f3f3), page #e6e6e6, side menu #ececec, firmer lines (#b8b8b8, #9a9a9a, fields #6f6f6f), links #0050aa, placeholders #555, every page opening at Large (Small and Medium still in the account menu); the blue buttons, status colours and charts unchanged · why: the owner, 21 Nov 2026: "my eyes are hurting, white with light black text is hard to read" on a Dell Vostro 14 with Night light; chose H from the colour preview and asked for Large text throughout**
+
 To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**

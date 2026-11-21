@@ -9,7 +9,7 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 > You are Apple's own design and web engineering team (the designer, the front-end engineer and the person who signs it off).
 > Build this screen of ISR, a premium product, as Apple would ship it on apple.com: calm, quiet, exact, expensive-feeling.
 > Read CLAUDE.md and DESIGN.md first and follow them to the letter, especially section 2 (the measured Apple values).
-> - Colour: near-black #1d1d1f and one grey #6e6e73 for text; blue (#0071e3 buttons, #0066cc links) only for the one main
+> - Colour: black #000 and one dark grey #333 for text (the owner's "Strong contrast", 21 Nov 2026); blue (#0071e3 buttons, #0050aa links) only for the one main
 >   action, links and "where you are now". No gradients, no coloured icons, no coloured panels, no glow. A colour appears only
 >   when it means something (an orange dot for missing, green for done, red for an error).
 > - Type: Apple's scale (17px body, line height 1.47, letter spacing -0.022em; headings weight 600 with tighter spacing). Sharp
@@ -48,11 +48,11 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 | Body text | 17px, line height 25px (1.47), letter spacing -0.374px (-0.022em), weight 400 | the same |
 | Small text and labels | 14px, line height 20px, letter spacing -0.224px (-0.016em) | the same |
 | Headings | weight 600; 40px (line 44px), 28px (line 32px), 21px (line 25px); 80px hero with -0.015em | page and card titles 40px, section titles 21 to 24px |
-| Text colours | #1d1d1f; secondary #6e6e73 | the same, nothing lighter than #6e6e73 |
+| Text colours | #1d1d1f; secondary #6e6e73 | Strong contrast (the owner, 21 Nov 2026): #000; secondary #333, nothing lighter; reading text weight 600 |
 | Links | #0066cc | the same |
 | Main button | #0071e3, white 17px words, pill (980px radius), 44px tall, about 22px each side | the same |
 | Other buttons | grey pill (#e8e8ed, hover #dcdce2) with black words; or a blue outline pill | grey pill |
-| Page and panels | page #f5f5f7, tiles white with 18 to 28px corners, no border, no shadow | page #f5f5f7, panels soft off-white #fbfbfd (never pure white), 22 to 28px corners, a barely visible shadow |
+| Page and panels | page #f5f5f7, tiles white with 18 to 28px corners, no border, no shadow | Strong contrast: page #e6e6e6, side menu #ececec, panels #f3f3f3, boxes and buttons #f7f7f7 (never pure white), lines #b8b8b8, #9a9a9a and #6f6f6f for fields |
 | Rules | hairlines | 1px #e8e8ed |
 | Top bar | 44px, rgba(245, 245, 247, .8) with saturate(180%) blur(20px) | the menu keeps its own place; nothing extra sticks to the top |
 | Text rendering | antialiased | antialiased, optimizeLegibility |
@@ -72,14 +72,15 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   picture twice on a page; a picture that fails is removed gracefully.
 - Fewer words: titles, numbers and short labels.
 - **Desktop and laptop first** (until the owner asks for phones). Phone styles already in the code stay as they are.
-- **Text size, the same for everyone by default (the owner, 21 Nov 2026).** On a laptop or desktop every page shows at the size the
-  owner liked at 67% browser zoom (`html[data-size="small"]`, CSS `zoom: .67`). The account menu has **Text size: Small, Medium,
-  Large** (0.67, 0.8, 1), kept in the browser per person, for anyone who finds it small; it never goes bigger than the page as built.
+- **Text size, the same for everyone by default (the owner, 21 Nov 2026).** On a laptop or desktop every page opens at **Large**, the
+  page as built (`html[data-size="large"]`; the owner, 21 Nov 2026: "make the text size large", replacing the earlier 67% default).
+  The account menu has **Text size: Small, Medium, Large** (0.67, 0.8, 1, CSS `zoom`), kept in the browser per person (`isrTextSize`);
+  it never goes bigger than the page as built.
   Pages inside the card drawer are not zoomed twice (`data-size="framed"`). Because of the zoom: place any menu or popup with
   `isrPos` (`shared/ui.js`), never with raw `getBoundingClientRect` or `innerWidth`; write a full-height size as
   `calc(100vh / var(--isr-z, 1))` or with `inset`, never plain `100vh`.
 - **Beyond Apple: Nike's type, Dior's restraint (the owner, 21 Nov 2026).** Text that people read in a medium weight (500; long
-  reading text 450) in a deep near-black #111, which stays crisp on a modest laptop screen; big confident titles (the student's name
+  reading text 450; since 21 Nov 2026 600, see Strong contrast below) in a deep near-black (now #000), which stays crisp on a modest laptop screen; big confident titles (the student's name
   42px, section titles 24px, weight 650, tight letter spacing); labels of sections and days in small spaced capitals (12px, weight 600,
   0.08em, grey); few words: a detail is a label and its value, an empty one says just "Add"; details laid out as a spec sheet, two to a
   line. Warmth from the logo's blue, softly: a light tint behind a monogram and the stage, a very light wash behind the profile bar;
@@ -87,8 +88,10 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 - **Solid, not floating (the owner, 21 Nov 2026: "a hard rock, not a river").** Screens of record (the student card first) are
   solid panels and tables: a firm 1px grey border, a grey title bar, label and value in table rows, and no fading, sliding or rising
   in. Every change says who saved it and when. A partner is named by its name only, never "Direct" or "B2B".
-- **Less glare (the owner, 21 Nov 2026):** canvas #eef0f3, panels #f8f9fb (a cool off-white, never cream or yellow); on the student
-  card the Profile column #f1f3f6 and edit boxes #fdfdfe. Screens of work are flat: surfaces meet edge to edge with hairlines, not
+- **Strong contrast (the owner, 21 Nov 2026, option H from the colour preview, for tired eyes, a modest laptop screen and Night
+  light):** page #e6e6e6, side menu and the student card's Profile column #ececec, panels #f3f3f3, boxes and buttons #f7f7f7, never
+  pure white; text #000 in a semi-bold weight (600), titles 700, grey words #333; lines #b8b8b8 and #9a9a9a, field borders #6f6f6f;
+  links #0050aa; the blue buttons stay #0071e3. This replaces the earlier near-black #111 / #1d1d1f and grey #6e6e73 values above. Screens of work are flat: surfaces meet edge to edge with hairlines, not
   cards floating with margins on every side.
 
 ## 1a. The owner's direction for screens of work (21 Nov 2026)

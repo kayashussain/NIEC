@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 :root {
   /* NIEC brand, from the official logo and niec.edu.np: light blue, orange and grey. --niec-blue-text
@@ -7,12 +8,12 @@
   --niec-blue-tint: #e8f7fe;
   --niec-orange: #b86a00;
   --niec-grey: #9d9d9d;
-  --bg: #f3f6fa;
-  --panel: #ffffff;
-  --border: #dfe3e8;
-  --border-strong: #c7ccd4;
-  --text: #1c2126;
-  --text-dim: #5b6472;
+  --bg: #f3f3f3;
+  --panel: #f7f7f7;
+  --border: #b8b8b8;
+  --border-strong: #9a9a9a;
+  --text: #000;
+  --text-dim: #333;
   --accent: #b86a00;
   --primary: #cc4a0a; /* orange for buttons with white text: readable (4.6:1), unlike the bright brand orange */
   --primary-hover: #b54008;
@@ -23,13 +24,13 @@
   --focus-strong: #cbe9f8;
   --range-tint: rgba(2, 132, 199, 0.14);
   --header-bg: #eef3f8;
-  --row-alt: #f8fafc;
+  --row-alt: #f3f3f3;
   --row-hover: #e8f6fd;
   --danger: #dc2626;
   --green-bg: #e6f6ea; --green-fg: #1b7a3d;
   --blue-bg: #e8f0fe; --blue-fg: #1d4ed8;
   --amber-bg: #fef3e0; --amber-fg: #b45309;
-  --gray-bg: #eef0f2; --gray-fg: #5b6472;
+  --gray-bg: #e6e6e6; --gray-fg: #333;
   --red-bg: #fce8e8; --red-fg: #b91c1c;
   --rc-green: #bbf0c8; --rc-yellow: #fdf0a6; --rc-orange: #fdd5a8; --rc-red: #fbc4c4; --rc-blue: #c3dafc; --rc-purple: #ddd0fa; --rc-grey: #d6dae0;
 }
@@ -331,7 +332,7 @@ td.date { font-variant-numeric: tabular-nums; color: var(--text-dim); padding: 3
 #body td.date .date-input::-webkit-datetime-edit-fields-wrapper { padding: 0; }
 #body td.date .date-input::-webkit-calendar-picker-indicator { position: absolute; right: 0; top: 0; width: 34px; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 /* A WhatsApp number shared by more than one student on the sheet. !important beats the striped/hover row backgrounds. */
-td.duplicate-phone { background: #fff176 !important; color: #1c2126; font-weight: 600; }
+td.duplicate-phone { background: #fff176 !important; color: #000; font-weight: 600; }
 /* 🔴 CSS CHANGED (2026-11-14): hint text no longer slanted | from: italic grey | to: plain grey (Apple never slants text) */
 td.date-note { color: var(--text-dim); }
 #body td.lang-test, td.lang-test { padding: 5px 8px; white-space: nowrap; text-overflow: clip; }

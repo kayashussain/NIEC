@@ -6,12 +6,13 @@
 // Navigation depends on the account: Admin sees every page (Users and Activity in the account menu), the Manager the Dashboard, All Students and
 // Universities, and the teams All Students and Universities.
 // Text size (the owner, 21 Nov 2026): the whole page is drawn at Small (the look the team had at the browser's 67%), Medium or Large,
-// chosen per computer in the account menu and kept in this browser. Small for everyone at first; a person who wants bigger text picks
-// Medium or Large. Only on laptop and desktop screens (theme.css); a phone keeps its own size.
+// chosen per computer in the account menu and kept in this browser. Large for everyone at first (the owner, 21 Nov 2026: easier on the
+// eyes); a person who wants smaller text picks Medium or Small. The choice is kept under a new name, so every computer starts at Large
+// once, even where Small was picked before. Only on laptop and desktop screens (theme.css); a phone keeps its own size.
 (function () {
   const SIZES = ['small', 'medium', 'large'];
-  let size = 'small';
-  try { const kept = localStorage.getItem('isrSize'); if (SIZES.includes(kept)) size = kept; } catch (e) { /* the first size */ }
+  let size = 'large';
+  try { const kept = localStorage.getItem('isrTextSize'); if (SIZES.includes(kept)) size = kept; } catch (e) { /* the first size */ }
   // A page shown inside another (the student card opened over All Students) is already drawn at the size of the page around it.
   let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
   document.documentElement.setAttribute('data-size', framed ? 'framed' : size);
@@ -223,7 +224,7 @@
       e.stopPropagation();
       const k = b.getAttribute('data-size');
       document.documentElement.setAttribute('data-size', k);
-      try { localStorage.setItem('isrSize', k); } catch (err) { /* this page only */ }
+      try { localStorage.setItem('isrTextSize', k); } catch (err) { /* this page only */ }
       account.querySelectorAll('.niec-size-seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
       window.dispatchEvent(new Event('resize'));
     }));
