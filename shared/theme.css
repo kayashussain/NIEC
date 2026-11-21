@@ -4019,3 +4019,14 @@ html body a.uni-card.uc-card .uc-foot { margin-top: auto; }
 html body .fd-grid { align-items: stretch; }
 html body .fd-uni .fd-see-all { margin-top: auto; }
 html body .fd-uni .fd-course-box { margin-bottom: 14px; }
+/* 🔴 CSS CHANGED (2026-11-21): the independent review's fixes so every screen follows the one system | from: the Dashboard number tiles without their colour band (hidden by an older rule) and its two-card rows ending at different heights; Today's task board 36px wider than a 1366px laptop, so the last team column was cut ("5 day"); the All Students sheet box with 18px corners and a pale border; Partner cards side by side ending at different heights; a university's page in round 22 to 28px cards with soft shadows (the page, the campus film, the video tile, the logo); "Copy summary" and "Print or save as PDF" as bare words; the back-to-top button with a shadow | to: a 4px band in the stage colour across the top of every Dashboard number tile; cards in a Dashboard row and in Partners end on one line; the four team columns of Today fit the laptop screen (each at least 235px); the sheet box, the university page, its film and video tiles 10px corners, a firm #9a9a9a border where it is a panel, no shadows; the two university page actions as grey bordered buttons like everywhere else */
+html body:has(.ov-card) .ov-kpi::before { content: "" !important; }
+html body .ov-row.ov-row-2, html body .bp-grid, html body .bp-page .bp-grid { align-items: stretch; }
+html body .td-page.is-board .tb-board, html body .tb-board { grid-auto-columns: minmax(235px, 1fr); gap: 12px; }
+html:root body:has(#sheet) .table-wrap { border: 1px solid #9a9a9a; border-radius: 10px; box-shadow: none; }
+html:root body .up-doc { border: 1px solid #9a9a9a; border-radius: 10px; box-shadow: none; }
+html:root body :is(.up-film, .up-watch) { border-radius: 10px; box-shadow: none; }
+html:root body .up-logo { border: 1px solid #b8b8b8; border-radius: 10px; box-shadow: none; }
+html:root body #toolbar .btn { min-height: 40px; padding: 0 16px; border: 1px solid #9a9a9a; border-radius: 8px; background: #f7f7f7; color: #000; box-shadow: none; }
+html:root body #toolbar .btn:hover { background: #e2e2e2; }
+html:root body .to-top, html:root body .isr-top, html:root body [class*="back-top"] { box-shadow: none; border: 1px solid #9a9a9a; background: #f7f7f7; }
