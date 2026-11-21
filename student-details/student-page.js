@@ -19,6 +19,8 @@
 
   if (embedded) {
     document.body.classList.add('p-embed');
+    // Asked by the window around the card (card-drawer.js) before it closes or moves to another student.
+    window.isrCardBusy = () => Boolean(editingHero || editingOrigin || editingField || document.querySelector('dialog[open], .p-dialog'));
     document.getElementById('closeEmbed').addEventListener('click', () => parent.postMessage({ niecCard: 'close' }, location.origin));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !editingHero && !editingOrigin && !editingField && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && !document.querySelector('dialog[open], .p-dialog')) parent.postMessage({ niecCard: 'close' }, location.origin); });
     // ← and → go to the previous and next student of the list the card was opened from (card-drawer.js), when nothing is being typed.

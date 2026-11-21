@@ -255,7 +255,19 @@
       if (!ALL_STATUSES.includes(String(to ?? '').trim())) return { ok: false, message: 'That is not one of the stages.' };
       // Leaving Application needs the same details for a branch (university, course, application day, offer).
       const leave = MOVES.find((m) => m.dept === 'application' && m.from === from && m.to === to && m.mustFill);
-      const lacking = leave ? leave.mustFill.filter((c) => isBlank(row[c])) : [];
+      // A branch can move its students on several steps at once, but never past what proves the step: past Application needs the
+      // application details, CAS Issued and later need the CAS day, Visa Issued the visa day (the review of 21 Nov 2026: a branch moved
+      // a student from Inquiry to Visa Issued with nothing filled in, and they were counted as a visa).
+      const at = (st) => ALL_STATUSES.indexOf(st);
+      // Only the steps this move passes are checked; a student on Defer, Hold or Withdrawn may have stopped at any step, so all are.
+      const f = at(from) >= 0 && at(from) <= at('Visa Issued') ? at(from) : -1;
+      const passes = (st) => to !== from && at(to) >= at(st) && at(to) <= at('Visa Issued') && f < at(st);
+      const proof = [
+        ...(passes('Mock Stage') && !leave ? MOVES[0].mustFill : []),
+        ...(passes('CAS Issued') ? ['CAS RECEIVED DATE'] : []),
+        ...(passes('Visa Issued') ? ['VISA RECEIVED DATE'] : []),
+      ];
+      const lacking = [...new Set([...(leave ? leave.mustFill : []), ...proof])].filter((c) => isBlank(row[c]));
       if (lacking.length) return { ok: false, message: `This student can't go to ${to} yet. Please fill these first:\n\n• ${lacking.map(label).join('\n• ')}` };
       return { ok: true };
     }

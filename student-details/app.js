@@ -737,7 +737,7 @@
         document.body.dataset.role = me.role;
         $('#viewOnly').hidden = !Teams.isReadOnly(me);
         { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = false; } }
-        { const bs = document.getElementById('bulkSend'); if (bs) bs.hidden = Teams.isReadOnly(me); }
+        syncFollowupButton();
         document.body.toggleAttribute('data-viewonly', Teams.isReadOnly(me));
         document.body.toggleAttribute('data-candelete', Teams.canDelete(me));
       }
@@ -1439,9 +1439,11 @@
     emptyEl.querySelector('.ui-empty-icon').textContent = narrowed ? '🔍' : '🎓';
     emptyEl.querySelector('strong').textContent = narrowed ? 'No students match' : 'No students on this sheet yet';
     emptyEl.querySelector('.ui-empty-text').textContent = narrowed
-      ? 'Try a different search, or clear the filters.'
+      ? 'Try a different search, or press Clear all filters above.'
       : (isViewOnly() ? 'Students will appear here once they are added.' : 'Click “+ Add student” to add the first one.');
-    emptyEl.querySelector('button').hidden = !narrowed;
+    // The bar above already has Clear all filters whenever a search or a filter is on: never a second button for the same thing.
+    const barShows = Object.keys(columnFilters).length > 0 || searchEl.value.trim() !== '' || Boolean(cameFrom);
+    emptyEl.querySelector('button').hidden = !narrowed || barShows;
   }
   function clearAllFilters() {
     searchEl.value = '';
@@ -2480,6 +2482,13 @@
     }
   }
 
+  // The menu already has Follow-up for Admin, the Follow-up Team and the branches: the button is shown only to those without it
+  // (never two controls for the same thing). The menu draws itself after the page, so this runs again whenever the menu changes.
+  function syncFollowupButton() {
+    const bs = document.getElementById('bulkSend');
+    if (bs) bs.hidden = Boolean(me && Teams.isReadOnly(me)) || Boolean(document.querySelector('.niec-nav a[href="/bulk"]'));
+  }
+  { const menu = document.querySelector('.niec-header') || document.body; new MutationObserver(syncFollowupButton).observe(menu, { childList: true, subtree: menu !== document.body }); }
   const bulkBtn = document.getElementById('bulkSend');
   if (bulkBtn) bulkBtn.addEventListener('click', () => { location.href = '/bulk'; });
 

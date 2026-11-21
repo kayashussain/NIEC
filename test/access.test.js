@@ -495,6 +495,8 @@ test('a branch person sees and changes everything about their own branch student
   const edit = (id, col, value) => { const m = copy(); m.sheets[0].rows.find((r) => r._id === id)[col] = value; return Teams.teamChanges(ch, base, m); };
   assert.deepStrictEqual(edit('c1', 'GROSS FEE', '2000').errors, []);
   assert.deepStrictEqual(edit('c2', S, 'Payment Stage').errors, []);                 // any stage move
+  // ... but never past what proves a step: from Mock Stage straight to Visa Issued with no CAS or visa day is refused.
+  assert.ok(edit('c2', S, 'Visa Issued').errors.length, 'a jump to Visa Issued needs the CAS and visa days');
   assert.deepStrictEqual(edit('c1', S, 'Inquiry').errors, []);
   assert.ok(edit('c1', src, 'Pokhara Branch').errors.length, 'cannot hand a student to another branch');
 

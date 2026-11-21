@@ -74,8 +74,15 @@
       next.title = at < ids.length - 1 && nameOf(at + 1) ? `Next: ${nameOf(at + 1)} (→)` : 'Next student (→)';
       frame.focus({ preventScroll: true });
     };
-    prev.addEventListener('click', () => show(at - 1));
-    next.addEventListener('click', () => show(at + 1));
+    // A form open on the card (Edit profile, a detail being typed): leaving it by a click beside the window or the next student
+    // asks first, as Escape already does, so typed words are never lost without a word (the review of 21 Nov 2026).
+    const busy = () => { try { const w = frame.contentWindow; return Boolean(w && w.isrCardBusy && w.isrCardBusy()); } catch (e) { return false; } };
+    const leave = async (go) => {
+      if (busy() && !(await root.NiecUI.confirm('You have changes on this card that are not saved. Leave without saving them?', { confirmText: 'Leave without saving', cancelText: 'Stay' }))) return;
+      go();
+    };
+    prev.addEventListener('click', () => leave(() => show(at - 1)));
+    next.addEventListener('click', () => leave(() => show(at + 1)));
     if (at !== -1 && ids.length > 1) drawer.append(nav); else ids.length = 0;
     show(at);
     const onKey = (e) => { if (e.key === 'Escape' && jump.hidden && !(root.NiecUI && root.NiecUI.isOpen())) close(); };
@@ -85,7 +92,7 @@
       else if (e.data.niecCard === 'next' && ids.length) show(at + 1);
       else if (e.data.niecCard === 'prev' && ids.length) show(at - 1);
     };
-    back.addEventListener('mousedown', close);
+    back.addEventListener('mousedown', () => leave(close));
     document.addEventListener('keydown', onKey);
     window.addEventListener('message', onMessage);
     // The keyboard goes with the card: whatever was being typed in on the page underneath (a cell of the sheet, after a

@@ -203,7 +203,9 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.waitForSelector('#body tr:not(.pad-row)');
     await page.fill('#search', 'zzzzzz');
     await page.waitForSelector('#sheetEmpty:not([hidden])');
-    await page.click('#clearFilters');
+    // One button clears it: the bar's Clear all filters (the empty note does not repeat it).
+    assert.ok(await page.isHidden('#clearFilters'));
+    await page.click('#clearAllFilters');
     await page.waitForSelector('#sheetEmpty', { state: 'hidden' });
     assert.match(await page.textContent('#rowCount'), /^12 of 12/);
     await page.close();
