@@ -4139,3 +4139,7 @@ html body .td-tasks .td-empty { border: 0; border-radius: 0; background: none; b
 html body .td-tasks .td-empty svg { display: none; }
 html body .td-pulse.td-summary { padding: 16px 24px; }
 html body .td-view-dot { top: 3px; right: 2px; background: #b42318; }
+/* 🔴 CSS CHANGED (2026-11-21): the "changed elsewhere, your edit was not saved" bar on All Students | from: plain red words across the full width with a hairline running past the sheet, the Reload button on a line of its own | to: a panel lined up with the sheet like the filter bar above it (24px in from each side, 10px corners, a firm red #b42318 border on the soft box colour #f7f7f7), the words in red #b42318 and Reload latest on the same line at the right */
+html body .conflict-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: nowrap; margin: 0 24px 8px; padding: 10px 14px; border: 1px solid #b42318; border-radius: 10px; background: #f7f7f7; color: #b42318; font-weight: 600; box-shadow: none; }
+html body .conflict-banner[hidden] { display: none; }
+html body .conflict-banner .btn { flex: none; }
