@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-21): one grey for secondary words in this file | from: several near-greys (#515154, #5f5f64, #66666b, #5c5c63, #86868b, #5b6472, #64635d, #525150, #48484e), some too pale to read | to: Apple's one grey, #6e6e73, everywhere a word is grey (only the colour of words changed; backgrounds untouched) */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 /* ISR design system.
    One light look, made to be easy on the eyes through a long day: a soft grey canvas, panels that are a gentle off-white instead of glaring pure white, strong dark text (about 15 to 1 contrast), a calm blue for the main action and for focus, and larger, roomier type and controls.
@@ -964,25 +965,25 @@ body:has(#sheet) .topbar #addRow:hover:not(:disabled) { background: #0077ed; col
 body:has(#sheet) .topbar #delRow { color: var(--red-fg); }
 body:has(#sheet) .topbar #delRow:hover:not(:disabled) { background: var(--red-bg); color: var(--red-fg); }
 body:has(#sheet) .table-wrap { border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, .04); }
-body:has(#sheet) #sheet thead th, body:has(#sheet) #sheet thead th.col-idx { background: var(--header-bg); color: #5f5f64; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; border-bottom: 1px solid var(--border-strong); }
+body:has(#sheet) #sheet thead th, body:has(#sheet) #sheet thead th.col-idx { background: var(--header-bg); color: #6e6e73; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; border-bottom: 1px solid var(--border-strong); }
 body:has(#sheet) #sheet thead th .th-label { font-size: 12.5px !important; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-body:has(#sheet) #sheet thead th .filter-btn { color: #66666b; }
+body:has(#sheet) #sheet thead th .filter-btn { color: #6e6e73; }
 body:has(#sheet) #sheet tbody tr:not(.pad-row) td { color: var(--ink); border-right: 1px solid #ececf0; border-bottom: 1px solid #ececf0; }
 body:has(#sheet) #sheet thead th { border-right: 1px solid #ececf0; }
-body:has(#sheet) #sheet td.col-idx { color: #66666b; font-size: 13px; font-variant-numeric: tabular-nums; background-color: var(--header-bg); }
+body:has(#sheet) #sheet td.col-idx { color: #6e6e73; font-size: 13px; font-variant-numeric: tabular-nums; background-color: var(--header-bg); }
 body:has(#sheet) #sheet td.date { font-variant-numeric: tabular-nums; color: #3a3a3c; }
 body:has(#sheet) #sheet tbody tr:not(.pad-row):hover td { background-color: var(--row-hover); }
 body:has(#sheet) #sheet .status-select { height: 28px; padding: 0 24px 0 10px; border: 0; border-radius: 8px; font-size: 13px; font-weight: 600; line-height: 28px; box-shadow: none; }
 /* 🔴 CSS CHANGED (2026-11-15): dropdown cells on All Students, Receiving Partner, University Partner, NOC and the other plain ones (a bug fix) | from: a click drew a second blue ring around the small dropdown inside the cell's own blue frame (a box in a box), the dropdown was only as wide as its words, had no arrow and its words were smaller than the rest of the row | to: one frame only (the cell's); the dropdown fills the cell, its words are the size of the other cells, and a small grey chevron at the right shows it is a choice; an empty one reads "Select" in grey */
 body:has(#sheet) #sheet .status-select.badge-gray { width: 100%; padding-right: 26px; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%23a1a1a6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center; color: #1d1d1f; font-size: 14.5px; font-weight: 400; text-overflow: ellipsis; }
-body:has(#sheet) #sheet .status-select.badge-gray:has(> option:checked[value=""]) { color: #66666b; }
+body:has(#sheet) #sheet .status-select.badge-gray:has(> option:checked[value=""]) { color: #6e6e73; }
 /* 🔴 CSS CHANGED (2026-11-16): a long name in a grey dropdown on All Students (University Partner, Receiving Partner, a long course) | from: the words ran on under the small arrow and were cut off in the middle of a letter ("The Official Representati") | to: the words stop before the arrow and end with "..." ("The Official Repre..."); the whole name shows on hover and in the list */
 body:has(#sheet) #sheet select.status-select.badge-gray { appearance: none; display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 body:has(#sheet) #sheet .status-select:focus, body:has(#sheet) #sheet .status-select:focus-visible { outline: none; box-shadow: none !important; }
 body:has(#sheet) #sheet td:has(> .status-select.badge-gray) { padding-left: 4px; padding-right: 4px; }
 body:has(#sheet) .sheet-tabs { padding: 10px 12px; border-top: 1px solid var(--border); background: var(--panel); }
 body:has(#sheet) .sheet-tabs-list { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: #ececf0; }
-body:has(#sheet) .sheet-tab { padding: 6px 12px; border: 0; border-radius: 9px; background: transparent; color: #5c5c63; font-weight: 550; box-shadow: none; }
+body:has(#sheet) .sheet-tab { padding: 6px 12px; border: 0; border-radius: 9px; background: transparent; color: #6e6e73; font-weight: 550; box-shadow: none; }
 body:has(#sheet) .sheet-tab.active, body:has(#sheet) .sheet-tab[aria-selected="true"] { background: #fff; color: var(--ink); font-weight: 650; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
 body:has(#sheet) .sheet-tab::after { content: none !important; }
 body:has(#sheet) .sheet-add-btn { border: 1px solid var(--border); border-radius: 9px; background: transparent; color: #3a3a3c; }
@@ -995,11 +996,11 @@ body:has(.p-embed-bar) .p-card.p-hero::before { content: none; }
 body:has(.p-embed-bar) .p-hero .p-avatar { width: 64px; height: 64px; background: linear-gradient(180deg, #a1a1a6, #6e6e73); color: #fff; font-family: var(--font); font-size: 21px; font-weight: 600; letter-spacing: .02em; box-shadow: none; }
 body:has(.p-embed-bar) .p-hero h1 { font-family: var(--font); font-size: 34px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
 body:has(.p-embed-bar) .p-hero .p-facts { border-top-color: var(--border); }
-body:has(.p-embed-bar) .p-hero .p-fact dt { color: #66666b; font-weight: 600; text-transform: uppercase; }
+body:has(.p-embed-bar) .p-hero .p-fact dt { color: #6e6e73; font-weight: 600; text-transform: uppercase; }
 body:has(.p-embed-bar) .p-hero .p-fact dd { margin-top: 4px; font-size: 15px; font-weight: 500; }
 body:has(.p-embed-bar) .p-hero .p-fact dd a { text-decoration-color: rgba(0, 102, 204, .45); }
 body:has(.p-embed-bar) .p-tabs { display: inline-flex; width: auto; gap: 2px; margin: 22px 0 18px; padding: 3px; border: 0; border-radius: 12px; background: #ececf0; }
-body:has(.p-embed-bar) .p-tabs button { padding: 7px 16px; border-radius: 9px; font-size: 14.5px; font-weight: 550; color: #5c5c63; box-shadow: none; }
+body:has(.p-embed-bar) .p-tabs button { padding: 7px 16px; border-radius: 9px; font-size: 14.5px; font-weight: 550; color: #6e6e73; box-shadow: none; }
 body:has(.p-embed-bar) .p-tabs button[aria-selected="true"] { background: #fff; color: var(--ink); font-weight: 650; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) { padding: 26px 28px; border: 0; border-radius: 20px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, .04); }
 body:has(.p-embed-bar) #view .p-card:not(.p-hero) h2 { font-family: var(--font); font-size: 18px; font-weight: 650; letter-spacing: -.015em; color: var(--ink); }
@@ -1022,7 +1023,7 @@ h1, .p-head h1, .page-head h1, .td-hello h1 { font-family: var(--font); font-wei
 h2, h3, .p-card > h2, .p-card-head h2, .md-card-head h2, .td-tasks-head h2, .td-attn-head h2, body:has(.p-embed-bar) #view .p-card:not(.p-hero) h2 { font-family: var(--font); font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 .p-card-head h2, .p-card > h2 { font-size: 19px; }
 .p-kpi b, .md-kpi b, .md-week-item b, .ov-kpi b, .ov-kpi-value, .stat-value { font-family: var(--font); font-weight: 600; letter-spacing: -.025em; color: var(--ink); }
-.td-kicker { color: #5f5f64; letter-spacing: .08em; }
+.td-kicker { color: #6e6e73; letter-spacing: .08em; }
 /* panels: no hard borders, soft shadow, generous corners */
 .p-card, .page .card, .md-card, .md-kpi, .td-attn, .td-tasks, .p-kpi, .bp-card, .pu-card, .ov-card, .tp-panel, .bp-band, .ev-band, .p-table-wrap { border-color: rgba(0, 0, 0, .05) !important; border-radius: 20px; background: var(--panel); box-shadow: var(--sh-2); }
 .td-tasks { background: var(--panel); box-shadow: var(--sh-3); }
@@ -1051,15 +1052,15 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="
 input:focus-visible, select:focus-visible, textarea:focus-visible, .p-field input:focus, .p-field select:focus, .p-field textarea:focus, .p-input:focus { outline: none; border-color: #0071e3 !important; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18) !important; }
 /* tabs as a segmented control */
 .p-tabs { display: inline-flex; width: auto; gap: 2px; padding: 3px; border: 0; border-radius: 12px; background: #e8e8ed; }
-.p-tabs button { padding: 7px 16px; border: 0; border-radius: 9px; background: transparent; color: #515154; font-weight: 500; box-shadow: none; }
+.p-tabs button { padding: 7px 16px; border: 0; border-radius: 9px; background: transparent; color: #6e6e73; font-weight: 500; box-shadow: none; }
 .p-tabs button[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
 /* tables on the other pages: headings in small spaced capitals */
-.p-table th, .page table th { background: #f7f7f9; color: #5f5f64; font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; border-bottom: 1px solid var(--border-strong); }
+.p-table th, .page table th { background: #f7f7f9; color: #6e6e73; font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; border-bottom: 1px solid var(--border-strong); }
 .p-table td, .page table td { border-color: #ececf0; }
 .p-notice { border-radius: 14px; }
 /* the cost figures and campaign tags on Events and marketing in the same look (the page's own styles come after this file, so these carry the body in front) */
 html body .ev-band .gold b, html body .ev-lrow.item .num.gold { color: #0071e3; }
-html body .ev-tag.mk { border-color: #d2d2d7; color: #515154; }
+html body .ev-tag.mk { border-color: #d2d2d7; color: #6e6e73; }
 
 /* 🔴 CSS CHANGED (2026-11-14): movement and the last pieces of the Apple look (the owner: "it should move like a Mac") | from: segmented controls that jumped from one segment to the next; the "Show numbers" boxes with serif figures, a blue line under Total and a bronze Conversion rate; pop-ups (Add student, Assign a task, Edit details ...) with a serif title and a hard line under the header; pages that appeared with no transition; buttons without press feedback | to: a white pill that slides to the chosen segment (card tabs, intake tabs, Dashboard switches); "Show numbers" as calm rounded tiles that slide in, figures in the system font, Total in blue and Conversion rate in green; pop-ups as Mac-style sheets that spring open and fade away, a large clean title, no header line, blurred background; a soft cross-fade between pages (Chrome and Edge); buttons that press in slightly; cards and rows that ease on hover; everything still at once for people who ask their computer for less motion */
 :root { --spring: cubic-bezier(.2, .9, .25, 1); --ease-out: cubic-bezier(.16, 1, .3, 1); }
@@ -1070,7 +1071,7 @@ html body .ev-tag.mk { border-color: #d2d2d7; color: #515154; }
 .has-thumb > [aria-selected="true"], .has-thumb > .active, .has-thumb > .on { background: transparent !important; box-shadow: none !important; }
 .p-tabs button, body:has(#sheet) .sheet-tab, .dd-switch button { transition: color .25s var(--ease-out); }
 .dd-switch { position: relative; display: inline-flex; gap: 2px; padding: 3px; border: 0; border-radius: 12px; background: #e8e8ed; }
-.dd-switch button { border: 0; border-radius: 9px; background: transparent; color: #515154; font-weight: 500; }
+.dd-switch button { border: 0; border-radius: 9px; background: transparent; color: #6e6e73; font-weight: 500; }
 .dd-switch button.on { color: #1d1d1f; font-weight: 600; }
 /* "Show numbers" on All Students */
 body:has(#sheet) .status-summary:not([hidden]) { animation: isr-slide-down .45s var(--ease-out) both; }
@@ -1078,7 +1079,7 @@ body:has(#sheet) .stat-card, body:has(#sheet) .stat-card.stat-total { border: 0;
 body:has(#sheet) .stat-card::after, body:has(#sheet) .stat-card.stat-total::after { content: none; }
 body:has(#sheet) .stat-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 0, 0, .07); }
 body:has(#sheet) .stat-card .stat-value, body:has(#sheet) .stat-card.stat-total .stat-value { font-family: var(--font); font-size: 24px; font-weight: 600; letter-spacing: -.02em; color: #1d1d1f; }
-body:has(#sheet) .stat-card .stat-label, body:has(#sheet) .stat-card.stat-total .stat-label { color: #5f5f64; font-size: 13.5px !important; font-weight: 500; }
+body:has(#sheet) .stat-card .stat-label, body:has(#sheet) .stat-card.stat-total .stat-label { color: #6e6e73; font-size: 13.5px !important; font-weight: 500; }
 body:has(#sheet) .stat-card.stat-total { box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
 body:has(#sheet) .stat-card.stat-rate { box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .04); }
 /* 🔴 CSS CHANGED (2026-11-20): All Students, Show numbers | from: the Conversion Rate figure in green | to: in near-black like every other figure (calm, as Apple) */
@@ -1093,7 +1094,7 @@ dialog.p-dialog.is-closing::backdrop { animation: isr-fade-out .16s ease-in both
 .p-dialog-head h2, .ui-dialog h2, #ui-dialog-title { font-family: var(--font); font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: #1d1d1f; }
 .p-dialog-body { padding: 10px 26px 24px; }
 .p-dialog-body h3 { font-family: var(--font); font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: #1d1d1f; text-transform: none; }
-.p-x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #e8e8ed; color: #515154; font-size: 18px; line-height: 1; transition: background .2s; }
+.p-x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #e8e8ed; color: #6e6e73; font-size: 18px; line-height: 1; transition: background .2s; }
 .p-x:hover { background: #dcdce2; color: #1d1d1f; }
 .p-dialog-foot { border-top: 0 !important; }
 /* 🔴 CSS CHANGED (2026-11-16): the Cancel / Save buttons at the bottom of a long window (Add a student, Edit details, Mark as done) | from: the buttons stayed 24px above the window's bottom edge, so the form scrolled through that gap underneath them (half a heading, "Where the student came from", showed cut off below the buttons) | to: the button bar reaches the bottom edge and covers the gap; the buttons stay where they were */
@@ -1130,15 +1131,15 @@ details.td-attn-row[open] .td-attn-list { animation: isr-slide-down .35s var(--e
 .niec-avatar { color: #fff !important; }
 /* tabs on Users, Activity and Incentive: segmented control */
 .tabs[role="tablist"], #tabs.tabs { display: inline-flex; flex-wrap: wrap; gap: 2px; width: auto; padding: 3px; border: 0; border-radius: 12px; background: #e8e8ed; box-shadow: none; }
-.tabs > button, .tabs > .tab { margin: 0; padding: 7px 16px; border: 0 !important; border-radius: 9px; background: transparent; color: #515154; font-weight: 500; box-shadow: none !important; }
+.tabs > button, .tabs > .tab { margin: 0; padding: 7px 16px; border: 0 !important; border-radius: 9px; background: transparent; color: #6e6e73; font-weight: 500; box-shadow: none !important; }
 .tabs > button[aria-selected="true"], .tabs > .tab.active { color: #1d1d1f; font-weight: 600; }
 .tabs:not(.has-thumb) > button[aria-selected="true"], .tabs:not(.has-thumb) > .tab.active { background: #fff; }
-.tabs .count { margin-left: 6px; padding: 1px 8px; border-radius: 980px; background: rgba(0, 0, 0, .06); color: #515154; font-weight: 600; }
+.tabs .count { margin-left: 6px; padding: 1px 8px; border-radius: 980px; background: rgba(0, 0, 0, .06); color: #6e6e73; font-weight: 600; }
 /* chips and pills */
 .chip-admin, .chip-manager, .chip { border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; }
 .activity-action.cat-logins { background: #e8f2fd; color: #0058b9; }
 #summary .tile { border: 0 !important; border-left: 0 !important; border-radius: 18px; background: var(--panel); box-shadow: var(--sh-2); }
-#view-only, #viewOnly.view-only, .view-only { border: 0; border-radius: 980px; background: #e8e8ed; color: #515154; }
+#view-only, #viewOnly.view-only, .view-only { border: 0; border-radius: 980px; background: #e8e8ed; color: #6e6e73; }
 /* Universities university page */
 .doc ol li::before { background: #e8f2fd !important; color: #0058b9 !important; border: 0 !important; }
 .doc h2::before { background: #0071e3 !important; }
@@ -1165,12 +1166,12 @@ body:has(.p-embed-bar) .p-hero .p-fact dt { font-size: 13px; letter-spacing: .04
 .md-todo-n { display: grid; place-items: center; height: 48px; border-radius: 14px; background: #e8f1fc; color: #0071e3; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .md-todo-words { display: grid; gap: 2px; min-width: 0; }
 .md-todo-words b { color: #1d1d1f; font-size: 16px; font-weight: 600; }
-.md-todo-words small { color: #5f5f64; font-size: 13.5px; }
+.md-todo-words small { color: #6e6e73; font-size: 13.5px; }
 .md-todo-names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .md-todo-name { padding: 3px 12px; border-radius: 999px; background: #f0f0f3; color: #1d1d1f; font-size: 13.5px; text-decoration: none; transition: background .2s; }
 .md-todo-name:hover { background: #e3e3e8; }
 .md-todo-name:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
-.md-todo-more { padding: 3px 4px; color: #5f5f64; font-size: 13.5px; }
+.md-todo-more { padding: 3px 4px; color: #6e6e73; font-size: 13.5px; }
 .td-kicker, .td-group h3 { font-size: 13px; }
 .td-done-toggle { color: #0066cc; text-decoration: none; }
 .td-done-toggle:hover { text-decoration: underline; }
@@ -1198,7 +1199,7 @@ dialog.ui-dialog .ui-ok.danger { background: #d70015; }
 .fly-pal-input { background: var(--panel); color: #1d1d1f; }
 .fly-pal-item { color: #1d1d1f; }
 .fly-pal-item.on, .fly-pal-item:hover { background: #e8f2fd; }
-.fly-pal-kind { font-size: 13px; color: #5f5f64; }
+.fly-pal-kind { font-size: 13px; color: #6e6e73; }
 .ui-toast button { border-radius: 50%; }
 /* Message templates: switched-on stages */
 /* Dashboard: no coloured stubs on the figure cards */
@@ -1234,8 +1235,8 @@ body:has(.niec-demo) .ui-toasts { top: 60px; }
 .td-task-top .td-task-text { flex: 1; min-width: 0; }
 .td-dot { flex: none; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px; background: #ff3b30; color: #fff; font-size: 12.5px; font-weight: 700; line-height: 22px; text-align: center; box-shadow: 0 2px 8px -2px rgba(255, 59, 48, .6); animation: isr-pop .5s cubic-bezier(.34, 1.56, .64, 1) both; }
 .td-route { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; }
-.td-route .td-arrow { color: #66666b; }
-.td-route .td-when::before, .td-route .td-donemark::before { content: "\00b7"; margin-right: 8px; color: #66666b; }
+.td-route .td-arrow { color: #6e6e73; }
+.td-route .td-when::before, .td-route .td-donemark::before { content: "\00b7"; margin-right: 8px; color: #6e6e73; }
 .td-route .td-donemark { color: #248a3d; }
 .td-group-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .td-group-head h3 { margin: 0; color: #1d1d1f; font-size: 17px; letter-spacing: -.01em; text-transform: none; }
@@ -1259,11 +1260,11 @@ body:has(.niec-demo) .ui-toasts { top: 60px; }
 .tk-main { flex: 1; min-width: 0; }
 .tk-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .tk-head b { color: #1d1d1f; font-size: 14px; font-weight: 650; }
-.tk-head time { color: #66666b; font-size: 12.5px; }
+.tk-head time { color: #6e6e73; font-size: 12.5px; }
 .tk-text { margin: 3px 0 0; color: #1d1d1f; font-size: 15px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .tk-msg.is-new { animation: isr-rise-in .45s cubic-bezier(.32, .72, 0, 1) backwards; background: linear-gradient(90deg, rgba(255, 59, 48, .06), transparent 60%); }
 .tk-msg.is-posted { animation: isr-rise-in .45s cubic-bezier(.32, .72, 0, 1) backwards; }
-.tk-empty { padding: 14px 16px; color: #5f5f64; font-size: 14px; }
+.tk-empty { padding: 14px 16px; color: #6e6e73; font-size: 14px; }
 .tk-compose { transition: border-color .2s, box-shadow .2s; }
 .tk-compose:focus-within { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .14); }
 html body .tk-compose textarea.tk-input { display: block; width: 100%; max-height: 180px; margin: 0; border: 0 !important; outline: 0 !important; box-shadow: none !important; resize: none; background: transparent !important; color: #1d1d1f; font: inherit; line-height: 1.45; }
@@ -1352,7 +1353,7 @@ svg .dd-slice, svg circle[stroke-dasharray] { animation: isr-ring .9s cubic-bezi
 .isr-cal-nav button:active { transform: scale(.9); }
 .isr-cal-nav svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .isr-cal-week, .isr-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.isr-cal-week span { padding: 4px 0 6px; color: #66666b; font-size: 11.5px; font-weight: 600; text-align: center; }
+.isr-cal-week span { padding: 4px 0 6px; color: #6e6e73; font-size: 11.5px; font-weight: 600; text-align: center; }
 .isr-cal-day { width: 36px; height: 36px; margin: 0 auto; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #1d1d1f; font: inherit; font-size: 15px; font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color .12s, color .12s, transform .12s; }
 .isr-cal-day:hover:not(:disabled):not(.is-on) { background: rgba(0, 0, 0, .06); }
 .isr-cal-day:active:not(:disabled) { transform: scale(.9); }
@@ -1383,7 +1384,7 @@ html.isr-cal-on input[type="date"]:hover::-webkit-calendar-picker-indicator { ba
 .p-date input[type="date"] { width: 100%; }
 .p-date:not(.typing) input[type="date"]::-webkit-datetime-edit { opacity: 0; }
 .p-date-text { position: absolute; left: 15px; right: 44px; top: 50%; transform: translateY(-50%); overflow: hidden; color: #1d1d1f; font-size: 15px; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
-.p-date.is-empty .p-date-text { color: #66666b; }
+.p-date.is-empty .p-date-text { color: #6e6e73; }
 .p-date.typing .p-date-text { visibility: hidden; }
 
 /* 🔴 CSS CHANGED (2026-11-14): the rest of the full page review | from: on Users, five buttons per person wrapping onto two lines, and peach initials; the chosen message template marked with a coloured bar; dashed boxes for the words filled in from the student; yellow outlined warnings (for example "Email is not set up on this server yet"); square grey checkboxes | to: on Users, one "Edit" pill and a "\2026" pill that opens a small Apple-style menu (Reset password, Log out everywhere, Disable, and Remove in red), grey initials; the chosen template a soft grey highlight with no bar; the fill-in words as soft grey pills in the system font; warnings as a soft panel with an orange dot; checkboxes and radio buttons in Apple blue */
@@ -1404,7 +1405,7 @@ html.isr-cal-on input[type="date"]:hover::-webkit-calendar-picker-indicator { ba
 .p-notice.warn::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ff9500; transform: translateY(-1px); }
 input[type="checkbox"], input[type="radio"] { accent-color: #0071e3; }
 /* 🔴 CSS CHANGED (2026-11-14): forms | from: an empty dropdown was a blank box; a section heading sat right on the first labels under it | to: an empty dropdown reads "Choose…" in grey; 16px between a section heading and its form */
-select:has(> option:checked[value=""]) { color: #66666b; }
+select:has(> option:checked[value=""]) { color: #6e6e73; }
 select option { color: #1d1d1f; }
 .p-card > h2 + .p-form, .p-card > h2 + .p-form-2 { margin-top: 16px; }
 
@@ -1421,7 +1422,7 @@ select option { color: #1d1d1f; }
 /* 🔴 CSS CHANGED (2026-11-14): the signature picture on My email | from: nothing (there was no signature picture for a team member) | to: the picture on a white rounded panel, at most 560px wide, or a dashed grey "No signature picture yet" box */
 .p-sig { margin: 14px 0 6px; }
 .p-sig img { display: block; max-width: min(560px, 100%); height: auto; padding: 14px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 2px 10px rgba(0, 0, 0, .05); }
-.p-sig-empty { padding: 22px; border: 1.5px dashed #d2d2d7; border-radius: 14px; color: #66666b; text-align: center; }
+.p-sig-empty { padding: 22px; border: 1.5px dashed #d2d2d7; border-radius: 14px; color: #6e6e73; text-align: center; }
 
 /* 🔴 CSS CHANGED (2026-11-14): the account area at the bottom of the menu | from: a grey rectangle with an outline, like a big button, on a second grey band; a menu with three links in it | to: just the round initials, the name and the role on the menu itself (no box, no outline), a soft grey highlight under the mouse, a small chevron; its menu is a small frosted Apple panel with the name and Log out, which springs open */
 .niec-menu { padding: 6px; border: 0 !important; border-radius: 14px !important; background: rgba(251, 251, 253, .97) !important; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 16px 44px -12px rgba(0, 0, 0, .3), 0 0 0 .5px rgba(0, 0, 0, .1) !important; transform-origin: bottom left; animation: isr-cal-in .22s cubic-bezier(.32, .72, 0, 1) both; }
@@ -1514,17 +1515,17 @@ select option { color: #1d1d1f; }
 .tr-peak { animation: isr-pop .5s cubic-bezier(.34, 1.56, .64, 1) 1s backwards; transform-box: fill-box; transform-origin: center; }
 .tr-peak-label { font: 700 11px var(--font); paint-order: stroke; stroke: #fbfbfd; stroke-width: 4px; }
 .tr-cross-line { stroke: rgba(0, 0, 0, .25); stroke-width: 1; stroke-dasharray: 2 3; }
-.tr-key.line small { color: #66666b; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tr-key.line small { color: #6e6e73; font-size: 12px; font-variant-numeric: tabular-nums; }
 .tr-key.line i { width: 14px; height: 4px; border-radius: 2px; }
 .tr-source select { min-height: 32px; padding: 0 30px 0 12px; border: 0; border-radius: 980px; background-color: rgba(0, 0, 0, .04); font: inherit; font-size: 13px; color: #1d1d1f; }
 .tr-lines { align-items: center; }
 .tr-table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 14px; }
-.tr-table th { padding: 8px 10px; color: #5f5f64; font-size: 12.5px; font-weight: 600; text-align: right; border-bottom: 1px solid rgba(0, 0, 0, .08); }
+.tr-table th { padding: 8px 10px; color: #6e6e73; font-size: 12.5px; font-weight: 600; text-align: right; border-bottom: 1px solid rgba(0, 0, 0, .08); }
 .tr-table th:first-child, .tr-table td:first-child { text-align: left; }
 .tr-table td { padding: 10px; text-align: right; border-bottom: 1px solid rgba(0, 0, 0, .05); font-variant-numeric: tabular-nums; }
 .tr-table td b { font-weight: 600; }
 .tr-table .tr-name { font-weight: 600; }
-.tr-chg { display: block; margin-top: 2px; color: #66666b; font-size: 12px; font-weight: 600; }
+.tr-chg { display: block; margin-top: 2px; color: #6e6e73; font-size: 12px; font-weight: 600; }
 .tr-chg.up { color: #248a3d; }
 .tr-chg.down { color: #d70015; }
 .tr-table tr { transition: background-color .15s; }
@@ -1536,7 +1537,7 @@ select option { color: #1d1d1f; }
 .tr-live { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 980px; background: rgba(0, 113, 227, .1); color: #0066cc; font-size: 11.5px; font-weight: 600; vertical-align: 1px; }
 /* 🔴 CSS CHANGED (2026-11-14): the "How they came" choice for a Social Media student | from: two plain browser buttons | to: Apple's segmented switch (a grey track with a white pill that slides to Organic or Advert) */
 .p-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: #e8e8ed; }
-.p-seg > button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: #515154; font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: color .25s; }
+.p-seg > button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: #6e6e73; font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: color .25s; }
 .p-seg > button.on { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
 /* 🔴 CSS CHANGED (2026-11-14): Organic / Advert switch labels stay on one line | from: a long label wrapped onto two lines | to: each label on one line */
 .p-seg > button { white-space: nowrap; }
@@ -1552,7 +1553,7 @@ select option { color: #1d1d1f; }
 .p-missing { display: inline-flex; align-items: center; gap: 6px; color: #a84d00; font-weight: 600; }
 .p-missing::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #ff9500; }
 /* 🔴 CSS CHANGED (2026-11-14): a task handed on to another team | from: a task went only from the giver to one team | to: the route line shows each team it was with in grey ("SK → Mock Team → Application Team", the team it is with now in bold), and the hand-on in the comments is a soft blue panel whose first line says "Mock Team handed this to Application Team" in blue semibold */
-.td-route .td-was { color: #5f5f64; }
+.td-route .td-was { color: #6e6e73; }
 .tk-msg.is-handoff .tk-main { padding: 8px 12px; border-radius: 12px; background: rgba(0, 113, 227, .07); }
 .tk-hand { margin: 3px 0 0; color: #0058b0; font-size: 14.5px; font-weight: 600; }
 /* 🔴 CSS CHANGED (2026-11-14): Business growth table on a phone (a bug fix) | from: the Visas and Visa rate columns were cut off at the right edge | to: the table slides sideways inside its card, so every column can be read */
@@ -1562,7 +1563,7 @@ select option { color: #1d1d1f; }
 .td-acts { display: flex; flex: none; gap: 6px; margin-left: auto; }
 .td-act { min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font: 600 13.5px/30px var(--font); cursor: pointer; transition: background .2s, color .2s; }
 .td-act:hover { background: #dcdce1; }
-.td-act.danger { color: #5f5f64; }
+.td-act.danger { color: #6e6e73; }
 .td-act.danger:hover { background: #ffe5e3; color: #d70015; }
 .td-act:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
 /* 🔴 CSS CHANGED (2026-11-14): University options, Find a course | from: two boxes and a remarks box with no Search button (results changed as you typed) | to: one row: Study level, Course name and a blue Search button lined up at the bottom; the remarks box below is two lines high; the count of courses found sits above the results */
@@ -1578,10 +1579,10 @@ select option { color: #1d1d1f; }
 /* 🔴 CSS CHANGED (2026-11-14): Today, the day at a glance (new) | from: Today started straight with the task list | to: a soft off-white panel at the top: a ring that fills in blue as this week's tasks are done (its % in the middle), "3 tasks open for you" or "All caught up" in large type, then "done this week" in green and "students waiting" in orange as big numbers; on a phone the numbers go under the ring */
 .td-pulse { display: grid; gap: 22px; align-items: center; margin: 0 0 18px; padding: 20px 24px; border-radius: 20px; background: #fbfbfd; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 28px -18px rgba(0, 0, 0, .18); }
 .td-pulse-words h2 { margin: 0; color: #1d1d1f; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
-.td-pulse-words p { margin: 4px 0 0; color: #5f5f64; font-size: 14.5px; }
+.td-pulse-words p { margin: 4px 0 0; color: #6e6e73; font-size: 14.5px; }
 .td-stat { display: grid; min-width: 104px; padding: 10px 16px; border-radius: 14px; background: #f5f5f7; text-align: center; }
 .td-stat b { color: #1d1d1f; font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.td-stat span { color: #5f5f64; font-size: 12.5px; }
+.td-stat span { color: #6e6e73; font-size: 12.5px; }
 .td-stat.good b { color: #248a3d; }
 .td-stat.warn b { color: #a84d00; }
 @media (max-width: 760px) { .td-pulse { grid-template-columns: auto 1fr; gap: 14px; padding: 16px; } .td-pulse-words h2 { font-size: 19px; } .td-pulse-words p { font-size: 13.5px; } .td-stat { min-width: 0; padding: 8px 10px; } .td-stat b { font-size: 22px; } }
@@ -1608,7 +1609,7 @@ select option { color: #1d1d1f; }
 .td-tag.tag-noc { background: #e9ebfb; color: #3c46a8; }
 .td-tag.tag-medical { background: #fce8ef; color: #b0305c; }
 .td-tag.tag-visa { background: #f1e9fb; color: #6b3fa0; }
-.td-tag.tag-other { background: #ececf0; color: #515154; }
+.td-tag.tag-other { background: #ececf0; color: #6e6e73; }
 .td-task.is-super:not(.has-unread) { box-shadow: inset 3px 0 0 #ff3b30; }
 .td-tag-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .td-tag-pick :is(.td-tag, .td-prio) { min-height: 34px; padding: 0 14px; font-size: 14px; line-height: 34px; opacity: .55; }
@@ -1635,8 +1636,8 @@ select option { color: #1d1d1f; }
 
 /* 🔴 CSS CHANGED (2026-11-15): the words of a task, bold only for what matters | from: nearly everything in a task was bold (the task, the giver's and the team's names, the student, the stage, the "1 open" chips, "Add an update", Reassign), so nothing stood out | to: only the task itself is in semibold near-black; the student's name is medium weight; who gave it to whom, the day, the chips, the stage, "Add an update", Reassign and Remove are regular weight in grey or near-black; the list heading stays semibold */
 .td-tasks .td-task-text, .p-tasks .td-task-text { color: #1d1d1f; font-size: 16px; font-weight: 600; line-height: 1.45; letter-spacing: -.005em; }
-.td-tasks .td-task.is-done .td-task-text, .p-tasks .td-task.is-done .td-task-text { color: #66666b; font-weight: 400; }
-.td-route { color: #5f5f64; font-size: 13.5px; font-weight: 400; }
+.td-tasks .td-task.is-done .td-task-text, .p-tasks .td-task.is-done .td-task-text { color: #6e6e73; font-weight: 400; }
+.td-route { color: #6e6e73; font-size: 13.5px; font-weight: 400; }
 .td-route .td-from-who, .td-route .td-to-who { color: #3a3a3c; font-weight: 500; }
 .td-route .td-donemark { font-weight: 500; }
 .td-student { color: #1d1d1f; font-size: 14.5px; font-weight: 500; }
@@ -1646,7 +1647,7 @@ select option { color: #1d1d1f; }
 .tk-toggle { font-weight: 500; color: #3a3a3c; }
 .td-act { font-weight: 500; }
 .td-group-head h3 { font-weight: 600; }
-.td-group-head p, .td-tasks-head p { color: #5f5f64; font-weight: 400; }
+.td-group-head p, .td-tasks-head p { color: #6e6e73; font-weight: 400; }
 
 /* 🔴 CSS CHANGED (2026-11-15): ticking a task done (new) | from: the circle turned blue and the row folded away | to: the same, with a small happy burst of soft coloured dots from the circle for about half a second; nothing moves for people who ask their computer for less motion */
 .isr-burst { position: fixed; z-index: 9999; width: 0; height: 0; pointer-events: none; }
@@ -1662,11 +1663,11 @@ select option { color: #1d1d1f; }
 .td-task.is-super, .td-task.is-super.has-unread { box-shadow: inset 3px 0 0 #ff3b30, 0 1px 2px rgba(0, 0, 0, .04); }
 .td-task-top { display: flex; align-items: flex-start; gap: 12px; }
 .td-side { display: flex; flex: none; align-items: center; gap: 4px; margin-left: auto; margin-top: -3px; }
-.td-side .tk-toggle { min-height: 30px; padding: 0 10px 0 8px; background: transparent; color: #5f5f64; font-size: 13px; font-weight: 500; }
+.td-side .tk-toggle { min-height: 30px; padding: 0 10px 0 8px; background: transparent; color: #6e6e73; font-size: 13px; font-weight: 500; }
 .td-side .tk-toggle:hover { background: rgba(0, 0, 0, .05); color: #1d1d1f; }
 .td-side .tk-toggle[aria-expanded="true"] { background: rgba(0, 113, 227, .1); color: #0058b0; }
 .td-side .tk-toggle.has-new { color: #1d1d1f; }
-.td-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; color: #5f5f64; font-size: 13.5px; }
+.td-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; color: #6e6e73; font-size: 13.5px; }
 .td-sub .td-student { color: #1d1d1f; font-size: 14px; font-weight: 500; text-decoration: none; }
 .td-sub .td-student:hover { color: #0066cc; text-decoration: underline; text-underline-offset: 3px; }
 .td-sub .td-stage::before { content: "\00b7"; margin-right: 10px; color: #aeaeb2; }
@@ -1675,7 +1676,7 @@ select option { color: #1d1d1f; }
 .td-task .tk-thread { margin-top: 0; }
 .td-task .td-dot { display: none; }
 .td-menu-wrap { position: relative; }
-.td-more-btn { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #5f5f64; cursor: pointer; transition: background-color .15s, color .15s; }
+.td-more-btn { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #6e6e73; cursor: pointer; transition: background-color .15s, color .15s; }
 .td-more-btn svg { width: 18px; height: 18px; fill: currentColor; }
 .td-more-btn:hover, .td-more-btn[aria-expanded="true"] { background: rgba(0, 0, 0, .06); color: #1d1d1f; }
 .td-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 220px; padding: 6px; border: 1px solid rgba(0, 0, 0, .08); border-radius: 14px; background: rgba(253, 253, 254, .96); box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .22), 0 2px 6px rgba(0, 0, 0, .06); backdrop-filter: blur(16px); animation: isr-menu-in .18s cubic-bezier(.2, .8, .3, 1) both; }
@@ -1710,9 +1711,9 @@ select option { color: #1d1d1f; }
 .td-note-line { color: #3a3a3c; font-size: 14px; line-height: 1.4; }
 .td-note-line b { color: #1d1d1f; font-weight: 600; }
 .td-note-task { margin-top: 2px; overflow: hidden; color: #1d1d1f; font-size: 15px; font-weight: 500; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
-.td-note-text { margin-top: 3px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: #5f5f64; font-size: 14px; line-height: 1.45; }
-.td-note-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding-top: 1px; color: #66666b; font-size: 12.5px; white-space: nowrap; }
-.td-note-student { max-width: 180px; overflow: hidden; color: #5f5f64; text-overflow: ellipsis; }
+.td-note-text { margin-top: 3px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: #6e6e73; font-size: 14px; line-height: 1.45; }
+.td-note-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding-top: 1px; color: #6e6e73; font-size: 12.5px; white-space: nowrap; }
+.td-note-student { max-width: 180px; overflow: hidden; color: #6e6e73; text-overflow: ellipsis; }
 @media (max-width: 600px) {
   .td-inbox { padding: 16px 14px 12px; }
   .td-note { grid-template-columns: 32px minmax(0, 1fr); }
@@ -1724,15 +1725,15 @@ select option { color: #1d1d1f; }
 /* 🔴 CSS CHANGED (2026-11-20): B2B Partners and Agents, "Set up all" removed | from: a soft blue band with "N not set up yet" and a blue "Set up all" button above the cards | to: no band (nothing is added by hand any more) */
 
 /* 🔴 CSS CHANGED (2026-11-15): an edited task | from: a changed task looked like it was always so | to: a small grey "Edited" after the date, with who changed it and when on hover */
-.td-route .td-edited { color: #66666b; font-style: normal; }
-.td-route .td-edited::before { content: "\00b7"; margin-right: 8px; color: #66666b; }
+.td-route .td-edited { color: #6e6e73; font-style: normal; }
+.td-route .td-edited::before { content: "\00b7"; margin-right: 8px; color: #6e6e73; }
 /* 🔴 CSS CHANGED (2026-11-15): how long an open task has waited (new) | from: only the day it was given | to: from the third day, "Open 5 days" after the date in grey; from a week on in soft orange */
-.td-route .td-waiting::before { content: "\00b7"; margin-right: 8px; color: #66666b; }
-.td-route .td-waiting { color: #66666b; }
+.td-route .td-waiting::before { content: "\00b7"; margin-right: 8px; color: #6e6e73; }
+.td-route .td-waiting { color: #6e6e73; }
 .td-route .td-waiting.is-long { color: #b25000; }
 
 /* 🔴 CSS CHANGED (2026-11-15): Notifications keep their history (a bug fix) | from: a notification vanished once read (and touching or scrolling past a task on a phone counted as reading it), and the whole panel disappeared when nothing was new | to: the panel is always on Today; new ones first under a small grey "New" heading, each with a soft blue background and a blue dot before the name; read ones of the last 30 days stay under "Earlier" in plain rows; "Show all N notifications (last 30 days)"; a done task shows "Asha marked a task as done" with a green initial; with nothing at all, a calm grey line says what will show here */
-.td-inbox-sec { margin: 10px 10px 2px; color: #66666b; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.td-inbox-sec { margin: 10px 10px 2px; color: #6e6e73; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .td-inbox-sec:first-child { margin-top: 0; }
 .td-inbox-sec + .td-note { border-top: 0; }
 .td-note.is-new { border-radius: 12px; background: #f2f7fe; }
@@ -1740,30 +1741,30 @@ select option { color: #1d1d1f; }
 .td-note.is-new .td-note-line b::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 7px 1px 0; border-radius: 50%; background: #0071e3; vertical-align: middle; }
 .td-note:not(.is-new) .td-note-task { font-weight: 400; color: #3a3a3c; }
 .td-note.kind-done .td-note-av { background: #e3f5e8; color: #1f7a3a; }
-.td-inbox-empty { margin: 4px 0 4px; color: #5f5f64; font-size: 14.5px; line-height: 1.5; }
+.td-inbox-empty { margin: 4px 0 4px; color: #6e6e73; font-size: 14.5px; line-height: 1.5; }
 
 /* 🔴 CSS CHANGED (2026-11-15): tasks with Today and Upcoming, updates always open, and who gets a task (new) | from: every open task in one list; the updates hidden behind "Add an update", so a task with no update looked empty; no way to put a task off; nothing said who exactly gets a team's task | to: each list shows the tasks for today; under them a quiet grey "Upcoming (3) next: Tomorrow" line opens the later ones, each day under a small grey heading; a moved task has a small blue day pill ("Tomorrow", "Wed 18 Nov") before its tag; every open task shows its latest two updates and a write box right on it (the first one says "Write the first update"), "Show all N updates" for older ones, a red "N new" at the task's top right; a move shows in the updates as "Moved to Wed 18 Nov" in blue; the list heading says "N for today" and "N upcoming" (soft blue); the Today panel says "N tasks for today", "N more upcoming" and "Tasks of the Application Team" in grey (or, in soft orange, that the person gets every team's tasks until Admin chooses their own team); in Assign a task, "Goes to Parvati, Sovat" in grey under the team (orange when nobody has it as their own team) */
 .td-when-pill { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #e6f0fc; color: #0058b0; font-size: 12px; font-weight: 600; line-height: 22px; }
 .td-chip.is-later { background: #e6f0fc; color: #0058b0; }
 .td-up-toggle { display: flex; align-items: center; gap: 10px; width: 100%; margin: 12px 0 2px; padding: 10px 12px; border: 0; border-radius: 12px; background: #f2f2f5; color: #1d1d1f; font: 500 14.5px var(--font); text-align: left; cursor: pointer; transition: background-color .15s; }
 .td-up-toggle:hover { background: #ebebef; }
-.td-up-toggle small { margin-left: auto; color: #5f5f64; font-size: 13px; font-weight: 400; }
+.td-up-toggle small { margin-left: auto; color: #6e6e73; font-size: 13px; font-weight: 400; }
 .td-up-chev { width: 8px; height: 8px; border-right: 2px solid #86868b; border-bottom: 2px solid #86868b; transform: rotate(-45deg); transition: transform .2s; }
 .td-up-toggle[aria-expanded="true"] .td-up-chev { transform: rotate(45deg); }
 .td-upcoming { padding-left: 2px; }
-.td-day { margin: 14px 4px 2px; color: #5f5f64; font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.td-day { margin: 14px 4px 2px; color: #6e6e73; font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
 .tk-earlier-row { list-style: none; padding: 0 0 6px; }
 .tk-earlier { padding: 0; border: 0; background: none; color: #0066cc; font: 400 13.5px var(--font); cursor: pointer; }
 .tk-earlier:hover { text-decoration: underline; }
 .tk-msg.is-schedule .tk-hand { color: #0058b0; }
 .td-side .tk-new { margin-right: 4px; }
-.td-from { margin-top: 4px; color: #66666b; font-size: 13.5px; }
+.td-from { margin-top: 4px; color: #6e6e73; font-size: 13.5px; }
 .td-from-warn { margin-top: 6px; padding: 8px 12px; border-radius: 10px; background: #fff6ec; color: #a35200; font-size: 13.5px; line-height: 1.45; }
-.p-goes { margin-top: 6px; color: #5f5f64; font-size: 13.5px; }
+.p-goes { margin-top: 6px; color: #6e6e73; font-size: 13.5px; }
 .p-goes.is-warn { color: #a35200; }
 /* 🔴 CSS CHANGED (2026-11-15): the tag set automatically, in the priority section (Assign a task, Edit the task) | from: a separate "What is it about?" row of eight tag pills to choose from | to: no tag row; under the three priority pills a grey line "Tag, set automatically:" with the tag the system picked from the words, as its small coloured pill, changing as the task is typed */
 .p-auto-tag { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.p-auto-label { color: #5f5f64; font-size: 13.5px; }
+.p-auto-label { color: #6e6e73; font-size: 13.5px; }
 .p-auto-tag .td-tag { cursor: default; }
 
 /* 🔴 CSS CHANGED (2026-11-15): the student first on a task (Today) and on a notification | from: the task in bold on top and the student's name small in the grey line under it, so the team had to stop and look for whose task it was | to: on Today each task starts with the student's name in bold near-black (17px, as people say it: "Sanjip Kumar Mahto", a click opens the card) with the stage as a small soft grey pill beside it; the task follows under it in regular weight (15.5px, dark grey); then the tags and who gave it; on the student card itself the task stays on top (the student is the card); in a notification the student's name in semibold leads the task line ("Rajan Rai · Get the NOC ..."), and the student's name no longer sits at the right */
@@ -1771,9 +1772,9 @@ select option { color: #1d1d1f; }
 .td-who { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
 .td-who-name { color: #1d1d1f; font-size: 17px; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; text-decoration: none; overflow-wrap: anywhere; }
 .td-who-name:hover { color: #0066cc; }
-.td-who-stage { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #f0f0f3; color: #515154; font-size: 12px; font-weight: 500; line-height: 22px; }
+.td-who-stage { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; background: #f0f0f3; color: #6e6e73; font-size: 12px; font-weight: 500; line-height: 22px; }
 .td-task.has-student .td-task-text { color: #3a3a3c; font-weight: 400; line-height: 1.45; }
-.td-task.has-student.is-done .td-who-name { color: #66666b; }
+.td-task.has-student.is-done .td-who-name { color: #6e6e73; }
 .td-note-task .td-note-student { color: #1d1d1f; font-weight: 600; }
 .td-note-task .td-note-student::after { content: "\00b7"; margin: 0 7px; color: #aeaeb2; font-weight: 400; }
 /* 🔴 CSS CHANGED (2026-11-15): the update box on a phone | from: "Ctrl+Enter to post" under every update box, which means nothing on a phone | to: hidden on a phone (the Post button stays) */
@@ -1789,7 +1790,7 @@ select option { color: #1d1d1f; }
 .td-search-ico svg { width: 16px; height: 16px; fill: none; stroke: #86868b; stroke-width: 2; stroke-linecap: round; }
 .td-search-field .td-search-input { width: 100%; padding: 0 16px 0 42px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; color: #1d1d1f; font: 400 15px var(--font); }
 html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .15); outline: none; }
-.td-search-n { color: #5f5f64; font-size: 14px; }
+.td-search-n { color: #6e6e73; font-size: 14px; }
 
 /* 🔴 CSS CHANGED (2026-11-15): Notifications behind a bell, and Today in a new order | from: the Notifications panel took the top of Today; Admin and the Manager saw Needs attention before the tasks | to: a round 44px bell at the top right of Today (soft grey, near-black outline icon, a red count when something is new); a press opens the notifications as a solid off-white panel under the bell (up to 560px wide, scrolls inside when long), closed by another press, Escape or a click outside; the page reads, for everyone: the greeting, the day at a glance, the tasks, then Needs attention */
 .td-hello { position: relative; z-index: 50; }
@@ -1830,7 +1831,7 @@ html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-s
 .td-tasks-head .td-views { margin: 0; }
 .td-group { margin-top: 6px; }
 .td-group-head { align-items: center; }
-.td-group-head p { margin: 0; color: #5f5f64; font-size: 14px; }
+.td-group-head p { margin: 0; color: #6e6e73; font-size: 14px; }
 .td-search { margin: 0 0 10px; }
 .td-search-field .td-search-input { height: 40px; }
 .td-filter { gap: 6px; margin: 0 0 14px; }
@@ -1841,7 +1842,7 @@ html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-s
 .td-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; }
 .td-meta .td-route { display: inline-flex; margin: 0; font-size: 13px; }
 .td-meta > .td-tag + .td-route::before, .td-meta > .td-prio + .td-route::before { content: ""; width: 1px; height: 14px; margin-right: 2px; background: #d2d2d7; }
-.td-last { display: flex; align-items: baseline; gap: 6px; width: 100%; max-width: 100%; margin-top: 10px; padding: 8px 12px; border: 0; border-radius: 10px; background: #f2f2f5; color: #515154; font: 400 14px/1.4 var(--font); text-align: left; cursor: pointer; transition: background-color .15s; }
+.td-last { display: flex; align-items: baseline; gap: 6px; width: 100%; max-width: 100%; margin-top: 10px; padding: 8px 12px; border: 0; border-radius: 10px; background: #f2f2f5; color: #6e6e73; font: 400 14px/1.4 var(--font); text-align: left; cursor: pointer; transition: background-color .15s; }
 .td-last:hover { background: #ebebef; }
 .td-last b { flex: none; color: #1d1d1f; font-weight: 600; }
 .td-last b::after { content: ":"; }
@@ -1882,7 +1883,7 @@ body:has(#sheet) .footbar #helpBtn { order: 3; margin-left: auto; }
 
 /* 🔴 CSS CHANGED (2026-11-15): B2B Partners and Agents, fewer words and hidden names kept out of the list | from: under the cards a line "Not B2B partners: OIEG show again, ARUC show again ..." listed every name marked Not a partner; each name not set up had a grey box "Named on the sheet. Set it up to add ..."; long sentences under the title and every step | to: names marked Not a partner are gone from the list; a small grey "5 hidden" link beside the count opens a short list with "Show again" for each; a name not set up shows only its name, its visas and the two buttons; one short line under the title and short or no help under each step; "3 not set up yet" with "Set up all 3" */
 .bp-tools #count { margin-left: auto; }
-.bp-hidden-btn { margin-left: 0; padding: 0; border: 0; background: none; color: #5f5f64; font: 400 14px var(--font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.bp-hidden-btn { margin-left: 0; padding: 0; border: 0; background: none; color: #6e6e73; font: 400 14px var(--font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .bp-hidden-btn:hover { color: #1d1d1f; }
 .bp-hidden-btn[hidden] { display: none; }
 .bp-hidden-list { display: grid; gap: 2px; min-width: min(420px, 80vw); margin-bottom: 8px; }
@@ -1911,20 +1912,20 @@ body:has(#sheet) .footbar #helpBtn { order: 3; margin-left: auto; }
 .td-list .td-who { gap: 4px 10px; }
 .td-new-dot { flex: none; width: 8px; height: 8px; margin-right: -2px; border-radius: 50%; background: #0071e3; }
 .td-list .td-who-name { font-size: 16.5px; font-weight: 600; }
-.td-list .td-who-stage { min-height: 0; padding: 0; border-radius: 0; background: none; color: #66666b; font-size: 13.5px; font-weight: 400; line-height: 1.3; }
+.td-list .td-who-stage { min-height: 0; padding: 0; border-radius: 0; background: none; color: #6e6e73; font-size: 13.5px; font-weight: 400; line-height: 1.3; }
 .td-list .td-task-text, .td-list .td-task.has-student .td-task-text { margin-top: 0; color: #1d1d1f; font-size: 15.5px; font-weight: 400; line-height: 1.5; }
 .td-list .td-task:not(.has-student) .td-task-text { font-size: 16px; font-weight: 600; }
 .td-list .td-task.has-student .td-task-text { margin-top: 4px; }
-.td-list .td-task.is-done .td-task-text { color: #66666b; text-decoration: line-through; text-decoration-color: #c7c7cc; }
+.td-list .td-task.is-done .td-task-text { color: #6e6e73; text-decoration: line-through; text-decoration-color: #c7c7cc; }
 .td-list .td-meta { gap: 6px 14px; margin-top: 10px; font-size: 13px; }
 .td-list .td-meta .td-tag { display: inline-flex; align-items: center; gap: 6px; min-height: 0; padding: 0; border-radius: 0; background: none; font-size: 13px; font-weight: 500; line-height: 1.4; }
 .td-list .td-meta .td-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .td-list .td-meta .td-tag:not(:disabled):hover { text-decoration: underline; text-underline-offset: 3px; }
 .td-list .td-meta > .td-tag + .td-route::before, .td-list .td-meta > .td-prio + .td-route::before { content: none; }
-.td-list .td-route { color: #66666b; font-size: 13px; }
-.td-list .td-route .td-from-who, .td-list .td-route .td-to-who { color: #515154; font-weight: 500; }
+.td-list .td-route { color: #6e6e73; font-size: 13px; }
+.td-list .td-route .td-from-who, .td-list .td-route .td-to-who { color: #6e6e73; font-weight: 500; }
 .td-list .td-side { gap: 2px; margin-top: -4px; }
-.td-list .td-side .tk-toggle, .td-list .td-side .tk-toggle[aria-expanded="true"] { gap: 6px; min-height: 32px; padding: 0 10px; border-radius: 999px; background: transparent; color: #5f5f64; font-size: 14px; font-weight: 500; }
+.td-list .td-side .tk-toggle, .td-list .td-side .tk-toggle[aria-expanded="true"] { gap: 6px; min-height: 32px; padding: 0 10px; border-radius: 999px; background: transparent; color: #6e6e73; font-size: 14px; font-weight: 500; }
 .td-list .td-side .tk-toggle:hover { background: rgba(0, 0, 0, .05); color: #1d1d1f; }
 .td-list .td-side .tk-toggle[aria-expanded="true"] { background: rgba(0, 113, 227, .1); color: #0058b0; }
 .td-list .td-side .tk-toggle > span { display: inline; }
@@ -1933,7 +1934,7 @@ body:has(#sheet) .footbar #helpBtn { order: 3; margin-left: auto; }
   .td-list .td-more-btn { opacity: 0; transition: opacity .15s, background-color .15s; }
   .td-list .td-task:hover .td-more-btn, .td-list .td-task:focus-within .td-more-btn, .td-list .td-more-btn[aria-expanded="true"] { opacity: 1; }
 }
-.td-list .td-last { gap: 6px; margin-top: 12px; padding: 1px 0 1px 12px; border-left: 2px solid #e5e5ea; border-radius: 0; background: none; color: #5f5f64; font-size: 14px; }
+.td-list .td-last { gap: 6px; margin-top: 12px; padding: 1px 0 1px 12px; border-left: 2px solid #e5e5ea; border-radius: 0; background: none; color: #6e6e73; font-size: 14px; }
 .td-list .td-last:hover { border-left-color: #0071e3; background: none; color: #1d1d1f; }
 .td-list .td-last b { color: #3a3a3c; font-weight: 600; }
 .td-list .tk-thread.is-open { margin-top: 16px; padding-top: 0; border-top: 0; }
@@ -1943,7 +1944,7 @@ body:has(#sheet) .footbar #helpBtn { order: 3; margin-left: auto; }
 .td-list .tk-msg.is-new { background: none; }
 .td-list .tk-msg.is-new .tk-head b::after { content: "New"; margin-left: 8px; padding: 1px 7px; border-radius: 999px; background: #e6f0fc; color: #0058b0; font-size: 11.5px; font-weight: 600; }
 .td-list .tk-av { width: 28px; height: 28px; font-size: 11.5px; line-height: 28px; }
-.td-list .tk-empty { padding: 4px 0 2px; color: #66666b; font-size: 14px; list-style: none; }
+.td-list .tk-empty { padding: 4px 0 2px; color: #6e6e73; font-size: 14px; list-style: none; }
 .tk-compose { display: flex; align-items: flex-end; gap: 8px; margin-top: 12px; padding: 6px; border: 1px solid #d2d2d7; border-radius: 12px; background: #fff; }
 html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36px; padding: 8px 8px 6px; border-radius: 8px; font-size: 15px; }
 .tk-compose .tk-send { flex: none; min-height: 36px; padding: 0 18px; border-radius: 8px; }
@@ -1960,7 +1961,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .bp-avatar.is-big { width: 64px; height: 64px; font-size: 22px; }
 .bp-card .bp-name { color: #1d1d1f; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
 .bp-card .bp-name:hover { color: #0066cc; text-decoration: none; }
-.bp-card .bp-sub { margin-top: 2px; color: #5f5f64; font-size: 14px; }
+.bp-card .bp-sub { margin-top: 2px; color: #6e6e73; font-size: 14px; }
 .bp-card { gap: 18px; padding: 24px; }
 .bp-card-new .bp-who { gap: 0; }
 .bp-submit, .bp-submit.bp-submit { display: grid; gap: 0; padding: 6px 16px; border-radius: 14px !important; background: #f2f2f5 !important; }
@@ -1968,16 +1969,16 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .bp-portal { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: #0071e3; color: #fff; font-size: 14.5px; font-weight: 600; }
 .bp-portal:hover { background: #0077ed; color: #fff; }
 .bp-submit-line { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 48px; padding: 6px 0; border-top: 1px solid rgba(0, 0, 0, .07); }
-.bp-submit-label { color: #5f5f64; font-size: 14px; }
+.bp-submit-label { color: #6e6e73; font-size: 14px; }
 .bp-submit-line .bp-value { color: #1d1d1f; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14.5px; font-weight: 500; overflow-wrap: anywhere; }
 .bp-submit-btns { display: inline-flex; gap: 4px; }
-.bp-icon { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #515154; cursor: pointer; transition: background-color .15s, color .15s; }
+.bp-icon { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #6e6e73; cursor: pointer; transition: background-color .15s, color .15s; }
 .bp-icon:hover { background: rgba(0, 0, 0, .07); color: #1d1d1f; }
 .bp-icon.is-on { background: rgba(0, 113, 227, .12); color: #0058b0; }
 .bp-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .bp-submit .bp-none { padding: 12px 0; }
 .bp-card .bp-facts { grid-template-columns: 110px minmax(0, 1fr); gap: 12px 16px; padding-top: 16px; border-top: 1px solid rgba(0, 0, 0, .07); font-size: 14.5px; }
-.bp-card .bp-facts dt { color: #5f5f64; font-size: 14px; }
+.bp-card .bp-facts dt { color: #6e6e73; font-size: 14px; }
 .bp-strong { color: #1d1d1f; font-weight: 500; }
 .bp-lines { display: grid; gap: 2px; }
 .bp-detail { max-width: 920px; }
@@ -1985,11 +1986,11 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .bp-hero > div:nth-child(2) { flex: 1; min-width: 0; }
 .bp-hero-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
 .bp-hero-title h2 { margin: 0; color: #1d1d1f; font-size: 30px; font-weight: 600; letter-spacing: -.02em; }
-.bp-hero-sub { margin: 6px 0 0; color: #5f5f64; font-size: 15px; }
+.bp-hero-sub { margin: 6px 0 0; color: #6e6e73; font-size: 15px; }
 .bp-hero-nums { display: flex; gap: 28px; }
 .bp-hero-nums > div { display: grid; text-align: right; }
 .bp-hero-nums b { color: #1d1d1f; font-size: 28px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
-.bp-hero-nums span { color: #5f5f64; font-size: 13px; }
+.bp-hero-nums span { color: #6e6e73; font-size: 13px; }
 .bp-panel { margin: 0 0 14px; padding: 22px 24px; border-radius: 20px; background: #fbfbfd; box-shadow: var(--sh-2); }
 .bp-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 #editor .bp-panel-head h3, .bp-panel-head h3 { margin: 0; padding: 0; border: 0; color: #1d1d1f; font-size: 17px; font-weight: 600; }
@@ -2013,7 +2014,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
   .bp-submit-label { grid-column: 1 / -1; font-size: 12.5px; }
 }
 .bp-grid { align-items: start; }
-.bp-muted { color: #66666b; font-size: 13px; }
+.bp-muted { color: #6e6e73; font-size: 13px; }
 
 /* 🔴 CSS CHANGED (2026-11-15): tasks with room to breathe, the update box always on the task, the person named | from: the tasks as rows divided by hairlines inside one large panel, the update box behind a speech bubble, "Show all 8 open tasks", "Upcoming (1)" and "Done this week (3)" under the list, and "→ your team" | to: the Tasks panel no longer draws a box of its own; each task is its own soft off-white card (rounded 18px, a faint shadow, 24px inside, 14px between cards) on the grey page, so one task is never mixed up with the next; on every open task the latest two updates and one rectangular "Write an update" box with Post inside it at the right; every open task shows (no "Show all"), done tasks leave Today (they stay on the student's card), and later tasks are only under the Upcoming switch; the task says who has it by name ("Owner Demo → Parvati"); a red "1 new" at the task's top right */
 .td-tasks, .td-tasks.td-tasks { padding: 8px 0 0; border: 0 !important; background: transparent; box-shadow: none; overflow: visible; }
@@ -2043,7 +2044,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .bp-funnel { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .bp-funnel-step { display: grid; gap: 1px; min-width: 0; }
 .bp-funnel-step b { color: #1d1d1f; font-size: 20px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.bp-funnel-step small { color: #5f5f64; font-size: 12.5px; }
+.bp-funnel-step small { color: #6e6e73; font-size: 12.5px; }
 .bp-funnel-step i { display: block; height: 5px; margin-top: 6px; border-radius: 999px; background: linear-gradient(90deg, #0071e3 var(--w, 0%), #e8e8ed var(--w, 0%)); }
 /* 🔴 CSS CHANGED (2026-11-18): the green Visas figure on partner cards is easier to read (a bug fix) | from: #248a3d, contrast 3.9 to 1 on the soft grey tray, below the 4.5 to 1 needed | to: #1d7a34, contrast 5.2 to 1, still the same green family */
 .bp-funnel-step.is-visa b { color: #1d7a34; }
@@ -2075,7 +2076,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-col:nth-child(5n+4) .tb-col-dot { background: #ff9500; }
 .tb-col:nth-child(5n+5) .tb-col-dot { background: #ff2d55; }
 .tb-col-n { min-width: 24px; height: 22px; padding: 0 7px; border-radius: 999px; background: #fbfbfd; color: #1d1d1f; font-size: 13px; font-weight: 700; line-height: 22px; text-align: center; font-variant-numeric: tabular-nums; }
-.tb-col-sub { display: flex; flex-wrap: wrap; gap: 4px 10px; color: #5f5f64; font-size: 13px; }
+.tb-col-sub { display: flex; flex-wrap: wrap; gap: 4px 10px; color: #6e6e73; font-size: 13px; }
 .tb-col-slow { color: #a84d00; font-weight: 600; }
 .tb-col-body { display: grid; align-content: start; gap: 10px; padding: 0 10px 12px; }
 .tb-tile { display: grid; gap: 6px; width: 100%; padding: 12px 14px; border: 0; border-left: 3px solid transparent; border-radius: 14px; background: #fbfbfd; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 18px -14px rgba(0, 0, 0, .25); transition: transform .2s cubic-bezier(.32, .72, 0, 1), box-shadow .2s ease; animation: isr-rise-in .45s cubic-bezier(.32, .72, 0, 1) backwards; }
@@ -2085,7 +2086,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-tile-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 /* 🔴 CSS CHANGED (2026-11-20): Today's board, student names | from: cut to about 106px with "..." ("Sarita Shres...") | to: the whole name, onto a second line when long */
 .tb-student { overflow-wrap: anywhere; font-size: 15px; font-weight: 600; }
-.tb-stage { flex: none; color: #66666b; font-size: 12.5px; }
+.tb-stage { flex: none; color: #6e6e73; font-size: 12.5px; }
 .tb-text { display: -webkit-box; overflow: hidden; color: #3a3a3c; font-size: 14px; line-height: 1.4; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .tb-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
 .tb-tag { padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
@@ -2097,11 +2098,11 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-tag.tag-noc { background: #e9ebfb; color: #3c46a8; }
 .tb-tag.tag-medical { background: #fce8ef; color: #b0305c; }
 .tb-tag.tag-visa { background: #f1e9fb; color: #6b3fa0; }
-.tb-tag.tag-other { background: #ececf0; color: #515154; }
-.tb-age { margin-left: auto; color: #5f5f64; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tb-tag.tag-other { background: #ececf0; color: #6e6e73; }
+.tb-age { margin-left: auto; color: #6e6e73; font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .tb-age.is-slow { color: #a84d00; font-weight: 600; }
 .tb-age.is-later { color: #0071e3; }
-.tb-updates { display: inline-flex; align-items: center; gap: 3px; color: #5f5f64; font-size: 12.5px; }
+.tb-updates { display: inline-flex; align-items: center; gap: 3px; color: #6e6e73; font-size: 12.5px; }
 .tb-updates svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
 .tb-dialog-body .td-card, .tb-dialog-body > article { box-shadow: none; }
 @media (max-width: 700px) { .tb-board { grid-auto-columns: 84%; } .tb-layout { margin-left: 0; } }
@@ -2110,7 +2111,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 /* 🔴 CSS CHANGED (2026-11-15): the student's Notes become "Notes and history", the Mark as done window, a held-back password | from: Notes listed only the notes typed by hand; ticking a task asked a plain yes or no; a team without access saw no password line at all | to: the notes and every task event in one timeline, newest first; a task event has a small coloured word after the name and time ("Task" in blue, "Update" in grey, "Done" in green), the event in semibold ("Gave Mock Team a task", "Update on ...", "Done: ...") and the task's tag pill; three pills above (Everything, Notes, Tasks) when there are both; the Mark as done window shows the task in a soft grey box, a two-line "What was done? (optional)" box and, for an application, a tick box to write today as Application submitted; on the partner pages a "Password" line with grey dots and a dimmed eye for those who may not see it */
 .td-done-task { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: #f0f0f3; color: #1d1d1f; font-size: 15px; line-height: 1.45; }
 .td-done-sheet { margin: 4px 0 6px; }
-.bp-value.bp-locked { color: #66666b; letter-spacing: .05em; }
+.bp-value.bp-locked { color: #6e6e73; letter-spacing: .05em; }
 .bp-icon.is-locked { opacity: .5; }
 
 /* 🔴 CSS CHANGED (2026-11-15): the Mark as done window asks by the task's tag | from: a grey box with the task, one "What was done?" box and, for an application, one tick box | to: under the task, the question of its tag answered with grey pills that turn blue with a blue ring when chosen ("Yes, submitted" / "No"; "Pending (account made)" / "Submitted"; "Booked" / "Report received" / "Not booked yet"), then a calendar and the boxes that answer needs (university, NOC number, hospital or clinic, a tick box for the feedback reminder), a small grey line saying where it goes on All Students, and a two-line note box; everything in one column with even spacing */
@@ -2121,7 +2122,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-done-form > .p-muted { margin: -4px 0 0; }
 
 /* 🔴 CSS CHANGED (2026-11-15): the Admin task Board, calmer and clearer (the focus row and the lighter empty column were removed later the same day) | from: the Board started straight with the tag pills; a tile showed the student, the task, its tag and age only; a column with nothing open was as tall as the others | to: a focus row above the Board, four quiet off-white buttons each with a large number over a small word (Everything, Waiting 3+ days with an orange number, New updates with a blue number, Super priority with a red number), the chosen one with a blue ring; each tile also shows the latest update in one grey line ("Asha: submitted on the portal"); a column with nothing open is shorter and lighter; the column background a softer grey */
-.tb-last { overflow: hidden; color: #5f5f64; font-size: 13px; white-space: nowrap; text-overflow: ellipsis; }
+.tb-last { overflow: hidden; color: #6e6e73; font-size: 13px; white-space: nowrap; text-overflow: ellipsis; }
 .tb-col { background: #efeff3; }
 
 /* 🔴 CSS CHANGED (2026-11-15): the student card's tabs on a phone (a bug fix) | from: Notes, University options and Send a message ran off the right edge ("Send a messa...") and had to be scrolled | to: on a phone the three share the full width, each a little smaller (13px, less padding), so all three always show */
@@ -2140,13 +2141,13 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-page.is-board .tb-board { grid-auto-columns: minmax(250px, 1fr); }
 
 /* 🔴 CSS CHANGED (2026-11-15): Admin's "For you" column when it is empty (new) | from: the column did not show when nothing was given to Admin | to: it always shows first, with "Nothing for you right now." in small grey type, centred */
-.tb-col-empty { padding: 18px 8px; color: #5f5f64; font-size: 14px; text-align: center; }
+.tb-col-empty { padding: 18px 8px; color: #6e6e73; font-size: 14px; text-align: center; }
 
 /* 🔴 CSS CHANGED (2026-11-15): the Mark as done window for an application, several universities; Offer and Refused in University options | from: one "To which university" box | to: a row per university, its University and Course side by side (one under the other on a phone), a small round grey "×" to remove a row after the first, and a grey "+ Another university" pill under them; in University options, beside the green "Applied" pill, a blue "Offer 20 Nov 2026" pill and a soft red "Refused 22 Nov 2026" pill */
 .td-unis { display: grid; gap: 8px; }
 .td-uni-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px; gap: 10px; align-items: end; }
 .td-uni-row .p-field { margin: 0; }
-.td-uni-x { width: 32px; height: 32px; margin-bottom: 7px; border: 0; border-radius: 50%; background: #ececf0; color: #515154; font-size: 18px; line-height: 1; cursor: pointer; }
+.td-uni-x { width: 32px; height: 32px; margin-bottom: 7px; border: 0; border-radius: 50%; background: #ececf0; color: #6e6e73; font-size: 18px; line-height: 1; cursor: pointer; }
 .td-uni-x:hover { background: #ffe5e3; color: #c41e14; }
 /* 🔴 CSS CHANGED (2026-11-18): the red asterisk after anything that must be filled in, and the university and course line at the top of the simple "Mark as done?" windows | from: required boxes were only said to be needed in words, and the simple windows did not exist | to: a bold red * (#d70015) after the label of a required box; the course window shows the university in bold with its course and partner beside it on a soft grey band */
 .p-req { color: #d70015; font-weight: 700; }
@@ -2165,10 +2166,10 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-sofar { display: grid; gap: 6px; }
 .td-sofar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; width: 100%; padding: 9px 12px; border: 0; border-radius: 12px; background: #f0f0f3; color: #1d1d1f; font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; transition: background-color .15s; }
 .td-sofar-row:hover { background: #e8e8ed; }
-.td-sofar-course { color: #5f5f64; }
+.td-sofar-course { color: #6e6e73; }
 .td-sofar-pills { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
 .td-sofar-pills .p-applied { margin-left: 0; }
-.td-sofar-sheet { padding: 1px 8px; border-radius: 999px; background: #e5e5ea; color: #515154; font-size: 12px; font-weight: 600; }
+.td-sofar-sheet { padding: 1px 8px; border-radius: 999px; background: #e5e5ea; color: #6e6e73; font-size: 12px; font-weight: 600; }
 .td-uni-row-3 { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) 32px; }
 .td-uni-row-3 > .p-field:nth-child(3):last-child { grid-column: 3 / span 2; }
 /* 🔴 CSS CHANGED (2026-11-18): each university line in "Mark as done?" has its own day | from: one day for every line, so two universities looked as if they were done on the same day | to: under the university, course and answer a "Day it happened" box across the three columns, with the round button staying at the right of the first line */
@@ -2182,12 +2183,12 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .td-check-list { display: grid; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
 .td-check-list li { padding: 9px 12px; border-radius: 12px; background: #f0f0f3; color: #1d1d1f; font-size: 14.5px; line-height: 1.45; }
 .td-check-change { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
-.td-check-from { color: #5f5f64; text-decoration: line-through; }
+.td-check-from { color: #6e6e73; text-decoration: line-through; }
 .td-check-from.is-empty { text-decoration: none; }
-.td-check-arrow { color: #66666b; }
+.td-check-arrow { color: #6e6e73; }
 .td-check-to { color: #0058b0; font-weight: 650; }
 .td-check-block.is-warn .td-check-list li { background: #fff4e0; color: #8a4b00; }
-.td-check-block.is-quiet .td-check-list li { background: #f5f5f7; color: #5f5f64; }
+.td-check-block.is-quiet .td-check-list li { background: #f5f5f7; color: #6e6e73; }
 
 /* 🔴 CSS CHANGED (2026-11-20): Data to fix page removed (all .df- rules in this file) | from: the Data to fix page and its look | to: no such page, so no styling for it */
 
@@ -2197,7 +2198,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .p-queue-back:hover { text-decoration: underline; }
 .p-queue-where { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 14.5px; }
 .p-queue-where b { color: var(--ink); font-weight: 650; }
-.p-queue-where span { overflow: hidden; color: #5f5f64; text-overflow: ellipsis; white-space: nowrap; }
+.p-queue-where span { overflow: hidden; color: #6e6e73; text-overflow: ellipsis; white-space: nowrap; }
 .p-queue-gap { flex: 1; }
 @media (max-width: 600px) { .p-queue-gap { display: none; } }
 
@@ -2213,7 +2214,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .ss-dot { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; font-weight: 700; line-height: 1; }
 .ss-dot.is-ok { background: #e3f5e8; color: #1f7a35; }
 .ss-dot.is-bad { background: #fff1e0; color: #b25000; }
-.ss-dot.is-soft { background: #ececf0; color: #5f5f64; }
+.ss-dot.is-soft { background: #ececf0; color: #6e6e73; }
 .ss-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ss-text b { color: var(--ink); font-size: 15.5px; font-weight: 600; }
 .ss-text span { overflow-wrap: anywhere; color: var(--text-dim); font-size: 14.5px; }
@@ -2284,7 +2285,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .fd-uni-name { color: var(--ink); font-size: 17px; font-weight: 650; text-decoration: none; }
 .fd-uni-name:hover { color: var(--link); }
 .fd-city { color: var(--text-dim); font-size: 13.5px; }
-.fd-status { flex: none; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #ececf0; color: #515154; }
+.fd-status { flex: none; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #ececf0; color: #6e6e73; }
 .fd-status.is-yes { background: #e3f5e8; color: #1f7a35; }
 .fd-status.is-check { background: #fff4e0; color: #9a5b00; }
 .fd-why { margin: 10px 0 4px; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 14.5px; }
@@ -2369,20 +2370,20 @@ html body .md-kpi b, html body .p-kpi b, html body table td, html body .kpi-valu
 @media (prefers-reduced-motion: reduce) { html body a.uni-card:hover, html body .uni-card:hover { transform: none; } }
 /* A switched-off line of the Dashboard chart: its key stays readable (grey words, a faded line) instead of the whole key at 40% (too faint
    to read, the accessibility check). */
-html body .tr-key.off { opacity: 1; color: #5f5f64; }
+html body .tr-key.off { opacity: 1; color: #6e6e73; }
 html body .tr-key.off i { opacity: .35; }
-html body .tr-key.off b, html body .tr-key.off span, html body .tr-key.off small { color: #5f5f64; }
+html body .tr-key.off b, html body .tr-key.off span, html body .tr-key.off small { color: #6e6e73; }
 /* "Students from every source" is a real choice, not an empty box: dark words like the other choices (it was pale grey, too faint). */
 html body .tr-source select, html body .tr-source select:has(> option:checked[value=""]) { color: #1d1d1f; }
 /* Any box showing its "every" or "all" choice: a readable grey (it was #86868b, too faint on the soft panels). */
-html body select:has(> option:checked[value=""]) { color: #5f5f64; }
-html body .p-date.is-empty .p-date-text { color: #5f5f64; } /* "Choose a date": readable (was #86868b) */
+html body select:has(> option:checked[value=""]) { color: #6e6e73; }
+html body .p-date.is-empty .p-date-text { color: #6e6e73; } /* "Choose a date": readable (was #86868b) */
 /* Today: the bell sits beside the greeting, never over it (on a phone the greeting used to run under the bell). */
 html body .td-hello:has(.td-bell-wrap) > :not(.td-bell-wrap) { padding-right: 56px; }
 
 /* 🔴 CSS CHANGED (2026-11-17): small text readable everywhere (the accessibility check, and the owner's "easy on older eyes") | from: small grey words in #86868b, #8e8e93 and #6e6e73 and small orange words in #c45c00 (contrast 3.0 to 4.4 against the panels, under the 4.5 the standard asks for); the "Every source"/"Everyone" choice of a box and "Choose a date" in the same pale grey; the switched-off lines of the Dashboard chart at 40% | to: the greys darkened to #66666b and #5f5f64 and the orange to #a84d00 wherever they colour text (98 places; backgrounds and borders unchanged), so every small word reaches at least 4.5 to 1; the University options' titles are headings of the right level, looking the same */
 html body .p-option h3, html body .p-chosen-item h3 { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-html body .page .count { color: #515154; }
+html body .page .count { color: #6e6e73; }
 html body:has(.p-embed-bar) .p-option h3 { color: var(--ink); font-size: 16px; font-weight: 650; }
 html body h1.p-error-title { margin: 0 0 8px; font-size: 24px; font-weight: 650; }
 
@@ -2405,7 +2406,7 @@ html body h1.p-error-title { margin: 0 0 8px; font-size: 24px; font-weight: 650;
 html body .doc { padding: 34px 40px 36px; }
 html body .doc-head { margin: 0 0 20px; }
 html body .doc-head h1 { margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; color: var(--ink); }
-html body .doc-sub { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 6px; color: #515154; font-size: 15px; }
+html body .doc-sub { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 6px; color: #6e6e73; font-size: 15px; }
 html body .doc-sub > * + *::before { content: "·"; margin: 0 8px; color: #8e8e93; }
 html body .doc-sub a { color: var(--link); text-decoration: none; }
 html body .doc-sub a:hover { text-decoration: underline; }
@@ -2419,30 +2420,30 @@ html body .dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minm
 html body .dl-card { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .05); }
 html body .dl-intake { color: #8a4b00; font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 html body .dl-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
-html body .dl-label { color: #515154; font-size: 14px; }
+html body .dl-label { color: #6e6e73; font-size: 14px; }
 html body .dl-date { color: var(--ink); font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
-html body .dl-note { color: #515154; font-size: 13.5px; }
+html body .dl-note { color: #6e6e73; font-size: 13.5px; }
 html body .dl-left { display: inline-block; padding: 1px 9px; border-radius: 999px; background: #eef0f4; color: #3a3a3c; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 html body .dl-left.is-soon { background: #ffefd0; color: #8a4b00; }
 html body .dl-left.is-urgent { background: #ffe3e0; color: #b42318; }
-html body .dl-left.is-past { background: #f0f0f3; color: #66666b; }
+html body .dl-left.is-past { background: #f0f0f3; color: #6e6e73; }
 html body .dl-list { list-style: none; margin: 0; padding: 8px 0 0; border-top: 1px solid #f0e6d6; }
 html body .dl-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; gap: 2px 10px; margin: 0; padding: 5px 0; font-size: 14.5px; }
 html body .dl-list li::before { display: none; }
 html body .dl-what { color: #3a3a3c; }
 html body .dl-list .dl-left { justify-self: end; }
 html body .dl-list b { color: var(--ink); font-weight: 650; }
-html body .dl-list li.is-past .dl-what, html body .dl-list li.is-past b { color: #66666b; }
-html body .dl-edited { color: #66666b; font-size: 12.5px; }
+html body .dl-list li.is-past .dl-what, html body .dl-list li.is-past b { color: #6e6e73; }
+html body .dl-edited { color: #6e6e73; font-size: 12.5px; }
 html body .dl-card.is-over { gap: 2px; background: #fbf8f2; box-shadow: none; }
-html body .dl-card.is-over .dl-intake { color: #66666b; }
-html body .dl-over { color: #66666b; font-size: 13.5px; }
+html body .dl-card.is-over .dl-intake { color: #6e6e73; }
+html body .dl-over { color: #6e6e73; font-size: 13.5px; }
 html body .dl-card.is-closed .dl-date { color: #b42318; }
 html body .dl-edit { display: grid; gap: 12px; margin: 0 0 10px; }
 html body .dl-edit-block { display: grid; gap: 8px; margin: 0; padding: 12px 14px; border: 0; border-radius: 12px; background: #f5f5f7; }
 
 /* 🔴 CSS CHANGED (2026-11-17): the entry requirements and fees of a university as one card per level | from: one wide table (Level, Entry requirements, English, Tuition fee, Scholarship, Deposit) whose columns were crushed to a word per line and ran off the right edge of the page | to: a grid of white rounded cards, one per level (level name bold 17px, duration in grey beside it), each fact on its own line with a small grey label (Entry requirements, English, Tuition fee ...) and the text in 15px dark type; tuition fee and scholarship in bold; a value the same for every level written once above the cards on a soft grey band */
-html body .lvl-dur { display: block; margin-top: 2px; color: #66666b; font-size: 13px; font-weight: 400; }
+html body .lvl-dur { display: block; margin-top: 2px; color: #6e6e73; font-size: 13px; font-weight: 400; }
 html body .doc .lvl-shared { display: grid; gap: 8px; margin: 0 0 14px; padding: 12px 16px; border-radius: 12px; background: #f5f5f7; }
 html body .doc .lvl-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
 html body .doc .lvl-card { display: flex; flex-direction: column; padding: 16px 18px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .08), 0 2px 10px -6px rgba(0, 0, 0, .12); break-inside: avoid; }
@@ -2460,20 +2461,20 @@ html body .doc .lvl-tuition dd, html body .doc .lvl-scholarship dd { font-weight
 html body .doc .lvl-facts .dim { color: #8e8e93; font-weight: 400; }
 html body .doc section > h3 { margin: 16px 0 6px; font-size: 15px; color: var(--ink); }
 
-html body .course-group { margin: 16px 0 6px; color: #515154; font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+html body .course-group { margin: 16px 0 6px; color: #6e6e73; font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 html body .course-group:first-of-type { margin-top: 4px; }
 html body .doc .course-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 0 28px; margin: 0 0 6px; padding: 0; list-style: none; }
 html body .doc .course-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; padding: 8px 0; border-bottom: 1px solid #ededf0; font-size: 15px; }
 html body .course-name { flex: 1 1 200px; color: var(--ink); }
 html body a.course-name { color: var(--link); text-decoration: none; }
 html body a.course-name:hover { text-decoration: underline; text-underline-offset: 3px; }
-html body .course-intakes { padding: 1px 8px; border-radius: 999px; background: #f0f0f3; color: #515154; font-size: 12px; white-space: nowrap; }
+html body .course-intakes { padding: 1px 8px; border-radius: 999px; background: #f0f0f3; color: #6e6e73; font-size: 12px; white-space: nowrap; }
 html body .course-warn { padding: 1px 8px; border-radius: 999px; background: #fff0d1; color: #8a4b00; font-size: 12px; font-weight: 600; white-space: nowrap; }
 html body .doc .course-list .sl-pick { margin-left: 0; }
 
 html body .doc .more-block { margin: 14px 0 0; padding: 12px 16px; border-radius: 12px; background: #f5f5f7; }
 html body .doc .more-block h3 { margin: 0 0 4px; font-size: 15px; }
-html body .doc .more-block h4 { margin: 8px 0 2px; color: #515154; font-size: 13.5px; font-weight: 650; }
+html body .doc .more-block h4 { margin: 8px 0 2px; color: #6e6e73; font-size: 13.5px; font-weight: 650; }
 html body .doc .more-block ul { margin: 0 0 4px; }
 html body .course-more { margin: 4px 0 8px; font-weight: 600; }
 html body .doc details.fold > summary { cursor: pointer; color: var(--link); font-weight: 600; padding: 4px 0; }
@@ -2506,13 +2507,13 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
    boxes, key dates text, the scroll hint above the fees table | to: deleted (the rebuilt page in the block above does not have them) */
 /* 🔴 CSS CHANGED (2026-11-17): Partners, one section for Partner Universities, B2B Partners and Agents | from: three separate menu entries and three pages with nothing joining them | to: one "Partners" menu entry; at the top of each of the three lists a small grey "PARTNERS" label and an Apple segmented switch (Universities | B2B partners | Agents), the open one as a white pill, each with a soft grey count bubble; on a phone the switch fills the width */
 .pt-bar { display: grid; gap: 8px; margin: 0 0 22px; }
-.pt-eyebrow { margin: 0; color: #5f5f64; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.pt-eyebrow { margin: 0; color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .pt-switch { justify-self: start; }
-.pt-switch a { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 9px; color: #515154; font-size: 15px; font-weight: 500; text-decoration: none; transition: color .25s var(--ease-out, ease); }
+.pt-switch a { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 9px; color: #6e6e73; font-size: 15px; font-weight: 500; text-decoration: none; transition: color .25s var(--ease-out, ease); }
 .pt-switch a:hover { color: #1d1d1f; }
 /* 🔴 CSS CHANGED (2026-11-18): the open tab of the Universities | B2B partners | Agents switch is found by aria-current instead of aria-selected (a bug fix, nothing changes on screen) | from: a link carrying aria-selected, which is not allowed on a link and was reported as a critical accessibility error | to: the standard aria-current="page" */
 .pt-switch a[aria-current="page"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
-.pt-n { min-width: 24px; padding: 1px 8px; border-radius: 999px; background: rgba(0, 0, 0, .06); color: #515154; font-size: 13px; font-weight: 600; text-align: center; }
+.pt-n { min-width: 24px; padding: 1px 8px; border-radius: 999px; background: rgba(0, 0, 0, .06); color: #6e6e73; font-size: 13px; font-weight: 600; text-align: center; }
 .pt-switch a[aria-current="page"] .pt-n { background: rgba(0, 113, 227, .1); color: #0071e3; }
 @media (max-width: 640px) { .pt-switch { display: flex; justify-self: stretch; } .pt-switch a { flex: 1 1 0; justify-content: center; padding: 0 8px; font-size: 14px; } }
 /* 🔴 CSS CHANGED (2026-11-18): the Universities | B2B partners | Agents switch on a small phone (a bug fix) | from: the last tab touched the edge of the switch and its count was cut off at 390px wide | to: a little less padding and gap on phones under 430px wide, so all three tabs sit inside the switch */
@@ -2524,7 +2525,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 /* the filters: search first, then intake, stage and source */
 .bk-filters { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
 .bk-filters .p-field { gap: 6px; }
-.bk-filters .p-label { font-size: 13px; font-weight: 600; color: #515154; }
+.bk-filters .p-label { font-size: 13px; font-weight: 600; color: #6e6e73; }
 .bk-filters input, .bk-filters select { min-height: 44px; border: 0; border-radius: 12px; background: rgba(118, 118, 128, .1); font-size: 15.5px; color: #1d1d1f; box-shadow: none; transition: background-color .2s, box-shadow .2s; }
 /* 🔴 CSS CHANGED (2026-11-17): a long choice in a filter | from: "All intakes you can see" broke onto two lines | to: one line, cut with ... */
 .bk-filters select { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -2533,7 +2534,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 
 /* the count and the two links above the list */
 .bk-tools { display: flex; align-items: center; gap: 18px; margin: 0 2px 10px; }
-.bk-info { margin-right: auto; font-size: 14px; color: #5f5f64; font-variant-numeric: tabular-nums; }
+.bk-info { margin-right: auto; font-size: 14px; color: #6e6e73; font-variant-numeric: tabular-nums; }
 .bk-link { padding: 4px 0; border: 0; background: none; color: #0066cc; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; }
 .bk-link:hover { text-decoration: underline; }
 
@@ -2547,27 +2548,27 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .bk-row input[type="checkbox"]:checked { border-color: #0071e3; background: #0071e3 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2.5 6.3 2.4 2.4 4.7-5'/%3E%3C/svg%3E") center no-repeat; }
 .bk-row input[type="checkbox"]:active { transform: scale(.9); }
 .bk-row input[type="checkbox"]:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(0, 113, 227, .25); }
-.bk-av { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(180deg, #e8e8ed, #d9d9de); color: #515154; font-size: 14px; font-weight: 600; letter-spacing: .02em; }
+.bk-av { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(180deg, #e8e8ed, #d9d9de); color: #6e6e73; font-size: 14px; font-weight: 600; letter-spacing: .02em; }
 .bk-row.is-on .bk-av { background: linear-gradient(180deg, #4ea1ff, #0071e3); color: #fff; }
 .bk-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .bk-who b { overflow: hidden; font-size: 16px; font-weight: 600; color: #1d1d1f; text-overflow: ellipsis; white-space: nowrap; }
-.bk-sub { overflow: hidden; font-size: 14px; color: #5f5f64; text-overflow: ellipsis; white-space: nowrap; }
+.bk-sub { overflow: hidden; font-size: 14px; color: #6e6e73; text-overflow: ellipsis; white-space: nowrap; }
 .bk-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .bk-tag { padding: 3px 10px; border-radius: 980px; background: rgba(0, 0, 0, .05); color: #3a3a3c; font-size: 13px; font-weight: 500; white-space: nowrap; }
 .bk-tag.is-warn { background: #fff1e0; color: #a84d00; }
-.bk-empty { padding: 34px 16px; color: #5f5f64; font-size: 15px; text-align: center; }
+.bk-empty { padding: 34px 16px; color: #6e6e73; font-size: 15px; text-align: center; }
 
 /* step 2: the email as a Mail-style window */
 .bk-mail { overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
 .bk-to, .bk-mail > .p-field:not([hidden]) { border-bottom: 1px solid rgba(0, 0, 0, .07); }
 .bk-to { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 18px; font-size: 15.5px; }
 .bk-to-label, .bk-mail > .p-field:first-of-type .p-label { flex: none; width: 64px; color: #6e6e73; font-size: 15px; font-weight: 500; }
-.bk-to-label { color: #5f5f64; }
+.bk-to-label { color: #6e6e73; }
 .bk-to-n { color: #1d1d1f; font-weight: 600; }
-.bk-to-n.is-none { color: #5f5f64; font-weight: 400; }
+.bk-to-n.is-none { color: #6e6e73; font-weight: 400; }
 .bk-mail > .p-field { display: flex; flex-direction: row; align-items: center; gap: 12px; margin: 0; padding: 0 18px; }
 .bk-mail > .p-field[hidden] { display: none; }
-.bk-mail > .p-field:first-of-type .p-label { color: #5f5f64; }
+.bk-mail > .p-field:first-of-type .p-label { color: #6e6e73; }
 .bk-mail > .p-field input { flex: 1 1 auto; min-height: 50px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px; font-weight: 600; color: #1d1d1f; }
 .bk-mail > .p-field:has(textarea) { display: block; padding: 0; }
 /* 🔴 CSS CHANGED (2026-11-18): the hidden label of the message box (a bug fix, nothing changes on screen) | from: the old 'clip: rect()' property, which browsers have retired | to: 'clip-path: inset(50%)', which hides it the same way */
@@ -2576,7 +2577,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .bk .bk-mail > .p-field input, .bk .bk-mail > .p-field input:focus, .bk .bk-mail > .p-field input:focus-visible, .bk .bk-mail textarea, .bk .bk-mail textarea:focus, .bk .bk-mail textarea:focus-visible { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent; }
 .bk-mail:focus-within { box-shadow: 0 0 0 1px rgba(0, 113, 227, .5), 0 0 0 4px rgba(0, 113, 227, .14); }
 .bk-mail .bk-words { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 18px; background: #f9f9fb; }
-.bk-mail .bk-words .tp-label { margin-right: 4px; color: #5f5f64; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.bk-mail .bk-words .tp-label { margin-right: 4px; color: #6e6e73; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 
 @media (max-width: 900px) { .bk-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bk-filters .bk-search { grid-column: 1 / -1; } }
 @media (max-width: 640px) {
@@ -2595,7 +2596,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .ss-icon-main { flex: none; width: 44px; height: 44px; border-radius: 12px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 2 11 13'/%3E%3Cpath d='M22 2 15 22l-4-9-9-4 20-7z'/%3E%3C/svg%3E"), linear-gradient(180deg, #4ea1ff, #0071e3); background-position: center; background-repeat: no-repeat; box-shadow: 0 2px 6px rgba(0, 113, 227, .3); }
 .ss-words { flex: 1 1 0; min-width: 0; }
 .bk .ss-head h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: #1d1d1f; }
-.bk .ss-head p { margin: 3px 0 0; font-size: 15px; line-height: 1.45; color: #5f5f64; }
+.bk .ss-head p { margin: 3px 0 0; font-size: 15px; line-height: 1.45; color: #6e6e73; }
 .ss-sum { flex: none; padding: 6px 14px; border-radius: 980px; background: #fff1e0; color: #a84d00; font-size: 14px; font-weight: 600; }
 .ss-sum.is-ok { background: #e3f5e8; color: #1f7a35; }
 .bk .ss-rows { overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
@@ -2611,16 +2612,16 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .bk .ss-ico .ss-dot.is-bad { background: #ff9500; color: #fff; }
 .bk .ss-ico .ss-dot.is-soft { background: #8e8e93; color: #fff; }
 .bk .ss-text b { font-size: 16px; color: #1d1d1f; }
-.bk .ss-text span { font-size: 14.5px; color: #5f5f64; }
+.bk .ss-text span { font-size: 14.5px; color: #6e6e73; }
 .bk .ss-row .btn { min-height: 34px; padding: 0 18px; border-radius: 980px; font-size: 14.5px; }
 .bk .ss-row .btn[aria-expanded="true"] { background: rgba(0, 0, 0, .06); color: #1d1d1f; }
 .bk .ss-form .p-msg:empty { display: none; }
 .bk .ss-form-box { padding: 18px 18px 20px 72px; border-top: 1px solid rgba(0, 0, 0, .07); background: #f9f9fb; }
 .bk .ss-form .p-form { gap: 14px; }
-.bk .ss-form .p-label { font-size: 13px; font-weight: 600; color: #515154; }
+.bk .ss-form .p-label { font-size: 13px; font-weight: 600; color: #6e6e73; }
 .bk .ss-form input:not([type="file"]):not([type="checkbox"]), .bk .ss-form select { min-height: 44px; border: 0; border-radius: 12px; background: rgba(118, 118, 128, .1); font-size: 15.5px; box-shadow: none; transition: background-color .2s, box-shadow .2s; }
 .bk .ss-form input:not([type="file"]):not([type="checkbox"]):focus, .bk .ss-form select:focus { background: #fff; box-shadow: 0 0 0 4px rgba(0, 113, 227, .22); outline: 0; }
-.bk .ss-form > p { margin: 12px 0 0; font-size: 14px; color: #5f5f64; }
+.bk .ss-form > p { margin: 12px 0 0; font-size: 14px; color: #6e6e73; }
 .bk .ss-form .p-bar { margin-top: 14px; gap: 10px; }
 .bk .ss-form .p-bar .btn { min-height: 40px; padding: 0 20px; border-radius: 980px; font-size: 15px; }
 .bk .ss-more summary { font-size: 14.5px; font-weight: 500; color: #0066cc; }
@@ -2651,7 +2652,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .fw-step button { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 2px 4px; border: 0; background: none; font: inherit; cursor: pointer; }
 .fw-step button:disabled { cursor: default; opacity: 1; }
 .fw-dot { display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid #d2d2d7; border-radius: 50%; background: var(--panel); color: #6e6e73; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; transition: background-color .25s var(--ease-out, ease), border-color .25s var(--ease-out, ease), transform .2s; }
-.fw-name { font-size: 14px; font-weight: 500; color: #5f5f64; text-align: center; }
+.fw-name { font-size: 14px; font-weight: 500; color: #6e6e73; text-align: center; }
 .fw-step.is-now .fw-dot { border-color: #0071e3; background: #0071e3; color: #fff; box-shadow: 0 0 0 5px rgba(0, 113, 227, .15); }
 .fw-step.is-now .fw-name { color: #1d1d1f; font-weight: 700; }
 .fw-step.is-done .fw-dot { border-color: transparent; background: rgba(0, 113, 227, .12); color: #0066cc; }
@@ -2665,7 +2666,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 @media (prefers-reduced-motion: reduce) { .fw-screen { animation: none; } }
 .fw-head { margin: 0 0 24px; }
 .fw-head h2 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.025em; line-height: 1.2; color: #1d1d1f; }
-.fw-head p { margin: 6px 0 0; font-size: 16.5px; line-height: 1.5; color: #5f5f64; }
+.fw-head p { margin: 6px 0 0; font-size: 16.5px; line-height: 1.5; color: #6e6e73; }
 /* the setup step shows the setup panel itself, without a second panel around it */
 .fw-screen:has(> div > .ss-card) { padding: 0; background: transparent; box-shadow: none; }
 .fw .ss-card.p-card { margin: 0; }
@@ -2678,7 +2679,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .fw-choice:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(0, 113, 227, .3); }
 .fw-choice.is-on { box-shadow: 0 0 0 2.5px #0071e3, 0 10px 30px -12px rgba(0, 113, 227, .45); }
 .fw-choice b { margin-top: 10px; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: #1d1d1f; }
-.fw-choice > span:not([class]) { font-size: 16px; line-height: 1.5; color: #5f5f64; }
+.fw-choice > span:not([class]) { font-size: 16px; line-height: 1.5; color: #6e6e73; }
 .fw-choice-ico { width: 60px; height: 60px; border-radius: 16px; background-position: center; background-repeat: no-repeat; box-shadow: 0 4px 12px -4px rgba(0, 0, 0, .25); }
 .fw-choice-email .fw-choice-ico { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E"), linear-gradient(180deg, #4ea1ff, #0071e3); }
 .fw-choice-whatsapp .fw-choice-ico { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z'/%3E%3C/svg%3E"), linear-gradient(180deg, #4cd964, #1f9d3c); }
@@ -2693,7 +2694,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .fw-foot[hidden] { display: none; }
 .fw-foot .btn { min-height: 46px; padding: 0 26px; border-radius: 980px; font-size: 16px; }
 .fw-foot .btn-primary { margin-left: auto; }
-.fw-info { flex: 1 1 auto; min-width: 0; font-size: 15px; color: #5f5f64; text-align: center; }
+.fw-info { flex: 1 1 auto; min-width: 0; font-size: 15px; color: #6e6e73; text-align: center; }
 .fw-foot .btn[hidden] + .fw-info { text-align: left; padding-left: 8px; }
 
 /* step 5: number tiles, the students and the message as the student sees it */
@@ -2701,7 +2702,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .fw-tiles:empty { display: none; }
 .fw-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06); }
 .fw-tile b { font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: #1d1d1f; font-variant-numeric: tabular-nums; }
-.fw-tile span { font-size: 14px; color: #5f5f64; }
+.fw-tile span { font-size: 14px; color: #6e6e73; }
 .fw-tile.is-ok b { color: #1f7a35; }
 .fw-tile.is-bad b { color: #c4271b; }
 .fw-tile.is-warn b { color: #a84d00; }
@@ -2721,7 +2722,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .fw-mailview { overflow: hidden; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 8px 24px -12px rgba(0, 0, 0, .15); }
 .fw-mailtop { display: flex; flex-direction: column; gap: 4px; padding: 18px 22px; border-bottom: 1px solid rgba(0, 0, 0, .07); }
 .fw-mailtop b { font-size: 19px; font-weight: 700; letter-spacing: -.01em; color: #1d1d1f; }
-.fw-mailtop span { font-size: 14.5px; color: #5f5f64; overflow-wrap: anywhere; }
+.fw-mailtop span { font-size: 14.5px; color: #6e6e73; overflow-wrap: anywhere; }
 .fw-mailtext { max-height: 470px; overflow: auto; padding: 20px 22px 24px; font-size: 15.5px; line-height: 1.65; color: #1d1d1f; white-space: pre-wrap; overflow-wrap: anywhere; }
 /* 🔴 CSS CHANGED (2026-11-17): the signature picture in Check and send | from: the email preview ended with a typed "Kind regards," and the company name | to: the email text, then the sender's own signature picture (as the student gets it), at most 520px wide */
 .fw-mailsig { display: block; max-width: min(520px, calc(100% - 44px)); height: auto; margin: 0 22px 22px; }
@@ -2735,7 +2736,7 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #0058b0; }
 .fw-done-ico { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: #34c759; color: #fff; font-size: 38px; font-weight: 700; box-shadow: 0 10px 30px -8px rgba(52, 199, 89, .6); animation: fw-pop .5s var(--spring, ease) both; }
 @keyframes fw-pop { from { transform: scale(.5); opacity: 0; } to { transform: none; opacity: 1; } }
 .fw-done h2 { margin: 8px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -.025em; color: #1d1d1f; }
-.fw-done p { margin: 0 0 6px; font-size: 16.5px; color: #5f5f64; }
+.fw-done p { margin: 0 0 6px; font-size: 16.5px; color: #6e6e73; }
 .fw-done-line { font-size: 15px; color: #c4271b; }
 .fw-done .btn { min-height: 46px; margin-top: 12px; padding: 0 26px; border-radius: 980px; font-size: 16px; }
 
@@ -2787,7 +2788,7 @@ body.has-sl-tray main { padding-bottom: 120px; }
 .sl-tray-who:hover { background: #ececf0; }
 .sl-tray-words { display: flex; flex-direction: column; min-width: 0; }
 .sl-tray-words b { font-size: 16px; font-weight: 600; }
-.sl-tray-words small { color: #515154; font-size: 14px; }
+.sl-tray-words small { color: #6e6e73; font-size: 14px; }
 .sl-tray-chev { flex: none; width: 9px; height: 9px; margin-left: 4px; border-right: 2px solid #6e6e73; border-top: 2px solid #6e6e73; transform: rotate(-45deg); transition: transform .2s ease; }
 .sl-tray-chev.is-open { transform: rotate(135deg); }
 .sl-tray-acts { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -2796,7 +2797,7 @@ body.has-sl-tray main { padding-bottom: 120px; }
 .sl-tray-list li::before { content: counter(tray); flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 13px; font-weight: 700; }
 .sl-tray-text { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; }
 .sl-tray-text b { color: #1d1d1f; font-weight: 600; overflow-wrap: anywhere; }
-.sl-tray-text span { color: #515154; font-size: 13.5px; overflow-wrap: anywhere; }
+.sl-tray-text span { color: #6e6e73; font-size: 13.5px; overflow-wrap: anywhere; }
 .sl-tray-tools { display: flex; flex: none; gap: 4px; }
 @media (max-width: 900px) { .sl-tray { left: 12px; right: 12px; } }
 @media (max-width: 700px) {
@@ -2879,7 +2880,7 @@ html body ol.p-chosen > li.p-chosen-item::before { content: counter(chosen); pos
 html body .p-chosen-item header { align-items: center; }
 html body .p-chosen-item h3 { margin: 0; font-size: 16px; }
 .p-chosen-tools { display: flex; flex: none; align-items: center; gap: 6px; }
-.p-chosen-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 2px 0 0; color: #515154; font-size: 14px; }
+.p-chosen-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 2px 0 0; color: #6e6e73; font-size: 14px; }
 .p-chosen-partner { padding: 1px 10px; border-radius: 999px; background: #ececf0; color: #1d1d1f; font-size: 13px; font-weight: 600; }
 .p-chosen-facts { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 10px 0 0; }
 .p-chosen-facts div { display: flex; flex-direction: column; min-width: 0; }
@@ -2890,7 +2891,7 @@ html body .p-chosen-item h3 { margin: 0; font-size: 16px; }
 /* 🔴 CSS CHANGED (2026-11-17): Universities list gives the answer without opening a page | from: 57 alike cards with only the name, city and intake chips; no filters; a course list on a university page with no way to search it | to: under the title a row of filters (a segmented switch All, Universities, Pathway colleges; Intake and Sort menus as soft grey pills; a blue "Clear filters" link); a soft amber line with an amber dot "4 universities close applications in the next 14 days. Show them first"; on each card a soft grey box "Apply by 4 Dec 2026" with the intake in grey and a days-left pill (grey; amber within 30 days; red within 7), "No open deadline listed" in grey when there is none, and at the bottom "123 courses" and a grey "Pathway college" pill; on a university page a search box above the courses "Filter the 123 courses" with how many match */
 .ff-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 18px 0 6px; }
 .ff-bar[hidden], .ff-soon[hidden] { display: none; }
-.ff-pick { display: inline-flex; align-items: center; gap: 8px; color: #515154; font-size: 14px; font-weight: 600; }
+.ff-pick { display: inline-flex; align-items: center; gap: 8px; color: #6e6e73; font-size: 14px; font-weight: 600; }
 .ff-pick select { width: auto; min-height: 38px; padding: 0 30px 0 14px; border: 0; border-radius: 999px; background-color: #e8e8ed; color: #1d1d1f; font: 500 14.5px var(--font); cursor: pointer; }
 .ff-pick select:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
 .ff-clear { font-weight: 600; }
@@ -2910,23 +2911,23 @@ html body .uc-card:hover .uni-mono { background: #0071e3; color: #fff; }
 html body .uc-card.is-pathway:hover .uni-mono { background: #7a52c7; color: #fff; }
 .uc-title { min-width: 0; }
 html body .uc-card h2 { margin: 1px 0 3px; padding: 0; font-size: 17.5px; line-height: 1.3; font-weight: 650; color: #1d1d1f; }
-html body .uc-card .city { color: #5f5f64; font-size: 14px; line-height: 1.35; }
+html body .uc-card .city { color: #6e6e73; font-size: 14px; line-height: 1.35; }
 .uc-card .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .uc-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding: 10px 12px; border-radius: 12px; background: #f5f5f7; font-size: 14.5px; color: #1d1d1f; }
 .uc-next b { font-weight: 650; }
-.uc-next-intake { display: block; color: #5f5f64; font-size: 13px; }
+.uc-next-intake { display: block; color: #6e6e73; font-size: 13px; }
 .uc-days { flex: none; padding: 2px 10px; border-radius: 999px; background: #e8e8ed; color: #3a3a3c; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .uc-days.is-soon { background: #ffefd0; color: #8a4b00; }
 .uc-days.is-urgent { background: #ffe3e0; color: #b42318; }
-.uc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(0, 0, 0, .07); color: #515154; font-size: 14px; }
+.uc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(0, 0, 0, .07); color: #6e6e73; font-size: 14px; }
 .uc-count { color: #1d1d1f; font-weight: 600; }
-.uc-nodate { color: #66666b; font-size: 13.5px; }
+.uc-nodate { color: #6e6e73; font-size: 13.5px; }
 html body .uc-card .updated { margin: 0; padding: 0; color: #a84d00; font-size: 13px; }
 .uni-card.is-board .uc-next { margin: 0 0 4px; }
 html body .doc .course-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 10px; }
 html body .doc .course-filter .search { flex: 1 1 260px; max-width: 420px; min-height: 40px; border: 0; border-radius: 999px; padding: 0 16px; background: #f0f0f3; }
 html body .doc .course-filter .search:focus { outline: 2px solid #0071e3; outline-offset: 1px; background: #fff; }
-.course-filter-info { color: #515154; font-size: 14px; font-weight: 600; }
+.course-filter-info { color: #6e6e73; font-size: 14px; font-weight: 600; }
 
 /* 🔴 CSS CHANGED (2026-11-17): the index of a university's university page | from: a row of white pills that scrolled with the page background behind it, every pill alike | to: the same row kept at the top on a frosted, see-through band while scrolling, the section being read as a filled blue pill */
 html body nav.toc { top: 0; z-index: 6; margin: 0 -8px 14px; padding: 10px 8px; border-radius: 16px; background: rgba(245, 245, 247, .82); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); }
@@ -2934,7 +2935,7 @@ html body nav.toc a.is-on { border-color: #0071e3; background: #0071e3; color: #
 
 /* 🔴 CSS CHANGED (2026-11-17): the Partners cards | from: a tall grey box "How to apply is not entered yet" on every partner without a portal; B2B partner cards without any figures | to: that note as one quiet line with a dashed edge (no big grey box); each B2B partner card shows Students, Visas and Visa rate with small bars (blue, then green), the same look as the Partner Universities cards */
 html body .bp-submit:has(> .bp-none:only-child) { padding: 0 !important; background: transparent !important; }
-html body .bp-submit > .bp-none:only-child { padding: 10px 14px; border: 1px dashed #c7c7cc; border-radius: 12px; color: #5f5f64; font-size: 14px; }
+html body .bp-submit > .bp-none:only-child { padding: 10px 14px; border: 1px dashed #c7c7cc; border-radius: 12px; color: #6e6e73; font-size: 14px; }
 .bp-funnel.is-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* 🔴 CSS CHANGED (2026-11-17): the shortlisting flow | from: "+ Shortlist" turning green only after the server answered (about a second), a course already given to the team showing "✓ Sent" in the same green; a newly added tray line looking finished at once; in Assign, an orange edge on an empty partner menu and a button that could not be pressed with no reason given | to: the pill turns green the moment it is pressed, with a soft fade; a course already with the Application Team as a grey "✓ With the team" pill; a tray line still being saved shown at 60% until the server confirms; in Assign, a blue "Use Real Dreams for the other 2" link under the first partner chosen, and the button saying "Choose 2 more partners" until every course has one */
@@ -2981,7 +2982,7 @@ button.ov-kpi:hover .ov-kpi-hint::after, button.ov-kpi:focus-visible .ov-kpi-hin
 .ov-person:hover, .ov-person:focus-visible { background: #f0f0f3; }
 .ov-person-text { display: grid; flex: 1; min-width: 0; }
 .ov-person-text b { font-weight: 600; color: #1d1d1f; }
-.ov-person-text small { color: #5f5f64; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-person-text small { color: #6e6e73; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ov-person-stage { flex: none; padding: 2px 10px; border-radius: 999px; background: #ececf0; color: #3a3a3c; font-size: 13px; font-weight: 600; }
 /* 🔴 CSS CHANGED (2026-11-17): "WhatsApp on your phone" window redesigned in the style of Apple's set-up screens (the owner asked for it to be the best and most professional) | from: a 560px window with a sentence on top, the code with two plain numbered steps beside it and a small blue "Waiting for your phone..." line; when connected, a green line and a plain list of phones with a grey Disconnect | to: a 760px window: at the top a 56px rounded tile with a phone and a green chat bubble beside a bold title and one grey line of what it does; below, the code on a white card with a soft shadow and "Works for 29:41 more, once" counting down under it (the code fades when it has run out); on the right a grey segmented switch Android | iPhone (the chosen side a white pill) and the steps as rows with blue numbered circles; under them a soft grey status pill with a pulsing grey dot ("Waiting for your phone..."), blue with a pulsing blue dot once the phone has opened the code, red when the code ran out, with a blue "Make a new code" pill under it. Connected: a large green circle with a white tick that springs in, "iPhone is connected" in bold, and each phone as a soft grey rounded row with a phone icon, its name in bold, "Connected today · Last used today" in grey and a grey Disconnect pill that turns red "Disconnect?" to confirm. On a narrow screen the code and steps stack */
 dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
@@ -2991,7 +2992,7 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 .pc-hero-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(180deg, #ffffff, #f0f0f3); box-shadow: 0 0 0 .5px rgba(0, 0, 0, .08), 0 2px 8px rgba(0, 0, 0, .06); color: #1d1d1f; }
 .pc-hero-icon svg { width: 40px; height: 40px; }
 .pc-hero-text h3 { margin: 0 0 3px; font-size: 19px; font-weight: 650; letter-spacing: -.015em; color: #1d1d1f; }
-.pc-hero-text p { margin: 0; color: #515154; font-size: 15px; line-height: 1.45; }
+.pc-hero-text p { margin: 0; color: #6e6e73; font-size: 15px; line-height: 1.45; }
 .pc-pair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
 .pc-qr-card { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .pc-qr { padding: 12px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 6px 22px -8px rgba(0, 0, 0, .18); line-height: 0; transition: opacity .3s ease, filter .3s ease, box-shadow .3s ease; }
@@ -3008,7 +3009,7 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 .pc-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 14px; font-weight: 650; }
 .pc-steps b { display: block; color: #1d1d1f; font-size: 16.5px; font-weight: 600; line-height: 1.35; }
 .pc-steps span:not(.pc-n) { display: block; margin-top: 2px; color: #6e6e73; font-size: 14px; line-height: 1.4; }
-.pc-status { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; align-self: flex-start; padding: 9px 16px; border-radius: 18px; background: #f0f0f3; color: #515154; font-size: 14.5px; font-weight: 500; }
+.pc-status { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; align-self: flex-start; padding: 9px 16px; border-radius: 18px; background: #f0f0f3; color: #6e6e73; font-size: 14.5px; font-weight: 500; }
 .pc-status > span:last-child { min-width: 0; }
 .pc-side > .btn { align-self: flex-start; }
 .pc-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #8e8e93; animation: pc-pulse 1.6s ease-in-out infinite; }
@@ -3022,7 +3023,7 @@ dialog.p-dialog.pc-dialog { width: min(760px, calc(100vw - 24px)); }
 .pc-done.is-new .pc-check { animation: pc-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes pc-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 .pc-done h3 { margin: 0 0 4px; font-size: 21px; font-weight: 650; letter-spacing: -.015em; color: #1d1d1f; }
-.pc-done p { max-width: 460px; margin: 0; color: #515154; font-size: 15px; line-height: 1.45; }
+.pc-done p { max-width: 460px; margin: 0; color: #6e6e73; font-size: 15px; line-height: 1.45; }
 .pc-devices { display: flex; flex-direction: column; gap: 8px; margin: 0 0 6px; padding: 0; list-style: none; }
 .pc-devices li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 14px; background: #f2f2f5; }
 .pc-dev-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: #fff; color: #1d1d1f; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .06); }
@@ -3054,7 +3055,7 @@ html body .p-apps .p-card-acts { gap: 8px; }
 html body .p-apps .p-priority { display: flex; align-items: center; gap: 16px; margin: 0 0 16px; padding: 12px 14px 12px 16px; border-radius: 14px; background: #f2f2f5; cursor: default; }
 html body .p-apps .p-priority-text { display: flex; flex: none; flex-direction: column; gap: 1px; }
 html body .p-apps .p-priority-text b { color: #1d1d1f; font-size: 15px; font-weight: 600; }
-html body .p-apps .p-priority-text small { color: #86868b; font-size: 12.5px; }
+html body .p-apps .p-priority-text small { color: #6e6e73; font-size: 12.5px; }
 html body .p-apps select.p-priority-select { appearance: none; -webkit-appearance: none; flex: 1 1 auto; min-width: 0; height: 40px; margin: 0 0 0 auto; padding: 0 36px 0 14px; overflow: hidden; border: 1px solid rgba(0, 0, 0, .1); border-radius: 10px; background: #fbfbfd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2386868b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center; color: #1d1d1f; font: inherit; font-size: 15px; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
 html body .p-apps select.p-priority-select:focus { outline: none; border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0, 113, 227, .2); }
 @supports (appearance: base-select) { html body .p-apps select.p-priority-select { appearance: none; } }
@@ -3063,7 +3064,7 @@ html body .p-apps ol.p-chosen { display: block; margin: 0; padding: 0; overflow:
 html body .p-apps ol.p-chosen > li.p-chosen-item { position: relative; margin: 0; padding: 16px 18px 16px 66px; border: 0 !important; border-radius: 0; background: transparent; box-shadow: none; }
 html body .p-apps ol.p-chosen > li.p-chosen-item + li.p-chosen-item::after { content: ""; position: absolute; top: 0; right: 0; left: 66px; height: 1px; background: rgba(0, 0, 0, .08); }
 html body .p-apps ol.p-chosen > li.p-chosen-item::before { left: 18px; top: 16px; width: 34px; height: 34px; background: #e8f1fc; color: #0071e3; font-size: 14px; font-weight: 650; }
-html body .p-apps ol.p-chosen.is-apps > li.p-chosen-item::before { content: attr(data-mono); background: #ececf0; color: #515154; font-size: 12.5px; letter-spacing: .02em; }
+html body .p-apps ol.p-chosen.is-apps > li.p-chosen-item::before { content: attr(data-mono); background: #ececf0; color: #6e6e73; font-size: 12.5px; letter-spacing: .02em; }
 html body .p-apps ol.p-chosen.is-apps > li.p-chosen-item.is-priority { background: #f3f8fe; }
 html body .p-apps ol.p-chosen.is-apps > li.p-chosen-item.is-priority::before { background: #0071e3; color: #fff; }
 html body .p-apps .p-chosen-item header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
@@ -3077,7 +3078,7 @@ html body .p-apps .p-applied.is-priority { background: #0071e3; color: #fff; }
 html body .p-apps .p-chosen-partner { background: #ececf0; color: #3a3a3c; }
 html body .p-apps .p-chosen-item > .p-muted { margin: 8px 0 0; color: #6e6e73; font-size: 13.5px; }
 html body .p-apps .p-chosen-facts { gap: 4px 28px; margin: 12px 0 0; }
-html body .p-apps .p-chosen-facts dt { color: #86868b; font-size: 12px; }
+html body .p-apps .p-chosen-facts dt { color: #6e6e73; font-size: 12px; }
 html body .p-apps .p-chosen-facts dd { font-size: 14.5px; font-weight: 600; }
 @media (max-width: 640px) {
   html body .p-apps .p-card { padding: 18px 16px; }
@@ -3092,7 +3093,7 @@ html body .p-apps .p-chosen-facts dd { font-size: 14.5px; font-weight: 600; }
 /* 🔴 CSS CHANGED (2026-11-17): Partners (Universities, B2B partners, Agents) made more professional, one look on all three (the owner asked) | from: the title with a loose name box and button beside it; the numbers in one long box split by thin lines; a plain round search box with "N in the list" far away on the right; cards with a light border, the numbers bar and the facts in loose rows | to: the title on the left and one joined "name + Add" pill on the right (the same on all three pages, no list dropping down); the numbers as separate soft tiles, each with a thin blue line on top and big figures; a frosted search bar with a magnifier that stays at the top of the screen while scrolling, the count beside it in a small grey pill; cards with a crisper edge, a deeper shadow on hover and a soft blue ring, the name larger, the numbers bar in a soft grey tray, the facts as small grey labels over their values, the Edit or Open button as a blue text link at the bottom right */
 html body .bp-page .p-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px 28px; flex-wrap: wrap; margin-bottom: 26px; }
 html body .bp-page .p-head h1 { margin: 0 0 6px; }
-html body .bp-page .p-head > div > p { margin: 0; color: #5f5f64; font-size: 16px; }
+html body .bp-page .p-head > div > p { margin: 0; color: #6e6e73; font-size: 16px; }
 /* 🔴 CSS CHANGED (2026-11-20): the "name + Add" box on Universities, B2B partners and Agents removed | from: a white rounded pill with a name box and a blue "+ Add" button at the top right | to: nothing there (the owner: no adding by hand) */
 html body .bp-page .bp-band { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 0 0 22px; padding: 0; border: 0 !important; background: transparent; box-shadow: none; overflow: visible; }
 html body .bp-page .bp-band > div { position: relative; padding: 20px 22px 18px; border: 0; border-radius: 18px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 8px 24px -18px rgba(0, 0, 0, .3); overflow: hidden; }
@@ -3102,14 +3103,14 @@ html body .bp-page .bp-band b { margin-top: 8px; color: #1d1d1f; font-family: va
 html body .bp-page .bp-band small { margin-top: 6px; color: #6e6e73; font-size: 14px; }
 /* 🔴 CSS CHANGED (2026-11-17): Partners: the search box taken off (the owner asked) | from: a frosted search bar with a magnifier that stayed at the top while scrolling, the count beside it | to: no search bar; only the small grey "N in the list" pill (and "N hidden" for Admin) on the right above the cards */
 html body .bp-page .bp-tools { justify-content: flex-end; margin: 0 0 14px; }
-html body .bp-page .bp-tools #count:not(:empty) { margin-left: auto; padding: 5px 12px; border-radius: 999px; background: rgba(0, 0, 0, .05); color: #515154; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+html body .bp-page .bp-tools #count:not(:empty) { margin-left: auto; padding: 5px 12px; border-radius: 999px; background: rgba(0, 0, 0, .05); color: #6e6e73; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
 html body .bp-page .bp-grid { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 20px; }
 html body .bp-page .bp-card { gap: 18px; padding: 24px 24px 18px; border: 0 !important; border-radius: 22px; background: #fbfbfd; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04), 0 10px 28px -20px rgba(0, 0, 0, .3); }
 html body .bp-page .bp-card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 113, 227, .28), 0 2px 4px rgba(0, 0, 0, .04), 0 26px 48px -28px rgba(0, 40, 100, .38); }
 html body .bp-page .bp-card-new { background: #f8f8fa; box-shadow: 0 0 0 1px rgba(0, 0, 0, .1) inset; }
 html body .bp-page .bp-avatar { width: 48px; height: 48px; border-radius: 14px; font-size: 16px; box-shadow: 0 6px 14px -8px rgba(0, 60, 140, .6), inset 0 1px 0 rgba(255, 255, 255, .25); }
 html body .bp-page .bp-card .bp-name { font-size: 20px; letter-spacing: -.015em; line-height: 1.25; }
-html body .bp-page .bp-card .bp-sub { margin-top: 3px; color: #66666b; font-size: 14px; }
+html body .bp-page .bp-card .bp-sub { margin-top: 3px; color: #6e6e73; font-size: 14px; }
 html body .bp-page .bp-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; font-size: 13px; font-weight: 600; }
 html body .bp-page .bp-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 html body .bp-page .bp-funnel { gap: 14px; padding: 14px 16px; border-radius: 14px; background: #f2f2f5; }
@@ -3144,7 +3145,7 @@ html body .p-dialog .p-form.p-assign select { width: 100%; max-width: 100%; heig
 html body .p-dialog .p-form.p-assign select::picker-icon { flex: none; }
 html body .p-dialog .p-form.p-assign select > button, html body .p-dialog .p-form.p-assign select selectedcontent { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 html body .p-dialog .p-form.p-assign textarea { width: 100%; min-height: 96px; border-radius: 10px; }
-html body .p-dialog .p-form.p-assign .p-goes { margin-top: 6px; color: #86868b; font-size: 13px; }
+html body .p-dialog .p-form.p-assign .p-goes { margin-top: 6px; color: #6e6e73; font-size: 13px; }
 
 /* 🔴 CSS CHANGED (2026-11-18): the All Students toolbar on a phone (a bug fix) | from: when the buttons wrapped, "Show numbers, Undo, Redo" sat pushed to the right of its own row, out of line with the buttons above | to: on phones under 700px wide that row starts at the left edge, in line with the buttons above */
 @media (max-width: 700px) {
@@ -3195,7 +3196,7 @@ html body .up-level-head h3 { margin: 0; color: #1d1d1f; font-size: 21px; font-w
 .up-money-tile { min-width: 0; padding: 16px 18px; border-radius: 16px; background: linear-gradient(180deg, #f7f9fc, #f1f4f9); }
 .up-money-k { display: block; color: #6e6e73; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .up-money-v { display: block; margin: 4px 0 2px; color: #1d1d1f; font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
-.up-money-d p { margin: 2px 0 0; color: #515154; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.up-money-d p { margin: 2px 0 0; color: #6e6e73; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
 .up-reqs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
 .up-req { min-width: 0; }
 .up-req-k { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: #1d1d1f; font-size: 15px; font-weight: 650; }
@@ -3223,7 +3224,7 @@ html body .up-group-head h3 { margin: 0; color: #1d1d1f; font-size: 20px; font-w
 .up-course:hover { box-shadow: 0 0 0 1px rgba(0, 113, 227, .25), 0 10px 24px -16px rgba(0, 0, 0, .3); }
 .up-course[hidden], .up-group[hidden], .up-course-name { color: #1d1d1f; font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
 .up-course-meta { display: flex; flex-wrap: wrap; gap: 6px; }
-.up-course-meta span { padding: 3px 10px; border-radius: 999px; background: #f2f2f5; color: #515154; font-size: 13px; }
+.up-course-meta span { padding: 3px 10px; border-radius: 999px; background: #f2f2f5; color: #6e6e73; font-size: 13px; }
 .up-course-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
 .up-course-deadline { color: #b25000; font-size: 13.5px; font-weight: 600; }
 html body .up-course .sl-pick { margin: 0 0 0 auto; }
@@ -3398,7 +3399,7 @@ html body a.uni-card.uc-card:hover { transform: translateY(-4px); }
 .td-task-chips, .td-app-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 html body .td-task-chips span, html body .td-app-chips span { padding: 3px 10px; border-radius: 999px; background: #f2f2f5; color: #3a3a3c; font-size: 13px; font-weight: 500; }
 html body .td-task-chips span.is-uni { background: #e8f2fd; color: #0058b0; font-weight: 600; }
-.td-task-note { margin: 0; color: #515154; font-size: 14px; }
+.td-task-note { margin: 0; color: #6e6e73; font-size: 14px; }
 .td-app-chips { margin-top: 6px; }
 html body .p-assign-app { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin: 2px 0 0; padding: 14px; border-radius: 14px; background: #f5f7fb; }
 html body .p-assign-app > .p-field:has(textarea) { grid-column: 1 / -1; }
@@ -3426,7 +3427,7 @@ html body .fd-out.is-busy { opacity: .45; pointer-events: none; }
 .fd-tile:hover:not(:disabled) { transform: translateY(-2px); }
 .fd-tile:disabled { opacity: .45; cursor: default; }
 .fd-tile b { font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.fd-tile span { color: #515154; font-size: 15px; font-weight: 600; }
+.fd-tile span { color: #6e6e73; font-size: 15px; font-weight: 600; }
 .fd-tile.is-yes b { color: #1f8a3c; }
 .fd-tile.is-check b { color: #b26a00; }
 .fd-tile.is-no b { color: #6e6e73; }
@@ -3562,7 +3563,7 @@ html body .up-logo img { width: 100%; height: 100%; }
 html body .up-money-v.is-none, html body .up-cm.is-none b { color: #6e6e73; font-size: 15px; font-weight: 500; letter-spacing: 0; }
 html body .up-course-deadline { color: #6e6e73; font-weight: 600; }
 html body .up-course-deadline.is-soon { color: #b25000; }
-html body .up-course-deadline.is-closed { color: #86868b; text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .25); }
+html body .up-course-deadline.is-closed { color: #6e6e73; text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, .25); }
 html body .up-course-name { color: #1d1d1f; font-size: 17px; font-weight: 600; line-height: 1.32; letter-spacing: -.012em; }
 html body .up-cm b { font-size: 16px; }
 .up-course-money.is-one { grid-template-columns: 1fr; }
@@ -4061,3 +4062,55 @@ dialog.p-dialog .btn, #view .sc-edit .p-bar .btn, #view .sc-source .p-bar .btn {
 #view .sc-tl-page > .p-card { padding-left: 44px; padding-right: 44px; }
 body.p-embed .sc-fact-value a { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 body.p-embed #view .sc-step-label { font-size: 13px; letter-spacing: -.01em; }
+
+/* 🔴 CSS CHANGED (2026-11-21): every page made calm, as the student card (the owner: "yes, make all the other pages calm too") | from: tinted pills and badges in blue, green, amber, red, purple, teal and brown (the status chips on All Students, the task tags on Today and in cards, the activity badges, the access chips, Offer and Sent chips), a soft blue-and-pink glow behind Today's greeting, grey capitals above it ("EVERYTHING AT A GLANCE"), team dots in four colours, orange figures on Today, blue, purple, teal, orange and pink gradient monograms on Partners, green visa figures, a deep blue gradient where a university picture is missing, the dashboard's five-colour trend lines, a red "Delete rows" and a green "All changes saved" at rest, a green-to-blue progress ring, white Follow-up choice cards with coloured app icons | to: one soft grey (#f0f0f3) behind every pill and badge, its words near-black, with colour kept only in the words when it means something (green for done or issued, red for refused or rejected, amber for on hold, waiting or missing); no glow behind the greeting and its small line in sentence case grey; grey team dots; near-black figures (amber stays only for "waiting 3+ days"); grey monograms with near-black initials; visa figures in near-black; a soft grey (#e8e8ed) where a picture is missing (a graphite gradient behind a university page title with no picture, so its white title still reads); the dashboard's small trend lines in blue and greys; "Delete rows" grey until the mouse is on it (then red); "All changes saved" in grey; the progress ring in solid blue; off-white Follow-up cards with grey app icons */
+html:root {
+  --green-bg: #f0f0f3; --green-fg: #1a7f37;
+  --blue-bg: #f0f0f3;  --blue-fg: #1d1d1f;
+  --amber-bg: #f0f0f3; --amber-fg: #8a5300;
+  --gray-bg: #f0f0f3;  --gray-fg: #1d1d1f;
+  --red-bg: #f0f0f3;   --red-fg: #b42318;
+  --s1: #0071e3; --s2: #98989d; --s3: #1d1d1f; --s4: #6e6e73; --s5: #c7c7cc;
+  --text-dim: #6e6e73; --head-ink: #6e6e73;
+}
+/* task tags (Today, cards, tasks) and the small tinted chips */
+:is(.td-tag, .tb-tag):is(.tag-application, .tag-offer, .tag-mock, .tag-payment, .tag-documents, .tag-noc, .tag-medical, .tag-visa, .tag-other),
+.td-chip.is-later, .td-filter-n.is-later, .td-tag-pick .td-answer[aria-checked="true"], .p-applied.is-offer, html body .p-applied.is-sent, .pc-status.is-seen,
+.activity-action, .activity-action.cat-logins, .cat-security, .cat-accounts, .chips .chip, html body .sl-pick, .td-note.kind-task .td-note-av { background: #f0f0f3; color: #1d1d1f; }
+.td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { box-shadow: 0 0 0 2px #1d1d1f inset; }
+.td-tag::before, .tb-tag::before { background: #6e6e73; }
+.p-applied { background: #f0f0f3; color: #1a7f37; }
+.p-applied.is-refused { background: #f0f0f3; color: #b42318; }
+/* Today */
+.td-hello::before { content: none; }
+.td-kicker { color: #6e6e73; font-size: 14px; font-weight: 600; letter-spacing: -.016em; text-transform: none; }
+.td-group h3, .td-inbox-sec, .td-day { color: #6e6e73; font-size: 14px; font-weight: 600; letter-spacing: -.016em; text-transform: none; }
+html body :is(.td-stat, .td-pulse) b, html body .td-pulse .td-stat b { color: #1d1d1f; }
+.tb-col-dot, .tb-col:nth-child(n) .tb-col-dot { background: #6e6e73; }
+/* Partners */
+.bp-avatar, .bp-card:nth-child(n) .bp-avatar, html body .bp-page .bp-avatar { background: #e8e8ed; color: #1d1d1f; box-shadow: none; }
+html body .bp-page :is(.bp-num.is-visa, .bp-figure.is-visa, .is-visa b) { color: #1d1d1f; }
+/* a missing picture */
+.uc-cover.is-blank, html body .uc-card.is-pathway .uc-cover.is-blank, html body .fd-cover.is-blank { background: #e8e8ed; }
+.up-hero, .up-hero.no-pic { background: linear-gradient(160deg, #3a3a3c, #1d1d1f); animation: none; }
+.uc-days.is-soon { background: #f0f0f3; color: #8a5300; }
+.uc-days.is-urgent { background: #f0f0f3; color: #b42318; }
+/* All Students: actions at rest */
+body:has(#sheet) #delRow:not(:hover):not(:focus-visible) { color: #1d1d1f; }
+body:has(#sheet) #status, body:has(#sheet) .save-status { background: transparent !important; color: #6e6e73 !important; }
+body:has(#sheet) .save-status::before, body:has(#sheet) #status::before { background: #6e6e73 !important; }
+/* Follow-up choices */
+.fw-choice { background: #fbfbfd; }
+.fw-choice-ico { filter: grayscale(1); box-shadow: none; }
+/* Mock interviews */
+.mg-status { font-size: 14px; font-weight: 600; }
+/* 🔴 CSS CHANGED (2026-11-21): the last colours of the calm pass | from: on the Dashboard chart, orange dashed lines and orange names for events; on partner cards, a green Visas bar; on Activity, a red "Clear activity" at rest | to: grey dashed lines with grey names; a near-black Visas bar like the other bars' calm; "Clear activity" grey until the mouse is on it (then red, as it asks before clearing) */
+.tr-mark-line { stroke: #a1a1a6; }
+.tr-mark-label { fill: #6e6e73; }
+.bp-funnel-step.is-visa i, html body .bp-page .bp-funnel-step.is-visa i { background: linear-gradient(90deg, #1d1d1f var(--w, 0%), #dcdce1 var(--w, 0%)); }
+#clear.btn-danger:not(:hover):not(:focus-visible) { color: #1d1d1f; }
+/* 🔴 CSS CHANGED (2026-11-21): Universities and Users, the last of the calm pass | from: on Universities, light blue (and violet for colleges) initials tiles that turned solid blue or violet under the mouse, and a blue count on the chosen Universities or Pathway colleges switch; on Users, "Student (own portal)" without its top line | to: grey initials tiles (#e8e8ed, near-black letters) that turn a shade darker under the mouse; a grey count with near-black figures; the Student row with its own full border like the other choices */
+html body .uc-card .uni-mono:not(.has-logo), html body .uni-card.is-board .uni-mono:not(.has-logo), html body .uc-card.is-pathway .uni-mono:not(.has-logo), html body .uni-card.is-board.is-pathway .uni-mono:not(.has-logo) { background: #e8e8ed; color: #1d1d1f; }
+html body .uc-card:hover .uni-mono:not(.has-logo), html body .uc-card.is-pathway:hover .uni-mono:not(.has-logo) { background: #dcdce2; color: #1d1d1f; }
+.ff-kind.p-seg > button.on .ff-n { background: #e8e8ed; color: #1d1d1f; }
+.access .check-student { border-top: 1px solid var(--border, #e3e3e8); padding-top: 12px; }

@@ -228,7 +228,8 @@
   // ---- drill-down charts (like a BI report): a donut of the groups; a click on a slice shows its parts as bars; a click on a bar
   // shows the students behind it (a click on a name opens the card). A path at the top goes back up. ----
   // 🔴 CSS CHANGED (2026-11-14): the colours of the source donut | from: navy, bronze and muted blues | to: Apple's system colours (blue, orange, green, indigo, teal, pink, purple, yellow, grey, mint)
-  const PALETTE = ['#0071e3', '#ff9f0a', '#30b350', '#5e5ce6', '#5ac8fa', '#ff375f', '#af52de', '#ffcc00', '#8e8e93', '#00c7be'];
+  /* 🔴 CSS CHANGED (2026-11-21): the colours of the source donut | from: ten bright system colours | to: calm, as Apple: blue, near-black and greys, with two lighter blues so neighbouring slices still part */
+  const PALETTE = ['#0071e3', '#1d1d1f', '#6e6e73', '#5ea2ef', '#a1a1a6', '#3a3a3c', '#b8d4f5', '#c7c7cc', '#2c5f9e', '#e0e0e5'];
   const share = (n, total) => (total ? Math.round((n / total) * 100) : 0);
   function donut(groups, onPick) {
     const total = groups.reduce((n, g) => n + g.students, 0) || 1;

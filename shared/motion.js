@@ -91,7 +91,8 @@
     const r = (size - stroke) / 2;
     const len = 2 * Math.PI * r;
     const share = total > 0 ? Math.min(1, value / total) : 1;
-    wrap.innerHTML = `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><defs><linearGradient id="mo-ring-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34c759"/><stop offset="1" stop-color="#0a84ff"/></linearGradient></defs>`
+    /* 🔴 CSS CHANGED (2026-11-21): the progress ring's colour set here | from: green to blue | to: solid Apple blue */
+    wrap.innerHTML = `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><defs><linearGradient id="mo-ring-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0071e3"/><stop offset="1" stop-color="#0071e3"/></linearGradient></defs>`
       + `<circle class="mo-ring-track" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" fill="none"/>`
       + `<circle class="mo-ring-fill" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" fill="none" stroke-linecap="round" stroke-dasharray="${len}" stroke-dashoffset="${len}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg>`;
     const mid = document.createElement('div');

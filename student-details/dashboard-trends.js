@@ -84,7 +84,8 @@
     card.append(head('Business growth by intake', 'Students and visas, intake by intake.'));
     if (list.length < 2) { card.append(el('p', 'p-muted', 'The growth shows once there are two intakes or more.')); }
     const pair = el('div', 'tr-pair');
-    pair.append(bars(list, 'students', 'Students in each intake', '#0071e3'), bars(list, 'visas', 'Visas in each intake', '#34c759'));
+    /* 🔴 CSS CHANGED (2026-11-21): the bars per intake | from: blue and bright green | to: blue for students, near-black for visas */
+    pair.append(bars(list, 'students', 'Students in each intake', '#0071e3'), bars(list, 'visas', 'Visas in each intake', '#1d1d1f'));
     // One plain sentence on the latest closed intake against the one before.
     const done = list.length > 2 ? list.slice(0, -1) : list;
     if (done.length > 1) {
@@ -125,7 +126,8 @@
 
   // ---- 2. ups and downs over time ----
   // Each line, and the place of its day in a student's record from /api/trends: [source, inquiry, application, offer, payment, CAS, visa].
-  const LINES = [['inq', 'Inquiries', '#0071e3', 1], ['app', 'Applied', '#5856d6', 2], ['off', 'Offers', '#af52de', 3], ['pay', 'Paid', '#ff9500', 4], ['cas', 'CAS', '#30b0c7', 5], ['visa', 'Visas', '#34c759', 6]];
+  /* 🔴 CSS CHANGED (2026-11-21): the colours of the lines over time | from: blue, indigo, purple, orange, teal and green | to: calm, as Apple: Inquiries in blue, Applied in near-black, Offers, Paid and CAS in three greys, Visas in green (done) */
+  const LINES = [['inq', 'Inquiries', '#0071e3', 1], ['app', 'Applied', '#1d1d1f', 2], ['off', 'Offers', '#6e6e73', 3], ['pay', 'Paid', '#98989d', 4], ['cas', 'CAS', '#c7c7cc', 5], ['visa', 'Visas', '#1a7f37', 6]];
   const SOURCES = [['', 'Every source'], ['events', 'Events and marketing (events, campaigns, paid adverts)'], ['social', 'Social media (not paid)'], ['organic', 'Came by itself (visitors, references, classes)'], ['branch', 'Branches'], ['agent', 'Agents and B2B partners'], ['unknown', 'Source not recorded']];
   // The days of one line, for the students of a source (and of one event, campaign, platform, branch or agent in it, when chosen).
   const daysOf = (data, source, at, detail = '') => (data.students || []).filter((r) => r[at] && (!source || r[0] === source) && (!detail || r[7] === detail)).map((r) => r[at]);

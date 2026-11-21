@@ -74,11 +74,11 @@
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if (!document.querySelector('.fly-pal-back') && paletteLinks.length) palette(paletteLinks); }
   });
 
-  // The menu is folded or open as the person left it.
-  // The menu is open or closed as the person left it; with nothing saved, open on a wide screen and closed on a narrow one.
+  // The menu is open or closed as the person left it; with nothing saved, open on a laptop or larger screen (1100px and up, so a
+  // 1280px laptop sees the whole menu: the owner, 21 Nov 2026) and closed on a narrower one.
   try {
     const saved = localStorage.getItem('niecNav');
-    const closed = saved ? (saved === 'closed' || saved === 'folded') : innerWidth < 1300;
+    const closed = saved ? (saved === 'closed' || saved === 'folded') : innerWidth < 1100;
     document.documentElement.setAttribute('data-nav', closed ? 'closed' : 'open');
   } catch (e) { /* open */ }
   const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
