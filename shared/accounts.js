@@ -226,7 +226,7 @@ function cleanEmail(s) {
 
 function createAccounts({
   dir, homePath = (req) => req.url, activity = null, writable = true, now = Date.now, mailer = defaultMailer,
-  maxFailures = 20, maxUserFailures = 8, windowMs = 15 * 60 * 1000,
+  maxFailures = 20, maxUserFailures = 8, maxAccountFailures = 60, windowMs = 15 * 60 * 1000,
   studentName = () => '', // the name of the student a student's own login is for (the server knows the sheet)
   companyName = () => '', // the consultancy's own name, a stored setting (the email signature); never written into code
 }) {
@@ -244,8 +244,11 @@ function createAccounts({
   // The one-time code for creating the first Admin: made (and printed) only while no accounts exist.
   // Someone who can log in: their own password is set.
   const isSetUp = (u) => !u.disabled && !u.mustChangePassword;
-  // First-time setup is only for a site with no working Admin yet.
-  const hasReadyAdmin = () => users().some((u) => u.role === 'admin' && isSetUp(u));
+  // An Admin made by first-time setup who never finished it (never chose a password, never logged in). An Admin whose password
+  // was reset (scripts/reset-login.js) has logged in before: they are not "unfinished", they log in with the temporary password.
+  const neverFinished = (u) => u.role === 'admin' && u.mustChangePassword && !u.lastLoginAt;
+  // First-time setup is only for a site with no working Admin yet: an Admin waiting to choose a new password still counts as working.
+  const hasReadyAdmin = () => users().some((u) => u.role === 'admin' && !u.disabled && !neverFinished(u));
 
   function setupCode() {
     if (hasReadyAdmin()) return null;
@@ -364,7 +367,13 @@ function createAccounts({
 
   // ---- wrong-guess limits: per address and per account ----
   const ipFailures = new Map();
-  const userFailures = new Map();
+  const userFailures = new Map(); // one account from one address
+  const accountFailures = new Map(); // one account from every address together
+  // Forgets the wrong tries of an account (removed, or its username freed for someone new).
+  const forgetFailures = (username) => {
+    accountFailures.delete(username);
+    userFailures.forEach((x, k) => { if (k.split('\n')[0] === username) userFailures.delete(k); });
+  };
   function blocked(map, key, limit) {
     const f = map.get(key);
     if (!f) return false;
@@ -505,8 +514,8 @@ function createAccounts({
         disabled: false, createdAt: new Date(now()).toISOString(),
       };
       // An earlier, unfinished setup is replaced (its account could never log in).
-      // Only an earlier first Admin that never set a password goes; nobody else's account is ever touched here.
-      const unfinished = users().filter((u) => u.role === 'admin' && u.mustChangePassword).map((u) => u.id);
+      // Only an earlier first Admin that never finished setup goes; nobody else's account is ever touched here.
+      const unfinished = users().filter(neverFinished).map((u) => u.id);
       if (users().some((u) => !unfinished.includes(u.id) && u.username === username)) { bad(res, 409, 'That username is taken.'); return true; }
       endSessions((sess) => unfinished.includes(sess.userId));
       saveUsers([...users().filter((u) => !unfinished.includes(u.id)), user]);
@@ -518,7 +527,10 @@ function createAccounts({
 
     if (urlPath === '/api/login' && method === 'POST') {
       const username = cleanUsername(body.username); // not case sensitive
-      if (blocked(ipFailures, ip, maxFailures) || blocked(userFailures, username, maxUserFailures)) {
+      // The per-account limit counts wrong tries from each address separately, so a stranger guessing from one address cannot
+      // lock the real person (the owner included) out from theirs. A much higher limit across all addresses still stops a spread-out guess.
+      const userAtIp = username + '\n' + ip;
+      if (blocked(ipFailures, ip, maxFailures) || blocked(userFailures, userAtIp, maxUserFailures) || blocked(accountFailures, username, maxAccountFailures)) {
         bad(res, 429, TOO_MANY);
         return true;
       }
@@ -526,7 +538,8 @@ function createAccounts({
       // Counted as a wrong try before the (slow) check, and taken back if it was right: tries sent all at once can't
       // all slip past the limit while the first ones are still being checked.
       fail(ipFailures, ip);
-      fail(userFailures, username);
+      fail(userFailures, userAtIp);
+      fail(accountFailures, username);
       const passOk = await verifyPasswordAsync(body.password || '', user ? user.passwordHash : DUMMY_HASH);
       if (!user || !passOk || user.disabled) {
         record(req, user && !user.disabled ? publicUser(user) : null, 'Failed login', {
@@ -537,7 +550,8 @@ function createAccounts({
         return true;
       }
       unfail(ipFailures, ip);
-      unfail(userFailures, username);
+      unfail(userFailures, userAtIp);
+      unfail(accountFailures, username);
       if (!user.mustChangePassword) {
         const updated = updateUser(user.id, { lastLoginAt: new Date(now()).toISOString() });
         startSession(req, res, updated, 'full');
@@ -636,7 +650,7 @@ function createAccounts({
         if (target.role === 'admin') { bad(res, 400, "The Admin account can't be removed."); return true; }
         const n = endAll();
         saveUsers(list.filter((u) => u.id !== target.id));
-        userFailures.delete(target.username);
+        forgetFailures(target.username);
         record(req, req.user, 'Removed user', { changes: [`Removed ${who} (${accessLabel(target)}); logged out of ${n} device${n === 1 ? '' : 's'}`] });
       } else if (action === 'enable') {
         updateUser(target.id, { disabled: false });
@@ -754,7 +768,7 @@ function createAccounts({
   function removeStudentLogins() {
     const gone = users().filter((u) => u.role === 'student');
     if (!gone.length) return [];
-    gone.forEach((u) => { endSessions((x) => x.userId === u.id); userFailures.delete(u.username); });
+    gone.forEach((u) => { endSessions((x) => x.userId === u.id); forgetFailures(u.username); });
     saveUsers(users().filter((u) => u.role !== 'student'));
     return gone.map((u) => `${u.name} (${u.username})`);
   }

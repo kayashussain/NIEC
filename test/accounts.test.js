@@ -146,7 +146,7 @@ test('disabling someone logs them out everywhere and stops them logging in', asy
 test('too many wrong passwords lock the account for a while, even with the right password', async () => {
   const clock = { t: Date.parse('2026-10-28T09:00:00Z') };
   const dir = tmpDir();
-  const accounts = createAccounts({ dir, now: () => clock.t, maxUserFailures: 3 });
+  const accounts = createAccounts({ dir, now: () => clock.t, maxUserFailures: 3, maxAccountFailures: 3 });
   await setUpAdmin(accounts, clock, dir);
   for (let i = 0; i < 3; i += 1) {
     const r = await browser(accounts, { ip: `198.51.100.${i}` }).call('POST', '/api/login', { username: 'kayas', password: 'guess' + i });
@@ -202,9 +202,43 @@ test('an unfinished first-Admin setup can be started again with the same code', 
 test('wrong passwords sent all at once still stop at the limit', async () => {
   const clock = { t: Date.parse('2026-10-28T09:00:00Z') };
   const dir = tmpDir();
-  const accounts = createAccounts({ dir, now: () => clock.t, maxUserFailures: 3 });
+  const accounts = createAccounts({ dir, now: () => clock.t, maxUserFailures: 3, maxAccountFailures: 3 });
   await setUpAdmin(accounts, clock, dir);
   const all = await Promise.all(Array.from({ length: 10 }, (_, i) => browser(accounts, { ip: `198.51.100.${i}` }).call('POST', '/api/login', { username: 'kayas', password: 'guess' + i })));
   assert.strictEqual(all.filter((r) => r.status === 401).length, 3);
   assert.strictEqual(all.filter((r) => r.status === 429).length, 7);
+});
+
+test('wrong tries from one address do not lock the real person out from another address', async () => {
+  const clock = { t: Date.parse('2026-10-28T09:00:00Z') };
+  const dir = tmpDir();
+  const accounts = createAccounts({ dir, now: () => clock.t, maxUserFailures: 3 });
+  await setUpAdmin(accounts, clock, dir);
+  const stranger = browser(accounts, { ip: '203.0.113.9' });
+  for (let i = 0; i < 5; i += 1) await stranger.call('POST', '/api/login', { username: 'kayas', password: 'guess' + i });
+  assert.strictEqual((await stranger.call('POST', '/api/login', { username: 'kayas', password: 'a long admin password' })).status, 429);
+  const owner = await browser(accounts, { ip: '198.51.100.7' }).call('POST', '/api/login', { username: 'kayas', password: 'a long admin password' });
+  assert.strictEqual(owner.json.stage, 'done');
+});
+
+test('an Admin whose password was reset logs in with the temporary one; first-time setup never comes back', async () => {
+  const clock = { t: Date.parse('2026-10-28T09:00:00Z') };
+  const dir = tmpDir();
+  const accounts = createAccounts({ dir, now: () => clock.t });
+  await setUpAdmin(accounts, clock, dir);
+  // What scripts/reset-login.js does to the file.
+  const file = path.join(dir, 'users.json');
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const owner = data.users.find((u) => u.username === 'kayas');
+  const { hashPassword } = require('../shared/accounts');
+  Object.assign(owner, { passwordHash: hashPassword('temporary pass 123'), mustChangePassword: true });
+  fs.writeFileSync(file, JSON.stringify(data));
+  const fresh = createAccounts({ dir, now: () => clock.t });
+  const b = browser(fresh);
+  assert.strictEqual((await b.call('GET', '/api/login/state')).json.stage, 'password');
+  assert.strictEqual((await b.call('POST', '/api/login', { username: 'kayas', password: 'temporary pass 123' })).json.stage, 'new-password');
+  // The setup code is not made again, so nobody can replace the owner's account with it.
+  assert.ok(!fs.existsSync(path.join(dir, 'first-admin-code.txt')));
+  assert.strictEqual((await browser(fresh).call('POST', '/api/login/first-admin', { setupCode: 'ABCD-EFGH-JKLM', name: 'X', username: 'newboss' })).status >= 400, true);
+  assert.ok(JSON.parse(fs.readFileSync(file, 'utf8')).users.some((u) => u.id === owner.id));
 });
