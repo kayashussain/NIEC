@@ -205,11 +205,14 @@ New in the same app, no new setup needed: the data goes in new files of the Stud
 
 New files of the same kind since then: `agents.json` with `agent-files/` (the Agents page), `source-options.json` (choices added to "Where exactly") and `course-watch.json` (the weekly check of the course pages; set `COURSE_WATCH=off` to switch it off). A file the server could not read is never deleted: it is set aside as `<name>.damaged-<time>.json` next to the data.
 
-## Route2Uni (removed)
+## The Thursday refresh of partner universities
 
-Route2Uni was removed on 17 Nov 2026 (the owner): ISR no longer logs into the Route2Uni portal, and Universities has no
-"Kept up to date by itself" panel. What it had already written into the university pages stays. If `ROUTE2UNI_EMAIL` and
-`ROUTE2UNI_PASSWORD` are still in the app's Environment variables, delete them (they are no longer used), then Restart.
+Every Thursday from 2 a.m. office time, ISR reads the January 2027 courses, requirements and dates of each partner university again
+from the partner it came from, with the login saved on that partner's B2B card (Partners, B2B Partners): Real Dreams through the
+Route2Uni portal, Adventus through its course search. Apply Board is not read (its sign-in asks a person to prove they are not a
+robot). Every run is written in Activity. Nothing needs setting up. To switch it off, add `PARTNER_REFRESH` with the value `off` to
+the app's Environment variables, then Restart. The old `ROUTE2UNI_EMAIL` and `ROUTE2UNI_PASSWORD` variables are not used: delete them
+if they are still there.
 
 ## The Navitas product toolkit in Universities
 

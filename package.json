@@ -2,7 +2,7 @@
   "name": "uk-student-niec",
   "version": "1.0.0",
   "private": true,
-  "description": "UK Student NIEC: student visa tracker and counselor commission apps, served together behind a login.",
+  "description": "International Student Recruitment (ISR): the student sheet, tasks, Dashboard, Universities and the Admin-only Incentive page, one app behind a login.",
   "scripts": {
     "start": "node gateway/server.js",
     "test": "node --test"

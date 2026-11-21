@@ -5,7 +5,7 @@
 //
 // The password is typed here, on the server, never on a web page, and is saved only in mail.json in the
 // data folder (STUDENT_DETAILS_DATA_DIR, else student-details/), which is never served and not in git.
-// Defaults suit niecedu.com.np; change them with the MAIL_* variables listed in shared/mailer.js.
+// The mail server defaults to mail.<the mailbox's domain> on port 465; change it with the MAIL_* variables listed in shared/mailer.js.
 
 const fs = require('fs');
 const path = require('path');
