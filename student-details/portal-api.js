@@ -591,7 +591,14 @@ function createPortalApi({
     const card = cards.get(row._id);
     const kind = Fields.taskTag(task, text(row[STATUS]));
     const own = courseOf(card, task);
-    const offerFor = kind === 'offer' ? offerOf(task) : null;
+    // The Offer request shows only the university, the course, the intake and the day applied (the owner, 21 Nov 2026).
+    const offerFor = kind === 'offer' ? (() => {
+      const o = offerOf(task); if (!o) return null;
+      const same = (x) => squash(x.university) === squash(o.university);
+      const opt = (card.options || []).find((x) => same(x) && (!o.course || squash(x.course) === squash(o.course))) || (card.options || []).find(same);
+      const app = applicationsOf(row, card).find((a) => same(a) && (!o.course || !a.course || squash(a.course) === squash(o.course))) || applicationsOf(row, card).find(same);
+      return { ...o, intake: (opt && opt.intake) || found.sheet.name || '', applied: (app && app.applied) || (opt && opt.applied) || '' };
+    })() : null;
     const unis = [...new Set([...applicationsOf(row, card).map((a) => a.university), ...(card.options || []).map((o) => o.university), ...(facts ? facts.all() : []).map((u) => u.name), ...(direct ? direct.all() : []).map((u) => u.name)].filter(Boolean))].slice(0, 400);
     return {
       kind, today: cards.today(), applications: applicationsOf(row, card), universities: unis,

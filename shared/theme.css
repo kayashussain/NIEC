@@ -3971,3 +3971,7 @@ html body:has(#sheet) .table-wrap { box-shadow: none; }
 body:has(.td-tasks) :is(.td-pulse, .td-tasks, .td-attn) { border: 1px solid var(--lg-line) !important; }
 html body:has(#sheet) .topbar .btn.btn-danger:not(:hover) { border: 1px solid #c9ccd2; background: #fff; color: #111; }
 dialog.p-dialog .td-tag-pick :is(.td-tag, .td-prio)::before { background: none !important; box-shadow: none !important; }
+/* 🔴 CSS CHANGED (2026-11-21): the Mark as done window's answers | from: the answers not chosen faded to 55% (they looked switched off), an empty grey bar above an application task's university | to: every answer at full strength (the chosen one black), no empty bar */
+dialog.p-dialog .td-answer { opacity: 1; border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; color: #111; }
+dialog.p-dialog .td-answer[aria-checked="true"], dialog.p-dialog .td-answer.is-on { border-color: #111; background: #111; color: #fff; }
+dialog.p-dialog .td-done-task:empty { display: none; }

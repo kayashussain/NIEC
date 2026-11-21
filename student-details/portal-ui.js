@@ -417,7 +417,9 @@
     const asks = ['application', 'offer', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
     return dialog('Mark as done?', (body, close) => {
       // An application task names its university and course below, so only the student is named here.
-      body.append(el('p', 'td-done-task', t.app ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
+      // An application task and an Offer request show only the student's name here (their university and course follow): no long sentence.
+      const isOfferReq = /^Offer request: /.test(String(t.text || ''));
+      body.append(el('p', 'td-done-task', t.app || isOfferReq ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
       const ask = el('div', 'td-done-step');
       const sure = el('div', 'td-done-step');
       sure.hidden = true;
@@ -460,7 +462,8 @@
         let noNotes = false; // the application window has no notes box (the owner, 20 Nov 2026)
         if (t.app || (state && state.courseTask)) {
           // One application, one university and course (the owner, 20 Nov 2026): what to apply for is shown, and the answer is one of
-          // three, with its day: Submitted, Not eligible, or Already applied through another agent (an agent change is not possible).
+          // five, with its day (the owner, 21 Nov 2026): Application submitted, Not eligible, Already applied through another agent (an
+          // agent change is not possible), Course not available, or Application closed (the deadline has passed).
           // No notes and no other university: a task is for one university at a time.
           const c = t.app || state.courseTask;
           const who = el('div', 'p-wide td-course');
@@ -468,36 +471,36 @@
           const chips = [c.intake, c.level, c.location].filter(Boolean);
           if (chips.length) { const cs = el('span', 'td-app-chips'); chips.forEach((x) => cs.append(el('span', '', x))); who.append(cs); }
           form.append(who);
-          const q = question('Result', [['submitted', 'Application submitted'], ['noteligible', 'Not eligible'], ['agent', 'Already applied through another agent']]);
+          const q = question('Result', [['submitted', 'Application submitted'], ['noteligible', 'Not eligible'], ['agent', 'Already applied through another agent'], ['nocourse', 'Course not available'], ['closed', 'Application closed']]);
           const dayF = field('Date', { kind: 'date', value: today, required: true });
           dayF.input.max = today;
           form.append(dayF.wrap);
           q.set('submitted');
           noNotes = true;
-          const NOTE = { noteligible: `Not eligible for ${c.university}.`, agent: `Already applied to ${c.university} through another agent; an agent change is not possible.` };
+          const NOTE = { noteligible: `Not eligible for ${c.university}.`, agent: `Already applied to ${c.university} through another agent; an agent change is not possible.`, nocourse: `The course is not available at ${c.university}.`, closed: `Applications to ${c.university} are closed: the deadline has passed.` };
           fallbackNote = () => NOTE[q.value()] || '';
           read = () => (q.value() === 'submitted' ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'submitted', date: dayF.input.value }] }
             : q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'notsubmitted', date: dayF.input.value }] } : {});
           check = () => (!q.value() ? 'Choose the result.' : !dayF.input.value ? 'Choose the date.' : '');
         } else if (state && state.offerTask) {
-          // The Offer request: has the university answered? An offer (with its day), a refusal (with why), or not yet (with the day to ask again,
-          // which makes the next Offer request by itself).
+          // The Offer request (the owner, 21 Nov 2026): only the university, the course, the intake and the day applied, then what the
+          // university said, with its day: Conditional offer, Unconditional offer, Application rejected or Application closed. No notes.
           const c = state.offerTask;
           const who = el('div', 'p-wide td-course');
           who.append(el('b', '', c.university), c.course ? el('span', 'td-sofar-course', c.course) : '');
+          const chips = [c.intake, c.applied ? `Applied ${day(c.applied)}` : ''].filter(Boolean);
+          if (chips.length) { const cs = el('span', 'td-app-chips'); chips.forEach((x) => cs.append(el('span', '', x))); who.append(cs); }
           form.append(who);
-          const q = question('Has the student received the offer letter?', [['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['waiting', 'Not received yet']], (v) => { show(dayF.wrap, ['conditional', 'unconditional', 'refused'].includes(v)); show(againF.wrap, v === 'waiting'); onWhat(v); });
-          const dayF = field('Day of the answer', { kind: 'date', value: today, required: true });
+          const q = question('Has the student received the offer letter?', [['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Application rejected'], ['closed', 'Application closed']]);
+          const dayF = field('Date', { kind: 'date', value: today, required: true });
           dayF.input.max = today;
-          const againF = field('Ask the university again on', { kind: 'date', value: new Date(Date.parse(today + 'T12:00:00Z') + 7 * 86400000).toISOString().slice(0, 10), required: true });
-          againF.input.min = today;
-          form.append(dayF.wrap, againF.wrap);
-          show([dayF.wrap, againF.wrap], false);
-          onWhat = (v) => { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(v === 'refused' ? 'Why was it refused?' : 'Notes (optional)'); if (v === 'refused') l.append(requiredMark()); };
-          fallbackNote = () => (q.value() === 'waiting' ? `Offer letter from ${c.university} not received yet; asking again on ${againF.input.value}.` : '');
-          read = () => (['conditional', 'unconditional', 'refused'].includes(q.value()) ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: q.value(), date: dayF.input.value }] }
-            : q.value() === 'waiting' ? { waiting: true, generic: true, next: againF.input.value, nextText: t.text } : {});
-          check = () => (!q.value() ? 'Choose what the university said.' : ['conditional', 'unconditional', 'refused'].includes(q.value()) && !dayF.input.value ? 'Choose the day of the answer.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Write why it was refused, in a few words.' : q.value() === 'waiting' && !againF.input.value ? 'Choose the day to ask again.' : '');
+          form.append(dayF.wrap);
+          noNotes = true;
+          const NOTE = { refused: `Application to ${c.university} rejected.`, closed: `Applications to ${c.university} are closed: the deadline has passed.` };
+          fallbackNote = () => NOTE[q.value()] || '';
+          // Application closed is kept as withdrawn on that university (the application no longer goes on), with the reason in its note.
+          read = () => (q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: q.value() === 'closed' ? 'withdrawn' : q.value(), date: dayF.input.value }] } : {});
+          check = () => (!q.value() ? 'Choose what the university said.' : !dayF.input.value ? 'Choose the date.' : '');
         } else if (tag === 'application' || tag === 'offer') {
           // So far: every application ISR knows, each with its days; a press on one starts a line for it below.
           const apps = state.applications || [];
@@ -654,7 +657,7 @@
         if (noNotes) words.wrap.hidden = true;
         // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
         ask.append(msg);
-        if (!noNotes) ask.append(el('p', 'p-muted p-small', asks && !simple ? 'Nothing is saved until you check it on the next step.' : "Saved in the student's notes."));
+        if (!noNotes && asks && !simple) ask.append(el('p', 'p-muted p-small', 'Nothing is saved until you check it on the next step.'));
         const foot = el('div', 'p-dialog-foot');
         const next = h('button', { class: 'btn btn-primary', type: 'button' }, simple ? 'Save' : asks ? 'Next: check' : 'Yes, it is done');
         next.addEventListener('click', async () => {
