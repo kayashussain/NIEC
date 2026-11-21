@@ -485,7 +485,7 @@ function createPortalApi({
     const keys = Object.keys(changes);
     if (!wb || !keys.length) return;
     const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((sh) => (sh.rows.some((r) => r._id === rowId) ? { ...sh, rows: sh.rows.map((r) => (r._id === rowId ? { ...r, ...changes } : r)) } : sh)) };
-    writeWorkbook(next);
+    writeWorkbook(next, req.user && req.user.id);
     recordChanges(req, wb, next);
   }
   // The application and offer days live per university on the card (the owner, 17 Nov 2026: a student applies to many). All
@@ -1095,7 +1095,7 @@ function createPortalApi({
     const apply = (rows) => rows.map((r) => (r._id === found.row._id ? { ...r, ...changes } : r));
     if (Teams.isAdmin(req.user)) {
       const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((sh) => (sh.id !== found.sheet.id ? sh : { ...sh, rows: apply(sh.rows) })) };
-      writeWorkbook(next);
+      writeWorkbook(next, req.user && req.user.id);
       recordChanges(req, wb, next);
       return { ok: true };
     }
@@ -1862,7 +1862,7 @@ function createPortalApi({
       Object.keys(fields).forEach((c) => { if (sheet.columns.includes(c)) row[c] = fields[c]; });
       if (sheet.columns.includes(STATUS)) row[STATUS] = stage;
       const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((s) => (s.id === sheet.id ? { ...s, rows: [...s.rows, row] } : s)) };
-      try { writeWorkbook(next); } catch (e) { console.error('[new student]', e); return { status: 500, json: { error: 'save failed' } }; }
+      try { writeWorkbook(next, req.user && req.user.id); } catch (e) { console.error('[new student]', e); return { status: 500, json: { error: 'save failed' } }; }
       recordChanges(req, wb, next);
     } else {
       const depts = Teams.addableDepartments(req.user);
@@ -2252,7 +2252,7 @@ function createPortalApi({
     const wb = getWorkbook();
     const gone = new Set(remove.map((x) => x.id));
     const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((sh) => (sh.rows.some((r) => gone.has(r._id)) ? { ...sh, rows: sh.rows.filter((r) => !gone.has(r._id)) } : sh)) };
-    try { writeWorkbook(next); } catch (e) { console.error('[remove list]', e); return { status: 500, json: { error: 'save failed' } }; }
+    try { writeWorkbook(next, req.user && req.user.id); } catch (e) { console.error('[remove list]', e); return { status: 500, json: { error: 'save failed' } }; }
     recordChanges(req, wb, next);
     cards.forget([...gone]);
     note(req, [`${ev.name}: removed the ${gone.size} student${gone.size === 1 ? '' : 's'} its list had added (${worked.length} worked on and ${before.length} in ISR before were kept)${copy ? `; a copy was saved first (${copy})` : ''}`], 'Removed an event list');

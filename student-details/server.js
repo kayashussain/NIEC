@@ -367,7 +367,24 @@ function recoverWorkbook() {
   return null;
 }
 
-function writeWorkbook(workbook) {
+// Who saved each revision kept in history (an account id), so a save is never told "someone else changed this" about its own earlier edit.
+const authorOf = new Map();
+// Did anyone other than `userId` change this cell after revision `baseRev`? Unknown history counts as yes (the safe answer).
+function othersChanged(baseRev, rowId, col, userId) {
+  if (!current) return true;
+  const cell = (wb) => { for (const sh of wb.sheets) { const r = sh.rows.find((x) => x._id === rowId); if (r) return String(r[col] ?? ''); } return null; };
+  let prev = baseRev === current.revision ? current : history.get(baseRev);
+  if (!prev) return true;
+  for (let r = baseRev + 1; r <= current.revision; r += 1) {
+    const next = r === current.revision ? current : history.get(r);
+    if (!next) return true;
+    if (cell(next) !== cell(prev) && (!userId || authorOf.get(r) !== userId)) return true;
+    prev = next;
+  }
+  return false;
+}
+
+function writeWorkbook(workbook, by = null) {
   // Only a file that was read fine is copied into the backups, so a damaged one never replaces a good copy.
   if (current && fs.existsSync(DATA_FILE)) {
     snapshotDaily(DATA_FILE, DATA_DIR, 'data');
@@ -381,6 +398,8 @@ function writeWorkbook(workbook) {
   served.clear();
   patches.clear();
   history.remember(workbook, json);
+  authorOf.set(workbook.revision, by);
+  if (authorOf.size > 60) authorOf.delete(authorOf.keys().next().value);
   broadcast();
 }
 
@@ -523,7 +542,7 @@ function teamSave(req, parsed, { checked = false } = {}) {
       const b = baseRows.get(`${c.sheetId}\u0000${c.rowId}`); const n = rowsNow.get(`${c.sheetId}\u0000${c.rowId}`);
       if (!b || !n) return false;
       const bv = String(b[c.col] ?? ''); const nv = String(n[c.col] ?? ''); const mv = String(c.value ?? '');
-      return nv !== bv && nv.trim() !== mv.trim();
+      return nv !== bv && nv.trim() !== mv.trim() && othersChanged(parsed.baseRevision, c.rowId, c.col, req.user && req.user.id);
     });
     if (clash.length) return { status: 409, body: { error: 'conflict', revision: current.revision, clash: clash.slice(0, 5).map((c) => { const r = rowsNow.get(`${c.sheetId}\u0000${c.rowId}`); return { rowId: c.rowId, name: [r['FIRST NAME'], r['LAST NAME']].filter(Boolean).join(' '), col: c.col }; }) } };
   }
@@ -583,7 +602,7 @@ function teamSave(req, parsed, { checked = false } = {}) {
       ],
     })),
   };
-  writeWorkbook(next);
+  writeWorkbook(next, req.user && req.user.id);
   recordChanges(req, before, next);
   // A student moved to another stage leaves this team's view, and a new one is stored as the server
   // checked it: either way the page fetches its fresh view.
@@ -630,18 +649,18 @@ async function handleSave(req, res) {
       const before = current;
       const revision = (current ? current.revision : num(parsed.baseRevision)) + 1;
       const next = ensureRowIds({ revision, sheets: mine.sheets, activeSheetId: mine.activeSheetId });
-      writeWorkbook(next);
+      writeWorkbook(next, req.user && req.user.id);
       recordChanges(req, before, next);
       return sendJSON(res, 200, { ok: true, revision });
     }
     const base = history.get(parsed.baseRevision);
     if (!base) return sendJSON(res, 409, { error: 'conflict', revision: current.revision });
     // A cell someone else changed meanwhile to another value is never overwritten without a word: the page says so and reloads.
-    const clashes = cellClashes(base, current, mine);
+    const clashes = cellClashes(base, current, mine).filter((c) => othersChanged(parsed.baseRevision, c.rowId, c.col, req.user && req.user.id));
     if (clashes.length) return sendJSON(res, 409, { error: 'conflict', revision: current.revision, clash: clashes.slice(0, 5) });
     const before = current;
     const merged = { revision: current.revision + 1, ...mergeWorkbooks(base, current, mine) };
-    writeWorkbook(merged);
+    writeWorkbook(merged, req.user && req.user.id);
     recordChanges(req, before, merged);
     return sendJSON(res, 200, { ok: true, revision: merged.revision, merged: true, workbook: merged });
   } catch (e) {
