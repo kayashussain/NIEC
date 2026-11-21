@@ -412,7 +412,7 @@
       const reload = async () => { data = await api('/api/cards/' + encodeURIComponent(id)); render(); };
       list.append(window.Portal.taskCard(t, {
         rowId: id, me, teams: data.taskTeams || [], stage: data.student.stage, unread: unread[t.id] || 0, today: data.today,
-        canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (mine || t.by === me),
+        canWrite: !data.can.readOnly && (mine || t.by === me || had), mayTick: mine, canChange: !data.can.readOnly && (Boolean(data.can.removeAnyTask) || t.by === me), // the tag: whoever gave it, Admin or the Manager
         student: null, fromName: t.by === me ? 'You' : t.by || 'Someone', toName: forMe && t.team === 'head' ? 'you' : label(t.team),
         actions: [
           // Reassign (the team it is with, whoever gave it, Admin and the Manager) and Remove.
@@ -731,10 +731,11 @@
     }
     // Taken off the shortlist right here (the owner, 17 Nov 2026: no going back to Universities), until an application is recorded.
     const answered = o.applied || o.offer || o.refused || o.withdrawn || o.skipped;
-    if (can() && o.id && !answered) {
+    // A course already given to the team is answered, not removed; only Admin may still take it off (as the server allows).
+    if (can() && o.id && !answered && (!o.sent || (data.me || {}).role === 'admin')) {
       tools.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => {
         if (o.sent && !(await window.NiecUI.confirm(`Take ${o.university}${o.course ? ` (${o.course})` : ''} off? It was given to the Application Team on ${day(o.sent)}; tell them too.`, { danger: true, confirmText: 'Take it off' }))) return;
-        await save('options/' + o.id + '/delete', {}, 'Taken off the shortlist'); render();
+        try { await save('options/' + o.id + '/delete', {}, 'Taken off the shortlist'); render(); } catch (e) { /* the message is shown */ }
       } }, 'Remove from shortlist'));
     }
     if (can() && i < 0) tools.append(h('button', { class: 'btn btn-sm', type: 'button', onclick: () => updateApplication(o) }, answered ? 'Update' : 'Record submission'));
@@ -859,13 +860,16 @@
     // Straight to Universities with this student already chosen, so the team shortlists without searching for the student again.
     // target _top: from the half card (an iframe on All Students) Universities opens as the whole page, not inside the card.
     if (can()) acts.append(h('a', { class: 'btn btn-sm', href: '/fact-file?for=' + encodeURIComponent(id), target: '_top' }, 'Find course'));
-    if (data.card.options.length) {
-      acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : data.card.options).then((r) => { if (r) refreshCard(); }) }, 'Share options'));
+    // Share options: only for those who may change the student, and only the options still open (never a refused, withdrawn or not
+    // submitted university under "the options we have shortlisted for you").
+    const openOpts = data.card.options.filter((o) => !o.refused && !o.withdrawn && !o.skipped);
+    if (can() && openOpts.length) {
+      acts.append(h('button', { class: 'btn btn-sm', type: 'button', title: 'Email these options to the student', onclick: () => window.OptionActions.email(studentRef(), waiting.length ? waiting : openOpts).then((r) => { if (r) refreshCard(); }) }, 'Share options'));
       if (waiting.length && can()) acts.append(h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: () => window.OptionActions.assign(studentRef(), waitingOptions()).then((r) => { if (r) { sendOrder = null; refreshCard(); } }) }, 'Assign to the Application Team'));
     }
     if (acts.children.length) head.append(acts);
     box.append(head);
-    if (!waiting.length) box.append(el('p', 'p-muted', 'No course waiting to be assigned. Press "Find course" to open Universities with this student chosen.'));
+    if (!waiting.length) box.append(el('p', 'p-muted', can() ? 'No course waiting to be assigned. Press "Find course" to open Universities with this student chosen.' : 'No course waiting to be assigned.'));
     else { const list = el('ol', 'p-chosen'); waiting.forEach((o) => list.append(optionItem(o, waiting))); box.append(list); }
     return box;
   }
@@ -1074,6 +1078,8 @@
   function sheetDaysOnOptions() {
     const row = data.student.row || {};
     const squash = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    // Only for a student recorded before the days were kept per university (no university has its own day yet).
+    if (data.card.options.some((x) => x.applied || x.offer)) return;
     const o = data.card.options.find((x) => squash(x.university) && squash(x.university) === squash(row['UNIVERSITY NAME']));
     if (!o) return;
     const iso = (v) => { const t = String(v || '').trim(); return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : ''; };
