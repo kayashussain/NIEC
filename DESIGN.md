@@ -73,6 +73,18 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 - Fewer words: titles, numbers and short labels.
 - **Desktop and laptop first** (until the owner asks for phones). Phone styles already in the code stay as they are.
 
+## 1a. The owner's direction for screens of work (21 Nov 2026)
+
+- **A portal, not a brochure.** Use the whole width; one bar across the top, the profile on the left, the work on the right (as
+  ApplyBoard, Adventus and Route2Uni do). No card inside a card, no wide empty margins; panels with a hairline and 18 to 24px inside.
+- **Interactive, not just numbers and words.** What can be changed is changed where it is shown (press, type, Enter); what is
+  missing is an empty box waiting; a press does the next useful thing (open the next missing detail, record the offer, start a note).
+- **Colour only from the brand, and little of it.** The consultancy's blue and orange (from its logo) and Apple's action blue: blue for
+  actions, links and "where the student is now", orange for what is missing; everything else near-black, grey and off-white. Like
+  Apple giving Mac and iPhone their own colour, a page may lean on one brand colour, never on many.
+- **Motion that helps:** the line of steps draws, entries rise in as they come into view, a tab slides from the side chosen, a saved
+  detail shows a tick. No drifting colour, tilting tiles or bouncing.
+
 ## 2a. What the owner's award-winning reference sites teach (studied 20 Nov 2026)
 
 The owner sent Awwwards winners as references: Lusion, KPR, Mana, Mammut, Wix Studio, Synchronized, Noomo, Rouser, The Year of
@@ -138,7 +150,7 @@ set to Apple's timings above.
 
 | Page | Done | Still to come |
 |---|---|---|
-| Student card | rebuilt as one calm system on the measured values: grey monogram, 40px name, grey contact pills, black progress dots with one blue "now", details as a three-column list, the Student Source as a section of the main card, plain Next step and Details to check panels, a quiet Timeline; a grey loading outline; Saving..., then Saved with a tick; a gentle shake on a mistake; shortcuts N, E, A, 1, 2, ? (and Escape to cancel a form); no notification, confetti or sticky bar | |
+| Student card | a working portal (the owner, 21 Nov 2026, as ApplyBoard): the whole width, a profile bar with the progress steps, the Profile on the left with every detail changed where it is shown (Enter saves with a tick, Escape cancels, "N to add" opens the next missing one), the work on the right; quick-note pills; brand colours used sparingly (blue for actions and now, orange for missing); its own stylesheet `student-details/student-card.css` | waiting for the owner's approval before the other pages follow |
 | Every page | the kit at Apple's timings: quick colour on press, 0.2s page fade, no mouse light, no spring | each page brought to the calm system, one at a time |
 | Today | the greeting, a progress ring of the day, counting numbers, rising rows, confetti for finished tasks | the greeting shine and the confetti to be checked against the calm rule with the owner |
 | Universities (university pages) | cover slideshow with pause, gallery fades, rising cards, counting amounts | moving to the calm system |

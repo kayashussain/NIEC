@@ -103,6 +103,7 @@ const STATIC_FILES = {
   '/sw.js': 'text/javascript; charset=utf-8',
   '/card-fields.js': 'text/javascript; charset=utf-8',
   '/portal.css': 'text/css; charset=utf-8',
+  '/student-card.css': 'text/css; charset=utf-8',
   '/portal-ui.js': 'text/javascript; charset=utf-8',
   '/student.html': 'text/html; charset=utf-8',
   '/bulk.html': 'text/html; charset=utf-8',

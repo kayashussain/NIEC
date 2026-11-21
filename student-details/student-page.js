@@ -22,10 +22,10 @@
   if (embedded) {
     document.body.classList.add('p-embed');
     document.getElementById('closeEmbed').addEventListener('click', () => parent.postMessage({ niecCard: 'close' }, location.origin));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !editingHero && !editingOrigin && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && !document.querySelector('dialog[open], .p-dialog')) parent.postMessage({ niecCard: 'close' }, location.origin); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !editingHero && !editingOrigin && !editingField && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && !document.querySelector('dialog[open], .p-dialog')) parent.postMessage({ niecCard: 'close' }, location.origin); });
     // ← and → go to the previous and next student of the list the card was opened from (card-drawer.js), when nothing is being typed.
     document.addEventListener('keydown', (e) => {
-      if (editingHero || editingOrigin) return; // a form is open: its words are never lost to a keystroke
+      if (editingHero || editingOrigin || editingField) return; // a form is open: its words are never lost to a keystroke
       if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const a = document.activeElement;
       if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable || a.closest('[role="tablist"], .p-seg, .p-tabs'))) return;
@@ -44,60 +44,38 @@
     } catch (e) { say(e.message, true); throw e; }
   }
 
-  // ---- the details of the sheet (name, email, number, university, course, dates): shown, and changed only after pressing Edit ----
-  let editingHero = false;
-  const HERO_FIELDS = [['FIRST NAME', 'First name'], ['LAST NAME', 'Last name'], ['EMAIL', 'Email'], ['CONTACT NUMBER', 'Contact number'], ['UNIVERSITY NAME', 'University'], ['COURSE NAME', 'Course']];
-  // The application and offer days are not here (the owner, 17 Nov 2026): they are kept per university under Applications.
-  function heroEdit() {
-    const c = el('section', 'p-card sc-edit');
-    // The student stays in view while the details are changed: the monogram and the name above the form.
-    const who = el('div', 'sc-edit-who');
-    who.append(el('div', 'sc-avatar', initials(data.student.name)), el('div', 'sc-edit-name', data.student.name));
-    c.append(who, el('h2', '', 'Change the details'));
-    c.append(el('p', 'p-muted p-small', 'Changes here also update All Students.'));
-    const form = el('div', 'p-form');
-    const inputs = {};
-    HERO_FIELDS.forEach(([col, label, kind]) => {
-      const raw = String(data.student.row[col] || '');
-      const iso = kind === 'date' ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : (/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.test(raw) ? raw.replace(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, (m, a, b, y) => `${y}-${a.padStart(2, '0')}-${b.padStart(2, '0')}`) : '')) : raw;
-      const f = field(label, { value: iso, kind: kind === 'date' ? 'date' : undefined, max: 240 });
-      inputs[col] = f.input;
-      form.append(f.wrap);
-    });
-    // And from the passport, kept on the card.
-    const pp = profile();
-    const dob = field('Date of birth', { kind: 'date', value: pp.dob });
-    dob.input.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10); // never in the future; the calendar's years then end this year
-    const passNo = field('Passport number', { value: pp.passportNo, max: 20 });
-    const address = field('Address (as in the passport)', { value: pp.address, max: 200 });
-    const nation = field('Nationality', { kind: 'select', choices: F.NATIONALITIES, value: pp.nationality || 'Nepali' });
-    form.append(dob.wrap, passNo.wrap, address.wrap, nation.wrap);
-    const bar = el('div', 'p-bar');
-    const msg = el('div', 'p-msg');
-    // What was in each box when it opened: only the boxes that were changed are saved, so a detail someone else fixed in the
-    // meantime (on the sheet or another card) is never put back to the old one.
-    const started = { dob: dob.input.value, passportNo: passNo.input.value, address: address.input.value, nationality: nation.input.value };
-    const startedSheet = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.value]));
-    const save = async () => {
-      try {
-        const nowProfile = { dob: dob.input.value, passportNo: passNo.input.value.trim().toUpperCase(), address: address.input.value.trim(), nationality: nation.input.value };
-        const tidy = (k, v) => (k === 'passportNo' ? String(v).trim().toUpperCase() : String(v).trim());
-        const profileChanged = Object.fromEntries(Object.entries(nowProfile).filter(([k, v]) => v !== tidy(k, started[k])));
-        if (Object.keys(profileChanged).length) await api(`/api/cards/${id}/profile`, profileChanged);
-        const sheetChanged = Object.fromEntries(Object.entries(inputs).filter(([k, i]) => i.value !== startedSheet[k]).map(([k, i]) => [k, i.value]));
-        if (Object.keys(sheetChanged).length) await api(`/api/cards/${id}/sheet`, { fields: sheetChanged });
-        data = await api('/api/cards/' + encodeURIComponent(id));
-        // The details just filled in flash green with a tick on their tiles (a small reward).
-        justFilled = new Set(Object.entries({ dob: 'Date of birth', passportNo: 'Passport number', address: 'Address (passport)' }).filter(([k]) => !started[k] && profile()[k]).map(([, v]) => v));
-        editingHero = false; say('Saved on the sheet'); render();
-      } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; shake(msg); throw e; }
-    };
-    const saveBtn = h('button', { class: 'btn btn-primary', type: 'button', onclick: () => morph(saveBtn, save).catch(() => {}) }, 'Save');
-    bar.append(saveBtn, h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = false; render(); } }, 'Cancel'));
-    form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); saveBtn.click(); } });
-    c.append(form, bar, msg);
-    return c;
+  // ---- the student's details are changed where they are shown (the owner, 21 Nov 2026: interactive, as a portal) ----
+  // A press on a value turns it into a box; Enter (or leaving the box) saves it and a tick shows; Escape puts it back. A missing detail
+  // is an empty box waiting. The name is changed the same way, in the bar at the top. Only those who may change the card see it.
+  let editingHero = false; // the name is being changed
+  let editingField = ''; // the detail being changed
+  let justSaved = ''; // the detail just saved: a tick shows on it once
+  const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const FIELDS = [
+    { key: 'EMAIL', on: 'sheet', label: 'Email', type: 'email', get: () => data.student.email, link: (v) => 'mailto:' + v, max: 120 },
+    { key: 'CONTACT NUMBER', on: 'sheet', label: 'WhatsApp', type: 'tel', get: () => data.student.phone, wa: true, max: 40 },
+    { key: 'dob', on: 'profile', label: 'Date of birth', type: 'date', get: () => profile().dob, show: (v) => day(v) },
+    { key: 'passportNo', on: 'profile', label: 'Passport number', get: () => profile().passportNo, upper: true, max: 20 },
+    { key: 'address', on: 'profile', label: 'Address (passport)', get: () => profile().address, max: 200 },
+    { key: 'nationality', on: 'profile', label: 'Nationality', type: 'select', get: () => profile().nationality || 'Nepali', choices: () => F.NATIONALITIES },
+  ];
+  async function saveField(f, raw) {
+    let v = String(raw || '').trim();
+    if (f.upper) v = v.toUpperCase();
+    if (v === String(f.get() || '')) { editingField = ''; render(); return; }
+    if (f.type === 'email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { say('That email does not look right.', true); shake(view.querySelector('.sc-row.is-editing')); return; }
+    if (f.type === 'date' && v && v > today()) { say('A date of birth cannot be in the future.', true); shake(view.querySelector('.sc-row.is-editing')); return; }
+    const row = view.querySelector('.sc-row.is-editing'); if (row) row.classList.add('is-saving');
+    try {
+      if (f.on === 'sheet') await api(`/api/cards/${id}/sheet`, { fields: { [f.key]: v } });
+      else await api(`/api/cards/${id}/profile`, { [f.key]: v });
+      data = await api('/api/cards/' + encodeURIComponent(id));
+      editingField = ''; justSaved = f.key; render();
+    } catch (e) { if (row) row.classList.remove('is-saving'); say(e.message, true); shake(row); }
   }
+  // The first detail still missing (for the E key, "2 to add" and Next step), or the email when nothing is missing.
+  const firstMissing = () => (FIELDS.find((f) => !f.get()) || FIELDS[0]).key;
+  function openField(key) { editingOrigin = false; editingHero = false; editingField = key; render(); const r = view.querySelector('.sc-row.is-editing'); if (r) r.scrollIntoView({ block: 'nearest', behavior: calm() ? 'auto' : 'smooth' }); }
 
   // ---- small line pictures for the card (drawn in lines, as Apple's own symbols are) ----
   const ICONS = {
@@ -142,7 +120,6 @@
   }
   // The light that follows the mouse is the shared motion kit's (motion.js), on the tiles, contact buttons and Timeline bubbles too.
   let sourceSaved = false; // the source was just saved: its panel glows green with a tick once
-  let justFilled = new Set(); // tiles filled in by the last Edit details: they flash green once
   let animateList = false; // the Timeline entries arrive again one by one after a change of filter
   let intro = true; // the first drawing of the card: its parts arrive one after another; later redraws do not replay it
   const icon = (name, cls) => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); if (cls) sv.setAttribute('class', cls); sv.innerHTML = ICONS[name] || ''; return sv; };
@@ -151,6 +128,9 @@
   // Done steps are a blue dot with a tick, the step the student is at has a soft ring, the rest are grey (the owner, 20 Nov 2026).
   const JOURNEY = [['Inquiry', 'Inquiry'], ['Application Stage', 'Application'], ['Mock Stage', 'Mock interview'], ['Payment Stage', 'Payment'],
     ['CAS Stage', 'CAS requested'], ['CAS Issued', 'CAS issued'], ['Visa Lodge', 'Visa lodged'], ['Visa Issued', 'Visa issued']];
+  // What each step means, shown in a small card when the mouse is on it (or it has the keyboard).
+  const STEP_HELP = ['The student first asked about studying', 'Applications to universities', 'The mock interview before the CAS', 'Deposit or tuition paid',
+    'The CAS is asked for', 'The CAS is in hand', 'The visa application is lodged', 'The visa is granted'];
   function journey(stage) {
     const box = el('div', 'sc-steps-box');
     const at = JOURNEY.findIndex(([name]) => name === stage);
@@ -160,91 +140,176 @@
     else if (lost) { box.classList.add('is-lost'); head.append(el('span', 'sc-eyebrow', 'Progress'), el('b', '', `Not moving at the moment: ${stage}`)); }
     else head.append(el('span', 'sc-eyebrow', 'Progress'), el('b', '', stage ? `Stage: ${stage}` : 'No stage yet'));
     const ol = el('ol', 'sc-steps');
-    /* 🔴 CSS CHANGED (2026-11-20): --sc-done set here | from: none | to: how far the blue progress line reaches (0 to 1) */
+    /* 🔴 CSS CHANGED (2026-11-21): --sc-done set here | from: none | to: how far the progress line reaches (0 to 1), drawn from the start when the card appears */
     ol.style.setProperty('--sc-done', at <= 0 ? '0' : String(at / (JOURNEY.length - 1)));
     JOURNEY.forEach(([, label], i) => {
-      const li = el('li', at === -1 ? '' : i < at ? 'is-done' : i === at ? 'is-now' : '');
+      const state = at === -1 ? '' : i < at ? 'is-done' : i === at ? 'is-now' : '';
+      const li = el('li', state);
+      li.tabIndex = 0;
       const dot = el('span', 'sc-step-dot');
       if (at !== -1 && i < at) dot.append(icon('check'));
-      li.append(dot, el('span', 'sc-step-label', label));
-      li.title = label;
+      const tip = el('span', 'sc-step-tip');
+      tip.append(el('b', '', label), el('span', '', STEP_HELP[i]), el('em', '', state === 'is-done' ? 'Done' : state === 'is-now' ? 'Here now' : at !== -1 && i === at + 1 ? 'Next' : 'Still to come'));
+      li.append(dot, el('span', 'sc-step-label', label), tip);
+      li.setAttribute('aria-label', `${label}: ${state === 'is-done' ? 'done' : state === 'is-now' ? 'here now' : 'still to come'}`);
       if (i === at) li.setAttribute('aria-current', 'step');
+      /* 🔴 CSS CHANGED (2026-11-21): --i set here | from: none | to: the step's number, so the dots light up one after another */
+      li.style.setProperty('--i', String(i));
       ol.append(li);
     });
     box.append(head, ol);
     return box;
   }
 
-  // ---- the top: who the student is, how to reach them, where they are, and where they came from ----
+  // ---- small helpers ----
+  // The first day of the intake ("Jan Intake 2027" is 1 January 2027), or null.
+  function intakeStart(intake) {
+    const m = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\D*(\d{4})/i.exec(String(intake || ''));
+    if (!m) return null;
+    return Date.UTC(Number(m[2]), 'janfebmaraprmayjunjulaugsepoctnovdec'.indexOf(m[1].toLowerCase().slice(0, 3)) / 3, 1);
+  }
+  const todayUtc = () => Date.parse((data.today || new Date().toISOString().slice(0, 10)) + 'T00:00:00Z');
+  // What is needed for a complete student, and what is still missing.
+  function profileGaps() {
+    const s = data.student;
+    const items = [...FIELDS.filter((f) => f.key !== 'nationality').map((f) => [f.label, f.get()]), ['Student source', F.sourceGroup(s.source)]];
+    return { total: items.length, missing: items.filter(([, v]) => !v).map(([k]) => k) };
+  }
+
+  // ---- the bar at the top: who the student is, where they are, and the actions (a portal's profile bar, as ApplyBoard's) ----
   function hero() {
     const s = data.student;
-    if (editingHero) return heroEdit();
     const pp = profile();
     const c = el('section', 'sc-hero');
     const head = el('div', 'sc-head');
     const av = el('div', 'sc-avatar', initials(s.name));
     av.setAttribute('aria-hidden', 'true');
     const who = el('div', 'sc-id');
-    // A long name (SANJIP KUMAR MAHTO Mahato) wraps; the buttons move under it, they never sit on top of each other (the owner, 15 Nov 2026).
-    const name = el('h1', 'sc-name', s.name);
-    name.title = s.name;
+    if (editingHero && can()) {
+      // The name, changed where it is: first and last name; Enter saves, Escape puts it back.
+      const row = s.row || {};
+      const form = el('div', 'sc-name-edit');
+      const first = h('input', { class: 'sc-input', 'aria-label': 'First name', value: row['FIRST NAME'] || '', maxlength: '80' });
+      const last = h('input', { class: 'sc-input', 'aria-label': 'Last name', value: row['LAST NAME'] || '', maxlength: '80' });
+      const go = async () => {
+        if (!first.value.trim()) { shake(form); say('The first name is needed.', true); return; }
+        try { await api(`/api/cards/${id}/sheet`, { fields: { 'FIRST NAME': first.value.trim(), 'LAST NAME': last.value.trim() } }); data = await api('/api/cards/' + encodeURIComponent(id)); editingHero = false; say('Name saved'); render(); } catch (e) { say(e.message, true); }
+      };
+      [first, last].forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } }));
+      form.append(first, last, h('button', { class: 'btn btn-primary btn-sm', type: 'button', onclick: go }, 'Save'), h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { editingHero = false; render(); } }, 'Cancel'));
+      who.append(form);
+    } else {
+      const name = el('h1', 'sc-name', s.name);
+      name.title = can() ? 'Change the name' : s.name;
+      if (can()) {
+        name.classList.add('is-editable'); name.tabIndex = 0;
+        const open = () => { editingField = ''; editingHero = true; render(); };
+        name.addEventListener('click', open);
+        name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); open(); } });
+        name.append(icon('pencil', 'sc-name-pen'));
+      }
+      who.append(name);
+    }
     const meta = el('div', 'sc-meta');
     meta.append(stagePill(s.stage));
-    if (s.intake) meta.append(el('span', 'sc-meta-text', s.intake));
-    if (pp.nationality && pp.nationality !== 'Nepali') meta.append(el('span', 'sc-meta-text', pp.nationality));
-    who.append(name, meta);
-    const reach = contactBar();
-    if (reach) who.append(reach);
+    if (s.intake) {
+      const start = intakeStart(s.intake);
+      const d = start === null ? null : Math.round((start - todayUtc()) / 86400000);
+      meta.append(el('span', 'sc-meta-text', s.intake + (d !== null && d >= 0 ? ` · ${d} ${d === 1 ? 'day' : 'days'} to go` : '')));
+    }
+    if (pp.inquiryDate) { const d = Math.max(0, Math.round((todayUtc() - Date.parse(pp.inquiryDate + 'T00:00:00Z')) / 86400000)); if (Number.isFinite(d)) meta.append(el('span', 'sc-meta-text', `With us ${d} ${d === 1 ? 'day' : 'days'}`)); }
+    who.append(meta);
     const act = el('div', 'sc-actions');
-    if (can()) { const b = h('button', { class: 'btn', type: 'button', onclick: () => { editingHero = true; render(); } }); b.append(icon('pencil', 'sc-btn-ico'), 'Edit details'); act.append(b); }
+    const reach = contactBar();
+    if (reach) act.append(reach);
     if (data.can.assign) { const b = h('button', { class: 'btn btn-primary', type: 'button', onclick: assignTask }); b.append(icon('plus', 'sc-btn-ico'), 'Assign a task'); act.append(b); }
-    head.append(av, who);
-    if (act.childNodes.length) head.append(act);
+    head.append(av, who, act);
     c.append(head, journey(s.stage));
-
-    // The details as tiles, in the order the owner asked for (14 Nov 2026): who the student is (email and the passport details), then how
-    // to reach them, then the applications. The passport details are always shown: an empty one says "Missing" in orange.
-    const facts = el('div', 'sc-facts');
-    const tile = (ico, k, v, { href, missing, onClick, wide } = {}) => {
-      const t = el(onClick ? 'button' : 'div', `sc-fact${missing ? ' is-missing' : ''}${onClick ? ' is-action' : ''}${wide ? ' is-wide' : ''}`);
-      if (onClick) { t.type = 'button'; t.addEventListener('click', onClick); }
-      const txt = el('span', 'sc-fact-text');
-      txt.append(el('span', 'sc-fact-label', k));
-      const val = el('span', 'sc-fact-value');
-      if (missing) val.append(el('span', 'p-missing', 'Missing'));
-      else if (href) { const a2 = el('a'); a2.href = href; const at = String(v).indexOf('@'); if (at > 0) a2.append(v.slice(0, at), document.createElement('wbr'), v.slice(at)); else a2.textContent = v; val.append(a2); }
-      else val.textContent = v;
-      val.title = missing ? '' : v;
-      txt.append(val);
-      t.append(txt);
-      if (onClick) t.append(icon('arrow', 'sc-fact-go'));
-      if (justFilled.has(k)) { t.classList.add('is-filled'); t.append(icon('check', 'sc-fact-tick sc-tick')); justFilled.delete(k); }
-      facts.append(t);
-      return t;
-    };
-    if (s.email) tile('mail', 'Email', s.email, { href: 'mailto:' + s.email });
-    if (s.phone) {
-      const wa = F.whatsappNumber(s.phone);
-      const t = tile('whatsapp', 'WhatsApp', s.phone, { href: wa ? 'https://wa.me/' + wa : '' });
-      const a2 = t.querySelector('a');
-      if (a2) a2.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(wa, s.name, '', id); });
-    }
-    // The date only, no age beside it (the owner, 15 Nov 2026): the Dashboard groups the students by age.
-    tile('cake', 'Date of birth', pp.dob ? day(pp.dob) : '', { missing: !pp.dob });
-    tile('passport', 'Passport number', pp.passportNo, { missing: !pp.passportNo });
-    tile('pin', 'Address (passport)', pp.address, { missing: !pp.address });
-    // How many universities were applied to and how many offers, from Applications (one student applies to many; the tab below has them).
-    {
-      const ap = appStats();
-      const t = tile('cap', 'Applications', 'None yet');
-      // The two numbers count up when the card opens (ui.js, the one count-up of ISR).
-      if (ap.submitted || ap.offers) t.querySelector('.sc-fact-value').replaceChildren(el('b', 'sc-num', String(ap.submitted)), ' submitted · ', el('b', 'sc-num', String(ap.offers)), ` ${ap.offers === 1 ? 'offer' : 'offers'}`);
-    }
-    c.append(facts);
-    // What is missing shows as Missing on its tile; Edit details above opens the form (the owner, 17 Nov 2026: one button per action).
-    // Where the student came from, inside the main card (the owner, 20 Nov 2026: not a separate panel under the tabs).
-    c.append(origin());
     return c;
+  }
+
+  // ---- the left column: the student's details, changed where they are, and where the student came from ----
+  function profileColumn() {
+    const s = data.student;
+    const side = el('aside', 'sc-side');
+    // How complete the details are, with one press to the next one missing.
+    const g = profileGaps();
+    const done = g.total - g.missing.length;
+    const top = el('div', 'sc-side-top');
+    const words = el('div', 'sc-side-words');
+    words.append(el('h2', '', 'Profile'), el('span', 'sc-side-pct', `${Math.round((done / g.total) * 100)}% complete`));
+    top.append(words);
+    if (g.missing.length && can()) {
+      const next = h('button', { class: 'sc-link', type: 'button', onclick: () => { if (g.missing[0] === 'Student source') { editingField = ''; editingOrigin = true; render(); } else openField(firstMissing()); } }, `${g.missing.length} to add`);
+      top.append(next);
+    }
+    const bar = el('div', 'sc-meter'); const fill = el('i');
+    /* 🔴 CSS CHANGED (2026-11-21): the width of the Profile bar set here | from: none | to: as long as the share of details filled in */
+    fill.style.transform = `scaleX(${done / g.total})`;
+    bar.append(fill);
+    side.append(top, bar);
+    const group = (title, keys) => {
+      const sec = el('section', 'sc-group');
+      sec.append(el('h3', '', title));
+      FIELDS.filter((f) => keys.includes(f.key)).forEach((f) => sec.append(fieldRow(f)));
+      return sec;
+    };
+    side.append(group('Contact', ['EMAIL', 'CONTACT NUMBER']), group('Passport', ['dob', 'passportNo', 'address', 'nationality']));
+    // How many universities and offers (the Applications tab has them).
+    const ap = appStats();
+    const apps = el('section', 'sc-group');
+    apps.append(el('h3', '', 'Applications'));
+    const r = el('button', 'sc-row is-link'); r.type = 'button';
+    r.append(el('span', 'sc-row-label', 'Submitted'), el('span', 'sc-row-value', ap.submitted || ap.offers ? `${ap.submitted} submitted · ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}` : 'None yet'), icon('arrow', 'sc-row-go'));
+    r.addEventListener('click', () => select('options'));
+    r.title = 'Open Applications';
+    apps.append(r);
+    side.append(apps, origin());
+    return side;
+  }
+  // One detail: its label and value; a press opens a box to change it (Enter saves, Escape puts it back).
+  function fieldRow(f) {
+    const v = f.get();
+    const open = editingField === f.key && can();
+    const row = el('div', `sc-row${v ? '' : ' is-empty'}${open ? ' is-editing' : ''}${justSaved === f.key ? ' is-saved' : ''}`);
+    row.append(el('span', 'sc-row-label', f.label));
+    if (open) {
+      let input;
+      if (f.type === 'select') { input = el('select', 'sc-input'); f.choices().forEach((c) => { const o = el('option', '', c); o.value = c; input.append(o); }); input.value = v || ''; }
+      else { input = h('input', { class: 'sc-input', type: f.type === 'date' ? 'date' : f.type || 'text', value: v || '' }); if (f.max) input.maxLength = f.max; if (f.type === 'date') input.max = today(); }
+      input.setAttribute('aria-label', f.label);
+      let done = false;
+      const commit = () => { if (done) return; done = true; saveField(f, input.value); };
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done = true; editingField = ''; render(); }
+      });
+      if (f.type === 'select') input.addEventListener('change', commit); else input.addEventListener('blur', () => setTimeout(() => { if (!done && document.activeElement !== input) commit(); }, 120));
+      const val = el('div', 'sc-row-edit'); val.append(input, el('span', 'sc-row-hint', 'Enter to save · Esc to cancel'));
+      row.append(val);
+      return row;
+    }
+    const val = el('span', 'sc-row-value');
+    if (v) {
+      const shown = f.show ? f.show(v) : v;
+      if (f.link || f.wa) {
+        const wa = f.wa ? F.whatsappNumber(v) : '';
+        const a = el('a', '', shown); a.href = f.link ? f.link(v) : wa ? 'https://wa.me/' + wa : '#';
+        if (f.wa && wa) a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); window.Portal.whatsapp(wa, data.student.name, '', id); });
+        else a.addEventListener('click', (e) => e.stopPropagation());
+        val.append(a);
+      } else val.textContent = shown;
+      val.title = shown;
+    } else val.append(el('span', 'sc-row-add', can() ? `Add ${f.label.toLowerCase()}` : 'Not added'));
+    row.append(val);
+    if (justSaved === f.key) { row.append(icon('check', 'sc-row-tick sc-tick')); justSaved = ''; }
+    else if (can()) row.append(icon('pencil', 'sc-row-pen'));
+    if (can()) {
+      row.tabIndex = 0; row.setAttribute('role', 'button'); row.setAttribute('aria-label', `${f.label}: ${v || 'not added'}. Press to change`);
+      row.addEventListener('click', () => openField(f.key));
+      row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openField(f.key); } });
+    }
+    return row;
   }
 
   // ---- tasks given to a team about this student ----
@@ -575,6 +640,15 @@
       box.append(me, field2);
       showAdd();
       wrap.append(box);
+      // Quick starts for the notes written most (the owner, 21 Nov 2026: one press instead of typing); the words can be changed before
+      // the note is added.
+      const quick = el('div', 'sc-quick');
+      ['Called the student', 'No answer, will call again', 'Documents received', 'Came to the office', 'Sent the details on WhatsApp'].forEach((q) => {
+        const b = h('button', { class: 'sc-quick-btn', type: 'button' }, q);
+        b.addEventListener('click', () => { text.value = text.value.trim() ? `${text.value.trim()} ${q}.` : `${q}. `; text.dispatchEvent(new Event('input')); text.focus(); text.setSelectionRange(text.value.length, text.value.length); });
+        quick.append(b);
+      });
+      wrap.append(quick);
     }
     // The student's History (the owner, 15 Nov 2026): the notes and, without anyone typing them again, every task about the student:
     // who gave it to which team, each update, a reassignment or a move to another day, and who marked it done. Newest first.
@@ -988,6 +1062,8 @@
   }
 
   function select(name) {
+    const order = TABS.map(([k]) => k);
+    tabDir = order.indexOf(name) - order.indexOf(tab);
     const changed = name !== tab;
     tab = name;
     history.replaceState(null, '', location.pathname + location.search + '#' + name);
@@ -1100,7 +1176,7 @@
     const one = step.apps ? step.pick() : null;
     if (one) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => updateApplication(one, { offer: step.act === 'Record offer' }) }, step.act));
     else if (step.apps) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => select('options') }, 'Open Applications'));
-    else if (step.edit) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => { editingHero = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 'Add them'));
+    else if (step.edit) act.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openField(firstMissing()) }, 'Add them'));
     else {
       const input = h('input', { type: 'date', 'aria-label': step.label });
       input.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -1141,9 +1217,12 @@
     const frag = document.createDocumentFragment();
     const q = queueBar(); if (q) frag.append(q);
     frag.append(hero());
-    if (!editingHero) { const n = nextStep(); if (n) frag.append(n); }
-    if ((data.checks || []).length) frag.append(checksBox());
-    if (!can()) frag.append(el('div', 'p-notice', 'View only.'));
+    // A portal's layout (the owner, 21 Nov 2026): the profile on the left, the work on the right, across the whole width.
+    const layout = el('div', 'sc-layout');
+    const main = el('div', 'sc-main');
+    { const n = nextStep(); if (n) main.append(n); }
+    if ((data.checks || []).length) main.append(checksBox());
+    if (!can()) main.append(el('div', 'p-notice', 'View only.'));
     const tabs = el('div', 'p-tabs sc-tabs');
     tabs.setAttribute('role', 'tablist');
     TABS.forEach(([key, text]) => {
@@ -1160,10 +1239,13 @@
     const keysBtn = h('button', { class: 'sc-keys-btn', type: 'button', title: 'Shortcuts for this card (?)', onclick: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' })) }, 'Shortcuts');
     const tabRow = el('div', 'sc-tabrow');
     tabRow.append(tabs, keysBtn);
-    frag.append(tabRow);
-    frag.append(tab === 'options' ? optionsTab() : details());
+    main.append(tabRow, el('div', 'sc-tab-body'));
+    main.lastChild.append(tab === 'options' ? optionsTab() : details());
+    layout.append(profileColumn(), main);
+    frag.append(layout);
     view.replaceChildren(frag);
     focusForm();
+    interactions();
     // The first drawing (and a change of filter) animates; other redraws (a saved note, a tab) do not replay the entrance.
     if (intro) { view.classList.add('sc-entering'); setTimeout(() => view.classList.remove('sc-entering'), 1200); }
     intro = false;
@@ -1171,14 +1253,14 @@
 
   // Keys for the card (the owner, 20 Nov 2026), when nothing is being typed and no window is open: N a note (above), E Edit details,
   // A Assign a task, 1 and 2 the tabs, ? the list of keys. Ctrl+K (quick search) and the arrow keys (the next student) are kept.
-  const KEYS = [['N', 'Write a note'], ['E', 'Edit details'], ['A', 'Assign a task'], ['1', 'Timeline'], ['2', 'Applications'], ['← →', 'Previous or next student (from All Students)'], ['Ctrl K', 'Quick search'], ['?', 'These shortcuts']];
+  const KEYS = [['N', 'Write a note'], ['E', 'Change the next missing detail'], ['A', 'Assign a task'], ['1', 'Timeline'], ['2', 'Applications'], ['← →', 'Previous or next student (from All Students)'], ['Ctrl K', 'Quick search'], ['?', 'These shortcuts']];
   document.addEventListener('keydown', (e) => {
     if (!data || e.ctrlKey || e.metaKey || e.altKey) return;
     const a = document.activeElement;
     if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
-    if (document.querySelector('dialog[open], .p-dialog') || editingHero || editingOrigin) return;
+    if (document.querySelector('dialog[open], .p-dialog') || editingHero || editingOrigin || editingField) return;
     const k = e.key.toLowerCase();
-    if (k === 'e' && can()) { e.preventDefault(); editingHero = true; render(); window.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' }); }
+    if (k === 'e' && can()) { e.preventDefault(); openField(firstMissing()); }
     else if (k === 'a' && data.can.assign) { e.preventDefault(); assignTask(); }
     else if (k === '1' || k === '2') { e.preventDefault(); select(k === '1' ? 'details' : 'options'); }
     else if (e.key === '?') {
@@ -1196,10 +1278,30 @@
   // An open form inside the card (Edit details, the source): Escape cancels it, as Cancel does (the owner, 20 Nov 2026: one way out
   // everywhere), and the cursor starts in its first box.
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || !(editingHero || editingOrigin) || document.querySelector('dialog[open], .p-dialog[open]')) return;
-    e.preventDefault(); editingHero = false; editingOrigin = false; render();
+    if (e.key !== 'Escape' || !(editingHero || editingOrigin || editingField) || document.querySelector('dialog[open], .p-dialog[open]')) return;
+    e.preventDefault(); editingHero = false; editingOrigin = false; editingField = ''; render();
   });
-  const focusForm = () => { if (!(editingHero || editingOrigin)) return; const f = view.querySelector('.sc-edit input, .sc-edit select, .sc-source.is-editing select, .sc-source.is-editing input'); if (f && !view.contains(document.activeElement)) f.focus({ preventScroll: true }); };
+  const focusForm = () => { if (!(editingHero || editingOrigin || editingField)) return; const f = view.querySelector('.sc-row.is-editing .sc-input, .sc-name-edit input, .sc-source.is-editing select, .sc-source.is-editing input'); if (f && document.activeElement !== f) { f.focus({ preventScroll: true }); if (f.select && f.type !== 'date') f.select(); } };
+  // ---- the card answers the hand (the owner, 21 Nov 2026: interactive and engaging, calm as a portal) ----
+  // The Timeline's line draws and its entries rise in as they come into view, and another tab slides in from the side chosen. Nothing of
+  // it for a reader who asked for less motion. Only transform and opacity move.
+  let tabDir = 0; // -1 when the tab to the left was chosen, 1 to the right: the new tab slides in from that side
+  const moving = () => !calm();
+  let seenObs = null;
+  function interactions() {
+    if (seenObs) seenObs.disconnect();
+    const items = view.querySelectorAll('.sc-tl-item, .sc-tl-list, .p-chosen-item');
+    if (!moving() || !('IntersectionObserver' in window)) { items.forEach((x) => x.classList.add('is-seen')); }
+    else {
+      seenObs = new IntersectionObserver((list) => list.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('is-seen'); seenObs.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
+      items.forEach((x, i) => {
+        /* 🔴 CSS CHANGED (2026-11-21): --k set here | from: none | to: a small delay per entry, so entries that come into view together arrive one after another */
+        x.style.setProperty('--k', String(i % 6));
+        seenObs.observe(x);
+      });
+    }
+    if (tabDir) { view.dataset.dir = tabDir < 0 ? 'left' : 'right'; tabDir = 0; setTimeout(() => { delete view.dataset.dir; }, 600); }
+  }
   async function start() {
     if (!id) { view.replaceChildren(el('div', 'p-card', 'Choose a student from the sheet first.')); return; }
     try {

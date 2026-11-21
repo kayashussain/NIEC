@@ -161,12 +161,12 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp and Email are under the name')
     assert.strictEqual(await frame.getByRole('button', { name: 'Copy number' }).count(), 0, 'no Copy number (the owner, 17 Nov 2026)');
     // The card never opens a window asking where the student came from or for missing details (the owner, 20 Nov 2026): the source is
-    // in the main card (Add source when it is not recorded) and the missing details are named there.
-    await frame.locator('.sc-hero .sc-source').waitFor();
+    // in the Profile column beside the work (Add source when it is not recorded) and a missing detail is an empty box there.
+    await frame.locator('.sc-side .sc-source').waitFor();
     await page.waitForTimeout(500);
     assert.strictEqual(await frame.locator('dialog.p-dialog').count(), 0, 'no pop-up when the card opens');
     assert.strictEqual(await frame.locator('.sc-tl-page .sc-source').count(), 0, 'the source is not repeated under the tabs');
-    await frame.locator('.sc-hero h1').click();
+    await frame.locator('.sc-hero .sc-meta').click();
     // The keyboard is in the card now: typing must not reach the cell of the sheet hidden behind it.
     assert.strictEqual(await page.evaluate(() => document.activeElement && document.activeElement.tagName), 'IFRAME');
     await page.keyboard.type('x');
