@@ -393,7 +393,8 @@
     const fees = [...data.courses.flatMap((c) => money(c.fee)), ...data.levels.flatMap((l) => money(l.tuition))];
     const deadline = P0.own ? (view.deadlines.find((d) => d.applyBy && Q1.test(d.name)) || view.deadlines.find((d) => d.applyBy) || null) : null;
     // The next date still open (a date that has passed is never shown as "Apply by"), else "Closed".
-    const nextPartner = (() => { for (const line of P0.deadlines || []) { const d = P.parseDate(line); if (d && P.daysLeft(d.date) >= 0) return { when: d.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }), days: P.daysLeft(d.date) }; } return null; })();
+    // The first application deadline still to come (a deposit or CAS date never stands in for it once the deadline has passed).
+    const nextPartner = P.nextApplyBy(P0.deadlines);
     const openOwn = deadline && deadline.applyBy && !deadline.applyBy.closed && typeof deadline.applyBy.days === 'number' && deadline.applyBy.days >= 0 ? deadline : (P0.own ? view.deadlines.find((d) => Q1.test(d.name) && d.applyBy && !d.applyBy.closed && d.applyBy.days >= 0) : null);
     const shortDate = (t) => String(t || '').replace(/\b(January|February|March|April|June|July|August|September|October|November|December)\b/g, (m) => m.slice(0, 3));
     const anyDate = P0.own ? view.deadlines.some((d) => d.applyBy) : (P0.deadlines || []).length > 0;

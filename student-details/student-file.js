@@ -94,7 +94,19 @@
   //         platform, campaign, ad, ad set and form names (the event or campaign itself already says where the student came from).
   const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
   const ymd = (y, m, d) => { y = Number(y); m = Number(m); d = Number(d); if (y < 100) y += 2000; const t = new Date(Date.UTC(y, m - 1, d)); return y > 1990 && y < 2100 && t.getUTCMonth() === m - 1 && t.getUTCDate() === d ? t.toISOString().slice(0, 10) : ''; };
+  // A time written with its time zone ("2026-11-20T18:45:00+0000", as Meta and Facebook export it) as the same moment in Nepal
+  // (UTC+5:45), so a lead that came at half past midnight in Nepal is on that Nepal day, not the day before. null otherwise.
+  const NEPAL_MINUTES = 345;
+  const inNepal = (c) => {
+    const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)\s*(Z|[+-]\d{2}:?\d{2})$/i.exec(String(c === null || c === undefined ? '' : c).trim());
+    if (!m) return null;
+    const zone = m[3].toUpperCase() === 'Z' ? 'Z' : m[3].replace(/^([+-]\d{2}):?(\d{2})$/, '$1:$2');
+    const t = Date.parse(`${m[1]}T${m[2]}${zone}`);
+    return Number.isNaN(t) ? null : new Date(t + NEPAL_MINUTES * 60000);
+  };
   const dayOf = (c, isDate) => {
+    const np = inNepal(c);
+    if (np) return np.toISOString().slice(0, 10);
     if (c instanceof Date && !Number.isNaN(c.getTime())) return c.toISOString().slice(0, 10);
     const n = Number(c);
     // An Excel day number (46338.9 is 12 Nov 2026) in a column about a date.
@@ -114,7 +126,8 @@
   // "9:23 pm" from an Excel day number with a time (46338.89 is 12 Nov 2026, 9:21 pm), a Date, or text with a time in it.
   const timeOf = (c) => {
     let h = -1; let m = 0;
-    if (c instanceof Date && !Number.isNaN(c.getTime())) { h = c.getUTCHours(); m = c.getUTCMinutes(); } else {
+    const np = inNepal(c);
+    if (np) { h = np.getUTCHours(); m = np.getUTCMinutes(); } else if (c instanceof Date && !Number.isNaN(c.getTime())) { h = c.getUTCHours(); m = c.getUTCMinutes(); } else {
       const n = Number(c);
       if (Number.isFinite(n) && n > 20000 && n < 80000 && n % 1) { const mins = Math.round((n % 1) * 1440); h = Math.floor(mins / 60) % 24; m = mins % 60; } else {
         const t = /(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i.exec(String(c || ''));

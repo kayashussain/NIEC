@@ -151,9 +151,30 @@
     return { dates, rest: kept.join('\n').trim() };
   }
   // Days from today to a date (negative once past), by the calendar day.
+  // Days from today to a date. "Today" is the day in Nepal (where the team works), whatever clock the server or the computer has:
+  // a deadline of today says 0 days left at 1 am in Kathmandu, not 1.
   function daysLeft(date, now = new Date()) {
-    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    let today;
+    try {
+      const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now).split('-').map(Number);
+      today = Date.UTC(y, m - 1, d);
+    } catch (e) { today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()); }
     return Math.round((date.getTime() - today) / 86400000);
+  }
+  // A partner's deadline line that is about applying (not "Deposit payment received 9 Dec" or a CAS or enrolment date): only these
+  // say "Apply by". A line with just a date counts.
+  const OTHER_DATE = /deposit|payment|\bfees?\b|\bcas\b|enrol|induction|arriv|orientation|\bvisa\b|starts?\b|begins?/i;
+  const isApplyLine = (line) => /appl|deadline/i.test(String(line)) || !OTHER_DATE.test(String(line));
+  // The first application deadline still to come among a partner's lines: { date, days, when }, or null when every one has passed.
+  function nextApplyBy(lines, now = new Date()) {
+    for (const line of lines || []) {
+      if (!isApplyLine(line)) continue;
+      const d = parseDate(line);
+      if (!d) continue;
+      const days = daysLeft(d.date, now);
+      if (days >= 0) return { date: d.date, days, when: d.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) };
+    }
+    return null;
   }
 
   // ---- courses ----
@@ -421,5 +442,5 @@
     return [...new Set(String(city).split(/,|\/| and /).map((x) => x.trim()).filter((x) => x && x.length < 40))];
   }
 
-  return { present, pageData, campusesOf, levelOf, intakeLabel, LEVEL_ORDER, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, parseCourseText, levelGroup, compact };
+  return { present, pageData, campusesOf, levelOf, intakeLabel, LEVEL_ORDER, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, nextApplyBy, isApplyLine, parseCourseText, levelGroup, compact };
 }));

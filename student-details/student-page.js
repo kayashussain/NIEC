@@ -211,16 +211,6 @@
     return box;
   }
 
-  // ---- small helpers ----
-  // The first day of the intake ("Jan Intake 2027" is 1 January 2027), or null.
-  function intakeStart(intake) {
-    const m = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\D*(\d{4})/i.exec(String(intake || ''));
-    if (!m) return null;
-    return Date.UTC(Number(m[2]), 'janfebmaraprmayjunjulaugsepoctnovdec'.indexOf(m[1].toLowerCase().slice(0, 3)) / 3, 1);
-  }
-  const todayUtc = () => Date.parse((data.today || new Date().toISOString().slice(0, 10)) + 'T00:00:00Z');
-
-
   // ---- the bar at the top: who the student is, the stage and intake, the actions, and the progress line (a solid panel) ----
   function hero() {
     const s = data.student;

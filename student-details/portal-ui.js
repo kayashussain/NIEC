@@ -56,15 +56,6 @@
     if (Number.isNaN(d.getTime())) return '';
     return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
   }
-  // How far a day is from today: "today", "in 3 days", "4 days ago". `today` and `iso` are YYYY-MM-DD.
-  function fromToday(iso, today) {
-    const n = Math.round((Date.parse(iso + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86400000);
-    if (Number.isNaN(n)) return '';
-    if (n === 0) return 'today';
-    if (n === 1) return 'tomorrow';
-    if (n === -1) return 'yesterday';
-    return n > 0 ? `in ${n} days` : `${-n} days ago`;
-  }
 
   // The colour family of a stage, the same as the badges on the sheet.
   function stageKind(stage) {
@@ -81,20 +72,6 @@
   const rupees = (n) => (n === null || n === undefined ? '' : `Rs ${Number(n).toLocaleString('en-IN')}`);
   const percent = (n) => (n === null || n === undefined ? 'n/a' : `${n}%`);
 
-  // Typed text as paragraphs, bullets ("- ") and small headings ("## "), like the university pages.
-  function richText(parent, text) {
-    let list = null;
-    String(text || '').split('\n').forEach((raw) => {
-      const line = raw.trim();
-      const heading = /^##\s+(.*)$/.exec(line);
-      if (heading) { list = null; parent.append(el('h4', '', heading[1])); return; }
-      const bullet = /^[-*]\s+(.*)$/.exec(line);
-      if (bullet) { if (!list) { list = el('ul'); parent.append(list); } list.append(el('li', '', bullet[1])); return; }
-      list = null;
-      if (line) parent.append(el('p', '', line));
-    });
-    return parent;
-  }
 
   // The red asterisk after the label of anything that must be filled in (the owner, 18 Nov 2026: every required detail is marked).
   function requiredMark() { const m = el('b', 'p-req', ' *'); m.setAttribute('aria-hidden', 'true'); m.title = 'Required'; return m; }
@@ -168,31 +145,7 @@
     });
   }
 
-  // Copies text to the clipboard (with the older way as a fallback). true when it worked.
-  async function copy(text) {
-    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* the older way below */ }
-    const box = el('textarea');
-    box.value = text;
-    box.className = 'p-offscreen';
-    document.body.append(box);
-    box.select();
-    let ok = false;
-    try { ok = document.execCommand('copy'); } catch (e) { /* not allowed */ }
-    box.remove();
-    return ok;
-  }
 
-  // Asks every few seconds for the answer of a question the server is working on (see ai.js). Resolves with the result.
-  async function waitFor(url, { every = 2500, limit = 240000 } = {}) {
-    const start = Date.now();
-    for (;;) {
-      await new Promise((r) => setTimeout(r, every));
-      const j = await api(url);
-      if (j.status === 'done') return j.result;
-      if (j.status === 'failed') throw new Error(j.error || 'The question could not be answered.');
-      if (Date.now() - start > limit) throw new Error('Taking too long. Try again.');
-    }
-  }
 
   // The comments on a task (the owner, 14 Nov 2026): the team writes how it went, what it needs (a student's email, a document) or what
   // is in the way, with or without ticking the task, and whoever gave the task answers. Shown on Today and on the student card as a
@@ -370,12 +323,6 @@
       const g = el('div', 'p-form'); g.append(team.wrap, why.wrap);
       body.append(g, msg, foot);
     });
-  }
-  // A task's actions, side by side at its top right (Reassign, Remove): small, quiet buttons, never spread across the row.
-  function taskActions(list) {
-    const box = el('div', 'td-acts');
-    list.filter(Boolean).forEach(([label, onClick, danger]) => box.append(h('button', { class: `td-act${danger ? ' danger' : ''}`, type: 'button', onclick: onClick }, label)));
-    return box.childNodes.length ? box : null;
   }
   // A task's actions behind one quiet "..." button (Reassign, Remove), so the row stays calm (the owner, 15 Nov 2026).
   function taskMenu(list) {
@@ -987,5 +934,5 @@
     if (root.PhoneLink) { root.PhoneLink.openChat({ id, number, name, text }); return; }
     window.open(`https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`, '_blank', 'noopener');
   }
-  root.Portal = { requiredMark, whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskActions, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, fromToday, stageKind, stagePill, initials, number, rupees, percent, richText, field, datalist, dialog, copy, waitFor };
+  root.Portal = { requiredMark, whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, stageKind, stagePill, initials, number, rupees, percent, field, datalist, dialog };
 })(this);

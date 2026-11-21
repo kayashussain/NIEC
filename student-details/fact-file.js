@@ -109,10 +109,10 @@
     }
     const next = nextLine(u);
     if (next) a.append(next);
-    else if (u.deadline) a.append(el('div', 'uc-deadline', u.deadline));
+    else if (u.closed) a.append(el('div', 'uc-deadline', 'Applications closed'));
     const foot = el('div', 'uc-foot');
     foot.append(el('span', 'uc-count', u.courseCount ? `${u.courseCount} course${u.courseCount === 1 ? '' : 's'}` : 'Courses not listed yet'));
-    if (!u.next && !u.deadline) foot.append(el('span', 'uc-nodate', 'No open deadline'));
+    if (!u.next && !u.closed) foot.append(el('span', 'uc-nodate', 'No open deadline'));
     a.append(foot);
     if (u.updatedAt && (Date.now() - new Date(u.updatedAt).getTime()) > 90 * 86400000) a.append(el('div', 'updated', 'Last updated ' + when(u.updatedAt) + ', check it'));
     return a;

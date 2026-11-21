@@ -67,19 +67,18 @@
   function kpis() {
     const s = ins.summary;
     const trend = ins.trend || [];
-    const a = apps || { applicants: 0 };
     const cards = [
       { label: 'Students', value: num(s.students), color: 'var(--s1)', series: null, hint: `${num(s.active)} still active` },
-      { label: 'Applied', value: num(a.applicants), color: COLORS.applied, series: trend.map((t) => t.applied), hint: `${pct(s.toApplication)} of students` },
+      // Applied is counted one way only, as the funnel and the % below it count it (a submission day, or Mock Stage or later), so the
+      // figure, its share and the list behind it always agree.
+      { label: 'Applied', value: num(s.applied), color: COLORS.applied, series: trend.map((t) => t.applied), hint: `${pct(s.toApplication)} of students` },
       { label: 'Offers', value: num(s.offers), color: COLORS.offer, series: trend.map((t) => t.offer), hint: `${pct(s.toOffer)} of applicants` },
       { label: 'Paid', value: num(s.paid), color: COLORS.paid, series: trend.map((t) => t.paid), hint: `${pct(s.toPayment)} of offers` },
       { label: 'Visas', value: num(s.visas), color: COLORS.visa, series: trend.map((t) => t.visa), hint: ins.target && ins.target.visas ? `target ${ins.target.visas}` : `${pct(s.visaSuccess)} of decisions` },
     ];
-    // Who is behind each figure, by the same rules as the figure (Applied as /api/applicants counts it: past Inquiry, not Defer, Hold
-    // or Withdrawn, or with a submission day).
-    const NOT_APPLIED = ['', 'Inquiry', 'Defer', 'Hold', 'Withdrawn'];
+    // Who is behind each figure, by the same rules as the figure.
     const who = {
-      Students: () => true, Applied: (x) => !NOT_APPLIED.includes(x.s || '') || x.a, Offers: (x) => x.o, Paid: (x) => x.p, Visas: (x) => x.v,
+      Students: () => true, Applied: (x) => x.ap, Offers: (x) => x.o, Paid: (x) => x.p, Visas: (x) => x.v,
     };
     const row = el('div', 'ov-kpis');
     cards.forEach((c) => {

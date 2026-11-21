@@ -653,7 +653,7 @@ function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b
     minSample: MIN_SAMPLE,
     // The students behind the five figures at the top of the Dashboard (the owner, 17 Nov 2026: a press on a figure lists them),
     // counted by the same rules as the figures: o offer, p paid, v visa reached; a applied (the submission day is filled in).
-    people: students.slice(0, 3000).map((st) => ({ id: st.id, n: st.name, s: st.status, u: st.university, a: Boolean(st.dates.applied), o: Boolean(st.p.reached.offer), p: Boolean(st.p.reached.paid), v: Boolean(st.visa), act: Boolean(st.active) })),
+    people: students.slice(0, 3000).map((st) => ({ id: st.id, n: st.name, s: st.status, u: st.university, a: Boolean(st.dates.applied), ap: Boolean(st.p.reached.applied), o: Boolean(st.p.reached.offer), p: Boolean(st.p.reached.paid), v: Boolean(st.visa), act: Boolean(st.active) })),
   };
 }
 

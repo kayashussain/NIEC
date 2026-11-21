@@ -248,7 +248,7 @@ const glanceMemo = new WeakMap();
 // ARU College (Anglia Ruskin) and The College, Swansea University are pathway colleges too (the owner, 17 Nov 2026).
 const PATHWAY = /international college|\bISC\b|oncampus|pathway|\bARU College\b|\bThe College\b|\b(ICD|UKIC|UBIC|UGIC|ENUIC|BUIC|ICAS)\b/i;
 function glance(u) {
-  const day = new Date().toDateString();
+  const day = new Date(Date.now() + 345 * 60000).toISOString().slice(0, 10); // the day in Nepal
   const hit = glanceMemo.get(u);
   if (hit && hit.day === day) return hit.value;
   let value = { next: null, courseCount: 0 };
@@ -260,13 +260,8 @@ function glance(u) {
     let next = open ? { intake: open.name, when: open.applyBy.when, days: open.applyBy.days } : null;
     // A partner's page: its first "Apply by" date.
     if (u.profile && !u.profile.own) {
-      next = null;
-      for (const line of u.profile.deadlines || []) {
-        const d = FactPresent.parseDate(line);
-        if (!d) continue;
-        const days = FactPresent.daysLeft(d.date);
-        if (days >= 0) { next = { intake: u.profile.intake || 'January 2027', when: d.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }), days }; break; }
-      }
+      const n = FactPresent.nextApplyBy(u.profile.deadlines);
+      next = n ? { intake: u.profile.intake || 'January 2027', when: n.when, days: n.days } : null;
     }
     value = { next, courseCount: view.courses.length };
   } catch (e) { /* the card shows without it */ }
@@ -282,7 +277,7 @@ const q1Intakes = (u) => {
 };
 const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: q1Intakes(u), updatedAt: u.updatedAt, kind: (u.profile && u.profile.type === 'college') || PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u),
   // A page with the partner's January 2027 details counts only those courses, and shows the university's logo on its card.
-  ...(u.profile ? { ...(u.profile.own ? {} : { courseCount: u.profile.courses.length, deadline: u.profile.deadlines[0] || '' }), logo: u.profile.logo || '', cover: u.profile.banner || u.profile.photos[0] || '', profileCity: u.profile.city || '' } : {}) });
+  ...(u.profile ? { ...(u.profile.own ? {} : { courseCount: u.profile.courses.length, closed: (u.profile.deadlines || []).length > 0 && !FactPresent.nextApplyBy(u.profile.deadlines) }), logo: u.profile.logo || '', cover: u.profile.banner || u.profile.photos[0] || '', profileCity: u.profile.city || '' } : {}) });
 
 // Course lines of a page: the course list and each intake's, without the "## " sub-headings.
 const courseLines = (u) => (u.profile && !u.profile.own ? u.profile.courses.map((c) => c.name) : [u.courses, ...u.intakes.map((i) => i.courses)])
