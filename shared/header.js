@@ -163,9 +163,19 @@
 
   let studentLogin = false; // a student's own login: no tasks, no student search
   let bound = false; // the menu's own buttons are wired once, however often the menu is drawn
+  // Whether a person's own team is the Application Team (the same rule as the server's ownTeamApplication): chosen as their own team,
+  // or the only team they are in. The owner, 21 Nov 2026: that team works from Today, All Students and Universities, without the
+  // Dashboard, Partners and Mock interviews.
+  const ownTeamApplication = (me) => {
+    if (!me || me.role === 'admin' || me.role === 'manager') return false;
+    const deps = me.departments || [];
+    return me.taskTeam ? me.taskTeam === 'application' && deps.includes('application') : deps.length === 1 && deps[0] === 'application';
+  };
   function render(me) {
-    const own = LINKS[kindOf(me)] || [];
-    const extra = sharedLinks(me);
+    const appOwn = ownTeamApplication(me);
+    const own = (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
+    const shared0 = sharedLinks(me);
+    const extra = appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'mock') } : shared0;
     const at = own.findIndex(([id]) => id === 'factfile');
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];

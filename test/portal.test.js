@@ -471,7 +471,9 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
 
   // B2B Partners: the Manager looks with the commission; the Application Team sets B2B partners up (the owner, 15 Nov 2026) without
   // the commission (see partner-access.test.js). The old Message templates page now leads to Follow-up's setup.
-  for (const url of ['/api/b2b', '/b2b-partners']) assert.strictEqual((await app('GET', url)).status, 200, `${url} opens for the Application Team`);
+  // The page itself is no longer the Application Team's (the owner, 21 Nov 2026: no Partners in its menu); the list still answers.
+  assert.strictEqual((await app('GET', '/api/b2b')).status, 200, 'the list answers the Application Team');
+  assert.strictEqual((await app('GET', '/b2b-partners')).status, 302, 'the page sends the Application Team to Today');
   assert.strictEqual((await app('GET', '/message-templates')).location, '/bulk#setup');
   assert.strictEqual((await app('GET', '/api/b2b')).json.access, 'setup');
   assert.strictEqual((await manager('GET', '/api/b2b')).json.access, 'commission');

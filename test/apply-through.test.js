@@ -1,12 +1,12 @@
-// Apply through (the owner, 20 Nov 2026): the places two or more B2B partners offer, and the partner each one is applied through.
-// A direct route (own agreement, OIEG, Navitas) or one partner only is never a choice; a university and its international college
-// are two places; only Admin changes a partner and the Application Team looks. Also the one-time partner step of the same day.
+// Apply through (the owner, 20 and 21 Nov 2026): every university and international college, and the partner each one is applied
+// through. Admin moves any place to any B2B partner, and a place with a direct route (own agreement, OIEG, Navitas) can move to a
+// partner and back; a university and its international college are two places. Also the one-time partner step of 20 Nov.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createApplyThrough, choosable } = require('../student-details/apply-through');
+const { createApplyThrough } = require('../student-details/apply-through');
 const { createB2b } = require('../student-details/b2b');
 const { createPlanning } = require('../student-details/planning');
 const { tidyNov20, tidyNames } = require('../student-details/partner-tidy');
@@ -16,7 +16,7 @@ const { partnerAccess } = require('../student-details/partner-access');
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-apply-'));
 const SEED = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'student-details', 'apply-through-seed.json'), 'utf8'));
 
-test('the starting list keeps a university and its international college apart, and never offers a direct route as a choice', () => {
+test('the starting list keeps a university and its international college apart, and every place is listed (the owner, 21 Nov 2026)', () => {
   const store = createApplyThrough(tmp(), { wanted: () => true });
   const all = store.all();
   assert.strictEqual(all.length, SEED.length);
@@ -28,10 +28,11 @@ test('the starting list keeps a university and its international college apart, 
   assert.ok(ugic.direct && ugic.partner === 'Oxford International Education Group', 'UGIC goes through OIEG, no choice');
   assert.ok(!uni.options.includes('Oxford International Education Group'), 'OIEG does not offer the university itself');
   const choices = store.choices();
-  assert.ok(choices.length > 0);
-  assert.ok(choices.every((e) => !e.direct && e.options.length > 1), 'only places with two or more partners and no direct route');
-  assert.ok(!choices.some((e) => /Navitas|Oxford International/.test(e.partner)), 'Navitas and OIEG places are not listed');
-  assert.ok(!choices.some((e) => e.name === 'University of West London'), 'a direct university is not listed');
+  assert.strictEqual(choices.length, SEED.length, 'every place, also a direct route and a place one partner lists');
+  assert.ok(choices.some((e) => e.direct && e.name === 'University of West London'), 'a direct university is listed');
+  assert.strictEqual(ugic.directPartner, 'Oxford International Education Group', 'the direct route is remembered');
+  const firstCollege = choices.findIndex((e) => e.type === 'college');
+  assert.ok(choices.slice(0, firstCollege).every((e) => e.type === 'university') && choices.slice(firstCollege).every((e) => e.type === 'college'), 'universities first');
   assert.strictEqual(all.find((e) => e.name === 'University of Wolverhampton').partner, 'Nissus International Education Foundation');
   ['University of Gloucestershire', 'University of Derby', 'University of Plymouth'].forEach((n) => assert.strictEqual(all.find((e) => e.name === n).partner, 'Awarded Edu', n));
 });
@@ -41,19 +42,30 @@ test('another consultancy starts with an empty list', () => {
   assert.deepStrictEqual(store.all(), []);
 });
 
-test('a partner is changed only to one that offers the place, and never for a place without a choice', () => {
+test('any place moves to any B2B partner, and a direct route to a partner and back (the owner, 21 Nov 2026)', () => {
   const dir = tmp();
   const store = createApplyThrough(dir, { wanted: () => true });
+  const partners = ['Adventus', 'Apply Board', 'Real Dreams Educational Consultancy'];
   const e = store.choices().find((x) => x.options.length > 1);
   const other = e.options.find((o) => o !== e.partner);
-  const out = store.choose(e.id, other, 'Admin');
+  const out = store.choose(e.id, other, 'Admin', partners);
   assert.strictEqual(out.from, e.partner);
   assert.strictEqual(out.entry.partner, other);
   assert.strictEqual(createApplyThrough(dir).all().find((x) => x.id === e.id).partner, other, 'kept in the data folder');
-  assert.ok(store.choose(e.id, 'Someone else', 'Admin').error, 'a partner that does not offer it is refused');
-  const fixed = store.all().find((x) => !choosable(x));
-  assert.ok(store.choose(fixed.id, fixed.options[0], 'Admin').error, 'no choice for a direct or one-partner place');
-  assert.ok(store.choose('no-such-place', 'Adventus', 'Admin').error);
+  assert.ok(store.choose(e.id, 'Someone else', 'Admin', partners).error, 'a name that is not a B2B partner is refused');
+  // A place only one partner lists (the agreement may be lost): it moves to any other B2B partner.
+  const single = store.all().find((x) => !x.direct && x.options.length === 1);
+  const elsewhere = partners.find((p) => !single.options.includes(p));
+  assert.strictEqual(store.choose(single.id, elsewhere, 'Admin', partners).entry.partner, elsewhere);
+  assert.strictEqual(createApplyThrough(dir).all().find((x) => x.id === single.id).partner, elsewhere, 'kept, though the partner does not list it');
+  // A direct route: to a partner (no longer direct) and back (direct again).
+  const uwl = store.all().find((x) => x.name === 'University of West London');
+  const moved = store.choose(uwl.id, 'Adventus', 'Admin', partners).entry;
+  assert.strictEqual(moved.partner, 'Adventus');
+  assert.ok(!moved.direct, 'through a partner now');
+  const back = store.choose(uwl.id, uwl.directPartner, 'Admin', partners).entry;
+  assert.ok(back.direct && back.partner === uwl.directPartner, 'back on its own route');
+  assert.ok(store.choose('no-such-place', 'Adventus', 'Admin', partners).error);
 });
 
 test('Universities finds a university by its name, the university before its college', () => {

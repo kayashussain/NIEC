@@ -184,7 +184,9 @@ test('Admin changes the list; the Application Team and the Manager look; the Fol
       assert.strictEqual((await them('GET', '/api/direct')).status, 403, `${username} cannot read the list`);
       assert.strictEqual((await them('GET', `/api/direct/${id}`)).status, 403);
     } else {
-      assert.strictEqual(page.status, 200, `${username} opens the page to look`);
+      // The Application Team no longer has the Partners pages (the owner, 21 Nov 2026): the page sends it to Today, the list still
+      // answers (Apply now on a university uses the partner's portal and contacts).
+      assert.strictEqual(page.status, look === 'team' ? 302 : 200, look === 'team' ? `${username} is sent to Today` : `${username} opens the page to look`);
       const one = (await them('GET', `/api/direct/${id}`)).json;
       assert.strictEqual(Boolean(one.slabs), look === 'commission', `${username}: the commission only for the Manager`);
       assert.strictEqual((await them('GET', `/api/direct/${id}/files/${fileId}`)).status, look === 'commission' ? 200 : 403, `${username}: the agreement file only for the Manager`);

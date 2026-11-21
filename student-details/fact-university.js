@@ -343,7 +343,7 @@
         const row = el('div', 'up-cred'); row.append(el('span', '', A.email), copyBtn(A.email));
         step(`Send the application to ${A.partner}`, row);
       } else {
-        step(A.partner, el('span', 'up-step-sub', 'No portal saved yet (Partners).'));
+        step(A.partner, el('span', 'up-step-sub', 'No portal saved yet: Admin adds it on Partners.'));
       }
       if (A.login && (A.login.user || A.login.password)) {
         const box = el('div', 'up-creds');

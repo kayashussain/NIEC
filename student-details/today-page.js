@@ -494,6 +494,7 @@
       head.append(seg);
     }
     const view = VIEWS.find((v) => v[0] === taskView) || ['mine', 'Today', forMe, '', 'Nothing here.', true, 'today'];
+    const byKind = Boolean(todayData && todayData.missing); // the Application Team
     if (view[6] === 'missing') { box.append(missingPanel(refresh)); return box; }
     const inView = view[2];
     // The kinds (Application, Mock interview ...) of the tasks in this view, each with how many are for TODAY. A kind whose tasks are
@@ -503,6 +504,9 @@
       const now = {}; const after = {};
       openAll.forEach((x) => { const k = tagOf(x, x.stage); if (later(x)) after[k] = (after[k] || 0) + 1; else now[k] = (now[k] || 0) + 1; });
       if (tagFilter !== 'all' && !now[tagFilter] && !after[tagFilter]) tagFilter = 'all';
+      // The Application Team works one kind at a time (the owner, 21 Nov 2026): no "All", the first kind with tasks is open.
+      const order = ((window.CardFields && window.CardFields.TASK_TAGS) || []).map(([k]) => k);
+      if (byKind && tagFilter === 'all') tagFilter = order.find((k) => now[k]) || order.find((k) => after[k]) || 'all';
       const bar = el('div', 'td-filter');
       bar.setAttribute('role', 'tablist');
       bar.setAttribute('aria-label', 'Show the tasks about');
@@ -514,11 +518,11 @@
         bar.append(b);
       };
       const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
-      pill('all', 'All', sum(now), sum(after));
+      if (!byKind) pill('all', 'All', sum(now), sum(after));
       // One kind only: "All 2, Application 2" says nothing twice, so the row is left out.
       const kinds = new Set([...Object.keys(now), ...Object.keys(after)]);
       ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (now[k] || after[k]) pill(k, label, now[k] || 0, after[k] || 0); });
-      if (kinds.size > 1 || tagFilter !== 'all') box.append(bar);
+      if (kinds.size > 1 || tagFilter !== 'all' || byKind) box.append(bar);
     }
     box.append(group(view[0], view[3], inView, refresh, view[4], view[6]));
     return box;
@@ -635,7 +639,7 @@
     // A done task is no longer on Today: it is on the student's card.
     if (x.done) { api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {}).then(() => { location.href = '/student?id=' + encodeURIComponent(x.studentId); }); return; }
     taskView = x.forMe ? (!x.done && x.doOn && todayIso && x.doOn > todayIso ? 'upcoming' : 'mine') : (x.given || x.by === me) ? 'gave' : 'others';
-    tagFilter = 'all';
+    tagFilter = todayData && todayData.missing ? tagOf(x, x.stage) : 'all'; // the Application Team has no "All": the task's own kind
     searchQ = '';
     focusTask = x.id;
     refresh();

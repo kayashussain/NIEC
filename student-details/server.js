@@ -1005,6 +1005,14 @@ try {
   console.error('[startup] data tidy-up failed:', e.message);
 }
 
+// Whether a person's own team is the Application Team: chosen as their own team, or the only team they are in (never Admin or the
+// Manager). The menu (shared/header.js) uses the same rule.
+function ownTeamApplication(u) {
+  if (!u || u.role === 'admin' || u.role === 'manager') return false;
+  const deps = Array.isArray(u.departments) ? u.departments : [];
+  return u.taskTeam ? u.taskTeam === 'application' && deps.includes('application') : deps.length === 1 && deps[0] === 'application';
+}
+
 // Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Universities and
 // Partner Universities, each on its own). The data as it is now is saved first, so a restore can be undone.
 async function handleRestore(req, res, urlPath) {
@@ -1203,6 +1211,9 @@ const server = http.createServer(async (req, res) => {
         '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/mock-guides': 'mock-guides.html', '/events': 'events.html',
       }[urlPath];
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
+      // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): no Dashboard, no Partners pages,
+      // no Mock interviews for anyone whose own team is Application (Apply now on a university still shows the partner and its portal).
+      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides'].includes(urlPath)) return send(res, 302, '', { Location: home });
       if (urlPath === '/my-portal') return send(res, 302, '', { Location: '/today' }); // a student's own page; the team has the student card
       // Partners: one place for Partner Universities, B2B Partners and Agents (the owner, 17 Nov 2026). It opens the first of the three
       // this account may see; a switch at the top of each moves between them (partners-switch.js).
@@ -1260,14 +1271,16 @@ const server = http.createServer(async (req, res) => {
       }
       if (urlPath === '/api/apply-through' && req.method === 'GET') {
         const choices = applyThrough.choices();
-        return sendJSON(res, 200, { canChange: level === 'full', choices, choosable: choices.length });
+        // Every B2B partner, for each place's dropdown (the owner, 21 Nov 2026: any place can move to any partner).
+        const partners = [...new Set(b2b.all().map((p) => String(p.name || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        return sendJSON(res, 200, { canChange: level === 'full', choices, choosable: choices.length, partners });
       }
       const id = (urlPath.match(/^\/api\/apply-through\/([a-z0-9-]{1,160})$/) || [])[1];
       if (id && req.method === 'POST') {
         if (level !== 'full') return sendJSON(res, 403, { error: 'Only Admin changes the partner.' });
         let body;
         try { body = await readJSONBody(req, 4096); } catch (e) { return sendJSON(res, 400, { error: 'Could not read the request.' }); }
-        const out = applyThrough.choose(id, body.partner, req.user.label);
+        const out = applyThrough.choose(id, body.partner, req.user.label, b2b.all().map((p) => p.name));
         if (out.error) return sendJSON(res, 400, { error: out.error });
         if (out.from !== out.entry.partner) activity.record(req, req.user, 'Edited partners', { app: 'Apply through', changes: [`${out.entry.name}: apply through ${out.entry.partner} (was ${out.from})`] });
         return sendJSON(res, 200, out.entry);

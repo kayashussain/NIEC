@@ -1,10 +1,11 @@
-// Apply through (the owner, 20 Nov 2026; see apply-through.js on the server): the places two or more B2B partners offer, with no
-// direct route, and the partner each one is applied through. Admin changes the partner with the dropdown and it is saved at once;
-// the Application Team sees the list only. Universities and international colleges are two tabs: they are never the same place.
+// Apply through (the owner, 20 and 21 Nov 2026; see apply-through.js on the server): every university and international college, and
+// the partner each one is applied through. Admin changes the partner with the dropdown and it is saved at once: the partners that list
+// the place first, then every other B2B partner, and its direct route if it has one. Universities and international colleges are two
+// tabs: they are never the same place.
 (function () {
   const $ = (id) => document.getElementById(id);
   const { el, api, when } = window.Portal;
-  let data = { canChange: false, choices: [] };
+  let data = { canChange: false, choices: [], partners: [] };
   let type = 'university';
 
   function say(text, error) { const m = $('msg'); m.textContent = text || ''; m.className = 'p-msg' + (error ? ' error' : ''); }
@@ -16,7 +17,7 @@
     $('nCol').textContent = of('college').length;
     const list = of(type).filter((e) => !q || e.name.toLowerCase().includes(q) || e.partner.toLowerCase().includes(q));
     if (!list.length) {
-      const td = el('td', 'p-empty', q ? 'Nothing matches that search.' : 'Nothing to choose here.');
+      const td = el('td', 'p-empty', q ? 'Nothing matches that search.' : 'No place in this list yet.');
       td.colSpan = 4;
       const tr = el('tr'); tr.append(td); $('rows').replaceChildren(tr);
       return;
@@ -28,7 +29,15 @@
       if (data.canChange) {
         const sel = el('select');
         sel.setAttribute('aria-label', `Apply through for ${e.name}`);
-        e.options.forEach((o) => { const opt = el('option', '', o); opt.value = o; if (o === e.partner) opt.selected = true; sel.append(opt); });
+        // The partners that list it, its direct route, then every other B2B partner (and the one chosen now, whatever it is).
+        const group = (label, names) => { if (!names.length) return; const g = document.createElement('optgroup'); g.label = label; names.forEach((o) => { const opt = el('option', '', o); opt.value = o; if (o === e.partner) opt.selected = true; g.append(opt); }); sel.append(g); };
+        const lists = e.options.filter((o) => o !== e.directPartner);
+        const seen = new Set([...lists, ...(e.directPartner ? [e.directPartner] : [])]);
+        const others = [];
+        [...(data.partners || []), e.partner].forEach((o) => { if (o && !seen.has(o)) { seen.add(o); others.push(o); } });
+        group('Lists this place', lists);
+        if (e.directPartner) group('Direct route', [e.directPartner]);
+        group('Other B2B partners', others);
         sel.addEventListener('change', () => choose(e, sel));
         cell.append(sel);
       } else {

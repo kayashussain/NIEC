@@ -1,13 +1,12 @@
-// Apply through (the owner, 20 Nov 2026): which partner each UK university, and each international college, is applied through.
+// Apply through (the owner, 20 and 21 Nov 2026): which partner each UK university, and each international college, is applied through.
 //
 //   A university and its international college are two different places to apply and are never put together (University of
 //   Greenwich is one entry, University of Greenwich International College (UGIC) another).
-//   A direct route always wins and is not a choice: the consultancy's own agreement, Oxford International Education Group (OIEG)
-//   and Navitas. Such an entry has `direct: true` and only that one partner.
-//   Where only one partner offers a place there is nothing to choose either.
-//   The Apply through page lists only the places two or more B2B partners offer, with no direct route; Admin chooses the partner
-//   there, and every change is written in Activity. The Application Team sees the list and Universities shows the chosen partner on
-//   the university's page (Admin and the Application Team only).
+//   Every place is listed and Admin can move any of them to any B2B partner (the owner, 21 Nov 2026: a partner can lose its agreement
+//   with a university). A place with a direct route (the consultancy's own agreement, Oxford International Education Group (OIEG) or
+//   Navitas) remembers it (directPartner), so it can be moved to a B2B partner and back; `direct` is true while it goes that way.
+//   Every change is written in Activity. Universities shows the chosen partner on the university's page, with its portal and login
+//   under Apply now (Admin and the Application Team only).
 //
 // The starting list is apply-through-seed.json: the partners' UK lists read on 20 Nov 2026 (Real Dreams through Route2Uni, Adventus,
 // Apply Board and the OIEG website) with the owner's choices that day. It is written into apply-through.json in the data folder on
@@ -49,11 +48,16 @@ function clean(e) {
   const name = tidy(e.name, 160);
   const id = tidy(e.id, 160).toLowerCase().replace(/[^a-z0-9-]/g, '');
   if (!name || !id || !options.length) return null;
+  // Every place can be moved to any partner (the owner, 21 Nov 2026: a partner can lose its agreement), so the partner chosen is kept
+  // even when it is not one that lists the place. A place with a direct route (own agreement, OIEG, Navitas) remembers that route
+  // (directPartner), so it can be moved to a B2B partner and back; `direct` is true while it goes through that route.
   const chosen = tidy(partnerName(tidy(e.partner, 120)), 120);
-  const partner = options.includes(chosen) ? chosen : options[0];
+  const partner = chosen || options[0];
+  const directPartner = tidy(partnerName(tidy(e.directPartner, 120)), 120) || (e.direct ? partner : '');
   return {
     id, name, type: e.type === 'college' ? 'college' : 'university', options, partner,
-    ...(e.direct ? { direct: true } : {}),
+    ...(directPartner ? { directPartner } : {}),
+    ...(directPartner && partner === directPartner ? { direct: true } : {}),
     ...(e.changedBy ? { changedBy: tidy(e.changedBy, 120), changedAt: tidy(e.changedAt, 40) } : {}),
   };
 }
@@ -93,8 +97,8 @@ function createApplyThrough(dir, { wanted = () => false } = {}) {
   }
   return {
     all: () => read(),
-    // The places the owner chooses for, A to Z, universities first.
-    choices: () => read().filter(choosable).sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'university' ? -1 : 1)),
+    // Every place, A to Z, universities first (the owner, 21 Nov 2026: all of them, each with its dropdown).
+    choices: () => read().slice().sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'university' ? -1 : 1)),
     // The entry for a university's name as Universities writes it, or null. Universities are preferred to colleges.
     find(name) {
       const key = squash(ALIASES[squash(name)] || name);
@@ -103,17 +107,19 @@ function createApplyThrough(dir, { wanted = () => false } = {}) {
       const exact = all.filter((e) => squash(e.name) === key);
       return exact.find((e) => e.type === 'university') || exact[0] || null;
     },
-    // Changes the partner of one place. { entry, from } or { error }.
-    choose(id, partner, by) {
+    // Changes the partner of one place to one that lists it, one of `partners` (every B2B partner, given by the server), or its own
+    // direct route. { entry, from } or { error }.
+    choose(id, partner, by, partners = []) {
       const entries = read();
       const i = entries.findIndex((e) => e.id === id);
       if (i < 0) return { error: 'That university is not in the list.' };
       const e = entries[i];
-      if (!choosable(e)) return { error: `${e.name} has no choice: ${e.direct ? 'it is applied through a direct route' : 'only one partner offers it'}.` };
-      const to = tidy(partner, 120);
-      if (!e.options.includes(to)) return { error: `${to || 'That partner'} does not offer ${e.name}.` };
+      const to = tidy(partnerName(tidy(partner, 120)), 120);
+      const allowed = new Set([...e.options, ...(e.directPartner ? [e.directPartner] : []), ...partners.map((x) => tidy(partnerName(tidy(x, 120)), 120))]);
+      if (!to || !allowed.has(to)) return { error: `${to || 'That partner'} is not a partner here. Add it on B2B Partners first.` };
       const from = e.partner;
-      entries[i] = { ...e, partner: to, changedBy: tidy(by, 120), changedAt: new Date().toISOString() };
+      const { direct, ...rest } = e;
+      entries[i] = { ...rest, partner: to, ...(e.directPartner && to === e.directPartner ? { direct: true } : {}), changedBy: tidy(by, 120), changedAt: new Date().toISOString() };
       save(entries);
       return { entry: entries[i], from };
     },

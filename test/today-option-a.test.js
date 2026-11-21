@@ -115,4 +115,14 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   const casId = (await admin('POST', '/api/students/new', { stage: 'CAS Stage', fields: { 'FIRST NAME': 'Hari', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000083', 'STUDENT SOURCE': 'Visitor' } })).json.id;
   assert.strictEqual((await app('GET', `/api/cards/${casId}`)).status, 404, 'a CAS Stage student is not the team\'s');
   assert.ok(!((await app('GET', '/api/today')).json.missing.find((m) => m.id === casId)));
+
+  // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): Dashboard, Partners, Apply through
+  // and Mock interviews send it back to Today; Apply now on a university still finds the partner.
+  for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides']) {
+    assert.strictEqual((await app('GET', page)).status, 302, page);
+  }
+  assert.strictEqual((await app('GET', '/today')).status, 200);
+  assert.strictEqual((await app('GET', '/api/apply-through/find?name=Nowhere')).status, 200, 'Apply now still asks for the partner');
+  assert.strictEqual((await admin('GET', '/apply-through')).status, 200, 'Admin keeps Apply through');
+  assert.strictEqual((await admin('GET', '/api/apply-through')).json.canChange, true);
 });
