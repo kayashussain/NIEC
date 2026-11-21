@@ -899,7 +899,7 @@
       // One quiet row: the words on the left, the choice on the right (long names end in "..." instead of crowding the row).
       const row = el('label', 'p-priority');
       const words = el('span', 'p-priority-text');
-      words.append(el('b', '', 'Priority University'), el('small', '', 'Writes the university and course on All Students'));
+      words.append(el('b', '', 'Priority University')); // it still writes the university and course on All Students, without saying so (the owner, 21 Nov 2026)
       const sel = document.createElement('select');
       sel.className = 'p-priority-select';
       [...(cur ? [] : [['', 'Choose one']]), ...live.map((o) => [o.id, appName(o)])].forEach(([v, t]) => { const op = document.createElement('option'); op.value = v; op.textContent = t; sel.append(op); });
