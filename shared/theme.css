@@ -4032,3 +4032,15 @@ html:root body .up-logo { border: 1px solid #b8b8b8; border-radius: 10px; box-sh
 html:root body #toolbar .btn { min-height: 40px; padding: 0 16px; border: 1px solid #9a9a9a; border-radius: 8px; background: #f7f7f7; color: #000; box-shadow: none; }
 html:root body #toolbar .btn:hover { background: #e2e2e2; }
 html:root body .to-top, html:root body .isr-top, html:root body [class*="back-top"] { box-shadow: none; border: 1px solid #9a9a9a; background: #f7f7f7; }
+
+/* 🔴 CSS CHANGED (2026-11-21): All Students and Today fit a 1280px laptop (the review of 21 Nov 2026) | from: on All Students the Source box alone on its own line under the title (the top area took 176px of an 800px screen, 7 students showed); on Today the four team columns 980px wide in a 924px space, so the Follow-up Team column was cut and the board scrolled sideways | to: the Source box on the title's line, before the search box (the search a little narrower on a small laptop, at most 360px as before), so the top area is two lines; Today's team columns share the width (each at least 200px), and wrap to a new line instead of scrolling sideways when they cannot fit */
+html body:has(#sheet) .topbar .came-from { order: 3; }
+html body:has(#sheet) .topbar #search { width: clamp(240px, 26vw, 360px); }
+html body .td-page.is-board .tb-board, html body .tb-board { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); overflow-x: visible; }
+/* 🔴 CSS CHANGED (2026-11-21): Today's board tiles | from: the stage beside the name, so in a narrower column a name broke inside a word ("Shrest / ha") | to: the name on its own line (broken only between words), the stage on the line under it */
+html body .tb-tile-top { flex-wrap: wrap; row-gap: 2px; }
+html body .tb-student { overflow-wrap: normal; word-break: normal; }
+html body .tb-stage { flex-basis: 100%; }
+/* 🔴 CSS CHANGED (2026-11-21): the student card's Applications panel | from: Shortlist and Universities applied to drawn as their own bordered boxes inside the Applications panel (a box inside a box), their words touching the inner border | to: as the student card was designed: flat sections of the panel, divided by a hairline, no box of their own */
+html:root body #view .lg-apps .p-apps > .p-card { border: 0 !important; border-top: 1px solid #b8b8b8 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html:root body #view .lg-apps .p-apps > .p-card:first-child { border-top: 0 !important; }

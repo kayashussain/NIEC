@@ -92,10 +92,11 @@ html body.p-embed .p-page:has(#view) { padding: 0; }
 .sc-steps li:hover .sc-step-dot, .sc-steps li:focus-visible .sc-step-dot { transform: scale(1.25); }
 .sc-step-dot svg { display: none; }
 .sc-steps li.is-done .sc-step-dot { background: var(--sc-ink); box-shadow: none; }
-.sc-steps li.is-now .sc-step-dot { background: var(--sc-orange); box-shadow: 0 0 0 4px rgba(240, 138, 36, .18); }
+/* 🔴 CSS CHANGED (2026-11-21): the student's current step on the progress line | from: an orange dot and orange words (orange means "missing" everywhere else, so "Visa issued" in orange read as a problem) | to: Apple's blue (#0071e3) dot with a soft blue ring and deep blue words (#0050aa), the colour DESIGN.md gives to "where the student is now" */
+.sc-steps li.is-now .sc-step-dot { background: #0071e3; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18); }
 .sc-step-label { max-width: 100%; color: var(--sc-grey); font-size: 13px; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
 .sc-steps li.is-done .sc-step-label { color: var(--sc-ink); }
-.sc-steps li.is-now .sc-step-label { color: var(--sc-orange-ink); font-weight: 600; }
+.sc-steps li.is-now .sc-step-label { color: #0050aa; font-weight: 600; }
 .sc-step-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; z-index: 5; display: grid; gap: 2px; width: max-content; max-width: 220px; padding: 9px 12px; border-radius: 12px; background: rgba(29, 29, 31, .94); color: #fff; font-size: 13px; line-height: 1.35; text-align: left; opacity: 0; pointer-events: none; transform: translate(-50%, 4px); transition: opacity .18s ease, transform .3s var(--sc-glide); }
 .sc-step-tip b { font-weight: 600; }
 .sc-step-tip span { color: rgba(255, 255, 255, .75); }
