@@ -35,6 +35,9 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
     const p = person(); await p('POST', '/api/login', { username, password: made.temporaryPassword }); await p('POST', '/api/login/new-password', { password: 'Team-Strong-2026' }); return p;
   };
   const mock = await login('bikram', ['mock']);
+  // A view-only Manager (no team) sees every task but changes none (the council review of 21 Nov 2026: their Today went empty).
+  const viewMade = (await admin('POST', '/api/users', { username: 'viewer', name: 'Viewer', email: '', role: 'manager', departments: [] })).json;
+  const viewer = person(); await viewer('POST', '/api/login', { username: 'viewer', password: viewMade.temporaryPassword }); await viewer('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
   const app = await login('asha', ['application']);
   const id = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Sita', 'LAST NAME': 'Rai', 'CONTACT NUMBER': '9800000001' } })).json.id;
   assert.strictEqual((await mock('GET', `/api/cards/${id}`)).status, 404, 'the mock team does not see an Inquiry student');
@@ -97,6 +100,12 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await admin('GET', '/api/tasks/unread')).json.count, 0, 'read: the dot goes');
   await admin('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { comment: 'Done, it is in your inbox.' });
   assert.strictEqual((await app('GET', '/api/tasks/unread')).json.count, 1, 'the team that gave it sees the answer as new');
+  {
+    const seen = (await viewer('GET', '/api/tasks')).json;
+    assert.ok(seen.tasks.some((x) => x.id === headTask.id), 'the view-only Manager sees the task');
+    assert.deepStrictEqual([seen.seesAll, seen.canAssign], [true, false]);
+    assert.strictEqual((await viewer('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { text: 'changed by a viewer' })).status, 403, 'but cannot change it');
+  }
   // Mark all as read on Today is one request, and it only marks tasks this person may see.
   assert.strictEqual((await mock('POST', '/api/tasks/seen', { ids: [headTask.id] })).json.marked, 0, 'another team marks nothing');
   assert.strictEqual((await app('GET', '/api/tasks/unread')).json.count, 1);

@@ -96,6 +96,9 @@ function createPortalApi({
   const teamLabel = (id) => (id === HEAD ? headLabel() : Teams.DEPARTMENTS[id] ? Teams.DEPARTMENTS[id].label : id);
   // A view-only account (a Manager with no team) only looks: it never gives, changes, retags or removes a task.
   const canAssign = (user) => Teams.isAdmin(user) || (Teams.isManager(user) && !Teams.isReadOnly(user));
+  // Who sees every team's tasks (Today's board, the counts, Mark as read): Admin and every Manager, the view-only one too (looking is
+  // allowed; only giving, changing and removing a task needs canAssign).
+  const seesAllTasks = (user) => Teams.isAdmin(user) || Teams.isManager(user);
   // A branch gives tasks too, about its own students, to the Application Team and the Mock Team (the owner, 14 Nov 2026). Whoever gave
   // a task removes it; Admin and the Manager remove any.
   const isBranchUser = (user) => teamsOf(user).some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source);
@@ -1535,7 +1538,7 @@ function createPortalApi({
         if (!task) { sendJSON(res, 404, { error: 'No such task.' }); return true; }
         if (body.seen) {
           // The person has read the task and its comments: its red dot goes.
-          if (!canAssign(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task) && !hadIt(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
+          if (!seesAllTasks(req.user) && !gaveIt(req.user, task) && !forMe(req.user, task) && !hadIt(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
           cards.markSeen(req.user.username, [task.id]);
           sendJSON(res, 200, { ok: true });
           return true;
@@ -3051,7 +3054,7 @@ function createPortalApi({
     }
     if (urlPath === '/api/tasks' && req.method === 'GET') {
       const all = cards.all();
-      const everyone = canAssign(req.user);
+      const everyone = seesAllTasks(req.user);
       const seen = cards.seenBy(req.user.username);
       const out = [];
       for (const { sheet, row } of rowIndex().values()) {
@@ -3082,7 +3085,7 @@ function createPortalApi({
       const rest = out.filter((t) => !keep.includes(t));
       const shown = keep.length >= 500 ? keep : [...keep, ...rest.slice(0, 500 - keep.length)];
       shown.sort((a, b) => (a.done - b.done) || lastWord(b).localeCompare(lastWord(a)));
-      sendJSON(res, 200, { tasks: shown, today: cards.today(), mineFrom, noOwnTeam, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS(), handTeams: handTeamsFor(req.user) });
+      sendJSON(res, 200, { tasks: shown, today: cards.today(), mineFrom, noOwnTeam, canAssign: canAssign(req.user), seesAll: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS(), handTeams: handTeamsFor(req.user) });
       return true;
     }
     // How much is new on the tasks for this person (the red dot on Today in the menu): new comments, and tasks just given to them.
@@ -3092,7 +3095,7 @@ function createPortalApi({
       if (!body) return true;
       const want = new Set((Array.isArray(body.ids) ? body.ids : []).slice(0, 5000).map((x) => text(x)));
       const all = cards.all();
-      const everyoneS = canAssign(req.user);
+      const everyoneS = seesAllTasks(req.user);
       const ids = [];
       for (const { row } of rowIndex().values()) {
         const c = all[row._id];
@@ -3110,7 +3113,7 @@ function createPortalApi({
         const c = all[row._id];
         // The same tasks Today lists (a task handed on to another team has left this team's Today), so the red count in the menu can
         // always be cleared on Today (the owner, 21 Nov 2026: the count stayed after Mark all as read).
-        const everyoneU = canAssign(req.user);
+        const everyoneU = seesAllTasks(req.user);
         (c && Array.isArray(c.tasks) ? c.tasks : []).forEach((t) => { if (everyoneU || forMe(req.user, t) || gaveIt(req.user, t)) count += unreadOf(req.user, t, seen); });
       }
       sendJSON(res, 200, { count });

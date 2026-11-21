@@ -57,7 +57,8 @@
       onChanged: () => refresh(true),
     });
   }
-  let canAssignAll = false;
+  let canAssignAll = false; // may give, change and remove any task (Admin and a Manager who is not view-only)
+  let seesAll = false; // sees every team's tasks on the Board (Admin and every Manager)
   let todayIso = '';
   let allTeams = [];
   let handTeams = []; // where this person may reassign a task (never their own team)
@@ -409,6 +410,7 @@
 
   function tasksPanel(t, refresh) {
     canAssignAll = Boolean(t.canAssign);
+    seesAll = Boolean(t.seesAll);
     todayIso = t.today || todayIso;
     allTeams = t.teams || [];
     handTeams = t.handTeams || [];
@@ -449,7 +451,7 @@
       box.append(sb);
     }
     // The Board, for Admin and the Manager: the kind pills, then a column per team.
-    if (canAssignAll && t.tasks.length) {
+    if (seesAll && t.tasks.length) {
       const pills = kindPills(t.tasks.filter((x) => !x.done && matches(x)), refresh);
       if (pills) box.append(pills);
       box.append(boardOf(t, refresh));
