@@ -496,6 +496,12 @@
       });
       head.append(seg);
     }
+    // The approved design (the owner, 22 Nov 2026): a team's switches at the left and the search on the same line, with no "Tasks"
+    // title above them (the Board of Admin and the Manager keeps its own head).
+    head.classList.add('td-toolbar');
+    titles.remove();
+    const searchNow = box.querySelector(':scope > .td-search');
+    if (searchNow) head.append(searchNow);
     const view = VIEWS.find((v) => v[0] === taskView) || ['mine', 'Today', forMe, '', 'Nothing here.', true, 'today'];
     const byKind = Boolean(todayData && todayData.missing); // the Application Team
     if (view[6] === 'missing') { box.append(missingPanel(refresh)); return box; }
@@ -742,8 +748,10 @@
     const first = String(d.name || '').split(/\s+/)[0] || '';
     const hi = el('h1', '', `${greeting()}${first ? ', ' : ''}`);
     if (first) hi.append(el('span', 'td-name', first));
-    head.append(el('span', 'td-kicker', d.title), hi,
-      el('p', '', new Date(d.today + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })));
+    // One small line above the greeting, as in the approved design (the owner, 22 Nov 2026): "Application Team · Saturday, 21 November".
+    const at = new Date(d.today + 'T12:00:00');
+    const dayLine = `${at.toLocaleDateString('en-GB', { weekday: 'long' })}, ${at.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`;
+    head.append(el('span', 'td-kicker', [d.title, dayLine].filter(Boolean).join(' · ')), hi);
     const slot = el('div');
     const top = el('div');
     // Notifications behind a bell at the top right (the owner, 15 Nov 2026): the red count shows what is new; a press opens them over

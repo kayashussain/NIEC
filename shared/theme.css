@@ -4143,3 +4143,9 @@ html body .td-view-dot { top: 3px; right: 2px; background: #b42318; }
 html body .conflict-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: nowrap; margin: 0 24px 8px; padding: 10px 14px; border: 1px solid #b42318; border-radius: 10px; background: #f7f7f7; color: #b42318; font-weight: 600; box-shadow: none; }
 html body .conflict-banner[hidden] { display: none; }
 html body .conflict-banner .btn { flex: none; }
+/* 🔴 CSS CHANGED (2026-11-22): Today matches the approved design | from: "Tasks" as a title with Today, Later and Missing details at the right and the search box on its own line below; at the top "APPLICATION TEAM" in small capitals, the greeting, then the date on its own line | to: Today, Later and Missing details at the left with the search box beside them on one line, no "Tasks" title; at the top one line "Application Team · Saturday, 22 November" in normal letters, then the greeting (the Board of Admin and the Manager keeps its head) */
+html body .td-tasks-head.td-toolbar { justify-content: flex-start; align-items: center; flex-wrap: nowrap; gap: 12px; margin-bottom: 12px; }
+html body .td-tasks-head.td-toolbar .td-views { flex: none; margin: 0; }
+html body .td-tasks-head.td-toolbar .td-search { flex: 1 1 auto; min-width: 0; margin: 0; }
+html body .td-tasks-head.td-toolbar .td-search-field { flex: 1 1 auto; max-width: none; }
+html body .td-hello .td-kicker { margin-bottom: 4px; color: #333; font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; }
