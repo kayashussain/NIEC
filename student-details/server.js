@@ -21,7 +21,7 @@ const { uniqueNames } = require('../counselor-incentive/incentive-data');
 const { createIncentive } = require('../counselor-incentive/incentive');
 const { createIncentiveLock } = require('../shared/incentive-lock');
 const {
-  blankWorkbook, ensureRowIds, migrateWorkbook, isValidWorkbook, mergeWorkbooks, createHistory, describeChanges,
+  blankWorkbook, ensureRowIds, migrateWorkbook, isValidWorkbook, mergeWorkbooks, cellClashes, createHistory, describeChanges,
 } = require('./workbook');
 const { createCards, ROW_ID } = require('./cards');
 const { createMessages } = require('./messages');
@@ -514,6 +514,19 @@ function teamSave(req, parsed, { checked = false } = {}) {
   const rowsNow = new Map();
   current.sheets.forEach((s) => s.rows.forEach((r) => rowsNow.set(`${s.id}\u0000${r._id}`, r)));
   const seesNow = (row) => viewFor(req.user, { sheets: [{ rows: [row] }] }).sheets[0].rows.length > 0;
+  // A cell someone else changed after this page's copy, to a value other than this save's, is not overwritten silently (see cellClashes).
+  if (behind) {
+    const baseRows = new Map();
+    base.sheets.forEach((s) => s.rows.forEach((r) => baseRows.set(`${s.id}\u0000${r._id}`, r)));
+    const clash = changes.filter((c) => {
+      if (c.col.startsWith('_')) return false;
+      const b = baseRows.get(`${c.sheetId}\u0000${c.rowId}`); const n = rowsNow.get(`${c.sheetId}\u0000${c.rowId}`);
+      if (!b || !n) return false;
+      const bv = String(b[c.col] ?? ''); const nv = String(n[c.col] ?? ''); const mv = String(c.value ?? '');
+      return nv !== bv && nv.trim() !== mv.trim();
+    });
+    if (clash.length) return { status: 409, body: { error: 'conflict', revision: current.revision, clash: clash.slice(0, 5).map((c) => { const r = rowsNow.get(`${c.sheetId}\u0000${c.rowId}`); return { rowId: c.rowId, name: [r['FIRST NAME'], r['LAST NAME']].filter(Boolean).join(' '), col: c.col }; }) } };
+  }
   const updates = new Map(); // "sheet\0row" -> { col: value }
   for (const c of changes) {
     const key = `${c.sheetId}\u0000${c.rowId}`;
@@ -623,6 +636,9 @@ async function handleSave(req, res) {
     }
     const base = history.get(parsed.baseRevision);
     if (!base) return sendJSON(res, 409, { error: 'conflict', revision: current.revision });
+    // A cell someone else changed meanwhile to another value is never overwritten without a word: the page says so and reloads.
+    const clashes = cellClashes(base, current, mine);
+    if (clashes.length) return sendJSON(res, 409, { error: 'conflict', revision: current.revision, clash: clashes.slice(0, 5) });
     const before = current;
     const merged = { revision: current.revision + 1, ...mergeWorkbooks(base, current, mine) };
     writeWorkbook(merged);

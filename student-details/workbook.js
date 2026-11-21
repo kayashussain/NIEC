@@ -236,6 +236,24 @@ function mergeFields(base, theirs, mine, skip = []) {
   return out;
 }
 
+// The cells two people changed to different values since the copy one of them started from (`base`): someone else saved one value
+// (`theirs`, what is stored now) and this save (`mine`) carries another. Such a save is refused rather than letting the last one win
+// without anyone knowing (the review of 21 Nov 2026). Inner columns (starting with _) are not counted. [{ rowId, name, col }]
+function cellClashes(base, theirs, mine) {
+  const index = (wb) => { const m = new Map(); ((wb && wb.sheets) || []).forEach((sh) => (sh.rows || []).forEach((r) => { if (r && r._id) m.set(r._id, r); })); return m; };
+  const b = index(base); const t = index(theirs); const out = [];
+  index(mine).forEach((m, id) => {
+    const br = b.get(id); const tr = t.get(id);
+    if (!br || !tr) return;
+    new Set([...Object.keys(m), ...Object.keys(tr)]).forEach((col) => {
+      if (col.startsWith('_')) return;
+      const bv = br[col] ?? ''; const tv = tr[col] ?? ''; const mv = m[col] ?? '';
+      if (!same(tv, bv) && !same(mv, bv) && !same(tv, mv)) out.push({ rowId: id, name: [m['FIRST NAME'], m['LAST NAME']].filter(Boolean).join(' '), col });
+    });
+  });
+  return out;
+}
+
 // Merges two lists of records keyed by `key`. A record deleted on one side stays deleted unless the
 // other side edited it (then the edit is kept, so no one's typing is lost).
 function mergeRecords(base, theirs, mine, key, mergeOne) {
@@ -379,5 +397,6 @@ module.exports = {
   isValidWorkbook,
   mergeOrder,
   mergeWorkbooks,
+  cellClashes,
   createHistory,
 };

@@ -97,6 +97,11 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await admin('GET', '/api/tasks/unread')).json.count, 0, 'read: the dot goes');
   await admin('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { comment: 'Done, it is in your inbox.' });
   assert.strictEqual((await app('GET', '/api/tasks/unread')).json.count, 1, 'the team that gave it sees the answer as new');
+  // Mark all as read on Today is one request, and it only marks tasks this person may see.
+  assert.strictEqual((await mock('POST', '/api/tasks/seen', { ids: [headTask.id] })).json.marked, 0, 'another team marks nothing');
+  assert.strictEqual((await app('GET', '/api/tasks/unread')).json.count, 1);
+  assert.strictEqual((await app('POST', '/api/tasks/seen', { ids: [headTask.id] })).json.marked, 1);
+  assert.strictEqual((await app('GET', '/api/tasks/unread')).json.count, 0, 'all read at once');
   assert.strictEqual((await admin('GET', '/api/tasks/unread')).json.count, 0, 'their own comment is not new to Admin');
   assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { comment: 'x' })).status, 404, 'another team cannot see the student');
   assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks/${headTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'only Admin ticks a task given to Admin');

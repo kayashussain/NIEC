@@ -355,7 +355,7 @@
       clear.addEventListener('click', async () => {
         clear.disabled = true;
         const ids = [...new Set(fresh.map((n) => n.task))];
-        await Promise.all(ids.map((x) => api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {})));
+        try { await api('/api/tasks/seen', { ids: ids.map((x) => x.id) }); } catch (e) { clear.disabled = false; window.NiecUI.toast(e.message || 'Could not mark them as read. Try again.', { type: 'error' }); return; }
         ids.forEach((x) => { x.news = []; x.unread = 0; (x.history || []).forEach((n) => { n.isNew = false; }); });
         window.dispatchEvent(new Event('isr-tasks-read'));
         refresh();

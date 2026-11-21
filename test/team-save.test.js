@@ -78,6 +78,22 @@ test('team saves from an old page are checked against the students as they are n
   bad.sheets[0].rows[0]['COURSE NAME'] = { big: 'x' };
   assert.strictEqual((await staff('POST', '/api/data', { sheets: bad.sheets, activeSheetId: bad.activeSheetId, baseRevision: view.revision })).status, 400);
 
+  // Two pages change the same detail from the same copy: the second is refused and told which detail, never silently winning.
+  {
+    const tabA = (await admin('GET', '/api/data')).json;
+    const tabB = JSON.parse(JSON.stringify(tabA));
+    tabA.sheets[0].rows.find((x) => x._id === 'r2').REMARKS = 'From tab A';
+    assert.strictEqual((await admin('POST', '/api/data', { sheets: tabA.sheets, activeSheetId: tabA.activeSheetId, baseRevision: tabA.revision })).status, 200);
+    tabB.sheets[0].rows.find((x) => x._id === 'r2').REMARKS = 'From tab B';
+    const late = await admin('POST', '/api/data', { sheets: tabB.sheets, activeSheetId: tabB.activeSheetId, baseRevision: tabB.revision });
+    assert.strictEqual(late.status, 409);
+    assert.strictEqual(late.json.clash[0].col, 'REMARKS');
+    assert.strictEqual((await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2').REMARKS, 'From tab A', 'the first save stays');
+    // A different detail of the same student from the old copy still merges.
+    tabB.sheets[0].rows.find((x) => x._id === 'r2').REMARKS = 'From tab A';
+    tabB.sheets[0].rows.find((x) => x._id === 'r2')['COURSE NAME'] = 'BSc From B';
+    assert.strictEqual((await admin('POST', '/api/data', { sheets: tabB.sheets, activeSheetId: tabB.activeSheetId, baseRevision: tabB.revision })).status, 200);
+  }
   // The sheet's own save is never a way round the duplicate check: a second row with an email already on the sheet is refused.
   {
     let w = (await admin('GET', '/api/data')).json;

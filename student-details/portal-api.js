@@ -2973,10 +2973,32 @@ function createPortalApi({
       const mineFrom = { teams: taskTeamsOf(req.user).map(teamLabel), allTeams: teamsOf(req.user).length, ownChosen: Boolean(req.user.taskTeam && teamsOf(req.user).includes(req.user.taskTeam)), choices: teamsOf(req.user).map((id) => ({ id, label: teamLabel(id) })) };
       // For Admin and the Manager: who is in two or more teams with no own team yet (they get every team's tasks and work list).
       const noOwnTeam = everyone && accounts && accounts.people ? accounts.people().filter((p) => p.role !== 'admin' && (p.departments || []).length > 1 && !p.taskTeam).map((p) => p.name) : [];
-      sendJSON(res, 200, { tasks: out.slice(0, 500), today: cards.today(), mineFrom, noOwnTeam, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS(), handTeams: handTeamsFor(req.user) });
+      // A long list is shortened by leaving out only finished tasks with nothing new on them (the oldest first): every open task and
+      // every task with something new always comes, so Today's counts, the bell and the menu count always match and can be cleared.
+      const keep = out.filter((t) => !t.done || t.unread > 0 || (t.news && t.news.length));
+      const rest = out.filter((t) => !keep.includes(t));
+      const shown = keep.length >= 500 ? keep : [...keep, ...rest.slice(0, 500 - keep.length)];
+      shown.sort((a, b) => (a.done - b.done) || lastWord(b).localeCompare(lastWord(a)));
+      sendJSON(res, 200, { tasks: shown, today: cards.today(), mineFrom, noOwnTeam, canAssign: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS(), handTeams: handTeamsFor(req.user) });
       return true;
     }
     // How much is new on the tasks for this person (the red dot on Today in the menu): new comments, and tasks just given to them.
+    // Mark all as read on Today: one request for every task it lists (it once sent one request per task, hundreds at a time).
+    if (urlPath === '/api/tasks/seen' && req.method === 'POST') {
+      const body = await bodyOf(req, res, 256 * 1024);
+      if (!body) return true;
+      const want = new Set((Array.isArray(body.ids) ? body.ids : []).slice(0, 5000).map((x) => text(x)));
+      const all = cards.all();
+      const everyoneS = canAssign(req.user);
+      const ids = [];
+      for (const { row } of rowIndex().values()) {
+        const c = all[row._id];
+        (c && Array.isArray(c.tasks) ? c.tasks : []).forEach((t) => { if (want.has(t.id) && (everyoneS || forMe(req.user, t) || gaveIt(req.user, t))) ids.push(t.id); });
+      }
+      if (ids.length) cards.markSeen(req.user.username, ids);
+      sendJSON(res, 200, { ok: true, marked: ids.length });
+      return true;
+    }
     if (urlPath === '/api/tasks/unread' && req.method === 'GET') {
       const all = cards.all();
       const seen = cards.seenBy(req.user.username);

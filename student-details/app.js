@@ -2283,7 +2283,17 @@
         body: JSON.stringify(patch ? { patch, baseRevision: revision } : { sheets, activeSheetId, baseRevision: revision }),
       });
       if (res.status === 412) { sendFull = true; saveQueued = true; return; }
-      if (res.status === 409) { showConflict(); return; }
+      if (res.status === 409) {
+        const why = await res.json().catch(() => ({}));
+        // The same student already on the sheet: say so (nothing was saved).
+        if (why.duplicate) { showRefused(why.error); return; }
+        showConflict();
+        // Someone else changed the same detail meanwhile: name it, so the person knows what to look at after reloading.
+        const c = Array.isArray(why.clash) && why.clash[0];
+        const span = conflictBanner.querySelector('span');
+        if (c && span) span.textContent = `Someone else changed ${String(c.col).toLowerCase()}${c.name ? ` of ${c.name}` : ''} meanwhile, so your edit was not saved. Reload to see theirs, then change it again if needed.`;
+        return;
+      }
       if (res.status === 403) { showRefused((await res.json().catch(() => ({}))).error); return; }
       if (!res.ok) throw new Error('save failed');
       sendFull = false;
