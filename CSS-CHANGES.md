@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-22 · shared/theme.css (end) · the folded menu · from: a thin grey line under the menu button when the menu is folded (the divider under the logo stayed while the logo was hidden) · to: no line, the folded rail shows only the menu button · why: the owner asked why there was a thin line in the folded menu (22 Nov 2026). The open menu keeps its divider under the logo.**
+
 - **2026-11-22 · shared/theme.css (end) and student-details/today-page.js · Today's points 7 and 8 taken back · from: Today, Later and Missing details at the left with the search box beside them on one line (no "Tasks" title), and one line "Application Team · Sunday, 22 November" above the greeting · to: as before: "Tasks" as a title with the switches at the right and the search box below, and the team name, the greeting and the date on its own line · why: the owner saw the page break when the menu was folded on the Application Team's Today and asked to keep what was there before (22 Nov 2026).**
 
 - **2026-11-21 · shared/theme.css · the "changed elsewhere, your edit was not saved" bar on All Students · from: plain red words across the full width, a hairline running past the sheet, Reload on its own line · to: a panel lined up with the sheet like the filter bar (10px corners, firm red border on #f7f7f7, red words, Reload latest on the same line) · why: the council's design review (21 Nov 2026); the bar now names the detail someone else changed, so it shows more often and must look finished**

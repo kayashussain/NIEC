@@ -4143,3 +4143,5 @@ html body .td-view-dot { top: 3px; right: 2px; background: #b42318; }
 html body .conflict-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: nowrap; margin: 0 24px 8px; padding: 10px 14px; border: 1px solid #b42318; border-radius: 10px; background: #f7f7f7; color: #b42318; font-weight: 600; box-shadow: none; }
 html body .conflict-banner[hidden] { display: none; }
 html body .conflict-banner .btn { flex: none; }
+/* 🔴 CSS CHANGED (2026-11-22): the folded menu | from: a thin grey line under the menu button when the menu is folded (the divider under the logo stayed while the logo was hidden) | to: no line: the folded rail shows only the menu button */
+html[data-nav="closed"] body .niec-brand { border-bottom: 0; padding-bottom: 6px; }
