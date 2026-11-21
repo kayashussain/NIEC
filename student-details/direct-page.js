@@ -300,7 +300,7 @@
 
     // 3. Contacts
     const s3 = step(3, 'Contacts', 'The first one shows on the list.');
-    const contacts = repeater([['name', 'Name', 'e.g. Braj Jha (Regional Manager)'], ['phone', 'Phone', 'e.g. +44 7833 769210'], ['email', 'Email', 'name@university.ac.uk']], uni.contacts, 'Add a contact');
+    const contacts = repeater([['name', 'Name', 'e.g. Sam Taylor (Regional Manager)'], ['phone', 'Phone', 'e.g. +44 7700 900000'], ['email', 'Email', 'name@university.ac.uk']], uni.contacts, 'Add a contact');
     s3.append(contacts.node);
 
     // 4. Commission and payment

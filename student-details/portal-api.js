@@ -1684,6 +1684,7 @@ function createPortalApi({
       if (gone && (gone.applied || gone.offer) && !Teams.isAdmin(req.user)) { sendJSON(res, 400, { error: 'This university has an application or offer recorded: change it with Update (for example refused or withdrawn) instead of removing it.' }); return true; }
       if (gone && assignedOf(card).some((a) => a.id === sub) && !Teams.isAdmin(req.user)) { sendJSON(res, 400, { error: 'This course was given to the team and has no answer yet: answer it (applied, offer, refused, withdrawn or not submitted) instead of removing it.' }); return true; }
       out = cards.removeOption(rowId, sub, by(req));
+      if (!out.error && gone) note(req, [`${who}: removed the option ${[gone.university, gone.course].filter(Boolean).join(', ')}`]);
     } else if (part === 'options' && sub) {
       const before = (card.options || []).find((o) => o.id === sub) || null;
       // A refusal, a withdrawal or "not submitted" says why, and a course given to the team is not taken back by the team (needed to track
@@ -1694,6 +1695,11 @@ function createPortalApi({
         if (before.sent && body.sent !== undefined && !text(body.sent) && assignedOf(card).some((a) => a.id === sub) && !Teams.isAdmin(req.user)) { sendJSON(res, 400, { error: 'This course was given to the team and has no answer yet: answer it instead of taking it back.' }); return true; }
       }
       out = cards.updateOption(rowId, sub, body, by(req));
+      if (!out.error && before) {
+        const after = (cards.get(rowId).options || []).find((o) => o.id === sub) || {};
+        const changed = Object.keys(after).filter((k) => !['updatedAt', 'updatedBy', 'at', 'by'].includes(k) && JSON.stringify(after[k] ?? '') !== JSON.stringify(before[k] ?? ''));
+        if (changed.length) note(req, [`${who}: changed the option ${[before.university, before.course].filter(Boolean).join(', ')} (${changed.join(', ')})`]);
+      }
       // What the Application Team records on the card (the day submitted, the answer) is also a note, so the student's timeline shows
       // every step day by day (the owner, 17 Nov 2026).
       if (!out.error && before) { const after = (cards.get(rowId).options || []).find((o) => o.id === sub); const line = applicationNote(before, after); if (line) cards.addNote(rowId, { kind: 'note', text: line }, by(req)); out = { ...out, card: cards.get(rowId) }; }
@@ -2138,6 +2144,12 @@ function createPortalApi({
       if ((card.options || []).length) why.push('has university options');
       if ((card.messages || []).length) why.push('was sent a message');
       if ((card.notes || []).some((n) => !LIST_NOTE.test(String(n.text || '')))) why.push('has notes from the team');
+      // Anything a person typed counts too (the review of 21 Nov 2026: a student given a course, a test date and a saved profile was
+      // still listed for removal): a saved profile, remarks, a course, a test, an offer or a later step's date.
+      if (card.profile && card.profile.savedAt) why.push('has a saved profile');
+      const typed = ['REMARKS', 'COURSE NAME', 'LANGUAGE TEST DATE', 'OFFER RECEIVED DATE', 'PAYMENT DATE', 'CAS RECEIVED DATE', 'VISA LODGE DATE', 'VISA RECEIVED DATE'].filter((c) => text(row[c]));
+      if (typed.length) why.push('has details typed in');
+      if (card.checks && Object.values(card.checks).some(Boolean)) why.push('has documents ticked');
       if (why.length) worked.push({ ...who, why: `Worked on (${why.join(', ')}): stays` });
       else remove.push(who);
     }
