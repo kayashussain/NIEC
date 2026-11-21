@@ -358,7 +358,10 @@ function createAccounts({
     }
     const wantsPage = req.method === 'GET' && String(req.headers.accept || '').includes('text/html');
     if (wantsPage) {
-      send(res, 302, '', { Location: '/login?next=' + encodeURIComponent(homePath(req)), 'Cache-Control': 'no-store' });
+      // The login page never names the Incentive page, not even in its address (the owner: the login says nothing about incentives).
+      const back = homePath(req);
+      const hidden = /^\/(incentive|commission)(\/|$)/i.test(String(back));
+      send(res, 302, '', { Location: hidden ? '/login' : '/login?next=' + encodeURIComponent(back), 'Cache-Control': 'no-store' });
     } else {
       sendJSON(res, 401, { error: 'Please log in again.' });
     }

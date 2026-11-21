@@ -189,6 +189,25 @@ function createIncentive({ dataDir, studentDataFile, getWorkbook, activity }) {
     return v !== undefined && [0, 1, 2].includes(n) ? n : (Number(fallback) || 0);
   }
 
+  // A typed amount as a number, or NaN: digits with an optional decimal point and thousands commas ("1,500.50"), nothing else
+  // (no minus, no "e" exponent: "7e4" would otherwise be read as 7, and "1.5e3" checked as 1500 but saved as 1.5).
+  function plainAmount(v) {
+    const t = String(v ?? '').trim().replace(/[£$₹]|^Rs\.?\s*|^NPR\s*/gi, '').replace(/,/g, '');
+    return /^(?:\d+(?:\.\d+)?|\.\d+)$/.test(t) ? parseFloat(t) : NaN;
+  }
+  const COMMISSION_FIELDS = ['enrollmentCommission', 'enrollmentCommissionUni', 'flywireFeePayment', 'flywireCommission', 'loanCommission', 'newPartnershipCommission', 'selfStudentCommission', 'uniCommissionRate'];
+  // Why a save's amounts cannot be kept, or '' when they are fine. Only the fields sent are checked; an empty box clears a field.
+  function moneyProblem(body, fields, caps = {}) {
+    for (const f of fields) {
+      if (!body || !(f in body) || body[f] === null || body[f] === '') continue;
+      const v = typeof body[f] === 'number' ? body[f] : plainAmount(body[f]);
+      if (!Number.isFinite(v) || v < 0) return 'Please type an amount of 0 or more, in plain digits (for example 1500 or 1,500.50).';
+      if (v >= 1e12) return 'That amount is too large.';
+      if (caps[f] !== undefined && v > caps[f]) return `That rate can be at most ${caps[f]}%.`;
+    }
+    return '';
+  }
+
   // A number from the page. Anything that is not a finite, sensible amount (letters, Infinity, 1e300) keeps the saved value.
   function num(v, fallback) {
     // "1,500" is 1500 (a plain parseFloat read it as 1); text without any number keeps the saved value.
@@ -286,6 +305,9 @@ function createIncentive({ dataDir, studentDataFile, getWorkbook, activity }) {
         const id = decodeURIComponent(commMatch[1]);
         if (RESERVED_KEYS.has(id)) return sendJSON(res, 400, { error: 'invalid id' });
         const body = await readJSONBody(req, MAX_BODY_BYTES);
+        // An amount is a plain number of 0 or more (a typed "-500" or "7e4" is refused, not saved as -500 or 7), and a rate is at most 100%.
+        const bad = moneyProblem(body, COMMISSION_FIELDS, { uniCommissionRate: 100 });
+        if (bad) return sendJSON(res, 400, { error: bad });
         const all = readJSONStrict(COMMISSIONS_FILE, {});
         const existing = all[id] || {};
         // Only the fields in the body change; the rest keep their saved values, so two people editing
@@ -323,7 +345,7 @@ function createIncentive({ dataDir, studentDataFile, getWorkbook, activity }) {
         const RANGES = { previousAdvance: [0, 1e12], basicSalary: [0, 1e9], salaryMonths: [0, 24] };
         for (const [f, [lo, hi]] of Object.entries(RANGES)) {
           if (!(f in body) || body[f] === null || body[f] === '') continue;
-          const v = typeof body[f] === 'number' ? body[f] : Number(String(body[f]).replace(/,/g, ''));
+          const v = typeof body[f] === 'number' ? body[f] : plainAmount(body[f]);
           if (!Number.isFinite(v) || v < lo || v > hi) return sendJSON(res, 400, { error: `${f} must be a number from ${lo} to ${hi}` });
         }
         // The live pound rate, when a first payment may need it, is fetched BEFORE the saved file is read: waiting for the

@@ -89,17 +89,20 @@ function createPortalApi({
     const own = inTeam.filter((p) => !p.taskTeam || !(p.departments || []).includes(p.taskTeam) || p.taskTeam === id);
     return (own.length ? own : inTeam).map((p) => p.name);
   };
+  // A team nobody (working) belongs to: a task given or handed to it would reach no one's Today. Only known when the accounts are there.
+  const nobodyIn = (id) => Boolean(accounts && accounts.people) && membersOf(id).length === 0;
   const TASK_TEAMS = () => [...Object.entries(Teams.DEPARTMENTS).map(([id, d]) => ({ id, label: d.label, members: membersOf(id) })), { id: HEAD, label: headLabel(), members: membersOf(HEAD) }];
   const teamLabel = (id) => (id === HEAD ? headLabel() : Teams.DEPARTMENTS[id] ? Teams.DEPARTMENTS[id].label : id);
-  const canAssign = (user) => Teams.isAdmin(user) || Teams.isManager(user);
+  // A view-only account (a Manager with no team) only looks: it never gives, changes, retags or removes a task.
+  const canAssign = (user) => Teams.isAdmin(user) || (Teams.isManager(user) && !Teams.isReadOnly(user));
   // A branch gives tasks too, about its own students, to the Application Team and the Mock Team (the owner, 14 Nov 2026). Whoever gave
   // a task removes it; Admin and the Manager remove any.
   const isBranchUser = (user) => teamsOf(user).some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source);
   const BRANCH_TASK_TEAMS = ['application', 'mock'];
   const assignTeamsFor = (user) => {
     if (Teams.isAdmin(user)) return TASK_TEAMS().filter((t) => t.id !== HEAD);
-    if (Teams.isManager(user)) return TASK_TEAMS();
     if (Teams.isReadOnly(user)) return [];
+    if (Teams.isManager(user)) return TASK_TEAMS();
     // A branch gives the Application Team and the Mock Team tasks about its students, and Admin.
     if (isBranchUser(user)) return TASK_TEAMS().filter((t) => t.id === HEAD || BRANCH_TASK_TEAMS.includes(t.id));
     // A team gives tasks to every other team, every branch and Admin, never to its own team (the owner, 15 Nov 2026: the Mock Team
@@ -1437,6 +1440,7 @@ function createPortalApi({
         const allowedTeams = assignTeamsFor(req.user).map((t) => t.id);
         if (!allowedTeams.length) { sendJSON(res, 403, { error: 'Your account cannot give tasks.' }); return true; }
         if (!allowedTeams.includes(text(body.team))) { sendJSON(res, 400, { error: 'Choose the team.' }); return true; }
+        if (nobodyIn(text(body.team))) { sendJSON(res, 400, { error: `Nobody has ${teamLabel(text(body.team))} yet, so the task would reach no one. Give it to another team, or add someone to this team on Users.` }); return true; }
         out = cards.addTask(rowId, body, by(req));
         if (!out.error) note(req, [`${who2}: gave ${teamLabel(out.task.team)} a task: ${out.task.text.slice(0, 120)}`], 'Gave a task');
       } else {
@@ -1470,6 +1474,7 @@ function createPortalApi({
           if (!mayHand(req.user, task)) { sendJSON(res, 403, { error: 'Only the team the task is with, whoever gave it, Admin or the Manager can reassign it.' }); return true; }
           if (!TASK_TEAMS().some((t) => t.id === text(body.handTo))) { sendJSON(res, 400, { error: 'Choose the team.' }); return true; }
           if (!handTeamsFor(req.user).some((t) => t.id === text(body.handTo))) { sendJSON(res, 403, { error: 'Your account cannot give a task to that team.' }); return true; }
+          if (nobodyIn(text(body.handTo))) { sendJSON(res, 400, { error: `Nobody has ${teamLabel(text(body.handTo))} yet, so the task would reach no one. Choose another team.` }); return true; }
           const from = task.team;
           out = cards.handTask(rowId, sub, { team: text(body.handTo), reason: body.reason }, by(req));
           if (!out.error) { cards.markSeen(req.user.username, [task.id]); note(req, [`${who2}: handed the task from ${teamLabel(from)} to ${teamLabel(out.task.team)}: ${String(body.reason).slice(0, 120)}`], 'Handed a task on'); }
@@ -1526,7 +1531,8 @@ function createPortalApi({
             // "Nothing to record" is not an answer while courses given to the team are still unanswered.
             const ownC = courseOf(cards.get(found.row._id), task);
             const pendingAssigned = ownC ? assignedOf(cards.get(found.row._id)).filter((a) => a.id === ownC.id) : assignedOf(cards.get(found.row._id));
-            if (f.generic !== true && f.waiting !== true && Fields.taskTag(task, text(found.row[STATUS])) === 'application' && pendingAssigned.length && !(plan0 && plan0.options.length)) {
+            // No word in the request skips this (an old "generic" or "waiting" flag once did): every course given to the team is answered.
+            if (Fields.taskTag(task, text(found.row[STATUS])) === 'application' && pendingAssigned.length && !(plan0 && plan0.options.length)) {
               sendJSON(res, 400, { error: 'Courses were given to the team and have no answer yet: choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why) for each.' }); return true;
             }
             // An answer to the task's question says what happened by itself; without one, a few words are needed.

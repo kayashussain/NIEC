@@ -29,12 +29,13 @@ function createIncentiveLock({ password = process.env.INCENTIVE_PASSWORD, now = 
     open.forEach((until, id) => { if (until <= t) open.delete(id); });
   }
 
-  // Is this login session unlocked right now? Using the page keeps it open (the idle time starts again).
-  function isUnlocked(req) {
+  // Is this login session unlocked right now? Only a person using the page keeps it open (the idle time starts again):
+  // `active` is false for the page's own background refreshes, so a tab left open on a desk still locks itself after 20 minutes.
+  function isUnlocked(req, { active = true } = {}) {
     if (!configured || !req.sessionId) return false;
     const until = open.get(req.sessionId);
     if (!until || until <= now()) { open.delete(req.sessionId); return false; }
-    open.set(req.sessionId, now() + IDLE_MS);
+    if (active) open.set(req.sessionId, now() + IDLE_MS);
     return true;
   }
 

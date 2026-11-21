@@ -133,3 +133,15 @@ test('Incentive in the real app: Admin only, password first, and the connector n
     assert.strictEqual(r.headers.get('location'), '/incentive/');
   });
 });
+
+test('the page\'s own background refreshes never keep Incentive open: it still locks after 20 minutes nobody uses it', () => {
+  const { createIncentiveLock } = require('../shared/incentive-lock');
+  const clock = { t: 0 };
+  const lock = createIncentiveLock({ password: 'Gate Pass 1', now: () => clock.t });
+  const r = { sessionId: 's1', user: { id: 'u1' } };
+  assert.ok(lock.unlock(r, 'Gate Pass 1').ok);
+  for (let i = 0; i < 5; i += 1) { clock.t += 5 * 60 * 1000; lock.isUnlocked(r, { active: false }); }
+  assert.strictEqual(lock.isUnlocked(r, { active: false }), false, 'locked after 25 minutes of refreshes only');
+  assert.ok(lock.unlock(r, 'Gate Pass 1').ok);
+  for (let i = 0; i < 5; i += 1) { clock.t += 5 * 60 * 1000; assert.ok(lock.isUnlocked(r, { active: true })); }
+});

@@ -205,6 +205,9 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.ok(!(await mock('GET', `/api/cards/${sita}`)).json.assignTeams.some((x) => x.id === 'mock'), 'the Mock Team does not give itself a task');
   assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'mock', reason: 'x' })).status, 403, 'a task is not reassigned to the team it is with');
   assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'application', reason: 'Back to us' })).status, 403, 'nor by a team to itself');
+  // A team or branch with nobody in it would get a task no one sees: it is refused until someone is in it.
+  assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'chitwan', reason: 'The branch meets the student' })).status, 400, 'nobody is in the branch yet');
+  await login('chitra', ['chitwan']);
   assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'chitwan', reason: 'The branch meets the student' })).status, 200, 'a branch can be given it');
   // A team that nobody has as their own team still has someone to do its tasks: everyone in it.
   const ravi = await login('ravi', ['application', 'followup']);

@@ -176,8 +176,13 @@ const applyThrough = createApplyThrough(DATA_DIR, { wanted: () => b2b.all().some
 const backups = createBackups(DATA_DIR, () => ({
   students: current, facts: facts.all(), partners: direct.all(),
   cards: cards.all(), b2b: b2b.all(), agents: agents.all(), planning: planning.all(), templates: messages.stored(), sourceOptions: sourceOptions.stored(),
+  // The Incentive page's own figures are kept in the same daily copy, so a lost or damaged file can be found again. They stay in the
+  // file on the server only: no page shows this part of a backup, so nothing gets past the Incentive password.
+  incentives: { commissions: readIncentiveFile('commissions.json', null), advances: readIncentiveFile('advances.json', null) },
 }));
-setInterval(() => backups.tick(), 5 * 60 * 1000).unref();
+// No daily copy is taken while the students could not be read (a damaged file and no good copy): an empty copy would fill the day's place.
+const dailyBackup = () => { if (current) backups.tick(); };
+setInterval(dailyBackup, 5 * 60 * 1000).unref();
 
 // The Incentive page's saved figures (commissions, advances, exchange rate), read-only, so the same Claude connector can also answer
 // questions about incentives. They live in the Incentive page's data folder: COUNSELOR_DATA_DIR, or (as on cPanel and with
@@ -259,7 +264,10 @@ async function handleIncentive(req, res, urlPath) {
     if (result.wrong) activity.record(req, req.user, 'Wrong Incentive password', { changes: ['Typed a wrong Incentive password'] });
     return sendJSON(res, result.status, { error: result.error });
   }
-  if (!incentiveLock.isUnlocked(req)) {
+  // A save, opening the page, or a refresh the page marks as following something the person did, counts as using it; the page's
+  // timed refreshes (the figures every 20 seconds, the exchange rate every 5 minutes) do not, so they never keep it open by themselves.
+  const active = req.method !== 'GET' || !api || req.headers['x-isr-active'] === '1';
+  if (!incentiveLock.isUnlocked(req, { active })) {
     if (api) return sendJSON(res, 403, { error: 'Enter the Incentive password first.', locked: true });
     if (inner === '/' || inner === '/index.html') return incentive.serveLocked(req, res);
     return send(res, 302, '', { Location: '/incentive/' });
@@ -1076,7 +1084,7 @@ async function studentGate(req, res, urlPath) {
 const server = http.createServer(async (req, res) => {
   try {
     const urlPath = req.url.split('?')[0];
-    backups.tick(); // the day's 6 p.m. copy, if it is due and missing (the host may have put the server to sleep)
+    dailyBackup(); // the day's 6 p.m. copy, if it is due and missing (the host may have put the server to sleep)
     if (urlPath === '/login' && req.method === 'GET') {
       req.url = '/login.html';
       return serveShared(req, res);

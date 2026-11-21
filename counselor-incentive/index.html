@@ -525,6 +525,12 @@ function cellText(key, v) {
 // Reads a typed or pasted amount: "1,250.50" everywhere, "Rs. 1250" in a rupee cell, "£1250" in the pound cell and
 // "15%" in Commission %. Blank means 0. Returns null when it isn't a number, or carries the wrong sign for the cell:
 // "£500" pasted into a rupee cell is refused rather than quietly saved as Rs 500.
+// The page locks itself after 20 minutes nobody uses it (shared/incentive-lock.js). A refresh tells the server the person is here
+// only when they pressed, typed or scrolled in the last 2 minutes; the timed refreshes alone never keep the page open.
+let lastActive = Date.now();
+['pointerdown', 'keydown', 'wheel', 'input'].forEach((type) => document.addEventListener(type, () => { lastActive = Date.now(); }, { passive: true, capture: true }));
+const activeHeader = () => (Date.now() - lastActive < 2 * 60 * 1000 ? { 'x-isr-active': '1' } : {});
+
 function parseMoney(text, key) {
   const col = COLUMNS[colIndex(key)] || {};
   let s = String(text ?? '').trim();
@@ -534,7 +540,8 @@ function parseMoney(text, key) {
   // A comma only separates thousands; letters (1e3, 0x10) and any other sign are not an amount.
   s = s.replace(/,(?=\d{3}(?:\D|$)|\d{2},)/g, '');
   if (!s) return 0;
-  return /^-?(?:\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : null;
+  // No minus: an incentive, a commission or a loan is never below 0 (the server refuses it too).
+  return /^(?:\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : null;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -638,6 +645,34 @@ const scheduleSaveAdvance = createSaver(pendingAdvances, async (intake, leaving)
   }
   return res;
 });
+// When the page locks (20 minutes unused, or the password changed), anything typed and not saved yet is kept in this tab and
+// sent again once the password is typed, so a lock never throws an edit away (the review of 21 Nov 2026 lost one this way).
+const KEEP_KEY = 'isrIncentiveUnsaved';
+function keepUnsaved() {
+  const c = {}; Object.keys(unsavedFields).forEach((id) => { c[id] = {}; Object.keys(unsavedFields[id]).forEach((f) => { c[id][f] = (state.commissions[id] || {})[f]; }); });
+  const a = {}; Object.keys(unsavedAdvanceFields).forEach((intake) => { a[intake] = { fields: Object.keys(unsavedAdvanceFields[intake]), entry: state.advances[intake] || {} }; });
+  if (!Object.keys(c).length && !Object.keys(a).length) return;
+  try { sessionStorage.setItem(KEEP_KEY, JSON.stringify({ c, a })); } catch (e) { /* private window: nothing more can be done */ }
+}
+window.addEventListener('pagehide', keepUnsaved);
+function restoreUnsaved() {
+  let kept = null;
+  try { kept = JSON.parse(sessionStorage.getItem(KEEP_KEY) || 'null'); sessionStorage.removeItem(KEEP_KEY); } catch (e) { kept = null; }
+  if (!kept || typeof kept !== 'object') return;
+  Object.entries(kept.c || {}).forEach(([id, fields]) => {
+    state.commissions[id] = { ...(state.commissions[id] || {}), ...fields };
+    unsavedFields[id] = unsavedFields[id] || {};
+    Object.keys(fields).forEach((f) => { unsavedFields[id][f] = ++editNumber; });
+    scheduleSaveCommission(id);
+  });
+  Object.entries(kept.a || {}).forEach(([intake, { fields, entry }]) => {
+    const merged = { ...(state.advances[intake] || {}) };
+    (fields || []).forEach((f) => { (f === 'payments' ? ['payments', 'lockedRate'] : [f]).forEach((k) => { if (entry[k] === undefined) delete merged[k]; else merged[k] = entry[k]; }); noteAdvanceEdit(intake, f); });
+    state.advances[intake] = merged;
+    scheduleSaveAdvance(intake);
+  });
+  render();
+}
 // Anything typed but not saved yet is sent the moment the page is hidden or closed (the page lock follows it).
 window.__flushSaves = () => { scheduleSaveCommission.flush(); scheduleSaveAdvance.flush(); };
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') window.__flushSaves(); });
@@ -742,7 +777,7 @@ async function getExchangeRate() {
   // The server fetches a new rate every hour; asking it every few minutes keeps this page within that hour.
   if (exchangeRateCache && Date.now() - exchangeRateCache.at < 5 * 60 * 1000) return exchangeRateCache.result;
   try {
-    const res = await fetch(BASE + '/api/exchange-rate', { signal: AbortSignal.timeout(12000) });
+    const res = await fetch(BASE + '/api/exchange-rate', { signal: AbortSignal.timeout(12000), headers: activeHeader() });
     const data = await res.json();
     if (data.ok) {
       const result = { rate: data.rate, date: data.date, fetchedAt: data.fetchedAt || null, stale: Boolean(data.stale) };
@@ -814,8 +849,8 @@ let lastSnapshot = '';
 async function loadAll() {
   try {
     const [syncRes, commRes, advRes] = await Promise.all(['/api/sync', '/api/commissions', '/api/advances'].map((p) =>
-      fetch(BASE + p, { cache: 'no-store' }).then((r) => {
-        if (r.status === 403) { location.reload(); throw new Error('locked'); } // the password window ended: show the password page
+      fetch(BASE + p, { cache: 'no-store', headers: activeHeader() }).then((r) => {
+        if (r.status === 403) { keepUnsaved(); location.reload(); throw new Error('locked'); } // the password window ended: show the password page (edits kept)
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })));
@@ -1914,7 +1949,8 @@ document.addEventListener('visibilitychange', refreshIfIdle);
 
 renderHead();
 updateUndoRedoButtons();
-loadAll();
+// Edits kept when the page locked are put back once the figures have loaded (only then: a load that failed keeps them for the next).
+loadAll().then(() => { if (lastSnapshot) restoreUnsaved(); });
 </script>
 <span id="isr-ready" hidden></span>
 </body>
