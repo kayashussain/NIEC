@@ -2484,9 +2484,10 @@
 
   // The menu already has Follow-up for Admin, the Follow-up Team and the branches: the button is shown only to those without it
   // (never two controls for the same thing). The menu draws itself after the page, so this runs again whenever the menu changes.
+  // Never for the Application Team (the owner, 22 Nov 2026): following students up is not its work.
   function syncFollowupButton() {
     const bs = document.getElementById('bulkSend');
-    if (bs) bs.hidden = Boolean(me && Teams.isReadOnly(me)) || Boolean(document.querySelector('.niec-nav a[href="/bulk"]'));
+    if (bs) bs.hidden = !me || Teams.isReadOnly(me) || Teams.ownTeamApplication(me) || Boolean(document.querySelector('.niec-nav a[href="/bulk"]'));
   }
   { const menu = document.querySelector('.niec-header') || document.body; new MutationObserver(syncFollowupButton).observe(menu, { childList: true, subtree: menu !== document.body }); }
   const bulkBtn = document.getElementById('bulkSend');

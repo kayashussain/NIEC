@@ -1236,7 +1236,8 @@ const server = http.createServer(async (req, res) => {
       if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
       // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): no Dashboard, no Partners pages,
       // no Mock interviews for anyone whose own team is Application (Apply now on a university still shows the partner and its portal).
-      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides'].includes(urlPath)) return send(res, 302, '', { Location: home });
+      // Nor Follow-up (the owner, 22 Nov 2026): following students up is not the Application Team's work.
+      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk'].includes(urlPath)) return send(res, 302, '', { Location: home });
       if (urlPath === '/my-portal') return send(res, 302, '', { Location: '/today' }); // a student's own page; the team has the student card
       // Partners: one place for Partner Universities, B2B Partners and Agents (the owner, 17 Nov 2026). It opens the first of the three
       // this account may see; a switch at the top of each moves between them (partners-switch.js).

@@ -118,7 +118,7 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
 
   // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): Dashboard, Partners, Apply through
   // and Mock interviews send it back to Today; Apply now on a university still finds the partner.
-  for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides']) {
+  for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk']) {
     assert.strictEqual((await app('GET', page)).status, 302, page);
   }
   assert.strictEqual((await app('GET', '/today')).status, 200);
