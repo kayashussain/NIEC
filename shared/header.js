@@ -315,7 +315,8 @@
     .then((res) => (res.ok ? res.json() : null))
     .then((me) => {
       if (!me) return;
-      const fresh = JSON.stringify({ name: me.name, username: me.username, role: me.role, roleLabel: me.roleLabel, departments: me.departments || [] });
+      // The own team is kept too (the owner, 21 Nov 2026): the menu of someone whose own team is the Application Team depends on it.
+      const fresh = JSON.stringify({ name: me.name, username: me.username, role: me.role, roleLabel: me.roleLabel, departments: me.departments || [], taskTeam: me.taskTeam || '' });
       try { sessionStorage.setItem(MEMORY, fresh); } catch (e) { /* not kept */ }
       if (fresh !== shown) { render(JSON.parse(fresh)); showUnread(); }
       askUnread();

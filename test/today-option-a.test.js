@@ -139,3 +139,9 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   assert.notStrictEqual((await ownMock('GET', '/partners')).location, '/today', 'own team Mock: keeps Partners');
   assert.strictEqual((await admin('GET', '/api/apply-through')).json.canChange, true);
 });
+
+test('the menu keeps the own team in its saved copy, so someone in two teams whose own team is Application gets the short menu', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'shared', 'header.js'), 'utf8');
+  const line = src.split('\n').find((l) => /const fresh = JSON\.stringify\(/.test(l)) || '';
+  assert.match(line, /taskTeam/, 'the saved copy of the person keeps taskTeam');
+});
