@@ -542,10 +542,14 @@ function createPortalApi({
     const uni = text(row['UNIVERSITY NAME']);
     const applied = isoDate(row['APPLICATION SUBMISSION DATE']) || '';
     const offer = isoDate(row['OFFER RECEIVED DATE']) || '';
+    // All Students' application and offer days belong to its university only for a student recorded before the days were kept per
+    // university (no university has its own day yet). Afterwards they are only the first application and offer of any university, and
+    // never move to whichever university is named there (the owner, 21 Nov 2026: changing the Priority University moved the day).
+    const legacy = !out.some((a) => a.applied || a.offer);
     if (uni) {
       const same = out.find((a) => squash(a.university) === squash(uni));
-      if (same) { same.onSheet = true; if (!same.applied && applied) same.applied = applied; if (!same.offer && offer) same.offer = offer; }
-      else if (applied || offer) out.unshift({ id: '', university: uni, course: text(row['COURSE NAME']), applied, offer, offerType: '', refused: '', withdrawn: '', onSheet: true });
+      if (same) { same.onSheet = true; if (legacy && !same.applied && applied) same.applied = applied; if (legacy && !same.offer && offer) same.offer = offer; }
+      else if (legacy && (applied || offer)) out.unshift({ id: '', university: uni, course: text(row['COURSE NAME']), applied, offer, offerType: '', refused: '', withdrawn: '', onSheet: true });
     }
     return out;
   }
@@ -682,7 +686,7 @@ function createPortalApi({
         if (list.some((u) => lineDay(u) > today)) return { error: 'Choose a day that has come.' };
         const known = applicationsOf(row, card);
         const sheetUni = text(row['UNIVERSITY NAME']);
-        const sheetApplied = isoDate(row['APPLICATION SUBMISSION DATE']) || '';
+        const sheetApplied = (card.options || []).some((o) => o.applied || o.offer) ? '' : isoDate(row['APPLICATION SUBMISSION DATE']) || ''; // a legacy student only (see applicationsOf)
         const isSheet = (u) => !u.university || !sheetUni || squash(u.university) === squash(sheetUni);
         const priorOf = (u) => known.find((a) => squash(a.university) === squash(u.university) && (!u.course || !a.course || squash(a.course) === squash(u.course)))
           || (u.university ? null : known.find((a) => a.onSheet));
@@ -926,7 +930,8 @@ function createPortalApi({
     // The sheet's Remarks shows the latest progress (the owner, 15 Nov 2026), only when it is empty or still holds ISR's own last
     // line: a remark a person typed is never overwritten.
     if (plan.note) {
-      const remark = `${niceDay(cards.today())}: ${plan.note}`.slice(0, 300);
+      // The day once: a note that already starts with it ("On 21 Nov 2026: ...") is not given it a second time.
+      const remark = (/^On \d{1,2} \w+ \d{4}/.test(plan.note) ? plan.note : `${niceDay(cards.today())}: ${plan.note}`).slice(0, 300);
       const now = text(found.row.REMARKS);
       if (!now || now === text(card.autoRemark)) { plan.columns.REMARKS = remark; cards.setAutoRemark(rowId, remark); }
     }
@@ -1612,6 +1617,20 @@ function createPortalApi({
       const off = 'OFFER RECEIVED DATE' in changes ? changes['OFFER RECEIVED DATE'] : realDay(found.row['OFFER RECEIVED DATE']) || '';
       if (sub && off && off < sub && ('APPLICATION SUBMISSION DATE' in changes || 'OFFER RECEIVED DATE' in changes)) { sendJSON(res, 400, { error: 'The offer cannot be received before the application was submitted.' }); return true; }
       if (changes.EMAIL && !mailer.isAddress(changes.EMAIL)) { sendJSON(res, 400, { error: 'That email address does not look right.' }); return true; }
+      // A new Priority University: the university named before keeps its own application and offer days, so they never move to the
+      // new one (the owner, 21 Nov 2026).
+      if ('UNIVERSITY NAME' in changes) {
+        const oldUni = text(found.row['UNIVERSITY NAME']); const oldCourse = text(found.row['COURSE NAME']);
+        const a0 = isoDate(found.row['APPLICATION SUBMISSION DATE']) || ''; const o0 = isoDate(found.row['OFFER RECEIVED DATE']) || '';
+        if (oldUni && (a0 || o0) && squash(oldUni) !== squash(changes['UNIVERSITY NAME'])) {
+          const opts = card.options || [];
+          if (!opts.some((o) => o.applied || o.offer)) { // a legacy student: the days are the old university's
+            const own = opts.find((o) => squash(o.university) === squash(oldUni) && (!oldCourse || !o.course || squash(o.course) === squash(oldCourse))) || opts.find((o) => squash(o.university) === squash(oldUni));
+            if (!own) cards.addOption(rowId, { university: oldUni, course: oldCourse, applied: a0, offer: o0, note: 'From All Students' }, 'ISR');
+            else cards.updateOption(rowId, own.id, { ...(a0 && !own.applied ? { applied: a0 } : {}), ...(o0 && !own.offer && !own.refused && !own.withdrawn ? { offer: o0 } : {}) }, 'ISR');
+          }
+        }
+      }
       if (Object.keys(changes).length) {
         const done = setColumns(req, found, changes);
         if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }

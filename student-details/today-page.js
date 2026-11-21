@@ -37,7 +37,7 @@
     return window.Portal.taskCard(t, {
       rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: true, today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
-      canChange: t.forMe || t.by === me || canAssignAll,
+      canChange: t.by === me || canAssignAll, // the tag is changed by whoever gave the task, Admin or the Manager (as the server allows)
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [
         !t.done && (t.forMe || t.by === me || canAssignAll) && [t.doOn && t.doOn > todayIso ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: t.studentId, today: todayIso })) { window.NiecUI.toast('Moved. It waits under Upcoming.', { type: 'success' }); refresh(true); } }],
