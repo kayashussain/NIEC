@@ -594,8 +594,33 @@ function createPortalApi({
   const assignedOf = (card) => (card.options || []).filter((o) => o.sent && !o.applied && !o.offer && !o.refused && !o.withdrawn && !o.skipped);
   // The course an Apply task was made for (one task per course), and the university and course an Offer request names.
   const courseOf = (card, task) => (card.options || []).find((o) => o.taskId === task.id) || null;
-  const offerOf = (task) => { const m = /^Offer request: .*? from (.+?)(?: \((.+)\))?\?$/.exec(text(task.text)); return m ? { university: m[1], course: m[2] || '' } : null; };
-  function finishState(found, task) {
+  // An Offer request made from 21 Nov 2026 carries the application it chases (offerFor); an older one is read from its words.
+  const offerOf = (task) => {
+    if (task && task.offerFor && task.offerFor.university) return { university: task.offerFor.university, course: task.offerFor.course || '' };
+    const m = /^Offer request: .*? from (.+?)(?: \((.+)\))?\?$/.exec(text(task && task.text)); return m ? { university: m[1], course: m[2] || '' } : null;
+  };
+  // What Today shows about a task's application (the owner, 21 Nov 2026): the course it was made for, or the one an Offer request
+  // chases. Never All Students' university (that names the first offer, which may be another university): a task with no course of its
+  // own shows none.
+  function courseShown(card, task, tag) {
+    const pick = (o) => (o && o.university ? { university: o.university, course: o.course || '', level: o.level || '', intake: o.intake || '', ...(o.applied ? { applied: o.applied } : {}) } : null);
+    if (tag === 'offer') {
+      const o = offerOf(task); if (!o) return null;
+      const same = (x) => squash(x.university) === squash(o.university) && (!o.course || squash(x.course) === squash(o.course));
+      const opt = (card.options || []).find(same) || {};
+      const kept = task.offerFor || {};
+      return pick({ ...o, level: opt.level || '', intake: kept.intake || opt.intake || '', applied: opt.applied || kept.applied || '' });
+    }
+    return pick(task.app) || pick(courseOf(card, task));
+  }
+  // How to reach the student from a task: the WhatsApp number (as typed, and as WhatsApp wants it, '' when it is not a number), the email
+  // when it is one, and the Student Source. The Application Team already sees and edits these on the sheet.
+  function contactOf(row) {
+    const phone = text(row['CONTACT NUMBER']).slice(0, 60);
+    const email = text(row.EMAIL).trim();
+    return { phone, wa: Fields.whatsappNumber(phone), email: /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email) ? email.slice(0, 120) : '', emailText: email.slice(0, 120), source: text(row['STUDENT SOURCE']).slice(0, 80) };
+  }
+  function finishState(found, task, user = null) {
     const row = found.row;
     const card = cards.get(row._id);
     const kind = Fields.taskTag(task, text(row[STATUS]));
@@ -606,13 +631,19 @@ function createPortalApi({
       const same = (x) => squash(x.university) === squash(o.university);
       const opt = (card.options || []).find((x) => same(x) && (!o.course || squash(x.course) === squash(o.course))) || (card.options || []).find(same);
       const app = applicationsOf(row, card).find((a) => same(a) && (!o.course || !a.course || squash(a.course) === squash(o.course))) || applicationsOf(row, card).find(same);
-      return { ...o, intake: (opt && opt.intake) || found.sheet.name || '', applied: (app && app.applied) || (opt && opt.applied) || '' };
+      const kept = task.offerFor || {};
+      return { ...o, intake: kept.intake || (opt && opt.intake) || found.sheet.name || '', applied: (app && app.applied) || (opt && opt.applied) || kept.applied || '' };
     })() : null;
     const unis = [...new Set([...applicationsOf(row, card).map((a) => a.university), ...(card.options || []).map((o) => o.university), ...(facts ? facts.all() : []).map((u) => u.name), ...(direct ? direct.all() : []).map((u) => u.name)].filter(Boolean))].slice(0, 400);
     return {
       kind, today: cards.today(), applications: applicationsOf(row, card), universities: unis,
+      // The student's other applications and offers are listed only for Admin and the Manager (the owner, 21 Nov 2026): a team finishing a
+      // task records what that task is about, and is not shown what the student holds elsewhere.
+      showSoFar: Boolean(user && (Teams.isAdmin(user) || Teams.isManager(user))),
       // The courses given to the Application Team and not answered yet: the "Mark as done?" window starts with one line for each.
-      assigned: kind === 'offer' || own ? [] : assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
+      // Only for an Apply task of before 18 Nov 2026 (one task for several courses): any other Application task (a Documents task moved to
+      // Application, a task typed by hand) starts with no university line, so nothing is recorded as applied by mistake.
+      assigned: kind === 'offer' || own || task.app || !/^apply\b/i.test(text(task.text)) ? [] : assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
@@ -747,7 +778,7 @@ function createPortalApi({
             else if (u.what === 'withdrawn') opt.withdrawn = d;
           }
           // An application submitted starts its own task: "Offer request", asking whether the university has answered (the owner, 18 Nov 2026).
-          if (u.what === 'submitted' && !prior.offer) plan.offerRequests.push({ university: opt.university, course: opt.course });
+          if (u.what === 'submitted' && !prior.offer) plan.offerRequests.push({ university: opt.university, course: opt.course, intake: (given && given !== 'ambiguous' && given.intake) || prior.intake || '', applied: prior.applied || d });
           plan.options.push(opt);
           (groups[u.what] = groups[u.what] || []).push({ name, course: u.course });
         }
@@ -971,7 +1002,7 @@ function createPortalApi({
       const words = offerRequestText(r);
       const open = (cards.get(rowId).tasks || []).some((x) => !x.done && squash(x.text) === squash(words));
       if (open) return;
-      const made = cards.addTask(rowId, { team: task.team === HEAD ? 'application' : task.team, text: words, tag: 'offer' }, by(req));
+      const made = cards.addTask(rowId, { team: task.team === HEAD ? 'application' : task.team, text: words, tag: 'offer', offerFor: r }, by(req));
       if (!made.error) wrote.offerRequests.push(made.task.id);
     });
     if (wrote.options.length) syncApplicationDays(req, rowId);
@@ -1112,6 +1143,33 @@ function createPortalApi({
     ];
     const by = Object.fromEntries(sections.map((x) => [x.key, x]));
     const totals = { active: 0, applied: 0, visas: 0, atMock: 0, deferred: 0, inquiries: 0 };
+    // Missing details (the owner, 21 Nov 2026), the Application Team's own list on Today: every student it can correct whose application,
+    // passport or medical details are missing or do not add up, one plain line each, all of them (never cut short). A line leaves by itself
+    // once the detail is right.
+    const missing = kind === 'application' ? new Map() : null;
+    const missOne = (row, sheet, line, extra = {}) => {
+      const m = missing.get(row._id) || { id: row._id, name: nameOf(row), stage: text(row[STATUS]), intake: sheet.name, lines: [] };
+      if (!m.lines.some((x) => x.text === line)) m.lines.push({ text: line, ...extra });
+      missing.set(row._id, m);
+    };
+    function missingOf(row, sheet, card, stage, wrong) {
+      const opts = card.options || [];
+      // Dates on each university the student applied to (a wrong day there stays even when All Students is corrected).
+      let onOptions = 0;
+      opts.forEach((o) => {
+        if (o.offer && o.applied && o.offer < o.applied) { onOptions += 1; missOne(row, sheet, `Offer from ${o.university} (${niceDay(o.offer)}) is before its application (${niceDay(o.applied)}).`); }
+        else if (o.offer && !o.applied) { onOptions += 1; missOne(row, sheet, `Offer from ${o.university} on ${niceDay(o.offer)}, but no application date for it.`); }
+      });
+      // All Students' own dates (the system's checks); the ones only to be confirmed are not listed here, they cannot be fixed.
+      wrong.filter((c) => /^offer-(no-app|before-app|refused):/.test(c.key)).forEach((c) => { if (!onOptions || /^offer-refused:/.test(c.key)) missOne(row, sheet, c.text); });
+      // At Application Stage with nowhere to apply: only when no course was given to the team either (an Apply task is that choice).
+      if (stage === 'Application Stage' && (!text(row['UNIVERSITY NAME']) || !text(row['COURSE NAME'])) && !opts.some((o) => Fields.WITH_TEAM(o) || o.applied)) missOne(row, sheet, !text(row['UNIVERSITY NAME']) ? 'No university or course chosen yet.' : 'No course chosen yet.');
+      if (stage && stage !== 'Inquiry') {
+        const pp = card.profile || {};
+        const gone = [['date of birth', pp.dob], ['passport number', pp.passportNo], ['address', pp.address]].filter(([, v]) => !text(v)).map(([k]) => k);
+        if (gone.length) missOne(row, sheet, `No ${gone.length > 1 ? `${gone.slice(0, -1).join(', ')} or ${gone[gone.length - 1]}` : gone[0]}.`);
+      }
+    }
     const dateOf = (v) => isoDate(v);
     for (const { sheet, row } of visibleStudents(user)) {
       const stage = text(row[STATUS]);
@@ -1122,6 +1180,7 @@ function createPortalApi({
       // Details that do not add up, at any stage (see checksOf).
       const wrong = checksOf(row, card);
       if (wrong.length) add('check', wrong.map((c) => c.text).join(' '), wrong.length);
+      if (missing) missingOf(row, sheet, card, stage, wrong);
       if (stage === 'Defer') {
         totals.deferred += 1;
         if (lastDay === null || now - lastDay >= 14) add('defer', lastDay === null ? 'No contact recorded' : `Last contact ${now - lastDay} days ago`, lastDay === null ? 999 : now - lastDay);
@@ -1158,11 +1217,22 @@ function createPortalApi({
       const cas = dateOf(row['CAS RECEIVED DATE']);
       if (cas && !text(row['VISA LODGE DATE'])) add('cas', `CAS received ${Math.max(0, now - dayNo(cas))} days ago`, Math.max(0, now - dayNo(cas)));
     }
+    // The medical step is the team's too, after Application Stage: a Medical task of this person whose test day has passed and whose report
+    // is not recorded. It is fixed by finishing that task (it records the report), so the line points at the task.
+    if (missing) {
+      for (const { sheet, row } of rowIndex().values()) {
+        const c = all[row._id];
+        if (!c || !c.medical || !(c.medical.date < today) || text(row['MEDICAL REPORT']) === 'Received') continue;
+        const t = (c.tasks || []).find((x) => !x.done && forMe(user, x) && Fields.taskTag(x, text(row[STATUS])) === 'medical');
+        if (t) missOne(row, sheet, `The medical test was on ${niceDay(c.medical.date)}, the report is not recorded.`, { taskId: t.id });
+      }
+    }
     const counts = { toSubmit: by.apply.rows.length, waitingOffer: by.noOffer.rows.length, toSchedule: by.mock.rows.length, feedbackMissing: by.mockFeedback.rows.length, toFollow: by.inquiries.rows.length };
     const value = { ...totals, ...counts };
     return {
       today, name: user.name, totals, kind, title: space.title, tagline: space.tagline,
       tiles: space.tiles.map((k) => ({ key: k, label: TILE_LABEL[k], value: value[k] })),
+      missing: missing ? [...missing.values()].sort((a, b) => b.lines.length - a.lines.length || a.name.localeCompare(b.name)) : null,
       // How many different students wait in these lists: a student in two lists (no passport details and not applied yet) counts once.
       waiting: new Set(space.sections.flatMap((k) => by[k].rows.map((r) => r.id))).size,
       sections: space.sections.map((k) => by[k]).map((x) => ({ key: x.key, title: x.title, hint: x.hint, stage: x.stage, count: x.rows.length, students: x.rows.sort((a, b) => b.waited - a.waited).slice(0, x.key === 'check' ? 100 : perList) })),
@@ -1519,7 +1589,7 @@ function createPortalApi({
           if (Teams.isReadOnly(req.user) || (!canAssign(req.user) && !forMe(req.user, task))) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
           const f = body.finish && typeof body.finish === 'object' ? body.finish : null;
           // What the "Mark as done?" window shows before it asks (see finishState).
-          if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task) }); return true; }
+          if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task, req.user) }); return true; }
           // Done needs what happened (an answer, or a few words).
           if (body.done && !task.done && !f) { sendJSON(res, 400, { error: 'Say what was done first.' }); return true; }
           const hasKeys = Boolean(f) && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText', 'generic', 'waiting'].includes(k) && f[k] !== undefined && f[k] !== '');
@@ -1656,6 +1726,10 @@ function createPortalApi({
       const ids = (Array.isArray(body.ids) ? body.ids : []).map(text).filter(Boolean).slice(0, 30);
       const chosen = ids.map((oid) => (card.options || []).find((o) => o.id === oid)).filter(Boolean);
       if (!chosen.length) { sendJSON(res, 400, { error: 'Choose at least one course first.' }); return true; }
+      // A course already with the Application Team and not answered yet is never given a second time (a double press or two open pages
+      // made two Apply tasks, and the first lost its course).
+      const already = chosen.filter((o) => assignedOf(card).some((a) => a.id === o.id) && (card.tasks || []).some((t) => t.id === o.taskId && !t.done));
+      if (already.length) { sendJSON(res, 400, { error: `${already.map((o) => o.university || o.course).join(', ')} ${already.length === 1 ? 'is' : 'are'} already with the Application Team.` }); return true; }
       // Through which partner each one goes (Direct or a B2B partner): asked every time, nothing goes to the team without it.
       const partners = body.partners && typeof body.partners === 'object' ? body.partners : {};
       const via = (o) => text(partners[o.id] || o.partner).replace(/\s+/g, ' ').slice(0, 120);
@@ -1669,7 +1743,8 @@ function createPortalApi({
       const made = [];
       for (const [n, o] of chosen.entries()) {
         const label = `${o.university}${o.course ? ` (${o.course})` : ''}`;
-        const t = cards.addTask(rowId, { team: 'application', text: `Apply to ${label} for ${who}`, tag: 'application', priority: 'high' }, by(req));
+        // The task carries what to apply for (university, course, level, intake), so Today shows it and Mark as done asks for that one course.
+        const t = cards.addTask(rowId, { team: 'application', text: `Apply to ${label} for ${who}`, tag: 'application', priority: 'high', app: { university: o.university, universityId: o.universityId || '', course: o.course || '', level: o.level || '', intake: o.intake || '' } }, by(req));
         if (t.error) { sendJSON(res, 400, { error: t.error }); return true; }
         cards.commentTask(rowId, t.task.id, [`${n + 1}. ${[o.course, o.university].filter(Boolean).join(' at ')}${o.intake ? ` (${o.intake})` : ''}, ${through(o)}`, words].filter(Boolean).join('\n\n'), by(req));
         // A course that was answered before and is given again starts with no answer, so it is asked about again.
@@ -2975,7 +3050,8 @@ function createPortalApi({
           // A task handed on to another team leaves this team's Today (the owner, 20 Nov 2026): it is the other team's now, and comes back
           // only if it is handed back. It stays on the student card.
           if (!everyone && !mine && !gaveIt(req.user, t)) return;
-          out.push({ ...t, tag: Fields.taskTag(t, text(row[STATUS])), priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name });
+          const tag = Fields.taskTag(t, text(row[STATUS]));
+          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row) });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

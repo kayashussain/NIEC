@@ -24,7 +24,7 @@
   let searchQ = '';
   const fold = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // Admin and the Manager see the tasks as a Board only, a column per team (the owner, 15 Nov 2026: no List, no "done this week").
-  const matches = (x) => (!searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage}`).includes(fold(searchQ)));
+  const matches = (x) => (!searchQ || fold(`${x.student} ${x.text} ${tagLabel(tagOf(x, x.stage))} ${x.stage} ${x.course ? `${x.course.university} ${x.course.course}` : ''}`).includes(fold(searchQ)));
   const expanded = new Set();
   // The task a notification was pressed for (its later day opens if it waits there).
   let focusTask = null;
@@ -73,7 +73,7 @@
   // Tasks grouped by their day, each day under a small heading.
   function byDay(items, refresh, into) {
     let day = ''; let l = null;
-    items.forEach((x) => { if (x.doOn !== day) { day = x.doOn; into.append(el('div', 'td-day', window.Portal.dayLabel(day, todayIso))); l = el('div', 'td-list'); into.append(l); } l.append(taskRow(x, refresh)); });
+    items.forEach((x) => { if (x.doOn !== day) { day = x.doOn; into.append(el('h3', 'tdx-group', window.Portal.dayLabel(day, todayIso))); l = el('div', 'tdx-list'); into.append(l); } l.append(rowFor(x, refresh)); });
   }
   function emptyNote(text) {
     const empty = el('div', 'td-empty');
@@ -99,18 +99,18 @@
     head.append(chips);
     g.append(head);
     if (mode === 'upcoming') {
-      if (!upcoming.length) g.append(emptyNote(searchQ ? `No later task matches \u201c${searchQ}\u201d.` : 'Nothing planned for later days.'));
+      if (!upcoming.length) g.append(emptyNote(searchQ ? `No later task matches \u201c${searchQ}\u201d.` : 'Nothing is planned for a later day. A task you reschedule waits here.'));
       byDay(upcoming, refresh, g);
       return g;
     }
     if (!open.length) {
       const kind = tagFilter !== 'all' ? ` about ${tagLabel(tagFilter).toLowerCase()}` : '';
-      const where = mode === 'today' ? 'under Upcoming' : 'below';
+      const where = mode === 'today' ? 'under Later' : 'below';
       g.append(emptyNote(upcoming.length ? `Nothing${kind} for today. ${upcoming.length} on later days, ${where}.` : searchQ ? `No task for today matches \u201c${searchQ}\u201d.` : kind ? `Nothing${kind} for today.` : emptyText));
     }
     // Every open task shows, however many (the owner, 15 Nov 2026: no "Show all"); a task done leaves Today (it stays on the student's
     // card); the later ones are under the Upcoming switch, or folded under the list in You gave and the others.
-    if (open.length) g.append(listOf(open, refresh));
+    if (open.length) rowsOf(open, refresh, g);
     if (upcoming.length && mode !== 'today') {
       const key = 'up:' + title;
       const shown = expanded.has(key) || upcoming.some((x) => x.id === focusTask) || !open.length;
@@ -122,6 +122,199 @@
     }
     return g;
   }
+
+  // ---- Today for a team (the owner, 21 Nov 2026, "Option A"): one line per task, the student's name first and large, then the task,
+  // then the course; a press opens what the task needs: the course and how to reach the student, the updates, and four buttons. ----
+  const DAY = 86400000;
+  const LATE = 3; // days: a task waiting this long is late and listed first
+  const opened = new Set(); // the tasks opened on this page (kept when the list is read again every minute)
+  let todayData = null; // the /api/today answer: the Missing details list for the Application Team
+  const isoDay = (v) => {
+    if (!v) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(v))) return String(v);
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return '';
+    try { return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kathmandu' }); } catch (e) { return d.toISOString().slice(0, 10); }
+  };
+  // How many days a task has waited: from the day it was given, or from the day it was moved to when that is later (a task moved to
+  // today is not late at once).
+  const waitDays = (x) => {
+    const from = [isoDay(x.at), x.doOn || ''].filter(Boolean).sort().pop();
+    if (!from || !todayIso) return 0;
+    return Math.max(0, Math.round((Date.parse(todayIso + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / DAY));
+  };
+  const isLate = (x) => waitDays(x) >= LATE;
+  const dayShort = (iso) => (iso ? new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '');
+  // What the task asks, in a few words: "Apply to Coventry University", "Has an offer come from Coventry University?", else its words.
+  function titleOf(x) {
+    const c = x.course;
+    if (x.tag === 'offer' && c) return `Has an offer come from ${c.university}?`;
+    if (c && (x.app || /^apply\b/i.test(String(x.text || '')))) return `Apply to ${c.university}`;
+    return String(x.text || '').split('\n')[0];
+  }
+  // The grey line under a closed task: the course, its intake and how many updates.
+  function metaOf(x) {
+    const c = x.course;
+    const n = (x.comments || []).filter((m) => m.text).length;
+    // A task with no course of its own says the student's stage and intake instead, so every line reads the same.
+    const bits = c ? [c.course, c.intake, x.tag === 'offer' && c.applied ? `applied on ${dayShort(c.applied)}` : ''] : [x.stage, x.intake];
+    if (n) bits.push(`${n} update${n === 1 ? '' : 's'}`);
+    return bits.filter(Boolean).join(' · ');
+  }
+  // The course and how to reach the student, in one box. The WhatsApp number opens a chat, the email a new email; a detail not saved
+  // says so, with Add (the student's profile).
+  function factsOf(x) {
+    const box = el('div', 'tdx-facts');
+    const c = x.course;
+    const cell = (label, value, wide) => { const d = el('div', `tdx-fact${wide ? ' is-wide' : ''}`); d.append(el('span', 'tdx-label', label)); const b = el('b', 'tdx-value'); b.append(value); d.append(b); box.append(d); return d; };
+    const missingVal = () => { const w = el('span', 'tdx-missing'); w.append('Not saved '); const a = h('a', { href: '/student?id=' + encodeURIComponent(x.studentId) }, 'Add'); w.append(a); return w; };
+    if (c) {
+      cell('University', c.university, true);
+      cell('Course', c.course || 'Not saved', true);
+      cell('Intake', c.intake || 'Not saved');
+      if (x.tag === 'offer') cell('Applied on', c.applied ? dayShort(c.applied) : 'Not saved');
+      else cell('Level', c.level || 'Not saved');
+    }
+    const k = x.contact || {};
+    cell('Source', k.source || 'Not saved', Boolean(c));
+    let phone;
+    if (k.wa) {
+      phone = h('a', { href: `https://wa.me/${k.wa}`, target: '_blank', rel: 'noopener', title: 'Open a WhatsApp chat with the student' }, k.phone);
+      phone.addEventListener('click', (e) => { if (e.ctrlKey || e.metaKey) return; e.preventDefault(); window.Portal.whatsapp(k.wa, x.student, '', x.studentId); });
+    } else phone = k.phone ? k.phone : missingVal();
+    cell('WhatsApp', phone, true).classList.add('is-contact');
+    const mail = k.email ? h('a', { href: `mailto:${k.email}`, title: 'Write a new email to the student' }, k.email) : (k.emailText ? k.emailText : missingVal());
+    cell('Email', mail, true).classList.add('is-contact');
+    return box;
+  }
+  // One task. `refresh(true)` reads the tasks again.
+  function rowFor(x, refresh) {
+    const r = el('article', `tdx${x.unread ? ' has-unread' : ''}`);
+    r.dataset.taskId = x.id;
+    const open = opened.has(x.id) || focusTask === x.id;
+    const head = h('div', { class: 'tdx-head', role: 'button', tabindex: '0', 'aria-expanded': String(open), title: open ? 'Close' : 'Open the task' });
+    const av = el('span', 'tdx-av', initials(x.student));
+    av.setAttribute('aria-hidden', 'true');
+    const main = el('div', 'tdx-main');
+    const name = h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(x.studentId), title: 'View student profile' }, window.Portal.niceName ? window.Portal.niceName(x.student) : x.student);
+    const nameLine = el('div', 'tdx-name-line');
+    if (x.unread && !open) { const dot = el('span', 'tdx-new'); dot.title = 'Something new'; nameLine.append(dot); }
+    nameLine.append(name);
+    const task = el('p', 'tdx-task');
+    task.append(el('span', '', titleOf(x)), el('span', `tdx-kind tag-${tagOf(x, x.stage)}`, tagLabel(tagOf(x, x.stage))));
+    main.append(nameLine, task);
+    const meta = metaOf(x);
+    if (meta) main.append(el('p', 'tdx-meta', meta));
+    const w = waitDays(x);
+    const later = x.doOn && todayIso && x.doOn > todayIso;
+    const age = el('span', `tdx-age${later ? ' is-later' : w >= LATE ? ' is-late' : ''}`, later ? window.Portal.dayLabel(x.doOn, todayIso) : w >= LATE ? `Waiting ${w} days` : w === 0 ? 'New today' : `${w} day${w === 1 ? '' : 's'}`);
+    const chev = el('span', 'tdx-chev');
+    chev.setAttribute('aria-hidden', 'true');
+    head.append(av, main, age, chev);
+    r.append(head);
+    // Opened or closed, the task's own line stays in view (its close button never scrolls away).
+    const toggle = () => {
+      if (opened.has(x.id)) opened.delete(x.id); else opened.add(x.id);
+      if (focusTask === x.id) focusTask = null;
+      refresh();
+      const again = document.querySelector(`.tdx[data-task-id="${x.id}"]`);
+      if (again) again.scrollIntoView({ block: 'nearest' });
+    };
+    head.addEventListener('click', (e) => { if (e.target.closest('a')) return; toggle(); });
+    head.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); toggle(); } });
+    if (!open) return r;
+
+    r.classList.add('is-open');
+    const body = el('div', 'tdx-body');
+    // An Offer request is made by ISR when the application is submitted; any other task says who gave it.
+    const given = el('p', 'tdx-given', x.tag === 'offer' ? `Made by ISR when the application was submitted${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}` : `Given by ${x.by === me ? 'you' : x.by || 'someone'}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`);
+    body.append(given, factsOf(x));
+    // The updates: the conversation on the task, and the box to write one.
+    const ups = el('div', 'tdx-updates');
+    const n = (x.comments || []).filter((m) => m.text).length;
+    ups.append(el('p', 'tdx-label', `Updates on this task${n ? ` · ${n}` : ''}`));
+    const thread = window.Portal.taskThread(x, { rowId: x.studentId, me, canWrite: !x.done && (x.forMe || x.by === me || canAssignAll), unread: x.unread || 0, teams: allTeams, today: todayIso, always: true });
+    ups.append(thread);
+    body.append(ups);
+    if (x.unread && thread.markRead) { thread.markRead(); r.classList.remove('has-unread'); }
+    r.openThread = () => { if (thread.markRead) thread.markRead(); };
+    // Mark as done, Reschedule, Reassign, View student profile (the owner, 21 Nov 2026); Edit and Remove for whoever gave it.
+    const acts = el('div', 'tdx-actions');
+    if (!x.done && (x.forMe || (canAssignAll && !x.given))) {
+      const done = h('button', { class: 'btn btn-primary tdx-done', type: 'button' });
+      done.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+      done.append('Mark as done');
+      done.addEventListener('click', async () => {
+        const finish = await window.Portal.doneDialog(x, { rowId: x.studentId, stage: x.stage, student: { name: x.student }, today: todayIso });
+        if (!finish) return;
+        done.disabled = true;
+        try {
+          await api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { done: true, finish });
+          window.NiecUI.toast(window.Portal.cheer(), { type: 'success' });
+          opened.delete(x.id);
+          refresh(true);
+        } catch (e) { done.disabled = false; window.NiecUI.toast(e.message, { type: 'error' }); }
+      });
+      acts.append(done);
+    }
+    if (!x.done && (x.forMe || x.by === me || canAssignAll)) {
+      acts.append(h('button', { class: 'btn', type: 'button', onclick: async () => { if (await window.Portal.scheduleTask(x, { rowId: x.studentId, today: todayIso })) { window.NiecUI.toast('Rescheduled. It waits under Later.', { type: 'success' }); refresh(true); } } }, 'Reschedule'));
+    }
+    if (x.mayHand) acts.append(h('button', { class: 'btn', type: 'button', onclick: async () => { if (await handOn(x, { rowId: x.studentId, teams: handTeams })) { window.NiecUI.toast('Reassigned.', { type: 'success' }); refresh(true); } } }, 'Reassign'));
+    acts.append(h('a', { class: 'btn tdx-profile', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'View student profile'));
+    const mayEdit = canAssignAll || (x.by === me && x.tag !== 'offer'); // an Offer request is ISR's own: Admin may change it
+    const menu = window.Portal.taskMenu([
+      mayEdit && ['Edit the task', async () => { if (await window.Portal.editTask(x, { rowId: x.studentId, stage: x.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
+      mayEdit && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
+    ]);
+    if (menu) acts.append(menu);
+    body.append(acts);
+    r.append(body);
+    return r;
+  }
+  // A list of tasks; the late ones first under their own heading when there are any (the owner, 21 Nov 2026).
+  function rowsOf(items, refresh, into) {
+    const late = items.filter(isLate);
+    const rest = items.filter((x) => !isLate(x));
+    const list = (xs) => { const l = el('div', 'tdx-list'); xs.forEach((x) => l.append(rowFor(x, refresh))); return l; };
+    if (late.length) {
+      into.append(el('h3', 'tdx-group is-late', `Late, do these first · ${late.length}`), list(late));
+      if (rest.length) into.append(el('h3', 'tdx-group', `Today · ${rest.length}`));
+    }
+    if (rest.length) into.append(list(rest));
+  }
+  // Missing details (the owner, 21 Nov 2026): every student the Application Team can correct whose application, passport or medical
+  // details are missing or do not add up; one line per problem and one button, Fix it.
+  function missingPanel(refresh) {
+    const box = el('div', 'td-group');
+    const all = (todayData && todayData.missing) || [];
+    const list = all.filter((m) => !searchQ || fold(`${m.name} ${m.lines.map((l) => l.text).join(' ')}`).includes(fold(searchQ)));
+    if (!list.length) { box.append(emptyNote(searchQ ? `No student matches “${searchQ}”.` : 'Nothing is missing. Every detail is in.')); return box; }
+    const l = el('div', 'tdx-list');
+    list.forEach((m) => {
+      const r = el('article', 'tdx tdx-miss');
+      const head = el('div', 'tdx-head');
+      const av = el('span', 'tdx-av', initials(m.name));
+      av.setAttribute('aria-hidden', 'true');
+      const main = el('div', 'tdx-main');
+      const nameLine = el('div', 'tdx-name-line');
+      nameLine.append(h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, window.Portal.niceName ? window.Portal.niceName(m.name) : m.name));
+      main.append(nameLine, el('p', 'tdx-meta', [m.stage, m.intake].filter(Boolean).join(' · ')));
+      const ul = el('ul', 'tdx-problems');
+      m.lines.forEach((ln) => ul.append(el('li', '', ln.text)));
+      main.append(ul);
+      // A line about a Medical task is fixed by finishing that task; everything else on the student's profile.
+      const onTask = m.lines.every((ln) => ln.taskId) ? (tasksNow.find((t) => t.id === m.lines[0].taskId) || null) : null;
+      const fix = onTask ? h('button', { class: 'btn btn-primary tdx-fix', type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
+        : h('a', { class: 'btn btn-primary tdx-fix', href: '/student?id=' + encodeURIComponent(m.id) }, 'Fix it');
+      head.append(av, main, fix);
+      r.append(head);
+      l.append(r);
+    });
+    box.append(l);
+    return box;
+  }
+  let tasksNow = []; // the tasks as last read (Missing details points at a Medical task)
 
   // ---- the Board (Admin and the Manager) ----
   // A column per team, the team's open tasks as small tiles (the student, the task, its tag, how long it has waited, its updates), the
@@ -229,8 +422,8 @@
     if (t.tasks.length) {
       const sb = el('div', 'td-search');
       const q = el('input', 'td-search-input');
-      q.type = 'search'; q.placeholder = 'Search tasks by student name or word   ( / )'; q.value = searchQ;
-      q.setAttribute('aria-label', 'Search tasks by student name or word');
+      q.type = 'search'; q.placeholder = 'Find a student, university or task   ( / )'; q.value = searchQ;
+      q.setAttribute('aria-label', 'Find a student, university or task');
       let timer = null;
       q.addEventListener('input', () => {
         clearTimeout(timer);
@@ -270,17 +463,20 @@
     const others = t.canAssign ? t.tasks.filter((x) => !x.forMe && x.by !== me) : [];
     const showMine = t.isHead || !t.canAssign || forMe.length;
     const todayHint = '';
+    // A team sees only its own tasks (the owner, 21 Nov 2026): Today and Later, and for the Application Team Missing details. Later is
+    // always there, so a rescheduled task is never lost. "You gave" stays for Admin and the Manager only.
     const VIEWS = [
       ['mine', 'Today', forMe, todayHint, 'No task for today.', showMine, 'today'],
-      ['upcoming', 'Upcoming', forMe, '', '', showMine && forMe.some((x) => !x.done && later(x)), 'upcoming'],
-      ['gave', 'You gave', gave, '', 'Every task you gave is done.', t.canAssign || gave.length, ''],
-      ['others', 'Given by others', others, '', 'All done.', others.length, ''],
+      ['upcoming', 'Later', forMe, '', '', showMine, 'upcoming'],
+      ['missing', 'Missing details', [], '', '', Boolean(todayData && todayData.missing), 'missing'],
+      ['gave', 'You gave', gave, '', 'Every task you gave is done.', t.canAssign, ''],
+      ['others', 'Given by others', others, '', 'All done.', t.canAssign && others.length, ''],
     ].filter((v) => v[5]);
     // The number on each switch: what is open in it (for Upcoming, the later ones; elsewhere, today's).
-    const countOf = (v) => v[2].filter((x) => !x.done && (v[6] === 'upcoming' ? later(x) : !later(x))).length;
+    const countOf = (v) => (v[6] === 'missing' ? ((todayData && todayData.missing) || []).length : v[2].filter((x) => !x.done && (v[6] === 'upcoming' ? later(x) : !later(x))).length);
     const freshOf = (v) => v[2].filter((x) => v[6] === 'upcoming' ? later(x) : v[6] === 'today' ? !later(x) : true).reduce((m, x) => m + (x.unread || 0), 0);
     if (!VIEWS.some((v) => v[0] === taskView)) taskView = '';
-    if (!taskView) taskView = (VIEWS.find((v) => countOf(v)) || VIEWS[0] || ['mine'])[0];
+    if (!taskView) taskView = (VIEWS[0] || ['mine'])[0]; // Today first, always (the owner, 21 Nov 2026)
     if (VIEWS.length > 1) {
       const seg = el('div', 'td-views');
       seg.setAttribute('role', 'tablist');
@@ -289,7 +485,7 @@
         const [k, label] = v;
         const b = h('button', { class: 'td-view', type: 'button', role: 'tab', 'aria-selected': String(taskView === k) }, label);
         const n = countOf(v);
-        if (n) b.append(el('span', 'td-view-n', String(n)));
+        if (n) b.append(el('span', `td-view-n${v[6] === 'missing' ? ' is-missing' : ''}`, n > 999 ? '999+' : String(n)));
         if (freshOf(v)) { const dot = el('span', 'td-view-dot', ''); dot.title = 'Something new'; b.append(dot); }
         b.addEventListener('click', () => { taskView = k; tagFilter = 'all'; refresh(); });
         seg.append(b);
@@ -297,6 +493,7 @@
       head.append(seg);
     }
     const view = VIEWS.find((v) => v[0] === taskView) || ['mine', 'Today', forMe, '', 'Nothing here.', true, 'today'];
+    if (view[6] === 'missing') { box.append(missingPanel(refresh)); return box; }
     const inView = view[2];
     // The kinds (Application, Mock interview ...) of the tasks in this view, each with how many are for TODAY. A kind whose tasks are
     // all moved to later days says "2 later" in blue, so a count never promises tasks that are not under Today.
@@ -442,7 +639,7 @@
     focusTask = x.id;
     refresh();
     requestAnimationFrame(() => {
-      const row = document.querySelector(`.td-task[data-task-id="${x.id}"]`);
+      const row = document.querySelector(`[data-task-id="${x.id}"]`);
       if (!row) return;
       row.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
       row.classList.add('is-flash');
@@ -450,7 +647,7 @@
       if (row.openThread) row.openThread();
       x.news = []; x.unread = 0; (x.history || []).forEach((n) => { n.isNew = false; });
       // Redraw once it is read: the notification, the counts and the dot go (its updates stay open, see portal-ui.js openThreads).
-      setTimeout(() => { refresh(); const again = document.querySelector(`.td-task[data-task-id="${x.id}"]`); if (again) again.scrollIntoView({ block: 'center' }); }, 700);
+      setTimeout(() => { refresh(); const again = document.querySelector(`[data-task-id="${x.id}"]`); if (again) again.scrollIntoView({ block: 'center' }); }, 700);
     });
   }
   // What needs attention: one line per kind of work that has students waiting; a click opens the first few names.
@@ -492,31 +689,37 @@
     const day = (iso) => { try { return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kathmandu' }); } catch (e) { return String(iso || '').slice(0, 10); } };
     return mine.filter((x) => x.done && x.doneAt && day(x.doneAt) === tasks.today).length;
   }
-  let firstDraw = true; // the first drawing of the page animates; the quiet refresh every minute does not
-  function pulse(tasks, sections, waitingCount) {
-    // Admin and the Manager see the whole team's work here, not only their own tasks. What is done is in the students' notes, so
-    // nothing here counts it (the owner, 15 Nov 2026).
+  let firstDraw = true; // the first drawing of the page glides in; the quiet refresh every minute does not
+  // The day at a glance (the owner, 21 Nov 2026): one plain sentence that says what to do first, and a thin bar of what was finished today.
+  // No ring, no number tiles, no confetti (DESIGN.md).
+  function pulse(tasks) {
     const mine = tasks.canAssign ? tasks.tasks : tasks.tasks.filter((x) => x.forMe);
     const later = (x) => x.doOn && tasks.today && x.doOn > tasks.today;
     const openList = mine.filter((x) => !x.done && !later(x));
     const open = openList.length;
+    const late = openList.filter(isLate).length;
     const upcoming = mine.filter((x) => !x.done && later(x)).length;
-    const slow = openList.filter((x) => Date.now() - Date.parse(x.at) >= 3 * 86400000).length;
-    const waiting = typeof waitingCount === 'number' ? waitingCount : sections.reduce((n, x) => n + x.count, 0);
-    const box = el('section', 'td-pulse');
-    // The numbers count up as the day is shown (motion.js; the final number is always exact).
-    const stat = (n, label, tone) => { const x = el('div', `td-stat${tone ? ' ' + tone : ''}`); const b = el('b', '', String(n)); x.append(b, el('span', '', label)); if (window.Motion && firstDraw) window.Motion.countUp(b, n); return x; };
-    // Today's progress as a ring that fills (the owner, 20 Nov 2026: work that feels like a game): what was finished today out of
-    // what was there today. A finished task is still not listed here, only counted.
     const doneToday = doneTodayOf(tasks);
-    const ringBox = el('div', 'td-ring');
-    if (window.Motion) ringBox.append(window.Motion.ring(doneToday, doneToday + open, { size: 104, stroke: 10, label: doneToday + open ? 'done today' : 'nothing due' }));
+    const box = el('section', 'td-pulse td-summary');
     const words = el('div', 'td-pulse-words');
-    words.append(el('h2', '', open ? `${open} task${open === 1 ? '' : 's'} ${tasks.canAssign ? 'open across the teams' : 'for today'}` : 'All caught up'));
-    if (upcoming) words.append(el('p', '', `${upcoming} more on later days`));
-    if (!open && doneToday) words.append(el('p', 'td-cheer', 'Everything for today is done. Well done!'));
-    box.append(...(window.Motion ? [ringBox] : []), words, stat(slow, 'waiting 3+ days', slow ? 'warn' : ''), stat(waiting, 'students waiting', waiting ? 'warn' : ''));
-    box.classList.toggle('has-ring', Boolean(window.Motion));
+    const lead = !open ? 'All caught up.'
+      : tasks.canAssign ? `${open} task${open === 1 ? '' : 's'} open across the teams${late ? `, ${late} late` : ''}.`
+        : `You have ${open} task${open === 1 ? '' : 's'} today.${late ? ` Start with the ${late === open ? '' : `${late} `}late one${late === 1 ? '' : 's'}.` : ''}`;
+    words.append(el('h2', '', lead));
+    if (upcoming) words.append(el('p', '', `${upcoming} more on later days.`));
+    else if (!open && doneToday) words.append(el('p', '', 'Everything for today is done.'));
+    const bar = el('div', 'td-bar');
+    const total = doneToday + open;
+    bar.append(el('p', 'td-bar-words', total ? `${doneToday} of ${total} done today` : 'Nothing due today'));
+    const track = el('div', 'td-bar-track');
+    track.setAttribute('role', 'progressbar');
+    track.setAttribute('aria-valuemin', '0'); track.setAttribute('aria-valuemax', String(total || 1)); track.setAttribute('aria-valuenow', String(doneToday));
+    track.setAttribute('aria-label', 'Done today');
+    const fill = el('div', 'td-bar-fill');
+    fill.style.width = `${total ? Math.round((doneToday / total) * 100) : 0}%`;
+    track.append(fill);
+    bar.append(track);
+    box.append(words, bar);
     return box;
   }
 
@@ -570,37 +773,29 @@
     // A task read on this page (its updates opened, an update written, Mark all as read): the bell follows at once, without redrawing
     // the tasks (an update being typed is never lost). The owner, 21 Nov 2026: the bell stayed at 10 after reading.
     window.addEventListener('isr-tasks-read', async () => { try { tasks = await api('/api/tasks'); } catch (e) { return; } paintBell(); });
+    todayData = d;
     const refresh = async (reload) => {
-      if (reload) { try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ } }
+      if (reload) {
+        try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ }
+        // Missing details follows too: a detail fixed on the profile leaves the list (the Application Team only).
+        if (todayData && todayData.missing) { try { todayData = await api('/api/today'); } catch (e) { /* keep */ } }
+      }
       todayIso = tasks.today || d.today || todayIso;
+      tasksNow = tasks.tasks || [];
       paintBell();
       const own = ownTeamCard(tasks);
       page.classList.toggle('is-board', Boolean(tasks.canAssign));
-      const doneNow = doneTodayOf(tasks);
-      const openNow = (tasks.canAssign ? tasks.tasks : tasks.tasks.filter((x) => x.forMe)).filter((x) => !x.done && !(x.doOn && tasks.today && x.doOn > tasks.today)).length;
-      top.replaceChildren(...(own ? [own] : []), pulse(tasks, d.sections, d.waiting));
+      top.replaceChildren(...(own ? [own] : []), pulse(tasks));
       slot.replaceChildren(tasksPanel(tasks, refresh));
-      if (window.Motion) {
-        if (firstDraw) { window.Motion.reveal(slot, '.td-list > *, .tb-col'); }
-        // A task finished since the last look: a burst of confetti from the ring; the last one of the day: a big one, once a day.
-        if (lastDone !== null && doneNow > lastDone) {
-          const r = top.querySelector('.td-ring');
-          const at = r ? r.getBoundingClientRect() : { left: innerWidth / 2, top: 140, width: 0, height: 0 };
-          const key = `isrAllDone:${tasks.today}`;
-          let shown = false; try { shown = localStorage.getItem(key) === '1'; } catch (e) { /* this time only */ }
-          if (!openNow && !shown) { window.Motion.celebrate(innerWidth / 2, innerHeight / 3, true); try { localStorage.setItem(key, '1'); } catch (e) { /* fine */ } }
-          else window.Motion.celebrate(at.left + at.width / 2, at.top + at.height / 2);
-        }
-      }
-      lastDone = doneNow;
+      if (window.Motion && firstDraw) window.Motion.reveal(slot, '.tdx-list > *, .tb-col');
       firstDraw = false;
     };
-    let lastDone = null;
     refresh();
-    // The day at a glance, then the tasks, then Needs attention, for everyone (the owner, 15 Nov 2026).
-    page.append(head, top, slot, attention(d.sections));
+    // The day at a glance, then the tasks. Needs attention stays for the other teams; for the Application Team its lists are the
+    // Missing details switch (the owner, 21 Nov 2026), so nothing shows twice.
+    page.append(head, top, slot, ...(d.missing ? [] : [attention(d.sections)]));
     view.replaceChildren(page);
-    if (window.Motion) window.Motion.reveal(page, '.td-attn-row');
+    if (window.Motion && !d.missing) window.Motion.reveal(page, '.td-attn-row');
 
     // A student's name opens their card over Today (card-drawer.js), with ‹ › to go through every student on the page in order, so
     // nobody leaves Today and comes back (the owner, 17 Nov 2026: less work). Closing it brings the tasks up to date. A Ctrl or

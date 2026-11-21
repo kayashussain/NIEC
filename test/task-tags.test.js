@@ -13,7 +13,7 @@ test('the system guesses what a task is about from its words, the team and the s
   assert.strictEqual(Fields.guessTaskTag('Collect the tuition fee deposit receipt', 'application', 'Application Stage'), 'payment');
   assert.strictEqual(Fields.guessTaskTag('Book the VFS appointment', 'application', ''), 'visa');
   assert.strictEqual(Fields.guessTaskTag('Prepare the student for the interview', 'application', ''), 'mock');
-  assert.strictEqual(Fields.guessTaskTag('Ask for the missing transcript', 'mock', ''), 'documents');
+  assert.strictEqual(Fields.guessTaskTag('Ask for the missing transcript', 'mock', ''), 'application', 'documents are part of the application (the owner, 21 Nov 2026)');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'mock', ''), 'mock');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'head', 'Payment Stage'), 'payment');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'head', 'Inquiry'), 'other');
@@ -56,9 +56,9 @@ test('a name typed in capitals reads normally in a message; the sheet keeps it a
   assert.strictEqual(valuesFor({ row: { 'FIRST NAME': 'McKenzie' } }).first_name, 'McKenzie', 'a name in mixed case is left alone');
 });
 
-test('a task is given with Application, Mock interview, Documents, NOC, Medical or Other; older tags still read (the owner, 20 Nov 2026)', () => {
+test('a task is given with Application, Mock interview, NOC, Medical or Other; older tags still read (the owner, 21 Nov 2026)', () => {
   const F = require('../student-details/card-fields');
-  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'documents', 'noc', 'medical', 'other']);
+  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'noc', 'medical', 'other']);
   ['offer', 'payment', 'visa'].forEach((k) => assert.ok(F.TASK_TAG_IDS.includes(k), `${k} is still a known tag, so stored tasks keep it`));
 });
 
@@ -74,4 +74,29 @@ test('the card keeps a passport expiry (a future day) and a gender from its list
   cards.setProfile(row, { gender: 'Robot' }, 'Admin');
   assert.strictEqual(cards.get(row).profile.gender, undefined, 'a gender outside the list is not kept');
   assert.strictEqual(cards.get(row).profile.passportExpiry, '2031-05-04', 'other details are kept when one changes');
+});
+
+test('the Documents tasks become Application once, and a second run changes nothing (the owner, 21 Nov 2026)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-retag-'));
+  const cards = createCards(dir);
+  const row = 'row-retagtest1';
+  const a = cards.addTask(row, { team: 'application', text: 'Ask for the transcript', tag: 'documents' }, 'Admin').task;
+  const b = cards.addTask(row, { team: 'application', text: 'Get the NOC', tag: 'noc' }, 'Admin').task;
+  assert.deepStrictEqual(cards.retagTasks('documents', 'application'), { changed: 1 });
+  const tasks = cards.get(row).tasks;
+  assert.strictEqual(tasks.find((t) => t.id === a.id).tag, 'application');
+  assert.strictEqual(tasks.find((t) => t.id === b.id).tag, 'noc', 'other kinds are untouched');
+  assert.strictEqual(tasks.find((t) => t.id === a.id).text, 'Ask for the transcript', 'the words stay');
+  assert.deepStrictEqual(cards.retagTasks('documents', 'application'), { changed: 0 });
+});
+
+test('an Offer request keeps the application it chases, whatever its university is called (the owner, 21 Nov 2026)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-offerfor-'));
+  const cards = createCards(dir);
+  const row = 'row-offerfor01';
+  const t = cards.addTask(row, { team: 'application', text: 'Offer request: has the student received the offer letter from University of Greenwich International College (UGIC) (Foundation)?', tag: 'offer', offerFor: { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' } }, 'ISR').task;
+  assert.deepStrictEqual(cards.get(row).tasks[0].offerFor, { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' });
+  assert.ok(t.id);
+  const bad = cards.addTask(row, { team: 'application', text: 'x', tag: 'offer', offerFor: { university: '', course: 'y' } }, 'ISR').task;
+  assert.strictEqual(bad.offerFor, undefined, 'no university, nothing kept');
 });

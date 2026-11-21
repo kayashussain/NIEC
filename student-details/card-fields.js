@@ -176,7 +176,10 @@
   // The tags a person chooses from when giving or editing a task (the owner, 20 Nov 2026): Application, Mock interview, Documents, NOC,
   // Medical and Other. Offer request, Payment and Visa and CAS are no longer offered; tasks that already carry one keep it and still show
   // it (ISR's own "Offer request" task after a submission keeps its tag), so stored tasks keep their meaning.
-  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'mock', 'documents', 'noc', 'medical', 'other'].includes(k));
+  // Documents is no longer a kind of its own (the owner, 21 Nov 2026): documents are part of the application, so the five kinds a person
+  // chooses from are Application, Mock interview, NOC, Medical and Other. Offer request is made by ISR only, after an application is
+  // submitted. The Documents tasks already saved were moved to Application once at start-up (see server.js).
+  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'mock', 'noc', 'medical', 'other'].includes(k));
   // A course leaves the Shortlist for good once it has gone to the Application Team (the owner, 18 Nov 2026): given to the team, applied
   // to, answered (offer, refused, withdrawn) or decided not to be submitted. The Shortlist holds only courses still to be assigned.
   const WITH_TEAM = (o) => Boolean(o && (o.sent || o.applied || o.offer || o.refused || o.withdrawn || o.skipped));
@@ -190,9 +193,11 @@
     // Other or Payment). The health surcharge (IHS) is a payment, not a medical.
     if (/\b(medicals?|health ?check|iom|tb|tuberculosis|x-?ray|clinic|hospital|doctor)\b/.test(t)) return 'medical';
     if (/\b(pay|payment|deposit|fee|fees|invoice|receipt|tuition|refund)\b/.test(t)) return 'payment';
+    if (/\bpre-?cas\b/.test(t)) return 'mock'; // the Pre-CAS interview is the last mock, not the visa
     if (/\b(visa|cas|vfs|biometric|e-?visa|brp|lodge)\b/.test(t)) return 'visa';
     if (/\b(mock|interview|pre-?cas)\b/.test(t)) return 'mock';
-    if (/\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|ielts|pte|toefl|moi)\b/.test(t)) return 'documents';
+    // Documents are part of the application (the owner, 21 Nov 2026).
+    if (/\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|ielts|pte|toefl|moi)\b/.test(t)) return 'application';
     if (/\b(apply|application|submit|offer|portal|university|course)\b/.test(t)) return 'application';
     if (team === 'mock') return 'mock';
     if (team === 'application') return 'application';

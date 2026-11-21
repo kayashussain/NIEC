@@ -976,6 +976,24 @@ try {
 } catch (e) {
   console.error('[startup] partner tidy-up failed:', e.message);
 }
+// Task kinds (the owner, 21 Nov 2026): Documents is part of the application, so a task saved as Documents becomes Application. It runs at
+// every start and changes only what is still Documents (nothing after the first time); each change is written in Activity. Open tasks
+// that show as Payment or Visa and CAS are only counted and reported, never changed by themselves.
+try {
+  const sysRecord = (action, changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, action, { app: 'Task kinds', changes });
+  const moved = cards.retagTasks('documents', 'application');
+  if (moved.changed) {
+    sysRecord('Changed task kinds', [`${moved.changed} task${moved.changed === 1 ? '' : 's'} of the kind Documents now of the kind Application`]);
+    console.log('[startup] task kinds:', moved.changed, 'Documents tasks are now Application');
+  }
+  const stageOf = new Map();
+  (current ? current.sheets : []).forEach((sh) => sh.rows.forEach((r) => { if (r && r._id) stageOf.set(r._id, String(r['APPLICATION STATUS'] || '')); }));
+  const left = { payment: 0, visa: 0 };
+  Object.entries(cards.all()).forEach(([rowId, c]) => (c.tasks || []).forEach((t) => { if (!t.done) { const k = CardFields.taskTag(t, stageOf.get(rowId) || ''); if (k in left) left[k] += 1; } }));
+  if (left.payment || left.visa) console.log(`[startup] task kinds: open tasks shown as Payment: ${left.payment}, as Visa and CAS: ${left.visa} (left as they are)`);
+} catch (e) {
+  console.error('[startup] task kinds failed:', e.message);
+}
 // Dates in one form (YYYY-MM-DD) and an office in one spelling, at every start (see data-tidy.js); written in Activity.
 try {
   const out = tidyData({

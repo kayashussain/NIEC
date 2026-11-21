@@ -4044,3 +4044,98 @@ html body .tb-stage { flex-basis: 100%; }
 /* 🔴 CSS CHANGED (2026-11-21): the student card's Applications panel | from: Shortlist and Universities applied to drawn as their own bordered boxes inside the Applications panel (a box inside a box), their words touching the inner border | to: as the student card was designed: flat sections of the panel, divided by a hairline, no box of their own */
 html:root body #view .lg-apps .p-apps > .p-card { border: 0 !important; border-top: 1px solid #b8b8b8 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
 html:root body #view .lg-apps .p-apps > .p-card:first-child { border-top: 0 !important; }
+
+/* ---- Today for a team, "Option A" (the owner, 21 Nov 2026): the student's name first and large, then the task and its course; a press
+   opens the course and how to reach the student, the updates and four buttons. Missing details is its own switch. Colours from the ISR
+   colour table only (CLAUDE.md): cards #f3f3f3 with a #9a9a9a line and 10px corners, tiles #e2e2e2 with #b8b8b8 and 8px, boxes #f7f7f7,
+   text #000 and #333, blue #0071e3 for the main button and where you are now, links #0050aa, orange #b85300 for late and missing. ---- */
+/* 🔴 CSS CHANGED (2026-11-21): Today's day at a glance | from: a ring "0% done today" beside the words, and two number tiles ("3 waiting 3+ days", "19 students waiting") | to: one sentence ("You have 4 tasks today. Start with the 3 late ones.") and a thin green bar "1 of 5 done today" at the right */
+html body .td-pulse.td-summary { display: flex; align-items: center; gap: 28px; padding: 20px 24px; }
+html body .td-summary .td-pulse-words { flex: 1; min-width: 0; }
+html body .td-summary .td-pulse-words h2 { font-size: 21px; line-height: 27px; font-weight: 700; color: #000; }
+html body .td-summary .td-pulse-words p { margin: 4px 0 0; color: #333; font-size: 15px; font-weight: 600; }
+html body .td-bar { flex: none; width: 220px; }
+html body .td-bar-words { margin: 0 0 8px; color: #000; font-size: 14px; font-weight: 600; }
+html body .td-bar-track { height: 8px; overflow: hidden; border-radius: 999px; background: #b8b8b8; }
+html body .td-bar-fill { height: 8px; border-radius: 999px; background: #1e8e4a; }
+
+/* 🔴 CSS CHANGED (2026-11-21): Today's switches and kind buttons | from: the chosen kind button black (#000) with white words; the switches Today, Upcoming, You gave | to: the chosen kind button blue #0071e3 (where you are now, the colour table); the switches Today, Later and, for the Application Team, Missing details with an orange count */
+html body:has(.td-tasks) .td-filter-pill { min-height: 40px; padding: 0 16px; font-size: 15px; font-weight: 600; }
+html body:has(.td-tasks) .td-filter-pill:is(.on, .is-on, [aria-pressed="true"], [aria-selected="true"]) { border-color: #0071e3; background: #0071e3; color: #fff; }
+html body:has(.td-tasks) .td-filter-pill[aria-selected="true"] .td-filter-n { background: rgba(255, 255, 255, .25); color: #fff; }
+html body .td-view-n.is-missing { background: #b85300; color: #fff; }
+
+/* 🔴 CSS CHANGED (2026-11-21): one task on Today | from: a separate box per task with an empty circle to tick, the student's name in 15px, "Owner Demo → You · 16 Nov · Open 5 days" under it and an open "Write the first update" box on every task | to: one line per task in the list: a round initial, the name in 21px bold, the task in 17px with its kind, a grey line with the course, intake and updates, and "Waiting 5 days" in orange at the right; a press opens it in place */
+html body .tdx-list { display: flex; flex-direction: column; }
+html body .tdx { border-top: 1px solid #b8b8b8; }
+html body .tdx-list > .tdx:first-child { border-top: 0; }
+html body .tdx-group { margin: 18px 0 0; padding: 0 0 8px; border-bottom: 1px solid #b8b8b8; color: #333; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+html body .tdx-group.is-late { color: #b85300; }
+html body .tdx-group + .tdx-list > .tdx:first-child { border-top: 0; }
+html body .tdx-head { display: flex; align-items: flex-start; gap: 16px; padding: 16px 4px; cursor: pointer; border-radius: 8px; transition: background-color .1s linear; }
+html body .tdx-head:hover { background: #ececec; }
+html body .tdx-head:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+html body .tdx-av { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: #d9f1fb; color: #000; font-size: 15px; font-weight: 700; }
+html body .tdx-main { flex: 1; min-width: 0; }
+html body .tdx-name-line { display: flex; align-items: center; gap: 8px; }
+html body .tdx-name { color: #000; font-size: 21px; line-height: 26px; font-weight: 700; letter-spacing: -.015em; text-decoration: none; }
+html body .tdx-name:hover { color: #0050aa; text-decoration: underline; }
+html body .tdx-new { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #0071e3; }
+html body .tdx-task { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 4px 0 0; color: #000; font-size: 17px; line-height: 23px; font-weight: 600; }
+html body .tdx-kind { padding: 2px 9px; border-radius: 4px; background: #e2e2e2; color: #000; font-size: 12px; line-height: 18px; font-weight: 700; }
+html body .tdx-meta { margin: 3px 0 0; color: #333; font-size: 14px; font-weight: 500; }
+html body .tdx-age { flex: none; margin-top: 4px; padding: 4px 11px; border-radius: 999px; background: #e2e2e2; color: #333; font-size: 13px; font-weight: 700; white-space: nowrap; }
+html body .tdx-age.is-late { background: #fbeadb; color: #b85300; }
+html body .tdx-age.is-later { background: #f7f7f7; color: #0050aa; border: 1px solid #b8b8b8; }
+html body .tdx-chev { flex: none; width: 36px; height: 36px; border-radius: 50%; background: #e2e2e2; position: relative; }
+html body .tdx-chev::before { content: ""; position: absolute; left: 13px; top: 11px; width: 8px; height: 8px; border-right: 2px solid #000; border-bottom: 2px solid #000; transform: rotate(45deg); transition: transform .32s cubic-bezier(.4, 0, .6, 1), top .32s cubic-bezier(.4, 0, .6, 1); }
+html body .tdx.is-open .tdx-chev::before { top: 15px; transform: rotate(-135deg); }
+
+/* 🔴 CSS CHANGED (2026-11-21): a task opened on Today | from: (new) | to: "Given by Owner on 16 Nov", one grey tile with the university, course, intake, level, source, the WhatsApp number (opens a chat) and the email (opens a new email), the updates as a conversation (your own in a light blue), and the buttons Mark as done (blue), Reschedule, Reassign and View student profile */
+html body .tdx-body { display: flex; flex-direction: column; gap: 14px; margin: 0 0 20px 64px; }
+html body .tdx-given { margin: -6px 0 0; color: #333; font-size: 14px; font-weight: 500; }
+html body .tdx-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 18px; padding: 16px 18px; border: 1px solid #b8b8b8; border-radius: 8px; background: #e2e2e2; }
+html body .tdx-fact { min-width: 0; }
+html body .tdx-fact.is-wide { grid-column: span 2; }
+html body .tdx-fact.is-contact { padding-top: 12px; border-top: 1px solid #b8b8b8; }
+html body .tdx-label { display: block; margin: 0; color: #333; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+html body .tdx-value { display: block; margin-top: 3px; color: #000; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+html body .tdx-value a { color: #0050aa; font-size: 16px; }
+html body .tdx-missing { color: #b85300; }
+html body .tdx-missing a { margin-left: 4px; font-size: 14px; }
+html body .tdx-updates { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border: 1px solid #b8b8b8; border-radius: 8px; background: #e2e2e2; }
+html body .tdx-updates .tk-thread { margin: 0; }
+html body .tdx-updates .tk-list { margin: 0; border-radius: 0; background: transparent; }
+html body .tdx-updates .tk-msg { padding: 8px 0; }
+html body .tdx-updates .tk-msg + .tk-msg { border-top: 0; }
+html body .tdx-updates .tk-av { width: 34px; height: 34px; line-height: 34px; background: #b8b8b8; color: #000; }
+html body .tdx-updates .tk-av.mine { background: #d9f1fb; color: #000; }
+html body .tdx-updates .tk-text { margin-top: 4px; padding: 10px 14px; border: 1px solid #b8b8b8; border-radius: 4px 14px 14px 14px; background: #f7f7f7; max-width: 620px; }
+html body .tdx-updates .tk-msg:has(.tk-av.mine) .tk-text { border-color: #9fd9f3; background: #e6f6fd; }
+html body .tdx-updates .tk-msg.is-new { background: none; }
+html body .tdx-updates .tk-compose { margin-top: 6px; border: 1px solid #6f6f6f; background: #f7f7f7; }
+html body .tdx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+html body .tdx-actions .btn { min-height: 44px; padding: 0 20px; border: 1px solid #9a9a9a; border-radius: 999px; background: #f7f7f7; color: #000; font-size: 15px; font-weight: 600; text-decoration: none; }
+html body .tdx-actions .btn:hover:not(:disabled) { background: #e2e2e2; }
+html body .tdx-actions .btn.btn-primary { border-color: #0071e3; background: #0071e3; color: #fff; }
+html body .tdx-actions .btn.btn-primary:hover:not(:disabled) { background: #0077ed; }
+html body .tdx-actions .tdx-done svg { width: 16px; height: 16px; margin-right: 6px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+html body .tdx-actions .tdx-profile { margin-left: auto; }
+
+/* 🔴 CSS CHANGED (2026-11-21): Missing details on Today (the Application Team) | from: "Needs attention" at the bottom of Today, a short list per kind ("Passport details missing 19") | to: one plain list, one student per line with each problem in words and an orange dot, and one blue button "Fix it" */
+html body .tdx-miss .tdx-head { cursor: default; }
+html body .tdx-miss .tdx-head:hover { background: none; }
+html body .tdx-problems { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+html body .tdx-problems li { position: relative; padding-left: 18px; color: #000; font-size: 15px; line-height: 22px; font-weight: 600; }
+html body .tdx-problems li::before { content: ""; position: absolute; left: 0; top: 7px; width: 8px; height: 8px; border-radius: 50%; background: #d9650b; }
+html body .tdx-fix { flex: none; min-height: 44px; padding: 0 22px; border-radius: 999px; font-size: 15px; font-weight: 600; text-decoration: none; }
+/* 🔴 CSS CHANGED (2026-11-21): the independent review of the new Today | from: the blue "new" dot pushed the name to the right; the updates in a second grey box inside the opened task (a box in a box); "Fix it" drawn as a rounded rectangle; the empty list with a dashed border and a green tick; the summary card 20px high inside; the red dot on the Today switch #ff3b30 touching the count | to: the dot centred between the initial and the name, names in one line, an opened task keeping the heading above it readable; the updates under a hairline with no box; "Fix it" a pill; the empty list a plain grey sentence; the summary 16px inside; the dot red #b42318 at the corner */
+html body .tdx-name-line { position: relative; }
+html body .tdx-new { position: absolute; left: -12.5px; top: 9px; }
+html body .tdx { scroll-margin-top: 72px; }
+html body .tdx-updates { padding: 14px 0 0; border: 0; border-top: 1px solid #b8b8b8; border-radius: 0; background: none; }
+html body .tdx-miss .tdx-fix.btn, html body .tdx-fix.btn { display: inline-flex; align-items: center; border-radius: 999px; padding: 0 22px; }
+html body .td-tasks .td-empty { border: 0; border-radius: 0; background: none; box-shadow: none; padding: 24px 4px; color: #333; font-weight: 600; }
+html body .td-tasks .td-empty svg { display: none; }
+html body .td-pulse.td-summary { padding: 16px 24px; }
+html body .td-view-dot { top: 3px; right: 2px; background: #b42318; }

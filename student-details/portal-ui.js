@@ -454,6 +454,8 @@
           const listId = `td-unis-${t.id}`;
           form.append(datalist(listId, state.universities || []));
           const so = el('div', 'p-wide td-sofar');
+          // Listed for Admin and the Manager only (the server says): a team records what its task is about (the owner, 21 Nov 2026).
+          so.hidden = !(state && state.showSoFar);
           so.append(el('span', 'p-label', apps.length ? 'Applications so far (press one to record news for it)' : 'No application is recorded yet.'));
           apps.forEach((a) => {
             const line = h('button', { class: 'td-sofar-row', type: 'button', title: 'Record something for this university' });
@@ -522,7 +524,7 @@
           const assigned = tag === 'offer' ? [] : (state.assigned || []);
           if (fromTask) addRow(fromTask[1], fromTask[2] || '');
           else if (assigned.length) assigned.forEach((a) => addRow(a.university, a.course || '', true));
-          else if (sheet['UNIVERSITY NAME'] && !apps.some((a) => a.onSheet && a.applied)) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); // the student's university on All Students, not yet recorded as applied
+          else if (state && state.showSoFar && sheet['UNIVERSITY NAME'] && !apps.some((a) => a.onSheet && a.applied)) addRow(sheet['UNIVERSITY NAME'] || '', sheet['COURSE NAME'] || ''); // the student's university on All Students, not yet recorded as applied (Admin and the Manager)
           else addRow();
           const on = dateField('On (the day it happened)', today);
           if (tag === 'application') on.input.value = today; // the day the application is submitted is today unless it is changed (the owner, 18 Nov 2026)
@@ -691,7 +693,8 @@
   // university, intake, level, location and course as small chips, then the comments of whoever gave it.
   function taskText(t) {
     const box = el('div', 'td-task-text');
-    const offer = /^Offer request: has the student received the offer letter from (.+?)(?: \((.+)\))?\?$/.exec(String(t.text || ''));
+    // An Offer request carries the application it chases (offerFor, from 21 Nov 2026); an older one is read from its words.
+    const offer = t.offerFor && t.offerFor.university ? [null, t.offerFor.university, t.offerFor.course || ''] : /^Offer request: has the student received the offer letter from (.+?)(?: \((.+)\))?\?$/.exec(String(t.text || ''));
     if (offer) {
       box.classList.add('is-structured');
       box.append(el('b', 'td-task-title', 'Ask for the offer letter'));
@@ -934,5 +937,5 @@
     if (root.PhoneLink) { root.PhoneLink.openChat({ id, number, name, text }); return; }
     window.open(`https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ''}`, '_blank', 'noopener');
   }
-  root.Portal = { requiredMark, whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, stageKind, stagePill, initials, number, rupees, percent, field, datalist, dialog };
+  root.Portal = { requiredMark, doneDialog, whatsapp, niceName, reopenDialog, taskThread, taskRoute, handOn, editTask, scheduleTask, dayLabel, taskMenu, taskCard, taskBadges, tagPicker, taskPriority, tagOf, tagLabel, celebrate, cheer, el, h, api, day, when, stageKind, stagePill, initials, number, rupees, percent, field, datalist, dialog };
 })(this);

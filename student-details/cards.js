@@ -290,6 +290,26 @@ function createCards(dir, { now = () => new Date() } = {}) {
       return update(rowId, by, (card) => { card.profile = cleanProfile(input, card.profile); });
     },
 
+    // Changes the kind of every task whose kind is `from` (stored, or shown by guessing for an older task saved without one) to `to`,
+    // in one write. Returns how many changed. Used once at start-up (the owner, 21 Nov 2026: Documents tasks become Application).
+    retagTasks(from, to, shownTag) {
+      if (!Fields.TASK_TAG_IDS.includes(to)) return { changed: 0 };
+      const data = load();
+      const next = { ...data.cards };
+      let changed = 0;
+      Object.entries(next).forEach(([rowId, card]) => {
+        let touched = false;
+        const tasks = (card.tasks || []).map((t) => {
+          const now = t.tag || (shownTag ? shownTag(t, rowId) : '');
+          if (now !== from) return t;
+          touched = true; changed += 1;
+          return { ...t, tag: to };
+        });
+        if (touched) next[rowId] = { ...card, tasks };
+      });
+      if (changed) write({ ...data, cards: next });
+      return { changed };
+    },
     // A task for a team about this student (Admin and the Manager give them; the team marks it complete or not complete).
     addTask(rowId, input, by) {
       const text = str(input && input.text, LIMITS.text);
@@ -300,7 +320,7 @@ function createCards(dir, { now = () => new Date() } = {}) {
       // through in the task's comments. Older tasks keep the date they were given with; it is simply not shown.
       let task;
       const out = update(rowId, by, (card, stamp) => {
-        // The tag chosen when the task was given (Payment, Visa and CAS, Application, Mock interview, Documents, Other), if any.
+        // The tag chosen when the task was given (Application, Mock interview, NOC, Medical, Other; Offer request by ISR), if any.
         const tag = Fields.TASK_TAG_IDS.includes(input && input.tag) ? input.tag : '';
         // How important it is: Priority unless Super priority or Medium was chosen.
         const priority = Fields.TASK_PRIORITY_IDS.includes(input && input.priority) ? input.priority : 'high';
@@ -308,7 +328,12 @@ function createCards(dir, { now = () => new Date() } = {}) {
         // Application Team sees it at a glance and ticks it with one choice.
         const a = input && input.app && typeof input.app === 'object' ? input.app : null;
         const app = a && str(a.university, 160) && str(a.course, 300) ? { university: str(a.university, 160), universityId: str(a.universityId, 20), intake: str(a.intake, 60), level: str(a.level, 60), location: str(a.location, 120), course: str(a.course, 300) } : null;
-        task = { id: newId(), team, text, ...(tag ? { tag } : {}), ...(app ? { app } : {}), priority, by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
+        // An Offer request carries the application it chases (the owner, 21 Nov 2026), so it never has to be read back from its words
+        // (a university with brackets in its name, or words edited later, broke that).
+        const f = input && input.offerFor && typeof input.offerFor === 'object' ? input.offerFor : null;
+        const day = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : '');
+        const offerFor = f && str(f.university, 160) ? { university: str(f.university, 160), course: str(f.course, 300), intake: str(f.intake, 80), applied: day(f.applied) } : null;
+        task = { id: newId(), team, text, ...(tag ? { tag } : {}), ...(app ? { app } : {}), ...(offerFor ? { offerFor } : {}), priority, by: by || '', at: stamp, done: false, doneBy: '', doneAt: '', comments: [] };
         card.tasks = [...card.tasks, task].slice(-LIMITS.tasks);
       });
       return out.error ? out : { ...out, task };
