@@ -1222,7 +1222,7 @@ function createPortalApi({
     if (missing) {
       for (const { sheet, row } of rowIndex().values()) {
         const c = all[row._id];
-        if (!c || !c.medical || !(c.medical.date < today) || text(row['MEDICAL REPORT']) === 'Received') continue;
+        if (!c || !c.medical || c.medical.done || !(c.medical.date < today) || text(row['MEDICAL REPORT']) === 'Received') continue;
         const t = (c.tasks || []).find((x) => !x.done && forMe(user, x) && Fields.taskTag(x, text(row[STATUS])) === 'medical');
         if (t) missOne(row, sheet, `The medical test was on ${niceDay(c.medical.date)}, the report is not recorded.`, { taskId: t.id });
       }

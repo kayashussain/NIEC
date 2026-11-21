@@ -852,7 +852,7 @@
   function scheduleTask(task, { rowId, today }) {
     const add = (n) => new Date(Date.parse(today + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
     const moved = task.doOn && task.doOn > today;
-    return dialog('Move to another day', (body, close) => {
+    return dialog('Reschedule', (body, close) => {
       const date = field('Which day?', { kind: 'date', value: moved ? task.doOn : add(1) });
       date.input.min = add(1);
       const msg = el('div', 'p-msg');

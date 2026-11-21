@@ -1,8 +1,9 @@
-// Today: the first screen, kept quiet on purpose. Two things only:
-//   1. the tasks, one list at a time behind a switch: Today and Upcoming (this person's: their team's, or for Admin the tasks the
-//      team gave them), You gave, and (Admin and the Manager) Given by others, or (a team) Reassigned; each task is one compact card
-//      that says whose student it is, who gave it to whom, and folds its updates away (the owner, 15 Nov 2026);
-//   2. what needs attention: one short list, a line per kind of work with how many students wait, opened with a click.
+// Today: the first screen, kept quiet on purpose (the owner, 21 Nov 2026, "Option A"):
+//   1. a team's own tasks behind a switch: Today and Later (a task rescheduled to a later day), and for the Application Team Missing
+//      details; each task is one line, the student's name first, then the task, its kind and its course, late ones first; a press opens
+//      the course, how to reach the student, the updates and Mark as done, Reschedule, Reassign and View student profile. Admin and
+//      the Manager see the Board, a column per team;
+//   2. for the other teams, what needs attention: one short list, a line per kind of work with how many students wait.
 // The numbers, charts and buttons live on the Dashboard and on All Students, not here.
 (function () {
   const { el, h, api, initials, stagePill, handOn, taskPriority, tagOf, tagLabel } = window.Portal;
@@ -40,7 +41,7 @@
       canChange: t.by === me || canAssignAll, // the tag is changed by whoever gave the task, Admin or the Manager (as the server allows)
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,
       actions: [
-        !t.done && (t.forMe || t.by === me || canAssignAll) && [t.doOn && t.doOn > todayIso ? 'Change the day' : 'Move to another day', async () => { if (await window.Portal.scheduleTask(t, { rowId: t.studentId, today: todayIso })) { window.NiecUI.toast('Moved. It waits under Upcoming.', { type: 'success' }); refresh(true); } }],
+        !t.done && (t.forMe || t.by === me || canAssignAll) && ['Reschedule', async () => { if (await window.Portal.scheduleTask(t, { rowId: t.studentId, today: todayIso })) { window.NiecUI.toast('Rescheduled. It waits under Later.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Edit the task', async () => { if (await window.Portal.editTask(t, { rowId: t.studentId, stage: t.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
         t.mayHand && ['Reassign to another team', async () => { if (await handOn(t, { rowId: t.studentId, teams: handTeams })) { window.NiecUI.toast('Reassigned. You can still follow it here.', { type: 'success' }); refresh(true); } }],
         (canAssignAll || t.by === me) && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
@@ -81,12 +82,12 @@
     empty.append(el('div', '', text));
     return empty;
   }
-  // `mode`: 'today' shows only what is for today (a link points at Upcoming), 'upcoming' only the later days, one heading per day;
+  // `mode`: 'today' shows only what is for today (a link points at Later), 'upcoming' only the later days, one heading per day;
   // anything else shows today's tasks with the later ones folded under them.
   function group(title, hint, all, refresh, emptyText, mode) {
     const g = el('div', 'td-group');
     const list = (tagFilter === 'all' ? all : all.filter((x) => tagOf(x, x.stage) === tagFilter)).filter(matches);
-    // Today and Upcoming (the owner, 15 Nov 2026): a task moved to a later day waits under Upcoming and is back under Today on its day.
+    // Today and Later (the owner, 15 and 21 Nov 2026): a task rescheduled to a later day waits under Later and is back under Today on its day.
     const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
     const openAll = list.filter((x) => !x.done);
     const open = openAll.filter((x) => !later(x)).sort((a, b) => taskPriority(b) - taskPriority(a));
@@ -109,7 +110,7 @@
       g.append(emptyNote(upcoming.length ? `Nothing${kind} for today. ${upcoming.length} on later days, ${where}.` : searchQ ? `No task for today matches \u201c${searchQ}\u201d.` : kind ? `Nothing${kind} for today.` : emptyText));
     }
     // Every open task shows, however many (the owner, 15 Nov 2026: no "Show all"); a task done leaves Today (it stays on the student's
-    // card); the later ones are under the Upcoming switch, or folded under the list in You gave and the others.
+    // card); the later ones are under the Later switch, or folded under the list in You gave and the others (Admin and the Manager).
     if (open.length) rowsOf(open, refresh, g);
     if (upcoming.length && mode !== 'today') {
       const key = 'up:' + title;
@@ -419,7 +420,7 @@
     head.append(titles);
     box.append(head);
     // The search box: a student's name or any word of a task. The list redraws as it is typed and the box keeps the cursor.
-    if (t.tasks.length) {
+    if (t.tasks.length || (todayData && todayData.missing && todayData.missing.length)) {
       const sb = el('div', 'td-search');
       const q = el('input', 'td-search-input');
       q.type = 'search'; q.placeholder = 'Find a student, university or task   ( / )'; q.value = searchQ;
@@ -455,7 +456,7 @@
       return box;
     }
     // Which tasks to see (the owner, 15 Nov 2026): one list at a time, never mixed. The tasks for this person are split in two, Today
-    // and Upcoming (moved to a later day), then "You gave", and for Admin and the Manager "Given by others". A task handed on to another
+    // and Later (rescheduled to a later day); for Admin and the Manager also "You gave" and "Given by others". A task handed on to another
     // team is no longer listed here (the owner, 20 Nov 2026).
     const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
     const forMe = t.tasks.filter((x) => x.forMe);
@@ -472,7 +473,7 @@
       ['gave', 'You gave', gave, '', 'Every task you gave is done.', t.canAssign, ''],
       ['others', 'Given by others', others, '', 'All done.', t.canAssign && others.length, ''],
     ].filter((v) => v[5]);
-    // The number on each switch: what is open in it (for Upcoming, the later ones; elsewhere, today's).
+    // The number on each switch: what is open in it (for Later, the later ones; elsewhere, today's).
     const countOf = (v) => (v[6] === 'missing' ? ((todayData && todayData.missing) || []).length : v[2].filter((x) => !x.done && (v[6] === 'upcoming' ? later(x) : !later(x))).length);
     const freshOf = (v) => v[2].filter((x) => v[6] === 'upcoming' ? later(x) : v[6] === 'today' ? !later(x) : true).reduce((m, x) => m + (x.unread || 0), 0);
     if (!VIEWS.some((v) => v[0] === taskView)) taskView = '';

@@ -354,7 +354,7 @@ function createCards(dir, { now = () => new Date() } = {}) {
       return out.error ? out : { ...out, task };
     },
     // A task moved to another day by the team or whoever gave it (the owner, 15 Nov 2026: "the student says not today, in 3 days"):
-    // it waits under Upcoming until that day, then is back under Today by itself. `date`: YYYY-MM-DD, or '' for today. The move is
+    // it waits under Later until that day, then is back under Today by itself. `date`: YYYY-MM-DD, or '' for today. The move is
     // written in the task's updates with its reason, so everyone sees why.
     scheduleTask(rowId, taskId, input, by, today) {
       const date = String((input && input.date) || '');

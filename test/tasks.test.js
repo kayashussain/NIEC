@@ -170,7 +170,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
   const toGiver = (await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === appTask.id);
   assert.deepStrictEqual([toGiver.news[0].kind, toGiver.news[0].by], ['done', 'maya'], 'Admin is told the task is done');
-  // Today and Upcoming (the owner, 15 Nov 2026): the team moves a task to a later day with a reason; whoever gave it is told.
+  // Today and Later (the owner, 15 and 21 Nov 2026): the team moves a task to a later day with a reason; whoever gave it is told.
   const later = (await admin('POST', `/api/cards/${mockStudent}/tasks`, { team: 'application', text: 'Collect the bank statement' })).json.card.tasks.find((x) => x.text === 'Collect the bank statement');
   const today = (await both('GET', '/api/tasks')).json.today;
   const in3 = new Date(Date.parse(today + 'T00:00:00Z') + 3 * 86400000).toISOString().slice(0, 10);
