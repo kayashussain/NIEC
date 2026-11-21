@@ -45,3 +45,17 @@ test('a student moved to another intake while someone edited the old row is not 
   const out = mergeWorkbooks(base, theirs, mine);
   assert.strictEqual(out.sheets.reduce((n, s) => n + s.rows.filter((r) => r._id === 'r1').length, 0), 1, 'one copy only');
 });
+
+test('a row can never be given the name of a built-in (toString, __proto__): it would break pages for everyone', () => {
+  const { ROW_ID } = require('../student-details/cards');
+  ['toString', 'constructor', '__proto__', 'hasOwnProperty', 'valueOf'].forEach((id) => assert.ok(!ROW_ID.test(id), id));
+  assert.ok(ROW_ID.test('row-abc123'));
+  assert.ok(ROW_ID.test('legacy_id-7'));
+  const { migrateWorkbook } = require('../student-details/workbook');
+  {
+    const wb = migrateWorkbook({ sheets: [{ id: 's1', name: 'Jan Intake 2027', columns: [], rows: [{ _id: 'toString' }, { _id: 'row-ok' }] }] });
+    const ids = wb.sheets[0].rows.map((r) => r._id);
+    assert.ok(!ids.includes('toString'));
+    assert.ok(ids.includes('row-ok'));
+  }
+});

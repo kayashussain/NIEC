@@ -178,6 +178,8 @@ function migrateWorkbook(parsed) {
   // A row id used twice would make one student overwrite the other on merge: repeats get a new id.
   const usedRowIds = new Set();
   workbook.sheets.forEach((sh) => sh.rows.forEach((r) => {
+    // An id that is not text, or is the name of something every object has (toString, __proto__ ...), is replaced too: it would break lookups.
+    if (r._id && (typeof r._id !== 'string' || r._id in Object.prototype || r._id === '__proto__')) r._id = makeRowId();
     if (r._id && usedRowIds.has(r._id)) r._id = makeRowId();
     if (r._id) usedRowIds.add(r._id);
   }));

@@ -13,6 +13,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-21 · shared/theme.css · the green words (Active on Users, Applied chips, done) · from: #1a7f37, 4.1 to 1 against the grey chip · to: #146c2e, a slightly deeper green, 5.2 to 1 · why: the automatic accessibility test failed on every push since the morning (green text below the 4.5 to 1 easy-reading level); the look is otherwise the same**
+
 - **2026-11-21 · shared/theme.css, student-details/student-card.css · the reviewers' fixes · from: the open bell blank (white on white), the Tasks panel on Today with no inner space, round buttons in the "Are you sure?" and Shortcuts windows, soft Dashboard cards and Show numbers tiles, column titles running into their filter arrow, messages over the search box, plain browser arrows on Nationality and Gender in Edit profile · to: the open bell black with a white picture, 18px inside the Tasks panel, 8px buttons in every window, firm grey borders on the Dashboard cards and Show numbers tiles, tighter column titles, messages at the bottom right (the same message never shown twice), the same dropdown arrows as everywhere · why: the owner, 21 Nov 2026: review the Application Team's screens deeply with several reviewers and clear every issue**
 
 - **2026-11-21 · shared/theme.css · the Mark as done window's answers · from: the answers not chosen faded to 55%, an empty grey bar above an application task · to: every answer at full strength (the chosen one black), no empty bar · why: they looked switched off (the owner, 21 Nov 2026: Application closed and Course not available added to the answers)**

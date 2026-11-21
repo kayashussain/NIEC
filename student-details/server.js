@@ -23,7 +23,7 @@ const { createIncentiveLock } = require('../shared/incentive-lock');
 const {
   blankWorkbook, ensureRowIds, migrateWorkbook, isValidWorkbook, mergeWorkbooks, createHistory, describeChanges,
 } = require('./workbook');
-const { createCards } = require('./cards');
+const { createCards, ROW_ID } = require('./cards');
 const { createMessages } = require('./messages');
 const { createCourseLinks } = require('./course-index');
 const { createCourseFinder } = require('./course-finder');
@@ -446,7 +446,8 @@ function cellValueError(cells, sheet, user) {
 // cell it changed is checked against its rules and written onto the current workbook. Anything
 // outside the rules refuses the whole save (the page never offers it, so that means tampering or a
 // stale page).
-function teamSave(req, parsed) {
+// `checked`: the add-student form has already looked for duplicates (it may add a brother or sister on the family phone once a person says so).
+function teamSave(req, parsed, { checked = false } = {}) {
   const base = current && (parsed.baseRevision === current.revision ? current : history.get(parsed.baseRevision));
   if (!base) return { status: 409, body: { error: 'conflict', revision: current ? current.revision : 0 } };
   const baseView = viewFor(req.user, base);
@@ -480,6 +481,25 @@ function teamSave(req, parsed) {
   const cellError = cellValueError(changes.map((c) => ({ col: c.col, value: c.value }))
     .concat(adds.flatMap((a) => Object.keys(a.row).map((col) => ({ col, value: a.row[col] })))), intake, req.user);
   if (cellError) return { status: 400, body: { error: cellError } };
+  // A Student Source is stored with the portal's own spelling ("social media" is kept as "Social Media"), so it is counted as one source.
+  const sourceSpelling = (v) => CardFields.STORED_SOURCES.find((x) => x.toLowerCase() === String(v ?? '').trim().toLowerCase()) || v;
+  changes.forEach((c) => { if (c.col === 'STUDENT SOURCE') c.value = sourceSpelling(c.value); });
+  adds.forEach((a) => { if (a.row['STUDENT SOURCE']) a.row['STUDENT SOURCE'] = sourceSpelling(a.row['STUDENT SOURCE']); });
+  // A new student whose email or phone is already on the sheet is refused here too, as the Add student form refuses it: the
+  // sheet's own save is never a way round the duplicate check.
+  if (adds.length && !checked) {
+    const emailOf = (r) => String(r.EMAIL ?? '').trim().toLowerCase();
+    const phoneOf = (r) => { const d = String(r['CONTACT NUMBER'] ?? '').replace(/\D/g, ''); return d.length >= 7 ? d.slice(-10) : ''; };
+    const emails = new Set(); const phones = new Set();
+    current.sheets.forEach((sh) => sh.rows.forEach((r) => { if (emailOf(r)) emails.add(emailOf(r)); if (phoneOf(r)) phones.add(phoneOf(r)); }));
+    for (const a of adds) {
+      const em = emailOf(a.row); const ph = phoneOf(a.row);
+      if ((em && emails.has(em)) || (ph && phones.has(ph))) {
+        return { status: 409, body: { error: 'This student is already on the sheet (the same email or phone). Search for them instead of adding them again.', duplicate: true, revision: current.revision } };
+      }
+      if (em) emails.add(em); if (ph) phones.add(ph);
+    }
+  }
   // The rules were checked against the revision the page had, which may be older. Each change is checked again
   // against the student as the server has them now (someone may have moved them on, or changed their source,
   // meanwhile), so an old page can never change what the rules no longer allow.
@@ -521,7 +541,7 @@ function teamSave(req, parsed) {
   const added = new Map(); // sheet id -> [rows]
   for (const a of adds) {
     const sheet = current.sheets.find((s) => s.id === a.sheetId);
-    if (!sheet || sheet.hidden || typeof a.row._id !== 'string' || allIds.has(a.row._id) || !/^[\w-]{1,64}$/.test(a.row._id)) {
+    if (!sheet || sheet.hidden || typeof a.row._id !== 'string' || allIds.has(a.row._id) || !ROW_ID.test(a.row._id)) {
       return { status: 409, body: { error: 'conflict', revision: current.revision } };
     }
     allIds.add(a.row._id);

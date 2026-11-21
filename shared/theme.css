@@ -3814,8 +3814,9 @@ dialog.p-dialog .btn { min-height: 44px; padding: 0 22px; font-size: 17px; font-
 
 
 /* 🔴 CSS CHANGED (2026-11-21): every page made calm, as the student card (the owner: "yes, make all the other pages calm too") | from: tinted pills and badges in blue, green, amber, red, purple, teal and brown (the status chips on All Students, the task tags on Today and in cards, the activity badges, the access chips, Offer and Sent chips), a soft blue-and-pink glow behind Today's greeting, grey capitals above it ("EVERYTHING AT A GLANCE"), team dots in four colours, orange figures on Today, blue, purple, teal, orange and pink gradient monograms on Partners, green visa figures, a deep blue gradient where a university picture is missing, the dashboard's five-colour trend lines, a red "Delete rows" and a green "All changes saved" at rest, a green-to-blue progress ring, white Follow-up choice cards with coloured app icons | to: one soft grey (#f0f0f3) behind every pill and badge, its words near-black, with colour kept only in the words when it means something (green for done or issued, red for refused or rejected, amber for on hold, waiting or missing); no glow behind the greeting and its small line in sentence case grey; grey team dots; near-black figures (amber stays only for "waiting 3+ days"); grey monograms with near-black initials; visa figures in near-black; a soft grey (#e8e8ed) where a picture is missing (a graphite gradient behind a university page title with no picture, so its white title still reads); the dashboard's small trend lines in blue and greys; "Delete rows" grey until the mouse is on it (then red); "All changes saved" in grey; the progress ring in solid blue; off-white Follow-up cards with grey app icons */
+/* 🔴 CSS CHANGED (2026-11-21): the green words (Active, Applied, done) | from: #1a7f37, 4.1 to 1 on the grey chip, below the 4.5 to 1 easy-reading level (the accessibility test failed on every push) | to: #146c2e, a slightly deeper green, 5.2 to 1 */
 html:root {
-  --green-bg: #e6e6e6; --green-fg: #1a7f37;
+  --green-bg: #e6e6e6; --green-fg: #146c2e;
   --blue-bg: #e6e6e6;  --blue-fg: #000;
   --amber-bg: #e6e6e6; --amber-fg: #8a5300;
   --gray-bg: #e6e6e6;  --gray-fg: #000;
@@ -3829,7 +3830,8 @@ html:root {
 .activity-action, .activity-action.cat-logins, .cat-security, .cat-accounts, .chips .chip, html body .sl-pick, .td-note.kind-task .td-note-av { background: #e6e6e6; color: #000; }
 .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { box-shadow: 0 0 0 2px #1d1d1f inset; }
 .td-tag::before, .tb-tag::before { background: #6e6e73; }
-.p-applied { background: #e6e6e6; color: #1a7f37; }
+/* 🔴 CSS CHANGED (2026-11-21): Applied chip green | from: #1a7f37 | to: #146c2e (easier to read, as above) */
+.p-applied { background: #e6e6e6; color: #146c2e; }
 .p-applied.is-refused { background: #e6e6e6; color: #b42318; }
 /* Today */
 .td-hello::before { content: none; }

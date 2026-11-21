@@ -78,6 +78,19 @@ test('team saves from an old page are checked against the students as they are n
   bad.sheets[0].rows[0]['COURSE NAME'] = { big: 'x' };
   assert.strictEqual((await staff('POST', '/api/data', { sheets: bad.sheets, activeSheetId: bad.activeSheetId, baseRevision: view.revision })).status, 400);
 
+  // The sheet's own save is never a way round the duplicate check: a second row with an email already on the sheet is refused.
+  {
+    let w = (await admin('GET', '/api/data')).json;
+    w.sheets[0].rows.find((x) => x._id === 'r2').EMAIL = 'bina@example.com';
+    assert.strictEqual((await admin('POST', '/api/data', { sheets: w.sheets, activeSheetId: w.activeSheetId, baseRevision: w.revision })).status, 200);
+    const v = (await staff('GET', '/api/data')).json;
+    const copy = JSON.parse(JSON.stringify(v));
+    copy.sheets[0].rows.push({ ...blank, _id: 'row-dup1', 'FIRST NAME': 'Bina', EMAIL: 'BINA@example.com ', [S]: 'Application Stage' });
+    const dup = await staff('POST', '/api/data', { sheets: copy.sheets, activeSheetId: copy.activeSheetId, baseRevision: v.revision });
+    assert.strictEqual(dup.status, 409, JSON.stringify(dup.json));
+    assert.ok(dup.json.duplicate);
+  }
+
   // A newer intake is started; the staff page still holding the earlier one can't change it.
   wb = (await admin('GET', '/api/data')).json;
   wb.sheets.push({ ...wb.sheets[0], id: 'sheet-' + Date.now().toString(36) + 'zzzzz', name: 'Next intake', rows: [] });

@@ -18,7 +18,10 @@ const { writeFileAtomic, snapshotDaily, localDate } = require('../shared/server-
 const Fields = require('./card-fields');
 
 const LIMITS = { tasks: 200, comments: 200, notes: 500, noteText: 4000, options: 40, messages: 400, short: 300, text: 2000, cards: 50000 };
-const ROW_ID = /^[\w-]{1,64}$/;
+// A row id: letters, digits, _ and -, at most 64. Names every plain object already has (toString, constructor, __proto__ ...)
+// are never ids: a row called "toString" would make cards[id] find a built-in function and break pages for everyone.
+const ID_SHAPE = /^[\w-]{1,64}$/;
+const ROW_ID = { test: (id) => ID_SHAPE.test(String(id)) && !(String(id) in Object.prototype) && String(id) !== '__proto__' };
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 const newId = () => crypto.randomBytes(6).toString('hex');

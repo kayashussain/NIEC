@@ -68,3 +68,14 @@ live-data/
 
 # The university pages' pictures, fetched by the server and kept with the data (media-cache.js): a cache, never in git.
 **/media-cache/
+# More files the server writes into the data folder (found by the review of 21 Nov 2026): the private key for phone
+# notifications and the phones that get them, older activity records, and the stored copies of partner and course pages.
+**/push-keys.json
+**/push-devices.json
+**/activity-*.jsonl
+**/navitas-toolkit.json
+**/course-sitemaps.json
+**/partner-refresh.json
+**/mock-guides.json
+**/apply-through.json
+student-details/brand-logo.png
