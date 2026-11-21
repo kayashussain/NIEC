@@ -1032,13 +1032,8 @@ function b2bPartnerNames() {
   return [...new Set(b2b.all().map((p) => String(p.name || '').trim()).filter((n) => n && !hidden.has(key(n))))].sort((a, b) => a.localeCompare(b));
 }
 
-// Whether a person's own team is the Application Team: chosen as their own team, or the only team they are in (never Admin or the
-// Manager). The menu (shared/header.js) uses the same rule.
-function ownTeamApplication(u) {
-  if (!u || u.role === 'admin' || u.role === 'manager') return false;
-  const deps = Array.isArray(u.departments) ? u.departments : [];
-  return u.taskTeam ? u.taskTeam === 'application' && deps.includes('application') : deps.length === 1 && deps[0] === 'application';
-}
+// Whether a person's own team is the Application Team: the one rule in shared/teams.js (the menu in shared/header.js keeps the same).
+const { ownTeamApplication } = require('../shared/teams');
 
 // Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Universities and
 // Partner Universities, each on its own). The data as it is now is saved first, so a restore can be undone.

@@ -268,11 +268,11 @@
 
   // ---- the university page (the owner, 20 Nov 2026) ----
   // Every university and international college with a profile is drawn this way: a large picture with the logo, the name and the place
-  // and, for Admin and the Application Team, one "Apply now" button that opens a window with how to apply (the portal, the username and
-  // password to copy, the contact people); four facts (location, intake, deadline, tuition from); the video and pictures; a short about
+  // and, for Admin and the Application Team, one "Apply now" button that opens a window with how to apply (the partner, the portal link
+  // or email, the username and password to copy; never a student or a shortlist, the owner, 21 Nov 2026); four facts (location, intake, deadline, tuition from); the video and pictures; a short about
   // with the key points; one card per level (fee and scholarship first, then the entry and English requirements and the rest) in the
   // order foundation, year one, undergraduate, postgraduate, pre-masters, masters by research; every January 2027 course by level, each
-  // with Shortlist; and the deadlines. The courses and requirements are the partner's January 2027 figures, or, for a direct route
+  // with Shortlist (Share for the Application Team, the owner, 21 Nov 2026); and the deadlines. The courses and requirements are the partner's January 2027 figures, or, for a direct route
   // (`own`), the university page's own figures. Nothing says which partner it is applied through: that is only in the Apply window.
   // The levels, their order and each course's level are read the same way here, in Assign task and on the server (fact-present.js).
   const { LEVEL_ORDER, levelOf } = P;
@@ -357,24 +357,8 @@
         }
         step('Log in', box);
       }
-      // The student being shortlisted and their courses here, so the application goes in for the right one.
-      const who = window.ShortlistFor && window.ShortlistFor.current();
-      const mine = who && window.ShortlistFor.shortlisted ? window.ShortlistFor.shortlisted(uni.id) : [];
-      if (who) {
-        const st = el('div', 'up-apply-for');
-        st.append(el('span', 'p-avatar sm', window.Portal.initials(who.name)));
-        const t = el('div');
-        t.append(el('b', '', who.name), el('span', '', mine.length ? mine.map((o) => o.course).join(' · ') : 'No course shortlisted here yet'));
-        st.append(t);
-        body.append(st);
-      }
+      // Only where to apply and the login (the owner, 21 Nov 2026, for everyone): no student, no shortlisted course, no contact people.
       body.append(steps);
-      if (A.contacts && A.contacts.length) {
-        const c = el('div', 'up-contacts');
-        c.append(el('h3', '', 'Contact people'));
-        A.contacts.forEach((p) => { const d = el('div', 'up-contact'); d.append(el('b', '', p.name || 'Contact')); if (p.email) { const a = el('a', '', p.email); a.href = 'mailto:' + p.email; d.append(a); } if (p.phone) d.append(el('span', '', p.phone)); c.append(d); });
-        body.append(c);
-      }
       const foot = el('div', 'p-dialog-foot');
       const done = el('button', 'btn', 'Close'); done.type = 'button'; done.addEventListener('click', () => close());
       foot.append(done);
@@ -695,7 +679,7 @@
             const d = P.parseDate(c.deadline); const left = d ? P.daysLeft(d.date) : null;
             foot.append(el('span', `up-course-deadline${left !== null && left < 0 ? ' is-closed' : left !== null && left <= 14 ? ' is-soon' : ''}`, left !== null && left < 0 ? `Closed ${c.deadline.replace(/ \d{4}$/, '')}` : `Apply by ${c.deadline}`));
           }
-          if (team() && window.ShortlistFor) foot.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.name, intake: String(c.start || data.intake).split(', ')[0], level: g }));
+          if (team() && window.ShortlistFor) foot.append(window.ShortlistFor.button({ universityId: uni.id, university: uni.name, course: c.full || c.name, intake: String(c.start || data.intake).split(', ')[0], level: g, fee, scholarship: sch, duration: c.duration ? years(c.duration) : '', location: c.campus || campuses[0] || uni.city || '', deadline: c.deadline || '' }));
           else if (student() && window.Shortlist && window.Shortlist.isLinked()) foot.append(window.Shortlist.button(uni, c.full || c.name, String(c.start || data.intake).split(', ')[0]));
           if (foot.children.length) card.append(foot);
           grid.append(card);
@@ -908,6 +892,8 @@
       if (!uniRes.ok) { say('That university is not in Universities.', true); return; }
       me = await meRes.json();
       uni = await uniRes.json();
+      // The Application Team shares a course instead of shortlisting it (fact-finder.js): told before anything is drawn.
+      if (window.ShortlistFor && window.ShortlistFor.useMe) window.ShortlistFor.useMe(me);
     } catch (e) {
       say('Could not load this page. Please reload.', true);
       return;

@@ -23,7 +23,10 @@
   const say = (t, e) => root.NiecUI.toast(t, { type: e ? 'error' : 'success' });
   const KEY = 'isrShortlistFor';
   const ORDER_KEY = 'isrShortlistOrder';
-  const state = { student: null, options: [], listeners: [], order: null, open: false };
+  const state = { student: null, options: [], listeners: [], order: null, open: false, shareOnly: false };
+  // The Application Team does not shortlist (it does not give itself applications): beside each course it has Share, and no tray
+  // (the owner, 21 Nov 2026). The page tells this module who is looking (useMe) before it draws anything.
+  function useMe(me) { state.shareOnly = Boolean(root.TeamRules && root.TeamRules.ownTeamApplication && root.TeamRules.ownTeamApplication(me)); }
   const optKey = (universityId, course, intake) => `${universityId}|${String(course).toLowerCase()}|${String(intake || '').toLowerCase()}`;
   // A shortlist change only repaints the Shortlist buttons and the tray, at once (the owner, 17 Nov 2026: quick, fast and smooth);
   // the page itself is redrawn only when the student changes (its "Shortlisting for ..." bars).
@@ -161,6 +164,7 @@
     changed();
   }
   function button(o) {
+    if (state.shareOnly) return shareButton(o);
     const b = h('button', { class: 'sl-pick no-print', type: 'button' }, '');
     b.slOption = o;
     paint(b);
@@ -223,6 +227,7 @@
     }
   }
   function tray() {
+    if (state.shareOnly) return;
     if (!trayBox) {
       trayBox = el('aside', 'sl-tray no-print');
       trayBox.setAttribute('aria-label', 'Shortlist');
@@ -353,6 +358,7 @@
   // A refresh starts clean: the student chosen before is forgotten (moving to another university page keeps it).
   const refreshed = () => { try { const n = performance.getEntriesByType('navigation')[0]; return Boolean(n && n.type === 'reload'); } catch (e) { return false; } };
   const ready = async () => {
+    if (state.shareOnly) { state.student = null; state.options = []; return; }
     if (refreshed()) {
       remember(null);
       try { sessionStorage.removeItem(ORDER_KEY); const u = new URL(location.href); if (u.searchParams.has('for')) { u.searchParams.delete('for'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) { /* nothing kept */ }
@@ -364,7 +370,69 @@
   };
   // The courses shortlisted at one university for the chosen student (the Apply window shows them, the owner, 20 Nov 2026).
   const shortlisted = (universityId) => (state.student ? state.options.filter((o) => o.universityId === universityId && CardFields.onShortlist(o)) : []);
-  root.ShortlistFor = { ready, button, tray, shortlisted, onChange: (f) => state.listeners.push(f), current: () => state.student };
+  // ---- Share (the owner, 21 Nov 2026): the Application Team shares a course's details instead of shortlisting it. A window shows the
+  // university, the course and what the university page says about it (the fee, the scholarship, the intake, the length, where it is
+  // taught and the deadline, when given), with Copy to send them to whoever asked. ----
+  const norm = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const firstOf = (v) => String(v || '').split('\n').map((x) => x.replace(/^[-*\u2022]\s+/, '').trim()).filter(Boolean)[0] || '';
+  const plainMoney = (v) => String(v || '').replace(/\/-/g, '').replace(/\bupto\b/gi, 'Up to').replace(/^gross fee:?\s*/i, '').replace(/^scholarships?\s*(of|:|-)?\s*/i, '').replace(/\s{2,}/g, ' ').trim();
+  const asYears = (d) => { const m = /^(\d+)\s*months?$/i.exec(String(d || '').trim()); if (!m || +m[1] < 12) return String(d || ''); const y = Math.floor(+m[1] / 12); const r = +m[1] % 12; return `${y} year${y === 1 ? '' : 's'}${r ? ` ${r} month${r === 1 ? '' : 's'}` : ''}`; };
+  // The course's details: what the page gave with the button, then the university's own data for the rest.
+  async function detailsOf(o) {
+    const out = { university: o.university || '', course: o.course || '', level: o.level || '', intake: o.intake || '', duration: o.duration || '', location: o.location || '', fee: o.fee || '', scholarship: o.scholarship || '', deadline: o.deadline || '' };
+    const P = root.FactPresent;
+    if (!P || !o.universityId) return out;
+    let uni = null;
+    try { uni = await api(`/api/facts/${encodeURIComponent(o.universityId)}`); } catch (e) { return out; }
+    if (!uni || !uni.name) return out;
+    const data = P.pageData(uni);
+    const want = norm(o.course);
+    const c = data.courses.find((x) => norm(x.full) === want || norm(x.name) === want) || data.courses.find((x) => want && (norm(x.full).startsWith(want) || want.startsWith(norm(x.name)))) || {};
+    const lvl = c.level || o.level || '';
+    const L = data.levels.find((l) => l.level === lvl) || data.levels.find((l) => P.levelOf(l.level) === lvl) || data.levels.find((l) => P.levelOf(l.level) === P.levelOf(lvl)) || {};
+    const fromExtra = (k) => (Array.isArray(L.extra) ? L.extra : []).map(String).find((x) => x.toLowerCase().startsWith(k.toLowerCase() + ':'));
+    const next = P.nextApplyBy ? P.nextApplyBy((uni.profile || {}).deadlines || []) : null;
+    return {
+      university: out.university || uni.name,
+      course: out.course,
+      level: out.level || lvl,
+      intake: c.start || out.intake || data.intake || '',
+      duration: asYears(out.duration || c.duration || (fromExtra('Duration') || '').replace(/^duration:\s*/i, '')),
+      location: out.location || c.campus || (P.campusesOf(uni, data.courses)[0]) || uni.city || '',
+      fee: plainMoney(out.fee || c.fee || firstOf(L.tuition)),
+      scholarship: plainMoney(out.scholarship || c.scholarship || firstOf(L.scholarship)),
+      deadline: out.deadline || c.deadline || (next && next.when) || '',
+    };
+  }
+  const SHARE_ROWS = [['University', 'university'], ['Course', 'course'], ['Level', 'level'], ['Intake', 'intake'], ['Course duration', 'duration'], ['Location', 'location'], ['Tuition fee', 'fee'], ['Scholarship', 'scholarship'], ['Apply by', 'deadline']];
+  function shareButton(o) {
+    const b = h('button', { class: 'sl-pick no-print', type: 'button', title: `Share the details of ${o.course || 'this course'}` }, 'Share');
+    b.addEventListener('click', () => shareWindow(o));
+    return b;
+  }
+  function shareWindow(o) {
+    return dialog('Share this course', (body, close) => {
+      const wait = el('p', 'p-muted p-small', 'Reading the course details...');
+      body.append(wait);
+      detailsOf(o).then((d) => {
+        wait.remove();
+        const table = el('table', 'p-table');
+        const tb = el('tbody');
+        SHARE_ROWS.forEach(([label, k]) => { const tr = el('tr'); tr.append(el('th', '', label), el('td', '', d[k] || 'Not given')); tb.append(tr); });
+        table.append(tb);
+        // What is copied: only the details that are given, one per line, ready to paste in a message.
+        const text = SHARE_ROWS.filter(([, k]) => d[k]).map(([label, k]) => `${label}: ${d[k]}`).join('\n');
+        const foot = el('div', 'p-dialog-foot');
+        const copy = h('button', { class: 'btn btn-primary', type: 'button' }, 'Copy details');
+        copy.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(text); copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy details'; }, 1600); } catch (e) { say('Could not copy. Select the details and copy them.', true); }
+        });
+        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Close'), copy);
+        body.append(table, foot);
+      });
+    });
+  }
+  root.ShortlistFor = { ready, button, tray, shortlisted, useMe, onChange: (f) => state.listeners.push(f), current: () => state.student };
   root.OptionActions = { email: emailOptions, assign };
 
   // Looks the course page up on the university's website (the server does the search); resolves to a link or ''.

@@ -145,3 +145,18 @@ test('the menu keeps the own team in its saved copy, so someone in two teams who
   const line = src.split('\n').find((l) => /const fresh = JSON\.stringify\(/.test(l)) || '';
   assert.match(line, /taskTeam/, 'the saved copy of the person keeps taskTeam');
 });
+
+test('own team Application: one rule for the menu, the pages and Universities (Share instead of Shortlist)', () => {
+  const T = require('../shared/teams');
+  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application'] }), true);
+  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'mock'], taskTeam: 'application' }), true);
+  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'mock'], taskTeam: 'mock' }), false);
+  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'mock'] }), false, 'no own team chosen: not only the Application Team');
+  assert.strictEqual(T.ownTeamApplication({ role: 'manager', departments: ['application'] }), false);
+  assert.strictEqual(T.ownTeamApplication({ role: 'admin' }), false);
+  const finder = fs.readFileSync(path.join(__dirname, '..', 'student-details', 'fact-finder.js'), 'utf8');
+  assert.match(finder, /if \(state\.shareOnly\) return shareButton\(o\);/, 'the Application Team gets Share');
+  const uni = fs.readFileSync(path.join(__dirname, '..', 'student-details', 'fact-university.js'), 'utf8');
+  const apply = uni.slice(uni.indexOf('function applyWindow'), uni.indexOf('function renderProfile')).split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n');
+  assert.ok(!/ShortlistFor|shortlisted|contacts/.test(apply), 'Apply now shows no student, no shortlist and no contact people');
+});

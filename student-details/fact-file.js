@@ -234,6 +234,8 @@
     anchor.after(box);
     fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then(async (me) => {
       const student = me.role === 'student';
+      // The Application Team shares a course instead of shortlisting it (fact-finder.js).
+      if (window.ShortlistFor && window.ShortlistFor.useMe) window.ShortlistFor.useMe(me);
       if (!student && window.ShortlistFor && !(window.TeamRules && window.TeamRules.isReadOnly(me))) {
         await window.ShortlistFor.ready();
         team = true;

@@ -404,8 +404,17 @@
     return { changes, adds, deletes, errors: [...new Set(errors)] };
   }
 
+  // Whether a person's own team is the Application Team (the owner, 21 Nov 2026): chosen as their own team, or the only team they are
+  // in; never Admin or the Manager. That team works from Today, All Students and Universities (no Dashboard, Partners or Mock
+  // interviews) and shares a course on Universities instead of shortlisting it. The menu (shared/header.js) keeps the same rule.
+  function ownTeamApplication(u) {
+    if (!u || u.role === 'admin' || u.role === 'manager') return false;
+    const deps = Array.isArray(u.departments) ? u.departments : [];
+    return u.taskTeam ? u.taskTeam === 'application' && deps.includes('application') : deps.length === 1 && deps[0] === 'application';
+  }
+
   return {
-    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS,
+    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication,
     who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };
