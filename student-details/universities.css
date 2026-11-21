@@ -1,0 +1,105 @@
+/* The Universities pages (fact-file.html: the list and one university's page, fact-university.html): their own look, loaded after
+   theme.css. The Ledger look of the student card (the owner, 21 Nov 2026): firm 1px grey borders, 10px corners, grey title bars,
+   solid labels, one font. Only the look: every section, link, picture, video and button stays as it is. */
+
+/* 🔴 CSS CHANGED (2026-11-21): the Universities pages in the Ledger look of the student card | from: soft white cards with large round corners (16 to 26px) and soft shadows that lift under the mouse, round grey pills for the levels, the switch and the chips, a light blue gradient initials badge, a grey rounded box for the deadline inside each card, a coloured stripe down the left of each entry requirement panel, the four facts as four floating boxes, the fee and the scholarship of a course as two separate tinted boxes, round pill buttons | to: off-white cards (#fbfbfc) with a firm grey border (#d4d6db) and 10px corners that stay still under the mouse (the border darkens), level buttons and the switch as 8px rectangles (the chosen one black), chips as small 4px labels, a white initials badge with a grey border and the logo's blue letters, the deadline as a row across the card with a solid "days left" label with a dot (red when urgent, orange when soon), the course count in a grey footer bar, each entry requirement panel with a grey title bar and no stripe, the four facts as one bordered strip, the fee and the scholarship of a course side by side in one grey block with no line between them, 8px buttons, + Shortlist outlined in blue; one font everywhere */
+:root { --uv-line: #d4d6db; --uv-soft: #dcdee3; --uv-panel: #fbfbfc; --uv-bar: #f1f2f5; --uv-ink: #111; --uv-grey: #5f6066; }
+
+/* ---- the list ---- */
+html body .fd-card { border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); box-shadow: none; }
+.fd-levels { gap: 6px; }
+.fd-levels button { min-height: 36px; padding: 0 14px; border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; color: var(--uv-ink); font-size: 14.5px; font-weight: 500; box-shadow: none; transition: none; }
+.fd-levels button:hover { background: var(--uv-bar); }
+.fd-levels button:active { transform: none; }
+.fd-levels button.is-on { border-color: var(--uv-ink); background: var(--uv-ink); color: #fff; font-weight: 600; box-shadow: none; }
+html body .fd-form { border: 1px solid var(--uv-soft); border-radius: 10px; background: var(--uv-bar); }
+html body .fd-form .p-field input, html body .fd-form .p-field select { min-height: 42px; border: 1px solid #b9bcc3; border-radius: 8px; background: #fff; }
+html body .fd-card .btn, html body .fd-go { border-radius: 8px; }
+.ff-soon { border: 1px solid #e7c9a5; border-radius: 10px; background: #fff8f0; color: #6b3a00; font-weight: 600; }
+.ff-soon-dot { background: #f08a24; }
+.ff-kind.p-seg { padding: 0; overflow: hidden; border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; }
+.ff-kind.p-seg > button { min-height: 38px; border-radius: 0; font-size: 15px; box-shadow: none; }
+.ff-kind.p-seg > button + button { border-left: 1px solid #c9ccd2; }
+.ff-kind.p-seg > button.on { color: #fff; }
+.ff-kind.p-seg > .seg-thumb { border-radius: 0; background: var(--uv-ink); box-shadow: none; }
+.ff-kind.p-seg > button.on .ff-n { background: rgba(255, 255, 255, .22); color: #fff; }
+
+html body a.uni-card.uc-card, html body a.uni-card.uc-card.has-cover { gap: 10px; padding: 0; overflow: hidden; border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); box-shadow: none; transition: border-color .1s linear; }
+html body a.uni-card.uc-card:hover { border-color: #9a9ca3; box-shadow: none; transform: none; }
+html body a.uni-card.uc-card:hover .uc-cover img { transform: none; }
+.uc-cover { margin: 0; border-bottom: 1px solid var(--uv-line); }
+html body .uc-card .uni-mono, html body .uc-card.is-pathway .uni-mono { border: 1px solid var(--uv-line); border-radius: 8px; background: #fff; color: #00679a; }
+html body .uc-card:hover .uni-mono, html body .uc-card.is-pathway:hover .uni-mono { background: #fff; color: #00679a; }
+html body .uc-card h2 { color: var(--uv-ink); font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+html body .uc-card .city { color: var(--uv-grey); font-weight: 500; }
+html body .uc-card .chips span, html body .uc-card .chips .p-chip, html body .uc-card .chips .chip { border-radius: 4px; background: #eef0f3; color: var(--uv-ink); font-weight: 600; }
+html body a.uni-card.uc-card.has-cover > .uc-next, html body a.uni-card.uc-card .uc-next { margin: 2px 0 0; padding: 12px 22px; border-top: 1px solid var(--uv-soft); border-radius: 0; background: transparent; }
+.uc-next b { font-weight: 700; }
+.uc-next-intake { color: var(--uv-grey); }
+.uc-days { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: #eef0f3; color: #3d3e42; font-weight: 700; }
+.uc-days::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.uc-days.is-soon { background: #fff3e4; color: #8a4600; }
+.uc-days.is-urgent { background: #fdecec; color: #b42318; }
+html body a.uni-card.uc-card.has-cover > .uc-foot, html body a.uni-card.uc-card .uc-foot { margin: 0; padding: 11px 22px; border-top: 1px solid var(--uv-line); background: var(--uv-bar); }
+.uc-count { color: var(--uv-ink); font-weight: 700; }
+
+/* the finder's answers */
+html body .fd-uni { border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); box-shadow: none; }
+.fd-logo { border-radius: 8px; box-shadow: 0 0 0 1px var(--uv-line); }
+.fd-cover + .fd-uni-top .fd-logo { box-shadow: 0 0 0 1px var(--uv-line); }
+
+/* ---- one university ---- */
+html body .page:has(.up-doc) a.btn.btn-sm[href="/fact-file"] { border: 1px solid #c9ccd2; border-radius: 8px; background: #fff; }
+html body .up-doc { background: var(--uv-panel); }
+.up-logo { width: 100px; height: 100px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, .22); }
+html body .up-titles h1 { font-size: 36px; }
+.up-chip { border-radius: 6px; backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(17, 17, 17, .55); }
+html body .up-apply { min-height: 46px; border-radius: 8px; box-shadow: none; }
+html body .up-doc > .up-facts { gap: 0; margin: 24px 40px 4px; padding: 0; overflow: hidden; border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); }
+html body .up-fact { padding: 16px 20px; border-left: 1px solid var(--uv-line); border-radius: 0; background: transparent; box-shadow: none; }
+html body .up-fact:first-child { border-left: 0; }
+.up-fact b { color: var(--uv-ink); font-size: 21px; font-weight: 700; }
+html body .up-section h2 { color: var(--uv-ink); font-size: 24px; }
+.up-about-text { color: #1d1d1f; font-size: 16px; }
+.up-points { border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); }
+html body .up-level { padding: 0; overflow: hidden; border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); box-shadow: none; transform: none; }
+html body .up-level::before { display: none; }
+html body .up-level:hover { transform: none; box-shadow: none; }
+html body .up-level-head { margin: 0 0 16px; padding: 12px 20px; border-bottom: 1px solid var(--uv-line); background: var(--uv-bar); }
+html body .up-level-head h3 { font-size: 18px; }
+html body .up-level > :not(.up-level-head) { margin-left: 20px; margin-right: 20px; }
+html body .up-level > :last-child:not(.up-level-head) { margin-bottom: 18px; }
+.up-level-link, html body .up-level-link { border-radius: 6px; }
+.up-level-more, html body .up-level-link .up-level-more { border-radius: 4px; }
+.up-level-note { border-radius: 8px; }
+.up-money-tile { border: 1px solid var(--uv-soft); border-radius: 8px; background: var(--uv-bar); }
+.up-req-k { font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--uv-grey); }
+.up-req-k::before { border-radius: 6px; }
+.up-extra span { border-radius: 4px; }
+.up-jump a { border-radius: 6px; }
+.up-courses-head .search { border: 1px solid #b9bcc3; border-radius: 8px; }
+html body .up-group-head h3 { font-size: 19px; }
+
+/* a course: name, then intake, place and length, then the fee and the scholarship side by side in one block, then the deadline and Shortlist */
+html body .up-course { gap: 10px; border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); box-shadow: none; transition: border-color .1s linear; }
+html body .up-course:hover { border-color: #9a9ca3; box-shadow: none; transform: none; }
+.up-course-name { color: var(--uv-ink); font-weight: 700; }
+.up-course-where span { border-radius: 4px; }
+html body .up-course-money { gap: 0; padding: 0; overflow: hidden; border-radius: 8px; background: var(--uv-bar); }
+html body .up-cm, html body .up-cm.is-sch, html body .up-cm.is-sch.is-none { padding: 10px 14px; border-radius: 0; background: transparent; }
+html body .up-cm span { color: var(--uv-grey); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+html body .up-cm b { color: var(--uv-ink); font-size: 16px; }
+html body .up-cm.is-sch:not(.is-none) b { color: #11602e; }
+html body .up-cm.is-none b { color: var(--uv-grey); font-size: 15px; font-weight: 500; }
+.up-course-deadline { color: #8a4600; }
+html body .up-course .sl-pick { min-height: 32px; border: 1px solid #0071e3; border-radius: 8px; background: #fff; color: #0058b0; font-weight: 600; line-height: 30px; }
+html body .up-course .sl-pick:hover { background: #e6f0fd; }
+html body .up-course .sl-pick.is-on { border-color: #b7dfc3; background: #e7f6ec; color: #11602e; }
+.up-deadlines { border: 1px solid var(--uv-line); border-radius: 10px; background: var(--uv-panel); box-shadow: none; }
+
+/* ---- the Apply window ---- */
+.up-cred { border-radius: 8px; }
+.up-copy { border-radius: 6px; }
+
+/* ---- less motion: nothing lifts or zooms under the mouse (above); the reader who asks for none gets none ---- */
+@media (prefers-reduced-motion: reduce) { html body a.uni-card.uc-card, html body .up-course { transition: none; } }

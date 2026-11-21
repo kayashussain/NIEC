@@ -169,6 +169,7 @@ set to Apple's timings above.
 | Page | Done | Still to come |
 |---|---|---|
 | Student card | the Ledger design (the owner, 21 Nov 2026, chosen from three: closest to Route2Uni): solid off-white panels with a firm grey border and a grey title bar on a grey page; a top panel (name, intake, stage, Call, WhatsApp, Email, Assign a task, the progress line); the Profile as a two-column table with one Edit profile window and "Last saved ... by ..."; Student source; Next step, Applications, open tasks and a Timeline table (When, What, What happened, By, a "..." menu) that shows every event; nothing on the card moves; its own stylesheet `student-details/student-card.css` | the other pages follow once the owner approves |
+| Universities (list and one university) | the Ledger look (the owner, 21 Nov 2026), only the look: firm borders, 10px corners, still cards, a solid days-left label, grey title bars on entry requirements, the facts as one strip, fee and scholarship side by side on every course card; `student-details/universities.css` | |
 | Every page | the kit at Apple's timings: quick colour on press, 0.2s page fade, no mouse light, no spring | each page brought to the calm system, one at a time |
 | Today | the greeting, a progress ring of the day, counting numbers, rising rows, confetti for finished tasks | the greeting shine and the confetti to be checked against the calm rule with the owner |
 | Universities (university pages) | cover slideshow with pause, gallery fades, rising cards, counting amounts | moving to the calm system |

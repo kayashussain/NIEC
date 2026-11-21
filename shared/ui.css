@@ -1,3 +1,4 @@
+/* 🔴 CSS CHANGED (2026-11-21): one font everywhere in messages, windows and empty lists | from: the computer's own system font (Segoe UI on Windows) for a few words, such as "Admin only", while the rest of the page used the ISR font | to: the ISR font (--font) for them too, so every word on a page is in the same font (the owner, 21 Nov 2026) */
 /* Shared polish for every page (shared/ui.js adds the notices and confirmation boxes): one look for
    keyboard focus, gentle motion, loading placeholders and empty states. Self-contained, with its own
    colours, so it works the same on every page (there is one light look only). */
@@ -45,7 +46,7 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible, [role="
 .ui-toast {
   display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 11px 14px;
   background: var(--ui-panel); color: var(--ui-text); border: 1px solid var(--ui-border); border-left: 4px solid var(--ui-blue);
-  border-radius: 10px; box-shadow: var(--ui-shadow); font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  border-radius: 10px; box-shadow: var(--ui-shadow); font: 13px/1.45 var(--font, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
   pointer-events: auto; animation: ui-toast-in .22s ease-out both;
 }
 .ui-toast.success { border-left-color: #16a34a; }
@@ -64,7 +65,7 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible, [role="
 dialog.ui-dialog {
   width: min(92vw, 420px); padding: 0; border: 1px solid var(--ui-border); border-radius: 14px;
   background: var(--ui-panel); color: var(--ui-text); box-shadow: var(--ui-shadow);
-  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 14px/1.5 var(--font, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
 }
 dialog.ui-dialog[open] { animation: ui-dialog-in .18s ease-out both; }
 dialog.ui-dialog::backdrop { background: rgba(15, 23, 42, .5); backdrop-filter: blur(2px); animation: ui-fade-in .18s ease-out both; }
@@ -94,7 +95,7 @@ dialog.ui-dialog::backdrop { background: rgba(15, 23, 42, .5); backdrop-filter: 
 @keyframes ui-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 .ui-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
-  padding: 36px 20px; color: var(--ui-dim); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 36px 20px; color: var(--ui-dim); font: 14px/1.5 var(--font, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
 }
 .ui-empty strong { color: var(--ui-text); font-size: 16px; }
 .ui-empty .ui-empty-icon { font-size: 30px; line-height: 1; opacity: .8; }

@@ -673,14 +673,11 @@
           const fee = tidyMoney(c.fee || firstLine(L.tuition));
           // "Scholarship of £4,000" in the Scholarship tile reads "£4,000"; "Upto" reads "Up to".
           const sch = tidyMoney(c.scholarship || firstLine(L.scholarship)).replace(/^scholarships?\s*(of|:|-)?\s*/i, '');
-          const levelHasSch = has(L.scholarship) || data.courses.some((x) => x.level === g && has(x.scholarship));
           const money2 = el('div', 'up-course-money');
           const tile = (k, v, cls) => { const t = el('div', `up-cm ${cls}`); t.append(el('span', '', k), el('b', '', v || 'Not given')); if (!v) t.classList.add('is-none'); money2.append(t); return t; };
-          // No fee tile on a level where nothing gives a fee either (it would say "Not given" on every card).
-          const levelHasFee = has(L.tuition) || data.courses.some((x) => x.level === g && has(x.fee));
-          if (levelHasFee) tile('Tuition fee', fee, 'is-fee');
-          // No scholarship tile on a level where no partner gives any (it would say "Not given" on every card).
-          if (levelHasSch) { const full = sch; const short = sch.length > 60 ? (sch.split(/(?<=\))\s|\.\s|;\s/)[0] || sch).slice(0, 70) : sch; const st = tile('Scholarship', short, 'is-sch'); if (short !== full) st.title = full; if (sch && !c.scholarship && L.scholarship) st.title = L.scholarship; }
+          // Every course card shows its tuition fee and its scholarship, "Not given" when there is none (the owner, 21 Nov 2026).
+          tile('Tuition fee', fee, 'is-fee');
+          { const full = sch; const short = sch.length > 60 ? (sch.split(/(?<=\))\s|\.\s|;\s/)[0] || sch).slice(0, 70) : sch; const st = tile('Scholarship', short, 'is-sch'); if (short !== full) st.title = full; if (sch && !c.scholarship && L.scholarship) st.title = L.scholarship; }
           if (money2.children.length === 1) money2.classList.add('is-one');
           if (money2.children.length) card.append(money2);
           // Only what asks more: the English tests whose score or band is higher than the level's, the grade when higher.
