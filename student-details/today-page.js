@@ -36,7 +36,8 @@
     // Who has it, by name (the owner, 15 Nov 2026: "Parvati", not "your team"); the team's name when nobody has it as their own team.
     const toName = peopleOf(t.team, t.teamLabel);
     return window.Portal.taskCard(t, {
-      rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: (t.forMe || t.by === me || canAssignAll || t.had), // only who the server lets write (a view-only Manager reads) today: todayIso,
+      // canWrite: only who the server lets write (a view-only Manager reads).
+      rowId: t.studentId, me, teams: allTeams, stage: t.stage, unread: t.unread || 0, canWrite: (t.forMe || t.by === me || canAssignAll || t.had), today: todayIso,
       mayTick: t.forMe || (canAssignAll && !t.given), tickTitle: `${t.teamLabel} ticks it when it is done`,
       canChange: t.by === me || canAssignAll, // the tag is changed by whoever gave the task, Admin or the Manager (as the server allows)
       student: { name: t.student, href: '/student?id=' + encodeURIComponent(t.studentId) }, fromName, toName,

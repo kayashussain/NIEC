@@ -387,7 +387,10 @@
     if (!uni || !uni.name) return out;
     const data = P.pageData(uni);
     const want = norm(o.course);
-    const c = data.courses.find((x) => norm(x.full) === want || norm(x.name) === want) || data.courses.find((x) => want && (norm(x.full).startsWith(want) || want.startsWith(norm(x.name)))) || {};
+    // The same course by its name; a near name only when exactly one course fits it (never another course's fee).
+    const exact = data.courses.find((x) => want && (norm(x.full) === want || norm(x.name) === want));
+    const near = exact ? [] : data.courses.filter((x) => want.length > 5 && norm(x.name).length > 5 && (norm(x.full).startsWith(want) || want.startsWith(norm(x.name))));
+    const c = exact || (near.length === 1 ? near[0] : {});
     const lvl = c.level || o.level || '';
     const L = data.levels.find((l) => l.level === lvl) || data.levels.find((l) => P.levelOf(l.level) === lvl) || data.levels.find((l) => P.levelOf(l.level) === P.levelOf(lvl)) || {};
     const fromExtra = (k) => (Array.isArray(L.extra) ? L.extra : []).map(String).find((x) => x.toLowerCase().startsWith(k.toLowerCase() + ':'));
