@@ -8,7 +8,8 @@ body.p-embed { padding-left: 0 !important; }
 .niec-header {
   /* 🔴 CSS CHANGED (2026-11-20): the menu's words | from: a blue-black #1a2230 and a blue-grey #424c5b | to: Apple's near-black #1d1d1f and grey #6e6e73, the same as every page */
   --h-text: #1d1d1f; --h-dim: #6e6e73; --h-hover: rgba(20, 30, 50, .06); --h-border: rgba(20, 30, 50, .12); --h-gold: #1f5fc0;
-  position: fixed; inset: 0 auto 0 0; z-index: 40; width: var(--side-w); height: 100vh;
+  /* 🔴 CSS CHANGED (2026-11-21): the menu's height | from: 100vh (which falls short when the page is drawn at a smaller Text size) | to: from the top to the bottom of the window by its position, at any Text size */
+  position: fixed; inset: 0 auto 0 0; z-index: 40; width: var(--side-w);
   display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 18px 14px 16px;
   background: rgba(233, 236, 240, .86); -webkit-backdrop-filter: saturate(180%) blur(32px); backdrop-filter: saturate(180%) blur(32px);
   color: var(--h-text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

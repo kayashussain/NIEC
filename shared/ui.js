@@ -1,3 +1,18 @@
+// The size the whole page is drawn at (Text size in the account menu, the owner, 21 Nov 2026): the page may be drawn smaller than the
+// browser's own 100% (CSS zoom on <html>). Positions measured on the screen (getBoundingClientRect, mouse positions, the window's size)
+// then come in screen pixels, while a menu placed with style.left/top is placed in page pixels; `isrPos` turns the first into the second.
+// With no zoom it changes nothing.
+(function (root) {
+  const zoom = () => { try { const z = parseFloat(getComputedStyle(document.documentElement).zoom); return z > 0 ? z : 1; } catch (e) { return 1; } };
+  root.isrPos = {
+    zoom,
+    rect(el) { const z = zoom(); const r = el.getBoundingClientRect(); return { top: r.top / z, bottom: r.bottom / z, left: r.left / z, right: r.right / z, width: r.width / z, height: r.height / z }; },
+    width() { return root.innerWidth / zoom(); },
+    height() { return root.innerHeight / zoom(); },
+    point(x) { return x / zoom(); },
+  };
+})(this);
+
 // Notices and confirmation boxes for every page, in place of the browser's plain pop-ups: they match the
 // site, can be used from the keyboard (Enter confirms, Escape cancels) and don't freeze the page.
 // Served as /ui.js together with /ui.css; loaded as window.NiecUI.
@@ -233,12 +248,12 @@
   }
   function place() {
     if (!open) return;
-    const r = open.input.getBoundingClientRect();
+    const r = window.isrPos.rect(open.input); // in page pixels, whatever the Text size
     const p = open.panel;
     const h = p.offsetHeight; const w = p.offsetWidth;
-    const below = r.bottom + 8 + h <= window.innerHeight || r.top - 8 - h < 0;
+    const below = r.bottom + 8 + h <= window.isrPos.height() || r.top - 8 - h < 0;
     p.style.top = `${Math.max(8, below ? r.bottom + 8 : r.top - 8 - h)}px`;
-    p.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - w - 8))}px`;
+    p.style.left = `${Math.max(8, Math.min(r.left, window.isrPos.width() - w - 8))}px`;
     p.classList.toggle('above', !below);
   }
   // The month and the year can be picked at once (the owner, 16 Nov 2026: a date of birth in 1999 took a click for every month): a

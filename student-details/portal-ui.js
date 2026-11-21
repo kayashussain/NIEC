@@ -957,7 +957,7 @@
   // A small, happy burst of soft coloured dots from where a task was ticked (nothing moves for people who ask for less motion).
   function celebrate(from) {
     if (!from || (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    const r = from.getBoundingClientRect();
+    const r = window.isrPos ? window.isrPos.rect(from) : from.getBoundingClientRect(); // page pixels, whatever the Text size
     const box = el('div', 'isr-burst');
     box.style.left = `${r.left + r.width / 2}px`;
     box.style.top = `${r.top + r.height / 2}px`;

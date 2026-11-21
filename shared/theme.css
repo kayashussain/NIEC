@@ -3861,3 +3861,18 @@ html body .uc-card .uni-mono:not(.has-logo), html body .uni-card.is-board .uni-m
 html body .uc-card:hover .uni-mono:not(.has-logo), html body .uc-card.is-pathway:hover .uni-mono:not(.has-logo) { background: #dcdce2; color: #1d1d1f; }
 .ff-kind.p-seg > button.on .ff-n { background: #e8e8ed; color: #1d1d1f; }
 .access .check-student { border-top: 1px solid var(--border, #e3e3e8); padding-top: 12px; }
+
+/* 🔴 CSS CHANGED (2026-11-21): Text size, and a page easier on the eyes (the owner: "the system should look as it does at 67% zoom for everyone, with bigger text for whoever needs it; white is hard on the eyes all day, but not cream or yellow") | from: every page drawn at the browser's 100%, so on a laptop the team zoomed out to 67% by hand; a bright near-white canvas (#f5f5f7) and panels (#fbfbfd) | to: the page drawn at Small (as at 67%) by default on laptops and desktops, Medium (80%) or Large (100%) chosen in the account menu as three grey segments (the chosen one raised); windows, the menu and All Students still fill the screen at every size; a cooler, softer canvas (#eef0f3) and panels (#f8f9fb) with the same near-black text, so there is less glare and the words stand out more; phones keep their own size */
+@media (min-width: 900px) {
+  html[data-size="small"] { zoom: .67; --isr-z: .67; }
+  html[data-size="medium"] { zoom: .8; --isr-z: .8; }
+}
+html:root { --bg: #eef0f3; --panel: #f8f9fb; --surface: #f8f9fb; --ui-panel: #f8f9fb; }
+dialog.p-dialog[open] { max-height: calc(100vh / var(--isr-z, 1) - 48px); }
+.mo-confetti { width: auto; height: auto; }
+.niec-size { display: grid; gap: 6px; margin: 4px 0; padding: 8px 10px; border-top: 1px solid rgba(0, 0, 0, .06); border-bottom: 1px solid rgba(0, 0, 0, .06); }
+.niec-size > span { color: #6e6e73; font-size: 13px; font-weight: 600; }
+.niec-size-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 9px; background: #e8e8ed; }
+.niec-menu .niec-size-seg button { display: block; width: auto; min-height: 30px; padding: 0 6px; border: 0; border-radius: 7px; background: transparent; color: #1d1d1f; font-size: 13px; text-align: center; }
+.niec-menu .niec-size-seg button:hover { background: rgba(255, 255, 255, .6); }
+.niec-menu .niec-size-seg button[aria-pressed="true"] { background: #fdfdfe; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }

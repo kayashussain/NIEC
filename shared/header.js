@@ -5,6 +5,18 @@
 //
 // Navigation depends on the account: Admin sees every page (Users and Activity in the account menu), the Manager the Dashboard, All Students and
 // Universities, and the teams All Students and Universities.
+// Text size (the owner, 21 Nov 2026): the whole page is drawn at Small (the look the team had at the browser's 67%), Medium or Large,
+// chosen per computer in the account menu and kept in this browser. Small for everyone at first; a person who wants bigger text picks
+// Medium or Large. Only on laptop and desktop screens (theme.css); a phone keeps its own size.
+(function () {
+  const SIZES = ['small', 'medium', 'large'];
+  let size = 'small';
+  try { const kept = localStorage.getItem('isrSize'); if (SIZES.includes(kept)) size = kept; } catch (e) { /* the first size */ }
+  // A page shown inside another (the student card opened over All Students) is already drawn at the size of the page around it.
+  let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
+  document.documentElement.setAttribute('data-size', framed ? 'framed' : size);
+})();
+
 (function () {
   const header = document.querySelector('.niec-header');
   if (!header) return;
@@ -196,6 +208,7 @@
         <div class="niec-menu-head"><b>${esc(me.name)}</b><span>${esc(me.username)} · ${esc(me.roleLabel)}</span></div>
         ${(ACCOUNT_LINKS[me.role] || []).map(([id, href, label]) => `<a href="${href}" role="menuitem" class="niec-${id}"${id === page ? ' aria-current="page"' : ''}>${esc(label)}</a>`).join('')}
         ${me.role === 'student' ? '' : '<button type="button" role="menuitem" class="niec-phone">Connect my phone</button>'}
+        <div class="niec-size" role="group" aria-label="Text size"><span>Text size</span><div class="niec-size-seg">${[['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']].map(([k, t]) => `<button type="button" data-size="${k}" aria-pressed="${document.documentElement.getAttribute('data-size') === k}">${t}</button>`).join('')}</div></div>
         <button type="button" role="menuitem" class="niec-logout">Log out</button>
       </div>`;
     const btn = account.querySelector('.niec-account-btn');
@@ -205,6 +218,15 @@
     document.addEventListener('click', (e) => { if (!account.contains(e.target)) setOpen(false); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); } });
     account.querySelector('.niec-logout').addEventListener('click', () => window.NiecSession.logout());
+    // Text size: the page is redrawn at once at the size chosen, and every page of this browser keeps it.
+    account.querySelectorAll('.niec-size-seg button').forEach((b) => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const k = b.getAttribute('data-size');
+      document.documentElement.setAttribute('data-size', k);
+      try { localStorage.setItem('isrSize', k); } catch (err) { /* this page only */ }
+      account.querySelectorAll('.niec-size-seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      window.dispatchEvent(new Event('resize'));
+    }));
     // WhatsApp chats on the person's own phone (see student-details/phone-link.js).
     if (account.querySelector('.niec-phone')) account.querySelector('.niec-phone').addEventListener('click', () => { setOpen(false); if (window.PhoneLink) window.PhoneLink.dialog(); });
   }

@@ -72,6 +72,15 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   picture twice on a page; a picture that fails is removed gracefully.
 - Fewer words: titles, numbers and short labels.
 - **Desktop and laptop first** (until the owner asks for phones). Phone styles already in the code stay as they are.
+- **Text size, the same for everyone by default (the owner, 21 Nov 2026).** On a laptop or desktop every page shows at the size the
+  owner liked at 67% browser zoom (`html[data-size="small"]`, CSS `zoom: .67`). The account menu has **Text size: Small, Medium,
+  Large** (0.67, 0.8, 1), kept in the browser per person, for anyone who finds it small; it never goes bigger than the page as built.
+  Pages inside the card drawer are not zoomed twice (`data-size="framed"`). Because of the zoom: place any menu or popup with
+  `isrPos` (`shared/ui.js`), never with raw `getBoundingClientRect` or `innerWidth`; write a full-height size as
+  `calc(100vh / var(--isr-z, 1))` or with `inset`, never plain `100vh`.
+- **Less glare (the owner, 21 Nov 2026):** canvas #eef0f3, panels #f8f9fb (a cool off-white, never cream or yellow); on the student
+  card the Profile column #f1f3f6 and edit boxes #fdfdfe. Screens of work are flat: surfaces meet edge to edge with hairlines, not
+  cards floating with margins on every side.
 
 ## 1a. The owner's direction for screens of work (21 Nov 2026)
 
@@ -150,7 +159,7 @@ set to Apple's timings above.
 
 | Page | Done | Still to come |
 |---|---|---|
-| Student card | a working portal (the owner, 21 Nov 2026, as ApplyBoard): the whole width, a profile bar with the progress steps, the Profile on the left with every detail changed where it is shown (Enter saves with a tick, Escape cancels, "N to add" opens the next missing one), the work on the right; quick-note pills; brand colours used sparingly (blue for actions and now, orange for missing); its own stylesheet `student-details/student-card.css` | waiting for the owner's approval before the other pages follow |
+| Student card | a working portal (the owner, 21 Nov 2026, as ApplyBoard): the whole width, a profile bar with the progress steps, the Profile on the left with every detail changed where it is shown (Enter saves with a tick, Escape cancels, "N to add" opens the next missing one), the work on the right; brand colours used sparingly (blue for actions and now, orange for missing); its own stylesheet `student-details/student-card.css` | waiting for the owner's approval before the other pages follow |
 | Every page | the kit at Apple's timings: quick colour on press, 0.2s page fade, no mouse light, no spring | each page brought to the calm system, one at a time |
 | Today | the greeting, a progress ring of the day, counting numbers, rising rows, confetti for finished tasks | the greeting shine and the confetti to be checked against the calm rule with the owner |
 | Universities (university pages) | cover slideshow with pause, gallery fades, rising cards, counting amounts | moving to the calm system |

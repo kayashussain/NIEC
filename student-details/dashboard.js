@@ -36,8 +36,9 @@
       tip.append(row);
     });
     tip.hidden = false;
-    tip.style.left = Math.max(8, Math.min(x, window.innerWidth - tip.offsetWidth - 8)) + 'px';
-    tip.style.top = Math.max(8, Math.min(y, window.innerHeight - tip.offsetHeight - 8)) + 'px';
+    const P = window.isrPos; // page pixels, whatever the Text size
+    tip.style.left = Math.max(8, Math.min(P.point(x), P.width() - tip.offsetWidth - 8)) + 'px';
+    tip.style.top = Math.max(8, Math.min(P.point(y), P.height() - tip.offsetHeight - 8)) + 'px';
   }
   const hideTip = () => { tip.hidden = true; };
   function hover(node, content) {

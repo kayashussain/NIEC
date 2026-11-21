@@ -1063,8 +1063,8 @@
     });
 
     document.body.appendChild(menu);
-    const rect = btn.getBoundingClientRect();
-    menu.style.left = Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8) + 'px';
+    const rect = window.isrPos.rect(btn); // in page pixels, whatever the Text size
+    menu.style.left = Math.min(rect.left, window.isrPos.width() - menu.offsetWidth - 8) + 'px';
     menu.style.top = (rect.top - menu.offsetHeight - 4) + 'px';
     openSheetMenu = menu;
     setTimeout(() => document.addEventListener('mousedown', onSheetMenuDocClick, true), 0);
@@ -1311,12 +1311,12 @@
     menu.appendChild(footer);
 
     document.body.appendChild(menu);
-    const rect = th.getBoundingClientRect();
-    menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+    const rect = window.isrPos.rect(th); // in page pixels, whatever the Text size
+    menu.style.left = Math.max(8, Math.min(rect.left, window.isrPos.width() - menu.offsetWidth - 8)) + 'px';
     // It opens right under its column header (the list inside scrolls), never over the page title above (the owner, 20 Nov 2026:
     // the menu covered the title and the search). Only when there is too little room below does it open above the header.
     /* 🔴 CSS CHANGED (2026-11-20): the column filter menu's height and place set here | from: as tall as the window, pushed up to the top over the title, search and toolbar | to: under its column header, as tall as the room below allows (at most 440px), above the header only when there is less than 260px below */
-    const below = window.innerHeight - rect.bottom - 12;
+    const below = window.isrPos.height() - rect.bottom - 12;
     const up = below < 260 && rect.top > below;
     const room = Math.max(200, Math.min(440, up ? rect.top - 12 : below));
     menu.style.maxHeight = room + 'px';
@@ -2552,8 +2552,8 @@
       menu.appendChild(item);
     });
     document.body.appendChild(menu);
-    const rect = $('#colorRow').getBoundingClientRect();
-    menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+    const rect = window.isrPos.rect($('#colorRow')); // in page pixels, whatever the Text size
+    menu.style.left = Math.max(8, Math.min(rect.left, window.isrPos.width() - menu.offsetWidth - 8)) + 'px';
     menu.style.top = rect.bottom + 4 + 'px';
     openSheetMenu = menu;
     setTimeout(() => document.addEventListener('mousedown', onSheetMenuDocClick, true), 0);

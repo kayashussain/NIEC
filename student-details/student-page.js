@@ -662,15 +662,6 @@
       box.append(me, field2);
       showAdd();
       wrap.append(box);
-      // Quick starts for the notes written most (the owner, 21 Nov 2026: one press instead of typing); the words can be changed before
-      // the note is added.
-      const quick = el('div', 'sc-quick');
-      ['Called the student', 'No answer, will call again', 'Documents received', 'Came to the office', 'Sent the details on WhatsApp'].forEach((q) => {
-        const b = h('button', { class: 'sc-quick-btn', type: 'button' }, q);
-        b.addEventListener('click', () => { text.value = text.value.trim() ? `${text.value.trim()} ${q}.` : `${q}. `; text.dispatchEvent(new Event('input')); text.focus(); text.setSelectionRange(text.value.length, text.value.length); });
-        quick.append(b);
-      });
-      wrap.append(quick);
     }
     // The student's History (the owner, 15 Nov 2026): the notes and, without anyone typing them again, every task about the student:
     // who gave it to which team, each update, a reassignment or a move to another day, and who marked it done. Newest first.
