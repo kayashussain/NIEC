@@ -92,6 +92,18 @@ It must stay exactly the same until the owner asks for a change and approves it.
   `scripts/local-demo.js`) before pushing, and say in the reply that it was checked and did not change.
 - **Bugs:** a fix that changes nothing the team sees can be made, and the owner is told; if a fix would change what they see, ask first.
 
+## Rule 5: reviews, and what may be changed without asking (the owner, 22 Nov 2026, strictly, for every reviewer and every session)
+
+- **The back end may be made stronger without asking:** fixing bugs that change nothing on screen, cleaning the code, security,
+  validation, data safety, speed, and tests. Tell the owner afterwards, in plain words, what was fixed.
+- **Anything a person would see needs the owner's yes first:** a page, a card, a window, a button, a number, a message, a hint, a
+  paragraph or any text on the front end, a layout or a style. Describe it plainly (what they would see before and after), ask, and
+  change it only after the owner approves. This holds even when it is a fix, and even when it is a better idea.
+- **A reviewer may suggest better features**, but only as suggestions for the owner to approve, never built on the reviewer's own.
+- **A deep review checks that the data lines up everywhere:** what the Application Team does on Today, All Students and the student
+  card must match the sheet, the student, Admin's view, the Dashboard and every other team (Mock, Follow-up, branches, the Manager),
+  with the data that already exists on the live server (Rule 3).
+
 ## The ISR colours (the owner accepted these, 21 Nov 2026; every page uses them, nothing else)
 
 | Use | Colour |
