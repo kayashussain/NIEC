@@ -197,6 +197,8 @@ const backups = createBackups(DATA_DIR, () => ({
   cards: cards.all(), b2b: b2b.all(), agents: agents.all(), planning: planning.all(), templates: messages.stored(), sourceOptions: sourceOptions.stored(),
   // The Mock Team's bookings and the list of interview guidelines (the files themselves stay in guideline-files/, as agreement files do).
   mockBookings: mockBookings.all(), mockGuidelines: mockGuidelines.all(),
+  // The Mock interview guides (drafts, published copies, each student's reading progress) and Admin's Apply through choices.
+  mockGuides: mockGuides.all(), applyThrough: applyThrough.stored(),
   // The Incentive page's own figures are kept in the same daily copy, so a lost or damaged file can be found again. They stay in the
   // file on the server only: no page shows this part of a backup, so nothing gets past the Incentive password.
   incentives: { commissions: readIncentiveFile('commissions.json', null), advances: readIncentiveFile('advances.json', null) },
@@ -1203,6 +1205,8 @@ async function handleRestore(req, res, urlPath) {
     if (snap.sourceOptions) sourceOptions.restoreAll(snap.sourceOptions);
     if (snap.mockBookings) mockBookings.restoreAll(snap.mockBookings);
     if (snap.mockGuidelines) mockGuidelines.restoreAll(snap.mockGuidelines);
+    if (snap.mockGuides) mockGuides.restoreAll(snap.mockGuides);
+    if (Array.isArray(snap.applyThrough)) applyThrough.restoreAll(snap.applyThrough);
     done.push('the B2B partners, the Dashboard records, the email settings and the consultancy name, and the Mock Team\'s bookings and guidelines list');
   }
   activity.record(req, req.user, 'Restored data', { app: 'Student Details', changes: [`Restored ${done.join(', ')} from the backup ${id}. The data as it was before is saved as ${safety}`] });

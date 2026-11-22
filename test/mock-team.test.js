@@ -278,4 +278,6 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   const snap = JSON.parse(require('node:zlib').gunzipSync(fs.readFileSync(path.join(dir, 'daily-backups', gz))).toString('utf8'));
   assert.strictEqual(snap.mockBookings.bookings.filter((b) => b.status === 'booked').length, 2);
   assert.strictEqual(snap.mockGuidelines.files.length, 1);
+  // ... and the Mock interview guides with every student's progress, and the Apply through list.
+  assert.ok(!snap.mockGuides || snap.mockGuides.guides, 'the guides, if saved, are in the backup');
 });

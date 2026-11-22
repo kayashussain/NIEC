@@ -122,6 +122,14 @@ function createMockGuides(dir, { universities = () => [], now = () => new Date()
 
   return {
     PHASES,
+    // For the daily backup and a restore: the guides and each student's reading progress, as stored.
+    // (null when nothing is saved yet: reading must not create the starting guides before the Partner Universities exist.)
+    all: () => { if (!fs.existsSync(file)) return null; const d = load(); return { guides: d.guides, progress: d.progress }; },
+    restoreAll(data) {
+      if (!data || typeof data !== 'object' || !data.guides || typeof data.guides !== 'object' || Array.isArray(data.guides)) return;
+      const progress = data.progress && typeof data.progress === 'object' && !Array.isArray(data.progress) ? data.progress : {};
+      save({ guides: data.guides, progress }); // load() cleans every guide again when it is read
+    },
     list: () => Object.values(load().guides).map((g) => ({ key: g.key, name: g.name, status: statusOf(g), summary: (g.published || g.draft).summary, updatedAt: g.updatedAt, updatedBy: g.updatedBy, publishedAt: g.publishedAt, publishedBy: g.publishedBy, toCheck: g.confirm.length }))
       .sort((a, b) => (a.key === 'core' ? -1 : b.key === 'core' ? 1 : a.name.localeCompare(b.name))),
     get: (key) => { const g = load().guides[key]; return g ? { ...g, status: statusOf(g) } : null; },

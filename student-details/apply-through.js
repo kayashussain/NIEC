@@ -97,6 +97,11 @@ function createApplyThrough(dir, { wanted = () => false } = {}) {
   }
   return {
     all: () => read(),
+    // For the daily backup: the list as saved, or null when none is saved yet. Unlike all() it never creates the file, so a backup
+    // taken before the partners are set up cannot leave an empty list where the starting list belongs.
+    stored: () => (fs.existsSync(file) ? read() : null),
+    // A restore from a backup: the list as it was (every entry cleaned again).
+    restoreAll(entries) { if (Array.isArray(entries)) save(entries.map(clean).filter(Boolean)); },
     // Every place, A to Z, universities first (the owner, 21 Nov 2026: all of them, each with its dropdown).
     choices: () => read().slice().sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'university' ? -1 : 1)),
     // The entry for a university's name as Universities writes it, or null. Universities are preferred to colleges.
