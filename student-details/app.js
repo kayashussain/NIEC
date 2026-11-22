@@ -143,8 +143,6 @@
   const isViewOnly = () => Teams.isReadOnly(me);
   let scrolledToYours = false;
   const isBranchAccount = () => Boolean(me && (me.departments || []).some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source));
-  // The Application Team changes a student only on the student card (the owner, 22 Nov 2026: a detail changed there is written in the
-  // notes and can be undone); on the sheet it looks, adds a student, colours and deletes rows. The server holds the same rule.
   // The Application Team changes a student on the student card, not in the sheet (the owner, 22 Nov 2026). Only Status stays
   // open, because moving a student on (Application Stage to Mock Stage) is done there and nowhere else.
   const sheetLocked = () => Boolean(me && Teams.ownTeamApplication && Teams.ownTeamApplication(me));

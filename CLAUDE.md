@@ -70,6 +70,25 @@ The owner does not want old versions, copies or rewrites lying around, because a
 - Every change must work with the data that already exists on the live server: stored values keep their meaning (for example a
   student's Student Source stays "Chitwan Branch"), and new fields are optional.
 
+## Rule 4: the Application Team's pages and system are frozen (the owner, 22 Nov 2026, strictly)
+
+The Application Team's side of ISR is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule).
+It must stay exactly the same until the owner asks for a change and approves it.
+
+- **What is frozen:** everything a person whose own team is Application sees and uses (`Teams.ownTeamApplication`): the menu,
+  Today (Today, Later, Missing details, the kinds of task, the task cards), All Students as they see it (look only, Status open,
+  the four numbers, nothing at the top or under the sheet), the student card (notes of every change, Undo and Redo), Universities
+  (Share, Apply now), and the server rules behind them (`teamSave` with `fromSheet`, `appReach`, the page redirects, `noteCardChanges`).
+- **Never change any of it on your own.** No new feature, button, tab, number, message, hint, help text, paragraph or explanation is
+  added, and nothing is moved, renamed, restyled or removed, unless the owner asked for exactly that.
+- **Discuss first, then wait for a yes.** For any change that touches the Application Team (also as a side effect of other work, such
+  as a shared file, a shared style in `shared/theme.css`, `shared/teams.js` or a server rule), first tell the owner in plain words
+  what would change on their screens, ask, and make the change only after the owner says yes. If the request is not clear, ask; do
+  not guess.
+- **Work for other teams must leave the Application Team as it is.** Check it as the Application Team (`asha` in
+  `scripts/local-demo.js`) before pushing, and say in the reply that it was checked and did not change.
+- **Bugs:** a fix that changes nothing the team sees can be made, and the owner is told; if a fix would change what they see, ask first.
+
 ## The ISR colours (the owner accepted these, 21 Nov 2026; every page uses them, nothing else)
 
 | Use | Colour |
