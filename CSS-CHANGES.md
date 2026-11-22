@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-22 · student-details/app.js (a style set from JavaScript) · "All changes saved" beside the All Students title, for the Application Team only · from: always shown · to: hidden; a short message such as "Saving..." or "Open the student card to change a detail" still shows for a moment · why: the owner asked to remove it, with the line "Open a student card to change a detail" at the top of the sheet (22 Nov 2026).**
+
 - **2026-11-22 · shared/theme.css (end) · the Undo and Redo button in the small message after a save on the student card · from: no button, the message only said "Saved" · to: a grey pill button 32px high (#f7f7f7, border #6f6f6f, black semi-bold words) beside the words · why: the owner asked to undo and redo a recent save within 5 seconds, like in a Google sheet (22 Nov 2026).**
 
 - **2026-11-21 · student-details/events.html · Events and marketing, a student's Note box · from: the words, Save note and Cancel → to: "Next follow-up" and a date box (#f7f7f7, 1px #6f6f6f, 8px corners) before Save note · why: no automatic days any more, the next follow-up date is always chosen (the owner, 21 Nov 2026), the same as the Follow-up Team's list
