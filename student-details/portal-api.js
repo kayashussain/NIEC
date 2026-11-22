@@ -1145,6 +1145,16 @@ function createPortalApi({
       return { ok: true };
     }
     const view = Teams.viewFor(req.user, wb);
+    // A student the Application Team completes on the card but does not have on its sheet (a Mock Stage student of the current intake,
+    // see appReach): written here, with the same column checks as above. Through teamSave it would find no row and change nothing.
+    const onItsSheet = view.sheets.some((sh) => sh.id === found.sheet.id && sh.rows.some((r) => r._id === found.row._id));
+    if (!onItsSheet) {
+      if (!appReach(req.user, found)) return { error: 'This student cannot be changed from your account.', status: 403 };
+      const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((sh) => (sh.id !== found.sheet.id ? sh : { ...sh, rows: apply(sh.rows) })) };
+      writeWorkbook(next, req.user && req.user.id);
+      recordChanges(req, wb, next);
+      return { ok: true };
+    }
     const out = teamSave(req, { baseRevision: wb.revision, sheets: view.sheets.map((sh) => (sh.id !== found.sheet.id ? sh : { ...sh, rows: apply(sh.rows) })) });
     return out.status === 200 ? { ok: true } : { error: out.body.error === 'conflict' ? 'The sheet changed at the same moment. Please try again.' : out.body.error, status: out.status };
   }
@@ -1219,7 +1229,21 @@ function createPortalApi({
       if (stage === 'Application Stage' && (!text(row['UNIVERSITY NAME']) || !text(row['COURSE NAME'])) && !opts.some((o) => Fields.WITH_TEAM(o) || o.applied)) missOne(row, sheet, !text(row['UNIVERSITY NAME']) ? 'No university or course chosen yet.' : 'No course chosen yet.');
       if (stage && stage !== 'Inquiry') {
         const pp = card.profile || {};
-        const gone = [['date of birth', pp.dob], ['passport number', pp.passportNo], ['address', pp.address]].filter(([, v]) => !text(v)).map(([k]) => k);
+        // The Profile and Application details are the Application Team's to complete (the owner, 22 Nov 2026). Each detail counts as
+        // missing only from the step where it exists: University partner once applied, Student ID, NOC and NOC number once an offer is
+        // received, Medical report once the Pre-CAS interview is passed, the medical booking day once the report says Booked.
+        const applied = Boolean(text(row['APPLICATION SUBMISSION DATE']) || opts.some((o) => o.applied));
+        const offered = Boolean(text(row['OFFER RECEIVED DATE']) || opts.some((o) => o.offer && !o.refused && !o.withdrawn));
+        const lang = text(row['LANGUAGE TEST DATE']);
+        const gone = [
+          ['email', row.EMAIL], ['WhatsApp number', row['CONTACT NUMBER']], ['date of birth', pp.dob], ['passport number', pp.passportNo], ['address', pp.address],
+          ['Student source', row['STUDENT SOURCE']], ['receiving partner', row['RECEIVING PARTNER']],
+          [lang === 'Test Date' ? 'language test date' : 'language test', lang === 'Test Date' ? '' : lang],
+          ...(applied ? [['university partner', row['UNIVERSITY PARTNER']]] : []),
+          ...(offered ? [['Student ID', row['STUDENT ID']], ['NOC', row.NOC], ['NOC number', row['NOC NUMBER']]] : []),
+          ...(text(row['PRE CAS INTERVIEW']) === 'Passed' ? [['medical report', row['MEDICAL REPORT']]] : []),
+          ...(text(row['MEDICAL REPORT']) === 'Booked' ? [['medical booking date', card.medical && card.medical.date]] : []),
+        ].filter(([, v]) => !text(v)).map(([k]) => k);
         if (gone.length) missOne(row, sheet, `No ${gone.length > 1 ? `${gone.slice(0, -1).join(', ')} or ${gone[gone.length - 1]}` : gone[0]}.`);
       }
     }

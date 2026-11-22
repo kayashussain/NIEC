@@ -91,7 +91,9 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   assert.ok(me, 'the student is listed');
   const lines = me.lines.map((l) => l.text).join('\n');
   assert.match(lines, /is before the application/);
-  assert.match(lines, /No date of birth, passport number or address\./);
+  // Everything the Application Team completes, from the step where it exists (the owner, 22 Nov 2026): an offer, so Student ID, NOC and
+  // NOC number. One line names them all. University partner is not missing: it came by itself with the application ("Direct (...)").
+  assert.match(lines, /No date of birth, passport number, address, receiving partner, language test, Student ID, NOC or NOC number\./);
   assert.strictEqual((await admin('GET', '/api/today')).json.missing, null, 'Admin keeps Needs attention');
   // Fixed: the passport line leaves by itself.
   await admin('POST', `/api/cards/${id}/profile`, { dob: '2001-03-14', passportNo: 'PA0000001', address: 'Bharatpur-10, Chitwan' });
@@ -103,10 +105,24 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   const mockId = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000082', 'STUDENT SOURCE': 'Visitor' } })).json.id;
   const listed = (await app('GET', '/api/today')).json.missing.find((m) => m.id === mockId);
   assert.ok(listed, 'a Mock Stage student is in Missing details');
-  assert.match(listed.lines.map((l) => l.text).join('\n'), /No date of birth, passport number or address\./);
+  // No application or offer yet: only what exists from Application Stage is asked for.
+  assert.match(listed.lines.map((l) => l.text).join('\n'), /^No email, date of birth, passport number, address, receiving partner or language test\.$/);
   const cardRes = await app('GET', `/api/cards/${mockId}`);
   assert.strictEqual(cardRes.status, 200, 'Fix it opens the card');
   assert.strictEqual((await app('POST', `/api/cards/${mockId}/profile`, { dob: '2002-01-02', passportNo: 'PA0000002', address: 'Pokhara-8, Kaski' })).status, 200, 'the team fills in the passport details');
+  assert.strictEqual((await app('POST', `/api/cards/${mockId}/sheet`, { fields: { EMAIL: 'mina.demo@example.com', 'RECEIVING PARTNER': 'Head Office', 'LANGUAGE TEST DATE': 'Test Date' } })).status, 200);
+  assert.match((await app('GET', '/api/today')).json.missing.find((m) => m.id === mockId).lines[0].text, /^No language test date\.$/, 'a test chosen without its day');
+  assert.strictEqual((await app('POST', `/api/cards/${mockId}/sheet`, { fields: { 'LANGUAGE TEST DATE': '2026-12-01' } })).status, 200);
+  // Pre-CAS passed: the medical report is asked for; Booked: its day too.
+  {
+    const w = (await admin('GET', '/api/data')).json;
+    w.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === mockId) r['PRE CAS INTERVIEW'] = 'Passed'; }));
+    assert.strictEqual((await admin('POST', '/api/data', { baseRevision: w.revision, sheets: w.sheets, activeSheetId: w.activeSheetId })).status, 200);
+  }
+  assert.match((await app('GET', '/api/today')).json.missing.find((m) => m.id === mockId).lines[0].text, /^No medical report\.$/);
+  assert.strictEqual((await app('POST', `/api/cards/${mockId}/sheet`, { fields: { 'MEDICAL REPORT': 'Booked' } })).status, 200);
+  assert.match((await app('GET', '/api/today')).json.missing.find((m) => m.id === mockId).lines[0].text, /^No medical booking date\.$/);
+  assert.strictEqual((await app('POST', `/api/cards/${mockId}/sheet`, { fields: { 'MEDICAL BOOKING DATE': '2026-12-12' } })).status, 200);
   assert.ok(!((await app('GET', '/api/today')).json.missing.find((m) => m.id === mockId)), 'the line leaves once fixed');
   const sheetRows = (await app('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows);
   assert.ok(!sheetRows.some((r) => r._id === mockId), 'All Students does not show the team the Mock Stage student');

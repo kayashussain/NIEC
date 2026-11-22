@@ -76,7 +76,7 @@ The Application Team's side of ISR is finished and approved as it is on 22 Nov 2
 It must stay exactly the same until the owner asks for a change and approves it.
 
 - **What is frozen:** everything a person whose own team is Application sees and uses (`Teams.ownTeamApplication`): the menu,
-  Today (Today, Later, Missing details, the kinds of task, the task cards), All Students as they see it (look only: only Status is changed on the sheet;
+  Today (Today, Later, Missing details with every Profile and Application detail from the step where it exists, the kinds of task, the task cards), All Students as they see it (look only: only Status is changed on the sheet;
   the four numbers; no blue line; nothing at the top or under the sheet), the student card (Profile with the Student source in it, a branch
   Source staying Admin's; Application details, whose University, Course and University partner come by themselves from the Priority
   application and whose other details are changed with its Edit; Mock interviews, which the team only looks at; notes of every change,
