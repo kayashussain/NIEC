@@ -385,11 +385,11 @@ function writeFileAtomic(file, text) {
 
 // Once a day, before the first save of that day, copies the file into <dataDir>/backups/<prefix>-YYYY-MM-DD.json
 // and keeps the latest 60, so there's something to restore from beyond the last save.
-function snapshotDaily(file, dataDir, prefix) {
+function snapshotDaily(file, dataDir, prefix, date = new Date()) {
   try {
     if (!fs.existsSync(file)) return;
     const dir = path.join(dataDir, 'backups');
-    const target = path.join(dir, `${prefix}-${localDate()}.json`);
+    const target = path.join(dir, `${prefix}-${localDate(date)}.json`);
     if (fs.existsSync(target)) return;
     fs.mkdirSync(dir, { recursive: true });
     fs.copyFileSync(file, target);

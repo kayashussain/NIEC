@@ -14,7 +14,8 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { writeFileAtomic, snapshotDaily, localDate } = require('../shared/server-utils');
+const { writeFileAtomic, localDate } = require('../shared/server-utils');
+const { createFileStore } = require('./store');
 const Fields = require('./card-fields');
 
 const LIMITS = { tasks: 200, comments: 200, notes: 500, noteText: 4000, options: 40, messages: 400, short: 300, text: 2000, cards: 50000 };
@@ -140,20 +141,15 @@ function normalize(raw) {
   };
 }
 
-function createCards(dir, { now = () => new Date() } = {}) {
-  const file = path.join(dir, 'cards.json');
+function createCards(dir, { now = () => new Date(), store = createFileStore(dir, { now }) } = {}) {
   const logFile = path.join(dir, 'message-log.jsonl');
-  let cache = null; // { mtimeMs, size, data }
+  let cache = null; // { version, data }
 
-  // The newest daily copy that still reads, when cards.json itself is damaged.
+  // The newest daily copy that still reads, when the cards themselves are damaged.
   function recover() {
-    let copies = [];
-    try {
-      copies = fs.readdirSync(path.join(dir, 'backups')).filter((f) => /^cards-\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort().reverse();
-    } catch (e) { /* none */ }
-    for (const name of copies) {
+    for (const copy of store.snapshots('cards')) {
       try {
-        const data = JSON.parse(fs.readFileSync(path.join(dir, 'backups', name), 'utf8'));
+        const data = copy.read();
         if (data && data.cards && typeof data.cards === 'object') return data;
       } catch (e) { /* try the one before */ }
     }
@@ -165,21 +161,21 @@ function createCards(dir, { now = () => new Date() } = {}) {
   let batchDepth = 0; let held = null;
   function load() {
     if (held) return held;
-    let stat;
-    try { stat = fs.statSync(file); } catch (e) { return { cards: {} }; } // no card saved yet
-    if (cache && cache.mtimeMs === stat.mtimeMs && cache.size === stat.size) return cache.data;
+    const version = store.version('cards');
+    if (!version) return { cards: {} }; // no card saved yet
+    if (cache && cache.version === version) return cache.data;
     try {
-      const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const { data } = store.read('cards');
       if (data && data.cards && typeof data.cards === 'object' && !Array.isArray(data.cards)) {
         // Every card is made whole once, when the file is read, so nothing that reads a card has to guard against an older shape.
         const cards = {};
         Object.keys(data.cards).forEach((id) => { if (ROW_ID.test(id)) cards[id] = normalize(data.cards[id]); });
-        cache = { mtimeMs: stat.mtimeMs, size: stat.size, data: { ...data, cards } };
+        cache = { version, data: { ...data, cards } };
         return cache.data;
       }
     } catch (e) { /* unreadable: set aside below */ }
     // A damaged file is kept next to the data (never overwritten), and the cards carry on from the newest daily copy.
-    try { fs.renameSync(file, path.join(dir, `cards.damaged-${now().toISOString().replace(/[:.]/g, '-')}.json`)); } catch (e) { /* ignore */ }
+    store.quarantine('cards');
     const recovered = recover() || { cards: {} };
     console.error('[cards] cards.json could not be read; carried on from', recovered.cards && Object.keys(recovered.cards).length ? 'the newest daily copy' : 'an empty list');
     try { if (recovered.cards && Object.keys(recovered.cards).length) { write(recovered); return cache.data; } } catch (e) { /* kept in memory below */ }
@@ -188,11 +184,7 @@ function createCards(dir, { now = () => new Date() } = {}) {
 
   function write(data) {
     if (batchDepth > 0) { held = data; return; }
-    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-    snapshotDaily(file, dir, 'cards');
-    writeFileAtomic(file, JSON.stringify(data));
-    const stat = fs.statSync(file);
-    cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
+    cache = { version: store.write('cards', data), data };
   }
 
   // Changes one card and saves. `change(card)` returns what to answer, or { error }.

@@ -12,6 +12,14 @@ needs the owner's approval first.
 - A request is worked out from the data as it is when it arrives (a double press writes once).
 - 380+ automated tests, including real-server tests of every team's rules.
 
+## Database plan: progress
+- **Step (a), in progress:** `student-details/store.js` is the one door to stored data, with two backends (JSON files, as today; SQLite)
+  that must pass the same `test/store-contract.test.js`. The student cards already read and write through it, with every old test
+  passing, and the real cards module is tested on SQLite too (same answers as files). Still to move onto the door: the students sheet
+  (`data.json`), planning, B2B, messages, bookings, guides and the other small files.
+- **Not switched on:** the live server still uses files. `node:sqlite` needs Node 22.5 or newer; the cPanel notes say "18+", so the
+  Node version of the live host must be checked first (or a SQLite package added).
+
 ## Next, in this order
 1. **Owner: set the off-site settings** on the live server and an uptime monitor (about 15 minutes, DEPLOY.md). Until then there is no copy outside the server.
 2. **Database (SQLite first, PostgreSQL later).** Today the data is JSON files held in memory and rewritten whole on each save. That is safe
