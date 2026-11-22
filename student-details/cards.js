@@ -160,7 +160,11 @@ function createCards(dir, { now = () => new Date() } = {}) {
     return null;
   }
 
+  // Many changes in one go (a stage moved for hundreds of students in one save): kept in memory and written once at the end, so the
+  // server is never held up writing the whole file once per student (see batch below).
+  let batchDepth = 0; let held = null;
   function load() {
+    if (held) return held;
     let stat;
     try { stat = fs.statSync(file); } catch (e) { return { cards: {} }; } // no card saved yet
     if (cache && cache.mtimeMs === stat.mtimeMs && cache.size === stat.size) return cache.data;
@@ -183,6 +187,7 @@ function createCards(dir, { now = () => new Date() } = {}) {
   }
 
   function write(data) {
+    if (batchDepth > 0) { held = data; return; }
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     snapshotDaily(file, dir, 'cards');
     writeFileAtomic(file, JSON.stringify(data));
@@ -274,6 +279,14 @@ function createCards(dir, { now = () => new Date() } = {}) {
     get(rowId) {
       const data = load();
       return Object.prototype.hasOwnProperty.call(data.cards, rowId) ? data.cards[rowId] : normalize(emptyCard());
+    },
+    // Runs fn with every card change kept in memory, then writes the file once (also when fn throws, so nothing done is lost).
+    batch(fn) {
+      batchDepth += 1;
+      try { return fn(); } finally {
+        batchDepth -= 1;
+        if (batchDepth === 0 && held) { const d = held; held = null; write(d); }
+      }
     },
     has(rowId) { return Object.prototype.hasOwnProperty.call(load().cards, rowId); },
     // Every card, keyed by row id (for the Dashboard and the backup). Not a copy: do not change it.

@@ -9,8 +9,14 @@ const zlib = require('zlib');
 const TIME_ZONE = process.env.APP_TIMEZONE || 'Asia/Kathmandu';
 
 // YYYY-MM-DD in TIME_ZONE.
+// The formatter is made once per time zone (making one is slow, and Today asks for thousands of days). A date that is not a real moment
+// (a hand-edited or damaged value) gives '' instead of stopping the page.
+const DAY_FORMATS = new Map();
 function localDate(date = new Date(), timeZone = TIME_ZONE) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+  let f = DAY_FORMATS.get(timeZone);
+  if (!f) { f = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }); DAY_FORMATS.set(timeZone, f); }
+  const d = date instanceof Date ? date : new Date(date);
+  return Number.isNaN(d.getTime()) ? '' : f.format(d);
 }
 
 // Sent with every response: the pages can't be shown inside another site's frame (so no one can trick

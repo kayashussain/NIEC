@@ -38,6 +38,17 @@ function createPortalApi({
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
   // Names compared ignoring case, spaces, punctuation and a part in brackets ("Ulster University (QA)" is "Ulster University").
   const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, '');
+  // The course of a university, matched exactly, brackets included ("BSc Nursing (Adult)" is not "BSc Nursing (Child)"); a loose match
+  // (squash) only when it names exactly one course there, so an older course written a little differently is still found.
+  const courseKey = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9()]+/g, '');
+  function pickCourse(list, university, course) {
+    const here = (list || []).filter((x) => squash(x.university) === squash(university));
+    if (!course) return here[0] || null;
+    const exact = here.find((x) => x.course && courseKey(x.course) === courseKey(course));
+    if (exact) return exact;
+    const loose = here.filter((x) => !x.course || squash(x.course) === squash(course));
+    return loose.length === 1 ? loose[0] : null;
+  }
 
   // ---- finding a student, and who may see or change them ----
   let indexed = { wb: null, map: new Map() };
@@ -509,7 +520,7 @@ function createPortalApi({
     const stale = DIRECT_RE.test(text(nowPartner)) && squash(Fields.plainPartner(nowPartner)) !== squash(uni);
     const course = 'COURSE NAME' in changes ? text(changes['COURSE NAME']) : '';
     const opts = ((cards.get(rowId) || {}).options || []).filter((o) => squash(o.university) === squash(uni) && text(o.partner));
-    const o = opts.find((x) => course && squash(x.course) === squash(course)) || opts[0];
+    const o = (course && pickCourse(opts, uni, course)) || opts[0];
     if (!o) return stale ? { ...changes, 'UNIVERSITY PARTNER': '' } : changes;
     return { ...changes, 'UNIVERSITY PARTNER': DIRECT_RE.test(text(o.partner)) ? `Direct (${uni})` : text(o.partner) };
   }
@@ -556,7 +567,7 @@ function createPortalApi({
     const uni = text(row['UNIVERSITY NAME']);
     const a0 = isoDate(row['APPLICATION SUBMISSION DATE']) || ''; const o0 = isoDate(row['OFFER RECEIVED DATE']) || '';
     if (uni && (a0 || o0) && !opts.some((o) => squash(o.university) === squash(uni))) {
-      cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students' }, 'ISR');
+      cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students', ...(text(row['UNIVERSITY PARTNER']) ? { partner: text(row['UNIVERSITY PARTNER']) } : {}) }, 'ISR'); // the partner too, so it is never lost
       opts = cards.get(rowId).options || [];
     }
     // A refused or withdrawn university no longer holds an offer: only standing offers count as the first offer.
@@ -597,7 +608,8 @@ function createPortalApi({
     if (!lines.length && after.reason && after.reason !== before.reason) lines.push(`${after.university}: ${after.reason}.`);
     return lines.join(' ').replace(/\.\./g, '.');
   }
-  const niceDay = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+  const NICE_DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); // made once: it is slow to make
+  const niceDay = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return Number.isNaN(d.getTime()) ? iso : NICE_DAY.format(d); };
   const sentence = (t) => { const x = text(t).trim(); return x ? (/[.!?]$/.test(x) ? x : x + '.') : ''; };
   // A sheet value as people read it: a date as "16 Nov 2026", anything else as it is, "(empty)" for nothing.
   const shown = (v) => { const t = text(v); if (!t) return '(empty)'; const d = isoDate(t); return d && /^\d{4}-\d{2}-\d{2}$/.test(t) ? niceDay(d) : t; };
@@ -669,8 +681,7 @@ function createPortalApi({
     const pick = (o) => (o && o.university ? { university: o.university, course: o.course || '', level: o.level || '', intake: o.intake || '', ...(o.applied ? { applied: o.applied } : {}) } : null);
     if (tag === 'offer') {
       const o = offerOf(task); if (!o) return null;
-      const same = (x) => squash(x.university) === squash(o.university) && (!o.course || squash(x.course) === squash(o.course));
-      const opt = (card.options || []).find(same) || {};
+      const opt = pickCourse(card.options, o.university, o.course) || {};
       const kept = task.offerFor || {};
       return pick({ ...o, level: opt.level || '', intake: kept.intake || opt.intake || '', applied: opt.applied || kept.applied || '' });
     }
@@ -692,8 +703,8 @@ function createPortalApi({
     const offerFor = kind === 'offer' ? (() => {
       const o = offerOf(task); if (!o) return null;
       const same = (x) => squash(x.university) === squash(o.university);
-      const opt = (card.options || []).find((x) => same(x) && (!o.course || squash(x.course) === squash(o.course))) || (card.options || []).find(same);
-      const app = applicationsOf(row, card).find((a) => same(a) && (!o.course || !a.course || squash(a.course) === squash(o.course))) || applicationsOf(row, card).find(same);
+      const opt = pickCourse(card.options, o.university, o.course) || (card.options || []).find(same);
+      const app = pickCourse(applicationsOf(row, card), o.university, o.course) || applicationsOf(row, card).find(same);
       const kept = task.offerFor || {};
       return { ...o, intake: kept.intake || (opt && opt.intake) || found.sheet.name || '', applied: (app && app.applied) || (opt && opt.applied) || kept.applied || '' };
     })() : null;
@@ -1041,7 +1052,7 @@ function createPortalApi({
     // Every university is kept in the student's University options with the day it was applied to, gave an offer, refused or withdrew.
     plan.options.forEach((o) => {
       const opts = cards.get(rowId).options || [];
-      const same = (o.optionId && opts.find((x) => x.id === o.optionId)) || opts.find((x) => squash(x.university) === squash(o.university) && (!o.course || !x.course || squash(x.course) === squash(o.course)));
+      const same = (o.optionId && opts.find((x) => x.id === o.optionId)) || pickCourse(opts, o.university, o.course);
       const dates = Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason'].filter((k) => o[k]).map((k) => [k, o[k]]));
       if (o.refused || o.withdrawn) { dates.offer = ''; dates.offerType = ''; } // a refused or withdrawn offer no longer stands
       if (same) {
@@ -1312,7 +1323,7 @@ function createPortalApi({
     // Missing details covers every student the team can fix: Application Stage and Mock Stage of the current intake (see appReach).
     if (missing) {
       for (const found of rowIndex().values()) {
-        if (!appReach(user, found)) continue;
+        if (!appReach(user, found) || !isStudent(found.row)) continue; // a row with no name is not a student
         const c = all[found.row._id] || { notes: [], options: [], tasks: [] };
         missingOf(found.row, found.sheet, c, text(found.row[STATUS]), checksOf(found.row, c));
       }
@@ -1823,7 +1834,7 @@ function createPortalApi({
           const opts = card.options || [];
           if (!opts.some((o) => o.applied || o.offer)) { // a legacy student: the days are the old university's
             const own = opts.find((o) => squash(o.university) === squash(oldUni) && (!oldCourse || !o.course || squash(o.course) === squash(oldCourse))) || opts.find((o) => squash(o.university) === squash(oldUni));
-            if (!own) cards.addOption(rowId, { university: oldUni, course: oldCourse, applied: a0, offer: o0, note: 'From All Students' }, 'ISR');
+            if (!own) cards.addOption(rowId, { university: oldUni, course: oldCourse, applied: a0, offer: o0, note: 'From All Students', ...(text(found.row['UNIVERSITY PARTNER']) ? { partner: text(found.row['UNIVERSITY PARTNER']) } : {}) }, 'ISR');
             else cards.updateOption(rowId, own.id, { ...(a0 && !own.applied ? { applied: a0 } : {}), ...(o0 && !own.offer && !own.refused && !own.withdrawn ? { offer: o0 } : {}) }, 'ISR');
           }
         }
@@ -1841,13 +1852,17 @@ function createPortalApi({
       }
       let changesOut = Object.keys(changes);
       const pairs = [];
+      const replaced = {}; // what this save replaced, as the server had it: the card's Undo puts back exactly this
       if (changesOut.length) {
         const all = withPartner(rowId, changes, found.row['UNIVERSITY PARTNER']);
+        // Undo of a new university puts its University partner back exactly as it was (also one typed by hand).
+        if (body.undo === true && 'UNIVERSITY NAME' in all) { const x = (replacedOn.get(rowId) || {})['UNIVERSITY PARTNER']; if (x && Date.now() - x.at < 600000) all['UNIVERSITY PARTNER'] = x.value; }
         if (text(all['UNIVERSITY PARTNER']) === text(found.row['UNIVERSITY PARTNER'])) delete all['UNIVERSITY PARTNER'];
         const before = Object.fromEntries(Object.keys(all).map((col) => [col, text(found.row[col])]));
         const done = setColumns(req, found, all);
         if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }
         if (body.undo !== true) remember(rowId, before);
+        Object.assign(replaced, before);
         changesOut = Object.keys(all);
         pairs.push(...changesOut.map((col) => [Fields.columnLabel(col), before[col], all[col]]));
       }
@@ -1855,9 +1870,10 @@ function createPortalApi({
         cards.setMedical(rowId, medNow ? { ...(card.medical || {}), date: medNow } : null, by(req));
         pairs.push(['Medical booking date', medWas, medNow]);
         changesOut.push('MEDICAL BOOKING DATE');
+        replaced['MEDICAL BOOKING DATE'] = medWas;
       }
       noteCardChanges(req, rowId, pairs, body.undo === true); // one note for the whole save
-      sendJSON(res, 200, { ok: true, changed: changesOut });
+      sendJSON(res, 200, { ok: true, changed: changesOut, replaced });
       return true;
     } else if (part === 'source') {
       const was = text(found.row['STUDENT SOURCE']);
@@ -3321,7 +3337,8 @@ function createPortalApi({
       // A long list is shortened by leaving out only finished tasks with nothing new on them (the oldest first): every open task and
       // every task with something new always comes, so Today's counts, the bell and the menu count always match and can be cleared.
       const keep = out.filter((t) => !t.done || t.unread > 0 || (t.news && t.news.length));
-      const rest = out.filter((t) => !keep.includes(t));
+      const kept = new Set(keep);
+      const rest = out.filter((t) => !kept.has(t)); // a Set: thousands of tasks stay fast
       const shown = keep.length >= 500 ? keep : [...keep, ...rest.slice(0, 500 - keep.length)];
       shown.sort((a, b) => (a.done - b.done) || lastWord(b).localeCompare(lastWord(a)));
       sendJSON(res, 200, { tasks: shown, today: cards.today(), mineFrom, noOwnTeam, canAssign: canAssign(req.user), seesAll: everyone, me: req.user.name, headLabel: headLabel(), isHead: Teams.isAdmin(req.user), teams: TASK_TEAMS(), handTeams: handTeamsFor(req.user) });
@@ -3428,7 +3445,7 @@ function createPortalApi({
     }
     if (urlPath.startsWith('/api/cards/')) return handleCard(req, res, urlPath);
     // Follow-up messages to many students at once are for Admin and the branches, not the Follow-up Team (the owner, 21 Nov 2026).
-    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && Teams.ownTeamFollowup(req.user)) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
+    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && (Teams.ownTeamFollowup(req.user) || Teams.ownTeamApplication(req.user))) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
     if (urlPath === '/api/bulk/students' || urlPath === '/api/bulk/preview' || urlPath === '/api/bulk/send-email') return handleBulk(req, res, urlPath);
     if (urlPath === '/api/courses' && req.method === 'GET') {
       const q = query();

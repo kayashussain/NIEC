@@ -34,6 +34,9 @@
     data = await api('/api/cards/' + encodeURIComponent(id));
     render();
   }
+  // What a save on the sheet really replaced, as the server had it (a colleague may have changed it after this page opened): Undo puts
+  // back exactly that, never this page's older copy.
+  const tookOver = (was, r) => { if (r && r.replaced) Object.keys(was.sheet || {}).forEach((k) => { if (k in r.replaced) was.sheet[k] = r.replaced[k]; }); };
   // `before` and `after`: { sheet: { COLUMN: value }, prof: { key: value } }, only what changed.
   function savedWithUndo(message, before, after) {
     lastChange = { before, after, at: Date.now(), undone: false };
@@ -194,6 +197,8 @@
           c.forEach((k) => { if (SHEET.includes(k)) sheet[k] = v[k]; else prof[k] = v[k]; });
           const was = { sheet: {}, prof: {} }; const now2 = { sheet: {}, prof: {} };
           c.forEach((k) => { const into = SHEET.includes(k) ? 'sheet' : 'prof'; was[into][k] = before[k]; now2[into][k] = v[k]; });
+          // The name, email and phone first: they are the ones the server may refuse, so a refusal leaves nothing half saved.
+          if (Object.keys(sheet).length) tookOver(was, await api(`/api/cards/${id}/sheet`, { fields: sheet }));
           if (srcC) {
             const sv = srcValue();
             const diff = srcDiff();
@@ -201,7 +206,6 @@
             // The whole source is saved together once any part of it changed (as the Source panel did), so its parts always agree.
             [['sourceDetail', 'detail'], ['sourceRemarks', 'remarks'], ['sourcePlatform', 'platform'], ['sourceWay', 'way']].forEach(([key, k]) => { if (sv[k] !== srcStart[k]) { prof[key] = sv[k]; was.prof[key] = srcStart[k]; now2.prof[key] = sv[k]; } });
           }
-          if (Object.keys(sheet).length) await api(`/api/cards/${id}/sheet`, { fields: sheet });
           await api(`/api/cards/${id}/profile`, prof);
           data = await api('/api/cards/' + encodeURIComponent(id));
           close(); render(); savedWithUndo('Profile saved', was, now2);
@@ -457,7 +461,7 @@
         try {
           const was = { sheet: {} }; const now2 = { sheet: {} };
           c.forEach((k) => { was.sheet[k] = before[k]; now2.sheet[k] = v[k]; });
-          await api(`/api/cards/${id}/sheet`, { fields: now2.sheet });
+          tookOver(was, await api(`/api/cards/${id}/sheet`, { fields: now2.sheet }));
           data = await api('/api/cards/' + encodeURIComponent(id));
           close(); render(); savedWithUndo('Application details saved', was, now2);
         } catch (err) { ok.disabled = false; ok.textContent = 'Save changes'; say(err.message, true); }
@@ -527,7 +531,7 @@
         try {
           const was = { sheet: {} }; const now2 = { sheet: {} };
           c.forEach((k) => { was.sheet[k] = before[k]; now2.sheet[k] = v[k]; });
-          await api(`/api/cards/${id}/sheet`, { fields: now2.sheet });
+          tookOver(was, await api(`/api/cards/${id}/sheet`, { fields: now2.sheet }));
           data = await api('/api/cards/' + encodeURIComponent(id));
           close(); render(); savedWithUndo('Mock interviews saved', was, now2);
         } catch (err) { ok.disabled = false; ok.textContent = 'Save changes'; say(err.message, true); }
@@ -1035,7 +1039,7 @@
       const row0 = data.student.row || {};
       const was = { sheet: { 'UNIVERSITY NAME': row0['UNIVERSITY NAME'] || '', 'COURSE NAME': row0['COURSE NAME'] || '' } };
       const now2 = { sheet: { 'UNIVERSITY NAME': o.university || '', 'COURSE NAME': o.course || '' } };
-      await api(`/api/cards/${id}/sheet`, { fields: now2.sheet });
+      tookOver(was, await api(`/api/cards/${id}/sheet`, { fields: now2.sheet }));
       savedWithUndo(`Priority: ${o.university}. All Students is updated.`, was, now2);
       refreshCard();
     } catch (e) { say(e.message, true); }
@@ -1252,7 +1256,7 @@
         ok.disabled = true;
         try {
           const was = { sheet: { [step.col]: (data.student.row || {})[step.col] || '' } };
-          await api(`/api/cards/${encodeURIComponent(id)}/sheet`, { fields: { [step.col]: input.value } });
+          tookOver(was, await api(`/api/cards/${encodeURIComponent(id)}/sheet`, { fields: { [step.col]: input.value } }));
           data = await api('/api/cards/' + encodeURIComponent(id));
           render();
           savedWithUndo(`Saved: ${step.label.toLowerCase()} ${day(input.value)}`, was, { sheet: { [step.col]: input.value } });

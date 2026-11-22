@@ -292,13 +292,14 @@ function stageTimeline(req, before, after) {
   try { list = stageLog.changes(before, after, (rowId) => { const c = cards.has(rowId) ? cards.get(rowId) : null; return (c && c.profile && c.profile.lostReason) || ''; }); } catch (e) { console.error('[stage log]', e); return; }
   const who = (req && req.user && req.user.name) || '';
   const followup = Boolean(req && req.user && Array.isArray(req.user.departments) && req.user.departments.includes('followup') && req.user.role !== 'admin');
-  for (const x of list) {
+  // One write of the cards for the whole save, however many students moved (one write each held the server up for seconds).
+  if (list.length) cards.batch(() => { for (const x of list) {
     try {
       cards.addNote(x.rowId, { kind: 'stage', text: x.text }, who);
       if (x.back) cards.setFollow(x.rowId, { from: x.fromIntake, next: null, via: null }, who);
       else if (followup && ['Inquiry', 'Defer'].includes(x.from) && stageLog.LINE.indexOf(x.to) > 0) cards.setFollow(x.rowId, { via: 'converted', viaBy: who, viaAt: new Date().toISOString() }, who);
     } catch (e) { console.error('[stage log]', e); }
-  }
+  } });
 }
 
 // Recent revisions, so a save based on one of them can be merged instead of refused.
@@ -521,6 +522,8 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
   // Someone else saved after this page's copy: the page is told to fetch its fresh view, so it never claims a revision whose
   // other edits it has not seen (and then sends an old cell back over a newer one).
   const behind = base !== current;
+  // A cell the Application Team typed on the sheet is left out (above): the page is told to reload, so it never shows it as saved.
+  const dropped = changes.length !== worked.changes.length;
   if (!worked.changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision, reload: behind } };
   if (adds.length > 50) { // a person adds students one or a few at a time; thousands in one save is a mistake or an attack
     activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: [`Tried to add ${adds.length} students in one save`] });
@@ -535,7 +538,7 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
   const cellError = cellValueError(worked.changes.map((c) => ({ col: c.col, value: c.value }))
     .concat(adds.flatMap((a) => Object.keys(a.row).map((col) => ({ col, value: a.row[col] })))), intake, req.user);
   if (cellError) return { status: 400, body: { error: cellError } };
-  if (!changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision, reload: behind } };
+  if (!changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision, reload: behind || dropped } };
   // A Student Source is stored with the portal's own spelling ("social media" is kept as "Social Media"), so it is counted as one source.
   const sourceSpelling = (v) => CardFields.STORED_SOURCES.find((x) => x.toLowerCase() === String(v ?? '').trim().toLowerCase()) || v;
   changes.forEach((c) => { if (c.col === 'STUDENT SOURCE') c.value = sourceSpelling(c.value); });
@@ -634,7 +637,7 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
   recordChanges(req, before, next);
   // A student moved to another stage leaves this team's view, and a new one is stored as the server
   // checked it: either way the page fetches its fresh view.
-  const reload = behind || adds.length > 0 || deletes.length > 0 || changes.some((c) => c.col === 'APPLICATION STATUS');
+  const reload = behind || dropped || adds.length > 0 || deletes.length > 0 || changes.some((c) => c.col === 'APPLICATION STATUS');
   return { status: 200, body: { ok: true, revision: next.revision, reload } };
 }
 
@@ -1266,12 +1269,14 @@ const server = http.createServer(async (req, res) => {
       const fuOwn = ownTeamFollowup(req.user);
       if (urlPath === '/') return send(res, 302, '', { Location: fuOwn ? '/students' : '/today' });
       if (fuOwn && ['/my-email', '/message-templates'].includes(urlPath)) return send(res, 302, '', { Location: '/students#setup' });
-      if (fuOwn && ['/today', '/dashboard', '/my-dashboard', '/bulk'].includes(urlPath)) return send(res, 302, '', { Location: '/students' });
+      if (fuOwn && ['/today', '/dashboard', '/my-dashboard', '/bulk', '/today.html', '/dashboard.html', '/my-dashboard.html', '/bulk.html'].includes(urlPath)) return send(res, 302, '', { Location: '/students' });
       if (fuOwn && urlPath === '/students') { req.url = '/followup.html'; return serveStatic(req, res); }
       // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): no Dashboard, no Partners pages,
       // no Mock interviews for anyone whose own team is Application (Apply now on a university still shows the partner and its portal).
       // Nor Follow-up (the owner, 22 Nov 2026): following students up is not the Application Team's work.
-      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk'].includes(urlPath)) return send(res, 302, '', { Location: home });
+      // Also by the file's own address ("/bulk.html"), so a page closed to the team cannot be opened by typing it (review, 22 Nov 2026).
+      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk',
+        '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/bulk.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
       if (urlPath === '/my-portal') return send(res, 302, '', { Location: '/today' }); // a student's own page; the team has the student card
       // Partners: one place for Partner Universities, B2B Partners and Agents (the owner, 17 Nov 2026). It opens the first of the three
       // this account may see; a switch at the top of each moves between them (partners-switch.js).

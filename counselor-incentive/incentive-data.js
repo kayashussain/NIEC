@@ -5,6 +5,7 @@
 const { round2, groupByUniversity, displayDate } = require('./calc');
 // Student Details' own fee math, so the tuition fee shown always matches what's shown over there.
 const { netTuitionFee } = require('../student-details/calc');
+const { plainPartner } = require('../student-details/card-fields');
 
 // Student Details -> the fields Incentive cares about. Everything else (visa lodge dates, language test, other tuition
 // figures, etc.) stays over there. `agent` is the University Partner column: the agent's name; `source` is the Student Source column.
@@ -15,7 +16,7 @@ function normalizeStudent(row, intake) {
     name: [row['FIRST NAME'], row['LAST NAME']].filter(Boolean).join(' ').trim(),
     course: row['COURSE NAME'] || '',
     university: row['UNIVERSITY NAME'] || '',
-    agent: String(row['UNIVERSITY PARTNER'] || '').trim(),
+    agent: plainPartner(row['UNIVERSITY PARTNER']), // "Direct (X)" counted as X, as on the Dashboard and Partners
     source: String(row['STUDENT SOURCE'] || '').trim(), // the Student Source column of Student Details
     studentId: row['STUDENT ID'] || '',
     tuitionFee: String(row['GROSS FEE'] || '').trim() ? round2(netTuitionFee(row)) : 0,
