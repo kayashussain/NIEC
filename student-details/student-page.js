@@ -585,7 +585,8 @@
     // Every note, every task event (given, each update, reassigned, moved, done) and every message sent from Follow-up.
     const teamName = (tid) => (((data.taskTeams || []).find((x) => x.id === tid) || {}).label || tid).replace(/\s*\(.*\)$/, '');
     const AUTO = 'ISR (automatic)';
-    const events = data.card.notes.map((n) => ({ kind: n.by === AUTO ? 'auto' : 'note', at: n.at, by: n.by, text: n.text, note: n }));
+    // A stage moved on and a call with no answer are written by ISR (the owner, 21 Nov 2026) and shown as such.
+    const events = data.card.notes.map((n) => ({ kind: n.by === AUTO ? 'auto' : n.kind === 'stage' ? 'stage' : n.kind === 'try' ? 'try' : 'note', at: n.at, by: n.by, text: n.text, note: n }));
     (data.card.tasks || []).forEach((t) => {
       const tag = window.Portal.tagOf(t, data.student.stage);
       events.push({ kind: 'task', at: t.at, by: t.by, label: 'Task given', lead: `To ${teamName(t.team)}`, text: t.text, tag });
@@ -601,7 +602,7 @@
       events.push({ kind: 'message', at: m.at, by: m.by, label, lead: m.subject || m.template || '', text: '', message: m });
     });
     events.sort((x, y) => String(y.at).localeCompare(String(x.at)));
-    const group = (e) => (e.kind === 'note' || e.kind === 'auto' ? 'note' : e.kind === 'message' ? 'message' : 'task');
+    const group = (e) => (['note', 'auto', 'stage', 'try'].includes(e.kind) ? 'note' : e.kind === 'message' ? 'message' : 'task');
     const present = new Set(events.map(group));
     if (!present.has(historyFilter)) historyFilter = 'all';
     const remark = data.student.remarks && data.student.remarks !== data.card.autoRemark ? data.student.remarks : '';
@@ -635,7 +636,7 @@
       const dayWord = ago === 0 ? 'Today' : ago === 1 ? 'Yesterday' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(iso.slice(0, 4) === todayIso.slice(0, 4) ? {} : { year: 'numeric' }) });
       return [dayWord, d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })];
     };
-    const KIND = { note: 'Note', auto: 'Automatic', update: 'Task update', done: 'Task done' };
+    const KIND = { note: 'Note', auto: 'Automatic', update: 'Task update', done: 'Task done', stage: 'Stage', try: 'No answer' };
     shown.forEach((e) => {
       const tr = el('tr', `is-${e.kind}`);
       const [d1, d2] = whenText(e.at);

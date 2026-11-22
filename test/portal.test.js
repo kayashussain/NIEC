@@ -506,7 +506,7 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual(prev.items[1].error, 'Not in your list.', 'a student the account cannot see is refused');
   const bulkSent = (await app('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'Hi', body: 'Dear {first_name},\n\nA message.' })).json;
   assert.strictEqual(bulkSent.results[0].status, 'not-configured', 'nothing leaves a computer with no mailbox');
-  assert.strictEqual((await follow('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'x', body: 'y' })).json.results[0].status, 'skipped', 'a team cannot send to a student it does not see');
+  assert.match((await follow('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'x', body: 'y' })).json.error, /sent by Admin/, 'the Follow-up Team sends no messages to many students (the owner, 21 Nov 2026)');
   assert.strictEqual((await manager('POST', '/api/bulk/preview', { ids: [sitaId], subject: 'x', body: 'y' })).json.items[0].error, 'Not in your list.', 'the Manager only views');
 
   // Agents are their own list, apart from the B2B partners.

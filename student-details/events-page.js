@@ -39,7 +39,7 @@
   const SIGN = { USD: '$', GBP: '\u00a3' };
   const UNIT = { USD: 'dollar', GBP: 'pound' };
   const paidIn = (a) => (a.costCurrency && a.costCurrency !== 'NPR' && a.costAmount ? `${SIGN[a.costCurrency]}${Number(a.costAmount).toLocaleString('en-US', { maximumFractionDigits: 2 })} at Rs ${Number(a.costRate).toFixed(2)} a ${UNIT[a.costCurrency]}` : '');
-  // Students of an event still waiting for a follow-up: never contacted, or no contact for a few days.
+  // Students of an event still waiting for a follow-up: never contacted, or the next follow-up date has come.
   const waitOf = (a) => ((a.follow && a.follow.new) || 0) + ((a.follow && a.follow.due) || 0);
   const per = (cost, n) => (cost > 0 && n > 0 ? rupees(Math.round(cost / n)) : 'None yet');
   // The grey line under a name: where it ran and when.
@@ -141,7 +141,7 @@
   function closeEvent() { open = null; $('eventView').hidden = true; $('eventView').replaceChildren(); $('listView').hidden = false; window.scrollTo({ top: 0 }); }
 
   // Where each student of the event stands in the follow-up (worked out on the server from the stage, the notes and the messages).
-  // The switch above the table: those still waiting (never contacted, or no contact for a few days) come first.
+  // The switch above the table: those still waiting (never contacted, or the next follow-up date has come) come first.
   const VIEWS = [
     ['', 'All', () => true],
     ['wait', 'To follow up', (s) => s.follow === 'new' || s.follow === 'due'],
@@ -157,7 +157,6 @@
     let got;
     try { got = await api(`/api/activities/${a.id}/students`); } catch (e) { box.replaceChildren(el('div', 'p-notice bad', e.message)); return; }
     const list = got.students || [];
-    const rule = got.followDays || 3;
     if (!list.length) { const e = el('div', 'ev-people'); e.append(el('div', 'ev-empty small', 'No students yet. Upload the inquiry list below to start the follow-up.')); box.replaceChildren(e); return; }
     let state = list.some(VIEWS[1][2]) ? 'wait' : '';
     const seg = el('div', 'ev-pills');
@@ -192,7 +191,7 @@
         else if (lc) last.append(el('div', 'ev-when' + (s.follow === 'due' ? ' wait' : ''), `${ago(s.days) || localDay(lc.at)}${lc.by ? ' \u00b7 ' + lc.by : ''}${s.follow === 'due' ? ' \u00b7 follow-up due' : ''}`));
         else last.append(el('div', 'ev-when ev-none', 'No contact recorded'));
         if (lc && (lc.text || lc.what !== 'note')) { const w = el('div', 'ev-words', `${lc.what !== 'note' ? `${lc.what}: ` : ''}${lc.text || 'sent'}`); w.title = lc.text || ''; last.append(w); }
-        if (s.follow === 'due') last.title = `At Inquiry, no note or message for ${rule} days or more`;
+        if (s.follow === 'due') last.title = 'At Inquiry, and the next follow-up date has come (or none was set)';
         const remark = el('div', 'ev-remark');
         const said = [s.remarks && (!lc || s.remarks !== lc.text) ? s.remarks : '', s.follow === 'inactive' && s.lostReason ? `Why: ${s.lostReason}` : ''].filter(Boolean);
         if (said.length) remark.textContent = said.join(' \u00b7 '); else remark.append(el('span', 'ev-none', '-'));
@@ -211,17 +210,22 @@
       if (row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('ev-qnote')) { row.nextSibling.querySelector('textarea').focus(); return; }
       const box = el('div', 'ev-qnote');
       const area = h('textarea', { rows: '2', maxlength: '2000', placeholder: `What happened with ${s.name}? (a call, a message, their answer)`, 'aria-label': `Note on ${s.name}` });
+      // The next follow-up date is always chosen (the owner, 21 Nov 2026: no automatic days), as on the follow-up list.
+      const min = new Date(Date.now() + 86400000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      const nextIn = h('input', { type: 'date', min, 'aria-label': `Next follow-up for ${s.name}`, 'aria-required': 'true' });
+      const nextWrap = el('label', 'ev-qnote-next'); nextWrap.append('Next follow-up', nextIn);
       const save = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Save note');
       const cancel = h('button', { class: 'btn btn-sm', type: 'button', onclick: () => box.remove() }, 'Cancel');
       const go = async () => {
         const t = area.value.trim();
         if (!t) { area.focus(); return; }
+        if (!nextIn.value) { say('Choose the next follow-up date.', true); nextIn.focus(); return; }
         save.disabled = true;
-        try { await api(`/api/cards/${s.id}/notes`, { text: t }); say(`Note saved on ${s.name}'s card`); await refresh(); } catch (e) { say(e.message, true); save.disabled = false; }
+        try { await api(`/api/cards/${s.id}/notes`, { text: t, next: nextIn.value }); say(`Note saved on ${s.name}'s card`); await refresh(); } catch (e) { say(e.message, true); save.disabled = false; }
       };
       save.addEventListener('click', go);
       area.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); go(); } if (e.key === 'Escape') box.remove(); });
-      const foot = el('div', 'ev-qnote-foot'); foot.append(save, cancel, el('span', 'p-muted', 'Saved on the student’s card. Ctrl+Enter to save.'));
+      const foot = el('div', 'ev-qnote-foot'); foot.append(nextWrap, save, cancel, el('span', 'p-muted', 'Saved on the student’s card. Ctrl+Enter to save.'));
       box.append(area, foot);
       row.after(box);
       area.focus();

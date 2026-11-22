@@ -516,6 +516,9 @@ textarea.lg-input { flex: 1; height: auto; min-height: 44px; max-height: 300px; 
 .lg-kind.is-task, .lg-kind.is-update { background: #e6f0fd; color: #004a9e; }
 .lg-kind.is-done { background: #e7f6ec; color: #11602e; }
 .lg-kind.is-auto { color: #333; }
+/* 🔴 CSS CHANGED (2026-11-21): the student card's Timeline, two new kinds of line written by ISR (the follow-up list) | from: none | to: "Stage" (a stage moved on, "Moved to Mock Stage") in the same soft blue as the task lines, and "No answer" (a call nobody answered) in orange (#b85300 on a soft orange) */
+.lg-kind.is-stage { background: #e6f0fd; color: #004a9e; }
+.lg-kind.is-try { background: #fbefe5; color: #b85300; }
 tr.is-unseen .lg-kind::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #0071e3; vertical-align: 1px; }
 .lg-ref { display: block; font-weight: 700; overflow-wrap: anywhere; }
 .lg-lead { display: block; color: #000; font-size: 14px; }

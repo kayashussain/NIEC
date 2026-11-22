@@ -633,6 +633,9 @@
     // The row's own marks go with it (its colour, which team added it), so nothing about the student is lost in the move.
     Object.keys(row).forEach((k) => { if (k.startsWith('_') && !(k in movedRow)) movedRow[k] = row[k]; });
     target.columns.forEach((c) => { movedRow[c] = row[c] !== undefined ? row[c] : ''; });
+    // In the new intake the student is followed up again, back at Inquiry (the owner, 21 Nov 2026); the student's timeline says where
+    // they came from (stage-log.js on the server).
+    if (target.columns.includes('APPLICATION STATUS')) movedRow['APPLICATION STATUS'] = 'Inquiry';
     target.rows.push(movedRow);
     return true;
   }

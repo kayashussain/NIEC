@@ -407,6 +407,14 @@
   // Whether a person's own team is the Application Team (the owner, 21 Nov 2026): chosen as their own team, or the only team they are
   // in; never Admin or the Manager. That team works from Today, All Students and Universities (no Dashboard, Partners or Mock
   // interviews) and shares a course on Universities instead of shortlisting it. The menu (shared/header.js) keeps the same rule.
+  // Whether a person's own team is the Follow-up Team, by the same rule (the owner, 21 Nov 2026): they work from All Students, shown
+  // to them as the follow-up list (followup.html), and Universities, without Today, the Dashboard or Follow-up (the many-student
+  // messages stay with Admin and the branches).
+  function ownTeamFollowup(u) {
+    if (!u || u.role === 'admin' || u.role === 'manager') return false;
+    const deps = Array.isArray(u.departments) ? u.departments : [];
+    return u.taskTeam ? u.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
+  }
   function ownTeamApplication(u) {
     if (!u || u.role === 'admin' || u.role === 'manager') return false;
     const deps = Array.isArray(u.departments) ? u.departments : [];
@@ -414,7 +422,7 @@
   }
 
   return {
-    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication,
+    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup,
     who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };

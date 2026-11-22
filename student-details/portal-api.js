@@ -172,10 +172,15 @@ function createPortalApi({
   const APP_REACH = ['Application Stage', 'Mock Stage'];
   const appReach = (user, found) => Boolean(found) && teamsOf(user).includes('application') && !Teams.isReadOnly(user) && !Teams.isManager(user)
     && APP_REACH.includes(text(found.row[STATUS])) && (() => { const intake = currentIntake(); return Boolean(intake) && found.sheet.id === intake.id; })();
+  // The Follow-up Team keeps seeing, view only, the students of the current intake it sent on or withdrew (the owner, 21 Nov 2026:
+  // "they can open the student card and see the student details"); card.follow.via marks them (server.js, stageTimeline).
+  const followReach = (user, found) => Boolean(found) && teamsOf(user).includes('followup') && !Teams.isReadOnly(user)
+    && Boolean(cards.has(found.row._id) && (cards.get(found.row._id).follow || {}).via) && (() => { const intake = currentIntake(); return Boolean(intake) && found.sheet.id === intake.id; })();
   function canSee(user, found) {
     if (!found) return false;
     if (Teams.isAdmin(user) || Teams.isManager(user)) return true;
     if (appReach(user, found)) return true;
+    if (followReach(user, found)) return true;
     // A team given a task about a student sees that student while the task is open and for 7 days after it is done (to undo a
     // mistaken tick), wherever the student is.
     if (hasTaskFor(user, found.row._id)) return true;
@@ -267,7 +272,8 @@ function createPortalApi({
     return Teams.isAdmin(user) ? office : null;
   }
   // What a page is told about the sender's mailbox.
-  const mailInfo = (user) => { const cfg = mailFor(user); return { ready: Boolean(cfg), from: cfg ? cfg.from : '', own: !Teams.isAdmin(user), setUp: '/bulk#setup' }; };
+  // The Follow-up Team has no Follow-up page (the owner, 21 Nov 2026): its own email is set up from its list (followup-page.js).
+  const mailInfo = (user) => { const cfg = mailFor(user); return { ready: Boolean(cfg), from: cfg ? cfg.from : '', own: !Teams.isAdmin(user), setUp: Teams.ownTeamFollowup(user) ? '/students#setup' : '/bulk#setup' }; };
   // A team member's email ends with the signature picture they uploaded on Follow-up (the owner, 14 Nov 2026); until they upload one,
   // with their own name, team and address as text. The office picture carries Admin's name, so it is only for Admin.
   function signatureFor(user, cfg) {
@@ -1138,7 +1144,7 @@ function createPortalApi({
       ? { ...WORKSPACES.team, title: own.map((w) => w.title).join(' and '), sections: [...new Set(own.flatMap((w) => w.sections))], tiles: [...new Set(own.flatMap((w) => w.tiles.slice(0, 2)))].slice(0, 3) }
       : (WORKSPACES[kind] || WORKSPACES.team);
     const sections = [
-      { key: 'inquiries', title: 'Inquiries to follow up', hint: 'No contact in the last 3 days', stage: 'Inquiry', rows: [] },
+      { key: 'inquiries', title: 'Inquiries to follow up', hint: 'Never contacted, or the next follow-up date has come', stage: 'Inquiry', rows: [] },
       { key: 'defer', title: 'Deferred students to check', hint: 'Deferred and not contacted for 14 days', stage: 'Defer', rows: [] },
       { key: 'apply', title: 'Applications to submit', hint: 'At Application Stage, not submitted yet', stage: 'Application Stage', rows: [] },
       { key: 'noSource', title: 'Student source not recorded', hint: 'Add where they came from, so the Dashboard counts them', stage: '', rows: [] },
@@ -1204,7 +1210,10 @@ function createPortalApi({
       const created = dateOf(row['APPLICATION SUBMISSION DATE']);
       if (stage === 'Inquiry') totals.inquiries += 1;
       if (stage === 'Mock Stage') totals.atMock += 1;
-      if (stage === 'Inquiry' && (lastDay === null || now - lastDay >= 3)) add('inquiries', lastDay === null ? 'No contact recorded' : `Last contact ${now - lastDay} days ago`, lastDay === null ? 999 : now - lastDay);
+      if (stage === 'Inquiry') {
+        const f = followOf(row, card, now);
+        if (f.state === 'new' || f.state === 'due') add('inquiries', f.state === 'new' ? 'No contact recorded' : f.tries ? `No answer, ${f.tries} ${f.tries === 1 ? 'try' : 'tries'}` : f.next ? `Follow-up due since ${niceDay(f.next.date)}` : 'No follow-up date set', lastDay === null ? 999 : now - lastDay);
+      }
       if (stage === 'Application Stage' && !created) add('apply', text(row['UNIVERSITY NAME']) || 'No university chosen yet', 0);
       // Where the student came from feeds every source figure of the Dashboard: a student without it is asked for (the owner, 14 Nov 2026).
       if (!text(row['STUDENT SOURCE'])) add('noSource', 'No source', 0);
@@ -1298,7 +1307,7 @@ function createPortalApi({
     toSubmit: ['Applications to submit', 'At Application Stage, not submitted yet'], submitted: ['Applied', 'In this intake'],
     waitingOffer: ['Waiting for an offer', 'Submitted over 10 days ago'], offers: ['Offers', 'In this intake'],
     atMock: ['At Mock Stage', 'Students with you now'], toSchedule: ['Mocks to schedule', 'No mock date yet'], feedbackMissing: ['Feedback to write', 'The mock date has passed'],
-    mocksWeek: ['Mocks this week', 'Held in the last 7 days'], inquiries: ['Open inquiries', 'At Inquiry now'], toFollow: ['To follow up', 'No contact for 3 days'],
+    mocksWeek: ['Mocks this week', 'Held in the last 7 days'], inquiries: ['Open inquiries', 'At Inquiry now'], toFollow: ['To follow up', 'The next follow-up date has come'],
     contactedWeek: ['Contacted this week', 'A note or a message in 7 days'], deferred: ['Deferred students', 'To bring back'],
     active: ['Students in progress', 'Not left, no visa yet'], visas: ['Visas', 'In this intake'],
   };
@@ -1405,30 +1414,39 @@ function createPortalApi({
     if (!d) return null;
     return eventFor(planning.all().events, detail);
   };
-  // Where a student of an event stands in the follow-up (the owner, 17 Nov 2026: "which event has converted, and has the student
-  // been followed up"), worked out from what is already recorded, so nothing new has to be typed:
+  // Where a student stands in the follow-up (the owner, 17 Nov 2026: "which event has converted, and has the student been followed up";
+  // 21 Nov 2026: no automatic days, the team always chooses the next follow-up date). Worked out from what is already recorded, the
+  // same on the follow-up list, Events and marketing and Today:
   //   visa      a visa (Visa Issued, or a visa received date)
   //   applied   past Inquiry and still going (or an application submitted): converted
   //   inactive  Withdrawn, Hold, Defer or Visa Rejected
-  //   new       at Inquiry, no note and no message yet: not contacted
-  //   due       at Inquiry, the last note or message FOLLOW_DAYS days ago or more: the same rule as "Inquiries to follow up" on Today
-  //   ok        at Inquiry, contacted in the last FOLLOW_DAYS days
-  const FOLLOW_DAYS = 3;
+  //   new       at Inquiry, nobody has spoken to the student yet (calls with no answer do not count)
+  //   due       at Inquiry, and the next follow-up date has come, or none was set with the last contact, or a call since went unanswered
+  //   ok        at Inquiry, spoken to, and the next follow-up date is still ahead
+  // `triedToday`: a call today went unanswered (the list puts the student at the bottom for the rest of the day); `tries`: the
+  // unanswered calls since the last contact.
   const INACTIVE_STAGES = ['Withdrawn', 'Hold', 'Defer', 'Visa Rejected'];
   function followOf(row, card, todayNo) {
     const stage = text(row[STATUS]);
     const touches = contactsOf(card);
     const last = touches.length ? touches[touches.length - 1] : null;
-    const lastDay = last ? Math.floor(Date.parse(localDate(new Date(last.at)) + 'T00:00:00Z') / 86400000) : null;
+    const dayOfIso = (at) => Math.floor(Date.parse(localDate(new Date(at)) + 'T00:00:00Z') / 86400000);
+    const lastDay = last ? dayOfIso(last.at) : null;
     const days = lastDay === null ? null : Math.max(0, todayNo - lastDay);
+    const tries = ((card && card.notes) || []).filter((n) => n.kind === 'try' && (!last || String(n.at) > String(last.at)));
+    const triedToday = tries.length > 0 && dayOfIso(tries[tries.length - 1].at) === todayNo;
+    // The date counts only when it was set with (or after) the last contact: a later note written without one asks for a new date.
+    const nx = card && card.follow && card.follow.next;
+    const next = nx && (!last || String(nx.at) >= String(last.at)) ? nx : null;
+    const nextDay = next ? Math.floor(Date.parse(next.date + 'T00:00:00Z') / 86400000) : null;
     let state;
     if (stage === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) state = 'visa';
     else if (INACTIVE_STAGES.includes(stage)) state = 'inactive';
     else if ((stage && stage !== 'Inquiry') || text(row['APPLICATION SUBMISSION DATE'])) state = 'applied';
     else if (!last) state = 'new';
-    else if (days >= FOLLOW_DAYS) state = 'due';
+    else if (tries.length || nextDay === null || nextDay <= todayNo) state = 'due';
     else state = 'ok';
-    return { state, stage, last, days, touches };
+    return { state, stage, last, days, touches, tries: tries.length, triedToday, next };
   }
   const todayNumber = () => Math.floor(Date.parse(cards.today() + 'T00:00:00Z') / 86400000);
 
@@ -1696,8 +1714,12 @@ function createPortalApi({
       out = cards.removeNote(rowId, sub, by(req), Teams.isAdmin(req.user));
       if (!out.error) note(req, [`${who}: removed a note`]);
     } else if (part === 'notes' && !sub) {
-      out = cards.addNote(rowId, body, by(req));
-      if (!out.error) note(req, [`${who}: added a note`]);
+      // A note may carry the next follow-up date (Events and marketing asks for it, the same rule as the follow-up list).
+      const next = text(body.next);
+      if (next && (!/^\d{4}-\d{2}-\d{2}$/.test(next) || next <= cards.today())) { sendJSON(res, 400, { error: 'The next follow-up date is after today.' }); return true; }
+      out = cards.addNote(rowId, { text: body.text, kind: body.kind }, by(req));
+      if (!out.error && next) cards.setFollow(rowId, { next: { date: next, by: by(req), at: out.note.at } }, by(req));
+      if (!out.error) note(req, [`${who}: added a note${next ? `, next follow-up ${niceDay(next)}` : ''}`]);
     } else if (part === 'sheet') {
       const changes = {};
       for (const [col, clean] of Object.entries(CARD_EDITABLE)) {
@@ -1770,6 +1792,13 @@ function createPortalApi({
         made.push(t.task.id);
       }
       activity.record(req, req.user, 'Task', { app: 'Student card', changes: [`Sent ${chosen.length} course${chosen.length === 1 ? '' : 's'} of ${who} to the Application Team (one task for each)`] });
+      // Courses assigned to the Application Team move an inquiry (or a deferred student) to Application Stage by themselves (the owner,
+      // 21 Nov 2026), so the Application Team has the student in its list at once. The timeline says so (stage-log.js), and a student
+      // the Follow-up Team sent on stays in its list, view only.
+      const stageNow = text((rowIndex().get(rowId) || found).row[STATUS]);
+      if (['Inquiry', 'Defer', ''].includes(stageNow)) {
+        try { writeColumnsFor(req, rowId, { [STATUS]: 'Application Stage' }); } catch (e) { console.error('[assign stage]', e); }
+      }
       sendJSON(res, 200, { ok: true, card: cards.get(rowId) });
       return true;
     } else if (part === 'options' && sub && del) {
@@ -2215,7 +2244,7 @@ function createPortalApi({
   // use this one rule. [{ at, by, what: 'note' | 'WhatsApp' | 'email', text }], oldest first.
   function contactsOf(card) {
     return [
-      ...((card && card.notes) || []).filter((n) => !LIST_NOTE.test(String(n.text || ''))).map((n) => ({ at: n.at, by: n.by, what: 'note', text: n.text })),
+      ...((card && card.notes) || []).filter((n) => !LIST_NOTE.test(String(n.text || '')) && n.kind !== 'stage' && n.kind !== 'try').map((n) => ({ at: n.at, by: n.by, what: 'note', text: n.text })),
       ...((card && card.messages) || []).filter((m) => m.status !== 'failed' && m.status !== 'preview').map((m) => ({ at: m.at, by: m.by, what: m.channel === 'whatsapp' ? 'WhatsApp' : 'email', text: m.subject || '' })),
     ].filter((x) => x.at).sort((a, b) => String(a.at).localeCompare(String(b.at)));
   }
@@ -2296,7 +2325,7 @@ function createPortalApi({
         canNote: canChange(user, rowIndex().get(row._id)),
       });
     }
-    return { students: out.sort((a, b) => a.name.localeCompare(b.name)), team: [...team.values()].sort((a, b) => b.students - a.students || b.notes - a.notes), followDays: FOLLOW_DAYS };
+    return { students: out.sort((a, b) => a.name.localeCompare(b.name)), team: [...team.values()].sort((a, b) => b.students - a.students || b.notes - a.notes) };
   }
 
   // Which event or campaign each student came from, for the Source filter of All Students: only the students the account
@@ -2388,6 +2417,108 @@ function createPortalApi({
       places: { lives, home, none: noPlace }, ages, noAge,
     };
   }
+  // ---- the follow-up list (the owner, 21 Nov 2026): the Follow-up Team's All Students ----
+  // The students of the current intake the team works on (Inquiry and Defer), and the ones it sent on to the Application Team or
+  // withdrew (view only), each with where it stands (followOf), the last thing said, the next follow-up date and the tag.
+  const followTeam = (user) => Teams.isAdmin(user) || (teamsOf(user).includes('followup') && !Teams.isReadOnly(user));
+  const LATER = ['Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected', 'Hold'];
+  function followList(user) {
+    const intake = currentIntake();
+    if (!intake) return { intake: '', students: [] };
+    const all = cards.all();
+    const todayNo = todayNumber();
+    const out = [];
+    intake.rows.forEach((row, i) => {
+      if (!row || !row._id || !isStudent(row)) return;
+      const found = { sheet: intake, row };
+      const stage = text(row[STATUS]);
+      const card = all[row._id] || { notes: [], messages: [], options: [], profile: {}, follow: {} };
+      const fo = card.follow || {};
+      const ours = ['Inquiry', 'Defer'].includes(stage) && (Teams.isAdmin(user) || Teams.seesRow(user, row));
+      if (!ours && !fo.via) return;
+      const f = followOf(row, card, todayNo);
+      let state;
+      if (stage === 'Withdrawn') state = 'out';
+      else if (stage === 'Defer') state = 'defer';
+      else if (!ours) state = text(row['APPLICATION SUBMISSION DATE']) || LATER.includes(stage) || (card.options || []).some((o) => o.applied) ? 'applying' : 'sent';
+      else if ((f.state === 'new' || f.state === 'due') && f.triedToday) state = 'tried';
+      else state = f.state;
+      if (!['new', 'due', 'tried', 'ok', 'defer', 'sent', 'applying', 'out'].includes(state)) return;
+      let words = f.last ? `${f.last.what === 'note' ? '' : `${f.last.what}: `}${text(f.last.text) || 'sent'}` : '';
+      if (state === 'out') words = text(card.profile && card.profile.lostReason) ? `Why: ${text(card.profile.lostReason)}` : words;
+      if (state === 'sent') { const n = (card.options || []).filter((o) => o.sent && !o.applied && !o.refused && !o.withdrawn && !o.skipped).length; words = `${n || 'The'} course${n === 1 ? '' : 's'} with the Application Team, not submitted yet`; }
+      if (state === 'applying') { const a = (card.options || []).filter((o) => o.applied).sort((x, y) => String(y.applied).localeCompare(String(x.applied)))[0]; words = stage !== 'Application Stage' ? `Now at ${stage}` : a ? `Submitted on ${niceDay(a.applied)} to ${a.university}` : 'Application submitted'; }
+      const live = ['new', 'due', 'tried', 'ok', 'defer'].includes(state);
+      out.push({
+        no: i + 1, id: row._id, name: nameOf(row), phone: text(row['CONTACT NUMBER']), stage, remarks: text(row.REMARKS).slice(0, 300),
+        tag: fo.tag || '', from: fo.from || '', state, tries: f.tries,
+        last: f.last ? { at: f.last.at, by: text(f.last.by), what: f.last.what } : null, words: String(words).slice(0, 300),
+        next: f.next ? { date: f.next.date, by: f.next.by } : null,
+        canNote: live ? canChange(user, found) : state === 'out' && followTeam(user), canTag: live && canChange(user, found),
+      });
+    });
+    return { intake: intake.name, today: cards.today(), students: out, tags: Fields.FOLLOW_TAGS, reasons: Fields.LOST_REASONS };
+  }
+
+  // One action from the follow-up list on one student. Every note needs what the student said; a saved note also needs the next
+  // follow-up date; Defer needs only the words (the stage moves to Defer); Withdrawn needs the words and a reason (the stage moves to
+  // Withdrawn). A call with no answer is written as such and never counts as speaking to the student.
+  function followAction(req, rowId, body) {
+    const user = req.user;
+    if (!followTeam(user)) return { status: 403, json: { error: 'The follow-up list is for the Follow-up Team.' } };
+    const found = rowIndex().get(rowId);
+    const item = found && followList(user).students.find((x) => x.id === rowId);
+    if (!item) return { status: 404, json: { error: 'No such student, or the student is not in your list.' } };
+    const action = text(body.action);
+    const words = text(body.text).replace(/\s+\n/g, '\n').slice(0, 2000);
+    const who = by(req);
+    const name = item.name || 'the student';
+    if (action === 'tag') {
+      if (!item.canTag) return { status: 403, json: { error: 'This student cannot be changed from your account.' } };
+      const tag = text(body.tag);
+      if (tag && !Fields.FOLLOW_TAGS.some((t) => t.key === tag)) return { status: 400, json: { error: 'Choose Interested, Decision Making or Cold.' } };
+      cards.setFollow(rowId, { tag: tag || null }, who);
+      note(req, [`${name}: tag ${tag ? `set to ${tag}` : 'cleared'}`], 'Edited student card', 'Follow-up');
+      return { status: 200, json: { ok: true } };
+    }
+    if (!item.canNote) return { status: 403, json: { error: 'This student cannot be changed from your account.' } };
+    if (action === 'try') {
+      if (!['new', 'due', 'ok'].includes(item.state)) return { status: 400, json: { error: 'Only a student to follow up can be marked as not answering.' } };
+      cards.addNote(rowId, { kind: 'try', text: 'Called, no answer' }, who);
+      return { status: 200, json: { ok: true } };
+    }
+    if (!words) return { status: 400, json: { error: 'Write what the student said.', field: 'text' } };
+    if (action === 'note-only') { // a withdrawn student: only a word on the card
+      if (item.state !== 'out') return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
+      const n = cards.addNote(rowId, { kind: 'call', text: words }, who);
+      return n.error ? { status: 400, json: { error: n.error } } : { status: 200, json: { ok: true } };
+    }
+    if (action === 'note') {
+      const date = text(body.next);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00Z'))) return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
+      if (date <= cards.today()) return { status: 400, json: { error: 'The next follow-up date is after today.', field: 'next' } };
+      const n = cards.addNote(rowId, { kind: 'call', text: words }, who);
+      if (n.error) return { status: 400, json: { error: n.error } };
+      cards.setFollow(rowId, { next: { date, by: who, at: n.note.at } }, who);
+      note(req, [`${name}: follow-up note, next follow-up ${niceDay(date)}`], 'Edited student card', 'Follow-up');
+      return { status: 200, json: { ok: true } };
+    }
+    if (action === 'defer' || action === 'withdraw') {
+      const to = action === 'defer' ? 'Defer' : 'Withdrawn';
+      const reason = text(body.reason);
+      if (to === 'Withdrawn' && !Fields.LOST_REASONS.includes(reason)) return { status: 400, json: { error: 'Choose a reason.', field: 'reason' } };
+      if (item.stage === to) return { status: 400, json: { error: `${name} is already at ${to}.` } };
+      const move = Teams.checkMove(user, found.row, to);
+      if (!move.ok) return { status: 403, json: { error: move.message || `Your team cannot move this student to ${to}.` } };
+      const n = cards.addNote(rowId, { kind: 'call', text: words }, who);
+      if (n.error) return { status: 400, json: { error: n.error } };
+      if (to === 'Withdrawn') { cards.setProfile(rowId, { lostReason: reason }, who); cards.setFollow(rowId, { via: 'withdrawn', viaBy: who, viaAt: new Date().toISOString(), next: null }, who); } else cards.setFollow(rowId, { next: null }, who);
+      try { writeColumnsFor(req, rowId, { [STATUS]: to }); } catch (e) { console.error('[follow-up move]', e); return { status: 500, json: { error: 'save failed' } }; }
+      return { status: 200, json: { ok: true } };
+    }
+    return { status: 400, json: { error: 'Unknown action.' } };
+  }
+
   function eventTags(user) {
     const plan = planning.all();
     const all = cards.all();
@@ -3120,6 +3251,21 @@ function createPortalApi({
       return true;
     }
     if (urlPath === '/api/event-tags' && req.method === 'GET') { sendJSON(res, 200, eventTags(req.user)); return true; }
+    if (urlPath === '/api/followup' && req.method === 'GET') {
+      if (!followTeam(req.user)) { sendJSON(res, 403, { error: 'The follow-up list is for the Follow-up Team.' }); return true; }
+      sendJSON(res, 200, followList(req.user));
+      return true;
+    }
+    {
+      const fm = /^\/api\/followup\/([\w-]{1,64})$/.exec(urlPath);
+      if (fm && req.method === 'POST') {
+        const body = await bodyOf(req, res, 16 * 1024);
+        if (!body) return true;
+        const out = followAction(req, fm[1], body);
+        sendJSON(res, out.status, out.json);
+        return true;
+      }
+    }
     { const m = /^\/api\/activities\/([a-f0-9]{12})\/students\/remove$/.exec(urlPath);
       if (m && req.method === 'POST') {
         if (!Teams.isAdmin(req.user)) { sendJSON(res, 403, { error: 'Only Admin can remove the students of a list.' }); return true; }
@@ -3173,6 +3319,8 @@ function createPortalApi({
       return true;
     }
     if (urlPath.startsWith('/api/cards/')) return handleCard(req, res, urlPath);
+    // Follow-up messages to many students at once are for Admin and the branches, not the Follow-up Team (the owner, 21 Nov 2026).
+    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && Teams.ownTeamFollowup(req.user)) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
     if (urlPath === '/api/bulk/students' || urlPath === '/api/bulk/preview' || urlPath === '/api/bulk/send-email') return handleBulk(req, res, urlPath);
     if (urlPath === '/api/courses' && req.method === 'GET') {
       const q = query();
