@@ -72,22 +72,21 @@ test('each team sees only its students and no hidden sheets; Admin sees everythi
   const app = viewFor('application', base);
   assert.deepStrictEqual(app.sheets.map((s) => s.id), ['a']);
   assert.deepStrictEqual(app.sheets[0].rows.map((r) => r._id), ['r1']);
-  assert.deepStrictEqual(viewFor('mock', base).sheets[0].rows.map((r) => r._id), ['r2']);
-  assert.deepStrictEqual(viewFor('followup', base).sheets[0].rows.map((r) => r._id), ['r3']);
-  assert.ok(seesRow('followup', { [S]: 'Defer' }) && !seesRow('followup', { [S]: 'Withdrawn' }));
+  // The Mock and Follow-up Teams were removed (the owner, 22 Nov 2026): such a name is no team and sees no student.
+  assert.deepStrictEqual(viewFor('mock', base).sheets[0].rows.map((r) => r._id), []);
+  assert.ok(!seesRow('followup', { [S]: 'Inquiry' }) && !seesRow('application', { [S]: 'Withdrawn' }));
 });
 
 test('teams edit only their own columns and make only their own moves', () => {
   assert.ok(canEdit('application', 'NOC NUMBER') && !canEdit('application', 'MOCK SCHEDULE 1'));
-  assert.ok(canEdit('mock', 'PRE CAS INTERVIEW') && !canEdit('mock', 'STUDENT ID'));
-  assert.ok(canEdit('followup', 'REMARKS') && !canEdit('followup', 'FIRST NAME'));
+  assert.ok(!canEdit('mock', 'PRE CAS INTERVIEW') && !canEdit('followup', 'REMARKS'), 'removed teams change nothing');
   assert.ok(canEdit('admin', 'ANYTHING'));
   // A team can also stop, wait or hold a student it has (the owner, 18 Nov 2026), so nobody is stuck at a stage.
   assert.deepStrictEqual(statusChoices('application', 'Application Stage', []), ['Application Stage', 'Mock Stage', 'Defer', 'Withdrawn', 'Hold']);
-  assert.deepStrictEqual(statusChoices('followup', 'Inquiry', []), ['Inquiry', 'Application Stage', 'Defer', 'Withdrawn']);
+  assert.deepStrictEqual(statusChoices('application', 'Mock Stage', []), ['Mock Stage', 'Application Stage', 'Defer', 'Withdrawn', 'Hold']);
 });
 
-test('Application → Mock warns about blank details; Mock → Payment is refused until the mocks are filled', () => {
+test('Application → Mock warns about blank details; nobody but Admin moves a student on from Mock Stage', () => {
   // The university, course, application day and offer are needed to leave Application (the owner, 18 Nov 2026); the rest only asks.
   const need = { 'UNIVERSITY NAME': 'Test University', 'COURSE NAME': 'BSc Test', 'APPLICATION SUBMISSION DATE': '2026-09-01', 'OFFER RECEIVED DATE': '2026-10-01' };
   const refused = checkMove('application', { [S]: 'Application Stage' }, 'Mock Stage');
@@ -95,21 +94,9 @@ test('Application → Mock warns about blank details; Mock → Payment is refuse
   assert.ok(!checkMove('application', { [S]: 'Application Stage', ...need, 'OFFER RECEIVED DATE': '' }, 'Mock Stage').ok, 'no offer yet: it cannot leave Application');
   const warn = checkMove('application', { [S]: 'Application Stage', ...need, 'STUDENT ID': '' }, 'Mock Stage');
   assert.ok(warn.ok && /Student ID/.test(warn.confirm));
-  const blocked = checkMove('mock', { [S]: 'Mock Stage', 'MOCK SCHEDULE 1': '2026-01-01' }, 'Payment Stage');
-  assert.ok(!blocked.ok && /Feedback 1/.test(blocked.message) && /Pre-CAS Interview/.test(blocked.message) && !/Mock Schedule 4/.test(blocked.message));
-  assert.ok(!checkMove('mock', { [S]: 'Mock Stage', 'PRE CAS INTERVIEW': 'Passed' }, 'Payment Stage').ok, 'at least one mock');
-  // One mock with its feedback and the Pre-CAS passed is enough (the owner, 15 Nov 2026).
-  const one = { [S]: 'Mock Stage', 'MOCK SCHEDULE 1': 'x', 'FEEDBACK 1': 'y', 'PRE CAS INTERVIEW': 'Passed' };
-  assert.ok(checkMove('mock', one, 'Payment Stage').ok);
-  assert.ok(!checkMove('mock', { ...one, 'MOCK SCHEDULE 2': 'z' }, 'Payment Stage').ok, 'a mock held needs its feedback');
-  assert.ok(!checkMove('mock', { ...one, 'PRE CAS INTERVIEW': 'Fail' }, 'Payment Stage').ok, 'not after a failed Pre-CAS');
-  const full = { [S]: 'Mock Stage', 'PRE CAS INTERVIEW': 'Passed' };
-  [1, 2, 3, 4].forEach((n) => { full[`MOCK SCHEDULE ${n}`] = 'x'; full[`FEEDBACK ${n}`] = 'y'; });
-  assert.ok(checkMove('mock', full, 'Payment Stage').ok);
-  // The Follow-up Team moves its own students on (the owner, 15 Nov 2026).
-  assert.ok(checkMove('followup', { [S]: 'Inquiry' }, 'Application Stage').ok);
-  assert.ok(checkMove('followup', { [S]: 'Defer' }, 'Inquiry').ok);
-  assert.ok(!checkMove('followup', { [S]: 'Inquiry' }, 'Visa Issued').ok);
+  // Moving on from Mock Stage is Admin's now (the Mock Team was removed, the owner, 22 Nov 2026).
+  assert.ok(!checkMove('application', { [S]: 'Mock Stage', 'PRE CAS INTERVIEW': 'Passed' }, 'Payment Stage').ok);
+  assert.ok(!checkMove('followup', { [S]: 'Inquiry' }, 'Application Stage').ok);
 });
 
 test('a team save is checked cell by cell', () => {
@@ -130,7 +117,7 @@ test('a team save is checked cell by cell', () => {
   deleted.sheets[0].rows = [];
   const del = teamChanges('application', base, deleted);
   assert.ok(del.errors.some((e) => /one student at a time/.test(e)) || base.sheets[0].rows.length === 1, 'several at once is refused');
-  assert.ok(teamChanges('followup', base, deleted).errors.some((e) => /Only Admin can delete/.test(e)), 'Follow-up cannot delete');
+  assert.ok(teamChanges('chitwan', base, deleted).errors.some((e) => /Only Admin can delete/.test(e)), 'a branch cannot delete');
   const added = clone(base);
   added.sheets[0].rows.push({ _id: 'n', 'FIRST NAME': 'x' }); // a new student: allowed (see below)
   assert.deepStrictEqual(teamChanges('application', base, added).adds.map((a) => a.row[S]), ['Application Stage']);
@@ -143,26 +130,24 @@ test('a team save moving a student on is checked from the status it had before',
   assert.ok(teamChanges('application', base, mine).errors.some((e) => /can't go to Mock Stage/.test(e)), 'refused without the university, course, application day and offer');
   Object.assign(mine.sheets[0].rows[0], { 'UNIVERSITY NAME': 'Test University', 'COURSE NAME': 'BSc Test', 'APPLICATION SUBMISSION DATE': '2026-09-01', 'OFFER RECEIVED DATE': '2026-10-01' });
   assert.deepStrictEqual(teamChanges('application', base, mine).errors, []);
-  const mockBase = viewFor('mock', book());
-  const early = clone(mockBase);
-  early.sheets[0].rows[0][S] = 'Payment Stage'; // mocks not filled: refused even if the page is bypassed
-  assert.ok(teamChanges('mock', mockBase, early).errors.some((e) => /can't go to Payment Stage/.test(e)));
+  const early = clone(base);
+  early.sheets[0].rows[0][S] = 'Payment Stage'; // not one of the team's moves: refused even if the page is bypassed
+  assert.ok(teamChanges('application', base, early).errors.some((e) => /can't move a student from Application Stage to Payment Stage/.test(e)));
 });
 
 test('a team can add a student at its own stage, and fill in the basics of students it added', () => {
-  const base = viewFor('followup', book());
+  const base = viewFor('application', book());
   const mine = clone(base);
   mine.sheets[0].rows.push({ _id: 'n1', [S]: '', 'FIRST NAME': 'Nabin', 'CONTACT NUMBER': '98000', REMARKS: 'walk-in', 'FEE AFTER SCHOLARSHIP': '' });
-  const out = teamChanges('followup', base, mine, ['FEE AFTER SCHOLARSHIP']);
+  const out = teamChanges('application', base, mine, ['FEE AFTER SCHOLARSHIP']);
   assert.deepStrictEqual(out.errors, []);
   assert.deepStrictEqual(out.adds, [{ sheetId: 'a', row: {
-    _id: 'n1', [S]: 'Inquiry', _addedByTeam: 'followup', 'FIRST NAME': 'Nabin', 'CONTACT NUMBER': '98000', REMARKS: 'walk-in',
+    _id: 'n1', [S]: 'Application Stage', _addedByTeam: 'application', 'FIRST NAME': 'Nabin', 'CONTACT NUMBER': '98000', REMARKS: 'walk-in',
   } }]);
-  // Later: the team may fix the name of a student it added, but not of one it didn't.
-  const own = { _id: 'n1', [S]: 'Inquiry', _addedByTeam: 'followup', 'FIRST NAME': 'Nabin' };
-  assert.ok(canEdit('followup', 'FIRST NAME', own));
-  assert.ok(!canEdit('followup', 'FIRST NAME', { ...own, _addedByTeam: undefined }));
-  assert.ok(!canEdit('followup', 'GROSS FEE', own));
+  // Later: the team may fix the email of a student it added, but not of one it didn't.
+  const own = { _id: 'n1', [S]: 'Application Stage', _addedByTeam: 'application', 'FIRST NAME': 'Nabin' };
+  assert.ok(canEdit('application', 'FIRST NAME', own));
+  assert.ok(!canEdit('application', 'GROSS FEE', own));
 });
 
 test('a team cannot add a student at another stage, with other columns, or claim another\'s student', () => {
@@ -174,28 +159,27 @@ test('a team cannot add a student at another stage, with other columns, or claim
   extra.sheets[0].rows.push({ _id: 'n3', [S]: 'Application Stage', 'GROSS FEE': '9' });
   assert.ok(teamChanges('application', base, extra).errors.some((e) => /Gross Fee/.test(e)));
   // Sending `_addedByTeam` on an existing student doesn't unlock it: the server's copy decides.
-  const fu = viewFor('followup', book());
-  const claim = clone(fu);
-  Object.assign(claim.sheets[0].rows[0], { _addedByTeam: 'followup', 'FIRST NAME': 'Changed' });
-  assert.ok(teamChanges('followup', fu, claim).errors.some((e) => /First Name/.test(e)));
+  const claim = clone(base);
+  Object.assign(claim.sheets[0].rows[0], { _addedByTeam: 'application', 'GROSS FEE': '5' });
+  assert.ok(teamChanges('application', base, claim).errors.some((e) => /Gross Fee/.test(e)));
 });
 
 test('a team can colour the students it sees, with the listed colours only', () => {
-  const base = viewFor('followup', book());
+  const base = viewFor('application', book());
   const mine = clone(base);
   mine.sheets[0].rows[0]._color = 'green';
-  assert.deepStrictEqual(teamChanges('followup', base, mine),
+  assert.deepStrictEqual(teamChanges('application', base, mine),
     { changes: [{ sheetId: 'a', rowId: mine.sheets[0].rows[0]._id, col: '_color', value: 'green' }], adds: [], deletes: [], errors: [] });
 
   const odd = clone(base);
   odd.sheets[0].rows[0]._color = 'url(x)';
-  assert.strictEqual(teamChanges('followup', base, odd).errors.length, 1, 'a colour outside the list is refused');
+  assert.strictEqual(teamChanges('application', base, odd).errors.length, 1, 'a colour outside the list is refused');
 
   const other = clone(base);
-  other.sheets[0].rows[0]._addedByTeam = 'mock'; // other hidden fields still can't be changed
-  assert.deepStrictEqual(teamChanges('followup', base, other).changes, []);
+  other.sheets[0].rows[0]._addedByTeam = 'chitwan'; // other hidden fields still can't be changed
+  assert.deepStrictEqual(teamChanges('application', base, other).changes, []);
 
   const { canColor } = require('../shared/teams');
-  assert.ok(canColor('followup', {}) && canColor('application', {}));
+  assert.ok(canColor('chitwan', {}) && canColor('application', {}));
   assert.ok(!canColor({ role: 'manager', departments: [] }, {}), 'a view-only Manager cannot');
 });

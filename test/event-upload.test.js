@@ -35,7 +35,7 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   const code = fs.readFileSync(path.join(dir, 'first-admin-code.txt'), 'utf8').trim();
   await admin('POST', '/api/login/first-admin', { setupCode: code, username: 'owner', name: 'Owner' });
   await admin('POST', '/api/login/new-password', { password: 'Strong-Pass-2026' });
-  const made = (await admin('POST', '/api/users', { username: 'bikram', name: 'Bikram', email: '', departments: ['followup'] })).json;
+  const made = (await admin('POST', '/api/users', { username: 'bikram', name: 'Bikram', email: '', departments: ['application'] })).json;
   const follow = person();
   await follow('POST', '/api/login', { username: 'bikram', password: made.temporaryPassword });
   await follow('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
@@ -58,7 +58,7 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
     { first: 'New', last: 'One', phone: '9811122233' },
     { first: 'Fair', last: 'Student', phone: '9811100000' },
   ];
-  // Only Admin uploads; the follow-up team cannot.
+  // Only Admin uploads; a team cannot.
   assert.strictEqual((await follow('POST', `/api/activities/${ids['ABC event']}/students`, { rows: list })).status, 403);
   // The review changes nothing.
   const pre = (await admin('POST', `/api/activities/${ids['ABC event']}/students`, { rows: list, preview: true })).json;

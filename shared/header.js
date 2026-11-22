@@ -1,6 +1,6 @@
 // The side menu every page shares: the Vishnu mark and the name of the consultancy using it, navigation between the pages, and the account
 // menu with Log out. A page puts <header class="niec-header" data-page="..."></header> at the top (page
-// is dashboard, sheet, b2b, bulk, incentive, users, activity or direct), loads header.css and this file (after
+// is dashboard, sheet, b2b, bulkadd, incentive, users, activity or direct), loads header.css and this file (after
 // session.js), and the header fills itself in.
 //
 // Navigation depends on the account: Admin sees every page (Users and Activity in the account menu), the Manager the Dashboard, All Students and
@@ -26,8 +26,7 @@
   header.innerHTML = `
     <button type="button" class="niec-toggle" aria-label="Open or close the menu" aria-expanded="true" title="Open or close the menu"><span class="niec-burger-ico" aria-hidden="true"></span></button>
     <a class="niec-brand" href="/today" title="Home" id="niecHome">
-      <img class="niec-logo vishnu-lotus" src="/vishnu-lotus.svg" alt="" width="40" height="40" />
-      <span class="niec-name"><b>Vishnu</b></span>
+      <img class="niec-logo vishnu-logo" src="/vishnu-logo.png" alt="Vishnu" width="126" height="146" />
       <span class="niec-mark" aria-hidden="true">Vishnu</span>
     </a>
     <button type="button" class="niec-burger" aria-expanded="false" aria-controls="niecNav"><span class="niec-burger-ico" aria-hidden="true"></span><span class="niec-burger-lbl">Menu</span></button>
@@ -39,9 +38,7 @@
   window.addEventListener('pageswap', quiet);
   window.addEventListener('pagereveal', quiet);
 
-  // Only the consultancy's logo at the top of the menu (the owner, 14 Nov 2026); "Vishnu" shows only if there is no logo.
-  const logo = header.querySelector('.niec-logo');
-  logo.addEventListener('error', () => { logo.hidden = true; });
+  // Only the Vishnu logo at the top of the menu (the owner, 22 Nov 2026: no consultancy logo anywhere).
 
 
   // ---- Quick search (Ctrl+K, or the Search button): jump to a page or a student from anywhere, with the keyboard ----
@@ -103,42 +100,36 @@
     b2b: svg('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
     partners: svg('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2.5 19c.4-3 2.6-5 5.5-5 1.6 0 3 .6 4 1.7 1-1.1 2.4-1.7 4-1.7 2.9 0 5.1 2 5.5 5"/>'),
     agents: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3.2-5.5 6.5-5.5s6 2 6.5 5.5"/><path d="M16 5a3.5 3.5 0 0 1 0 7M18.5 15c1.8.8 3 2.4 3.3 5"/>'),
-    bulk: svg('<path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12h5"/>'),
     bulkadd: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3.2-5.5 6.5-5.5 1.4 0 2.6.3 3.6.9"/><path d="M18 13v6M15 16h6"/>'),
     users: svg('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6"/>'),
     activity: svg('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
     incentive: svg('<path d="M12 3v18M16.5 7.5C15.8 6.4 14.2 6 12.5 6 10.3 6 8.5 7 8.5 8.8c0 4 8 2 8 6.2 0 1.8-1.9 3-4.2 3-2 0-3.7-.6-4.5-1.8"/>'),
     events: svg('<path d="M4 14V8l12-4v14L4 14z"/><path d="M16 8a3 3 0 0 1 0 6M7 14v4a2 2 0 0 0 4 0v-3"/>'),
-    // The student's portal (a graduation cap) and the mock interview guides (a speech bubble).
+    // The student's portal (a graduation cap).
     portal: svg('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/>'),
-    mock: svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
-    // Bookings (a calendar) and Interview guidelines (a document), the Mock Team's own pages (the owner, 22 Nov 2026).
-    bookings: svg('<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
-    guidelines: svg('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'),
     factfile: svg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>'),
   };
   const LINKS = {
-    admin: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['partners', '/partners', 'Partners'], ['events', '/events', 'Events and marketing'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Universities']],
+    admin: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['partners', '/partners', 'Partners'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Universities']],
     manager: [['today', '/today', 'Today'], ['dashboard', '/dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['events', '/events', 'Events and marketing'], ['factfile', '/fact-file', 'Universities']],
     staff: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']],
-    followup: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Universities']],
     // A student's own login: their own portal only (the owner, 20 Nov 2026).
     student: [['portal', '/my-portal', 'My portal']],
-    branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulkadd', '/bulk-add', 'Add many students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Universities']],
+    branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulkadd', '/bulk-add', 'Add many students'], ['factfile', '/fact-file', 'Universities']],
   };
-  // The menu of an account: Admin and Manager have their own; a team gets the pages its work needs (a branch adds students, the Follow-up Team follows up).
+  // The menu of an account: Admin and Manager have their own; a team gets the pages its work needs (a branch adds students).
+  // The Mock and Follow-up Teams were removed (the owner, 22 Nov 2026).
   const kindOf = (me) => {
     if (me.role === 'student') return 'student';
     const deps = me.departments || [];
-    if (me.role === 'admin' || me.role === 'manager') return me.role === 'manager' && deps.length ? (deps.some((d) => !['application', 'mock', 'followup'].includes(d)) ? 'branch' : 'staff') : me.role;
-    if (deps.some((d) => !['application', 'mock', 'followup'].includes(d))) return 'branch';
-    return deps.includes('followup') ? 'followup' : 'staff';
+    if (me.role === 'admin' || me.role === 'manager') return me.role === 'manager' && deps.length ? (deps.some((d) => d !== 'application') ? 'branch' : 'staff') : me.role;
+    if (deps.some((d) => d !== 'application')) return 'branch';
+    return 'staff';
   };
 
   // Admin's own pages (people, the record of what happened), under their own heading in the menu. The account menu holds
 // Incentive (Admin only, behind its own password, moved there from the side menu, the owner, 17 Nov 2026), Connect my phone
-// (WhatsApp chats open on the person's phone, the owner, 17 Nov 2026) and Log out; a person's own email, signature and WhatsApp
-// number are set up on Follow-up, where messages to students are sent from (the owner, 17 Nov 2026).
+// (WhatsApp chats open on the person's phone, the owner, 17 Nov 2026) and Log out.
   const MENU_LINKS = {
     admin: [['users', '/users', 'Users'], ['activity', '/activity', 'Activity']],
   };
@@ -147,62 +138,39 @@
   };
 
   // The partner pages a person may open besides their own (the same rules as student-details/partner-access.js): the Manager all of
-  // them; the Application and Mock Teams Partner Universities, B2B Partners and Agents; a branch Partner Universities. Admin has them.
+  // them; the Application Team Partner Universities, B2B Partners and Agents; a branch Partner Universities. Admin has them.
   // All three are one menu entry, Partners.
   function sharedLinks(me) {
-    if (me.role === 'student') return { before: [], after: [] };
+    if (me.role === 'student' || me.role === 'admin') return { before: [] };
     const deps = me.departments || [];
-    // Mock interviews (the guides students read): Admin, the Manager and the Mock Team (the owner, 20 Nov 2026).
-    const after = me.role === 'admin' || me.role === 'manager' || deps.includes('mock') ? [['mock', '/mock-guides', 'Mock interviews']] : [];
-    if (me.role === 'admin') return { before: [], after };
     const manager = me.role === 'manager';
-    const appMock = deps.some((d) => d === 'application' || d === 'mock');
-    const branch = deps.some((d) => !['application', 'mock', 'followup'].includes(d));
     const before = [];
     // One "Partners" link for all three lists (the owner, 17 Nov 2026); the page itself shows only the lists this person may open.
-    if (manager || appMock || branch) before.push(['partners', '/partners', 'Partners']);
-    return { before, after };
+    if (manager || deps.length) before.push(['partners', '/partners', 'Partners']);
+    return { before };
   }
 
   let studentLogin = false; // a student's own login: no tasks, no student search
   let bound = false; // the menu's own buttons are wired once, however often the menu is drawn
   // Whether a person's own team is the Application Team (the same rule as the server's ownTeamApplication): chosen as their own team,
   // or the only team they are in. The owner, 21 Nov 2026: that team works from Today, All Students and Universities, without the
-  // Dashboard, Partners and Mock interviews.
+  // Dashboard and Partners.
   const ownTeamApplication = (me) => {
     if (!me || me.role === 'admin' || me.role === 'manager') return false;
     const deps = me.departments || [];
     return me.taskTeam ? me.taskTeam === 'application' && deps.includes('application') : deps.length === 1 && deps[0] === 'application';
   };
-  // The same for the Follow-up Team (the server's ownTeamFollowup): All Students (their follow-up list) and Universities only, with
-  // no Today, Dashboard or Follow-up (the owner, 21 Nov 2026).
-  const ownTeamFollowup = (me) => {
-    if (!me || me.role === 'admin' || me.role === 'manager') return false;
-    const deps = me.departments || [];
-    return me.taskTeam ? me.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
-  };
-  // The same for the Mock Team (the server's ownTeamMock): Today, Bookings, All Students, Universities and Interview guidelines, with no
-  // Dashboard, Partners or Mock interviews (the owner, 22 Nov 2026).
-  const ownTeamMock = (me) => {
-    if (!me || me.role === 'admin' || me.role === 'manager') return false;
-    const deps = me.departments || [];
-    return me.taskTeam ? me.taskTeam === 'mock' && deps.includes('mock') : deps.length === 1 && deps[0] === 'mock';
-  };
   function render(me) {
     const appOwn = ownTeamApplication(me);
-    const fuOwn = ownTeamFollowup(me);
-    const mockOwn = ownTeamMock(me);
-    const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
-      : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
-        : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
+    const own = (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
-    const extra = mockOwn ? { before: [], after: [] } : appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'mock') } : shared0;
+    const extra = appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners') } : shared0;
     const at = own.findIndex(([id]) => id === 'factfile');
-    const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
+    const links = at === -1 ? [...own, ...extra.before] : [...own.slice(0, at), ...extra.before, ...own.slice(at)];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];
-    // Follow-up and Add many students belong to All Students in a menu that has no link of their own.
+    // Add many students belongs to All Students in a menu that has no link of its own.
     const menuPage = ['direct', 'b2b', 'agents', 'apply-through'].includes(header.dataset.page) ? 'partners' : header.dataset.page;
-    const page = links.some(([id]) => id === menuPage) || !['bulk', 'bulkadd'].includes(menuPage) ? menuPage : 'sheet';
+    const page = links.some(([id]) => id === menuPage) || menuPage !== 'bulkadd' ? menuPage : 'sheet';
     header.querySelector('.niec-nav').innerHTML = links
       .map(([id, href, label]) => `<a href="${href}" title="${label}"${id === page ? ' aria-current="page"' : ''}><span class="niec-ico" aria-hidden="true">${ICONS[id] || ''}</span><span class="niec-lbl">${label}</span></a>`).join('')
       // Admin's own pages are in the menu too, under their own heading (Users, Activity); Incentive is in the account menu.
@@ -226,7 +194,7 @@
     const here = nav.querySelector('[aria-current="page"]');
     if (here) nav.scrollLeft = Math.max(0, here.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft - (nav.clientWidth - here.offsetWidth) / 2);
     // The logo goes home: the dashboard for the Manager, All Students for everyone else.
-    header.querySelector('#niecHome').setAttribute('href', me.role === 'student' ? '/my-portal' : fuOwn ? '/students' : '/today');
+    header.querySelector('#niecHome').setAttribute('href', me.role === 'student' ? '/my-portal' : '/today');
     studentLogin = me.role === 'student';
     const initials = String(me.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
     const account = header.querySelector('.niec-account');

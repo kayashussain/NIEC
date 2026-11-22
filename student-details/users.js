@@ -4,8 +4,6 @@
   const $ = (id) => document.getElementById(id);
   const DEPARTMENTS = {
     application: { label: 'Application Team', help: 'Application Stage students, up to NOC Number and the Medical Report.' },
-    mock: { label: 'Mock Team', help: 'Mock Stage students: mock interviews and Pre-CAS.' },
-    followup: { label: 'Follow-up Team', help: 'Inquiry and Defer students: remarks and moving them on.' },
   };
   // A branch team for each branch in the one list (card-fields.js).
   window.CardFields.BRANCHES.forEach((name) => {
@@ -47,7 +45,7 @@
         <div class="check-group">
           ${boxes}
           <label class="check"><input type="checkbox" name="${name}-manager"><span><b>Manager</b><small>Sees every student and the Dashboard, exports to Excel. View only unless a team is ticked.</small></span></label>
-          <label class="check check-student"><input type="checkbox" name="${name}-student"><span><b>Student (own portal)</b><small>For a student: their own portal only (their applications, where they are, mock interviews and the interview guides). Sees nothing else, no other student.</small></span></label>
+          <label class="check check-student"><input type="checkbox" name="${name}-student"><span><b>Student (own portal)</b><small>For a student: their own portal only (their applications and where they are). Sees nothing else, no other student.</small></span></label>
         </div>
         <div class="student-pick" hidden>
           <span><b>Which student is this login for?</b><small>Their choices go to this student's University options, and the Application Team gets a task.</small></span>
@@ -63,8 +61,8 @@
       </fieldset>`;
   }
 
-  // "Their own team" (the owner, 15 Nov 2026): asked once two or more teams are ticked. A person ticked in the Application and the Mock
-  // Team who belongs to the Application Team gets only the Application Team's tasks, Today and dashboard; the Mock Team is extra
+  // "Their own team" (the owner, 15 Nov 2026): asked once two or more teams are ticked. A person ticked in the Application Team and a branch
+  // who belongs to the Application Team gets only the Application Team's tasks, Today and dashboard; the branch is extra
   // access. It must be chosen before saving (an older person without one gets every team's tasks until it is chosen).
   function drawTaskTeam(container, name, keep) {
     const ticked = [...container.querySelectorAll(`input[name="${name}-dept"]:checked`)].map((c) => c.value);
@@ -187,7 +185,7 @@
     return '<span class="pill pill-ok">Active</span>';
   }
 
-  // Their own team first (a solid chip), then the other teams as extra access ("+ Mock Team"); a person in two or more teams with no
+  // Their own team first (a solid chip), then the other teams as extra access ("+ Chitwan Branch"); a person in two or more teams with no
   // own team chosen yet shows an orange "Own team not chosen", so it is noticed and set.
   function accessChips(u) {
     if (u.role === 'admin') return '<span class="chip chip-admin">Admin</span>';

@@ -302,19 +302,14 @@
       const main = el('div', 'tdx-main');
       const nameLine = el('div', 'tdx-name-line');
       const shownName = window.Portal.niceName ? window.Portal.niceName(m.name) : m.name;
-      // A booking not matched to a student yet (the Mock Team) has no card to open.
-      nameLine.append(m.id ? h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, shownName) : el('span', 'tdx-name', shownName));
+      nameLine.append(h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, shownName));
       main.append(nameLine, el('p', 'tdx-meta', [m.stage, m.intake].filter(Boolean).join(' · ')));
       const ul = el('ul', 'tdx-problems');
       m.lines.forEach((ln) => ul.append(el('li', '', ln.text)));
       main.append(ul);
       // A line about a Medical task is fixed by finishing that task; everything else on the student's profile.
       const onTask = m.lines.every((ln) => ln.taskId) ? (tasksNow.find((t) => t.id === m.lines[0].taskId) || null) : null;
-      // The Mock Team's lines say what to do (Write feedback, Answer, Copy booking link) and where (the owner, 22 Nov 2026).
-      const acts = m.lines.filter((ln) => ln.action && /^\/[\w-]/.test(ln.action.href || '')).map((ln) => ln.action);
-      const act = acts.find((a) => a.label === 'Answer') || acts[0]; // a mock to answer comes first
-      const fix = act ? h('a', { class: 'btn btn-primary tdx-fix', href: act.href }, act.label)
-        : onTask ? h('button', { class: 'btn btn-primary tdx-fix', type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
+      const fix = onTask ? h('button', { class: 'btn btn-primary tdx-fix', type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
         : h('a', { class: 'btn btn-primary tdx-fix', href: '/student?id=' + encodeURIComponent(m.id) }, 'Fix it');
       head.append(av, main, fix);
       r.append(head);
@@ -506,7 +501,7 @@
     const byKind = Boolean(todayData && todayData.missing); // the Application Team
     if (view[6] === 'missing') { box.append(missingPanel(refresh)); return box; }
     const inView = view[2];
-    // The kinds (Application, Mock interview ...) of the tasks in this view, each with how many are for TODAY. A kind whose tasks are
+    // The kinds (Application, NOC ...) of the tasks in this view, each with how many are for TODAY. A kind whose tasks are
     // all moved to later days says "2 later" in blue, so a count never promises tasks that are not under Today.
     const openAll = inView.filter((x) => !x.done && matches(x) && (view[6] === 'upcoming' ? later(x) : view[6] === 'today' ? !later(x) : true));
     if (!openAll.length) tagFilter = 'all'; // nothing open here: no kind is left chosen
@@ -615,7 +610,7 @@
   // Go to one task: every kind shown, then glide to it, open its updates and mark
   // it read.
   // A person in two or more teams with no own team chooses it here, once (the owner, 15 Nov 2026: the Application Team kept seeing
-  // the Mock Team's tasks and work). Admin and the Manager are told who has not chosen yet.
+  // another team's tasks and work). Admin and the Manager are told who has not chosen yet.
   function ownTeamCard(t) {
     const from = t.mineFrom || {};
     if (!t.canAssign && from.allTeams > 1 && !from.ownChosen && (from.choices || []).length > 1) {

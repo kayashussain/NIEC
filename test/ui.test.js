@@ -168,12 +168,12 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     assert.strictEqual(await frame.getByRole('button', { name: 'Send a message' }).count(), 0, 'no Send a message button: Call, WhatsApp and Email are under the name')
     assert.strictEqual(await frame.getByRole('button', { name: 'Copy number' }).count(), 0, 'no Copy number (the owner, 17 Nov 2026)');
     // The card never opens a window asking where the student came from or for missing details (the owner, 20 Nov 2026). The source is
-    // rows of the Profile, changed in Edit profile, not a card of its own; under it Application details and Mock interviews (the
-    // owner, 22 Nov 2026).
+    // rows of the Profile, changed in Edit profile, not a card of its own; under it Application details (the owner, 22 Nov 2026; the
+    // Mock interviews box was removed the same day).
     await frame.locator('.sc-side .lg-profile dt', { hasText: 'Student source' }).waitFor();
     assert.strictEqual(await frame.locator('.lg-source').count(), 0, 'no Student source card of its own');
     await frame.locator('.sc-side .lg-appdetails').waitFor();
-    await frame.locator('.sc-side .lg-mocks').waitFor();
+    assert.strictEqual(await frame.locator('.sc-side .lg-mocks').count(), 0, 'no Mock interviews box');
     await page.waitForTimeout(500);
     assert.strictEqual(await frame.locator('dialog.p-dialog').count(), 0, 'no pop-up when the card opens');
     assert.strictEqual(await frame.locator('.sc-main .sc-source').count(), 0, 'the source is not repeated beside the work');
@@ -728,7 +728,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
 
     // A date picked from the calendar is on the cell as soon as it is confirmed (it used to stay blank until a refresh).
     // (Application submitted and Offer received are not on the sheet any more: they are kept per university on the card.)
-    const dateIdx = await colIndex('MOCK SCHEDULE 1');
+    const dateIdx = await colIndex('PAYMENT DATE');
     const cell = page.locator('#body tr:not(.pad-row)').first().locator('td').nth(dateIdx);
     await cell.click({ position: { x: 20, y: 12 } });
     await cell.locator('input').evaluate((el) => { el.value = '2026-11-12'; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); });

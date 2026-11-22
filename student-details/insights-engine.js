@@ -184,7 +184,7 @@ function speed(students) {
 // Of the students of every intake whose journey has ended (visa issued, refused, withdrawn, on hold or deferred) and
 // who had reached a step, the share who got the visa. A student still in progress is counted at the chance of the
 // furthest step they have reached.
-const STEP_KEYS = ['applied', 'offer', 'mock', 'paid', 'cas', 'lodged', 'visa'];
+const STEP_KEYS = ['applied', 'offer', 'paid', 'cas', 'lodged', 'visa'];
 // A journey has ended when the student has a visa, has left, or belongs to an intake that is over (an inquiry of last
 // year that never went further did not turn into a visa, whatever its stage still says).
 const hasEnded = (s) => s.visa || s.left || s.closed;
@@ -302,7 +302,7 @@ const SCHEDULE = [
   { key: 'apply', label: 'Applications submitted (last safe week)', at: 10 },
   { key: 'funds', label: 'Bank balance in place (it must be held 28 days before the visa application)', at: 9 },
   { key: 'offer', label: 'Offers in hand and conditions met', at: 8 },
-  { key: 'interview', label: 'Mock interviews done and credibility interview passed', at: 8 },
+  { key: 'interview', label: 'Credibility interview passed', at: 8 },
   { key: 'deposit', label: 'Tuition deposit paid and CAS requested', at: 7 },
   { key: 'cas', label: 'CAS received', at: 5 },
   { key: 'lodge', label: 'Visa application lodged', at: 4 },
@@ -572,7 +572,7 @@ function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b
       'Grades or study gap not accepted': 'Use the option finder for universities that accept a lower grade or a longer gap, before saying no.',
       'Course or university not available with us': 'This is a portfolio gap: list the courses asked for and seek a partner for the most asked one.',
       'University rejected the application': 'Check the entry rules in Universities before applying, and ask the university for the reason of each rejection.',
-      'Failed the credibility or Pre-CAS interview': 'More mock interviews before the real one, and a second mock for anyone who scores low in the first.',
+      'Failed the credibility or Pre-CAS interview': 'Prepare the student for the interview before the real one, with a second practice for anyone who is unsure.',
       'Visa refused': 'Review each refusal letter and add the missing check before the CAS is requested.',
       'Family or personal decision': 'Invite the parents to the counseling; many of these decisions are made by the family.',
       'Postponed to a later intake': 'Keep them warm: a note on the card to call them when the next intake opens.',

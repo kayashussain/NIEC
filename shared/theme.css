@@ -614,7 +614,6 @@ body:has(#sheet) .footbar { padding: 10px 32px 14px; background: transparent; bo
   body:has(#sheet) .sheet-title { font-size: 26px; }
 }
 
-/* 🔴 CSS CHANGED (2026-11-13): the Student Details buttons and the student card | from: buttons in the order + Add student, Add many, Export Excel, Colour rows, Bulk follow-up, Delete rows; the top of the student card kept jumping between three layouts as the zoom changed (buttons at the right, then underneath; details in two columns, then one, then two again) and broke emails in the middle | to: + Add student, Follow-up, Colour rows, Delete rows, Export Excel, with Add many students as a grey box at the top of the Add student window; the card has one steady layout at every zoom: the name, the buttons under it, then the details in two columns (one on a phone), and an email only breaks when it cannot fit (the card's width is changed in student-details/portal.css) */
 /* 🔴 CSS CHANGED (2026-11-13): the top of the wider student card | from: buttons always under the name and the details in two columns (made for a 600px card) | to: in the 920px card (and the card opened as its own page) the buttons sit in the top right corner, the name keeps clear of them, and the journey line and the details (three columns) use the full width under the name; a window narrower than the card falls back to buttons under the name and two columns */
 /* 🔴 CSS CHANGED (2026-11-15): the top of the student card, a long name (a bug fix) | from: the buttons were pinned to the top right corner and the name kept a fixed 330px clear of them, so a long name (SANJIP KUMAR MAHTO Mahato) ran under "Send a message"; the source was a big grey pill reading "Social Media: Marketing: Facebook ads Bangalore University, 6 Nov 2026" | to: the name and the buttons share one row that wraps: the name takes the room it needs (up to two lines, 30px) and the buttons move under it when they do not fit, never on top; the stage and intake on one line, then the source as one quiet grey line in 13.5px ("Social Media · Facebook · Advert: Facebook ads Bangalore University"), cut with … if longer than the card (the whole text shows on hover) */
 body:has(.p-embed-bar) .p-card.p-hero, body.p-embed .p-hero { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
@@ -1609,7 +1608,7 @@ select option { color: #dde9ef; }
 .td-tag.tag-application { background: #0d2736; color: #7fd3ee; }
 /* 🔴 CSS CHANGED (2026-11-18): the new "Offer request" task category has its own colour | from: it did not exist | to: a soft purple tag (#efe7fb with #5b34a8 text), next to the blue Application tag */
 .td-tag.tag-offer { background: #0d2736; color: #b9a6ff; }
-.td-tag.tag-mock { background: #13303f; color: #7fe9ec; }
+
 .td-tag.tag-payment { background: rgba(217, 113, 42, 0.14); color: #f0a463; }
 .td-tag.tag-documents { background: #0d2736; color: #f0a463; }
 .td-tag.tag-noc { background: #0d2736; color: #7fd3ee; }
@@ -2098,7 +2097,7 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .tb-tag { padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
 .tb-tag.tag-application { background: #0d2736; color: #7fd3ee; }
 .tb-tag.tag-offer { background: #0d2736; color: #b9a6ff; }
-.tb-tag.tag-mock { background: #13303f; color: #7fe9ec; }
+
 .tb-tag.tag-payment { background: rgba(217, 113, 42, 0.14); color: #f0a463; }
 .tb-tag.tag-documents { background: #0d2736; color: #f0a463; }
 .tb-tag.tag-noc { background: #0d2736; color: #7fd3ee; }
@@ -2209,32 +2208,8 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 @media (max-width: 600px) { .p-queue-gap { display: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-20): Weekly summary removed (all .wk- rules) | from: the Weekly summary page and its blue pill on the Dashboard, with their look | to: no such page and no pill */
-/* 🔴 CSS CHANGED (2026-11-17): Follow-up, "Your setup for sending" (new) and the Message chip in a student's history (new) | from: nothing (the email, signature and WhatsApp were set up on the My email page; the history showed notes and tasks only) | to: one off-white panel at the top of Follow-up with three rows (Your email, Your signature, Your WhatsApp), each with a round mark (green tick when ready, orange ! when missing, grey when optional), the state in plain words and one small pill button, the form opening right under its row; a soft violet "Message" chip in the history */
-.ss-card { margin: 0 0 18px; }
-.ss-head h2 { margin: 0 0 2px; }
-.ss-head p { margin: 0 0 12px; }
-.ss-rows { display: grid; gap: 0; }
-.ss-item { border-top: 1px solid var(--border); }
-.ss-item:first-child { border-top: 0; }
-.ss-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 0; }
-.ss-dot { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; font-weight: 700; line-height: 1; }
-.ss-dot.is-ok { background: #13303f; color: #6fd69a; }
-.ss-dot.is-bad { background: rgba(217, 113, 42, 0.14); color: #f0a463; }
-.ss-dot.is-soft { background: #0b2230; color: #dde9ef; }
-.ss-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ss-text b { color: var(--ink); font-size: 15.5px; font-weight: 600; }
-.ss-text span { overflow-wrap: anywhere; color: var(--text-dim); font-size: 14.5px; }
-.ss-form-box:empty { display: none; }
-.ss-form-box { padding: 4px 0 16px 46px; }
-.ss-form .p-bar { margin-top: 10px; }
-.ss-more { margin: 8px 0 0; }
-.ss-more summary { cursor: pointer; color: var(--link); font-size: 14px; }
-.ss-steps { margin: 14px 0 10px; padding-left: 20px; color: var(--text-dim); font-size: 14.5px; line-height: 1.55; }
+
 /* 🔴 CSS CHANGED (2026-11-17): the copy to the office mailbox | from: a tick box "Send a copy of every email to the office mailbox" (Admin only) | to: a fixed line with a green tick, always on, for everyone */
-.ss-copy { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 12px 16px; border-radius: 14px; background: #13303f; color: #6fd69a; font-size: 14.5px; line-height: 1.5; }
-.ss-copy-ico { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #2e9e5b; color: #ffffff; font-size: 12px; font-weight: 700; }
-.bk-words { grid-column: 1 / -1; }
-@media (max-width: 600px) { .ss-form-box { padding-left: 0; } .ss-row { grid-template-columns: 28px minmax(0, 1fr); } .ss-row .btn { grid-column: 2; justify-self: start; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): the WhatsApp window of a student removed | from: a small window with a QR code, "Open on this computer" and "Copy number" | to: nothing (a click on WhatsApp opens the chat at once, the owner asked for no QR code) */
 
@@ -2269,8 +2244,6 @@ html body .tk-compose textarea.tk-input { flex: 1; min-width: 0; min-height: 36p
 .student-result small { color: var(--text-dim); }
 .chip-student { background: #0d2736; color: #b9a6ff; }
 @media print { .sl-card, .sl-pick { display: none !important; } }
-
-/* 🔴 CSS CHANGED (2026-11-17): the old code-and-two-steps styles (.pl-pair, .pl-qr, .pl-two, .pl-wait) deleted | from: the code on the left and two numbered steps in large type | to: replaced by the new window, see ".pc-" at the end of this file */
 
 /* 🔴 CSS CHANGED (2026-11-17): the Route2Uni panel removed (the owner) | from: an off-white panel above Universities list, "Kept up to date by itself, every Monday and Thursday", with when Route2Uni, Navitas and the course pages were last read and grey tabs Information Hub and What changed | to: no panel; its styles (.r2u-*) deleted */
 
@@ -2350,8 +2323,7 @@ html body .page-head h1 + p, html body .page-head > div > p, html body .p-head >
   font-size: 17px; line-height: 1.45; color: var(--text-dim);
 }
 /* One panel. */
-html body .p-card, html body .page .card, html body .md-card, html body .bp-card, html body .pu-card, html body .ov-card, html body .fd-card,
-html body .ss-card, html body .sl-card, html body .uni-card, html body .md-kpi, html body .p-kpi {
+html body .p-card, html body .page .card, html body .md-card, html body .bp-card, html body .pu-card, html body .ov-card, html body .fd-card, html body .sl-card, html body .uni-card, html body .md-kpi, html body .p-kpi {
   border: 0; border-radius: var(--pl-radius); background: var(--panel); box-shadow: var(--pl-shadow);
 }
 html body a.uni-card, html body .uni-card { transition: box-shadow .2s ease, transform .2s ease; }
@@ -2525,254 +2497,6 @@ html body .p-applied.is-sent { background: #0d2736; color: #7fd3ee; }
 /* 🔴 CSS CHANGED (2026-11-18): the Universities | B2B partners | Agents switch on a small phone (a bug fix) | from: the last tab touched the edge of the switch and its count was cut off at 390px wide | to: a little less padding and gap on phones under 430px wide, so all three tabs sit inside the switch */
 @media (max-width: 430px) { .pt-switch a { gap: 5px; padding: 0 5px; font-size: 13.5px; min-width: 0; } }
 @media print { .pt-bar { display: none !important; } }
-
-/* 🔴 CSS CHANGED (2026-11-17): Follow-up turned into steps, one screen each (the owner: "step by step, each on its own page") | from: one long page with the setup, "1. Choose the students", "2. Write the message" and "3. Check and send" as numbered cards one under another, a "0 chosen" pill, Check and Send buttons at the bottom | to: the shared parts kept here: the search and the filters as soft grey fields, the students as a white grouped list with round iOS ticks, initials circles and stage pills (a ticked row soft blue), "Tick all shown" and "Clear" as blue links, the message as a Mail-style window (To, Subject, the text with no box) with "Insert" and the words as grey pills; the steps themselves are in the next block (.fw) */
-
-/* the filters: search first, then intake, stage and source */
-.bk-filters { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
-.bk-filters .p-field { gap: 6px; }
-.bk-filters .p-label { font-size: 13px; font-weight: 600; color: #dde9ef; }
-.bk-filters input, .bk-filters select { min-height: 44px; border: 0; border-radius: 12px; background: rgba(10, 28, 39, 0.1); font-size: 15.5px; color: #dde9ef; box-shadow: none; transition: background-color .2s, box-shadow .2s; }
-/* 🔴 CSS CHANGED (2026-11-17): a long choice in a filter | from: "All intakes you can see" broke onto two lines | to: one line, cut with ... */
-.bk-filters select { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.bk-filters input:focus, .bk-filters select:focus { background: #0f2a38; box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.352); outline: 0; }
-.bk-search input { padding-left: 38px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5.5'/%3E%3Cpath d='m11.2 11.2 3.3 3.3'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 13px 50%; }
-
-/* the count and the two links above the list */
-.bk-tools { display: flex; align-items: center; gap: 18px; margin: 0 2px 10px; }
-.bk-info { margin-right: auto; font-size: 14px; color: #dde9ef; font-variant-numeric: tabular-nums; }
-.bk-link { padding: 4px 0; border: 0; background: none; color: #7fd3ee; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; }
-.bk-link:hover { text-decoration: underline; }
-
-/* the students: an inset grouped list */
-.bk-list { max-height: 440px; overflow: auto; border-radius: 14px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096); scrollbar-width: thin; }
-.bk-row { position: relative; display: grid; grid-template-columns: 24px 38px minmax(0, 1fr) auto; align-items: center; gap: 14px; margin: 0; padding: 11px 16px; cursor: pointer; transition: background-color .15s; }
-.bk-row + .bk-row::before { content: ""; position: absolute; top: 0; left: 108px; right: 0; height: 1px; background: rgba(0, 0, 0, 0.098); }
-.bk-row:hover { background: rgba(0, 0, 0, 0.035); }
-.bk-row.is-on { background: rgba(15, 127, 179, 0.07); }
-.bk-row input[type="checkbox"] { appearance: none; -webkit-appearance: none; display: grid; place-items: center; width: 22px; height: 22px; margin: 0; border: 1.5px solid #3d6a80; border-radius: 50%; background: #0f2a38; cursor: pointer; transition: background-color .15s, border-color .15s, transform .15s; }
-.bk-row input[type="checkbox"]:checked { border-color: #0f7fb3; background: #0f7fb3 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2.5 6.3 2.4 2.4 4.7-5'/%3E%3C/svg%3E") center no-repeat; }
-.bk-row input[type="checkbox"]:active { transform: scale(.9); }
-.bk-row input[type="checkbox"]:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.4); }
-.bk-av { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(180deg, #1f4256, #1f4256); color: #dde9ef; font-size: 14px; font-weight: 600; letter-spacing: .02em; }
-.bk-row.is-on .bk-av { background: linear-gradient(180deg, #0f7fb3, #0f7fb3); color: #ffffff; }
-.bk-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.bk-who b { overflow: hidden; font-size: 16px; font-weight: 600; color: #dde9ef; text-overflow: ellipsis; white-space: nowrap; }
-.bk-sub { overflow: hidden; font-size: 14px; color: #dde9ef; text-overflow: ellipsis; white-space: nowrap; }
-.bk-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-.bk-tag { padding: 3px 10px; border-radius: 980px; background: rgba(0, 0, 0, 0.07); color: #dde9ef; font-size: 13px; font-weight: 500; white-space: nowrap; }
-.bk-tag.is-warn { background: rgba(217, 113, 42, 0.14); color: #f0a463; }
-.bk-empty { padding: 34px 16px; color: #dde9ef; font-size: 15px; text-align: center; }
-
-/* step 2: the email as a Mail-style window */
-.bk-mail { overflow: hidden; border-radius: 14px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096); }
-.bk-to, .bk-mail > .p-field:not([hidden]) { border-bottom: 1px solid rgba(79, 127, 149, 0.07); }
-.bk-to { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 18px; font-size: 15.5px; }
-.bk-to-label, .bk-mail > .p-field:first-of-type .p-label { flex: none; width: 64px; color: #dde9ef; font-size: 15px; font-weight: 500; }
-.bk-to-label { color: #dde9ef; }
-.bk-to-n { color: #dde9ef; font-weight: 600; }
-.bk-to-n.is-none { color: #dde9ef; font-weight: 400; }
-.bk-mail > .p-field { display: flex; flex-direction: row; align-items: center; gap: 12px; margin: 0; padding: 0 18px; }
-.bk-mail > .p-field[hidden] { display: none; }
-.bk-mail > .p-field:first-of-type .p-label { color: #dde9ef; }
-.bk-mail > .p-field input { flex: 1 1 auto; min-height: 50px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px; font-weight: 600; color: #dde9ef; }
-.bk-mail > .p-field:has(textarea) { display: block; padding: 0; }
-/* 🔴 CSS CHANGED (2026-11-18): the hidden label of the message box (a bug fix, nothing changes on screen) | from: the old 'clip: rect()' property, which browsers have retired | to: 'clip-path: inset(50%)', which hides it the same way */
-.bk-mail > .p-field:has(textarea) .p-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.bk-mail textarea { display: block; width: 100%; min-height: 260px; padding: 18px; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px; line-height: 1.6; color: #dde9ef; resize: vertical; }
-.bk .bk-mail > .p-field input, .bk .bk-mail > .p-field input:focus, .bk .bk-mail > .p-field input:focus-visible, .bk .bk-mail textarea, .bk .bk-mail textarea:focus, .bk .bk-mail textarea:focus-visible { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent; }
-.bk-mail:focus-within { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 0 4px rgba(0, 0, 0, 0.224); }
-.bk-mail .bk-words { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 18px; background: #0f2a38; }
-.bk-mail .bk-words .tp-label { margin-right: 4px; color: #dde9ef; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-
-@media (max-width: 900px) { .bk-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bk-filters .bk-search { grid-column: 1 / -1; } }
-@media (max-width: 640px) {
-  .bk-tools { flex-wrap: wrap; gap: 4px 18px; }
-  .bk-info { flex-basis: 100%; }
-  .bk-filters { grid-template-columns: minmax(0, 1fr); }
-  .bk-row { grid-template-columns: 24px 34px minmax(0, 1fr); padding: 10px 12px; gap: 12px; }
-  .bk-row + .bk-row::before { left: 82px; }
-  .bk-av { width: 34px; height: 34px; font-size: 13px; }
-  .bk-tags { grid-column: 3; justify-content: flex-start; }
-}
-
-/* 🔴 CSS CHANGED (2026-11-17): "Your setup for sending" (Follow-up) in the look of Apple's apps, like the steps below it | from: a plain card, three rows with a small coloured circle (✓ or !) on the left, blue or grey "Set up/Upload/Add" pills, the open form with square-edged boxes and a plain numbered list · to: the same rounded panel as the steps (20px corners, soft shadow); a blue rounded paper-plane tile beside the title and a pill at the right ("2 of 3 ready" in orange, "All ready" in green); the three rows as a white grouped list like iPhone Settings, each with its own coloured rounded icon (email blue, signature purple, WhatsApp green) and a small green tick or orange mark on its corner, the title in bold and the state in grey; the buttons as pills (blue when something is missing, grey when ready); an open form sits on a soft grey band inside the list, with soft grey fields, a blue focus ring and the numbered WhatsApp steps in round blue numbers */
-.bk .ss-card.p-card { margin: 0 0 20px; padding: 26px 28px 28px; border: 0; border-radius: 20px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.064), 0 4px 18px rgba(0, 0, 0, 0.08); }
-.bk .ss-head { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; }
-.ss-icon-main { flex: none; width: 44px; height: 44px; border-radius: 12px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 2 11 13'/%3E%3Cpath d='M22 2 15 22l-4-9-9-4 20-7z'/%3E%3C/svg%3E"), linear-gradient(180deg, #0f7fb3, #0f7fb3); background-position: center; background-repeat: no-repeat; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.48); }
-.ss-words { flex: 1 1 0; min-width: 0; }
-.bk .ss-head h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: #dde9ef; }
-.bk .ss-head p { margin: 3px 0 0; font-size: 15px; line-height: 1.45; color: #dde9ef; }
-.ss-sum { flex: none; padding: 6px 14px; border-radius: 980px; background: rgba(217, 113, 42, 0.14); color: #f0a463; font-size: 14px; font-weight: 600; }
-.ss-sum.is-ok { background: #13303f; color: #6fd69a; }
-.bk .ss-rows { overflow: hidden; border-radius: 14px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096); }
-.bk .ss-item { position: relative; border-top: 0; }
-.bk .ss-item + .ss-item::before { content: ""; position: absolute; top: 0; left: 70px; right: 0; height: 1px; background: rgba(0, 0, 0, 0.098); }
-.bk .ss-row { grid-template-columns: 38px minmax(0, 1fr) auto; gap: 16px; min-height: 68px; padding: 12px 18px; }
-.ss-ico { position: relative; display: block; width: 38px; height: 38px; border-radius: 10px; background-position: center; background-repeat: no-repeat; }
-.ss-ico-email { background-color: #0f7fb3; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E"); }
-.ss-ico-signature { background-color: #6e57d6; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'/%3E%3C/svg%3E"); }
-.ss-ico-whatsapp { background-color: #2e9e5b; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z'/%3E%3C/svg%3E"); }
-.bk .ss-ico .ss-dot { position: absolute; right: -5px; bottom: -5px; width: 18px; height: 18px; border: 2px solid #1a3a4b; font-size: 10px; }
-.bk .ss-ico .ss-dot.is-ok { background: #2e9e5b; color: #ffffff; }
-.bk .ss-ico .ss-dot.is-bad { background: #d9712a; color: #ffffff; }
-.bk .ss-ico .ss-dot.is-soft { background: #0a1c27; color: #ffffff; }
-.bk .ss-text b { font-size: 16px; color: #dde9ef; }
-.bk .ss-text span { font-size: 14.5px; color: #dde9ef; }
-.bk .ss-row .btn { min-height: 34px; padding: 0 18px; border-radius: 980px; font-size: 14.5px; }
-.bk .ss-row .btn[aria-expanded="true"] { background: rgba(0, 0, 0, 0.084); color: #dde9ef; }
-.bk .ss-form .p-msg:empty { display: none; }
-.bk .ss-form-box { padding: 18px 18px 20px 72px; border-top: 1px solid rgba(79, 127, 149, 0.07); background: #0f2a38; }
-.bk .ss-form .p-form { gap: 14px; }
-.bk .ss-form .p-label { font-size: 13px; font-weight: 600; color: #dde9ef; }
-.bk .ss-form input:not([type="file"]):not([type="checkbox"]), .bk .ss-form select { min-height: 44px; border: 0; border-radius: 12px; background: rgba(10, 28, 39, 0.1); font-size: 15.5px; box-shadow: none; transition: background-color .2s, box-shadow .2s; }
-.bk .ss-form input:not([type="file"]):not([type="checkbox"]):focus, .bk .ss-form select:focus { background: #0f2a38; box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.352); outline: 0; }
-.bk .ss-form > p { margin: 12px 0 0; font-size: 14px; color: #dde9ef; }
-.bk .ss-form .p-bar { margin-top: 14px; gap: 10px; }
-.bk .ss-form .p-bar .btn { min-height: 40px; padding: 0 20px; border-radius: 980px; font-size: 15px; }
-.bk .ss-more summary { font-size: 14.5px; font-weight: 500; color: #7fd3ee; }
-.bk .ss-steps { margin: 18px 0 14px; padding: 0; list-style: none; counter-reset: ss; }
-.bk .ss-steps li { position: relative; margin: 0 0 10px; padding-left: 34px; font-size: 14.5px; line-height: 1.5; color: #dde9ef; counter-increment: ss; }
-.bk .ss-steps li::before { content: counter(ss); position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(15, 127, 179, 0.1); color: #7fd3ee; font-size: 12.5px; font-weight: 700; }
-.bk .ss-form .btn-sm { border-radius: 980px; }
-.bk .p-sig { border-radius: 12px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096); }
-@media (max-width: 640px) {
-  .bk .ss-card.p-card { padding: 20px 16px 22px; border-radius: 18px; }
-  .bk .ss-head { flex-wrap: wrap; }
-  .ss-icon-main { width: 38px; height: 38px; border-radius: 10px; }
-  .ss-words { flex-basis: calc(100% - 52px); }
-  .ss-sum { margin-left: 52px; }
-  .bk .ss-row { grid-template-columns: 38px minmax(0, 1fr); padding: 12px 14px; gap: 14px; }
-  .bk .ss-row .btn { grid-column: 2; justify-self: start; }
-  .bk .ss-item + .ss-item::before { left: 66px; }
-  .bk .ss-form-box { padding: 16px 14px 18px; }
-}
-
-/* 🔴 CSS CHANGED (2026-11-17): Follow-up as steps, one screen each, in the look of Apple's set-up screens (the owner: "step by step, each on its own page") | from: everything on one long page, one card under another | to: the page centred (980px); under the title a row of five steps (How to send, Your setup, Students, Message, Check and send) joined by a thin line, the current one a filled blue circle with its name in bold, the ones done a soft blue circle with a tick (click to go back), the ones still to come grey; one large off-white rounded screen per step with a 28px bold question ("How do you want to send it?") and a grey line of help, sliding in softly; on the first step two big white choice cards (By email with a blue envelope tile, By WhatsApp with a green chat tile) that lift on hover and get a blue ring and tick when chosen; a frosted bar fixed at the bottom of the window with a grey Back pill, a grey line saying where you are ("3 students chosen") and a blue Continue pill (it says "Send 3 emails" or "Open the next chat" on the last step); on the last step four number tiles (chosen, ready, cannot be sent in red, with a word not filled in in orange), the students on the left as a grouped list (the one shown soft blue, a green WhatsApp pill that turns "✓ Opened"), and on the right the message as the student sees it: an email window (subject in bold, To in grey, the text) or a WhatsApp chat (the beige chat background and a green bubble); after sending, a large green tick with "3 emails sent" and a blue "Send another message" pill */
-.fw { max-width: 980px; margin: 0 auto; padding-bottom: 24px; }
-.fw .p-head { margin-bottom: 18px; }
-.fw-steps { display: flex; margin: 0 0 22px; padding: 0; list-style: none; }
-.fw-step { position: relative; flex: 1 1 0; min-width: 0; }
-.fw-step + .fw-step::before { content: ""; position: absolute; top: 17px; left: calc(-50% + 22px); right: calc(50% + 22px); height: 2px; border-radius: 2px; background: #1f4256; }
-.fw-step.is-done + .fw-step::before, .fw-step.is-done + .fw-step.is-now::before { background: #0f7fb3; }
-.fw-step button { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 2px 4px; border: 0; background: none; font: inherit; cursor: pointer; }
-.fw-step button:disabled { cursor: default; opacity: 1; }
-.fw-dot { display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid #3d6a80; border-radius: 50%; background: var(--panel); color: #dde9ef; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; transition: background-color .25s var(--ease-out, ease), border-color .25s var(--ease-out, ease), transform .2s; }
-.fw-name { font-size: 14px; font-weight: 500; color: #dde9ef; text-align: center; }
-.fw-step.is-now .fw-dot { border-color: #0f7fb3; background: #0f7fb3; color: #ffffff; box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.24); }
-.fw-step.is-now .fw-name { color: #dde9ef; font-weight: 700; }
-.fw-step.is-done .fw-dot { border-color: transparent; background: rgba(15, 127, 179, 0.12); color: #7fd3ee; }
-.fw-step.is-done .fw-name { color: #dde9ef; }
-.fw-step.is-done button:hover .fw-dot { transform: scale(1.08); }
-.fw-step button:focus-visible { outline: 0; }
-.fw-step button:focus-visible .fw-dot { box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.48); }
-
-.fw-screen { min-height: 380px; padding: 32px 34px 34px; border-radius: 22px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.064), 0 6px 24px rgba(0, 0, 0, 0.096); animation: fw-in .4s var(--ease-out, ease) both; }
-@keyframes fw-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .fw-screen { animation: none; } }
-.fw-head { margin: 0 0 24px; }
-.fw-head h2 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.025em; line-height: 1.2; color: #dde9ef; }
-.fw-head p { margin: 6px 0 0; font-size: 16.5px; line-height: 1.5; color: #dde9ef; }
-/* the setup step shows the setup panel itself, without a second panel around it */
-.fw-screen:has(> div > .ss-card) { padding: 0; background: transparent; box-shadow: none; }
-.fw .ss-card.p-card { margin: 0; }
-
-/* step 1: two big choices */
-.fw-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.fw-choice { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 220px; padding: 28px; border: 0; border-radius: 20px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.112), 0 2px 10px rgba(0, 0, 0, 0.064); font: inherit; text-align: left; cursor: pointer; transition: transform .25s var(--ease-out, ease), box-shadow .25s var(--ease-out, ease); }
-.fw-choice:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.112), 0 14px 34px -10px rgba(0, 0, 0, 0.288); }
-.fw-choice:active { transform: scale(.985); }
-.fw-choice:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.48); }
-.fw-choice.is-on { box-shadow: 0 0 0 2.5px rgba(0, 0, 0, 0.72), 0 10px 30px -12px rgba(0, 0, 0, 0.72); }
-.fw-choice b { margin-top: 10px; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: #dde9ef; }
-.fw-choice > span:not([class]) { font-size: 16px; line-height: 1.5; color: #dde9ef; }
-.fw-choice-ico { width: 60px; height: 60px; border-radius: 16px; background-position: center; background-repeat: no-repeat; box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4); }
-.fw-choice-email .fw-choice-ico { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E"), linear-gradient(180deg, #0f7fb3, #0f7fb3); }
-.fw-choice-whatsapp .fw-choice-ico { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z'/%3E%3C/svg%3E"), linear-gradient(180deg, #2e9e5b, #2e9e5b); }
-.fw-choice-tick { position: absolute; top: 20px; right: 20px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #0f7fb3; color: #ffffff; font-size: 14px; font-weight: 700; opacity: 0; transform: scale(.6); transition: opacity .2s, transform .25s var(--spring, ease); }
-.fw-choice.is-on .fw-choice-tick { opacity: 1; transform: none; }
-
-/* the message window is taller on its own screen */
-.fw .bk-mail textarea { min-height: 300px; }
-
-/* the bar at the bottom: Back, where you are, Continue */
-.fw-foot { position: sticky; bottom: 14px; z-index: 20; display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 12px 14px; border-radius: 20px; background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096), 0 10px 30px -10px rgba(0, 0, 0, 0.32); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
-.fw-foot[hidden] { display: none; }
-.fw-foot .btn { min-height: 46px; padding: 0 26px; border-radius: 980px; font-size: 16px; }
-.fw-foot .btn-primary { margin-left: auto; }
-.fw-info { flex: 1 1 auto; min-width: 0; font-size: 15px; color: #dde9ef; text-align: center; }
-.fw-foot .btn[hidden] + .fw-info { text-align: left; padding-left: 8px; }
-
-/* step 5: number tiles, the students and the message as the student sees it */
-.fw-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 18px; }
-.fw-tiles:empty { display: none; }
-.fw-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; border-radius: 16px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096); }
-.fw-tile b { font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: #dde9ef; font-variant-numeric: tabular-nums; }
-.fw-tile span { font-size: 14px; color: #dde9ef; }
-.fw-tile.is-ok b { color: #6fd69a; }
-.fw-tile.is-bad b { color: #ff8a7e; }
-.fw-tile.is-warn b { color: #f0a463; }
-.fw-check { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
-.fw-list { max-height: 560px; overflow: auto; border-radius: 16px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096); scrollbar-width: thin; }
-.fw-item { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; transition: background-color .15s; }
-.fw-item + .fw-item::before { content: ""; position: absolute; top: 0; left: 64px; right: 0; height: 1px; background: rgba(0, 0, 0, 0.098); }
-.fw-item:hover { background: rgba(0, 0, 0, 0.035); }
-.fw-item.is-on { background: rgba(15, 127, 179, 0.08); }
-.fw-item.is-on .bk-av { background: linear-gradient(180deg, #0f7fb3, #0f7fb3); color: #ffffff; }
-.fw-item.is-off .bk-who b { color: #dde9ef; }
-.fw-item > .bk-tag { grid-column: 2 / -1; justify-self: start; white-space: normal; }
-.fw-wa { padding: 6px 14px; border-radius: 980px; background: #2e9e5b; color: #ffffff; font-size: 14px; font-weight: 600; white-space: nowrap; }
-.fw-wa:hover { background: #2e9e5b; }
-.fw-wa.is-done { background: #13303f; color: #6fd69a; }
-.fw-preview { min-width: 0; }
-.fw-mailview { overflow: hidden; border-radius: 16px; background: #0f2a38; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096), 0 8px 24px -12px rgba(0, 0, 0, 0.24); }
-.fw-mailtop { display: flex; flex-direction: column; gap: 4px; padding: 18px 22px; border-bottom: 1px solid rgba(79, 127, 149, 0.07); }
-.fw-mailtop b { font-size: 19px; font-weight: 700; letter-spacing: -.01em; color: #dde9ef; }
-.fw-mailtop span { font-size: 14.5px; color: #dde9ef; overflow-wrap: anywhere; }
-.fw-mailtext { max-height: 470px; overflow: auto; padding: 20px 22px 24px; font-size: 15.5px; line-height: 1.65; color: #dde9ef; white-space: pre-wrap; overflow-wrap: anywhere; }
-/* 🔴 CSS CHANGED (2026-11-17): the signature picture in Check and send | from: the email preview ended with a typed "Kind regards," and the company name | to: the email text, then the sender's own signature picture (as the student gets it), at most 520px wide */
-.fw-mailsig { display: block; max-width: min(520px, calc(100% - 44px)); height: auto; margin: 0 22px 22px; }
-.fw-waview { overflow: hidden; border-radius: 16px; background: #0d2736; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.096), 0 8px 24px -12px rgba(0, 0, 0, 0.24); }
-.fw-watop { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: #0f2a38; border-bottom: 1px solid rgba(79, 127, 149, 0.07); }
-.fw-watop b { font-size: 16px; color: #dde9ef; }
-.fw-bubble { width: fit-content; max-width: 85%; margin: 22px 18px 26px auto; padding: 10px 14px; border-radius: 14px 4px 14px 14px; background: rgba(46, 158, 91, 0.13); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.128); font-size: 15.5px; line-height: 1.5; color: #dde9ef; white-space: pre-wrap; overflow-wrap: anywhere; }
-
-/* after sending */
-.fw-done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 10px; text-align: center; }
-.fw-done-ico { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: #2e9e5b; color: #ffffff; font-size: 38px; font-weight: 700; box-shadow: 0 10px 30px -8px rgba(255, 255, 255, 0.048); animation: fw-pop .5s var(--spring, ease) both; }
-@keyframes fw-pop { from { transform: scale(.5); opacity: 0; } to { transform: none; opacity: 1; } }
-.fw-done h2 { margin: 8px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -.025em; color: #dde9ef; }
-.fw-done p { margin: 0 0 6px; font-size: 16.5px; color: #dde9ef; }
-.fw-done-line { font-size: 15px; color: #ff8a7e; }
-.fw-done .btn { min-height: 46px; margin-top: 12px; padding: 0 26px; border-radius: 980px; font-size: 16px; }
-
-@media (max-width: 760px) {
-  .fw-check { grid-template-columns: minmax(0, 1fr); }
-  .fw-list { max-height: 320px; }
-}
-@media (max-width: 640px) {
-  .fw-screen { min-height: 0; padding: 22px 16px 24px; border-radius: 18px; }
-  .fw-head h2 { font-size: 23px; }
-  .fw-head p { font-size: 15.5px; }
-  .fw-steps { margin-bottom: 16px; }
-  .fw-dot { width: 30px; height: 30px; font-size: 13.5px; }
-  .fw-step + .fw-step::before { top: 14px; left: calc(-50% + 18px); right: calc(50% + 18px); }
-  .fw-name { display: none; }
-  .fw-step.is-now .fw-name { display: block; position: absolute; top: 40px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 13px; }
-  .fw-steps:has(.is-now) { margin-bottom: 40px; }
-  .fw-step:first-child.is-now .fw-name { left: 0; transform: none; }
-  .fw-step:last-child.is-now .fw-name { left: auto; right: 0; transform: none; }
-  .fw-choices { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .fw-tiles { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
-  .fw-tile { padding: 10px 12px; }
-  .fw-tile b { font-size: 22px; }
-  .fw-tile span { font-size: 13px; }
-  .fw-choice { min-height: 0; padding: 20px; }
-  .fw-choice-ico { width: 50px; height: 50px; border-radius: 14px; }
-  .fw-foot { bottom: 8px; flex-wrap: wrap; gap: 8px 10px; padding: 10px; }
-  .fw-info { flex-basis: 100%; order: -1; font-size: 14px; }
-  .fw-foot .btn { flex: 1 1 0; padding: 0 16px; }
-}
 
 /* 🔴 CSS CHANGED (2026-11-17): the "Shortlist for which student?" window was broken (the owner: "the CSS crashes") | from: each student's
    two-letter badge stretched into a huge grey oval across half the row, the name pushed to the right | to: a round 34px badge on the left,
@@ -2951,9 +2675,6 @@ html body .sl-pick.is-sent { background: #0b2230; color: #dde9ef; cursor: defaul
 .sl-tray-list li.is-pending { opacity: .6; }
 .oa-all { font-size: 13.5px; font-weight: 600; }
 .oa-partner.is-missing { border-color: #c9a227; }
-
-/* 🔴 CSS CHANGED (2026-11-17): Follow-up's words to insert | from: grey pills showing the code, such as {first_name} and {offer_date} | to: grey pills with a blue "+" and the plain name ("+ First name", "+ Offer date"); the code still goes into the text */
-.bk .tp-chip::before { content: "+"; margin-right: 5px; color: #7fd3ee; font-weight: 700; }
 
 /* 🔴 CSS CHANGED (2026-11-17): Partners: the Sort menu taken off (the owner asked) | from: a grey "Sort" pill menu (Most visas, Most students, A to Z) under the search box | to: nothing; the busiest are first. Its styles (.pl-row, .pl-sort) removed */
 
@@ -3600,7 +3321,7 @@ html body .ui-empty { margin: 48px auto; max-width: 420px; text-align: center; }
 .mp-lede { font-size: 1.2rem; color: var(--text-dim); max-width: 46ch; margin: 0; }
 .mp-section { margin-top: 40px; }
 .mp-h2 { font-size: 1.6rem; letter-spacing: -.01em; font-weight: 700; color: var(--ink); margin: 0 0 14px; }
-.mp-sub { color: var(--text-dim); font-size: 1.05rem; margin: -6px 0 14px; }
+
 .mp-empty { color: var(--text-dim); font-size: 1.05rem; background: var(--panel); border-radius: 18px; padding: 22px 24px; margin: 0; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.064); }
 .mp-progress { list-style: none; margin: 0; padding: 22px 20px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); background: var(--panel); border-radius: 22px; box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08); position: relative; }
 .mp-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: mp-rise .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
@@ -3627,122 +3348,16 @@ html body .ui-empty { margin: 48px auto; max-width: 420px; text-align: center; }
 .mp-app-facts dt { color: var(--text-dim); }
 .mp-app-facts dd { margin: 0; color: var(--ink); font-weight: 500; }
 .mp-app-reason { font-size: .95rem; color: var(--text-dim); margin: 0; }
-.mp-app-guide { margin-top: auto; align-self: flex-start; }
-.mp-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.mp-tile { background: var(--panel); border-radius: 22px; padding: 24px; box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08); }
-.mp-tile h3 { font-size: 1.25rem; margin: 0 0 8px; color: var(--ink); }
-.mp-tile p { color: var(--text-dim); font-size: 1.02rem; margin: 0 0 12px; }
-.mp-tile-book { background: linear-gradient(160deg, #13303f 0%, var(--panel) 60%); }
-.mp-tile-icon { display: block; width: 44px; height: 44px; border-radius: 12px; background: var(--primary); margin-bottom: 14px; -webkit-mask: none; position: relative; }
-.mp-tile-icon::after { content: ""; position: absolute; inset: 11px; border: 2.5px solid var(--on-primary); border-radius: 4px; border-top-width: 6px; }
-.mp-soon { display: inline-block; font-size: .9rem; font-weight: 600; color: var(--blue-fg); background: var(--blue-bg); border-radius: 999px; padding: 5px 14px; }
-.mp-mocks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.mp-mock { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 12px 14px; border-radius: 14px; background: var(--bg); }
-.mp-mock b { color: var(--ink); }
-.mp-mock-date { color: var(--text-dim); }
-.mp-mock-feedback { flex-basis: 100%; margin: 4px 0 0; color: var(--ink); font-size: 1rem; white-space: pre-wrap; }
-.mp-precas { margin: 12px 0 0; font-weight: 600; border-radius: 12px; padding: 10px 14px; }
-.mp-precas.is-yes { background: var(--green-bg); color: var(--green-fg); }
-.mp-precas.is-no { background: var(--amber-bg); color: var(--amber-fg); }
-.mp-switch { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--soft); border-radius: 999px; padding: 4px; margin-bottom: 16px; }
-.mp-seg { border: 0; background: transparent; border-radius: 999px; padding: 9px 18px; font: inherit; font-size: 1rem; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: background .25s, color .25s, box-shadow .25s; }
-.mp-seg[aria-selected="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.192); }
+
 @media (max-width: 760px) {
   .mp-progress { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 18px; }
   .mp-step:nth-child(4)::before { display: none; }
-  .mp-tiles { grid-template-columns: 1fr; }
+
 }
-
-/* The guide as a journey (guide-view.js), in the portal and in the team's preview. */
-.gv { display: flex; flex-direction: column; gap: 16px; }
-.gv-bar { height: 6px; border-radius: 6px; background: var(--soft); overflow: hidden; }
-.gv-bar-fill { display: block; height: 100%; width: 0; background: var(--primary); border-radius: 6px; transition: width .7s cubic-bezier(.2, .8, .2, 1); }
-.gv-rail { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.gv-step { width: 100%; height: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 16px; padding: 12px 14px; background: var(--panel); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.096); font: inherit; color: var(--ink); cursor: pointer; transition: transform .25s, box-shadow .25s, background .25s; }
-.gv-step:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.128); }
-.gv-step-n { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .95rem; background: var(--soft); color: var(--text-dim); }
-.gv-step-t { font-size: .95rem; font-weight: 600; line-height: 1.25; }
-.gv-step.is-done .gv-step-n { background: var(--green-bg); color: var(--green-fg); }
-.gv-step.is-current { box-shadow: 0 0 0 2px var(--primary), 0 8px 20px rgba(0, 0, 0, 0.192); }
-.gv-step.is-current .gv-step-n { background: var(--primary); color: var(--on-primary); }
-.gv-step.is-locked { opacity: .5; cursor: not-allowed; }
-.gv-phase { background: var(--panel); border-radius: 24px; padding: 32px 36px; box-shadow: 0 2px 18px rgba(0, 0, 0, 0.096); animation: mp-rise .45s cubic-bezier(.2, .8, .2, 1) both; }
-.gv-kicker { margin: 0; font-size: .95rem; font-weight: 600; color: var(--blue-text); }
-.gv-title { font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -.015em; margin: 4px 0 18px; color: var(--ink); }
-.gv-prose { font-size: 1.1rem; line-height: 1.6; color: var(--ink); max-width: 72ch; }
-.gv-prose h3 { font-size: 1.25rem; margin: 26px 0 8px; color: var(--ink); }
-.gv-prose h3:first-child { margin-top: 0; }
-.gv-prose p { margin: 0 0 12px; }
-.gv-prose ul, .gv-prose ol { margin: 0 0 14px; padding-left: 1.4em; }
-.gv-prose li { margin: 6px 0; }
-.gv-own { margin: 24px 0 8px; padding: 20px 22px; border-radius: 18px; background: var(--blue-bg); border-left: 4px solid var(--primary); }
-.gv-own-label { margin: 0 0 10px; font-weight: 700; color: var(--blue-fg); font-size: 1.05rem; }
-.gv-note { color: var(--text-dim); font-size: 1.05rem; background: var(--bg); border-radius: 14px; padding: 14px 16px; }
-.gv-videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 22px 0 6px; }
-.gv-video { margin: 0; }
-.gv-video-poster, .gv-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 16px; background: #06141c center / cover no-repeat; cursor: pointer; position: relative; overflow: hidden; }
-.gv-video-poster::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.49)); }
-.gv-play { position: absolute; z-index: 1; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
-.gv-play::after { content: ""; position: absolute; left: 26px; top: 20px; border-style: solid; border-width: 12px 0 12px 19px; border-color: transparent transparent transparent var(--ink); }
-.gv-video-poster:hover .gv-play { transform: scale(1.1); }
-.gv-video figcaption { font-size: .95rem; color: var(--text-dim); margin-top: 8px; }
-.gv-questions { margin-top: 22px; }
-.gv-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-.gv-chip { border: 0; border-radius: 999px; padding: 8px 16px; background: var(--soft); font: inherit; font-size: .95rem; font-weight: 600; color: var(--ink); cursor: pointer; transition: background .2s, color .2s; }
-.gv-chip[aria-selected="true"] { background: var(--ink); color: var(--panel); }
-.gv-qcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
-.gv-q { background: var(--bg); border-radius: 18px; padding: 16px 18px; transition: background .25s, box-shadow .25s; animation: mp-rise .4s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(min(var(--i, 0), 12) * 35ms); }
-.gv-q[open] { background: var(--panel); box-shadow: 0 0 0 2px var(--primary); }
-.gv-q.is-own { background: var(--blue-bg); }
-.gv-q summary { list-style: none; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
-.gv-q summary::-webkit-details-marker { display: none; }
-.gv-q-group { font-size: .82rem; font-weight: 700; color: var(--blue-text); text-transform: uppercase; letter-spacing: .04em; }
-.gv-q-text { font-size: 1.1rem; font-weight: 600; color: var(--ink); line-height: 1.35; }
-.gv-q-hint { font-size: .88rem; color: var(--text-dim); }
-.gv-q[open] .gv-q-hint { display: none; }
-.gv-q-tip { margin-top: 10px; font-size: 1.02rem; line-height: 1.55; color: var(--ink); white-space: pre-wrap; animation: mp-rise .3s ease both; }
-.gv-links { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.gv-links h3 { flex-basis: 100%; font-size: 1.05rem; margin: 0 0 2px; color: var(--ink); }
-.gv-link { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 8px 16px; background: var(--soft); color: var(--link); font-weight: 600; text-decoration: none; transition: background .2s; }
-.gv-link::after { content: "↗"; font-size: .9em; }
-.gv-link:hover { background: var(--blue-bg); }
-.gv-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
-.gv-foot .gv-next { margin-left: auto; }
-.gv-empty { color: var(--text-dim); }
-@media (max-width: 900px) { .gv-rail { grid-template-columns: repeat(5, minmax(150px, 1fr)); overflow-x: auto; padding-bottom: 4px; } .gv-phase { padding: 24px 20px; } }
-
-/* Mock interviews, the team's page. */
-.mg-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
-.mg-card { text-align: left; border: 0; font: inherit; cursor: pointer; background: var(--panel); border-radius: 22px; padding: 22px; box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08); display: flex; flex-direction: column; gap: 8px; transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s; animation: mp-rise .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
-.mg-card:hover { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.144); }
-.mg-name { font-size: 1.3rem; margin: 0; color: var(--ink); }
-.mg-summary { margin: 0; color: var(--text-dim); font-size: 1rem; line-height: 1.45; }
-.mg-meta { margin: auto 0 0; font-size: .9rem; color: var(--text-dim); }
-.mg-status { align-self: flex-start; font-size: .85rem; font-weight: 600; border-radius: 999px; padding: 4px 12px; }
-.mg-status.is-empty { background: var(--gray-bg); color: var(--gray-fg); }
-.mg-status.is-draft { background: var(--amber-bg); color: var(--amber-fg); }
-.mg-status.is-live { background: var(--green-bg); color: var(--green-fg); }
-.mg-status.is-changed { background: var(--blue-bg); color: var(--blue-fg); }
-.mg-ed-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 18px; }
-.mg-ed-head h2 { margin: 0; font-size: 1.8rem; letter-spacing: -.01em; color: var(--ink); }
-.mg-form { display: flex; flex-direction: column; gap: 16px; }
-.mg-field { display: flex; flex-direction: column; gap: 6px; background: var(--panel); border-radius: 18px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
-.mg-label { font-weight: 600; color: var(--ink); }
-.mg-phase { background: var(--panel); border-radius: 18px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); display: flex; flex-direction: column; gap: 8px; }
-.mg-phase h3 { margin: 0 0 4px; font-size: 1.2rem; color: var(--ink); }
-.mg-phase h4 { margin: 8px 0 0; font-size: .95rem; color: var(--text-dim); }
-.mg-body { font-size: 1rem; line-height: 1.5; min-height: 8em; }
-.mg-rows { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-.mg-rows > div { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-.mg-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(200px, 2fr) auto; gap: 8px; align-items: start; }
-.mg-row:has(textarea) { grid-template-columns: minmax(110px, .7fr) minmax(200px, 1.6fr) minmax(220px, 2fr) auto; }
-.mg-bar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; padding: 14px 18px; border-radius: 18px; background: rgba(255, 255, 255, 0.08); backdrop-filter: saturate(180%) blur(16px); -webkit-backdrop-filter: saturate(180%) blur(16px); box-shadow: 0 -2px 18px rgba(0, 0, 0, 0.096); }
-.mg-note { margin-left: 6px; }
-@media (max-width: 760px) { .mg-row, .mg-row:has(textarea) { grid-template-columns: 1fr; } }
 
 @keyframes mp-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes mp-pulse { 0%, 100% { box-shadow: 0 0 0 3px var(--primary), 0 0 0 0 rgba(0, 0, 0, 0.56); } 50% { box-shadow: 0 0 0 3px var(--primary), 0 0 0 10px rgba(0, 0, 0, 0); } }
-@media (prefers-reduced-motion: reduce) { .mp-hero, .mp-step, .mp-app, .gv-phase, .gv-q, .gv-q-tip, .mg-card { animation: none; } .mp-step.is-now .mp-dot { animation: none; } .gv-bar-fill { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .mp-hero, .mp-step, .mp-app { animation: none; } .mp-step.is-now .mp-dot { animation: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-20): second review pass of the Universities pages | from: a 30px cover pause button, a flat blue cover where a page has no picture, "Not given" in the Apply by tile as bold as a date, long scholarship text making course cards uneven, the Shortlist row floating at different heights, the place under a university's name hard to read on bright pictures, a double margin around course cards on a phone | to: a 44px tap area round the cover pause button (the visible circle stays small); a cover with no picture as a soft blue light with a gentle highlight, a little lower; "Not given" in calm grey; scholarship and fee text at most two lines on a course card (the whole text on hover); the Shortlist row always at the foot of its card; a soft shadow under the place and chips on the cover; course cards using the full phone width */
 html body .up-dots .up-hero-play { width: 44px; height: 44px; margin: -7px -3px -7px -7px; background: radial-gradient(circle, rgba(0, 0, 0, 0.588) 0 15px, transparent 15.5px); }
@@ -3802,7 +3417,6 @@ html body .td-pulse .td-stat:hover { transform: translateY(-3px) scale(1.03); }
 html body .btn.btn-primary:disabled, html body .btn.btn-primary[disabled] { background: #1f4256 !important; color: #dde9ef !important; opacity: 1 !important; box-shadow: none !important; border-color: transparent !important; }
 body:has(#sheet) .topbar :is(#undoBtn, #redoBtn):disabled { color: #dde9ef; opacity: .5; }
 
-
 /* 🔴 CSS CHANGED (2026-11-20): two layout fixes from the page-by-page review | from: on Apply through, a long partner name ("Real Dreams Educational Consultancy") broke onto two lines inside its choice box; on Users, "Student (own portal)" sat alone in one narrow column with a dashed line, its words in six lines | to: the choice box keeps one line (at least 280px wide, a long name ends in "..."); "Student (own portal)" takes the whole row with a plain border like the others */
 body:has(.niec-header[data-page="apply-through"]) #rows td select { min-width: 280px; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; }
 .access .check-student { grid-column: 1 / -1; border-top: 0; padding-top: 0; }
@@ -3813,8 +3427,6 @@ dialog.p-dialog:has(.p-assign)[open] { max-height: calc(92vh - 24px); }
 dialog.p-dialog .p-dialog-body { min-height: 0; overflow-y: auto; }
 dialog.p-dialog .btn { min-height: 44px; padding: 0 22px; font-size: 17px; font-weight: 400; letter-spacing: -.022em; }
 
-
-/* 🔴 CSS CHANGED (2026-11-21): every page made calm, as the student card (the owner: "yes, make all the other pages calm too") | from: tinted pills and badges in blue, green, amber, red, purple, teal and brown (the status chips on All Students, the task tags on Today and in cards, the activity badges, the access chips, Offer and Sent chips), a soft blue-and-pink glow behind Today's greeting, grey capitals above it ("EVERYTHING AT A GLANCE"), team dots in four colours, orange figures on Today, blue, purple, teal, orange and pink gradient monograms on Partners, green visa figures, a deep blue gradient where a university picture is missing, the dashboard's five-colour trend lines, a red "Delete rows" and a green "All changes saved" at rest, a green-to-blue progress ring, white Follow-up choice cards with coloured app icons | to: one soft grey (#f0f0f3) behind every pill and badge, its words near-black, with colour kept only in the words when it means something (green for done or issued, red for refused or rejected, amber for on hold, waiting or missing); no glow behind the greeting and its small line in sentence case grey; grey team dots; near-black figures (amber stays only for "waiting 3+ days"); grey monograms with near-black initials; visa figures in near-black; a soft grey (#e8e8ed) where a picture is missing (a graphite gradient behind a university page title with no picture, so its white title still reads); the dashboard's small trend lines in blue and greys; "Delete rows" grey until the mouse is on it (then red); "All changes saved" in grey; the progress ring in solid blue; off-white Follow-up cards with grey app icons */
 /* 🔴 CSS CHANGED (2026-11-21): the green words (Active, Applied, done) | from: #1a7f37, 4.1 to 1 on the grey chip, below the 4.5 to 1 easy-reading level (the accessibility test failed on every push) | to: #146c2e, a slightly deeper green, 5.2 to 1 */
 html:root {
   --green-bg: #0b2230; --green-fg: #6fd69a;
@@ -3826,9 +3438,7 @@ html:root {
   --text-dim: #dde9ef; --head-ink: #dde9ef;
 }
 /* task tags (Today, cards, tasks) and the small tinted chips */
-:is(.td-tag, .tb-tag):is(.tag-application, .tag-offer, .tag-mock, .tag-payment, .tag-documents, .tag-noc, .tag-medical, .tag-visa, .tag-other),
-.td-chip.is-later, .td-filter-n.is-later, .td-tag-pick .td-answer[aria-checked="true"], .p-applied.is-offer, html body .p-applied.is-sent, .pc-status.is-seen,
-.activity-action, .activity-action.cat-logins, .cat-security, .cat-accounts, .chips .chip, html body .sl-pick, .td-note.kind-task .td-note-av { background: #0b2230; color: #dde9ef; }
+:is(.td-tag, .tb-tag):is(.tag-application, .tag-offer, .tag-payment, .tag-documents, .tag-noc, .tag-medical, .tag-visa, .tag-other), .td-chip.is-later, .td-filter-n.is-later, .td-tag-pick .td-answer[aria-checked="true"], .p-applied.is-offer, html body .p-applied.is-sent, .pc-status.is-seen, .activity-action, .activity-action.cat-logins, .cat-security, .cat-accounts, .chips .chip, html body .sl-pick, .td-note.kind-task .td-note-av { background: #0b2230; color: #dde9ef; }
 .td-tag-pick :is(.td-tag, .td-prio)[aria-checked="true"] { box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.72) inset; }
 .td-tag::before, .tb-tag::before { background: #0a1c27; }
 /* 🔴 CSS CHANGED (2026-11-21): Applied chip green | from: #1a7f37 | to: #146c2e (easier to read, as above) */
@@ -3852,11 +3462,7 @@ html body .bp-page :is(.bp-num.is-visa, .bp-figure.is-visa, .is-visa b) { color:
 body:has(#sheet) #delRow:not(:hover):not(:focus-visible) { color: #dde9ef; }
 body:has(#sheet) #status, body:has(#sheet) .save-status { background: transparent !important; color: #dde9ef !important; }
 body:has(#sheet) .save-status::before, body:has(#sheet) #status::before { background: #0a1c27 !important; }
-/* Follow-up choices */
-.fw-choice { background: #13303f; }
-.fw-choice-ico { filter: grayscale(1); box-shadow: none; }
-/* Mock interviews */
-.mg-status { font-size: 14px; font-weight: 600; }
+
 /* 🔴 CSS CHANGED (2026-11-21): the last colours of the calm pass | from: on the Dashboard chart, orange dashed lines and orange names for events; on partner cards, a green Visas bar; on Activity, a red "Clear activity" at rest | to: grey dashed lines with grey names; a near-black Visas bar like the other bars' calm; "Clear activity" grey until the mouse is on it (then red, as it asks before clearing) */
 .tr-mark-line { stroke: #3d6a80; }
 .tr-mark-label { fill: #c2d5de; }
@@ -3998,19 +3604,15 @@ input::placeholder, textarea::placeholder { color: #cddde5; opacity: 1; }
 /* 🔴 CSS CHANGED (2026-11-21): the side menu in option H | from: a light, see-through grey (about #edf0f3) | to: a solid soft grey (#ececec) with a firm line beside it (#b8b8b8), as in the chosen preview */
 html body .niec-header { background: #0d2736; border-right-color: #3d6a80; }
 
-/* ---- One system on every page (the owner, 21 Nov 2026: "the front end we decided should be used everywhere"). The colours of
-   option H and the solid look of the student card, Today and the Dashboard, now also on Partners (Universities, B2B partners, Agents,
-   Apply through), Events and marketing, Follow-up, Mock interviews, Add many students, Users, Activity, Admin and Incentive. ---- */
 /* 🔴 CSS CHANGED (2026-11-21): one card style on every page | from: two looks side by side: Today, Dashboard, All Students and Universities with firm 10px cards and a grey border, while Partners, Events, Follow-up, Mock interviews, Add many students, Users, Activity, Admin and Incentive had round 18 to 22px cards with no border and a soft shadow; the lines inside Today's team columns and the Universities cards still pale (#dcdee3) | to: every card and panel the same: 10px corners, a firm 1px grey border (#9a9a9a), the panel grey #f3f3f3, no shadow; tiles inside a card 8px corners, a lighter border (#b8b8b8) on #e2e2e2; Follow-up's bar at the foot solid #f3f3f3 instead of see-through near-white */
 :root { --lg-soft: #1f4256; --uv-soft: #1f4256; }
-html:root body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .mg-card, .p-card, .p-table-wrap, .card, .tile, .box) {
+html:root body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .p-card, .p-table-wrap, .card, .tile, .box) {
   border: 1px solid #3d6a80 !important; border-radius: 10px !important; background: #13303f !important; box-shadow: none !important;
 }
 html:root body #summary .tile { border: 1px solid #3d6a80 !important; border-radius: 10px !important; background: #13303f !important; box-shadow: none !important; }
 html:root body .bp-band { border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
 html body :is(.bp-funnel, .bp-band .bp-funnel) { border: 1px solid #3d6a80 !important; border-radius: 8px !important; background: #19384a !important; box-shadow: none !important; }
-html:root body :is(.fw-choice, .mg-card, .bp-card):hover { border-color: #4f7f95 !important; transform: none !important; }
-html:root body .fw-choice:is([aria-pressed="true"], [aria-checked="true"], .on, .is-on) { border-color: #0f7fb3 !important; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.72) inset !important; }
+html:root body .bp-card:hover { border-color: #4f7f95 !important; transform: none !important; }
 
 /* 🔴 CSS CHANGED (2026-11-21): a Dashboard in colour (the owner: "the dashboard can be much more colourful than black and white") | from: chart colours blue, grey and black (Applied black, Offers grey, Paid and CAS pale grey), a small 34px colour mark on each number tile | to: the Vishnu chart colours (CLAUDE.md): Students and Applied blue #0071e3, Offers purple #6e47d1, Paid orange #d9650b, Visas green #1e8e4a, Inquiries teal #0b8a95; each number tile has its colour as a 4px band across its top and in its little chart; the numbers stay black for reading */
 html:root { --s1: #7fd3ee; --s2: #f0a463; --s3: #6fd69a; --s4: #b9a6ff; --s5: #7fe9ec; }
@@ -4186,14 +3788,8 @@ html:root body :is(.p-seg, .p-tabs, .seg, .ov-seg, .niec-size-seg, .ff-kind, .dd
 html:root body h1 { color: #e3eef2; }
 /* keyboard focus */
 html:root body :focus-visible { outline: 2px solid #6fd8e0; outline-offset: 2px; }
-/* the Vishnu mark in the menu and on the login page */
-html:root body .vishnu-mark { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-html:root body .vishnu-mark img { width: 34px; height: 34px; flex: none; }
-html:root body .vishnu-word { color: #f1e6c2; font-size: 21px; font-weight: 700; letter-spacing: .02em; }
-/* 🔴 CSS CHANGED (2026-11-22): the top of the side menu | from: the consultancy logo, 52px high | to: the Vishnu lotus (40px) and the word "Vishnu" in soft gold #f1e6c2, 24px bold, above the peacock line */
-html:root body .niec-header .niec-logo.vishnu-lotus { width: 40px; height: 40px; }
-html:root body .niec-header .niec-name b { color: #f1e6c2; font-size: 24px; font-weight: 700; letter-spacing: .02em; }
+/* 🔴 CSS CHANGED (2026-11-22): the top of the side menu | from: the Vishnu lotus (40px) and the word "Vishnu" in gold | to: the Vishnu peacock feather logo alone (96px high) on a soft off-white tile (#faf8f4, 12px corners, 8px inside), centred, above the peacock line */
+html:root body .niec-header .niec-brand { justify-content: center; padding-bottom: 14px; }
+html:root body .niec-header .niec-logo.vishnu-logo { display: block; width: auto; height: 96px; padding: 8px 12px; border-radius: 12px; background: #faf8f4; }
 html:root body .niec-header .niec-mark { display: none; }
-html[data-nav="closed"] body .niec-header .niec-name { display: none; }
-/* 🔴 CSS CHANGED (2026-11-22): a consultancy logo drawn in dark colours (the menu is dark now) | from: the logo straight on the page | to: the logo on a small soft light tile (#e3eef2, 8px corners, 6px inside) so a dark logo stays readable on the dark Peacock Ocean */
-html:root body :is(.login-org, .bk-logo, .bk-side img[src*="brand-logo"], img[src*="brand-logo"]) { background: #e3eef2; border-radius: 8px; padding: 6px 10px; box-sizing: content-box; }
+/* 🔴 CSS CHANGED (2026-11-22): the Mock and Follow-up sections removed from Vishnu (the owner: "remove mock interview section and follow up section from everywhere even from admin") | from: styles for the Follow-up page (its steps, choices, mail and WhatsApp previews, "Your setup for sending"), the Mock interviews guides page and the interview guide (guide-view), the student portal's mock tiles and guide switch, the "Mock interview" task tag | to: those styles deleted with their pages; nothing else on any page changes */

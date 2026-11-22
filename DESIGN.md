@@ -99,7 +99,7 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 The full table of the accepted colours (page, panels, text, buttons, status and the ten chart colours) is in CLAUDE.md, "The Vishnu
 colours: Peacock Ocean". It is the one source; this file and the code follow it. Since 22 Nov 2026 the whole system is dark Peacock
 Ocean (deep sea page #0b2230, sea panels #13303f, soft light words #dde9ef, the blue to teal peacock gradient on main buttons, the
-Vishnu lotus at the top of the menu). Where a value below in section 2 names a light colour (#e6e6e6, #f3f3f3, #000, #0071e3),
+Vishnu peacock feather logo at the top of the menu). Where a value below in section 2 names a light colour (#e6e6e6, #f3f3f3, #000, #0071e3),
 read the Peacock Ocean colour for the same use in CLAUDE.md; the sizes, type scale and timings stay as written. The Dashboard is in
 colour (the owner, 21 Nov 2026: "the dashboard can be much more colourful than black and white"); every other page is deep sea,
 light words and the one peacock gradient.

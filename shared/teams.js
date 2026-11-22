@@ -4,7 +4,7 @@
 //   Manager sees every student on every sheet (earlier intakes too), and can change nothing, unless they
 //          also work in teams: then they change those teams' students in the current intake only.
 //   Branch (Chitwan, Pokhara) sees and changes every column of the students whose Student Source is that branch.
-//   Staff  work in one or more departments (Application, Mock, Follow-up, any mix), in the current (newest)
+//   Staff  work in the Application Team (the Mock and Follow-up Teams were removed, the owner, 22 Nov 2026), in the current (newest)
 //          intake only. A person gets the students, the editable columns and the stage moves of every department they hold.
 //
 // The page uses these rules to show the right students and lock the other cells; the server uses the
@@ -20,8 +20,7 @@
   // The branches come from the one list in student-details/card-fields.js (a page loads card-fields.js before this file).
   const BRANCH_LIST = (typeof module === 'object' && module.exports ? require('../student-details/card-fields.js') : self.CardFields).BRANCHES;
   const STATUS = 'APPLICATION STATUS';
-  // A row can be coloured (stored on the row as `_color`) so the Follow-up team can flag interested students
-  // for Admin. Anyone who can see a student and isn't view only may colour it; it changes no student detail.
+  // A row can be coloured (stored on the row as `_color`) so a team can flag students for Admin. Anyone who can see a student and isn't view only may colour it; it changes no student detail.
   const COLOR = '_color';
   const ROW_COLORS = ['green', 'yellow', 'orange', 'red', 'blue', 'purple', 'grey'];
 
@@ -32,11 +31,6 @@
     'FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER',
     'UNIVERSITY NAME', 'COURSE NAME', 'RECEIVING PARTNER', 'UNIVERSITY PARTNER',
     'LANGUAGE TEST DATE', 'STUDENT ID', 'NOC', 'NOC NUMBER', 'MEDICAL REPORT',
-  ];
-  // The mock interviews up to Pre-CAS Interview (the Mock Team's part).
-  const MOCK_COLUMNS = [
-    'MOCK SCHEDULE 1', 'FEEDBACK 1', 'MOCK SCHEDULE 2', 'FEEDBACK 2',
-    'MOCK SCHEDULE 3', 'FEEDBACK 3', 'MOCK SCHEDULE 4', 'FEEDBACK 4', 'PRE CAS INTERVIEW',
   ];
 
   // The basics of a new student. A person can fill these in on the students their department added
@@ -51,18 +45,6 @@
       statuses: ['Application Stage'],
       editable: new Set(APPLICATION_COLUMNS),
     },
-    mock: {
-      label: 'Mock Team',
-      start: 'Mock Stage',
-      statuses: ['Mock Stage'],
-      editable: new Set(['REMARKS', ...MOCK_COLUMNS]),
-    },
-    followup: {
-      label: 'Follow-up Team',
-      start: 'Inquiry',
-      statuses: ['Inquiry', 'Defer'],
-      editable: new Set(['REMARKS']),
-    },
     // A branch works on its own students, whatever their stage: the ones whose Student Source is the branch.
     // They can fill in and change every column (except the Student Source itself, which is what makes the
     // student theirs), and the students they add are tagged with the branch.
@@ -73,42 +55,19 @@
   });
   const SOURCE = 'STUDENT SOURCE';
 
-  // The stage moves a department may make. Follow-up can't move students on.
+  // The stage moves a department may make.
   const MOVES = [
     // Moving on with any of these blank asks "are you sure?" first.
     // A student cannot leave Application without the university and course, the day it was applied and the offer: otherwise nobody can
     // tell where the student is going (the owner, 18 Nov 2026). The other application columns still ask "are you sure?".
     { dept: 'application', from: 'Application Stage', to: 'Mock Stage', mustFill: ['UNIVERSITY NAME', 'COURSE NAME', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE'],
       warnIfBlank: APPLICATION_COLUMNS.filter((c) => c !== 'REMARKS' && !['UNIVERSITY NAME', 'COURSE NAME', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE'].includes(c)) },
-    // Moving on is refused until the mocks held are written up (see mockReady): one mock is enough when the Pre-CAS is done (the owner,
-    // 15 Nov 2026: a student who passed after one mock waited for four dates and four feedbacks).
-    { dept: 'mock', from: 'Mock Stage', to: 'Payment Stage', ready: (row) => mockReady(row) },
     // Back to Application: a student who failed with one university and applies to another.
     { dept: 'application', from: 'Mock Stage', to: 'Application Stage' },
-    { dept: 'mock', from: 'Mock Stage', to: 'Application Stage' },
-    // The Follow-up Team moves its own students on: an inquiry who decides goes to the Application Team; a student who waits goes to
-    // Defer and comes back; one who stops goes to Withdrawn (the owner, 15 Nov 2026: every move waited for Admin).
     // A student who stops, waits or is put on hold can be moved by the team that has them (the owner, 18 Nov 2026: a student whose
     // universities all refused had no way out of Application Stage, and one who withdrew after Mock stayed there with open tasks).
-    ...['application', 'mock'].flatMap((dept) => ['Application Stage', 'Mock Stage'].filter((from) => dept === 'application' ? true : from === 'Mock Stage').flatMap((from) => ['Defer', 'Withdrawn', 'Hold'].map((to) => ({ dept, from, to })))),
-    { dept: 'followup', from: 'Inquiry', to: 'Application Stage' },
-    { dept: 'followup', from: 'Inquiry', to: 'Defer' },
-    { dept: 'followup', from: 'Inquiry', to: 'Withdrawn' },
-    { dept: 'followup', from: 'Defer', to: 'Inquiry' },
-    { dept: 'followup', from: 'Defer', to: 'Application Stage' },
-    { dept: 'followup', from: 'Defer', to: 'Withdrawn' },
+    ...['application'].flatMap((dept) => ['Application Stage', 'Mock Stage'].flatMap((from) => ['Defer', 'Withdrawn', 'Hold'].map((to) => ({ dept, from, to })))),
   ];
-  // What is still missing before a Mock Stage student goes to Payment: at least one mock with its feedback, a feedback for every
-  // mock held, and the Pre-CAS interview passed.
-  function mockReady(row) {
-    const missing = [];
-    const held = [1, 2, 3, 4].filter((n) => !isBlank(row[`MOCK SCHEDULE ${n}`]));
-    if (!held.length) missing.push('MOCK SCHEDULE 1', 'FEEDBACK 1');
-    held.forEach((n) => { if (isBlank(row[`FEEDBACK ${n}`])) missing.push(`FEEDBACK ${n}`); });
-    if (isBlank(row['PRE CAS INTERVIEW'])) missing.push('PRE CAS INTERVIEW');
-    return { missing, failed: String(row['PRE CAS INTERVIEW'] || '').trim().toLowerCase() === 'fail' };
-  }
-
   // Every stage a student can be at (the same list as the Application Status dropdown on the page).
   const ALL_STATUSES = ['Inquiry', 'Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected', 'Defer', 'Hold', 'Withdrawn'];
 
@@ -134,7 +93,7 @@
     return { role: role === 'manager' ? 'manager' : 'staff', departments: [...new Set(listed.filter((d) => DEPARTMENTS[d]))] };
   }
 
-  // The kind of workspace an account gets: admin, manager (view only), branch, or the one team (application, mock, followup) it works in.
+  // The kind of workspace an account gets: admin, manager (view only), branch, or the one team (application) it works in.
   // A person in several teams gets 'team' (the work of all of them).
   function kindOf(x) {
     const w = who(x);
@@ -216,10 +175,10 @@
     return true;
   }
 
-  // Application and Mock staff can delete a student at one of their own stages (a duplicate entry), one at a
+  // Application staff can delete a student at one of their own stages (a duplicate entry), one at a
   // time. Admin can delete freely; a view-only Manager cannot. `row` (optional): the student, as the server has
   // it. A Manager sees every student, so this is what keeps one who works in a team to that team's stages.
-  const DELETE_DEPARTMENTS = ['application', 'mock'];
+  const DELETE_DEPARTMENTS = ['application'];
   function canDelete(x, row = null) {
     const team = teamOf(x);
     if (!team) return true;
@@ -410,22 +369,6 @@
   // Whether a person's own team is the Application Team (the owner, 21 Nov 2026): chosen as their own team, or the only team they are
   // in; never Admin or the Manager. That team works from Today, All Students and Universities (no Dashboard, Partners or Mock
   // interviews) and shares a course on Universities instead of shortlisting it. The menu (shared/header.js) keeps the same rule.
-  // Whether a person's own team is the Follow-up Team, by the same rule (the owner, 21 Nov 2026): they work from All Students, shown
-  // to them as the follow-up list (followup.html), and Universities, without Today, the Dashboard or Follow-up (the many-student
-  // messages stay with Admin and the branches).
-  function ownTeamFollowup(u) {
-    if (!u || u.role === 'admin' || u.role === 'manager') return false;
-    const deps = Array.isArray(u.departments) ? u.departments : [];
-    return u.taskTeam ? u.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
-  }
-  // Whether a person's own team is the Mock Team, by the same rule (the owner, 22 Nov 2026): they work from Today, Bookings, All
-  // Students (to look at; mocks are written in the window after a mock and corrected on the student card), Universities and
-  // Interview guidelines, without the Dashboard, Partners or Mock interviews (the guides students read stay with Admin and the Manager).
-  function ownTeamMock(u) {
-    if (!u || u.role === 'admin' || u.role === 'manager') return false;
-    const deps = Array.isArray(u.departments) ? u.departments : [];
-    return u.taskTeam ? u.taskTeam === 'mock' && deps.includes('mock') : deps.length === 1 && deps[0] === 'mock';
-  }
   function ownTeamApplication(u) {
     if (!u || u.role === 'admin' || u.role === 'manager') return false;
     const deps = Array.isArray(u.departments) ? u.departments : [];
@@ -433,7 +376,7 @@
   }
 
   return {
-    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup, ownTeamMock,
+    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication,
     who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };

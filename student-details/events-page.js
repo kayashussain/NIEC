@@ -210,7 +210,7 @@
       if (row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('ev-qnote')) { row.nextSibling.querySelector('textarea').focus(); return; }
       const box = el('div', 'ev-qnote');
       const area = h('textarea', { rows: '2', maxlength: '2000', placeholder: `What happened with ${s.name}? (a call, a message, their answer)`, 'aria-label': `Note on ${s.name}` });
-      // The next follow-up date is always chosen (the owner, 21 Nov 2026: no automatic days), as on the follow-up list.
+      // The next follow-up date is always chosen (the owner, 21 Nov 2026: no automatic days).
       const min = new Date(Date.now() + 86400000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
       const nextIn = h('input', { type: 'date', min, 'aria-label': `Next follow-up for ${s.name}`, 'aria-required': 'true' });
       const nextWrap = el('label', 'ev-qnote-next'); nextWrap.append('Next follow-up', nextIn);

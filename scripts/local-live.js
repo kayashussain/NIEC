@@ -31,8 +31,6 @@ const { createMessages } = require('../student-details/messages');
 const { createPlanning } = require('../student-details/planning');
 const { createSourceOptions } = require('../student-details/source-options');
 const { createB2b } = require('../student-details/b2b');
-const { createMockBookings } = require('../student-details/mock-bookings');
-const { createMockGuidelines } = require('../student-details/mock-guidelines');
 
 const files = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const withLogin = process.argv.includes('--login');
@@ -70,9 +68,6 @@ put('agents', (v) => createB2b(studentsDir, { file: 'agents.json', filesFolder: 
 put('records', (v) => createPlanning(studentsDir).restoreAll(v), snap.planning);
 put('templates', (v) => createMessages(studentsDir).restoreAll(v), snap.templates);
 put('source choices', (v) => createSourceOptions(studentsDir).restoreAll(v), snap.sourceOptions);
-// The Mock Team's bookings and the list of interview guidelines (the guideline files themselves stay on the server).
-put('mock bookings', (v) => createMockBookings(studentsDir).restoreAll(v), snap.mockBookings);
-put('interview guidelines', (v) => createMockGuidelines(studentsDir).restoreAll(v), snap.mockGuidelines);
 
 // Accounts are never part of a backup, so this copy has one account of its own.
 const password = process.env.LIVE_PASSWORD || crypto.randomBytes(6).toString('hex');

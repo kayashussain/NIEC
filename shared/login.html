@@ -17,15 +17,10 @@
   html, body { margin: 0; min-height: 100%; }
   body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; background: var(--bg); color: var(--ink);
     font: 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
-  /* 🔴 CSS CHANGED (2026-11-22): the top of the login page | from: the consultancy logo alone, 64px high | to: the Vishnu lotus (56px) with the word "Vishnu" in soft gold, and the consultancy logo smaller (40px) under it, on a small soft light tile (#e3eef2) so a dark logo stays readable */
-  .top { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 28px; }
-  .top img { display: block; height: 64px; width: auto; }
-  .top .vishnu-mark img { height: 56px; width: 56px; }
-  .top .vishnu-mark b { font-size: 34px; font-weight: 700; letter-spacing: .02em; color: #f1e6c2; }
-  .top .login-org { height: 40px; padding: 6px 10px; border-radius: 8px; background: #e3eef2; }
+  /* 🔴 CSS CHANGED (2026-11-22): the top of the login page | from: the Vishnu lotus with the word "Vishnu" in gold, and the consultancy (NIEC) logo under it | to: the Vishnu peacock feather logo alone, 120px high, on a soft off-white tile (#faf8f4, 16px corners, 10px inside) so its navy word reads on the dark page; no NIEC logo */
+  .top { display: flex; justify-content: center; margin-bottom: 28px; }
+  .top .vishnu-logo { display: block; height: 120px; width: auto; padding: 10px 14px; border-radius: 16px; background: #faf8f4; }
   .top img[hidden] { display: none; }
-  .top b { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
-  .top b[hidden] { display: none; }
   main.card { width: 100%; max-width: 440px; padding: 40px 40px 30px; border-radius: 22px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { main.card { animation: none; } }
@@ -58,7 +53,7 @@
 </style>
 </head>
 <body>
-<div class="top"><span class="vishnu-mark"><img src="/vishnu-lotus.svg" alt="" width="56" height="56" /><b class="vishnu-word" id="brandName">Vishnu</b></span><img id="brandLogo" class="login-org" src="/brand-logo.png" alt="Consultancy logo" width="198" height="96" /></div>
+<div class="top"><img class="vishnu-logo" src="/vishnu-logo.png" alt="Vishnu" width="126" height="146" /></div>
 <main class="card">
   <h1>Sign in</h1>
   <p class="sub" id="subtitle">Log in to continue</p>
@@ -99,11 +94,9 @@
   <p class="footnote">🔒 Staff only. Log in with your own username and password.</p>
 </main>
 <script>
-  // Only the consultancy's logo above the box; "Vishnu" if there is no logo. The menu remembered by this tab is forgotten here.
+  // The menu remembered by this tab is forgotten here.
   (function () {
     try { sessionStorage.removeItem('isrMe'); sessionStorage.removeItem('isrUnread'); } catch (e) { /* nothing kept */ }
-    const logo = document.getElementById('brandLogo');
-    logo.addEventListener('error', () => { logo.hidden = true; });
   })();
 (function () {
   const $ = (id) => document.getElementById(id);

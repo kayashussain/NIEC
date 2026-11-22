@@ -56,10 +56,10 @@ async function setUp({ mailer = fakeMailer(), clock = { t: Date.parse('2026-10-2
 
 test('one person can work in several teams, and Admin can never be given', async () => {
   const { admin } = await setUp();
-  const both = await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['application', 'followup'] });
+  const both = await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['application', 'chitwan'] });
   assert.strictEqual(both.status, 200, both.body);
-  assert.deepStrictEqual(both.json.user.departments, ['application', 'followup']);
-  assert.strictEqual(both.json.user.accessLabel, 'Application Team + Follow-up Team');
+  assert.deepStrictEqual(both.json.user.departments, ['application', 'chitwan']);
+  assert.strictEqual(both.json.user.accessLabel, 'Application Team + Chitwan Branch');
   assert.strictEqual((await admin.call('POST', '/api/users', { name: 'X', username: 'xxx', role: 'admin' })).status, 400);
   assert.strictEqual((await admin.call('POST', '/api/users', { name: 'X', username: 'xxx', role: 'staff', departments: [] })).status, 400);
   assert.strictEqual((await admin.call('POST', '/api/users', { name: 'X', username: 'xxx', role: 'staff', departments: ['finance'] })).status, 400);
@@ -70,14 +70,14 @@ test('one person can work in several teams, and Admin can never be given', async
 
 test('access can be changed later, never to Admin, and the Admin account itself is untouchable', async () => {
   const { admin } = await setUp();
-  const { user } = (await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['mock'] })).json;
-  let r = await admin.call('POST', `/api/users/${user.id}`, { action: 'update-person', role: 'staff', departments: ['mock', 'followup'] });
+  const { user } = (await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['pokhara'] })).json;
+  let r = await admin.call('POST', `/api/users/${user.id}`, { action: 'update-person', role: 'staff', departments: ['pokhara', 'chitwan'] });
   assert.strictEqual(r.status, 200);
-  assert.strictEqual((await admin.call('GET', '/api/users')).json.find((u) => u.id === user.id).accessLabel, 'Mock Team + Follow-up Team');
+  assert.strictEqual((await admin.call('GET', '/api/users')).json.find((u) => u.id === user.id).accessLabel, 'Pokhara Branch + Chitwan Branch');
   r = await admin.call('POST', `/api/users/${user.id}`, { action: 'update-person', role: 'admin' });
   assert.strictEqual(r.status, 400);
   const me = (await admin.call('GET', '/api/me')).json;
-  r = await admin.call('POST', `/api/users/${me.id}`, { action: 'update-person', role: 'staff', departments: ['mock'] });
+  r = await admin.call('POST', `/api/users/${me.id}`, { action: 'update-person', role: 'staff', departments: ['pokhara'] });
   assert.strictEqual(r.status, 400);
 });
 
@@ -85,12 +85,12 @@ test('accounts saved with one team as their role become staff in that team', asy
   const { dir, accounts, admin } = await setUp();
   const file = path.join(dir, 'users.json');
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-  data.users.push({ id: 'abcdef0123456789', username: 'old', name: 'Old Mock', role: 'mock', passwordHash: 'x', disabled: false });
+  data.users.push({ id: 'abcdef0123456789', username: 'old', name: 'Old Pokhara', role: 'pokhara', passwordHash: 'x', disabled: false });
   fs.writeFileSync(file, JSON.stringify(data));
   const list = (await admin.call('GET', '/api/users')).json;
   const old = list.find((u) => u.username === 'old');
   assert.strictEqual(old.role, 'staff');
-  assert.deepStrictEqual(old.departments, ['mock']);
+  assert.deepStrictEqual(old.departments, ['pokhara']);
   void accounts;
 });
 
@@ -112,7 +112,7 @@ const saveMail = (dir, cfg = {}) => fs.writeFileSync(path.join(dir, 'mail.json')
 test('adding a person emails their login details, and the password is not shown to Admin', async () => {
   const { admin, mailer, accounts, dir } = await setUp();
   saveMail(dir);
-  const r = await admin.call('POST', '/api/users', { name: 'Sita Sharma', username: 'sita', email: 'Sita@NIECedu.com.np', role: 'staff', departments: ['application', 'followup'] });
+  const r = await admin.call('POST', '/api/users', { name: 'Sita Sharma', username: 'sita', email: 'Sita@NIECedu.com.np', role: 'staff', departments: ['application', 'chitwan'] });
   assert.strictEqual(r.json.email.status, 'sent');
   assert.strictEqual(r.json.temporaryPassword, undefined);
   assert.strictEqual(mailer.sent.length, 1);
@@ -120,7 +120,7 @@ test('adding a person emails their login details, and the password is not shown 
   assert.strictEqual(mail.to, 'sita@niecedu.com.np');
   assert.match(mail.subject, /Set up your Vishnu account/);
   assert.match(mail.text, /Username: sita/);
-  assert.match(mail.text, /Application Team \+ Follow-up Team/);
+  assert.match(mail.text, /Application Team \+ Chitwan Branch/);
   assert.match(mail.text, /https:\/\/niec\.example\.org\/login/);
   const temp = /Temporary password: (\S+)/.exec(mail.text)[1];
   // The emailed temporary password really logs her in (first step of her setup).
@@ -151,7 +151,7 @@ test('when the email cannot be sent, Admin gets the temporary password and the r
 test('resetting a password emails the new temporary one', async () => {
   const { admin, mailer, dir } = await setUp();
   saveMail(dir);
-  const { user } = (await admin.call('POST', '/api/users', { name: 'Ram', username: 'ram', email: 'ram@x.org', role: 'staff', departments: ['mock'] })).json;
+  const { user } = (await admin.call('POST', '/api/users', { name: 'Ram', username: 'ram', email: 'ram@x.org', role: 'staff', departments: ['pokhara'] })).json;
   const r = await admin.call('POST', `/api/users/${user.id}`, { action: 'reset-password' });
   assert.strictEqual(r.json.email.status, 'sent');
   assert.match(mailer.sent[1].subject, /password was reset/);
@@ -220,14 +220,15 @@ const book = () => ({ sheets: [
 ] });
 const ids = (wb) => wb.sheets.flatMap((s) => s.rows.map((r) => r._id));
 
-test('someone in two teams sees both teams students and may use both teams moves', () => {
-  const both = { role: 'staff', departments: ['application', 'mock'] };
-  assert.deepStrictEqual(ids(Teams.viewFor(both, book())), ['1', '2']);
-  assert.deepStrictEqual(ids(Teams.viewFor({ role: 'staff', departments: ['application', 'followup'] }, book())), ['1', '3']);
+test('someone in the Application Team and a branch sees both teams students and may use both teams moves', () => {
+  const book2 = () => ({ sheets: [{ id: 'a', name: 'Jan', columns: [], rows: [
+    { _id: '1', [S]: 'Application Stage' }, { _id: '2', [S]: 'Inquiry', 'STUDENT SOURCE': 'Chitwan Branch' }, { _id: '3', [S]: 'Inquiry' },
+  ] }] });
+  const both = { role: 'staff', departments: ['application', 'chitwan'] };
+  assert.deepStrictEqual(ids(Teams.viewFor(both, book2())), ['1', '2']);
   assert.deepStrictEqual(Teams.statusChoices(both, 'Application Stage', []), ['Application Stage', 'Mock Stage', 'Defer', 'Withdrawn', 'Hold']);
-  assert.deepStrictEqual(Teams.statusChoices(both, 'Mock Stage', []), ['Mock Stage', 'Payment Stage', 'Application Stage', 'Defer', 'Withdrawn', 'Hold']);
-  assert.ok(Teams.canEdit(both, 'STUDENT ID') && Teams.canEdit(both, 'MOCK SCHEDULE 1') && !Teams.canEdit(both, 'GROSS FEE'));
-  assert.strictEqual(Teams.viewKey({ role: 'staff', departments: ['mock', 'application'] }), Teams.viewKey(both));
+  assert.ok(Teams.canEdit(both, 'STUDENT ID') && !Teams.canEdit(both, 'MOCK SCHEDULE 1', { [S]: 'Application Stage' }));
+  assert.strictEqual(Teams.viewKey({ role: 'staff', departments: ['chitwan', 'application'] }), Teams.viewKey(both));
 });
 
 test('the Manager sees every student on every sheet, hidden or earlier, and can change nothing', () => {
@@ -244,15 +245,15 @@ test('the Manager sees every student on every sheet, hidden or earlier, and can 
 });
 
 test('a person in several teams says which team a new student is for', () => {
-  const both = { role: 'staff', departments: ['application', 'followup'] };
+  const both = { role: 'staff', departments: ['application', 'chitwan'] };
   const base = Teams.viewFor(both, book());
   const mine = JSON.parse(JSON.stringify(base));
-  mine.sheets[0].rows.push({ _id: 'n1', [S]: 'Inquiry', _addedByTeam: 'followup', 'FIRST NAME': 'Nabin' });
+  mine.sheets[0].rows.push({ _id: 'n1', [S]: 'Inquiry', _addedByTeam: 'chitwan', 'FIRST NAME': 'Nabin' });
   mine.sheets[0].rows.push({ _id: 'n2', [S]: 'Application Stage' });
   const out = Teams.teamChanges(both, base, mine);
   assert.deepStrictEqual(out.errors, ['Choose which team the new student is for.']); // n2 named no team
-  assert.deepStrictEqual(out.adds.map((a) => [a.row._id, a.row[S], a.row._addedByTeam]), [['n1', 'Inquiry', 'followup']]);
-  assert.deepStrictEqual(Teams.addableDepartments(both), ['application', 'followup']);
+  assert.deepStrictEqual(out.adds.map((a) => [a.row._id, a.row[S], a.row._addedByTeam, a.row['STUDENT SOURCE']]), [['n1', 'Inquiry', 'chitwan', 'Chitwan Branch']]);
+  assert.deepStrictEqual(Teams.addableDepartments(both), ['application', 'chitwan']);
   assert.strictEqual(Teams.newStudentStatus(both, 'application'), 'Application Stage');
 });
 
@@ -277,7 +278,7 @@ test('the dashboard counts students, milestones, months and groups', () => {
   assert.deepStrictEqual([d.paidInFull, d.partlyPaid], [0, 0]); // no Gross Fee entered, so nothing to compare the deposit with
   assert.strictEqual(d.kpis.visaIssued, 1);
   assert.strictEqual(d.kpis.conversionRate, 33.3);
-  assert.deepStrictEqual(d.attention.map((a) => [a.key, a.count]), [['mockUnscheduled', 1]]);
+  assert.deepStrictEqual(d.attention.map((a) => [a.key, a.count]), []); // the Mock Team's alerts were removed (the owner, 22 Nov 2026)
   assert.deepStrictEqual(d.stages.find((s) => s.label === 'Mock Stage'), { label: 'Mock Stage', count: 1 });
   assert.strictEqual(d.left.find((s) => s.label === 'Defer').count, 1);
   assert.deepStrictEqual(d.monthly.months.slice(-3), ['2026-08', '2026-09', '2026-10']);
@@ -302,7 +303,7 @@ test('the dashboard never shows a visa without the steps before it, and says how
   ] };
   const d = buildDashboard(wb, { includeHidden: true, sheetId: 'sep', today: new Date('2026-10-28T00:00:00') });
   const by = Object.fromEntries(d.milestones.map((m) => [m.key, m.count]));
-  assert.deepStrictEqual([by.students, by.applied, by.offer, by.mock, by.paid, by.cas, by.lodged, by.visa], [8, 7, 7, 7, 6, 6, 6, 5]); // the Payment Stage student is waiting to pay, so not counted as paid
+  assert.deepStrictEqual([by.students, by.applied, by.offer, by.mock, by.paid, by.cas, by.lodged, by.visa], [8, 7, 7, undefined, 6, 6, 6, 5]); // the Payment Stage student is waiting to pay, so not counted as paid
   d.milestones.forEach((m, i) => { if (i) assert.ok(m.count <= d.milestones[i - 1].count, `${m.label} is no more than the step before`); });
   assert.strictEqual(d.quality.filledFromStage, 7);
   assert.strictEqual(d.kpis.visaSuccessRate, 83.3); // 5 issued, 1 rejected
@@ -318,8 +319,8 @@ test('the activity record filters by person, type, dates and words, and counts t
   const dir = tmpDir();
   const log = createActivityLog(dir);
   const req = { headers: { 'user-agent': 'Chrome/120 Windows' }, socket: { remoteAddress: '203.0.113.5' } };
-  const sita = { id: 's', label: 'Sita (Mock Team)' };
-  const ram = { id: 'r', label: 'Ram (Follow-up Team)' };
+  const sita = { id: 's', label: 'Sita (Pokhara Branch)' };
+  const ram = { id: 'r', label: 'Ram (Chitwan Branch)' };
   log.record(req, sita, 'Logged in');
   log.record(req, sita, 'Changed', { app: 'Student Details', changes: ['Jan Intake > Asha Rai > Remarks: "a" to "b"'] });
   log.record(req, ram, 'Failed login', { note: 'wrong username or password' });
@@ -327,21 +328,21 @@ test('the activity record filters by person, type, dates and words, and counts t
   const all = log.query({});
   assert.strictEqual(all.total, 4);
   assert.strictEqual(all.events[0].action, 'Failed login'); // newest first
-  assert.strictEqual(log.query({ account: 'Sita (Mock Team)' }).total, 2);
+  assert.strictEqual(log.query({ account: 'Sita (Pokhara Branch)' }).total, 2);
   assert.strictEqual(log.query({ category: 'security' }).total, 2);
   assert.strictEqual(log.query({ category: 'changes' }).total, 1);
   assert.strictEqual(log.query({ q: 'asha rai' }).total, 1);
   assert.strictEqual(log.query({ from: new Date(Date.now() + 3600e3).toISOString() }).total, 0);
   assert.strictEqual(log.query({ limit: 2, offset: 3 }).events.length, 1);
   assert.deepStrictEqual(all.summary.today, { logins: 1, failedLogins: 2, changes: 1, people: 2 });
-  assert.deepStrictEqual(all.people, ['Ram (Follow-up Team)', 'Sita (Mock Team)']);
+  assert.deepStrictEqual(all.people, ['Ram (Chitwan Branch)', 'Sita (Pokhara Branch)']);
 });
 
 // ---- removing a person, the older CEO role, clearing the activity ----
 
 test('removing a person deletes their login: they are logged out and cannot log in again', async () => {
   const { admin, accounts } = await setUp();
-  const made = await admin.call('POST', '/api/users', { name: 'Leaver', username: 'leaver', role: 'staff', departments: ['mock'] });
+  const made = await admin.call('POST', '/api/users', { name: 'Leaver', username: 'leaver', role: 'staff', departments: ['pokhara'] });
   const temp = made.json.temporaryPassword;
   const her = browser(accounts);
   await her.call('POST', '/api/login', { username: 'leaver', password: temp });
@@ -523,7 +524,7 @@ test('a login is just username and password: no second step for the Admin or any
   assert.strictEqual((await admin.call('POST', '/api/login/new-password', { password: 'a long admin password' })).json.stage, 'done');
   assert.strictEqual((await admin.call('GET', '/api/me')).status, 200);
 
-  const made = await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['mock'] });
+  const made = await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['pokhara'] });
   const temp = made.json.temporaryPassword;
   const sita = browser(accounts);
   assert.strictEqual((await sita.call('POST', '/api/login', { username: 'SITA', password: temp })).json.stage, 'new-password');
@@ -557,7 +558,7 @@ test('only Admin can change an existing student source', () => {
   const src = 'STUDENT SOURCE';
   const row = { _id: 'a', [src]: 'Chitwan Branch', [S]: 'Application Stage', _addedByTeam: 'application' };
   assert.ok(Teams.canEdit({ role: 'admin', departments: [] }, src, row));
-  ['application', 'mock', 'followup', 'chitwan', 'pokhara'].forEach((d) => {
+  ['application', 'pokhara', 'chitwan', 'chitwan', 'pokhara'].forEach((d) => {
     assert.ok(!Teams.canEdit({ role: 'staff', departments: [d] }, src, row), d);
   });
   assert.ok(!Teams.canEdit({ role: 'manager', departments: ['application'] }, src, row));
@@ -568,24 +569,23 @@ test('only Admin can change an existing student source', () => {
   assert.ok(Teams.canEdit({ role: 'staff', departments: ['application'] }, src, { ...row, [src]: '' }));
 });
 
-test('application and mock staff delete one student at a time and can send Mock Stage back to Application Stage', () => {
-  const rowsOf = (n) => Array.from({ length: n }, (_, i) => ({ _id: 'r' + i, [S]: 'Mock Stage', 'FIRST NAME': 'S' + i }));
+test('application staff delete one student at a time and can send Mock Stage back to Application Stage', () => {
+  const rowsOf = (n) => Array.from({ length: n }, (_, i) => ({ _id: 'r' + i, [S]: 'Application Stage', 'FIRST NAME': 'S' + i }));
   const wb = (n) => ({ revision: 1, sheets: [{ id: 'sheet-mjzzzzzzaaaaa', name: 'Jan', columns: ['FIRST NAME', S], rows: rowsOf(n) }] });
-  const both = { role: 'staff', departments: ['application', 'mock'] };
-  const base = Teams.viewFor(both, wb(3));
+  const app = { role: 'staff', departments: ['application'] };
+  const base = Teams.viewFor(app, wb(3));
   const one = JSON.parse(JSON.stringify(base)); one.sheets[0].rows.splice(0, 1);
   const two = JSON.parse(JSON.stringify(base)); two.sheets[0].rows.splice(0, 2);
-  assert.deepStrictEqual(Teams.teamChanges(both, base, one).deletes, [{ sheetId: 'sheet-mjzzzzzzaaaaa', rowId: 'r0' }]);
-  assert.ok(Teams.teamChanges(both, base, two).errors.some((e) => /one student at a time/.test(e)));
-  ['application', 'mock'].forEach((d) => assert.ok(Teams.canDelete({ role: 'staff', departments: [d] }), d));
-  assert.ok(!Teams.canDelete({ role: 'staff', departments: ['followup'] }));
+  assert.deepStrictEqual(Teams.teamChanges(app, base, one).deletes, [{ sheetId: 'sheet-mjzzzzzzaaaaa', rowId: 'r0' }]);
+  assert.ok(Teams.teamChanges(app, base, two).errors.some((e) => /one student at a time/.test(e)));
+  assert.ok(Teams.canDelete(app));
+  assert.ok(!Teams.canDelete({ role: 'staff', departments: ['chitwan'] }));
   assert.ok(!Teams.canDelete({ role: 'manager', departments: [] }));
-  ['application', 'mock'].forEach((d) => {
-    const w = { role: 'staff', departments: [d] };
-    assert.ok(Teams.statusChoices(w, 'Mock Stage', ['x']).includes('Application Stage'), d);
-    assert.ok(Teams.checkMove(w, { [S]: 'Mock Stage' }, 'Application Stage').ok, d);
-  });
-  assert.ok(Teams.statusChoices(both, 'Mock Stage', ['x']).includes('Payment Stage'));
+  assert.ok(Teams.statusChoices(app, 'Mock Stage', ['x']).includes('Application Stage'));
+  assert.ok(Teams.checkMove(app, { [S]: 'Mock Stage' }, 'Application Stage').ok);
+  assert.ok(!Teams.statusChoices(app, 'Mock Stage', ['x']).includes('Payment Stage'), 'moving on from Mock Stage is Admin\'s now');
+  // The Mock and Follow-up Teams no longer exist: an account still holding one has no team.
+  assert.deepStrictEqual(Teams.who({ role: 'staff', departments: ['mock', 'followup'] }).departments, []);
 });
 
 test('a student on Hold is counted on the dashboard as not moving forward, not as an active application', () => {
@@ -615,8 +615,8 @@ test('the dashboard counts active head office applicants: a head office source a
 
 test('a Manager who works in a team deletes only that team\'s students, not ones at other stages', () => {
   const wb = { revision: 1, sheets: [{ id: 'sheet-mjzzzzzzaaaaa', name: 'Jan', columns: ['FIRST NAME', S], rows: [
-    { _id: 'm', [S]: 'Mock Stage', 'FIRST NAME': 'M' }, { _id: 'v', [S]: 'Visa Issued', 'FIRST NAME': 'V' }] }] };
-  const mgr = { role: 'manager', departments: ['mock'] };
+    { _id: 'm', [S]: 'Application Stage', 'FIRST NAME': 'M' }, { _id: 'v', [S]: 'Visa Issued', 'FIRST NAME': 'V' }] }] };
+  const mgr = { role: 'manager', departments: ['application'] };
   const base = Teams.viewFor(mgr, wb);
   assert.strictEqual(base.sheets[0].rows.length, 2, 'the Manager sees every student');
   const noVisa = JSON.parse(JSON.stringify(base)); noVisa.sheets[0].rows = noVisa.sheets[0].rows.filter((r) => r._id !== 'v');
@@ -625,13 +625,13 @@ test('a Manager who works in a team deletes only that team\'s students, not ones
   assert.ok(out.errors.some((e) => /can't delete a student at Visa Issued/.test(e)));
   const noMock = JSON.parse(JSON.stringify(base)); noMock.sheets[0].rows = noMock.sheets[0].rows.filter((r) => r._id !== 'm');
   assert.deepStrictEqual(Teams.teamChanges(mgr, base, noMock), { changes: [], adds: [], deletes: [{ sheetId: 'sheet-mjzzzzzzaaaaa', rowId: 'm' }], errors: [] });
-  assert.ok(!Teams.canDelete({ role: 'staff', departments: ['mock'] }, { [S]: 'Payment Stage' }));
+  assert.ok(!Teams.canDelete({ role: 'staff', departments: ['pokhara'] }, { [S]: 'Payment Stage' }));
   assert.ok(Teams.canDelete({ role: 'admin' }, { [S]: 'Visa Issued' }));
 });
 
 test('after a password reset the temporary password only leads to choosing a new one; accounts that once had an authenticator log in with the password alone', async () => {
   const { admin, accounts, dir } = await setUp();
-  const made = (await admin.call('POST', '/api/users', { name: 'Ram', username: 'ram', role: 'staff', departments: ['mock'] })).json;
+  const made = (await admin.call('POST', '/api/users', { name: 'Ram', username: 'ram', role: 'staff', departments: ['pokhara'] })).json;
   const ram = browser(accounts);
   await ram.call('POST', '/api/login', { username: 'ram', password: made.temporaryPassword });
   await ram.call('POST', '/api/login/new-password', { password: 'ram first password' });
@@ -654,7 +654,7 @@ test('after a password reset the temporary password only leads to choosing a new
 
 test('a site that ran with the authenticator keeps all its accounts and goes straight to the login page', async () => {
   const { admin, accounts, dir } = await setUp();
-  await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['mock'] });
+  await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'staff', departments: ['pokhara'] });
   const file = path.join(dir, 'users.json');
   const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
   saved.users.forEach((u) => { u.totpSecret = 'JBSWY3DPEHPK3PXP'; u.totpLastStep = 1; });
@@ -694,10 +694,10 @@ test('Changes today counts every change to the data: the sheet, cards, tasks and
 });
 
 test('a row id that is not text (an array) is refused, so it cannot stand in for another student', () => {
-  const both = { role: 'staff', departments: ['application', 'followup'] };
+  const both = { role: 'staff', departments: ['application', 'chitwan'] };
   const base = Teams.viewFor(both, book());
   const mine = JSON.parse(JSON.stringify(base));
-  mine.sheets[0].rows.push({ _id: [base.sheets[0].rows[0]._id], [S]: 'Inquiry', _addedByTeam: 'followup', 'FIRST NAME': 'Dup' });
+  mine.sheets[0].rows.push({ _id: [base.sheets[0].rows[0]._id], [S]: 'Inquiry', _addedByTeam: 'chitwan', 'FIRST NAME': 'Dup' });
   const out = Teams.teamChanges(both, base, mine);
   assert.ok(out.errors.length && /not valid/.test(out.errors.join(' ')));
   assert.strictEqual(out.adds.length, 0);

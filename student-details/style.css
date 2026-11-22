@@ -680,8 +680,5 @@ body:not([data-role="admin"]) .sheet-tab-menu-btn { display: none; }
 .filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 24px 8px; padding: 8px 14px; border-radius: 12px; background: var(--focus-dim, #0d2736); border: 1px solid var(--focus-strong, rgba(14, 143, 151, 0.384)); color: var(--text); font-size: 13px; }
 .filter-bar[hidden] { display: none; }
 
-/* 🔴 CSS CHANGED (2026-11-22): a cut-short cell read in full, for the Mock Team (the owner, 22 Nov 2026: "if I double click on that cell I can see the details, I could not edit it") | from: no such box (a long University or course was cut with "…" and could not be read) | to: a double-click shows a small box under the cell: the column and the student in small grey words, the full text in black, and under a mock's day its feedback; it closes with Escape, a click anywhere or a scroll */
-.cell-peek { position: fixed; z-index: 70; padding: 12px 14px; border: 1px solid #4f7f95; border-radius: 10px; background: #0f2a38; color: #dde9ef; font-size: 15px; line-height: 1.45; animation: isr-slide-down .2s cubic-bezier(.16, 1, .3, 1) both; }
-.cell-peek small { display: block; margin-bottom: 4px; color: #dde9ef; font-size: 12px; font-weight: 600; }
-.cell-peek p { margin: 0; font-weight: 600; overflow-wrap: anywhere; white-space: pre-wrap; }
-.cell-peek .cell-peek-more { margin-top: 8px; padding-top: 8px; border-top: 1px solid #3d6a80; font-weight: 500; }
+
+/* 🔴 CSS CHANGED (2026-11-22): the Mock Team's small "full text of a cell" box on All Students removed with the team | from: .cell-peek styles | to: gone; nothing else changes */

@@ -85,7 +85,7 @@ test('a new person sets their own password, then logs in with just username and 
   const dir = tmpDir();
   const accounts = createAccounts({ dir, now: () => clock.t });
   const { b: admin } = await setUpAdmin(accounts, clock, dir);
-  const added = await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'mock' });
+  const added = await admin.call('POST', '/api/users', { name: 'Sita', username: 'sita', role: 'application' });
   const temp = added.json.temporaryPassword;
   assert.ok(temp.length >= 12);
 
@@ -99,7 +99,7 @@ test('a new person sets their own password, then logs in with just username and 
   assert.strictEqual(r.json.stage, 'done', 'no second step after choosing a password');
   r = await phone.call('GET', '/api/data');
   assert.strictEqual(r.allowed, true);
-  assert.strictEqual(r.user.label, 'Sita (Mock Team)');
+  assert.strictEqual(r.user.label, 'Sita (Application Team)');
   // Not Admin: can't see people.
   assert.strictEqual((await phone.call('GET', '/api/users')).status, 403);
 
@@ -122,7 +122,7 @@ test('disabling someone logs them out everywhere and stops them logging in', asy
   const accounts = createAccounts({ dir, now: () => clock.t });
   const incentive = createAccounts({ dir, now: () => clock.t, writable: false }); // the other app
   const { b: admin } = await setUpAdmin(accounts, clock, dir);
-  const { user, temporaryPassword } = (await admin.call('POST', '/api/users', { name: 'Ram', username: 'ram', role: 'followup' })).json;
+  const { user, temporaryPassword } = (await admin.call('POST', '/api/users', { name: 'Ram', username: 'ram', role: 'application' })).json;
   const ram = browser(accounts);
   await ram.call('POST', '/api/login', { username: 'ram', password: temporaryPassword });
   await ram.call('POST', '/api/login/new-password', { password: 'blue mango river' });

@@ -7,7 +7,7 @@
 //
 // How a student's progress is read. A student is "at" the step their status says, but the dates and
 // amounts filled in count too, and a later step proves the earlier ones: someone at Visa Issued must have
-// applied, had an offer, done a mock interview and paid, even if nobody typed those dates in. Counting
+// applied, had an offer and paid, even if nobody typed those dates in. Counting
 // only typed dates made old sheets (built before every column was tracked) read as "18 visas, 0
 // applications". So every step is counted from either its own entry or any later step, and the
 // `quality` block says how many students were filled in this way, so nothing looks hidden.
@@ -28,7 +28,6 @@ const DAY = 86400000;
 const STEPS = [
   { key: 'applied', label: 'Application submitted', stage: 2 },
   { key: 'offer', label: 'Offer received', stage: 2 },
-  { key: 'mock', label: 'Mock interview held', stage: 3 },
   // Payment Stage means waiting for the payment, so payment is only proven by CAS Stage onward (or a payment date or a deposit).
   { key: 'paid', label: 'Payment made', stage: 4 },
   { key: 'cas', label: 'CAS received', stage: 5 },
@@ -101,11 +100,9 @@ const round1 = (n) => Math.round(n * 10) / 10;
 // What one student has reached. `direct` is the evidence typed in; the rest is carried back from later steps.
 function progressOf(row, status) {
   const rank = PIPELINE.indexOf(status);
-  const mockEntered = [1, 2, 3, 4].some((n) => has(row, `MOCK SCHEDULE ${n}`));
   const direct = {
     applied: has(row, 'APPLICATION SUBMISSION DATE'),
     offer: has(row, 'OFFER RECEIVED DATE'),
-    mock: mockEntered,
     paid: has(row, 'PAYMENT DATE') || deposits(row) > 0,
     cas: has(row, 'CAS RECEIVED DATE'),
     lodged: has(row, 'VISA LODGE DATE') || has(row, 'VFS ATTENDED DATE') || status === 'Visa Rejected',
@@ -118,7 +115,7 @@ function progressOf(row, status) {
     if (STEPS[i + 1] && reached[STEPS[i + 1].key]) reached[STEPS[i].key] = true;
   }
   // The CAS requested date also shows the payment was made.
-  if (has(row, 'CAS REQUESTED DATE')) { reached.paid = true; reached.mock = true; reached.offer = true; reached.applied = true; }
+  if (has(row, 'CAS REQUESTED DATE')) { reached.paid = true; reached.offer = true; reached.applied = true; }
   const filledIn = STEPS.some((s) => reached[s.key] && !direct[s.key]);
   const furthest = STEPS.reduce((n, s, i) => (reached[s.key] ? i + 1 : n), 0); // 0 = none yet
   return { reached, direct, filledIn, furthest };
@@ -148,8 +145,6 @@ function chaseRules(row, status, p, today) {
   const out = [];
   const waited = (col) => { const d = dayNumber(row[col]); return Number.isNaN(d) ? null : Math.floor(today / DAY - d); };
   const rule = (key, reason, days) => out.push({ key, reason, days: days ?? null }); // null: no date to count from
-  if (status === 'Mock Stage' && !p.direct.mock) rule('mockUnscheduled', 'At Mock Stage, no mock interview scheduled', waited('OFFER RECEIVED DATE'));
-  if (text(row['PRE CAS INTERVIEW']) === 'Fail' && !p.reached.paid) rule('preCasFailed', 'Failed the Pre-CAS interview', null);
   const payDays = waited('PAYMENT DATE');
   if (['Payment Stage', 'CAS Stage'].includes(status) && !has(row, 'CAS REQUESTED DATE') && payDays !== null && payDays >= 7) rule('casNotRequested', `Paid ${payDays} days ago, CAS not requested`, payDays);
   const casReqDays = waited('CAS REQUESTED DATE');
@@ -161,8 +156,6 @@ function chaseRules(row, status, p, today) {
   return out;
 }
 const CHASE_LABELS = {
-  mockUnscheduled: 'students at Mock Stage with no mock interview scheduled',
-  preCasFailed: 'students who failed the Pre-CAS interview',
   casNotRequested: 'paid over a week ago, CAS not requested yet',
   casWaiting: 'CAS requested over two weeks ago, not received',
   visaNotLodged: 'CAS received over a week ago, visa not lodged',
@@ -173,7 +166,6 @@ const CHASE_LABELS = {
 const GAPS = [
   { key: 'appToOffer', label: 'Application to offer', from: 'APPLICATION SUBMISSION DATE', to: 'OFFER RECEIVED DATE' },
   { key: 'offerToPay', label: 'Offer to payment', from: 'OFFER RECEIVED DATE', to: 'PAYMENT DATE' },
-  { key: 'mockToPay', label: 'First mock interview to payment', from: 'MOCK SCHEDULE 1', to: 'PAYMENT DATE' },
   { key: 'payToCas', label: 'Payment to CAS received', from: 'PAYMENT DATE', to: 'CAS RECEIVED DATE' },
   { key: 'casToLodge', label: 'CAS received to visa lodged', from: 'CAS RECEIVED DATE', to: 'VISA LODGE DATE' },
   { key: 'lodgeToVisa', label: 'Visa lodged to visa issued', from: 'VISA LODGE DATE', to: 'VISA RECEIVED DATE' },
@@ -218,7 +210,7 @@ function buildDashboard(workbook, { sheetId = '', includeHidden = false, today: 
   const reachedCount = Object.fromEntries(STEPS.map((s) => [s.key, 0]));
   const gaps = Object.fromEntries(GAPS.map((g) => [g.key, []]));
   const k = {
-    students: students.length, mockInterviews: 0, noStatus: 0, active: 0, left: 0, rejected: 0, activeHeadOffice: 0,
+    students: students.length, noStatus: 0, active: 0, left: 0, rejected: 0, activeHeadOffice: 0,
   };
   const pay = { full: 0, partly: 0, unknown: 0 }; // students who have paid: the whole fee, part of it, or no fee entered to compare with
   const quality = {
@@ -238,7 +230,6 @@ function buildDashboard(workbook, { sheetId = '', includeHidden = false, today: 
     if (p.reached.visa && !isoDate(row['VISA RECEIVED DATE'])) quality.visasWithoutDate += 1; // blank or not a real day
     if (p.reached.applied && !isoDate(row['APPLICATION SUBMISSION DATE'])) quality.applicationsWithoutDate += 1; // blank or not a real day
 
-    for (let n = 1; n <= 4; n += 1) if (has(row, `MOCK SCHEDULE ${n}`)) k.mockInterviews += 1;
     if (status === 'Visa Rejected') k.rejected += 1;
     if (s.left) k.left += 1;
     if (s.active) k.active += 1;
@@ -291,7 +282,7 @@ function buildDashboard(workbook, { sheetId = '', includeHidden = false, today: 
     selected,
     kpis: {
       ...k,
-      applicationsSubmitted: reachedCount.applied, offersReceived: reachedCount.offer, mocksHeld: reachedCount.mock,
+      applicationsSubmitted: reachedCount.applied, offersReceived: reachedCount.offer,
       // Counted exactly as the sheet's Conversion Rate card counts them (Application Status is Visa Issued), so both agree.
       paymentsMade: reachedCount.paid, casReceived: reachedCount.cas, visaLodged: reachedCount.lodged, visaIssued: stageCounts.get('Visa Issued'),
       conversionRate: pct(stageCounts.get('Visa Issued')),

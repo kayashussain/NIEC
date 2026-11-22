@@ -72,14 +72,14 @@ The owner does not want old versions, copies or rewrites lying around, because a
 
 ## Rule 4: the Application Team's pages and system are frozen (the owner, 22 Nov 2026, strictly)
 
-The Application Team's side of Vishnu is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule). The owner then asked for the whole system, the Application Team included, to be renamed Vishnu and recoloured in Peacock Ocean (22 Nov 2026): that new look is part of what is frozen; only colours and the name changed, nothing was added, moved or removed.
+The Application Team's side of Vishnu is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule). The owner then asked for the whole system, the Application Team included, to be renamed Vishnu and recoloured in Peacock Ocean (22 Nov 2026): that new look is part of what is frozen; only colours and the name changed, nothing was added, moved or removed. The same day the owner removed the Mock and Follow-up sections from everywhere, Admin included: the Mock interviews box left the student card, Mock interview left the kinds of task, and the Mock and Follow-up Teams are no longer teams.
 It must stay exactly the same until the owner asks for a change and approves it.
 
 - **What is frozen:** everything a person whose own team is Application sees and uses (`Teams.ownTeamApplication`): the menu,
   Today (Today, Later, Missing details with every Profile and Application detail from the step where it exists, the kinds of task, the task cards), All Students as they see it (look only: only Status is changed on the sheet;
   the four numbers; no blue line; nothing at the top or under the sheet), the student card (Profile with the Student source in it, a branch
   Source staying Admin's; Application details, whose University, Course and University partner come by themselves from the Priority
-  application and whose other details are changed with its Edit; Mock interviews, which the team only looks at; notes of every change,
+  application and whose other details are changed with its Edit; notes of every change,
   Undo and Redo), Universities
   (Share, Apply now), and the server rules behind them (`teamSave` with `fromSheet`, `appReach`, the page redirects, `noteCardChanges`).
 - **Never change any of it on your own.** No new feature, button, tab, number, message, hint, help text, paragraph or explanation is
@@ -101,7 +101,7 @@ It must stay exactly the same until the owner asks for a change and approves it.
   change it only after the owner approves. This holds even when it is a fix, and even when it is a better idea.
 - **A reviewer may suggest better features**, but only as suggestions for the owner to approve, never built on the reviewer's own.
 - **A deep review checks that the data lines up everywhere:** what the Application Team does on Today, All Students and the student
-  card must match the sheet, the student, Admin's view, the Dashboard and every other team (Mock, Follow-up, branches, the Manager),
+  card must match the sheet, the student, Admin's view, the Dashboard and every other team (the branches, the Manager),
   with the data that already exists on the live server (Rule 3).
 
 ## The Vishnu colours: Peacock Ocean (the owner chose the dark Peacock Ocean look for the whole system, 22 Nov 2026, because light colours hurt the team's eyes; every page uses them, nothing else)
@@ -121,7 +121,7 @@ It must stay exactly the same until the owner asks for a change and approves it.
 | Missing or needs attention | orange #f0a463 (dot #d9712a) |
 | Done, visa granted | green #6fd69a |
 | Error, rejected | red #ff8a7e |
-| Brand mark | the Vishnu lotus (`shared/vishnu-lotus.svg`): petals green #3c7a2a, blue #0a5ca8, teal #12a1a6, centre gold #c9a227, edges bronze #c58f3a; the word "Vishnu" in soft gold #f1e6c2 |
+| Brand mark | the Vishnu peacock feather logo (`shared/vishnu-logo.png`, the owner's own picture) on a soft off-white tile #faf8f4 |
 | Peacock feather line (under the menu logo) | indigo #1b1f5e, blue #0a5ca8, teal #12a1a6, green #3c7a2a, gold #c9a227 |
 | Charts (Dashboard and every chart, in this order) | blue #0071e3, orange #d9650b, green #1e8e4a, purple #6e47d1, teal #0b8a95, pink #c2255c, amber #b7791f, slate #52606d, light blue #4aa3f0, olive #6b8e23 |
 | The same stage, the same colour on every chart | Inquiries teal, Applied and Students blue, Offers purple, Paid orange, CAS amber, Visas green |
@@ -140,7 +140,7 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Always run the complete test suite (`npm test`) before pushing**, not just the browser tests, because rules like the one
   above live in other tests.
 
-- The product is called **Vishnu** (the owner, 22 Nov 2026; it was "International Student Recruitment", ISR, before). Titles, emails, tabs, the menu and the login page say Vishnu, with the Vishnu lotus. Notes written by the system say "Vishnu (automatic)"; older notes that say "ISR (automatic)" keep their meaning. It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
+- The product is called **Vishnu** (the owner, 22 Nov 2026; it was "International Student Recruitment", ISR, before). Titles, emails, tabs, the menu and the login page say Vishnu, with the Vishnu peacock feather logo. Notes written by the system say "Vishnu (automatic)"; older notes that say "ISR (automatic)" keep their meaning. It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
 - There is **one look only: the dark Peacock Ocean theme, no light mode and no alternative themes** (the owner, 22 Nov 2026: light colours hurt the team's eyes). It must be easy on older eyes: no pure black and no pure white, soft light words on a deep sea canvas, larger type and larger buttons.
 - The login page must not mention incentives or commissions. Incentive is Admin-only and behind its own password.
 - **Never add something that is already on the page (the owner, 17 Nov 2026, strictly).** Improving, changing and making a page
@@ -151,6 +151,6 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Front end: follow DESIGN.md, always (the owner, 20 Nov 2026).** The front end is the product. Before any change to a page, a card, a window or a style, read `DESIGN.md` and build to it: Apple's own standard, measured on apple.com: calm, quiet, premium, one blue, black and grey text, Apple's type scale and timings, no pop-ups, confetti or sticky bars the person did not ask for (the owner, 20 Nov 2026), using the shared motion kit (`shared/motion.js`), never reinventing it. Section 0 of DESIGN.md is the prompt to use. Finish every front-end change with an independent reviewer pass that scores each screen 9/10 or more.
 - **Desktop and laptop only for now (the owner, 20 Nov 2026).** Design, build and check every page for a laptop or desktop screen. Do not spend work on the phone (mobile) version until the owner asks for it; phone styles already in the code stay as they are.
 - One font everywhere (`--font` in `shared/theme.css`): the system font (SF Pro on Apple devices), Inter (in `shared/fonts`) elsewhere; no serif (the owner, 14 Nov 2026).
-- The look (the owner, 14 Nov 2026, made dark on 22 Nov 2026): the design language of Apple's website and apps (calm, quiet, segmented tabs, pill buttons, Text size Large for everyone; see DESIGN.md) in the Vishnu Peacock Ocean colours above: a deep sea canvas, sea panels, soft light words, the peacock gradient on main buttons and grey-sea pills for the rest. The top of the menu shows the Vishnu lotus and the word Vishnu; the login page shows the lotus and Vishnu, with the consultancy's logo smaller under it on a soft light tile. The consultancy logo is `brand-logo.png` in the data folder, else the starting one in `shared/`.
+- The look (the owner, 14 Nov 2026, made dark on 22 Nov 2026): the design language of Apple's website and apps (calm, quiet, segmented tabs, pill buttons, Text size Large for everyone; see DESIGN.md) in the Vishnu Peacock Ocean colours above: a deep sea canvas, sea panels, soft light words, the peacock gradient on main buttons and grey-sea pills for the rest. The top of the menu and the login page show the Vishnu peacock feather logo (`shared/vishnu-logo.png`) on a soft off-white tile; no consultancy (NIEC) logo anywhere (the owner, 22 Nov 2026). The page icon is the feather from that logo.
 - Never put the real Incentive password, tokens or personal data in code, tests or git. It is the `INCENTIVE_PASSWORD`
   setting on the server only.

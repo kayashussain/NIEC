@@ -34,16 +34,16 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
     const made = (await admin('POST', '/api/users', { username, name: username, email: '', departments })).json;
     const p = person(); await p('POST', '/api/login', { username, password: made.temporaryPassword }); await p('POST', '/api/login/new-password', { password: 'Team-Strong-2026' }); return p;
   };
-  const mock = await login('bikram', ['mock']);
+  const mock = await login('bikram', ['chitwan']);
   // A view-only Manager (no team) sees every task but changes none (the council review of 21 Nov 2026: their Today went empty).
   const viewMade = (await admin('POST', '/api/users', { username: 'viewer', name: 'Viewer', email: '', role: 'manager', departments: [] })).json;
   const viewer = person(); await viewer('POST', '/api/login', { username: 'viewer', password: viewMade.temporaryPassword }); await viewer('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
   const app = await login('asha', ['application']);
   const id = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Sita', 'LAST NAME': 'Rai', 'CONTACT NUMBER': '9800000001' } })).json.id;
   assert.strictEqual((await mock('GET', `/api/cards/${id}`)).status, 404, 'the mock team does not see an Inquiry student');
-  assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks`, { team: 'mock', text: 'x' })).status, 404, 'a team cannot give tasks');
+  assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks`, { team: 'chitwan', text: 'x' })).status, 404, 'a team cannot give tasks');
   assert.strictEqual((await admin('POST', `/api/cards/${id}/tasks`, { team: 'nobody', text: 'x' })).status, 400);
-  const given = await admin('POST', `/api/cards/${id}/tasks`, { team: 'mock', text: 'Book the mock interview', due: '2026-11-20' });
+  const given = await admin('POST', `/api/cards/${id}/tasks`, { team: 'chitwan', text: 'Book the mock interview', due: '2026-11-20' });
   assert.strictEqual(given.status, 200);
   const taskId = given.json.card.tasks[0].id;
   assert.strictEqual(given.json.card.tasks[0].due, undefined, 'a task has no date to do it by (the owner, 14 Nov 2026)');
@@ -64,28 +64,27 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200);
   const all = (await admin('GET', '/api/tasks')).json.tasks;
   const finished = all.find((x) => x.id === taskId); // (a Mock task asks no follow-up day)
-  assert.deepStrictEqual([finished.done, finished.doneBy, finished.teamLabel], [true, 'bikram', 'Mock Team']);
+  assert.deepStrictEqual([finished.done, finished.doneBy, finished.teamLabel], [true, 'bikram', 'Chitwan Branch']);
   assert.strictEqual((await mock('POST', `/api/cards/${id}/tasks/${taskId}`, { done: false })).status, 200, 'marked not complete again');
   assert.strictEqual((await admin('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200);
   assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.tasks.filter((x) => x.id === taskId).length, 0, 'the deleted task is gone (its follow-up task stays)');
 
-  // The Mock Team has no Dashboard (the owner, 22 Nov 2026: its work is on Today and Bookings); Admin keeps the full one.
-  assert.strictEqual((await mock('GET', '/dashboard')).location, '/today', 'the Mock Team goes to Today');
-  assert.strictEqual((await mock('GET', '/my-dashboard')).location, '/today');
+  // A branch has its own dashboard; Admin keeps the full one.
+  assert.strictEqual((await mock('GET', '/dashboard')).location, '/my-dashboard', 'a branch goes to its own dashboard');
   assert.strictEqual((await admin('GET', '/my-dashboard')).location, '/dashboard', 'Admin keeps the full Dashboard');
   assert.strictEqual((await admin('GET', '/api/my-dashboard')).status, 403);
-  await admin('POST', `/api/cards/${id}/tasks`, { team: 'mock', text: 'Another one' });
+  await admin('POST', `/api/cards/${id}/tasks`, { team: 'chitwan', text: 'Another one' });
   const dash = (await mock('GET', '/api/my-dashboard')).json;
-  assert.strictEqual(dash.kind, 'mock');
+  assert.strictEqual(dash.kind, 'branch');
   assert.strictEqual(dash.kpis.length, 4);
   assert.deepStrictEqual([dash.tasks.open, dash.tasks.late], [1, undefined], 'the team sees its open tasks (no follow-up task is made by itself; no "late": tasks have no dates)');
   // A team gives Admin a task too (the owner, 14 Nov 2026): Admin is named with the signature's title, sees it under "For you" with
   // a red dot, and the dot goes once Admin reads it. A comment from the other side makes a new dot, for whoever gave the task too.
   const sita = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Gita', 'LAST NAME': 'Rai', 'CONTACT NUMBER': '9800000011' } })).json.id;
   const appCard = (await app('GET', `/api/cards/${sita}`)).json;
-  // Every team gives every other team and Admin a task (the owner, 15 Nov 2026: the Application Team could not give the Mock Team one).
-  // Never to its own team (the owner, 15 Nov 2026): the Application Team gives the Mock Team, the Follow-up Team, the branches and Admin.
-  assert.deepStrictEqual(appCard.assignTeams.map((x) => x.id), ['mock', 'followup', 'chitwan', 'pokhara', 'palpa', 'butwal', 'head'], 'a team gives tasks to the other teams, the branches and Admin');
+  // Every team gives every other team and Admin a task (the owner, 15 Nov 2026). Never to its own team: the Application Team gives the
+  // branches and Admin (the Mock and Follow-up Teams were removed, the owner, 22 Nov 2026).
+  assert.deepStrictEqual(appCard.assignTeams.map((x) => x.id), ['chitwan', 'pokhara', 'palpa', 'butwal', 'head'], 'a team gives tasks to the other teams, the branches and Admin');
   assert.deepStrictEqual(appCard.handTeams.map((x) => x.id), appCard.assignTeams.map((x) => x.id), 'and reassigns to the same');
   assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks`, { team: 'application', text: 'x' })).status, 400, 'not to its own team');
   assert.match(appCard.assignTeams.find((x) => x.id === 'head').label, /^Owner \(Head of Recruitment\)$/);
@@ -122,7 +121,7 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   // A task handed on to another team in the same task (the owner, 14 Nov 2026): one thread, the hand-on with its reason in the
   // comments, the route kept; the team it was with still sees it and comments; another team cannot hand it on.
   const relay = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Ram', 'LAST NAME': 'Thapa', 'CONTACT NUMBER': '9800000021' } })).json.id;
-  const given2 = (await admin('POST', `/api/cards/${relay}/tasks`, { team: 'mock', text: 'Run the mock interview' })).json.card.tasks[0];
+  const given2 = (await admin('POST', `/api/cards/${relay}/tasks`, { team: 'chitwan', text: 'Run the mock interview' })).json.card.tasks[0];
   // The Application Team may open a Mock Stage student's card (Missing details, the owner, 21 Nov 2026) but not another team's task.
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 403, 'a team that never had it cannot hand it on');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: '' })).status, 400, 'a reason is needed');
@@ -130,33 +129,33 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   const handed = await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'Mock passed, please send the CAS request' });
   assert.strictEqual(handed.status, 200);
   const moved = handed.json.card.tasks.find((x) => x.id === given2.id);
-  assert.deepStrictEqual([moved.team, moved.route, moved.done], ['application', ['mock'], false]);
-  assert.deepStrictEqual(moved.comments[moved.comments.length - 1].handoff, { from: 'mock', to: 'application' });
+  assert.deepStrictEqual([moved.team, moved.route, moved.done], ['application', ['chitwan'], false]);
+  assert.deepStrictEqual(moved.comments[moved.comments.length - 1].handoff, { from: 'chitwan', to: 'application' });
   const forApp = (await app('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id);
-  assert.deepStrictEqual([forApp.forMe, forApp.unread > 0, forApp.routeLabels], [true, true, ['Mock Team']], 'the new team has it, marked new');
+  assert.deepStrictEqual([forApp.forMe, forApp.unread > 0, forApp.routeLabels], [true, true, ['Chitwan Branch']], 'the new team has it, marked new');
   // Once handed on it leaves the team's Today (the owner, 20 Nov 2026); the team can still comment on it from the student card.
   assert.ok(!(await mock('GET', '/api/tasks')).json.tasks.some((x) => x.id === given2.id), 'a task handed on leaves the Today of the team that handed it on');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { comment: 'Feedback is on the card' })).status, 200, 'and comments');
   assert.strictEqual((await mock('POST', `/api/cards/${relay}/tasks/${given2.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'only the team it is with ticks it');
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'application', reason: 'x' })).status, 403, 'not to the team it is already with (its own team)');
   assert.strictEqual((await app('POST', `/api/cards/${relay}/tasks/${given2.id}`, { handTo: 'head', reason: 'Needs your approval' })).status, 200, 'on to Admin');
-  assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id).route, ['mock', 'application']);
+  assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.tasks.find((x) => x.id === given2.id).route, ['chitwan', 'application']);
 
-  // A person in both the Application and the Mock Team (to follow every student) gets only the tasks of the team chosen under "Gets
+  // A person in both the Application and the Chitwan Branch (to follow every student) gets only the tasks of the team chosen under "Gets
   // the tasks of" (the owner, 15 Nov 2026); they still see and work on the students of both teams.
-  const both = await login('maya', ['application', 'mock']);
+  const both = await login('maya', ['application', 'chitwan']);
   const mockStudent = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Hari', 'LAST NAME': 'KC', 'CONTACT NUMBER': '9800000031' } })).json.id;
   const appTask = (await admin('POST', `/api/cards/${mockStudent}/tasks`, { team: 'application', text: 'Check the offer letter' })).json.card.tasks[0];
-  const mockTask = (await admin('POST', `/api/cards/${mockStudent}/tasks`, { team: 'mock', text: 'Run the second mock' })).json.card.tasks.find((x) => x.text === 'Run the second mock');
+  const mockTask = (await admin('POST', `/api/cards/${mockStudent}/tasks`, { team: 'chitwan', text: 'Run the second mock' })).json.card.tasks.find((x) => x.text === 'Run the second mock');
   const seenBy = async () => (await both('GET', '/api/tasks')).json.tasks.filter((x) => x.forMe && x.studentId === mockStudent).map((x) => x.text).sort();
   assert.deepStrictEqual(await seenBy(), ['Check the offer letter', 'Run the second mock'], 'with nothing chosen, the tasks of both teams');
   const mayaId = (await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').id;
-  assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application', 'mock'], taskTeam: 'application' })).status, 200);
+  assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application', 'chitwan'], taskTeam: 'application' })).status, 200);
   assert.deepStrictEqual(await seenBy(), ['Check the offer letter'], 'only the Application Team\'s tasks once chosen');
   assert.strictEqual((await both('GET', '/api/my-dashboard')).json.kind, 'application', 'their dashboard and Today are their own team\'s');
   assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').roleLabel, 'Application Team', 'the account menu names their own team');
   assert.strictEqual((await both('GET', `/api/cards/${mockStudent}`)).status, 200, 'the Mock Stage student is still open to them');
-  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${mockTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'and the Mock Team\'s task is not theirs to tick');
+  assert.strictEqual((await both('POST', `/api/cards/${mockStudent}/tasks/${mockTask.id}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 403, 'and the Chitwan Branch\'s task is not theirs to tick');
 
   // Notifications: what exactly is new on each task, for whoever it is for.
   await admin('POST', `/api/cards/${mockStudent}/tasks/${appTask.id}`, { comment: 'The offer is in the portal' });
@@ -197,39 +196,39 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   // Who gets a team's tasks is named, and Today says whose tasks come to the person.
   const appTeam = (await admin('GET', `/api/cards/${mockStudent}`)).json.taskTeams.find((x) => x.id === 'application');
   assert.ok(appTeam.members.includes('maya') && appTeam.members.includes('asha'), 'Goes to: the Application Team');
-  assert.ok(!(await admin('GET', `/api/cards/${mockStudent}`)).json.taskTeams.find((x) => x.id === 'mock').members.includes('maya'), 'not the Mock Team, which is only extra access for maya');
+  assert.ok(!(await admin('GET', `/api/cards/${mockStudent}`)).json.taskTeams.find((x) => x.id === 'chitwan').members.includes('maya'), 'not the Chitwan Branch, which is only extra access for maya');
   const from = (await both('GET', '/api/tasks')).json.mineFrom;
   assert.deepStrictEqual([from.teams, from.allTeams, from.ownChosen], [['Application Team'], 2, true]);
   // A person in two teams with no own team chooses it themselves on Today; Admin is told who has not chosen yet.
-  const self = await login('sovat', ['application', 'mock']);
+  const self = await login('sovat', ['application', 'chitwan']);
   assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.noOwnTeam, ['sovat'], 'Admin sees who has no own team');
-  assert.deepStrictEqual((await self('GET', '/api/tasks')).json.mineFrom.choices.map((c) => c.id), ['application', 'mock']);
+  assert.deepStrictEqual((await self('GET', '/api/tasks')).json.mineFrom.choices.map((c) => c.id), ['application', 'chitwan']);
   assert.strictEqual((await self('POST', '/api/my-team', { team: 'followup' })).status, 400, 'only one of their own teams');
-  assert.strictEqual((await self('POST', '/api/my-team', { team: 'mock' })).status, 200);
-  assert.deepStrictEqual([(await self('GET', '/api/tasks')).json.mineFrom.ownChosen, (await self('GET', '/api/my-dashboard')).json.kind], [true, 'mock']);
+  assert.strictEqual((await self('POST', '/api/my-team', { team: 'chitwan' })).status, 200);
+  assert.deepStrictEqual([(await self('GET', '/api/tasks')).json.mineFrom.ownChosen, (await self('GET', '/api/my-dashboard')).json.kind], [true, 'branch']);
   assert.deepStrictEqual((await admin('GET', '/api/tasks')).json.noOwnTeam, [], 'and the warning goes');
-  assert.strictEqual((await admin('POST', '/api/my-team', { team: 'mock' })).status, 400, 'not for Admin');
+  assert.strictEqual((await admin('POST', '/api/my-team', { team: 'chitwan' })).status, 400, 'not for Admin');
   // A choice that is not one of their teams (or for a person in one team only) is not kept.
-  assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application'], taskTeam: 'mock' })).status, 200);
+  assert.strictEqual((await admin('POST', `/api/users/${mayaId}`, { action: 'update-person', departments: ['application'], taskTeam: 'chitwan' })).status, 200);
   assert.strictEqual((await admin('GET', '/api/users')).json.find((u) => u.username === 'maya').taskTeam, '');
-  // The Application Team gives the Mock Team a task, with the tag chosen by hand (the owner, 15 Nov 2026).
-  const toMock = await app('POST', `/api/cards/${sita}/tasks`, { team: 'mock', text: 'Run the first mock', tag: 'mock' });
-  assert.strictEqual(toMock.status, 200, 'the Application Team gives the Mock Team a task');
-  const mockGot = (await mock('GET', '/api/tasks')).json.tasks.find((x) => x.text === 'Run the first mock');
-  assert.ok(mockGot && mockGot.forMe && mockGot.tag === 'mock', 'and the Mock Team has it, tagged as chosen');
-  assert.ok(!(await mock('GET', `/api/cards/${sita}`)).json.assignTeams.some((x) => x.id === 'mock'), 'the Mock Team does not give itself a task');
-  assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'mock', reason: 'x' })).status, 403, 'a task is not reassigned to the team it is with');
+  // The Application Team gives a branch a task, with the tag chosen by hand (the owner, 15 Nov 2026).
+  const toMock = await app('POST', `/api/cards/${sita}/tasks`, { team: 'chitwan', text: 'Run the first meeting', tag: 'other' });
+  assert.strictEqual(toMock.status, 200, 'the Application Team gives a branch a task');
+  const mockGot = (await mock('GET', '/api/tasks')).json.tasks.find((x) => x.text === 'Run the first meeting');
+  assert.ok(mockGot && mockGot.forMe && mockGot.tag === 'other', 'and the branch has it, tagged as chosen');
+  assert.ok(!(await mock('GET', `/api/cards/${sita}`)).json.assignTeams.some((x) => x.id === 'chitwan'), 'the branch does not give itself a task');
+  assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'chitwan', reason: 'x' })).status, 403, 'a task is not reassigned to the team it is with');
   assert.strictEqual((await app('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'application', reason: 'Back to us' })).status, 403, 'nor by a team to itself');
   // A team or branch with nobody in it would get a task no one sees: it is refused until someone is in it.
-  assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'chitwan', reason: 'The branch meets the student' })).status, 400, 'nobody is in the branch yet');
-  await login('chitra', ['chitwan']);
-  assert.strictEqual((await mock('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'chitwan', reason: 'The branch meets the student' })).status, 200, 'a branch can be given it');
+  assert.strictEqual((await admin('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'pokhara', reason: 'The branch meets the student' })).status, 400, 'nobody is in the branch yet');
+  await login('chitra', ['pokhara']);
+  assert.strictEqual((await admin('POST', `/api/cards/${sita}/tasks/${mockGot.id}`, { handTo: 'pokhara', reason: 'The branch meets the student' })).status, 200, 'a branch can be given it');
   // A team that nobody has as their own team still has someone to do its tasks: everyone in it.
-  const ravi = await login('ravi', ['application', 'followup']);
+  const ravi = await login('ravi', ['application', 'palpa']);
   const raviId = (await admin('GET', '/api/users')).json.find((u) => u.username === 'ravi').id;
-  assert.strictEqual((await admin('POST', `/api/users/${raviId}`, { action: 'update-person', departments: ['application', 'followup'], taskTeam: 'application' })).status, 200);
-  const fu = await admin('POST', `/api/cards/${sita}/tasks`, { team: 'followup', text: 'Call the parents', tag: 'other' });
+  assert.strictEqual((await admin('POST', `/api/users/${raviId}`, { action: 'update-person', departments: ['application', 'palpa'], taskTeam: 'application' })).status, 200);
+  const fu = await admin('POST', `/api/cards/${sita}/tasks`, { team: 'palpa', text: 'Call the parents', tag: 'other' });
   assert.strictEqual(fu.status, 200);
-  assert.ok(fu.json && (await admin('GET', `/api/cards/${sita}`)).json.taskTeams.find((x) => x.id === 'followup').members.includes('ravi'), 'Goes to ravi, the only one in the Follow-up Team');
+  assert.ok(fu.json && (await admin('GET', `/api/cards/${sita}`)).json.taskTeams.find((x) => x.id === 'palpa').members.includes('ravi'), 'Goes to ravi, the only one in the Palpa Branch');
   assert.ok((await ravi('GET', '/api/tasks')).json.tasks.find((x) => x.text === 'Call the parents').forMe, 'and ravi gets it');
 });

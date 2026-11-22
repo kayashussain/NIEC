@@ -64,14 +64,14 @@ test('an event: the same inquiries everywhere, and a list upload is not a contac
   if (inq) assert.ok(inq.count >= 28, 'Today lists the uploaded inquiries as waiting');
 
   // A real note makes the student contacted; with no next follow-up date it is still to follow up (the owner, 21 Nov 2026: the date
-  // is always chosen), and the note from the follow-up list with its date makes the student followed up.
+  // is always chosen), and a note with its date (Events and marketing) makes the student followed up.
   const one = people.students.find((s) => s.follow === 'new');
   await api('POST', `/api/cards/${one.id}/notes`, { kind: 'note', text: 'Called, interested in January' });
   let after = await api('GET', `/api/activities/${id}/students`);
   assert.strictEqual(after.students.find((s) => s.id === one.id).follow, 'due', 'a note with no next follow-up date asks for one');
   const later = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
-  const saved = await api('POST', `/api/followup/${one.id}`, { action: 'note', text: 'Called again, will decide by Friday', next: later });
-  assert.ok(saved && saved.ok, JSON.stringify(saved));
+  const saved = await api('POST', `/api/cards/${one.id}/notes`, { text: 'Called again, will decide by Friday', next: later });
+  assert.ok(saved && !saved.error, JSON.stringify(saved));
   after = await api('GET', `/api/activities/${id}/students`);
   assert.strictEqual(after.students.find((s) => s.id === one.id).follow, 'ok');
 

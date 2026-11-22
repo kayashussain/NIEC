@@ -1,4 +1,4 @@
-// My dashboard: each team's own page (Application, Mock, Follow-up, a branch). How the team's work is going, in the team's own
+// My dashboard: each team's own page (Application, a branch). How the team's work is going, in the team's own
 // words: four figures, this week against last week, where its students are, what is coming up in the next 7 days, the good news
 // of the last 30 days and the team's tasks. Admin and the Manager have the full Dashboard instead.
 (function () {
