@@ -1223,6 +1223,77 @@ function createPortalApi({
     return { ok: true, row: found.row };
   }
 
+  // The admin door for Claude (advisor-write.js; off unless the server sets NIEC_ADVISOR_WRITE_TOKEN and NIEC_ADVISOR_WRITE_AS; the owner,
+  // 23 Nov 2026: "build a door of all access"). Three things, each in two steps (a preview, then the change with its code), each as the
+  // account the door acts as, each written on the card and in Activity under "(Claude)", each after the server's usual backup:
+  //   1. advisorChange: any detail the student card or the sheet can hold (the CARD_EDITABLE columns and Student Source), one student.
+  //   2. advisorRemoveTask: one task of one card (also a task whose student is no longer on the sheet).
+  //   3. advisorDeleteStudent: one student's row off the sheet (the card and its notes stay; the backups hold the row).
+  // Never through this door: users, passwords, settings, tokens, the Incentive page (it has its own password), more than one thing at a time.
+  const ADVISOR_COLUMNS = [...Object.keys(CARD_EDITABLE), 'STUDENT SOURCE'];
+  function advisorChange(req, { id, changes, expect = null, apply = false }) {
+    const found = typeof id === 'string' && id ? rowIndex().get(id) : null;
+    if (!found) return { error: 'No student with that id.' };
+    const cols = changes && typeof changes === 'object' && !Array.isArray(changes) ? Object.keys(changes) : [];
+    if (!cols.length) return { error: `Give the details to change. This door can change: ${ADVISOR_COLUMNS.join(', ')}.` };
+    const clean = {};
+    for (const col of cols) {
+      if (!ADVISOR_COLUMNS.includes(col)) return { error: `${col} cannot be changed through this door. It can change: ${ADVISOR_COLUMNS.join(', ')}.` };
+      if (col === 'STUDENT SOURCE') {
+        const bad = cellValueError([{ col, value: changes[col] }], found.sheet, req.user);
+        if (bad) return { error: bad };
+        const v = text(changes[col]);
+        clean[col] = Fields.STORED_SOURCES.find((x) => x.toLowerCase() === v.toLowerCase()) || v;
+      } else {
+        const v = CARD_EDITABLE[col](changes[col]);
+        if (v === null) return { error: `${col}: that value is not allowed.` };
+        clean[col] = v;
+      }
+      if (!Teams.canEdit(req.user, col, found.row)) return { error: `${col} cannot be changed from the account this door uses.` };
+    }
+    const before = Object.fromEntries(cols.map((c) => [c, text(found.row[c])]));
+    if (expect && cols.some((c) => text(expect[c]) !== before[c])) return { error: 'The student changed after the preview. Preview again.' };
+    const diff = cols.filter((c) => clean[c] !== before[c]).map((c) => ({ column: c, before: before[c], after: clean[c] }));
+    if (!diff.length) return { error: 'Nothing would change: the student already has these values.' };
+    const student = `${text(found.row['FIRST NAME'])} ${text(found.row['LAST NAME'])}`.trim();
+    if (!apply) return { id, student, changes: diff, before };
+    const done = setColumns(req, found, Object.fromEntries(diff.map((d) => [d.column, d.after])));
+    if (done.error) return { error: done.error };
+    noteCardChanges(req, id, diff.map((d) => [Fields.columnLabel(d.column), d.before, d.after]));
+    return { id, student, changed: diff };
+  }
+
+  function advisorRemoveTask(req, { id, taskId, apply = false }) {
+    if (!Teams.isAdmin(req.user)) return { error: 'This account is not Admin, so it cannot remove tasks.' };
+    const card = typeof id === 'string' && id ? cards.get(id) : null;
+    const task = card && (card.tasks || []).find((t) => t.id === taskId);
+    if (!task) return { error: 'No such task on that card.' };
+    const found = rowIndex().get(id);
+    const student = found ? `${text(found.row['FIRST NAME'])} ${text(found.row['LAST NAME'])}`.trim() : '(no longer on the sheet)';
+    const info = { id, taskId, student, task: { text: String(task.text || '').slice(0, 300), team: task.team, done: Boolean(task.done), by: task.by || '', at: task.at || '' } };
+    if (!apply) return info;
+    const out = cards.removeTask(id, taskId, by(req));
+    if (out && out.error) return { error: out.error };
+    if (found) note(req, [`Task removed through the admin door: ${info.task.text}`], 'Removed a task');
+    return { ...info, removed: true };
+  }
+
+  function advisorDeleteStudent(req, { id, apply = false }) {
+    if (!Teams.isAdmin(req.user)) return { error: 'This account is not Admin, so it cannot delete a student.' };
+    const found = typeof id === 'string' && id ? rowIndex().get(id) : null;
+    if (!found) return { error: 'No student with that id.' };
+    const student = `${text(found.row['FIRST NAME'])} ${text(found.row['LAST NAME'])}`.trim();
+    const card = cards.get(id) || {};
+    const info = { id, student, sheet: found.sheet.name, status: text(found.row['APPLICATION STATUS']), source: text(found.row['STUDENT SOURCE']), tasks: (card.tasks || []).length, notes: (card.notes || []).length };
+    if (!apply) return info;
+    const wb = getWorkbook();
+    const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((sh) => (sh.id !== found.sheet.id ? sh : { ...sh, rows: sh.rows.filter((r) => r._id !== id) })) };
+    writeWorkbook(next, req.user && req.user.id);
+    recordChanges(req, wb, next);
+    return { ...info, deleted: true };
+  }
+
+
   // ---- Today: what needs a person's attention now, for the students this account sees ----
   // The home screen of each kind of account (Teams.kindOf): the same facts, but each team sees the work that is its own, in its own words.
   const WORKSPACES = {
@@ -3711,7 +3782,7 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns };
+  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns, advisorChange, advisorRemoveTask, advisorDeleteStudent };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };

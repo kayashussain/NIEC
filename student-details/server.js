@@ -16,6 +16,7 @@ const { createFacts, viewFacts, clean: cleanFact } = require('./facts');
 const { createDirect, viewDirect, MAX_FILE_BYTES } = require('./direct');
 const { createBackups, ID: BACKUP_ID, HOUR: BACKUP_HOUR, KEEP_DAYS } = require('./backups');
 const { createAdvisorMcp } = require('./advisor-mcp');
+const { createAdvisorWrite } = require('./advisor-write');
 const { advancesByName } = require('../counselor-incentive/advances');
 const { uniqueNames } = require('../counselor-incentive/incentive-data');
 const { createIncentive } = require('../counselor-incentive/incentive');
@@ -244,6 +245,19 @@ const advisor = createAdvisorMcp({
       portal.note(req, [`Bulk email from Claude "${args.subject}": ${sent} sent, ${out.sendOut.length - sent} not sent`], 'Sent message');
     }
     return { ...out, sender: user.name };
+  } : null,
+});
+
+// The write door for Claude (advisor-write.js): a second, separate secret address that changes a few plain details of one student, in two
+// steps, as the portal account named in NIEC_ADVISOR_WRITE_AS (what that account may do is all it may do). Off unless both settings are set.
+const advisorWrite = createAdvisorWrite({
+  token: process.env.NIEC_ADVISOR_WRITE_TOKEN,
+  change: process.env.NIEC_ADVISOR_WRITE_AS ? (kind, args) => {
+    const account = accounts.userByUsername(process.env.NIEC_ADVISOR_WRITE_AS);
+    if (!account) return { error: `NIEC_ADVISOR_WRITE_AS names no active account ("${process.env.NIEC_ADVISOR_WRITE_AS}").` };
+    // The name in the notes and in Activity ends with "(Claude)", so a change made through this door is always recognisable.
+    const req = { user: { ...account, name: `${account.name} (Claude)` }, headers: { 'user-agent': 'Claude write door' }, socket: {} };
+    return { change: portal.advisorChange, removeTask: portal.advisorRemoveTask, deleteStudent: portal.advisorDeleteStudent }[kind](req, args);
   } : null,
 });
 
@@ -1285,6 +1299,7 @@ const server = http.createServer(async (req, res) => {
     if (await mockTeam.handlePublic(req, res, urlPath, serveStatic)) return;
     // The Advisor connector checks its own secret in the address, so it answers before the login.
     if (await advisor.handle(req, res, urlPath)) return;
+    if (await advisorWrite.handle(req, res, urlPath)) return;
     // Logging in, the login steps, /api/me, and Admin's people/devices/settings.
     if (await accounts.handleApi(req, res, urlPath)) return;
     if (!requireAuth(req, res)) return;

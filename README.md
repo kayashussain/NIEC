@@ -160,3 +160,11 @@ their own); a restore first saves the current data as a "before restore" backup.
 The students you see in `scripts/local-demo.js` are made up. To look at your real data without touching the live server: download a backup from the
 live server (Admin, Restore, or the daily backup), then run `node scripts/local-live.js <the downloaded file>` and open http://localhost:8080. It opens straight into the portal as the owner with no login page, and only on that computer (add `--login` for the normal login page). The copy
 is private to your computer (folder `live-data/`, never in git) and changes made there never reach the live server. Delete `live-data/` when you finish.
+
+## The admin door for Claude (off until switched on)
+
+`student-details/advisor-write.js`. Set `NIEC_ADVISOR_WRITE_TOKEN` (32 or more characters) and `NIEC_ADVISOR_WRITE_AS` (the username it acts as, an
+Admin account) in the hosting settings and restart; the door is then `https://<your-site>/advisor-write/<token>`. Two steps for everything
+(preview, then apply with the code): change a detail of one student, remove one task of one card, delete one student's row. Each is written on the
+card and in Activity as "<account> (Claude)" after the server's usual backup. Remove either setting to switch it off. Users, passwords, settings and
+the Incentive page are never reachable through it.

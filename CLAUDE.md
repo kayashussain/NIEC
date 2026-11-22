@@ -66,6 +66,13 @@ The owner does not want old versions, copies or rewrites lying around, because a
   browser, so the way is `scripts/local-live.js`: the owner downloads a backup from the live server (Admin, Restore, or the daily backup)
   and runs `node scripts/local-live.js <the file>` on their own computer, then opens http://localhost:8080 (no login page, this computer only; `--login` brings the login page back). When the owner asks again for live data, give these steps again,
   say plainly what Claude cannot do, and do not invent data.
+- **The admin door (the owner, 23 Nov 2026: "build a door of all access"):** `student-details/advisor-write.js` lets Claude fix the real data, in two
+  steps always: a preview that shows the exact before and after, then the change with its code, only after the owner says yes to that change.
+  Three things only: change any detail of one student (card or sheet columns, Student Source), remove one task of one card, delete one
+  student's row from the sheet (the card stays, the backups hold the row). Never a user, a password, a setting, a token, the Incentive page
+  (it has its own password), or more than one thing at a time. It is switched on by the owner in the hosting settings
+  (`NIEC_ADVISOR_WRITE_TOKEN` and `NIEC_ADVISOR_WRITE_AS`, the account it acts as, an Admin account for all three things) and added as a second
+  connector. Every change is written on the card and in Activity as "<account> (Claude)", after the server's usual backup.
 - Real data never goes in git, in code, in tests or in screenshots sent anywhere. `live-data/` and the daily backups are ignored by git.
 - Every change must work with the data that already exists on the live server: stored values keep their meaning (for example a
   student's Student Source stays "Chitwan Branch"), and new fields are optional.
