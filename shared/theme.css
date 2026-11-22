@@ -3872,15 +3872,10 @@ html body .uc-card:hover .uni-mono:not(.has-logo), html body .uc-card.is-pathway
   html[data-size="small"] { zoom: .67; --isr-z: .67; }
   html[data-size="medium"] { zoom: .8; --isr-z: .8; }
 }
+/* 🔴 CSS CHANGED (2026-11-23): the Text size choice in the account menu removed | from: a Small, Medium, Large switch under the account name | to: nothing there; every page is Medium for everyone (rules for the switch deleted) */
 html:root { --bg: #e6e6e6; --panel: #f3f3f3; --surface: #f3f3f3; --ui-panel: #f3f3f3; }
 dialog.p-dialog[open] { max-height: calc(100vh / var(--isr-z, 1) - 48px); }
 .mo-confetti { width: auto; height: auto; }
-.niec-size { display: grid; gap: 6px; margin: 4px 0; padding: 8px 10px; border-top: 1px solid rgba(0, 0, 0, .06); border-bottom: 1px solid rgba(0, 0, 0, .06); }
-.niec-size > span { color: #333; font-size: 13px; font-weight: 600; }
-.niec-size-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 9px; background: #dcdcdc; }
-.niec-menu .niec-size-seg button { display: block; width: auto; min-height: 30px; padding: 0 6px; border: 0; border-radius: 7px; background: transparent; color: #000; font-size: 13px; text-align: center; }
-.niec-menu .niec-size-seg button:hover { background: rgba(255, 255, 255, .6); }
-.niec-menu .niec-size-seg button[aria-pressed="true"] { background: #f3f3f3; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
 
 /* ---- the Ledger look on more pages (the owner, 21 Nov 2026): every window (Add student, Assign a task, Mark as done and the rest),
    Today, Dashboard, All Students and the Universities finder. Only the look: what each page shows and does stays the same. ---- */
