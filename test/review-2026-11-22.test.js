@@ -75,6 +75,31 @@ test('review fixes on the real server', { timeout: 120000 }, async (t) => {
   assert.strictEqual(dropped.json.reload, true);
   assert.notStrictEqual((await rowOf(id))['STUDENT ID'], 'typed');
 
+  // Every application gets its own Offer request, also two courses at one university (the owner, 22 Nov 2026).
+  {
+    const sid = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Two', 'LAST NAME': 'Courses', 'CONTACT NUMBER': '9800000095', 'STUDENT SOURCE': 'Visitor' } })).json.id;
+    const a = (await admin('POST', `/api/cards/${sid}/options`, { university: 'Coventry University', course: 'MSc A' })).json.option;
+    const b = (await admin('POST', `/api/cards/${sid}/options`, { university: 'Coventry University', course: 'MSc B' })).json.option;
+    assert.strictEqual((await admin('POST', `/api/cards/${sid}/options/send`, { ids: [a.id, b.id], partners: { [a.id]: 'Direct', [b.id]: 'Direct' } })).status, 200);
+    const today = (await admin('GET', '/api/tasks')).json.today;
+    const applyTasks = (await app('GET', '/api/tasks')).json.tasks.filter((x) => x.studentId === sid && x.tag === 'application' && !x.done);
+    for (const task of applyTasks) {
+      const done = await app('POST', `/api/cards/${sid}/tasks/${task.id}`, { done: true, finish: { app: 'record', date: today, unis: [{ university: 'Coventry University', course: task.course.course, what: 'submitted', date: today }], confirmed: true, next: 'none' } });
+      assert.strictEqual(done.status, 200, JSON.stringify(done.json));
+    }
+    const offers = (await app('GET', '/api/tasks')).json.tasks.filter((x) => x.studentId === sid && x.tag === 'offer' && !x.done).map((x) => x.offerFor.course).sort();
+    assert.deepStrictEqual(offers, ['MSc A', 'MSc B']);
+  }
+  // Assign takes the partner Admin set on Apply through (here the starting list's partner for a place on it).
+  {
+    const ap = (await admin('GET', '/api/apply-through')).json;
+    const entry = (ap.choices || []).find((e) => e.partner && !e.direct);
+    if (entry) {
+      const got = (await admin('GET', '/api/application-partners?u=' + encodeURIComponent(entry.name))).json;
+      assert.strictEqual(got.universities[entry.name].suggested, entry.partner);
+    }
+  }
+
   // Many students moved in one save: each gets its stage line (written to the cards file once).
   const ids = [];
   for (let i = 0; i < 5; i += 1) ids.push((await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': `Batch${i}`, 'LAST NAME': 'Demo', 'CONTACT NUMBER': `98000002${i}0`, 'STUDENT SOURCE': 'Visitor' } })).json.id);

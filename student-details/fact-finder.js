@@ -6,7 +6,8 @@
 // Move up, Move down, Remove), and one ⋯ menu for the rest (the owner, 20 Nov 2026):
 //
 //   Share options (by email)         the student gets the courses in one email (fee, scholarship, deposit and course page by themselves)
-//   Assign to the Application Team  asks, for every course, through which partner it goes (Direct or a B2B partner) and for notes,
+//   Assign to the Application Team  shows, for every course, the partner it goes through (from Apply through, else used before; Change
+//                                   partner picks another for this student only) and asks only when none is known, and for notes,
 //                                   then gives the Application Team one task with the numbered list
 //   Open the card                   the student card in a new tab, so Universities stays where it was
 //   Stop shortlisting (in the ⋯ menu) ends the shortlisting: the tray goes away; courses not yet given to the Application
@@ -284,7 +285,9 @@
   // Every course needs its partner (Direct, or the B2B partner it goes through) before the task can be given.
   function assign(student, options) {
     return dialog(`Assign ${student.name} to the Application Team`, (body, close) => {
-      body.append(el('p', 'p-muted p-small', 'In the order to apply. Choose through which partner each application goes.'));
+      // The partner is asked only where the system knows none (the owner, 22 Nov 2026): the words follow once the partners are known.
+      const intro = el('p', 'p-muted p-small', 'In the order to apply.');
+      body.append(intro);
       const list = el('ol', 'oa-assign');
       const picks = [];
       options.forEach((o) => {
@@ -296,9 +299,18 @@
         sel.append(new Option('Loading the partners...', ''));
         sel.disabled = true;
         const hint = el('div', 'oa-hint');
-        li.append(t, sel, hint);
+        // The partner the system already knows is shown as chosen (the owner, 22 Nov 2026): "Applying through: <partner>", with Change
+        // partner to pick another one for this student only (it is kept on this student's course, never on Apply through).
+        const via = el('div', '');
+        via.hidden = true;
+        const viaText = el('span', '');
+        const change = h('button', { class: 'p-link', type: 'button' }, 'Change partner');
+        via.append(viaText, el('br'), change);
+        const side = el('div', '');
+        side.append(via, sel);
+        li.append(t, side, hint);
         list.append(li);
-        picks.push({ o, sel, hint });
+        picks.push({ o, sel, hint, via, viaText, change });
       });
       const note = field('Notes for the Application Team', { kind: 'area', max: 1500, placeholder: 'e.g. Documents are in the email from Chitwan. Apply for the January intake.' });
       note.input.rows = 3;
@@ -328,7 +340,11 @@
           p.sel.append(group);
           p.sel.value = pick;
           p.sel.disabled = false;
-          if (info.suggested && !p.o.partner) p.hint.textContent = info.suggested === 'Direct' ? 'Suggested: we apply direct to this university.' : `Suggested: used before for this university.`;
+          if (p.sel.value) {
+            p.viaText.textContent = `Applying through: ${p.sel.value === 'Direct' ? `Direct with ${p.o.university || 'the university'}` : p.sel.value}`;
+            p.via.hidden = false; p.sel.hidden = true;
+            p.change.addEventListener('click', () => { p.via.hidden = true; p.sel.hidden = false; p.sel.focus(); });
+          }
           p.sel.addEventListener('change', () => {
             p.hint.replaceChildren();
             // With several courses, one press gives the same partner to the ones still without one (most go through one partner).
@@ -341,6 +357,7 @@
             ready();
           });
         });
+        if (picks.some((p) => !p.sel.value)) intro.textContent = 'In the order to apply. Choose through which partner each application goes.';
         ready();
       }).catch((e) => { msg.textContent = e.message; msg.className = 'p-msg error'; });
       go.addEventListener('click', async () => {

@@ -970,7 +970,7 @@ const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks 
 // navitas-toolkit.js). NAVITAS_SHEET_ID is the sheet's id (else the one the owner gave); NAVITAS_TOOLKIT=off switches it off.
 const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.env.NAVITAS_SHEET_ID || undefined, enabled: process.env.NAVITAS_TOOLKIT !== 'off', clean: cleanFact });
 const portal = createPortalApi({
-  getWorkbook: () => current, writeWorkbook, recordChanges, teamSave, cellValueError,
+  getWorkbook: () => current, writeWorkbook, recordChanges, teamSave, cellValueError, applyThrough,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
   insights: servedInsights, calculated: CALCULATED_COLUMNS,
   userMail, push, courseSitemaps, officeMailSettings: () => require('../shared/mailer').loadConfig(DATA_DIR),

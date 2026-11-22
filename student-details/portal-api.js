@@ -32,7 +32,7 @@ const MAX_CELL_CHARS = 5000;
 const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'STUDENT SOURCE'];
 
 function createPortalApi({
-  getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
+  getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, applyThrough = null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
   insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
@@ -353,7 +353,11 @@ function createPortalApi({
       const counts = [...((used.get(k) || new Map()).entries())].sort((a, b) => b[1] - a[1]);
       const isUni = (n) => squash(n) === k || /universit|college/i.test(n);
       let suggested = '';
-      if (d && d.type === 'Through a B2B partner' && d.via) suggested = d.via;
+      // The partner Admin set for this place on Apply through comes first (the owner, 22 Nov 2026: "the partner has already been
+      // selected in our system"): Assign shows it already chosen; Change partner changes it for this student only.
+      const at = applyThrough && applyThrough.find ? applyThrough.find(uniName) : null;
+      if (at && at.partner) suggested = at.direct ? 'Direct' : at.partner;
+      else if (d && d.type === 'Through a B2B partner' && d.via) suggested = d.via;
       else if (counts.length) suggested = isUni(counts[0][0]) ? 'Direct' : counts[0][0];
       else if (directHere) suggested = 'Direct';
       out[uniName] = { direct: directHere, suggested, used: counts.map(([n]) => (isUni(n) ? 'Direct' : n)).filter((n, i, a) => a.indexOf(n) === i) };
@@ -1064,7 +1068,7 @@ function createPortalApi({
       }
     });
     // Never a second open task with the same words for the same team (a task finished twice, or two people finishing together).
-    const twin = plan.remind && (cards.get(rowId).tasks || []).some((x) => !x.done && x.id !== task.id && x.team === task.team && squash(x.text) === squash(plan.remind.text));
+    const twin = plan.remind && (cards.get(rowId).tasks || []).some((x) => !x.done && x.id !== task.id && x.team === task.team && courseKey(x.text) === courseKey(plan.remind.text));
     if (plan.remind && !twin) {
       const team = task.team === HEAD ? (plan.remind.tag === 'mock' ? 'mock' : task.team) : task.team;
       const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: plan.remind.tag, priority: 'high' }, by(req));
@@ -1074,7 +1078,9 @@ function createPortalApi({
     wrote.offerRequests = [];
     (plan.offerRequests || []).forEach((r) => {
       const words = offerRequestText(r);
-      const open = (cards.get(rowId).tasks || []).some((x) => !x.done && squash(x.text) === squash(words));
+      // Compared with the brackets kept: "Coventry University (MSc A)" and "(MSc B)" are two applications, two Offer requests (the owner,
+      // 22 Nov 2026: every application gets its Offer request).
+      const open = (cards.get(rowId).tasks || []).some((x) => !x.done && courseKey(x.text) === courseKey(words));
       if (open) return;
       const made = cards.addTask(rowId, { team: task.team === HEAD ? 'application' : task.team, text: words, tag: 'offer', offerFor: r }, by(req));
       if (!made.error) wrote.offerRequests.push(made.task.id);
