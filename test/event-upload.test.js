@@ -35,7 +35,7 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   const code = fs.readFileSync(path.join(dir, 'first-admin-code.txt'), 'utf8').trim();
   await admin('POST', '/api/login/first-admin', { setupCode: code, username: 'owner', name: 'Owner' });
   await admin('POST', '/api/login/new-password', { password: 'Strong-Pass-2026' });
-  const made = (await admin('POST', '/api/users', { username: 'bikram', name: 'Bikram', email: '', departments: ['application'] })).json;
+  const made = (await admin('POST', '/api/users', { username: 'bikram', name: 'Bikram', email: '', departments: ['followup'] })).json;
   const follow = person();
   await follow('POST', '/api/login', { username: 'bikram', password: made.temporaryPassword });
   await follow('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
@@ -58,7 +58,7 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
     { first: 'New', last: 'One', phone: '9811122233' },
     { first: 'Fair', last: 'Student', phone: '9811100000' },
   ];
-  // Only Admin uploads; a team cannot.
+  // Only Admin uploads; the follow-up team cannot.
   assert.strictEqual((await follow('POST', `/api/activities/${ids['ABC event']}/students`, { rows: list })).status, 403);
   // The review changes nothing.
   const pre = (await admin('POST', `/api/activities/${ids['ABC event']}/students`, { rows: list, preview: true })).json;
@@ -187,11 +187,11 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   assert.deepStrictEqual([anilCard.profile.studyLevel, anilCard.profile.inquiryDate], ['Postgraduate', '2026-11-10']);
   assert.match(anilCard.notes[0].text, /Intended UK Study Intake: January 2027/);
 
-  // Adding a student who is already in Vishnu (same phone): nobody is added twice; who it is is said, and "fill in what is missing"
+  // Adding a student who is already in ISR (same phone): nobody is added twice; who it is is said, and "fill in what is missing"
   // fills only blanks, keeps what is there, and puts a different email in a note (the owner, 14 Nov 2026).
   const again2 = await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Early', 'CONTACT NUMBER': '9800099999', EMAIL: 'early@example.com' } });
   assert.strictEqual(again2.status, 409);
-  assert.strictEqual(again2.json.duplicate.id, early, 'the student already in Vishnu is named');
+  assert.strictEqual(again2.json.duplicate.id, early, 'the student already in ISR is named');
   // The same phone under a clearly different first name (a brother or sister on the family phone, the owner, 14 Nov 2026): said so,
   // and added once the person says it is someone else. Never with the same email, and never without being asked.
   const sibling = await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Maya', 'CONTACT NUMBER': '9800099999' } });
@@ -259,7 +259,7 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   assert.match(gone.copy, /^manual-/, 'a copy was saved first');
   const rows1 = (await admin('GET', '/api/data')).json.sheets.flatMap((x) => x.rows);
   assert.ok(!rows1.some((r) => ['New One', 'Twin Line'].includes(`${r['FIRST NAME']} ${r['LAST NAME']}`)));
-  assert.ok(rows1.some((r) => r._id === newTwo._id) && rows1.some((r) => r._id === early), 'the worked-on student and the one in Vishnu before stay');
+  assert.ok(rows1.some((r) => r._id === newTwo._id) && rows1.some((r) => r._id === early), 'the worked-on student and the one in ISR before stay');
   assert.ok((await acts()).activities.some((a) => a.name === 'ABC event'), 'the event stays');
   const again3 = (await admin('POST', `/api/activities/${ids['ABC event']}/students`, { rows: [{ first: 'New', last: 'One', phone: '9811122233' }], preview: true })).json;
   assert.strictEqual(again3.rows[0].action, 'new', 'uploaded again, it is added as new');

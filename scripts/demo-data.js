@@ -223,6 +223,8 @@ function buildDemo({ today = '2026-11-11', seed = 20261111 } = {}) {
   // Today and each team's Dashboard show what a task list looks like. Only students that already have a card get one.
   const TASK_PLAN = [
     ['Application Stage', 'application', ['Submit the application on the university portal', 'Ask the student for the missing transcript', 'Chase the university for the offer letter'], [-2, 0, 2]],
+    ['Mock Stage', 'mock', ['Book the first mock interview', 'Write the feedback of yesterday\'s mock', 'Prepare the student for the Pre-CAS interview'], [-1, 0, 3]],
+    ['Inquiry', 'followup', ['Call back about the scholarship question', 'Send the fee list on WhatsApp', 'Invite the student to the office with the parents'], [0, 1, null]],
   ];
   const dayIso = (n) => iso(now + n * DAY);
   const current = sheets[sheets.length - 1];

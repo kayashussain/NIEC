@@ -75,12 +75,13 @@ test('Universities finds a university by its name, the university before its col
   assert.strictEqual(store.find('Nowhere University'), null);
 });
 
-test('only Admin changes Apply through; the Application Team looks; nobody else sees it', () => {
+test('only Admin changes Apply through; the Application Team and the Mock Team look; nobody else sees it', () => {
   assert.strictEqual(partnerAccess({ role: 'admin' }).applyThrough, 'full');
   assert.strictEqual(partnerAccess({ role: 'staff', departments: ['application'] }).applyThrough, 'view');
-  // The Mock and Follow-up Teams were removed (the owner, 22 Nov 2026): an account still holding one sees nothing here.
-  assert.strictEqual(partnerAccess({ role: 'staff', departments: ['mock'] }).applyThrough, null);
-  assert.strictEqual(partnerAccess({ role: 'staff', departments: ['chitwan'] }).applyThrough, null);
+  // Universities for the Mock Team as for the Application Team (the owner, 22 Nov 2026): Apply now shows where to apply, never a login.
+  assert.strictEqual(partnerAccess({ role: 'staff', departments: ['mock'] }).applyThrough, 'view');
+  assert.strictEqual(partnerAccess({ role: 'staff', departments: ['mock', 'application'], taskTeam: 'application' }).applyThrough, 'view');
+  assert.strictEqual(partnerAccess({ role: 'staff', departments: ['followup'] }).applyThrough, null);
   assert.strictEqual(partnerAccess({ role: 'manager' }).applyThrough, null);
 });
 

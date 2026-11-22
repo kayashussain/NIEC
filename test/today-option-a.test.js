@@ -13,8 +13,8 @@ const Fields = require('../student-details/card-fields');
 const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-test('the Pre-CAS interview is not guessed as the visa', () => {
-  assert.strictEqual(Fields.guessTaskTag('Prepare the student for the Pre-CAS interview', 'head', ''), 'other');
+test('the Pre-CAS interview is guessed as a mock, not the visa', () => {
+  assert.strictEqual(Fields.guessTaskTag('Prepare the student for the Pre-CAS interview', 'mock', ''), 'mock');
   assert.strictEqual(Fields.guessTaskTag('Book the VFS appointment', 'application', ''), 'visa');
 });
 
@@ -166,9 +166,8 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
     assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.medical.date, '2026-12-12');
     assert.match(await notesOf(id), /Changed on the student card: .*Student ID: \(empty\) \u2192 "CU-1".*Medical booking date: \(empty\) \u2192 "2026-12-12"\./);
     assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: 'Maybe' } })).status, 400, 'only the NOC choices');
-    // The Mock interviews box was removed (the owner, 22 Nov 2026): a mock column sent from the card is never kept.
-    await app('POST', `/api/cards/${id}/sheet`, { fields: { 'FEEDBACK 1': 'x' } });
-    assert.strictEqual((await rowNow())['FEEDBACK 1'] || '', '');
+    // The Mock interviews card is the Mock Team's: the Application Team only looks.
+    assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'FEEDBACK 1': 'x' } })).status, 403);
     assert.ok(!(await app('GET', `/api/cards/${id}`)).json.can.cols.includes('FEEDBACK 1'));
     // University partner follows the Priority university by itself: a direct application says "Direct (<university>)".
     assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY PARTNER': 'QA' } })).status, 200);
@@ -193,7 +192,7 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
       // Undo is never a way round the checks: only the value this server just replaced is put back.
       assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: '<img src=x>' }, undo: true })).status, 400);
       assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'OFFER RECEIVED DATE': 'garbage' }, undo: true })).status, 400);
-      // A person's note is always a note (stage and "no answer" lines are Vishnu's own), and a next follow-up day must be a real day.
+      // A person's note is always a note (stage and "no answer" lines are ISR's own), and a next follow-up day must be a real day.
       const fake = await app('POST', `/api/cards/${id}/notes`, { text: 'Moved to Visa Issued', kind: 'stage' });
       assert.strictEqual(fake.status, 200);
       assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.notes.find((n) => n.text === 'Moved to Visa Issued').kind, 'note');
@@ -218,8 +217,8 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   assert.strictEqual((await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id)['APPLICATION STATUS'], 'Mock Stage', 'the Application Team still moves a student on');
 
   // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): Dashboard, Partners, Apply through
-  // send it back to Today, as do the removed Mock interviews and Follow-up pages; Apply now on a university still finds the partner.
-  for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk', '/bookings']) {
+  // and Mock interviews send it back to Today; Apply now on a university still finds the partner.
+  for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk']) {
     assert.strictEqual((await app('GET', page)).status, 302, page);
   }
   assert.strictEqual((await app('GET', '/today')).status, 200);
@@ -227,16 +226,19 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   assert.strictEqual((await admin('GET', '/apply-through')).status, 200, 'Admin keeps Apply through');
   // In both teams: the own team decides (the owner, 21 Nov 2026).
   const both = async (username, taskTeam) => {
-    const u = (await admin('POST', '/api/users', { username, name: username, email: '', departments: ['application', 'chitwan'], taskTeam })).json;
+    const u = (await admin('POST', '/api/users', { username, name: username, email: '', departments: ['application', 'mock'], taskTeam })).json;
     const p = person();
     await p('POST', '/api/login', { username, password: u.temporaryPassword }); await p('POST', '/api/login/new-password', { password: 'Team-Strong-2026x' });
     return p;
   };
   const ownApp = await both('sanu', 'application');
+  assert.strictEqual((await ownApp('GET', '/mock-guides')).status, 302, 'own team Application: no Mock interviews');
   assert.strictEqual((await ownApp('GET', '/partners')).status, 302, 'own team Application: no Partners');
-  const ownBranch = await both('rita', 'chitwan');
-  assert.strictEqual((await ownBranch('GET', '/partners')).status, 302, 'own team a branch: Partners opens');
-  assert.strictEqual((await ownBranch('GET', '/mock-guides')).status, 302, 'the Mock interviews page is gone for everyone');
+  const ownMock = await both('rita', 'mock');
+  // Own team Mock: no Mock interviews and no Partners either (the owner, 22 Nov 2026); Bookings and Interview guidelines instead.
+  assert.strictEqual((await ownMock('GET', '/mock-guides')).status, 302, 'own team Mock: no Mock interviews');
+  assert.strictEqual((await ownMock('GET', '/partners')).status, 302, 'own team Mock: no Partners');
+  assert.strictEqual((await ownMock('GET', '/bookings')).status, 200, 'own team Mock: Bookings');
   assert.strictEqual((await admin('GET', '/api/apply-through')).json.canChange, true);
 });
 
@@ -249,9 +251,9 @@ test('the menu keeps the own team in its saved copy, so someone in two teams who
 test('own team Application: one rule for the menu, the pages and Universities (Share instead of Shortlist)', () => {
   const T = require('../shared/teams');
   assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application'] }), true);
-  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'chitwan'], taskTeam: 'application' }), true);
-  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'chitwan'], taskTeam: 'chitwan' }), false);
-  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'chitwan'] }), false, 'no own team chosen: not only the Application Team');
+  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'mock'], taskTeam: 'application' }), true);
+  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'mock'], taskTeam: 'mock' }), false);
+  assert.strictEqual(T.ownTeamApplication({ role: 'staff', departments: ['application', 'mock'] }), false, 'no own team chosen: not only the Application Team');
   assert.strictEqual(T.ownTeamApplication({ role: 'manager', departments: ['application'] }), false);
   assert.strictEqual(T.ownTeamApplication({ role: 'admin' }), false);
   const finder = fs.readFileSync(path.join(__dirname, '..', 'student-details', 'fact-finder.js'), 'utf8');

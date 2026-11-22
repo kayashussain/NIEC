@@ -203,7 +203,7 @@
       const main = el('div', 'tk-main');
       const head = el('div', 'tk-head');
       head.append(el('b', '', c.by === me ? 'You' : c.by || 'Someone'), el('time', '', when(c.at)));
-      // A hand-on reads as one plain line in the thread: "Chitwan Branch handed this to Application Team", then the reason; a move to
+      // A hand-on reads as one plain line in the thread: "Mock Team handed this to Application Team", then the reason; a move to
       // another day as "Moved to Wed 18 Nov", then why.
       if (c.handoff) { li.classList.add('is-handoff'); main.append(head, el('p', 'tk-hand', `Reassigned: ${labelOf(c.handoff.from)} \u2192 ${labelOf(c.handoff.to)}`), el('p', 'tk-text', c.text)); }
       else if (c.schedule) { li.classList.add('is-schedule'); main.append(head, el('p', 'tk-hand', c.schedule.to && c.schedule.to > (today || '') ? `Moved to ${dayLabel(c.schedule.to, today)}` : 'Moved back to today')); if (c.text) main.append(el('p', 'tk-text', c.text)); }
@@ -294,7 +294,7 @@
     return box;
   }
 
-  // The way a task went: "From SK → Chitwan Branch → Application Team", the team it is with now last.
+  // The way a task went: "From SK → Mock Team → Application Team", the team it is with now last.
   function taskRoute(task, { fromName, toName, teams = [] }) {
     const labelOf = (id) => (teams.find((t) => t.id === id) || { label: id === 'head' ? 'Admin' : id }).label;
     const route = el('div', 'td-route');
@@ -309,7 +309,7 @@
       const choices = teams.filter((t) => t.id !== task.team).map((t) => [t.id, t.label]);
       body.append(el('p', 'p-muted p-small', 'The task and its updates move to the new team.'));
       const team = field('Reassign to', { kind: 'select', choices });
-      const why = field('Reason and next step', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Offer received. Please request the CAS.' });
+      const why = field('Reason and next step', { kind: 'area', max: 2000, wide: true, placeholder: 'e.g. Mock passed. Please request the CAS.' });
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Reassign');
@@ -353,7 +353,7 @@
     return wrap;
   }
   // The "Mark as done?" window (the owner, 16 Nov 2026: nothing is filled in by itself; the team is asked, checks, then it is saved).
-  // Step 1 shows what Vishnu already knows about the student (every application with its days) and asks what the task's tag needs, with
+  // Step 1 shows what ISR already knows about the student (every application with its days) and asks what the task's tag needs, with
   // no answer chosen and no day filled in. Step 2 shows the server's own list of exactly what will change, what stays as it is and
   // anything that does not add up; only "Yes, this is correct" saves it. A task with nothing to ask (Documents, Other) takes one
   // optional line and is done. Resolves the confirmed answers ({ ..., confirmed: true }) or null when Not yet is pressed.
@@ -361,7 +361,7 @@
     let answer = null;
     const url = `/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`;
     const tag = tagOf(t, o.stage);
-    const asks = ['application', 'offer', 'noc', 'medical', 'payment', 'visa'].includes(tag);
+    const asks = ['application', 'offer', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
     return dialog('Mark as done?', (body, close) => {
       // An application task names its university and course below, so only the student is named here.
       // An application task and an Offer request show only the student's name here (their university and course follow): no long sentence.
@@ -374,7 +374,7 @@
       const msg = el('div', 'p-msg');
       // The message is shown where the person is looking: scrolled into view and announced (a long window hid it below the buttons).
       const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; msg.setAttribute('role', 'alert'); try { msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) { /* older browsers */ } };
-      const wait = el('p', 'p-muted p-small', 'Loading what Vishnu knows about this student...');
+      const wait = el('p', 'p-muted p-small', 'Loading what ISR knows about this student...');
       ask.append(wait);
       api(url, { finishState: true }).then((r) => { wait.remove(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
 
@@ -449,7 +449,7 @@
           read = () => (q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: q.value() === 'closed' ? 'withdrawn' : q.value(), date: dayF.input.value }] } : {});
           check = () => (!q.value() ? 'Choose what the university said.' : !dayF.input.value ? 'Choose the date.' : '');
         } else if (tag === 'application' || tag === 'offer') {
-          // So far: every application Vishnu knows, each with its days; a press on one starts a line for it below.
+          // So far: every application ISR knows, each with its days; a press on one starts a line for it below.
           const apps = state.applications || [];
           const listId = `td-unis-${t.id}`;
           form.append(datalist(listId, state.universities || []));
@@ -549,9 +549,31 @@
           show(num.wrap, false);
           read = () => (q.value() ? { noc: q.value(), ...(q.value() === 'Received' ? { nocNumber: num.input.value.trim() } : {}) } : {});
           check = () => (!q.value() ? 'Choose Pending or Received.' : q.value() === 'Received' && !num.input.value.trim() ? 'Write the NOC number.' : '');
+        } else if (tag === 'mock') {
+          nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW']);
+          const q = question('What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
+            show([date.wrap, rem], v === 'set'); show([slot.wrap, fb.wrap], v === 'feedback'); show(res, v === 'precas');
+          });
+          const date = dateField('Mock interview on');
+          const rem = el('label', 'p-check p-wide');
+          const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
+          rem.append(remind, el('span', '', 'Remind the team to write the feedback on that day'));
+          form.append(rem);
+          const said = /mock interview (\d)/i.exec(String(t.text || ''));
+          const slot = field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: said ? said[1] : String(state.nextFeedback || '') });
+          const fb = field('Feedback', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Confident; work on the finance answers.' });
+          fb.input.rows = 3;
+          form.append(slot.wrap, fb.wrap);
+          const res = el('div', 'p-field p-wide');
+          const result = picker([['Passed', 'Passed'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS result');
+          res.append(el('span', 'p-label', 'Pre-CAS result'), result.node);
+          form.append(res);
+          show([date.wrap, rem, slot.wrap, fb.wrap, res], false);
+          read = () => (q.value() === 'set' ? { mock: 'set', date: date.input.value, remind: remind.checked } : q.value() === 'feedback' ? { mock: 'feedback', slot: Number(slot.input.value), feedback: fb.input.value.trim() } : q.value() === 'precas' ? { mock: 'precas', result: result.value() } : {});
+          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'set' && !date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !slot.input.value ? 'Choose which mock.' : q.value() === 'feedback' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !result.value() ? 'Choose Passed or Fail.' : '');
         } else if (tag === 'medical') {
           // The Medical Report as All Students has it: Pending, Booked (with the day) or Received (the owner, 18 Nov 2026). On the day of the
-          // test Vishnu's own "is the report received?" task keeps its meaning: Pending there is "not received yet".
+          // test ISR's own "is the report received?" task keeps its meaning: Pending there is "not received yet".
           nowLine(['MEDICAL REPORT']);
           const isCheck = Boolean(F().isReportCheck && F().isReportCheck(t));
           const q = question('Medical report', [['pending', 'Pending'], ['booked', 'Booked'], ['received', 'Received']], (v) => { show(date.wrap, v === 'booked'); });

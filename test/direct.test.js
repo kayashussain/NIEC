@@ -111,7 +111,7 @@ test('a damaged list file is set aside, not overwritten', () => {
 const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-test('Admin changes the list; the Application Team and the Manager look; a person with no partner access is sent away (real server)', { timeout: 120000 }, async (t) => {
+test('Admin changes the list; the Application Team and the Manager look; the Follow-up Team is sent away (real server)', { timeout: 120000 }, async (t) => {
   const dir = tmp();
   const port = await freePort();
   const server = spawn(process.execPath, ['server.js'], {
@@ -170,8 +170,8 @@ test('Admin changes the list; the Application Team and the Manager look; a perso
   assert.notStrictEqual((await nobody('GET', `/api/direct/${id}/files/${fileId}`)).status, 200, 'a logged-out visitor cannot download the agreement');
 
   // The Application Team and the Manager look at the page (the team without the commission, the Manager with it) and change
-  // nothing; a person with no partner access is sent away (who sees what: partner-access.js and partner-access.test.js).
-  for (const [username, role, extra, look] of [['sita', 'staff', { departments: ['application'] }, 'team'], ['chief', 'manager', {}, 'commission']]) {
+  // nothing; the Follow-up Team is sent away (who sees what: partner-access.js and partner-access.test.js).
+  for (const [username, role, extra, look] of [['sita', 'staff', { departments: ['application'] }, 'team'], ['chief', 'manager', {}, 'commission'], ['sunita', 'staff', { departments: ['followup'] }, null]]) {
     const made2 = await admin('POST', '/api/users', { name: username, username, role, ...extra });
     assert.strictEqual(made2.status, 200, `${username} created`);
     const them = person();

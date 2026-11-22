@@ -1,5 +1,5 @@
 // Who sees what of Partner Universities, B2B Partners, Agents and Message templates (student-details/partner-access.js), and a
-// branch giving the Application Team tasks about its own students. All names and details here are made up.
+// branch giving the Application and Mock Teams tasks about its own students. All names and details here are made up.
 const test = require('node:test');
 const assert = require('node:assert');
 const os = require('node:os');
@@ -11,7 +11,7 @@ const { spawn } = require('node:child_process');
 const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-test('partners: the Manager sees the commission, the teams and branches do not; branches give tasks', { timeout: 120000 }, async (t) => {
+test('partners: the Manager sees the commission, the teams and branches do not, the Follow-up Team not at all; branches give tasks', { timeout: 120000 }, async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-access-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
@@ -35,7 +35,9 @@ test('partners: the Manager sees the commission, the teams and branches do not; 
     const p = person(); await p('POST', '/api/login', { username, password: made.temporaryPassword }); await p('POST', '/api/login/new-password', { password: 'Team-Strong-2026' }); return p;
   };
   const asha = await login('asha', ['application']);
+  const bikram = await login('bikram', ['mock']);
   const chitwan = await login('chitwan', ['chitwan']);
+  const sunita = await login('sunita', ['followup']);
   const chief = await login('chief', [], true);
 
   // A partner university and a B2B partner with a commission, a login and notes (made up).
@@ -46,7 +48,7 @@ test('partners: the Manager sees the commission, the teams and branches do not; 
 
   const SECRET = /15%|Paid in March|Bonus 2%|secret-pass|nieclogin|Rate 10%|example\.org\/commission|"p1"|"u1"/;
   const NO_LOGIN_SECRET = /15%|Paid in March|Bonus 2%|Rate 10%|example\.org\/commission/; // what even the Application Team never gets
-  for (const [who, p] of [['asha', asha], ['chitwan', chitwan]]) {
+  for (const [who, p] of [['asha', asha], ['bikram', bikram], ['chitwan', chitwan]]) {
     const list = await p('GET', '/api/direct');
     assert.strictEqual(list.status, 200, `${who} opens Partner Universities`);
     const one = await p('GET', `/api/direct/${uni.id}`);
@@ -57,20 +59,22 @@ test('partners: the Manager sees the commission, the teams and branches do not; 
     assert.strictEqual(one.json.applyPortal, 'https://apply.example.org/', `${who} sees where to submit`);
     assert.strictEqual(one.json.contacts[0].name, 'Ann Example', `${who} sees the contacts`);
     assert.strictEqual((await p('POST', `/api/direct/${uni.id}`, { name: 'Changed' })).status, 403, `${who} cannot change it`);
-    // The Application Team no longer opens the Partners pages (the owner, 21 Nov 2026); a branch still does.
+    // The Application Team no longer opens the Partners pages (the owner, 21 Nov 2026), nor the Mock Team (the owner, 22 Nov 2026); a branch still does.
     assert.strictEqual((await p('GET', '/partner-universities')).status, who === 'chitwan' ? 200 : 302);
-    assert.strictEqual((await p('GET', '/message-templates')).status, 302, 'Message templates is gone: it leads home');
+    assert.strictEqual((await p('GET', '/message-templates')).status, 302, 'Message templates is gone: it leads to Follow-up');
   }
   // A university, a Partner University or its short form (OIG, OIEG) is never listed on B2B Partners, not even as hidden (the owner, 20 Nov 2026).
   await admin('POST', '/api/direct', { name: 'Oxford International Education Group' });
   for (const n of ['OIG', 'OIEG', 'Leeds Beckett University', 'Made Up Partner']) await admin('POST', '/api/b2b/not-partner', { name: n });
   assert.deepStrictEqual((await admin('GET', '/api/b2b')).json.notPartners, ['Made Up Partner'], 'only a real partner name can be hidden');
-  {
-    const b = await asha('GET', '/api/b2b');
-    assert.strictEqual(b.json.access, 'setup');
-    const seenB = JSON.stringify(b.json) + JSON.stringify((await asha('GET', `/api/b2b/${partner.id}`)).json);
-    assert.ok(!NO_LOGIN_SECRET.test(seenB) && /"applyPassword":"p1"/.test(seenB), 'the Application Team gets the B2B login, not the commission');
-    assert.strictEqual((await asha('GET', '/api/agents')).status, 200);
+  for (const [who, p] of [['asha', asha], ['bikram', bikram]]) {
+    const b = await p('GET', '/api/b2b');
+    assert.strictEqual(b.json.access, who === 'asha' ? 'setup' : 'team');
+    const seenB = JSON.stringify(b.json) + JSON.stringify((await p('GET', `/api/b2b/${partner.id}`)).json);
+    if (who === 'asha') assert.ok(!NO_LOGIN_SECRET.test(seenB) && /"applyPassword":"p1"/.test(seenB), 'the Application Team gets the B2B login, not the commission');
+    else assert.ok(!SECRET.test(seenB), `${who} gets no B2B commission or login`);
+    assert.strictEqual((await p('GET', '/api/agents')).status, 200);
+    if (who === 'bikram') assert.strictEqual((await p('POST', '/api/b2b', { name: 'X' })).status, 403, 'the Mock Team only looks');
   }
   // The Application Team sets B2B partners up (the owner, 15 Nov 2026): it sees the names on the sheet and adds one, but on a partner
   // it changes only the portal link (or email), its username and its password; the name, status, contacts, commission lists and notes
@@ -88,7 +92,7 @@ test('partners: the Manager sees the commission, the teams and branches do not; 
   assert.strictEqual(after.commissions[0].intake, 'Jan Intake 2027', 'the commission list is kept');
   assert.strictEqual(after.notes, before.notes, 'the notes are kept');
   assert.strictEqual((await asha('POST', `/api/b2b/${partner.id}/delete`, {})).status, 403, 'only Admin removes a partner');
-  assert.strictEqual((await chitwan('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 403);
+  assert.strictEqual((await bikram('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 403);
   assert.strictEqual((await asha('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 200, 'the Application Team marks Not a partner');
   // Set up all is gone (the owner, 20 Nov 2026: nothing is added by hand on the partner pages): the names on the sheet stay as they are.
   const sheetBefore = (await asha('GET', '/api/b2b')).json.onSheet;
@@ -98,9 +102,14 @@ test('partners: the Manager sees the commission, the teams and branches do not; 
   assert.strictEqual((await chitwan('GET', '/api/b2b')).status, 403, 'a branch has no B2B Partners');
   assert.strictEqual((await chitwan('GET', '/api/agents')).status, 403, 'a branch has no Agents');
   assert.strictEqual((await chitwan('GET', '/b2b-partners')).status, 302);
+  assert.strictEqual((await sunita('GET', '/api/direct')).status, 403, 'the Follow-up Team has no Partner Universities');
+  assert.strictEqual((await sunita('GET', '/partner-universities')).status, 302);
   // Partners: one menu entry; it opens the first of the three lists the account may see (the owner, 17 Nov 2026).
   assert.strictEqual((await chitwan('GET', '/partners')).location, '/partner-universities', 'a branch lands on Partner Universities');
   assert.strictEqual((await asha('GET', '/partners')).location, '/today', 'the Application Team has no Partners (the owner, 21 Nov 2026)');
+  assert.strictEqual((await bikram('GET', '/partners')).location, '/today', 'the Mock Team has no Partners (the owner, 22 Nov 2026)');
+  assert.ok(!String((await sunita('GET', '/partners')).location).startsWith('/partner'), 'the Follow-up Team is sent home');
+  assert.strictEqual((await sunita('GET', '/message-templates')).status, 302);
   const mgr = (await chief('GET', `/api/direct/${uni.id}`)).json;
   assert.deepStrictEqual([mgr.slabs[0].commission, mgr.paymentTerms, mgr.applyPassword], ['15%', 'Paid in March', undefined], 'the Manager sees the commission, not the login');
   assert.strictEqual((await chief('GET', `/api/b2b/${partner.id}`)).json.commissions[0].intake, 'Jan Intake 2027');
@@ -114,11 +123,11 @@ test('partners: the Manager sees the commission, the teams and branches do not; 
   const sheetId = (await admin('GET', '/api/data')).json.sheets[0].id;
   assert.strictEqual((await admin('POST', `/api/planning/targets/${sheetId}`, { visas: 40, byDate: '2027-01-10', startDate: '2027-01-20' })).status, 200);
 
-  // A branch gives its own student a task for the Application Team, or for Admin (no other team), and removes only its own tasks.
+  // A branch gives its own student a task for the Application or the Mock Team, or for Admin (no other team), and removes only its own tasks.
   const id = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Example', 'CONTACT NUMBER': '9800000002', 'STUDENT SOURCE': 'Chitwan Branch' } })).json.id;
   const card = (await chitwan('GET', `/api/cards/${id}`)).json;
-  assert.deepStrictEqual(card.assignTeams.map((x) => x.id), ['application', 'head']);
-  assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks`, { team: 'mock', text: 'x' })).status, 400, 'the Mock Team no longer exists');
+  assert.deepStrictEqual(card.assignTeams.map((x) => x.id), ['application', 'mock', 'head']);
+  assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks`, { team: 'followup', text: 'x' })).status, 400);
   const given = await chitwan('POST', `/api/cards/${id}/tasks`, { team: 'application', text: 'Submit to Example University' });
   assert.strictEqual(given.status, 200);
   const taskId = given.json.card.tasks[0].id;
@@ -130,14 +139,17 @@ test('partners: the Manager sees the commission, the teams and branches do not; 
   assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200, 'the branch removes the task it gave');
 });
 
-// Only the Application Team and Admin see a portal login (the owner, 15 Nov 2026). The page is told only that a login exists, so it can
-// say "you do not have access".
-test('portal logins: only the Application Team sees them; the removed Mock Team counts for nothing', () => {
-  const { seesLogins, shapeDirect, shapePartner } = require('../student-details/partner-access');
+// The Mock Team never sees a portal login (the owner, 15 Nov 2026: a Mock Team person also given the Application Team's students saw
+// every password). The page is told only that a login exists, so it can say "you do not have access".
+test('portal logins: a Mock Team person never sees them, even with the Application Team ticked too, unless that is their own team', () => {
+  const { seesLogins, partnerAccess, shapeDirect, shapePartner } = require('../student-details/partner-access');
   const person = (departments, taskTeam = '') => ({ role: 'staff', departments, taskTeam });
   assert.strictEqual(seesLogins(person(['application'])), true, 'the Application Team');
-  assert.strictEqual(seesLogins(person(['chitwan'])), false, 'a branch');
-  assert.strictEqual(seesLogins(person(['mock'])), false, 'an account still holding the removed Mock Team');
+  assert.strictEqual(seesLogins(person(['mock'])), false, 'the Mock Team');
+  assert.strictEqual(seesLogins(person(['application', 'mock'])), false, 'in both, no own team chosen');
+  assert.strictEqual(seesLogins(person(['application', 'mock'], 'mock')), false, 'in both, the Mock Team their own');
+  assert.strictEqual(seesLogins(person(['application', 'mock'], 'application')), true, 'in both, the Application Team their own');
+  assert.strictEqual(partnerAccess(person(['application', 'mock'], 'mock')).b2b, 'team', 'and does not set B2B partners up');
   const uni = { name: 'Example University', applyPortal: 'https://apply.example.org', applyUser: 'u1', applyPassword: 'p1', slabs: ['UG 15%'], paymentTerms: 'March' };
   const seen = shapeDirect(uni, 'team', false);
   assert.deepStrictEqual([seen.applyUser, seen.applyPassword, seen.slabs, seen.paymentTerms, seen.loginHidden, seen.applyPortal], [undefined, undefined, undefined, undefined, true, 'https://apply.example.org']);

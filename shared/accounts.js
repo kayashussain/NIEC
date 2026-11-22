@@ -140,13 +140,8 @@ function normalizeUser(raw) {
   if (u.role === 'manager') return { ...u, departments: (u.departments || []).filter((d) => DEPARTMENTS[d]) };
   if (DEPARTMENTS[u.role]) return { ...u, role: 'staff', departments: [u.role] };
   if (u.role === 'staff') return { ...u, departments: (u.departments || []).filter((d) => DEPARTMENTS[d]) };
-  // An old single-team role whose team no longer exists (the Mock and Follow-up Teams were removed, the owner, 22 Nov 2026).
-  if (u.role !== 'admin' && u.role !== 'student') return { ...u, role: 'staff', departments: [] };
   return { ...u, departments: [] };
 }
-// A staff account left with no team (its only team was the Mock or Follow-up Team, removed on 22 Nov 2026) cannot log in until
-// Admin gives it a team on Users: it would otherwise see nothing.
-const teamless = (u) => Boolean(u) && u.role === 'staff' && !(u.departments || []).length;
 
 // What a person can do, in words: "Admin", "Manager", or their teams joined with a plus.
 function accessLabel(u) {
@@ -286,7 +281,7 @@ function createAccounts({
     const s = sessionsMap()[key];
     if (!s || s.expires <= now()) return null;
     const user = findUser(s.userId);
-    if (!user || user.disabled || teamless(user)) return null;
+    if (!user || user.disabled) return null;
     return { key, session: s, user };
   }
   // The person behind a login that was checked earlier (a live update stream): their current account, or null once the
@@ -295,7 +290,7 @@ function createAccounts({
     const s = key && sessionsStore.read().sessions[key];
     if (!s || s.stage !== 'full' || s.expires <= now()) return null;
     const user = findUser(s.userId);
-    return user && !user.disabled && !teamless(user) ? publicUser(user) : null;
+    return user && !user.disabled ? publicUser(user) : null;
   }
   function startSession(req, res, user, stage) {
     const token = crypto.randomBytes(32).toString('hex');
@@ -557,12 +552,6 @@ function createAccounts({
         bad(res, 401, 'Wrong username or password.');
         return true;
       }
-      if (teamless(user)) {
-        unfail(ipFailures, ip); unfail(userFailures, userAtIp); unfail(accountFailures, username);
-        record(req, null, 'Failed login', { note: `account "${user.username}" has no team (its team was removed)` });
-        bad(res, 403, 'Your team was removed. Please ask Admin to give you a team.');
-        return true;
-      }
       unfail(ipFailures, ip);
       unfail(userFailures, userAtIp);
       unfail(accountFailures, username);
@@ -777,7 +766,7 @@ function createAccounts({
   // The enabled account with this username, as the pages see it, or null (the Claude connector sends as this person, NIEC_ADVISOR_SEND_AS).
   const userByUsername = (name) => { const u = users().find((x) => x.username === String(name || '').trim().toLowerCase() || x.username === String(name || '').trim()); return u && !u.disabled ? publicUser(u) : null; };
   // The owner, 20 Nov 2026: the student logins of before (Universities only) are deleted, once. A student's login is now for the
-  // student's own portal (applications and progress), created again by Admin in Users. Every device they were logged in
+  // student's own portal (applications, progress, mock interviews), created again by Admin in Users. Every device they were logged in
   // on is ended. Returns the names removed.
   function removeStudentLogins() {
     const gone = users().filter((u) => u.role === 'student');

@@ -1,13 +1,13 @@
-# Vishnu design brief: how every screen must look, move and feel
+# ISR design brief: how every screen must look, move and feel
 
 The owner's standing instruction (20 Nov 2026). Every change to a page, a card, a window or a style follows this file. CLAUDE.md
-points here, so every session reads it before front-end work. The front end is the product. Vishnu is treated as an Apple product:
+points here, so every session reads it before front-end work. The front end is the product. ISR is treated as an Apple product:
 premium, calm, quiet and exact. The measure is apple.com itself, not "inspired by" it.
 
 ## 0. The prompt (paste this whenever you ask for front-end work)
 
 > You are Apple's own design and web engineering team (the designer, the front-end engineer and the person who signs it off).
-> Build this screen of Vishnu, a premium product, as Apple would ship it on apple.com: calm, quiet, exact, expensive-feeling.
+> Build this screen of ISR, a premium product, as Apple would ship it on apple.com: calm, quiet, exact, expensive-feeling.
 > Read CLAUDE.md and DESIGN.md first and follow them to the letter, especially section 2 (the measured Apple values).
 > - Colour: black #000 and one dark grey #333 for text (the owner's "Strong contrast", 21 Nov 2026); blue (#0071e3 buttons, #0050aa links) only for the one main
 >   action, links and "where you are now". No gradients, no coloured icons, no coloured panels, no glow. A colour appears only
@@ -43,7 +43,7 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 
 ## 2. Fixed values (measured on apple.com, 20 Nov 2026)
 
-| What | Apple's value | In Vishnu |
+| What | Apple's value | In ISR |
 |---|---|---|
 | Body text | 17px, line height 25px (1.47), letter spacing -0.374px (-0.022em), weight 400 | the same |
 | Small text and labels | 14px, line height 20px, letter spacing -0.224px (-0.016em) | the same |
@@ -76,7 +76,6 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   page as built (`html[data-size="large"]`; the owner, 21 Nov 2026: "make the text size large", replacing the earlier 67% default).
   The account menu has **Text size: Small, Medium, Large** (0.67, 0.8, 1, CSS `zoom`), kept in the browser per person (`isrTextSize`);
   it never goes bigger than the page as built.
-  The Application Team's pages open at **Medium** instead (the owner, 22 Nov 2026), unless that person has already picked a size.
   Pages inside the card drawer are not zoomed twice (`data-size="framed"`). Because of the zoom: place any menu or popup with
   `isrPos` (`shared/ui.js`), never with raw `getBoundingClientRect` or `innerWidth`; write a full-height size as
   `calc(100vh / var(--isr-z, 1))` or with `inset`, never plain `100vh`.
@@ -95,15 +94,11 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   links #0050aa; the blue buttons stay #0071e3. This replaces the earlier near-black #111 / #1d1d1f and grey #6e6e73 values above. Screens of work are flat: surfaces meet edge to edge with hairlines, not
   cards floating with margins on every side.
 
-## 1b. The Vishnu colours
+## 1b. The ISR colours
 
-The full table of the accepted colours (page, panels, text, buttons, status and the ten chart colours) is in CLAUDE.md, "The Vishnu
-colours: Peacock Ocean". It is the one source; this file and the code follow it. Since 22 Nov 2026 the whole system is dark Peacock
-Ocean (deep sea page #0b2230, sea panels #13303f, soft light words #dde9ef, the blue to teal peacock gradient on main buttons, the
-Vishnu peacock feather logo at the top of the menu). Where a value below in section 2 names a light colour (#e6e6e6, #f3f3f3, #000, #0071e3),
-read the Peacock Ocean colour for the same use in CLAUDE.md; the sizes, type scale and timings stay as written. The Dashboard is in
-colour (the owner, 21 Nov 2026: "the dashboard can be much more colourful than black and white"); every other page is deep sea,
-light words and the one peacock gradient.
+The full table of the accepted colours (page, panels, text, buttons, status and the ten chart colours) is in CLAUDE.md, "The ISR
+colours". It is the one source; this file and the code follow it. The Dashboard is in colour (the owner, 21 Nov 2026: "the dashboard
+can be much more colourful than black and white"); every other page is black, grey and one blue.
 
 ## 1a. The owner's direction for screens of work (21 Nov 2026)
 
@@ -126,16 +121,16 @@ from the cloud). Measured in a browser:
 - **Almost no colour in text:** black or white (Lusion, Cappen, KPR, Mammut); one accent at most (KPR's lime, Rouser's yellow).
 - **The glide:** things appear on an ease-out-expo curve, a fast start and a long soft stop, over 0.5 to 0.9s
   (Lusion `cubic-bezier(.4, 0, .1, 1)`, Mammut `cubic-bezier(.19, 1, .22, 1)`, 5S `cubic-bezier(.075, .82, .165, 1)`,
-  Cappen `cubic-bezier(.25, 1, .5, 1)`). This is what makes them feel smooth and expensive. Vishnu uses `cubic-bezier(.16, 1, .3, 1)`
+  Cappen `cubic-bezier(.25, 1, .5, 1)`). This is what makes them feel smooth and expensive. ISR uses `cubic-bezier(.16, 1, .3, 1)`
   over 0.5s for things that appear, and Apple's 0.1 to 0.32s for hovers and presses.
 - **Small, exact hover reactions:** an arrow nudges, a line grows, a colour changes; never a big jump.
 - **Lots of space and a strict grid;** text set large and quiet.
-- What Vishnu does **not** take: 3D scenes, loaders, illustration overload, scroll shows. They are for marketing pages; Vishnu is a tool
+- What ISR does **not** take: 3D scenes, loaders, illustration overload, scroll shows. They are for marketing pages; ISR is a tool
   people work in all day, and must stay fast and calm.
 
 ## 3. The motion kit (use it; do not reinvent it)
 
-`shared/motion.js` is loaded on every page by `header.js`. Its styles are the "Vishnu motion kit" section of `shared/theme.css`,
+`shared/motion.js` is loaded on every page by `header.js`. Its styles are the "ISR motion kit" section of `shared/theme.css`,
 set to Apple's timings above.
 
 | Piece | How to use it | What it does |

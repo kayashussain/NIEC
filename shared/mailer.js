@@ -234,9 +234,9 @@ function setupEmail({ name, username, temporaryPassword, access, siteUrl, kind =
   // A student's own login (their own portal) is told what it is for, in a student's words.
   const student = /^Student\b/.test(String(access || ''));
   const intro = kind === 'reset'
-    ? 'Your password for the Vishnu system has been reset. Use the temporary password below to log in and choose a new one.'
+    ? 'Your password for the ISR system has been reset. Use the temporary password below to log in and choose a new one.'
     : student ? 'We have made you a login to your own student portal: see your applications and where you are, and prepare for your interview with the guide for each university you applied to.'
-      : `An account has been created for you on the Vishnu system (${access}).`;
+      : `An account has been created for you on the ISR system (${access}).`;
   const steps = [
     'Open the website and log in with the username and temporary password above.',
     'Choose your own password (at least 10 characters).',
@@ -263,7 +263,7 @@ function setupEmail({ name, username, temporaryPassword, access, siteUrl, kind =
   const html = `<!doctype html><html><body style="margin:0;background:#f3f6fa;padding:24px 12px;font-family:Segoe UI,Arial,sans-serif;color:#1c2126">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;border-top:4px solid #00adef">
-<tr><td style="padding:24px 28px 8px"><div style="font-size:20px;font-weight:800;letter-spacing:-.01em;color:#1a2230">Vishnu</div></td></tr>
+<tr><td style="padding:24px 28px 8px"><div style="font-size:20px;font-weight:800;letter-spacing:-.01em;color:#1a2230">International Student Recruitment</div></td></tr>
 <tr><td style="padding:8px 28px 4px;font-size:15px;line-height:1.5">
 <p style="margin:0 0 12px">Hello ${escapeHtml(name)},</p>
 <p style="margin:0 0 16px">${escapeHtml(intro)}</p>
@@ -280,15 +280,15 @@ ${row('Temporary password', escapeHtml(temporaryPassword), true)}
 ${company ? `<tr><td style="padding:14px 28px 22px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px">${escapeHtml(company)}</td></tr>` : ''}
 </table></td></tr></table></body></html>`;
 
-  return { subject: kind === 'reset' ? 'Your Vishnu password was reset' : 'Set up your Vishnu account', text, html };
+  return { subject: kind === 'reset' ? 'Your ISR password was reset' : 'Set up your ISR account', text, html };
 }
 
 // The message the "send a test email" button sends.
 function testEmail() {
   return {
-    subject: 'Vishnu email test',
-    text: 'This is a test message from the Vishnu system. If you can read it, setup emails will reach people.',
-    html: '<p style="font-family:Segoe UI,Arial,sans-serif">This is a test message from the Vishnu system. If you can read it, setup emails will reach people.</p>',
+    subject: 'ISR email test',
+    text: 'This is a test message from the ISR system. If you can read it, setup emails will reach people.',
+    html: '<p style="font-family:Segoe UI,Arial,sans-serif">This is a test message from the ISR system. If you can read it, setup emails will reach people.</p>',
   };
 }
 
@@ -306,7 +306,7 @@ function loadConfig(dir, env = process.env) {
     user: env.MAIL_USER || file.user || '',
     pass: env.MAIL_PASSWORD || file.pass || '',
     from: String(env.MAIL_FROM || file.from || '').toLowerCase(),
-    fromName: env.MAIL_FROM_NAME || file.fromName || 'Vishnu',
+    fromName: env.MAIL_FROM_NAME || file.fromName || 'ISR',
     siteUrl: String(env.SITE_URL || file.siteUrl || '').replace(/\/+$/, ''),
   };
 }

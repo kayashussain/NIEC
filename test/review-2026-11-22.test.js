@@ -44,11 +44,11 @@ test('review fixes on the real server', { timeout: 120000 }, async (t) => {
   await app('POST', '/api/login', { username: 'asha', password: made.temporaryPassword }); await app('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
   const rowOf = async (rid) => (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === rid);
 
-  // A page closed to the Application Team stays closed by its file's own address too; the removed Follow-up messages answer nobody.
-  for (const page of ['/my-dashboard.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/dashboard.html']) {
+  // A page closed to the Application Team stays closed by its file's own address too, and so do the bulk messages.
+  for (const page of ['/bulk.html', '/my-dashboard.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/dashboard.html']) {
     assert.strictEqual((await app('GET', page)).status, 302, page);
   }
-  assert.notStrictEqual((await app('GET', '/api/bulk/students')).status, 200);
+  assert.strictEqual((await app('GET', '/api/bulk/students')).status, 403);
 
   // Two courses of one university that differ only in brackets are two courses: the partner follows the one chosen.
   const id = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Mira', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000091', 'STUDENT SOURCE': 'Visitor', 'UNIVERSITY NAME': 'Old University', 'COURSE NAME': 'BA Old' } })).json.id;

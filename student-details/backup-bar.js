@@ -40,8 +40,7 @@
 
   const style = el('style');
   style.textContent = `
-    /* 🔴 CSS CHANGED (2026-11-22): the bar shown while looking at a backup | from: pale yellow #fff4d6 with brown words #5c3b00 | to: a deep amber #3a2a0a with gold words #f2c94c, readable on the dark Vishnu page */
-    .backup-bar { flex: 0 0 auto; position: sticky; top: 0; z-index: 50; background: #3a2a0a; color: #f2c94c; border-bottom: 2px solid #e0a100; padding: 10px 16px; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .backup-bar { flex: 0 0 auto; position: sticky; top: 0; z-index: 50; background: #fff4d6; color: #5c3b00; border-bottom: 2px solid #e0a100; padding: 10px 16px; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
     
     .backup-bar .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
     .backup-bar .title { font-size: 15px; }

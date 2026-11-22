@@ -1,6 +1,6 @@
 // The requests behind the portal pages around the sheet: the student card (notes, university options, messages), adding a
 // student from the card form, the course search over the
-// Universities, messages to a student, the B2B partners and the management records of the Dashboard.
+// Universities, Follow-up messages, the B2B partners and the management records of the Dashboard.
 //
 // Who may see or change a student here is decided by the very same rules as on the sheet (shared/teams.js): Admin
 // everything, the Manager every student but view only, a team its own students in the current intake. A student the
@@ -34,6 +34,7 @@ const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER
 function createPortalApi({
   getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, applyThrough = null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
   insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
+  mockTeam = () => null, // Bookings (mock-team-api.js), for the Mock Team's Missing details
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
   // Names compared ignoring case, spaces, punctuation and a part in brackets ("Ulster University (QA)" is "Ulster University").
@@ -110,18 +111,19 @@ function createPortalApi({
   // Who sees every team's tasks (Today's board, the counts, Mark as read): Admin and every Manager, the view-only one too (looking is
   // allowed; only giving, changing and removing a task needs canAssign).
   const seesAllTasks = (user) => Teams.isAdmin(user) || Teams.isManager(user);
-  // A branch gives tasks too, about its own students, to the Application Team (the owner, 14 Nov 2026). Whoever gave
+  // A branch gives tasks too, about its own students, to the Application Team and the Mock Team (the owner, 14 Nov 2026). Whoever gave
   // a task removes it; Admin and the Manager remove any.
   const isBranchUser = (user) => teamsOf(user).some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source);
-  const BRANCH_TASK_TEAMS = ['application'];
+  const BRANCH_TASK_TEAMS = ['application', 'mock'];
   const assignTeamsFor = (user) => {
     if (Teams.isAdmin(user)) return TASK_TEAMS().filter((t) => t.id !== HEAD);
     if (Teams.isReadOnly(user)) return [];
     if (Teams.isManager(user)) return TASK_TEAMS();
-    // A branch gives the Application Team tasks about its students, and Admin.
+    // A branch gives the Application Team and the Mock Team tasks about its students, and Admin.
     if (isBranchUser(user)) return TASK_TEAMS().filter((t) => t.id === HEAD || BRANCH_TASK_TEAMS.includes(t.id));
-    // A team gives tasks to every other team, every branch and Admin, never to its own team (the owner, 15 Nov 2026). "Its own team"
-    // is the team whose tasks come to the person (taskTeamsOf).
+    // A team gives tasks to every other team, every branch and Admin, never to its own team (the owner, 15 Nov 2026: the Mock Team
+    // gives the Application Team, the Follow-up Team, Admin and the branches tasks, not the Mock Team). "Its own team" is the team
+    // whose tasks come to the person (taskTeamsOf).
     const own = taskTeamsOf(user);
     return TASK_TEAMS().filter((t) => !own.includes(t.id));
   };
@@ -129,8 +131,10 @@ function createPortalApi({
   const handTeamsFor = (user) => (Teams.isAdmin(user) || Teams.isManager(user) ? TASK_TEAMS() : assignTeamsFor(user));
   // A task is for this person (their team's, or Admin's own); they gave it; and what is new on it for them (the red dots): the comments
   // the others wrote since they last read it (or since their own last comment), and a task given to them in the last 3 days not read yet.
-  // The teams whose tasks this person gets: their own team (Users, "Their own team"), else every team they are in (the owner,
-  // 15 Nov 2026). A team that nobody has as their own team is not left without anyone: everyone in it gets its tasks.
+  // The teams whose tasks this person gets: their own team (Users, "Their own team"), else every team they are in. A person in
+  // the Application Team who also follows the Mock Team's students is not given the Mock Team's tasks (the owner, 15 Nov 2026).
+  // A team that nobody has as their own team is not left without anyone: everyone in it gets its tasks (the owner, 15 Nov 2026: a task
+  // given to the Mock Team reached nobody when its only member had the Application Team as their own team).
   const ownedTeams = () => {
     const owned = new Set();
     (accounts && accounts.people ? accounts.people() : []).forEach((p) => {
@@ -180,10 +184,15 @@ function createPortalApi({
   const APP_REACH = ['Application Stage', 'Mock Stage'];
   const appReach = (user, found) => Boolean(found) && teamsOf(user).includes('application') && !Teams.isReadOnly(user) && !Teams.isManager(user)
     && APP_REACH.includes(text(found.row[STATUS])) && (() => { const intake = currentIntake(); return Boolean(intake) && found.sheet.id === intake.id; })();
+  // The Follow-up Team keeps seeing, view only, the students of the current intake it sent on or withdrew (the owner, 21 Nov 2026:
+  // "they can open the student card and see the student details"); card.follow.via marks them (server.js, stageTimeline).
+  const followReach = (user, found) => Boolean(found) && teamsOf(user).includes('followup') && !Teams.isReadOnly(user)
+    && Boolean(cards.has(found.row._id) && (cards.get(found.row._id).follow || {}).via) && (() => { const intake = currentIntake(); return Boolean(intake) && found.sheet.id === intake.id; })();
   function canSee(user, found) {
     if (!found) return false;
     if (Teams.isAdmin(user) || Teams.isManager(user)) return true;
     if (appReach(user, found)) return true;
+    if (followReach(user, found)) return true;
     // A team given a task about a student sees that student while the task is open and for 7 days after it is done (to undo a
     // mistaken tick), wherever the student is.
     if (hasTaskFor(user, found.row._id)) return true;
@@ -266,7 +275,7 @@ function createPortalApi({
   const officePicture = () => (signaturePicture ? { data: signaturePicture, type: 'image/png' } : null);
   const inlinePictures = (pic) => (pic ? [{ cid: 'niec-signature', type: pic.type, data: pic.data }] : []);
   const signatureSrc = (preview, pic) => (pic ? (preview ? `data:${pic.type};base64,${pic.data.toString('base64')}` : 'cid:niec-signature') : '');
-  // The mailbox a person sends from: their own (Your setup for sending) or, for Admin only, the office mailbox. A team member who has
+  // The mailbox a person sends from: their own (set up on Follow-up, Your setup for sending) or, for Admin only, the office mailbox. A team member who has
   // not set up their own mailbox cannot email (the owner, 14 Nov 2026). `personal` marks a person's own mailbox.
   function mailFor(user) {
     const own = userMail && user ? userMail.config(user.id) : null;
@@ -275,8 +284,9 @@ function createPortalApi({
     return Teams.isAdmin(user) ? office : null;
   }
   // What a page is told about the sender's mailbox.
-  const mailInfo = (user) => { const cfg = mailFor(user); return { ready: Boolean(cfg), from: cfg ? cfg.from : '', own: !Teams.isAdmin(user) }; };
-  // A team member's email ends with the signature picture they uploaded (the owner, 14 Nov 2026); until they upload one,
+  // The Follow-up Team has no Follow-up page (the owner, 21 Nov 2026): its own email is set up from its list (followup-page.js).
+  const mailInfo = (user) => { const cfg = mailFor(user); return { ready: Boolean(cfg), from: cfg ? cfg.from : '', own: !Teams.isAdmin(user), setUp: Teams.ownTeamFollowup(user) ? '/students#setup' : '/bulk#setup' }; };
+  // A team member's email ends with the signature picture they uploaded on Follow-up (the owner, 14 Nov 2026); until they upload one,
   // with their own name, team and address as text. The office picture carries Admin's name, so it is only for Admin.
   function signatureFor(user, cfg) {
     const sig = messages.signature();
@@ -503,6 +513,9 @@ function createPortalApi({
     'RECEIVING PARTNER': (v) => text(v).slice(0, 120), 'STUDENT ID': (v) => text(v).slice(0, 60), 'NOC NUMBER': (v) => text(v).slice(0, 60),
     NOC: (v) => (['', 'Pending', 'Submitted', 'Received'].includes(text(v)) ? text(v) : null),
     'MEDICAL REPORT': (v) => (['', 'Pending', 'Booked', 'Received'].includes(text(v)) ? text(v) : null),
+    // The Mock interviews card: the Mock Team (and Admin) change it; the Application Team only looks (Teams.canEdit).
+    ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [[`MOCK SCHEDULE ${n}`, (v) => realDay(v)], [`FEEDBACK ${n}`, (v) => text(v).slice(0, 2000)]])),
+    'PRE CAS INTERVIEW': (v) => (['', 'Passed', 'Fail'].includes(text(v)) ? text(v) : null),
   };
   // What each card save replaced, kept for 10 minutes in memory only, so Undo can put back an older value the checks would refuse.
   const replacedOn = new Map(); // rowId -> { col: { value, at } }
@@ -522,7 +535,7 @@ function createPortalApi({
     if (!('UNIVERSITY NAME' in changes)) return changes;
     const uni = text(changes['UNIVERSITY NAME']);
     if (!uni) return changes;
-    // "Direct (<another university>)" written by Vishnu before no longer fits: it is cleared when no partner is known for the new one.
+    // "Direct (<another university>)" written by ISR before no longer fits: it is cleared when no partner is known for the new one.
     const stale = DIRECT_RE.test(text(nowPartner)) && squash(Fields.plainPartner(nowPartner)) !== squash(uni);
     const course = 'COURSE NAME' in changes ? text(changes['COURSE NAME']) : '';
     const opts = ((cards.get(rowId) || {}).options || []).filter((o) => squash(o.university) === squash(uni) && text(o.partner));
@@ -531,7 +544,7 @@ function createPortalApi({
     return { ...changes, 'UNIVERSITY PARTNER': DIRECT_RE.test(text(o.partner)) ? `Direct (${uni})` : text(o.partner) };
   }
   // ---- finishing a task: asked, checked by the team, then written (the owner, 16 Nov 2026) ----
-  // Nothing is filled in by itself any more. When a team marks a task done, the "Mark as done?" window shows what Vishnu already knows
+  // Nothing is filled in by itself any more. When a team marks a task done, the "Mark as done?" window shows what ISR already knows
   // about the student (every application with its days, the sheet's dates) and asks what happened, with no answer chosen in advance
   // and no day filled in. The answers are then shown back as the exact list of what will change ("Offer received: (empty) → 16 Nov
   // 2026", "Stage: CAS Stage → CAS Issued", what stays as it is and why, and anything that does not add up), and only when the team
@@ -543,6 +556,8 @@ function createPortalApi({
   //                days). The sheet takes an application or an offer only for its own university (or when it names none yet) and only
   //                where the column is empty; an offer is never before that university's application.
   //   NOC          Pending (the account is made, not submitted) or Submitted, the NOC number: into NOC and NOC Number.
+  //   Mock         a mock set for a day (the next empty Mock Schedule, and "Write the feedback" waiting for that day), the feedback
+  //                of a mock held (its Feedback column), or the Pre-CAS result (Pre-CAS Interview).
   //   Medical      booked (Medical Report says Booked; the team is given "confirm the report" for that day), the report received, or
   //                not booked yet (a booking that fell through is cleared). Never Received by itself.
   //   Payment      paid on (a day) and how much: Payment Date when empty, the amount in the next empty Tuition Fee Deposit.
@@ -559,7 +574,7 @@ function createPortalApi({
     recordChanges(req, wb, next);
   }
   // The application and offer days live per university on the card (the owner, 17 Nov 2026: a student applies to many). All
-  // Students no longer shows the two columns; they stay in the file and Vishnu keeps them as the first application and the first offer,
+  // Students no longer shows the two columns; they stay in the file and ISR keeps them as the first application and the first offer,
   // so the Dashboard and Incentive count as before. A student with no day on the card keeps what the columns hold;
   // the columns' own university joins the card first, so nothing recorded before is lost.
   function syncApplicationDays(req, rowId) {
@@ -571,7 +586,7 @@ function createPortalApi({
     const uni = text(row['UNIVERSITY NAME']);
     const a0 = isoDate(row['APPLICATION SUBMISSION DATE']) || ''; const o0 = isoDate(row['OFFER RECEIVED DATE']) || '';
     if (uni && (a0 || o0) && !opts.some((o) => squash(o.university) === squash(uni))) {
-      cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students', ...(text(row['UNIVERSITY PARTNER']) ? { partner: text(row['UNIVERSITY PARTNER']) } : {}) }, 'Vishnu'); // the partner too, so it is never lost
+      cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students', ...(text(row['UNIVERSITY PARTNER']) ? { partner: text(row['UNIVERSITY PARTNER']) } : {}) }, 'ISR'); // the partner too, so it is never lost
       opts = cards.get(rowId).options || [];
     }
     // A refused or withdrawn university no longer holds an offer: only standing offers count as the first offer.
@@ -619,7 +634,7 @@ function createPortalApi({
   const shown = (v) => { const t = text(v); if (!t) return '(empty)'; const d = isoDate(t); return d && /^\d{4}-\d{2}-\d{2}$/.test(t) ? niceDay(d) : t; };
   const APP_WHAT = { submitted: 'Applied', conditional: 'Conditional offer', unconditional: 'Unconditional offer', offer: 'Offer', refused: 'Refused', withdrawn: 'Withdrawn', notsubmitted: 'Not submitted' };
   const OFFERS = ['conditional', 'unconditional', 'offer'];
-  // Every application Vishnu knows for a student: University options with a day, and the sheet's own university when it has a date.
+  // Every application ISR knows for a student: University options with a day, and the sheet's own university when it has a date.
   function applicationsOf(row, card) {
     const out = (card.options || []).filter((o) => o.applied || o.offer || o.refused || o.withdrawn || o.skipped)
       .map((o) => ({ id: o.id, university: o.university, course: o.course, applied: o.applied || '', offer: o.offer || '', offerType: o.offerType || '', refused: o.refused || '', withdrawn: o.withdrawn || '', skipped: o.skipped || '', reason: o.reason || '' }));
@@ -644,11 +659,11 @@ function createPortalApi({
     'CAS REQUESTED DATE', 'CAS RECEIVED DATE', 'VISA LODGE DATE', 'VFS ATTENDED DATE', 'VISA RECEIVED DATE'];
   // What must be said when a task is marked done (the owner, 17 Nov 2026: only what the system needs to track the student, so no
   // student is left without a next step, and nothing more):
-  //   1. What happened. A task that records something (an application, a payment, a visa step ...) says it by its answer;
+  //   1. What happened. A task that records something (an application, a mock, a payment, a visa step ...) says it by its answer;
   //      one that records nothing (Documents, Other, or "Nothing to record") needs a few words of what was done.
   //   2. What next. When the student is still on the way (any stage but Visa Issued, Withdrawn, Hold, Defer or Visa Rejected) and this
   //      was their last open task, the team picks the day someone gets back to the student (a task for the same team, waiting for that
-  //      day) or says no follow-up is needed. A task that already makes its own next task (a medical booked) does
+  //      day) or says no follow-up is needed. A task that already makes its own next task (a mock set for a day, a medical booked) does
   //      not ask.
   const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
   const MIN_NOTE = 8; // characters: "Called." is not enough, "Sent the checklist." is
@@ -724,10 +739,11 @@ function createPortalApi({
       assigned: kind === 'offer' || own || task.app || !/^apply\b/i.test(text(task.text)) ? [] : assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
-      medical: card.medical,
+      medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
       // A task for one course, and an Offer request, have simple windows with no follow-up question: the Offer request is made by itself.
       courseTask: own ? { id: own.id, university: own.university, course: own.course, partner: own.partner || '', answered: !assignedOf(card).some((a) => a.id === own.id) } : null,
       offerTask: offerFor,
+      // Mock tasks ask no follow-up day either (the owner, 18 Nov 2026): a mock set makes its own feedback task, and the rest is the team's work.
       stage: text(row[STATUS]), minNote: MIN_NOTE, // (no follow-up question when a task is done: the owner, 18 Nov 2026)
     };
   }
@@ -897,9 +913,42 @@ function createPortalApi({
       const oldNo = text(row['NOC NUMBER']);
       if (number) plan.columns['NOC NUMBER'] = number;
       plan.note = `NOC ${gotIt ? 'received' : 'pending'}${number ? `, NOC number ${number}` : ''}${number && oldNo && oldNo !== number ? ` (was ${oldNo})` : ''}. ${sentence(note)}`.trim();
+    } else if (kind === 'mock' && (f.mock || f.scheduled) && f.mock !== 'none') {
+      // Mock interview (the owner, 15 Nov 2026): a mock set for a day, the feedback of a mock held, or the Pre-CAS result.
+      const what = f.mock || 'set';
+      const slots = [1, 2, 3, 4];
+      if (what === 'set') {
+        const d = day(f.date);
+        if (!d) return { error: 'Choose the day of the mock interview.' };
+        const same = slots.find((n) => realDay(row[`MOCK SCHEDULE ${n}`]) === d);
+        const free = slots.find((n) => !text(row[`MOCK SCHEDULE ${n}`]));
+        const n = same || free;
+        if (n && !same) plan.columns[`MOCK SCHEDULE ${n}`] = d;
+        if (!n) plan.warnings.push('All four mock dates on All Students are already used: this one is kept in the note only.');
+        plan.note = `Mock interview${n ? ` ${n}` : ''} set for ${niceDay(d)}. ${sentence(note)}`.trim();
+        if (f.remind !== false && n) plan.remind = { day: d, text: `Write the feedback of mock interview ${n} (${niceDay(d)})`, tag: 'mock' };
+      } else if (what === 'feedback') {
+        const words = text(f.feedback).slice(0, 1500);
+        if (!words) return { error: 'Write the feedback.' };
+        const n = Number(f.slot) || slots.find((k) => text(row[`MOCK SCHEDULE ${k}`]) && !text(row[`FEEDBACK ${k}`])) || slots.find((k) => !text(row[`FEEDBACK ${k}`]));
+        if (!slots.includes(n)) return { error: 'All four feedback columns are already used.' };
+        const held = realDay(row[`MOCK SCHEDULE ${n}`]);
+        if (held && held > today) return { error: `Mock interview ${n} is set for ${niceDay(held)}: its feedback can be written on that day or after.` };
+        const before = text(row[`FEEDBACK ${n}`]);
+        // A feedback already there is kept, the new words after it.
+        plan.columns[`FEEDBACK ${n}`] = before ? `${before} | ${words}`.slice(0, 2000) : words;
+        if (!text(row[`MOCK SCHEDULE ${n}`])) plan.columns[`MOCK SCHEDULE ${n}`] = today;
+        plan.note = `Feedback of mock interview ${n}: ${sentence(words)} ${sentence(note)}`.trim();
+      } else if (what === 'precas') {
+        if (strict && stageAt >= 0 && stageAt < 2) return { error: `The Pre-CAS result is recorded from Mock Stage on: this student is at ${stageNow}.` };
+        const result = f.result === 'Passed' ? 'Passed' : f.result === 'Fail' ? 'Fail' : '';
+        if (!result) return { error: 'Choose Passed or Fail.' };
+        plan.columns['PRE CAS INTERVIEW'] = result;
+        plan.note = `Pre-CAS interview: ${result}. ${sentence(note)}`.trim();
+      } else return { error: 'Choose what happened.' };
     } else if (kind === 'medical' && f.medical && f.medical !== 'none') {
       const place = text(f.place).slice(0, 200);
-      // The report check Vishnu gives on the day of the test (the owner's team, 18 Nov 2026: "I finish it and it comes back"): "Booked"
+      // The report check ISR gives on the day of the test (the owner's team, 18 Nov 2026: "I finish it and it comes back"): "Booked"
       // for the same day it is already booked for is the same as "not received yet", so no second identical task is ever made.
       const sameBooking = (d) => Boolean(d) && Fields.isReportCheck(task) && (text(task.text).startsWith(`Medical test of ${niceDay(d)}`) || (card.medical && card.medical.date === d));
       if (f.medical === 'waiting') {
@@ -1007,7 +1056,7 @@ function createPortalApi({
     const rowId = found.row._id;
     const card = cards.get(rowId);
     const wrote = { at: new Date().toISOString(), columns: {}, options: [], remind: '', note: '', ...(plan.medical !== undefined ? { medical: card.medical || null } : {}) };
-    // The sheet's Remarks shows the latest progress (the owner, 15 Nov 2026), only when it is empty or still holds Vishnu's own last
+    // The sheet's Remarks shows the latest progress (the owner, 15 Nov 2026), only when it is empty or still holds ISR's own last
     // line: a remark a person typed is never overwritten.
     if (plan.note) {
       // The day once: a note that already starts with it ("On 21 Nov 2026: ...") is not given it a second time.
@@ -1036,7 +1085,7 @@ function createPortalApi({
     // Never a second open task with the same words for the same team (a task finished twice, or two people finishing together).
     const twin = plan.remind && (cards.get(rowId).tasks || []).some((x) => !x.done && x.id !== task.id && x.team === task.team && courseKey(x.text) === courseKey(plan.remind.text));
     if (plan.remind && !twin) {
-      const team = task.team;
+      const team = task.team === HEAD ? (plan.remind.tag === 'mock' ? 'mock' : task.team) : task.team;
       const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: plan.remind.tag, priority: 'high' }, by(req));
       if (!made.error) { wrote.remind = made.task.id; if (plan.remind.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: plan.remind.day, reason: plan.remind.tag === 'medical' ? 'On the day of the medical test' : 'On the day of the mock interview' }, by(req), cards.today()); }
     }
@@ -1090,7 +1139,7 @@ function createPortalApi({
     return { undone, left };
   }
   // ---- details that do not add up (the owner, 16 Nov 2026) ----
-  // Every student is checked for dates out of order and for what Vishnu used to fill in by itself, so the wrong ones can be found and
+  // Every student is checked for dates out of order and for what ISR used to fill in by itself, so the wrong ones can be found and
   // corrected: an offer with no application, an offer before its application, a payment with no offer, the visa steps out of order,
   // a Medical Report marked Received by itself, and offers recorded from a task before answers were checked. A detail someone has
   // checked and said is correct leaves the list until it changes. Each item: { key, text }.
@@ -1116,9 +1165,9 @@ function createPortalApi({
       if (earlier && i > 1) add(`order:${steps[i][0]}:${b}:${earlier[0]}`, `${steps[i][1]} ${niceDay(b)} is before ${earlier[1].toLowerCase()} (${niceDay(earlier[0])}).`);
     }
     if (d('VISA RECEIVED DATE') && !d('VISA LODGE DATE')) add(`visa-no-lodge:${d('VISA RECEIVED DATE')}`, 'Visa received, but no visa lodge date is recorded.');
-    // What Vishnu used to fill in by itself or from unchecked answers, before 16 Nov 2026.
+    // What ISR used to fill in by itself or from unchecked answers, before 16 Nov 2026.
     const notes = card.notes || [];
-    if (text(row['MEDICAL REPORT']) === 'Received' && notes.some((n) => ['Vishnu (automatic)', 'ISR (automatic)'].includes(n.by) && /* notes written before the rename say ISR */ /^Medical report received: the test was on/.test(n.text))) add('auto-medical', 'Medical Report was marked Received by itself on the test day. Confirm the report really came.');
+    if (text(row['MEDICAL REPORT']) === 'Received' && notes.some((n) => n.by === 'ISR (automatic)' && /^Medical report received: the test was on/.test(n.text))) add('auto-medical', 'Medical Report was marked Received by itself on the test day. Confirm the report really came.');
     const fromTask = offer && notes.some((n) => n.at < '2026-11-17' && n.text.startsWith(`Offer received on ${niceDay(offer)}`));
     if (fromTask) add(`task-offer:${offer}`, `Offer received ${niceDay(offer)} was recorded from a task before answers were checked. Confirm the offer really came.`);
     return out;
@@ -1155,53 +1204,42 @@ function createPortalApi({
     return out.status === 200 ? { ok: true } : { error: out.body.error === 'conflict' ? 'The sheet changed at the same moment. Please try again.' : out.body.error, status: out.status };
   }
 
-
-  // The write door for Claude (advisor-write.js; off unless the server sets NIEC_ADVISOR_WRITE_TOKEN and NIEC_ADVISOR_WRITE_AS, the owner,
-  // 22 Nov 2026). It changes a few plain details of ONE student, through setColumns, so the same account rules and the same value checks as
-  // on the student card apply, and it writes the same note on the card. It never does anything else. `apply: false` only shows the change.
-  // `expect`: the values as the preview saw them; if the student changed since, nothing is written.
-  const ADVISOR_COLUMNS = ['FIRST NAME', 'LAST NAME', 'STUDENT ID', 'NOC NUMBER'];
-  function advisorChange(req, { id, changes, expect = null, apply = false }) {
-    const found = typeof id === 'string' && id ? rowIndex().get(id) : null;
-    if (!found) return { error: 'No student with that id.' };
-    const cols = changes && typeof changes === 'object' && !Array.isArray(changes) ? Object.keys(changes) : [];
-    if (!cols.length) return { error: `Give the details to change. This door can change: ${ADVISOR_COLUMNS.join(', ')}.` };
+  // A few columns of one student changed from another page (the window after a mock on Bookings, the owner, 22 Nov 2026): the card's own
+  // checks of each value, the sheet's rules (setColumns) and one note on the card, as when the same is changed with the card's Edit.
+  function writeCardColumns(req, rowId, changes) {
+    const found = rowIndex().get(text(rowId));
+    if (!found) return { error: 'That student is no longer on the sheet.', status: 404 };
     const clean = {};
-    for (const col of cols) {
-      if (!ADVISOR_COLUMNS.includes(col)) return { error: `${col} cannot be changed through this door. It can change: ${ADVISOR_COLUMNS.join(', ')}.` };
-      const v = CARD_EDITABLE[col](changes[col]);
-      if (v === null) return { error: `${col}: that value is not allowed.` };
-      if (!Teams.canEdit(req.user, col, found.row)) return { error: `${col} cannot be changed from the account this door uses.` };
+    for (const [col, value] of Object.entries(changes)) {
+      if (!CARD_EDITABLE[col]) return { error: 'That detail cannot be changed here.', status: 400 };
+      const v = CARD_EDITABLE[col](value);
+      if (v === null) return { error: `${Fields.columnLabel(col)} is not right.`, status: 400 };
       clean[col] = v;
     }
-    const before = Object.fromEntries(cols.map((c) => [c, text(found.row[c])]));
-    if (expect && cols.some((c) => text(expect[c]) !== before[c])) return { error: 'The student changed after the preview. Preview again.' };
-    const diff = cols.filter((c) => clean[c] !== before[c]).map((c) => ({ column: c, before: before[c], after: clean[c] }));
-    if (!diff.length) return { error: 'Nothing would change: the student already has these values.' };
-    const student = `${text(found.row['FIRST NAME'])} ${text(found.row['LAST NAME'])}`.trim();
-    if (!apply) return { id, student, changes: diff, before };
-    const done = setColumns(req, found, Object.fromEntries(diff.map((d) => [d.column, d.after])));
-    if (done.error) return { error: done.error };
-    noteCardChanges(req, id, diff.map((d) => [Fields.columnLabel(d.column), d.before, d.after]));
-    return { id, student, changed: diff };
+    const before = Object.fromEntries(Object.keys(clean).map((col) => [col, text(found.row[col])]));
+    const done = setColumns(req, found, clean);
+    if (done.error) return done;
+    noteCardChanges(req, found.row._id, Object.keys(clean).map((col) => [Fields.columnLabel(col), before[col], clean[col]]));
+    return { ok: true, row: found.row };
   }
-
-
 
   // ---- Today: what needs a person's attention now, for the students this account sees ----
   // The home screen of each kind of account (Teams.kindOf): the same facts, but each team sees the work that is its own, in its own words.
   const WORKSPACES = {
-    admin: { title: 'Everything at a glance', tagline: 'Here is what needs attention across the whole consultancy today.', sections: ['check', 'apply', 'passport', 'noSource', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
-    manager: { title: 'The consultancy at a glance', tagline: 'The numbers and the students waiting, to look at. Open the Dashboard for the full picture.', sections: ['check', 'apply', 'passport', 'noSource', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
+    admin: { title: 'Everything at a glance', tagline: 'Here is what needs attention across the whole consultancy today.', sections: ['check', 'inquiries', 'apply', 'passport', 'noSource', 'mock', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
+    manager: { title: 'The consultancy at a glance', tagline: 'The numbers and the students waiting, to look at. Open the Dashboard for the full picture.', sections: ['check', 'inquiries', 'apply', 'passport', 'noSource', 'mock', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
     application: { title: 'Application Team', tagline: 'Applications to submit, to chase and to complete.', sections: ['check', 'apply', 'passport', 'noUni', 'noOffer', 'offers'], tiles: ['toSubmit', 'waitingOffer', 'applied'] },
-    branch: { title: 'Your branch', tagline: 'Your branch students: what to submit and who is close to a visa.', sections: ['apply', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
-    team: { title: 'Your teams', tagline: 'The work of all your teams in one place.', sections: ['apply', 'offers'], tiles: ['active', 'applied', 'visas'] },
+    mock: { title: 'Mock Team', tagline: 'Mocks to schedule and feedback to write.', sections: ['mock', 'mockFeedback', 'preCas'], tiles: ['atMock', 'toSchedule', 'feedbackMissing'] },
+    followup: { title: 'Follow-up Team', tagline: 'Inquiries that have gone quiet and students who deferred.', sections: ['inquiries', 'noSource', 'defer'], tiles: ['inquiries', 'toFollow', 'deferred'] },
+    branch: { title: 'Your branch', tagline: 'Your branch students: who to call, what to submit and who is close to a visa.', sections: ['inquiries', 'apply', 'mock', 'offers', 'cas'], tiles: ['active', 'applied', 'visas'] },
+    team: { title: 'Your teams', tagline: 'The work of all your teams in one place.', sections: ['inquiries', 'apply', 'mock', 'mockFeedback', 'defer'], tiles: ['active', 'applied', 'visas'] },
   };
   const TILE_LABEL = {
     active: 'Students in progress', applied: 'Applied', visas: 'Visas (every intake)', toSubmit: 'Applications to submit', waitingOffer: 'Waiting for an offer',
+    atMock: 'Students at Mock Stage', toSchedule: 'Mocks to schedule', feedbackMissing: 'Feedback to write', inquiries: 'Open inquiries', toFollow: 'To follow up', deferred: 'Deferred students',
   };
   // The workspace of a person (Today's title and lists, their dashboard): their own team when one is chosen (Users, "Their own
-  // team"), so a person in the Application Team with a branch's access too has the Application Team's Today and dashboard.
+  // team"), so a person in the Application Team with Mock Team access has the Application Team's Today and dashboard.
   const homeKind = (user) => (user && user.taskTeam && teamsOf(user).includes(user.taskTeam) && !Teams.isManager(user) ? Teams.kindOf({ ...user, departments: [user.taskTeam] }) : Teams.kindOf(user));
   // `perList`: how many students each list carries (Today shows 6; the team's Dashboard opens them all with "+N more").
   function todayFor(user, { perList = 6 } = {}) {
@@ -1216,11 +1254,16 @@ function createPortalApi({
       ? { ...WORKSPACES.team, title: own.map((w) => w.title).join(' and '), sections: [...new Set(own.flatMap((w) => w.sections))], tiles: [...new Set(own.flatMap((w) => w.tiles.slice(0, 2)))].slice(0, 3) }
       : (WORKSPACES[kind] || WORKSPACES.team);
     const sections = [
+      { key: 'inquiries', title: 'Inquiries to follow up', hint: 'Never contacted, or the next follow-up date has come', stage: 'Inquiry', rows: [] },
+      { key: 'defer', title: 'Deferred students to check', hint: 'Deferred and not contacted for 14 days', stage: 'Defer', rows: [] },
       { key: 'apply', title: 'Applications to submit', hint: 'At Application Stage, not submitted yet', stage: 'Application Stage', rows: [] },
       { key: 'noSource', title: 'Student source not recorded', hint: 'Add where they came from, so the Dashboard counts them', stage: '', rows: [] },
       { key: 'passport', title: 'Passport details missing', hint: 'Date of birth, passport number or address not added', stage: '', rows: [] },
       { key: 'noUni', title: 'Applications without a university or course', hint: 'At Application Stage: choose where to apply first', stage: 'Application Stage', rows: [] },
       { key: 'noOffer', title: 'Applications waiting for an offer', hint: 'Submitted over 10 days ago, no offer yet: chase the university', stage: '', rows: [] },
+      { key: 'mock', title: 'Mocks to schedule', hint: 'At Mock Stage, no mock date yet', stage: 'Mock Stage', rows: [] },
+      { key: 'mockFeedback', title: 'Feedback to write', hint: 'The interview date has passed and no feedback is recorded', stage: '', rows: [] },
+      { key: 'preCas', title: 'Pre-CAS interview to record', hint: 'All mock feedback is in, the Pre-CAS result is not', stage: '', rows: [] },
       { key: 'offers', title: 'Offers waiting for the deposit', hint: 'Offer received, payment not made', stage: '', rows: [] },
       { key: 'cas', title: 'CAS received, visa not lodged', hint: 'The next step is the visa application', stage: '', rows: [] },
       { key: 'check', title: 'Details to check', hint: 'Dates that do not add up, or filled in before answers were checked: open the card to correct or confirm', stage: '', rows: [] },
@@ -1230,7 +1273,8 @@ function createPortalApi({
     // Missing details (the owner, 21 Nov 2026), the Application Team's own list on Today: every student it can correct whose application,
     // passport or medical details are missing or do not add up, one plain line each, all of them (never cut short). A line leaves by itself
     // once the detail is right.
-    const missing = kind === 'application' ? new Map() : null;
+    // The Mock Team has its own Missing details too (the owner, 22 Nov 2026): feedback not written, a booked mock not answered, no mock yet.
+    const missing = kind === 'application' || kind === 'mock' ? new Map() : null;
     const missOne = (row, sheet, line, extra = {}) => {
       const m = missing.get(row._id) || { id: row._id, name: nameOf(row), stage: text(row[STATUS]), intake: sheet.name, lines: [] };
       if (!m.lines.some((x) => x.text === line)) m.lines.push({ text: line, ...extra });
@@ -1280,6 +1324,7 @@ function createPortalApi({
       if (wrong.length) add('check', wrong.map((c) => c.text).join(' '), wrong.length);
       if (stage === 'Defer') {
         totals.deferred += 1;
+        if (lastDay === null || now - lastDay >= 14) add('defer', lastDay === null ? 'No contact recorded' : `Last contact ${now - lastDay} days ago`, lastDay === null ? 999 : now - lastDay);
         continue;
       }
       if (['Withdrawn', 'Hold', 'Visa Rejected'].includes(stage)) continue;
@@ -1290,6 +1335,10 @@ function createPortalApi({
       const created = dateOf(row['APPLICATION SUBMISSION DATE']);
       if (stage === 'Inquiry') totals.inquiries += 1;
       if (stage === 'Mock Stage') totals.atMock += 1;
+      if (stage === 'Inquiry') {
+        const f = followOf(row, card, now);
+        if (f.state === 'new' || f.state === 'due') add('inquiries', f.state === 'new' ? 'No contact recorded' : f.tries ? `No answer, ${f.tries} ${f.tries === 1 ? 'try' : 'tries'}` : f.next ? `Follow-up due since ${niceDay(f.next.date)}` : 'No follow-up date set', lastDay === null ? 999 : now - lastDay);
+      }
       if (stage === 'Application Stage' && !created) add('apply', text(row['UNIVERSITY NAME']) || 'No university chosen yet', 0);
       // Where the student came from feeds every source figure of the Dashboard: a student without it is asked for (the owner, 14 Nov 2026).
       if (!text(row['STUDENT SOURCE'])) add('noSource', 'No source', 0);
@@ -1301,6 +1350,12 @@ function createPortalApi({
       }
       if (stage === 'Application Stage' && (!text(row['UNIVERSITY NAME']) || !text(row['COURSE NAME']))) add('noUni', !text(row['UNIVERSITY NAME']) ? 'No university chosen' : 'No course chosen', 0);
       if (created && !dateOf(row['OFFER RECEIVED DATE']) && now - dayNo(created) > 10 && ['Application Stage', 'Mock Stage'].includes(stage)) add('noOffer', `Submitted ${now - dayNo(created)} days ago`, now - dayNo(created));
+      if (stage === 'Mock Stage' && ![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`]))) add('mock', text(row['UNIVERSITY NAME']) || 'No university', 0);
+      for (const n of [1, 2, 3, 4]) {
+        const d = dateOf(row[`MOCK SCHEDULE ${n}`]);
+        if (d && dayNo(d) <= now && !text(row[`FEEDBACK ${n}`])) { add('mockFeedback', `Mock ${n} was ${now - dayNo(d)} days ago`, now - dayNo(d)); break; }
+      }
+      if (stage === 'Mock Stage' && [1, 2, 3, 4].some((n) => text(row[`FEEDBACK ${n}`])) && !text(row['PRE CAS INTERVIEW'])) add('preCas', 'Feedback is in', 0);
       const offer = dateOf(row['OFFER RECEIVED DATE']);
       if (offer && !text(row['PAYMENT DATE'])) add('offers', `Offer received ${Math.max(0, now - dayNo(offer))} days ago`, Math.max(0, now - dayNo(offer)));
       const cas = dateOf(row['CAS RECEIVED DATE']);
@@ -1324,7 +1379,34 @@ function createPortalApi({
         if (t) missOne(row, sheet, `The medical test was on ${niceDay(c.medical.date)}, the report is not recorded.`, { taskId: t.id });
       }
     }
-    const counts = { toSubmit: by.apply.rows.length, waitingOffer: by.noOffer.rows.length };
+    // The Mock Team's Missing details: each Mock Stage student it has whose held mock has no feedback, or who has no mock held or booked
+    // yet; and each of the person's own booked mocks whose time is over and not answered (the window on Bookings asks for it).
+    if (missing && kind === 'mock') {
+      const mt = mockTeam();
+      const coming = mt ? mt.comingRows() : new Set();
+      const asked = mt ? mt.unanswered(user) : []; // booked mocks whose time is over, not answered yet
+      asked.forEach((b) => { if (b.rowId) coming.add(b.rowId); });
+      for (const { sheet, row } of visibleStudents(user)) {
+        if (text(row[STATUS]) !== 'Mock Stage') continue;
+        const id = encodeURIComponent(row._id);
+        for (const n of [1, 2, 3, 4]) {
+          const d = dateOf(row[`MOCK SCHEDULE ${n}`]);
+          if (d && d <= today && !text(row[`FEEDBACK ${n}`])) missOne(row, sheet, `Feedback ${n} is missing (Mock ${n} was on ${niceDay(d)}).`, { action: { label: 'Write feedback', href: `/student?id=${id}` } });
+        }
+        if (![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`])) && !coming.has(row._id)) missOne(row, sheet, 'Mock Schedule 1 is missing: no mock held or booked yet.', { action: { label: 'Booking link', href: '/bookings' } });
+      }
+      if (mt) {
+        const rows = rowIndex();
+        asked.forEach((b) => {
+          const hm = b.time.split(':').map(Number);
+          const line = `Did the student join? Not answered (${b.mock ? `Mock ${b.mock}, ` : ''}${niceDay(b.day)}, ${hm[0] % 12 || 12}:${String(hm[1]).padStart(2, '0')} ${hm[0] < 12 ? 'AM' : 'PM'}).`;
+          const found = b.rowId && rows.get(b.rowId);
+          if (found) missOne(found.row, found.sheet, line, { action: { label: 'Answer', href: '/bookings' } });
+          else missing.set(`booking:${b.id}`, { id: '', name: b.name, stage: 'Not matched to a student yet', intake: '', lines: [{ text: line, action: { label: 'Answer', href: '/bookings' } }] });
+        });
+      }
+    }
+    const counts = { toSubmit: by.apply.rows.length, waitingOffer: by.noOffer.rows.length, toSchedule: by.mock.rows.length, feedbackMissing: by.mockFeedback.rows.length, toFollow: by.inquiries.rows.length };
     const value = { ...totals, ...counts };
     return {
       today, name: user.name, totals, kind, title: space.title, tagline: space.tagline,
@@ -1337,7 +1419,7 @@ function createPortalApi({
   }
 
   // ---- My dashboard: each team's own page of how its work is going (Admin and the Manager have the full Dashboard) ----
-  // The figures of the Application Team count the whole current intake (a student the team helped moves on to
+  // The figures of the Application, Mock and Follow-up teams count the whole current intake (a student the team helped moves on to
   // the next stage and leaves its sheet, and the team should still see that it went on); names are only ever those of the students
   // the account sees on its sheet. A branch counts its own students.
   // "This week" is the last 7 days, compared with the 7 days before, so a team sees its own rhythm without any ranking of people.
@@ -1347,6 +1429,18 @@ function createPortalApi({
       kpis: ['toSubmit', 'submitted', 'waitingOffer', 'offers'],
       week: [['APPLICATION SUBMISSION DATE', 'Applications submitted'], ['OFFER RECEIVED DATE', 'Offers received']],
       stages: ['Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'],
+    },
+    mock: {
+      title: 'Mock Team', lead: 'Mock interviews and students getting ready for the Pre-CAS interview.',
+      kpis: ['atMock', 'toSchedule', 'feedbackMissing', 'mocksWeek'],
+      week: [['MOCK', 'Mock interviews held'], ['PAYMENT DATE', 'Moved on to payment']],
+      stages: ['Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'],
+    },
+    followup: {
+      title: 'Follow-up Team', lead: 'Inquiries kept warm and deferred students brought back.',
+      kpis: ['inquiries', 'toFollow', 'contactedWeek', 'deferred'],
+      week: [['CONTACT', 'Students contacted'], ['INQUIRY', 'New inquiries']],
+      stages: ['Inquiry', 'Defer', 'Application Stage', 'Withdrawn'],
     },
     branch: {
       title: 'Your branch', lead: 'Your branch students, from the first inquiry to the visa.',
@@ -1364,6 +1458,9 @@ function createPortalApi({
   const MY_KPI = {
     toSubmit: ['Applications to submit', 'At Application Stage, not submitted yet'], submitted: ['Applied', 'In this intake'],
     waitingOffer: ['Waiting for an offer', 'Submitted over 10 days ago'], offers: ['Offers', 'In this intake'],
+    atMock: ['At Mock Stage', 'Students with you now'], toSchedule: ['Mocks to schedule', 'No mock date yet'], feedbackMissing: ['Feedback to write', 'The mock date has passed'],
+    mocksWeek: ['Mocks this week', 'Held in the last 7 days'], inquiries: ['Open inquiries', 'At Inquiry now'], toFollow: ['To follow up', 'The next follow-up date has come'],
+    contactedWeek: ['Contacted this week', 'A note or a message in 7 days'], deferred: ['Deferred students', 'To bring back'],
     active: ['Students in progress', 'Not left, no visa yet'], visas: ['Visas', 'In this intake'],
   };
   // A person in several teams (and no own team chosen) sees only what their teams do, put together: each team's own figures, the
@@ -1390,7 +1487,7 @@ function createPortalApi({
     const t = todayFor(user, { perList: 200 });
     const counts = Object.fromEntries(t.sections.map((x) => [x.key, x.count]));
     const students = visibleStudents(user);
-    const v = { ...t.totals, toSubmit: counts.apply || 0, waitingOffer: counts.noOffer || 0, submitted: 0, offers: 0, visas: 0, contactedWeek: 0 };
+    const v = { ...t.totals, toSubmit: counts.apply || 0, waitingOffer: counts.noOffer || 0, toSchedule: counts.mock || 0, feedbackMissing: counts.mockFeedback || 0, toFollow: counts.inquiries || 0, submitted: 0, offers: 0, visas: 0, mocksWeek: 0, contactedWeek: 0 };
     // Per day of the last 14: how many of each "done" thing happened.
     const weekNow = {}; const weekBefore = {};
     const bump = (key, iso) => {
@@ -1403,7 +1500,7 @@ function createPortalApi({
     const wins = []; const upcoming = [];
     const seen = new Set(students.map((x) => x.row._id));
     const intakeSheet = currentIntake();
-    const scope = ['application', 'team'].includes(kind) && intakeSheet
+    const scope = ['application', 'mock', 'followup', 'team'].includes(kind) && intakeSheet
       ? intakeSheet.rows.filter((r) => r && r._id && isStudent(r)).map((row) => ({ sheet: intakeSheet, row })) : students;
     for (const { sheet, row } of scope) {
       const mineToName = seen.has(row._id);
@@ -1414,6 +1511,14 @@ function createPortalApi({
       if (isoDate(row['OFFER RECEIVED DATE'])) v.offers += 1;
       if (stage === 'Visa Issued' || isoDate(row['VISA RECEIVED DATE'])) v.visas += 1;
       ['APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE', 'PAYMENT DATE', 'VISA RECEIVED DATE', 'CAS RECEIVED DATE'].forEach((c) => bump(c, isoDate(row[c])));
+      [1, 2, 3, 4].forEach((n) => {
+        const d = isoDate(row[`MOCK SCHEDULE ${n}`]);
+        if (!d) return;
+        bump('MOCK', d);
+        if (now - dayNo(d) >= 0 && now - dayNo(d) < 7) v.mocksWeek += 1;
+        const ahead = dayNo(d) - now;
+        if (mineToName && ahead >= 0 && ahead <= 7 && !text(row[`FEEDBACK ${n}`])) upcoming.push({ id: row._id, name: nameOf(row), date: d, what: `Mock interview ${n}`, stage });
+      });
       const lt = isoDate(row['LANGUAGE TEST DATE']);
       if (mineToName && lt && dayNo(lt) - now >= 0 && dayNo(lt) - now <= 7) upcoming.push({ id: row._id, name: nameOf(row), date: lt, what: 'English test', stage });
       bump('INQUIRY', isoDate(card.profile && card.profile.inquiryDate));
@@ -1695,7 +1800,7 @@ function createPortalApi({
             // No follow-up question is asked when a task is done (the owner, 18 Nov 2026: it is removed from every kind of task). A next day is
             // made only when one is given on purpose: the Offer request that is not answered yet ("ask the university again on ...").
             const wantsStep = f.waiting === true || (f.next !== undefined && f.next !== '' && f.next !== 'none');
-            if (wantsStep && !(plan0 && plan0.remind) && f.medical !== 'booked') {
+            if (wantsStep && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
               step = nextStepOf(f, task);
               if (step && step.error) { sendJSON(res, 400, { error: step.error }); return true; }
               if (f.waiting === true && !step) { sendJSON(res, 400, { error: 'Choose the day to check for the offer letter again.' }); return true; }
@@ -1763,10 +1868,10 @@ function createPortalApi({
       out = cards.removeNote(rowId, sub, by(req), Teams.isAdmin(req.user));
       if (!out.error) note(req, [`${who}: removed a note`]);
     } else if (part === 'notes' && !sub) {
-      // A note may carry the next follow-up date (Events and marketing asks for it).
+      // A note may carry the next follow-up date (Events and marketing asks for it, the same rule as the follow-up list).
       const next = text(body.next);
       if (next && (!realDay(next) || next <= cards.today())) { sendJSON(res, 400, { error: 'The next follow-up date is after today.' }); return true; } // a real day ("2099-99-99" is not)
-      // The stage lines and "no answer" lines are written by Vishnu itself: a person's note is always a note.
+      // The stage lines and "no answer" lines are written by ISR itself (server.js, followAction): a person's note is always a note.
       out = cards.addNote(rowId, { text: body.text, kind: ['stage', 'try'].includes(text(body.kind)) ? 'note' : body.kind }, by(req));
       if (!out.error && next) cards.setFollow(rowId, { next: { date: next, by: by(req), at: out.note.at } }, by(req));
       if (!out.error) note(req, [`${who}: added a note${next ? `, next follow-up ${niceDay(next)}` : ''}`]);
@@ -1797,8 +1902,8 @@ function createPortalApi({
           const opts = card.options || [];
           if (!opts.some((o) => o.applied || o.offer)) { // a legacy student: the days are the old university's
             const own = opts.find((o) => squash(o.university) === squash(oldUni) && (!oldCourse || !o.course || squash(o.course) === squash(oldCourse))) || opts.find((o) => squash(o.university) === squash(oldUni));
-            if (!own) cards.addOption(rowId, { university: oldUni, course: oldCourse, applied: a0, offer: o0, note: 'From All Students', ...(text(found.row['UNIVERSITY PARTNER']) ? { partner: text(found.row['UNIVERSITY PARTNER']) } : {}) }, 'Vishnu');
-            else cards.updateOption(rowId, own.id, { ...(a0 && !own.applied ? { applied: a0 } : {}), ...(o0 && !own.offer && !own.refused && !own.withdrawn ? { offer: o0 } : {}) }, 'Vishnu');
+            if (!own) cards.addOption(rowId, { university: oldUni, course: oldCourse, applied: a0, offer: o0, note: 'From All Students', ...(text(found.row['UNIVERSITY PARTNER']) ? { partner: text(found.row['UNIVERSITY PARTNER']) } : {}) }, 'ISR');
+            else cards.updateOption(rowId, own.id, { ...(a0 && !own.applied ? { applied: a0 } : {}), ...(o0 && !own.offer && !own.refused && !own.withdrawn ? { offer: o0 } : {}) }, 'ISR');
           }
         }
       }
@@ -1958,12 +2063,12 @@ function createPortalApi({
       const sameEmail = Boolean(dup && fields.EMAIL && text(dup.EMAIL).toLowerCase() === fields.EMAIL);
       const maybeOther = Boolean(dup && (sameName || (!sameEmail && otherPerson([fields['FIRST NAME'], fields['LAST NAME']].join(' '), nameOf(dup)))));
       if (dup && !(body.allowDuplicate && maybeOther)) {
-        // The student is already in Vishnu: nobody is added twice. Someone who may see that student is told who it is, and can fill in
+        // The student is already in ISR: nobody is added twice. Someone who may see that student is told who it is, and can fill in
         // what is missing on them instead (see /api/students/merge).
         const found = rowIndex().get(dup._id);
         const seen = found && canSee(req.user, found);
         return { status: 409, json: {
-          error: sameName ? `${(seen && nameOf(dup)) || 'A student'} with this exact name is already in Vishnu. If this is a different person, add them anyway.` : maybeOther ? `${(seen && nameOf(dup)) || 'A student'} is already in Vishnu with this phone number, under another name. If this is a different person, add them anyway.` : `${(seen && nameOf(dup)) || 'A student'} is already in Vishnu with this email or phone number, so nobody was added.`,
+          error: sameName ? `${(seen && nameOf(dup)) || 'A student'} with this exact name is already in ISR. If this is a different person, add them anyway.` : maybeOther ? `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this phone number, under another name. If this is a different person, add them anyway.` : `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this email or phone number, so nobody was added.`,
           duplicate: seen ? { id: dup._id, name: nameOf(dup), intake: found.sheet.name, stage: text(dup[STATUS]), source: text(dup['STUDENT SOURCE']), canFill: canChange(req.user, found), maybeOther, sameName } : (maybeOther ? { maybeOther, sameName } : null),
         } };
       }
@@ -2008,7 +2113,7 @@ function createPortalApi({
     return { status: 200, json: { ok: true, id: rowId, sheetId: sheet.id, revision: getWorkbook().revision } };
   }
 
-  // A student already in Vishnu, with what was typed for them again (Add student found them by email or phone): only what is blank on
+  // A student already in ISR, with what was typed for them again (Add student found them by email or phone): only what is blank on
   // them is filled in, never what is already there (the email an application went out with stays). The source is tagged if none was
   // recorded. Anything that differs (another email or phone) is kept in a note on the card, so nothing is lost and nothing is replaced.
   async function handleMerge(req, res) {
@@ -2104,13 +2209,13 @@ function createPortalApi({
   //   new: added to the chosen intake at Inquiry, Student Source "Events", tagged with the event;
   //   link: already on the sheet (same phone or email, any intake) and in no event yet: tagged with this event, the earlier source is
   //         kept in the remarks and a note says so on the card (the team may have added the student before the campaign was entered);
-  //   update: already in Vishnu, and the list knows more (an inquiry day or time, an email, comments ...): what is new is added (newsFor);
+  //   update: already in ISR, and the list knows more (an inquiry day or time, an email, comments ...): what is new is added (newsFor);
   //   already: already tagged with this event and nothing new (uploading the same list twice changes nothing);
   //   other: already tagged with another event, nothing new: left as it is and listed, so Admin decides on the card (never moved);
   //   problem: no name, or neither a phone nor an email (a student who cannot be matched later is not added).
   // { preview: true } only sorts the lines; without it the new and link lines are carried out.
   const digitsOf = (v) => text(v).replace(/\D/g, '');
-  // What a line of a list adds to a student already in Vishnu (the owner, 14 Nov 2026: the more we know, the better, and an updated list
+  // What a line of a list adds to a student already in ISR (the owner, 14 Nov 2026: the more we know, the better, and an updated list
   // must never be stopped because the student is already there). Only what is new is taken, and nothing on the sheet is replaced:
   //   a blank email or phone is filled in; a different one is kept in a note (an application may have gone out with the old one);
   //   the first inquiry day is the earliest one known, so an earlier day from the list replaces a later one (a student added before
@@ -2152,7 +2257,7 @@ function createPortalApi({
     const plan = planning.all();
     const label = eventLabel(ev.name, ev.date);
     const all = cards.all();
-    // Every student in Vishnu by phone (its last 10 digits) and by email, all of them (two students can share one by mistake).
+    // Every student in ISR by phone (its last 10 digits) and by email, all of them (two students can share one by mistake).
     const byPhone = new Map(); const byEmail = new Map();
     const put = (map, k, v) => { if (!map.has(k)) map.set(k, []); map.get(k).push(v); };
     for (const { sheet, row } of rowIndex().values()) {
@@ -2231,10 +2336,10 @@ function createPortalApi({
       ((email && byEmail.get(email)) || []).forEach((m) => ids.set(m.row._id, { ...m, how: 'email' }));
       ((d.length >= 7 && byPhone.get(d)) || []).forEach((m) => { if (!ids.has(m.row._id)) ids.set(m.row._id, { ...m, how: 'phone' }); });
       const matches = [...ids.values()];
-      // More than one student in Vishnu fits (the phone is one student's, the email another's, or two students share a number): a person
+      // More than one student in ISR fits (the phone is one student's, the email another's, or two students share a number): a person
       // must decide, so nothing is changed on any of them.
       if (matches.length > 1) {
-        out.push({ ...line, id: matches[0].row._id, action: 'check', note: `Fits ${matches.length} students in Vishnu: ${matches.map((m) => `${nameOf(m.row) || 'no name'} (${m.how}, ${m.sheet.name})`).join(', ')}. Nothing changed: check them on their cards.` });
+        out.push({ ...line, id: matches[0].row._id, action: 'check', note: `Fits ${matches.length} students in ISR: ${matches.map((m) => `${nameOf(m.row) || 'no name'} (${m.how}, ${m.sheet.name})`).join(', ')}. Nothing changed: check them on their cards.` });
         continue;
       }
       if (!matches.length) {
@@ -2320,7 +2425,7 @@ function createPortalApi({
   //            Inquiry, with no university, no application date, no task, no university option, no message sent and no note from a
   //            person (the list's own notes do not count). Its row and its card go, so the next list adds it again as new.
   //   kept (worked on): added by this list, but someone has worked on the student since: never removed here; listed with the reason.
-  //   kept (in Vishnu before): linked by the list but in Vishnu before it: stays as it is.
+  //   kept (in ISR before): linked by the list but in ISR before it: stays as it is.
   // { preview: true } only lists them. Before anything is removed, a copy of everything is saved (Admin, Restore, a "manual" copy).
   const LIST_NOTE = /^([EI]nquiry from .*, from its [ei]nquiry list|More from the list of |From the updated list of |Linked to .* from its [ei]nquiry list|(Changed|Undone) on the student card: )/; // "Enquiry" in notes written before 14 Nov 2026
   // A note a card change writes by itself ("Changed on the student card: ...", the owner, 22 Nov 2026) is a record, not a contact either.
@@ -2344,7 +2449,7 @@ function createPortalApi({
       if (!e || e.id !== ev.id) continue;
       const who = { id: row._id, name: nameOf(row) || 'Student with no name', intake: sheet.name, stage: text(row[STATUS]) };
       const byList = card.profile.fromList === ev.id || (card.notes || []).some((n) => [`Enquiry from ${ev.name}, from its enquiry list`, `Inquiry from ${ev.name}, from its inquiry list`].some((x) => String(n.text || '').startsWith(x)));
-      if (!byList) { before.push({ ...who, why: 'In Vishnu before the list: stays' }); continue; }
+      if (!byList) { before.push({ ...who, why: 'In ISR before the list: stays' }); continue; }
       const why = [];
       if (who.stage && who.stage !== 'Inquiry') why.push(`now at ${who.stage}`);
       if (text(row['UNIVERSITY NAME']) || isoDate(row['APPLICATION SUBMISSION DATE'])) why.push('has a university or an application');
@@ -2373,7 +2478,7 @@ function createPortalApi({
     try { writeWorkbook(next, req.user && req.user.id); } catch (e) { console.error('[remove list]', e); return { status: 500, json: { error: 'save failed' } }; }
     recordChanges(req, wb, next);
     cards.forget([...gone]);
-    note(req, [`${ev.name}: removed the ${gone.size} student${gone.size === 1 ? '' : 's'} its list had added (${worked.length} worked on and ${before.length} in Vishnu before were kept)${copy ? `; a copy was saved first (${copy})` : ''}`], 'Removed an event list');
+    note(req, [`${ev.name}: removed the ${gone.size} student${gone.size === 1 ? '' : 's'} its list had added (${worked.length} worked on and ${before.length} in ISR before were kept)${copy ? `; a copy was saved first (${copy})` : ''}`], 'Removed an event list');
     return { status: 200, json: { done: true, removed: gone.size, copy, ...lists } };
   }
 
@@ -2503,6 +2608,108 @@ function createPortalApi({
       places: { lives, home, none: noPlace }, ages, noAge,
     };
   }
+  // ---- the follow-up list (the owner, 21 Nov 2026): the Follow-up Team's All Students ----
+  // The students of the current intake the team works on (Inquiry and Defer), and the ones it sent on to the Application Team or
+  // withdrew (view only), each with where it stands (followOf), the last thing said, the next follow-up date and the tag.
+  const followTeam = (user) => Teams.isAdmin(user) || (teamsOf(user).includes('followup') && !Teams.isReadOnly(user));
+  const LATER = ['Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected', 'Hold'];
+  function followList(user) {
+    const intake = currentIntake();
+    if (!intake) return { intake: '', students: [] };
+    const all = cards.all();
+    const todayNo = todayNumber();
+    const out = [];
+    intake.rows.forEach((row, i) => {
+      if (!row || !row._id || !isStudent(row)) return;
+      const found = { sheet: intake, row };
+      const stage = text(row[STATUS]);
+      const card = all[row._id] || { notes: [], messages: [], options: [], profile: {}, follow: {} };
+      const fo = card.follow || {};
+      const ours = ['Inquiry', 'Defer'].includes(stage) && (Teams.isAdmin(user) || Teams.seesRow(user, row));
+      if (!ours && !fo.via) return;
+      const f = followOf(row, card, todayNo);
+      let state;
+      if (stage === 'Withdrawn') state = 'out';
+      else if (stage === 'Defer') state = 'defer';
+      else if (!ours) state = text(row['APPLICATION SUBMISSION DATE']) || LATER.includes(stage) || (card.options || []).some((o) => o.applied) ? 'applying' : 'sent';
+      else if ((f.state === 'new' || f.state === 'due') && f.triedToday) state = 'tried';
+      else state = f.state;
+      if (!['new', 'due', 'tried', 'ok', 'defer', 'sent', 'applying', 'out'].includes(state)) return;
+      let words = f.last ? `${f.last.what === 'note' ? '' : `${f.last.what}: `}${text(f.last.text) || 'sent'}` : '';
+      if (state === 'out') words = text(card.profile && card.profile.lostReason) ? `Why: ${text(card.profile.lostReason)}` : words;
+      if (state === 'sent') { const n = (card.options || []).filter((o) => o.sent && !o.applied && !o.refused && !o.withdrawn && !o.skipped).length; words = `${n || 'The'} course${n === 1 ? '' : 's'} with the Application Team, not submitted yet`; }
+      if (state === 'applying') { const a = (card.options || []).filter((o) => o.applied).sort((x, y) => String(y.applied).localeCompare(String(x.applied)))[0]; words = stage !== 'Application Stage' ? `Now at ${stage}` : a ? `Submitted on ${niceDay(a.applied)} to ${a.university}` : 'Application submitted'; }
+      const live = ['new', 'due', 'tried', 'ok', 'defer'].includes(state);
+      out.push({
+        no: i + 1, id: row._id, name: nameOf(row), phone: text(row['CONTACT NUMBER']), stage, remarks: text(row.REMARKS).slice(0, 300),
+        tag: fo.tag || '', from: fo.from || '', state, tries: f.tries,
+        last: f.last ? { at: f.last.at, by: text(f.last.by), what: f.last.what } : null, words: String(words).slice(0, 300),
+        next: f.next ? { date: f.next.date, by: f.next.by } : null,
+        canNote: live ? canChange(user, found) : state === 'out' && followTeam(user), canTag: live && canChange(user, found),
+      });
+    });
+    return { intake: intake.name, today: cards.today(), students: out, tags: Fields.FOLLOW_TAGS, reasons: Fields.LOST_REASONS };
+  }
+
+  // One action from the follow-up list on one student. Every note needs what the student said; a saved note also needs the next
+  // follow-up date; Defer needs only the words (the stage moves to Defer); Withdrawn needs the words and a reason (the stage moves to
+  // Withdrawn). A call with no answer is written as such and never counts as speaking to the student.
+  function followAction(req, rowId, body) {
+    const user = req.user;
+    if (!followTeam(user)) return { status: 403, json: { error: 'The follow-up list is for the Follow-up Team.' } };
+    const found = rowIndex().get(rowId);
+    const item = found && followList(user).students.find((x) => x.id === rowId);
+    if (!item) return { status: 404, json: { error: 'No such student, or the student is not in your list.' } };
+    const action = text(body.action);
+    const words = text(body.text).replace(/\s+\n/g, '\n').slice(0, 2000);
+    const who = by(req);
+    const name = item.name || 'the student';
+    if (action === 'tag') {
+      if (!item.canTag) return { status: 403, json: { error: 'This student cannot be changed from your account.' } };
+      const tag = text(body.tag);
+      if (tag && !Fields.FOLLOW_TAGS.some((t) => t.key === tag)) return { status: 400, json: { error: 'Choose Interested, Decision Making or Cold.' } };
+      cards.setFollow(rowId, { tag: tag || null }, who);
+      note(req, [`${name}: tag ${tag ? `set to ${tag}` : 'cleared'}`], 'Edited student card', 'Follow-up');
+      return { status: 200, json: { ok: true } };
+    }
+    if (!item.canNote) return { status: 403, json: { error: 'This student cannot be changed from your account.' } };
+    if (action === 'try') {
+      if (!['new', 'due', 'ok'].includes(item.state)) return { status: 400, json: { error: 'Only a student to follow up can be marked as not answering.' } };
+      cards.addNote(rowId, { kind: 'try', text: 'Called, no answer' }, who);
+      return { status: 200, json: { ok: true } };
+    }
+    if (!words) return { status: 400, json: { error: 'Write what the student said.', field: 'text' } };
+    if (action === 'note-only') { // a withdrawn student: only a word on the card
+      if (item.state !== 'out') return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
+      const n = cards.addNote(rowId, { kind: 'call', text: words }, who);
+      return n.error ? { status: 400, json: { error: n.error } } : { status: 200, json: { ok: true } };
+    }
+    if (action === 'note') {
+      const date = text(body.next);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00Z'))) return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
+      if (date <= cards.today()) return { status: 400, json: { error: 'The next follow-up date is after today.', field: 'next' } };
+      const n = cards.addNote(rowId, { kind: 'call', text: words }, who);
+      if (n.error) return { status: 400, json: { error: n.error } };
+      cards.setFollow(rowId, { next: { date, by: who, at: n.note.at } }, who);
+      note(req, [`${name}: follow-up note, next follow-up ${niceDay(date)}`], 'Edited student card', 'Follow-up');
+      return { status: 200, json: { ok: true } };
+    }
+    if (action === 'defer' || action === 'withdraw') {
+      const to = action === 'defer' ? 'Defer' : 'Withdrawn';
+      const reason = text(body.reason);
+      if (to === 'Withdrawn' && !Fields.LOST_REASONS.includes(reason)) return { status: 400, json: { error: 'Choose a reason.', field: 'reason' } };
+      if (item.stage === to) return { status: 400, json: { error: `${name} is already at ${to}.` } };
+      const move = Teams.checkMove(user, found.row, to);
+      if (!move.ok) return { status: 403, json: { error: move.message || `Your team cannot move this student to ${to}.` } };
+      const n = cards.addNote(rowId, { kind: 'call', text: words }, who);
+      if (n.error) return { status: 400, json: { error: n.error } };
+      if (to === 'Withdrawn') { cards.setProfile(rowId, { lostReason: reason }, who); cards.setFollow(rowId, { via: 'withdrawn', viaBy: who, viaAt: new Date().toISOString(), next: null }, who); } else cards.setFollow(rowId, { next: null }, who);
+      try { writeColumnsFor(req, rowId, { [STATUS]: to }); } catch (e) { console.error('[follow-up move]', e); return { status: 500, json: { error: 'save failed' } }; }
+      return { status: 200, json: { ok: true } };
+    }
+    return { status: 400, json: { error: 'Unknown action.' } };
+  }
+
   function eventTags(user) {
     const plan = planning.all();
     const all = cards.all();
@@ -2683,7 +2890,7 @@ function createPortalApi({
     }
     return handlePartnerStore(req, res, urlPath, { store: agents, prefix: 'agents', label: 'Agents', kind: 'agents' }); }
   async function handlePartnerStore(req, res, urlPath, { store: b2b, prefix, label, kind }) {
-    // Admin changes the list; the Manager (with the commission) and the Application Team (without it) look at it.
+    // Admin changes the list; the Manager (with the commission) and the Application and Mock Teams (without it) look at it.
     const level = partnerAccess(req.user)[kind];
     const reading = req.method === 'GET' && !/\/delete$/.test(urlPath);
     // 'setup' (the Application Team on B2B Partners): changes an existing partner's details, never its files, never removes it, and never
@@ -2863,11 +3070,57 @@ function createPortalApi({
     return true;
   }
 
-  // One message to many students by email: how each one looks (preview), or each one sent from the sender's own mailbox with their
-  // signature and logged on the student's card. Used by the Claude connector (advisor-mcp.js, only when NIEC_ADVISOR_SEND_AS names
-  // the sender); the Follow-up page was removed (the owner, 22 Nov 2026).
-  // `req` needs `user` and `headers` (for the activity record).
+  // ---- sending one message to many students (email or WhatsApp) ----
   const bulkSends = new Map();
+  async function handleBulk(req, res, urlPath) {
+    if (req.method === 'GET' && urlPath === '/api/bulk/students') {
+      const params = new URL(req.url, 'http://x').searchParams;
+      const sheet = text(params.get('sheet'));
+      const stage = text(params.get('stage'));
+      const list = [];
+      const plan = planning.all();
+      const all = cards.all();
+      for (const { sheet: sh, row } of visibleStudents(req.user)) {
+        if (!canChange(req.user, rowIndex().get(row._id))) continue;
+        const b = brief(sh, row);
+        if (sheet && sh.id !== sheet) continue;
+        if (stage && b.stage !== stage) continue;
+        // The source too, so the follow-up can be only the Visitor students, or only the leads of one campaign (the owner, 14 Nov 2026).
+        const [source, sourceDetail] = sourceOf(row, all[row._id], plan);
+        list.push({ id: b.id, name: b.name, stage: b.stage, intake: b.intake, sheetId: sh.id, email: b.email, phone: b.phone, whatsapp: Boolean(Fields.whatsappNumber(b.phone)), source, sourceDetail });
+        if (list.length >= 1000) break;
+      }
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      sendJSON(res, 200, { students: list, ...(() => { const l = cardLists(req.user); return { intakes: l.intakes, stages: l.stages }; })(), mail: mailInfo(req.user) });
+      return true;
+    }
+    if (req.method !== 'POST' || !/^\/api\/bulk\/(preview|send-email)$/.test(urlPath)) { send(res, 404, 'Not found'); return true; }
+    if (urlPath === '/api/bulk/send-email' && Teams.isReadOnly(req.user)) { sendJSON(res, 403, { error: 'Your account can only view students.' }); return true; }
+    const body = await bodyOf(req, res, 512 * 1024);
+    if (!body) return true;
+    const ids = [...new Set(Array.isArray(body.ids) ? body.ids.map(String) : [])].filter((i) => ROW_ID.test(i));
+    // 150 at a time: more is refused with a clear message, never half sent and described as "every chosen student".
+    if (ids.length > 150) { sendJSON(res, 400, { error: `${ids.length} students are chosen: at most 150 can be emailed at a time. Untick some and send the rest afterwards.` }); return true; }
+    if (!ids.length) { sendJSON(res, 400, { error: 'Choose at least one student.' }); return true; }
+    const subject = typeof body.subject === 'string' ? body.subject : '';
+    const emailBody = typeof body.body === 'string' ? body.body : '';
+    const whatsappBody = typeof body.whatsapp === 'string' ? body.whatsapp : '';
+    // A {word} that is not one of ours (a typing slip such as {frist_name}) would reach every student as typed: refuse it first.
+    { const bad = Messages.badPlaceholder(subject, emailBody, whatsappBody); if (bad) { sendJSON(res, 400, { error: bad }); return true; } }
+    const preview = urlPath.endsWith('preview');
+    const out = await followUp(req, { ids, subject, emailBody, whatsappBody, preview });
+    if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
+    const { items, sendOut, signed } = out;
+    // The sender's signature picture once (not in every item), so Check and send shows the email as the student sees it.
+    if (preview) { sendJSON(res, 200, { items, mail: mailInfo(req.user), signature: signatureSrc(true, signed.picture) }); return true; }
+    note(req, [`Bulk email "${subject}": ${sendOut.filter((r) => r.status === 'sent').length} sent, ${sendOut.filter((r) => r.status !== 'sent').length} not sent`], 'Sent message');
+    sendJSON(res, 200, { results: sendOut });
+    return true;
+  }
+
+  // One message to many students by email: how each one looks (preview), or each one sent from the sender's own mailbox with their
+  // signature and logged on the student's card. Used by the Follow-up page and by the Claude connector (advisor-mcp.js, only when
+  // NIEC_ADVISOR_SEND_AS names the sender). `req` needs `user` and `headers` (for the activity record).
   async function followUp(req, { ids, subject = '', emailBody = '', whatsappBody = '', preview = false }) {
     { const bad = Messages.badPlaceholder(subject, emailBody, whatsappBody); if (bad) return { error: bad }; }
     const cfg = mailFor(req.user);
@@ -2924,7 +3177,7 @@ function createPortalApi({
       if (await pointsInside(made.box.host)) { sendJSON(res, 400, { error: 'That mail server name points to a private address. Use the mail server your email provider gives you.' }); return true; }
       if (tooManySends(req.user.id)) { sendJSON(res, 429, { error: 'Too many tries in a short time. Please wait a few minutes.' }); return true; }
       try {
-        await mailer.sendMail({ ...made.box, fromName: req.user.name }, { to: made.box.from, subject: 'Vishnu: your email is set up', text: `Hello ${req.user.name},\n\nYour mailbox works with Vishnu. Emails you send to students from Vishnu now go from ${made.box.from}.\n`, auto: true });
+        await mailer.sendMail({ ...made.box, fromName: req.user.name }, { to: made.box.from, subject: 'ISR: your email is set up', text: `Hello ${req.user.name},\n\nYour mailbox works with ISR. Emails you send to students from ISR now go from ${made.box.from}.\n`, auto: true });
       } catch (e) {
         activity.record(req, req.user, 'Test email failed', { app: 'My email', changes: [`Could not set up ${made.box.from}: ${mailer.friendlyError(e, made.box.host)}`] });
         sendJSON(res, 400, { error: `It did not work, so nothing was saved: ${mailer.friendlyError(e, made.box.host)}` });
@@ -3013,7 +3266,7 @@ function createPortalApi({
       const notReached = (out) => {
         const devs = push.devices(req.user.id);
         if (!devs.length) return [409, 'Your phone is no longer connected. Connect it again.'];
-        if (devs.every((x) => x.lost)) { const n = devs.length === 1 ? `Your ${devs[0].name}` : 'Your phone'; return [409, `${n} is not answering. Open Vishnu on it once (from the Home Screen or Chrome) and it reconnects by itself.`]; }
+        if (devs.every((x) => x.lost)) { const n = devs.length === 1 ? `Your ${devs[0].name}` : 'Your phone'; return [409, `${n} is not answering. Open ISR on it once (from the Home Screen or Chrome) and it reconnects by itself.`]; }
         return [502, out && out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.'];
       };
       const reply = (out) => {
@@ -3023,7 +3276,7 @@ function createPortalApi({
       if (body.test === true) {
         // A test, from the Connect my phone window.
         if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
-        reply(await push.send(req.user.id, { title: 'Vishnu is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site, 'isr-test'));
+        reply(await push.send(req.user.id, { title: 'ISR is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site, 'isr-test'));
         return true;
       }
       // A student's chat, sent to the person's own phone: only a student this account may see, only that student's number.
@@ -3192,6 +3445,21 @@ function createPortalApi({
       return true;
     }
     if (urlPath === '/api/event-tags' && req.method === 'GET') { sendJSON(res, 200, eventTags(req.user)); return true; }
+    if (urlPath === '/api/followup' && req.method === 'GET') {
+      if (!followTeam(req.user)) { sendJSON(res, 403, { error: 'The follow-up list is for the Follow-up Team.' }); return true; }
+      sendJSON(res, 200, followList(req.user));
+      return true;
+    }
+    {
+      const fm = /^\/api\/followup\/([\w-]{1,64})$/.exec(urlPath);
+      if (fm && req.method === 'POST') {
+        const body = await bodyOf(req, res, 16 * 1024);
+        if (!body) return true;
+        const out = followAction(req, fm[1], body);
+        sendJSON(res, out.status, out.json);
+        return true;
+      }
+    }
     { const m = /^\/api\/activities\/([a-f0-9]{12})\/students\/remove$/.exec(urlPath);
       if (m && req.method === 'POST') {
         if (!Teams.isAdmin(req.user)) { sendJSON(res, 403, { error: 'Only Admin can remove the students of a list.' }); return true; }
@@ -3245,6 +3513,9 @@ function createPortalApi({
       return true;
     }
     if (urlPath.startsWith('/api/cards/')) return handleCard(req, res, urlPath);
+    // Follow-up messages to many students at once are for Admin and the branches, not the Follow-up Team (the owner, 21 Nov 2026).
+    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && (Teams.ownTeamFollowup(req.user) || Teams.ownTeamApplication(req.user))) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
+    if (urlPath === '/api/bulk/students' || urlPath === '/api/bulk/preview' || urlPath === '/api/bulk/send-email') return handleBulk(req, res, urlPath);
     if (urlPath === '/api/courses' && req.method === 'GET') {
       const q = query();
       const index = courseIndex();
@@ -3440,7 +3711,7 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, advisorChange };
+  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };

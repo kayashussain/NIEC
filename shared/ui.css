@@ -1,26 +1,25 @@
-/* 🔴 CSS CHANGED (2026-11-22): Vishnu Peacock Ocean, every colour in this file | from: the light ISR colours (page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, black words #000, grey words #333, blue #0071e3, borders #9a9a9a to #6f6f6f) | to: the dark Peacock Ocean colours (page #0b2230, panels #13303f, tiles #19384a, boxes #0f2a38, light words #dde9ef, second words #a9c3cf, peacock blue #0f7fb3 and teal, borders #1f4658 to #4f7f95; orange, green and red kept as lighter tones that read on dark) */
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
-/* 🔴 CSS CHANGED (2026-11-21): one font everywhere in messages, windows and empty lists | from: the computer's own system font (Segoe UI on Windows) for a few words, such as "Admin only", while the rest of the page used the Vishnu font | to: the Vishnu font (--font) for them too, so every word on a page is in the same font (the owner, 21 Nov 2026) */
+/* 🔴 CSS CHANGED (2026-11-21): one font everywhere in messages, windows and empty lists | from: the computer's own system font (Segoe UI on Windows) for a few words, such as "Admin only", while the rest of the page used the ISR font | to: the ISR font (--font) for them too, so every word on a page is in the same font (the owner, 21 Nov 2026) */
 /* Shared polish for every page (shared/ui.js adds the notices and confirmation boxes): one look for
    keyboard focus, gentle motion, loading placeholders and empty states. Self-contained, with its own
    colours, so it works the same on every page (there is one light look only). */
 :root {
-  --ui-blue: #7fd3ee;
-  --ui-text: #dde9ef;
-  --ui-dim: #dde9ef;
-  --ui-panel: #0f2a38;
-  --ui-border: #3d6a80;
-  --ui-danger: #ff8a7e;
-  --ui-focus: #7fd3ee;
-  --ui-skeleton-a: #19384a;
-  --ui-skeleton-b: #0d2736;
-  --ui-shadow: 0 18px 48px rgba(221, 233, 239, 0.28);
+  --ui-blue: #164a98;
+  --ui-text: #000;
+  --ui-dim: #333;
+  --ui-panel: #f7f7f7;
+  --ui-border: #b8b8b8;
+  --ui-danger: #dc2626;
+  --ui-focus: #0284c7;
+  --ui-skeleton-a: #dde2e9;
+  --ui-skeleton-b: #eceff3;
+  --ui-shadow: 0 18px 48px rgba(15, 23, 42, .28);
 }
 
 
 /* Crisper text, a calmer text selection, and buttons that answer a press. */
 html { text-rendering: optimizeLegibility; }
-::selection { background: rgba(201, 162, 39, 0.28); }
+::selection { background: rgba(184, 146, 74, .28); }
 button, a, select, input, summary { transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, opacity .15s ease; }
 button:disabled { cursor: not-allowed; }
 
@@ -51,14 +50,14 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible, [role="
   border-radius: 10px; box-shadow: var(--ui-shadow); font: 13px/1.45 var(--font, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
   pointer-events: auto; animation: ui-toast-in .22s ease-out both;
 }
-.ui-toast.success { border-left-color: #2e9e5b; }
+.ui-toast.success { border-left-color: #16a34a; }
 .ui-toast.error { border-left-color: var(--ui-danger); }
 .ui-toast .ui-toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-line; }
 .ui-toast button {
   flex: none; margin: -3px -6px -3px 0; padding: 2px 7px; border: 0; border-radius: 6px; background: none;
   color: var(--ui-dim); font: inherit; font-size: 16px; line-height: 1.2; cursor: pointer;
 }
-.ui-toast button:hover { color: var(--ui-text); background: rgba(10, 28, 39, 0.15); }
+.ui-toast button:hover { color: var(--ui-text); background: rgba(127, 127, 127, .15); }
 .ui-toast.leaving { animation: ui-toast-out .18s ease-in both; }
 @keyframes ui-toast-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes ui-toast-out { to { opacity: 0; transform: translateY(6px) scale(.98); } }
@@ -70,7 +69,7 @@ dialog.ui-dialog {
   font: 14px/1.5 var(--font, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
 }
 dialog.ui-dialog[open] { animation: ui-dialog-in .18s ease-out both; }
-dialog.ui-dialog::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(2px); animation: ui-fade-in .18s ease-out both; }
+dialog.ui-dialog::backdrop { background: rgba(15, 23, 42, .5); backdrop-filter: blur(2px); animation: ui-fade-in .18s ease-out both; }
 .ui-dialog form { margin: 0; padding: 22px 22px 18px; }
 .ui-dialog h2 { margin: 0 0 8px; font-size: 17px; line-height: 1.3; }
 .ui-dialog p { margin: 0 0 20px; color: var(--ui-dim); white-space: pre-line; overflow-wrap: anywhere; }
@@ -79,10 +78,10 @@ dialog.ui-dialog::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: bl
   padding: 8px 16px; border-radius: 8px; border: 1px solid var(--ui-border); background: var(--ui-panel); color: var(--ui-text);
   font: inherit; font-weight: 600; cursor: pointer; transition: background .12s, filter .12s;
 }
-.ui-dialog .ui-actions button:hover { background: rgba(10, 28, 39, 0.12); }
+.ui-dialog .ui-actions button:hover { background: rgba(127, 127, 127, .12); }
 /* 🔴 CSS CHANGED (2026-11-12): OK button in pop-up questions (Got it, Add them, Send...) | from: orange | to: the same blue as every other main button */
-.ui-dialog .ui-actions .ui-ok { background: var(--primary, #0f7fb3); border-color: var(--primary, #0f7fb3); color: var(--on-primary, #ffffff); }
-.ui-dialog .ui-actions .ui-ok:hover { background: var(--primary-hover, #0f7fb3); border-color: var(--primary-hover, #0f7fb3); filter: none; }
+.ui-dialog .ui-actions .ui-ok { background: var(--primary, #1d5fd1); border-color: var(--primary, #1d5fd1); color: var(--on-primary, #fff); }
+.ui-dialog .ui-actions .ui-ok:hover { background: var(--primary-hover, #174fb0); border-color: var(--primary-hover, #174fb0); filter: none; }
 .ui-dialog .ui-actions .ui-ok.danger { background: var(--ui-danger); border-color: var(--ui-danger); }
 .ui-dialog .ui-actions .ui-ok.danger:hover { filter: brightness(.92); background: var(--ui-danger); }
 @keyframes ui-dialog-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }

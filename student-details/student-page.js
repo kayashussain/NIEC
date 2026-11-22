@@ -1,5 +1,5 @@
 // One student's card (student.html): the main card (who the student is, Call, WhatsApp and Email, the progress, the details and
-// where the student came from), then two tabs, Timeline (tasks, notes and history) and Applications. Call, WhatsApp and Email are one tap under the name; The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
+// where the student came from), then two tabs, Timeline (tasks, notes and history) and Applications. Call, WhatsApp and Email are one tap under the name; messages to many students go from Follow-up. The sheet's own details are changed on the sheet; the card never changes them except the Student Source,
 // which is chosen here (it is no longer a column of the sheet).
 (function () {
   const { el, h, api, day, when, stagePill, initials, field, dialog } = window.Portal;
@@ -365,14 +365,14 @@
     if (p.inquiryDate) row('First inquiry', `${day(p.inquiryDate)}${p.inquiryTime ? ` at ${p.inquiryTime}` : ''}`);
     sec.append(dl);
     if (p.savedAt) sec.append(el('div', 'lg-foot', `Last saved ${when(p.savedAt)} by ${p.savedBy || 'someone'}`));
-    side.append(sec, applicationDetails());
+    side.append(sec, applicationDetails(), mockInterviews());
     return side;
   }
 
-  // ---- Application details (the owner, 22 Nov 2026): every detail of the application on the card ----
+  // ---- Application details and Mock interviews (the owner, 22 Nov 2026): every detail of the application on the card ----
   // University, course and University partner come by themselves from the Priority application; the rest is changed with Edit, in
   // one window. Every save is written in the student's notes and can be undone for 5 seconds. The Application Team changes these
-  // here, never on the sheet. The Mock interviews box was removed (the owner, 22 Nov 2026).
+  // here, never on the sheet. Mock interviews are changed by the Mock Team (and Admin); the Application Team only looks.
   const rowOf = () => data.student.row || {};
   const mayEdit = (col) => (data.can.cols || []).includes(col);
   const APP_EDIT = ['RECEIVING PARTNER', 'LANGUAGE TEST DATE', 'STUDENT ID', 'NOC', 'NOC NUMBER', 'MEDICAL REPORT'];
@@ -470,6 +470,76 @@
       setTimeout(() => { const f = form.querySelector('select:not([disabled]), input:not([disabled])'); if (f) f.focus(); }, 0);
     }, { wide: true });
   }
+  function mockInterviews() {
+    const r = rowOf();
+    const { sec, head } = box('Mock interviews', 'lg-mocks');
+    if (can() && mayEdit('MOCK SCHEDULE 1')) head.append(h('button', { class: 'btn lg-edit', type: 'button', onclick: editMockInterviews }, 'Edit'));
+    const mock = (n) => {
+      const d = isoDay(r[`MOCK SCHEDULE ${n}`]) || String(r[`MOCK SCHEDULE ${n}`] || '').trim();
+      const fb = String(r[`FEEDBACK ${n}`] || '').trim();
+      if (!d && !fb) return '';
+      const w = el('div', '');
+      w.append(el('div', '', d ? (isoDay(d) ? day(d) : d) : 'No day'));
+      if (fb) w.append(el('div', 'lg-none', fb));
+      return w;
+    };
+    sec.append(detailsList([[`Mock 1`, mock(1)], [`Mock 2`, mock(2)], [`Mock 3`, mock(3)], [`Mock 4`, mock(4)], ['Pre-CAS interview', r['PRE CAS INTERVIEW']]]));
+    return sec;
+  }
+  function editMockInterviews() {
+    const r = rowOf();
+    const COLS = [1, 2, 3, 4].flatMap((n) => [`MOCK SCHEDULE ${n}`, `FEEDBACK ${n}`]).concat('PRE CAS INTERVIEW');
+    const before = Object.fromEntries(COLS.map((c) => [c, c.startsWith('MOCK SCHEDULE') ? isoDay(r[c]) || String(r[c] || '').trim() : String(r[c] || '').trim()]));
+    const LABEL = (c) => c === 'PRE CAS INTERVIEW' ? 'Pre-CAS interview' : c.startsWith('MOCK') ? `Mock ${c.slice(-1)} day` : `Mock ${c.slice(-1)} feedback`;
+    dialog('Mock interviews', (body, close) => {
+      const form = el('form', 'lg-form');
+      form.noValidate = true;
+      const inputs = {};
+      const field = (key, label, input, wide) => {
+        const w = el('div', `lg-form-field${wide ? ' is-wide' : ''}`);
+        input.id = 'mi-' + key.replace(/\W+/g, '-').toLowerCase(); input.classList.add('lg-input');
+        if (!mayEdit(key)) input.disabled = true;
+        const l = el('label', 'lg-form-label', label); l.htmlFor = input.id;
+        w.append(l, input); form.append(w); inputs[key] = input;
+      };
+      [1, 2, 3, 4].forEach((n) => {
+        form.append(el('div', 'lg-form-group', `Mock ${n}`));
+        // A day kept in an older form ("3/12/2026") is shown as it is, so saving another detail never empties it.
+        const kept = before[`MOCK SCHEDULE ${n}`];
+        field(`MOCK SCHEDULE ${n}`, 'Day', kept && !isoDay(kept) ? h('input', { type: 'text', value: kept, maxlength: '40' }) : h('input', { type: 'date', value: kept }));
+        const fb = document.createElement('textarea'); fb.rows = 2; fb.maxLength = 2000; fb.value = before[`FEEDBACK ${n}`];
+        field(`FEEDBACK ${n}`, 'Feedback', fb, true);
+      });
+      form.append(el('div', 'lg-form-group', 'Pre-CAS interview'));
+      const pc = document.createElement('select'); [['', 'Not yet'], ['Passed', 'Passed'], ['Fail', 'Fail']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; pc.append(o); }); pc.value = before['PRE CAS INTERVIEW'];
+      field('PRE CAS INTERVIEW', 'Result', pc);
+      const now = () => Object.fromEntries(COLS.map((c) => [c, String(inputs[c].value || '').trim()]));
+      const changed = () => { const v = now(); return COLS.filter((c) => v[c] !== before[c]); };
+      const note = el('p', 'lg-form-note');
+      const showChanges = () => { const c = changed(); note.textContent = c.length ? `Will change: ${c.map(LABEL).join(', ')}.` : 'Nothing changed yet.'; };
+      form.addEventListener('input', showChanges); form.addEventListener('change', showChanges); showChanges();
+      form.append(note);
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Save changes');
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+      form.append(foot);
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const v = now(); const c = changed();
+        if (!c.length) { close(); return; }
+        ok.disabled = true; ok.textContent = 'Saving...';
+        try {
+          const was = { sheet: {} }; const now2 = { sheet: {} };
+          c.forEach((k) => { was.sheet[k] = before[k]; now2.sheet[k] = v[k]; });
+          tookOver(was, await api(`/api/cards/${id}/sheet`, { fields: now2.sheet }));
+          data = await api('/api/cards/' + encodeURIComponent(id));
+          close(); render(); savedWithUndo('Mock interviews saved', was, now2);
+        } catch (err) { ok.disabled = false; ok.textContent = 'Save changes'; say(err.message, true); }
+      });
+      body.append(form);
+    }, { wide: true });
+  }
+
   // ---- tasks given to a team about this student ----
   function assignTask() {
     dialog('Assign a task', (body, close) => {
@@ -493,7 +563,7 @@
       showGoes();
       // What it is about first, required (the owner, 20 Nov 2026). An Application task then asks, each required with a red *: the
       // university (every university in Universities), the intake, the course level, the location (when it teaches in more than one
-      // place) and the course, from the university's own list; then optional comments. Documents, NOC and Medical ask
+      // place) and the course, from the university's own list; then optional comments. Mock interview, Documents, NOC and Medical ask
       // for comments only (the owner, 20 Nov 2026); Other asks for them too, and needs them, since it says nothing by itself.
       const tag = window.Portal.tagPicker('');
       const tagWrap = el('div', 'p-field p-wide');
@@ -535,7 +605,7 @@
         const a = isApp(); const k = tag.value();
         appBox.hidden = !a; text.wrap.hidden = a || !k;
         if (k === 'other') { if (textLabel && !otherMark.isConnected) textLabel.append(otherMark); } else otherMark.remove();
-        const hints = { documents: 'e.g. Ask for the bank statement.', noc: 'e.g. Apply for the NOC this week.', medical: 'e.g. Book the TB test at the clinic.', other: 'What should they do?' };
+        const hints = { mock: 'e.g. Book the mock interview for Tuesday.', documents: 'e.g. Ask for the bank statement.', noc: 'e.g. Apply for the NOC this week.', medical: 'e.g. Book the TB test at the clinic.', other: 'What should they do?' };
         text.input.placeholder = hints[k] || '';
       };
       tag.node.addEventListener('click', () => setTimeout(showKind, 0));
@@ -558,7 +628,7 @@
         } else {
           const words = text.input.value.trim();
           if (!words && tag.value() === 'other') return stop('Write what should be done.', text.wrap);
-          // No comments: the task is named by what it is about ("NOC"), so the team still sees what to do.
+          // No comments: the task is named by what it is about ("Mock interview"), so the team still sees what to do.
           payload = { team: team.input.value, text: words || window.Portal.tagLabel(tag.value()), tag: tag.value() };
         }
         try { await morph(ok, () => save('tasks', payload), { busy: 'Assigning…', done: 'Assigned' }); window.Portal.celebrate(ok); say('Task assigned. The team is told.'); close(true); } catch (e) { /* shown */ }
@@ -710,11 +780,11 @@
       box2.append(text, add);
       wrap.append(box2);
     }
-    // Every note, every task event (given, each update, reassigned, moved, done) and every message sent to the student.
+    // Every note, every task event (given, each update, reassigned, moved, done) and every message sent from Follow-up.
     const teamName = (tid) => (((data.taskTeams || []).find((x) => x.id === tid) || {}).label || tid).replace(/\s*\(.*\)$/, '');
-    const AUTO = 'Vishnu (automatic)';
-    // A stage moved on and a call with no answer are written by Vishnu (the owner, 21 Nov 2026) and shown as such.
-    const events = data.card.notes.map((n) => ({ kind: n.by === AUTO || n.by === 'ISR (automatic)' ? 'auto' : n.kind === 'stage' ? 'stage' : n.kind === 'try' ? 'try' : 'note', at: n.at, by: n.by, text: n.text, note: n }));
+    const AUTO = 'ISR (automatic)';
+    // A stage moved on and a call with no answer are written by ISR (the owner, 21 Nov 2026) and shown as such.
+    const events = data.card.notes.map((n) => ({ kind: n.by === AUTO ? 'auto' : n.kind === 'stage' ? 'stage' : n.kind === 'try' ? 'try' : 'note', at: n.at, by: n.by, text: n.text, note: n }));
     (data.card.tasks || []).forEach((t) => {
       const tag = window.Portal.tagOf(t, data.student.stage);
       events.push({ kind: 'task', at: t.at, by: t.by, label: 'Task given', lead: `To ${teamName(t.team)}`, text: t.text, tag });
@@ -775,7 +845,7 @@
       if (e.ref) tdT.append(el('b', 'lg-ref', e.ref));
       if (e.lead) tdT.append(el('span', 'lg-lead', e.lead));
       if (e.text) { const p2 = el('p', 'lg-text'); if (e.tag) p2.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' '); p2.append(...linked(e.text)); tdT.append(p2); }
-      const tdB = el('td', 'is-by', e.kind === 'auto' ? 'Vishnu' : e.by || 'Someone');
+      const tdB = el('td', 'is-by', e.kind === 'auto' ? 'ISR' : e.by || 'Someone');
       const tdM = el('td', 'is-more');
       const items = [];
       if (e.message && e.message.channel === 'email') items.push(['Read the email', () => readMessage(e.message)]);
@@ -1213,7 +1283,7 @@
   }
   function render() {
     sheetDaysOnOptions();
-    document.title = `${data.student.name} · Student · Vishnu`;
+    document.title = `${data.student.name} · Student · ISR`;
     const keepY = window.scrollY;
     const frag = document.createDocumentFragment();
     const q = queueBar(); if (q) frag.append(q);

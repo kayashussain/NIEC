@@ -1,5 +1,5 @@
 'use strict';
-// Starts Vishnu on this computer, on http://localhost:8080, with the data in ONE fixed folder (default C:\Vishnu-data), so nothing has to be
+// Starts ISR on this computer, on http://localhost:8080, with the data in ONE fixed folder (default C:\ISR-data), so nothing has to be
 // set in the command window and the same login works every time. Used by start-isr.bat.
 //   - The login owner / isr-local-2026 is made (or set right again) every time it starts: a private copy on this computer only; the live server is never touched.
 //   - Any other login in the folder stays as it is.
@@ -13,7 +13,7 @@ const { hashPassword } = require('../shared/accounts');
 const { writeFileAtomic } = require('../shared/server-utils');
 
 const root = path.resolve(__dirname, '..');
-const dataDir = path.resolve(process.env.ISR_DATA || (process.platform === 'win32' ? path.join(path.parse(root).root, 'Vishnu-data') : path.join(os.homedir(), 'Vishnu-data')));
+const dataDir = path.resolve(process.env.ISR_DATA || (process.platform === 'win32' ? path.join(path.parse(root).root, 'ISR-data') : path.join(os.homedir(), 'ISR-data')));
 const port = String(process.env.PORT || 8080);
 const PASSWORD = 'isr-local-2026';
 

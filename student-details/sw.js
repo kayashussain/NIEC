@@ -1,12 +1,12 @@
-// Vishnu's service worker, on a phone that was connected for WhatsApp (see push.js and phone-link.js): it shows the notification sent
+// ISR's service worker, on a phone that was connected for WhatsApp (see push.js and phone-link.js): it shows the notification sent
 // when someone presses WhatsApp (or Call) on a computer, and a tap on it opens the chat. It changes nothing else.
 //
 // Made strong (the owner, 17 Nov 2026):
 //   - Instant: the small page a tap opens (/wa, its script, its style, the icon) is kept on the phone, so a tap opens WhatsApp at
 //     once instead of waiting for the internet. The kept copy is refreshed quietly in the background.
 //   - Never has to be connected again: phones change their push address from time to time. This worker hands the new address to
-//     Vishnu by itself (with the phone's own secret, kept in the "isr-device" store on this phone), when the phone says it changed,
-//     when a notification arrives or is tapped, and whenever Vishnu is opened on the phone.
+//     ISR by itself (with the phone's own secret, kept in the "isr-device" store on this phone), when the phone says it changed,
+//     when a notification arrives or is tapped, and whenever ISR is opened on the phone.
 //   - The computer is told "arrived" and "opened", so the person sees that their click worked.
 const SHELL = 'isr-phone-v2';
 const FILES = ['/wa', '/wa-page.js', '/phone.css', '/apple-touch-icon.png', '/favicon.png'];
@@ -18,7 +18,7 @@ const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Typ
 async function creds() { try { const r = await (await caches.open(STORE)).match(ME); return r ? await r.json() : null; } catch (e) { return null; } }
 async function keep(me) { try { await (await caches.open(STORE)).put(ME, new Response(JSON.stringify(me), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { /* tried again next time */ } }
 
-// Hands this phone's current push address to Vishnu when it changed (or, with `always`, to check in). If Vishnu says the address had
+// Hands this phone's current push address to ISR when it changed (or, with `always`, to check in). If ISR says the address had
 // stopped working, a fresh one is made and handed over.
 let healing = null;
 function heal(given, always) {
@@ -36,7 +36,7 @@ function heal(given, always) {
     if (r.status === 410) { await (await caches.open(STORE)).delete(ME); return; } // disconnected on the computer
     const j = await r.json().catch(() => ({}));
     if (r.ok && j.wasLost && sub.endpoint === me.endpoint) {
-      // Vishnu could not reach this address any more: make a new one.
+      // ISR could not reach this address any more: make a new one.
       await sub.unsubscribe().catch(() => {});
       sub = await fresh().catch(() => null);
       if (!sub) return;
@@ -84,7 +84,7 @@ self.addEventListener('push', (e) => {
   let m = {};
   try { m = e.data ? e.data.json() : {}; } catch (err) { m = {}; }
   e.waitUntil((async () => {
-    await self.registration.showNotification(m.title || 'Vishnu', {
+    await self.registration.showNotification(m.title || 'ISR', {
       body: m.body || '', tag: m.tag || 'isr', renotify: true, icon: '/apple-touch-icon.png', badge: '/favicon.png', timestamp: m.at || Date.now(), data: { url: m.url || '/today', m: m.m || '' },
     });
     await Promise.all([ack(m.m, 'got'), heal()]);
@@ -95,14 +95,14 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const data = e.notification.data || {};
   const url = new URL(data.url || '/today', self.location.origin);
-  if (url.origin !== self.location.origin) return; // only Vishnu's own pages are opened
+  if (url.origin !== self.location.origin) return; // only ISR's own pages are opened
   // The window is opened first, straight away (the phone allows it only right after the tap); the rest follows.
   const open = self.clients.openWindow(url.href).catch(() => null);
   e.waitUntil(Promise.all([open, ack(data.m, 'opened'), heal()]));
 });
 
-// The phone gave this worker a new push address: hand it to Vishnu at once.
+// The phone gave this worker a new push address: hand it to ISR at once.
 self.addEventListener('pushsubscriptionchange', (e) => { e.waitUntil(heal(e.newSubscription || null)); });
 
-// A page of Vishnu opened on this phone asks for a check-in (phone-link.js and wa-page.js).
+// A page of ISR opened on this phone asks for a check-in (phone-link.js and wa-page.js).
 self.addEventListener('message', (e) => { if (e.data === 'heal') e.waitUntil ? e.waitUntil(heal(null, true)) : heal(null, true); });

@@ -1,7 +1,7 @@
 // What must be said when a task is done (the owner, 17 Nov 2026): a few words of what was done when the task records nothing else,
 // and, when it was the student's last open task and the student is still on the way, the day someone gets back to the student (a task
-// for the same team, waiting for that day) or "Not needed". Also: a person's WhatsApp number is saved on its own (Your setup for
-// sending), and a message with a misspelt {word} is refused before it reaches anyone. All students are made up.
+// for the same team, waiting for that day) or "Not needed". Also: a person's WhatsApp number is saved on its own (Follow-up setup), and
+// a Follow-up message with a misspelt {word} is refused before it reaches anyone. All students are made up.
 const test = require('node:test');
 const assert = require('node:assert');
 const os = require('node:os');
@@ -31,14 +31,14 @@ test('a done task says what was done and what comes next; the setup and the word
   const code = fs.readFileSync(path.join(dir, 'first-admin-code.txt'), 'utf8').trim();
   await admin('POST', '/api/login/first-admin', { setupCode: code, username: 'owner', name: 'Owner' });
   await admin('POST', '/api/login/new-password', { password: 'Strong-Pass-2026' });
-  const made = (await admin('POST', '/api/users', { username: 'sunita', name: 'Sunita', email: '', departments: ['chitwan'] })).json;
+  const made = (await admin('POST', '/api/users', { username: 'sunita', name: 'Sunita', email: '', departments: ['followup'] })).json;
   const fu = person();
   await fu('POST', '/api/login', { username: 'sunita', password: made.temporaryPassword }); await fu('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
   const today = (await admin('GET', '/api/tasks')).json.today;
   const add = (n) => new Date(Date.parse(today + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 
-  const id = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Rina', 'LAST NAME': 'Demo', EMAIL: 'rina@example.org', 'CONTACT NUMBER': '9800000081', 'STUDENT SOURCE': 'Chitwan Branch' } })).json.id;
-  const give = async (text) => (await admin('POST', `/api/cards/${id}/tasks`, { team: 'chitwan', text, tag: 'other' })).json.card.tasks.find((x) => x.text === text).id;
+  const id = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Rina', 'LAST NAME': 'Demo', EMAIL: 'rina@example.org', 'CONTACT NUMBER': '9800000081' } })).json.id;
+  const give = async (text) => (await admin('POST', `/api/cards/${id}/tasks`, { team: 'followup', text, tag: 'other' })).json.card.tasks.find((x) => x.text === text).id;
   const tick = (tid, finish) => fu('POST', `/api/cards/${id}/tasks/${tid}`, { done: true, ...(finish ? { finish } : {}) });
   const tasks = async () => (await admin('GET', `/api/cards/${id}`)).json.card.tasks;
 
@@ -56,7 +56,7 @@ test('a done task says what was done and what comes next; the setup and the word
   const t1b = await give('Call about the intake');
   assert.strictEqual((await tick(t1b, { note: 'Called, she will decide by Friday.', next: add(3), nextText: 'Ask for her decision' })).status, 200);
   const follow = (await tasks()).find((x) => x.text === 'Ask for her decision');
-  assert.ok(follow && !follow.done && follow.team === 'chitwan' && follow.doOn === add(3), 'a day given on purpose: a task for the same team, waiting for that day');
+  assert.ok(follow && !follow.done && follow.team === 'followup' && follow.doOn === add(3), 'a day given on purpose: a task for the same team, waiting for that day');
   // With another task still open, nothing more is asked.
   const t2 = await give('Send the fee list');
     assert.strictEqual((await tick(t2, { note: 'Sent the fee list on WhatsApp.' })).status, 200);
@@ -74,13 +74,13 @@ test('a done task says what was done and what comes next; the setup and the word
   assert.strictEqual((await fu('GET', '/api/my-mail')).json.phone, '+977 9800000099');
   assert.strictEqual((await fu('POST', '/api/my-mail/phone', { phone: '' })).json.phone, '');
 
-  // 4. A misspelt {word} is refused; the Follow-up page and its many-student messages were removed (the owner, 22 Nov 2026).
-  const bad = await admin('POST', `/api/cards/${id}/messages/preview`, { subject: 'Hello', body: 'Dear {frist_name},' });
+  // 4. Follow-up refuses a misspelt {word}; the Follow-up Team has no Follow-up page (the owner, 21 Nov 2026): its messages to many
+  // students are refused, and the old pages lead to its own email setup on its list.
+  const bad = await admin('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {frist_name},' });
   assert.strictEqual(bad.status, 400);
   assert.match(bad.json.error, /not one of the words/);
-  assert.ok((await admin('POST', `/api/cards/${id}/messages/preview`, { subject: 'Hello', body: 'Dear {first_name},' })).json.text.startsWith('Dear Rina,'));
-  assert.notStrictEqual((await admin('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {first_name},' })).status, 200);
-  assert.strictEqual((await fu('GET', '/my-email')).location, '/today');
-  assert.strictEqual((await fu('GET', '/bulk')).location, '/today');
+  assert.strictEqual((await fu('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {first_name},' })).status, 403);
+  assert.ok((await admin('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {first_name},' })).json.items[0].text.startsWith('Dear Rina,'));
+  assert.strictEqual((await fu('GET', '/my-email')).location, '/students#setup');
   assert.strictEqual((await fu('GET', '/compose?id=' + id)).location, '/student?id=' + id);
 });

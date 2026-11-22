@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>All Students · Vishnu</title>
+<title>All Students · ISR</title>
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -12,7 +12,6 @@
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="portal.css" />
 <link rel="stylesheet" href="theme.css" />
-<link rel="stylesheet" href="niec-app.css" />
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />
 </head>
@@ -30,6 +29,7 @@
     </div>
     <div class="toolbar-group">
       <button id="addRow" class="btn btn-primary" title="Add a new student: a short form asks where the student came from and the student's details. To add many students at once, open Add student and choose Add many students">+ Add student</button>
+      <button id="bulkSend" class="btn" hidden title="Follow up students by email or WhatsApp: choose the intake and the stage, tick the students">Follow-up</button>
       <button id="colorRow" class="btn" aria-haspopup="true" title="Click the row numbers (S.N) of the students first, then pick a colour to mark those rows. Ctrl+Click to pick several"><i class="swatch-dot" aria-hidden="true"></i>Colour rows</button>
       <button id="delRow" class="btn btn-danger" title="Click the row numbers (S.N) of the students to delete first. Ctrl+Click to pick several">Delete rows</button>
       <button id="exportExcel" class="btn">Export Excel</button>

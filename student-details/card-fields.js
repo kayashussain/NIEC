@@ -77,12 +77,12 @@
   // The kinds notes were once kept with. A new note is always a plain note (the owner, 14 Nov 2026); the others stay readable.
   const NOTE_KINDS = [
     { key: 'note', text: 'Note' }, { key: 'call', text: 'Phone call' }, { key: 'meeting', text: 'Office visit' }, { key: 'message', text: 'Message' },
-    // Written by Vishnu itself: a stage moved on ("Moved to Mock Stage"), and a call that nobody answered (from the follow-up list, now removed). Neither
+    // Written by ISR itself: a stage moved on ("Moved to Mock Stage"), and a call from the follow-up list that nobody answered. Neither
     // counts as speaking to the student (the owner, 21 Nov 2026).
     { key: 'stage', text: 'Stage' }, { key: 'try', text: 'Called, no answer' },
   ];
-  // The tags the Follow-up Team once gave (how warm a student is). The team was removed (the owner, 22 Nov 2026); the list stays only so
-  // the tags already stored on student cards keep their meaning.
+  // The Follow-up Team's tags (the owner, 21 Nov 2026): how warm a student is, one at a time, changed with one press in the follow-up
+  // list. The table shows the short form.
   const FOLLOW_TAGS = [
     { key: 'Interested', short: 'INT' }, { key: 'Decision Making', short: 'DM' }, { key: 'Cold', short: 'COLD' },
   ];
@@ -182,17 +182,15 @@
 
   // What a task is about (the owner, 15 Nov 2026): a tag, so Today can show the tasks in calm groups. NOC and Medical are tags of
   // their own (the owner, 15 Nov 2026), as each is its own piece of work for the team.
-  const TASK_TAGS = [['application', 'Application'], ['offer', 'Offer request'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
+  const TASK_TAGS = [['application', 'Application'], ['offer', 'Offer request'], ['mock', 'Mock interview'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
   const TASK_TAG_IDS = TASK_TAGS.map(([k]) => k);
-  // The tags a person chooses from when giving or editing a task (the owner, 20 Nov 2026): Application, Documents, NOC,
+  // The tags a person chooses from when giving or editing a task (the owner, 20 Nov 2026): Application, Mock interview, Documents, NOC,
   // Medical and Other. Offer request, Payment and Visa and CAS are no longer offered; tasks that already carry one keep it and still show
-  // it (Vishnu's own "Offer request" task after a submission keeps its tag), so stored tasks keep their meaning.
+  // it (ISR's own "Offer request" task after a submission keeps its tag), so stored tasks keep their meaning.
   // Documents is no longer a kind of its own (the owner, 21 Nov 2026): documents are part of the application, so the five kinds a person
-  // chooses from are Application, NOC, Medical and Other. Offer request is made by Vishnu only, after an application is
+  // chooses from are Application, Mock interview, NOC, Medical and Other. Offer request is made by ISR only, after an application is
   // submitted. The Documents tasks already saved were moved to Application once at start-up (see server.js).
-  // Mock interview is no longer a kind (the owner, 22 Nov 2026: the Mock Team was removed): the tasks saved as Mock interview were moved
-  // to Other at start-up (see server.js).
-  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'noc', 'medical', 'other'].includes(k));
+  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'mock', 'noc', 'medical', 'other'].includes(k));
   // A course leaves the Shortlist for good once it has gone to the Application Team (the owner, 18 Nov 2026): given to the team, applied
   // to, answered (offer, refused, withdrawn) or decided not to be submitted. The Shortlist holds only courses still to be assigned.
   const WITH_TEAM = (o) => Boolean(o && (o.sent || o.applied || o.offer || o.refused || o.withdrawn || o.skipped));
@@ -206,20 +204,23 @@
     // Other or Payment). The health surcharge (IHS) is a payment, not a medical.
     if (/\b(medicals?|health ?check|iom|tb|tuberculosis|x-?ray|clinic|hospital|doctor)\b/.test(t)) return 'medical';
     if (/\b(pay|payment|deposit|fee|fees|invoice|receipt|tuition|refund)\b/.test(t)) return 'payment';
-    if (/\bpre-?cas\b/.test(t)) return 'other'; // the Pre-CAS interview is not the visa (Mock interview is no longer a kind)
+    if (/\bpre-?cas\b/.test(t)) return 'mock'; // the Pre-CAS interview is the last mock, not the visa
     if (/\b(visa|cas|vfs|biometric|e-?visa|brp|lodge)\b/.test(t)) return 'visa';
+    if (/\b(mock|interview|pre-?cas)\b/.test(t)) return 'mock';
     // Documents are part of the application (the owner, 21 Nov 2026).
     if (/\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|ielts|pte|toefl|moi)\b/.test(t)) return 'application';
     if (/\b(apply|application|submit|offer|portal|university|course)\b/.test(t)) return 'application';
+    if (team === 'mock') return 'mock';
     if (team === 'application') return 'application';
     const st = String(stage || '');
     if (/Payment/.test(st)) return 'payment';
     if (/CAS|Visa/.test(st)) return 'visa';
+    if (/Mock/.test(st)) return 'mock';
     if (/Application/.test(st)) return 'application';
     return 'other';
   }
   const taskTag = (task, stage) => (TASK_TAG_IDS.includes(task && task.tag) ? task.tag : guessTaskTag(task && task.text, task && task.team, stage));
-  // The task Vishnu gives by itself on the day of a medical test ("Medical test of 19 Nov 2026 at Norvic: is the report received?").
+  // The task ISR gives by itself on the day of a medical test ("Medical test of 19 Nov 2026 at Norvic: is the report received?").
   // It is about the report, not about booking, so finishing it never asks for a booking again (see finishPlan in portal-api.js).
   const isReportCheck = (task) => /^Medical test of .+: is the report received\?$/i.test(String((task && task.text) || '').trim());
   // How important a task is, chosen by whoever gives it (the owner, 15 Nov 2026): every task is Priority unless it is marked Super

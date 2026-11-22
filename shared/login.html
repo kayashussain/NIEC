@@ -4,24 +4,24 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Log in · Vishnu</title>
+<title>Log in · International Student Recruitment</title>
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="icon" type="image/png" href="/favicon.png" />
 <style>
-  /* 🔴 CSS CHANGED (2026-11-22): Vishnu Peacock Ocean, every colour in this file | from: the light ISR colours (page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, black words #000, grey words #333, blue #0071e3, borders #9a9a9a to #6f6f6f) | to: the dark Peacock Ocean colours (page #0b2230, panels #13303f, tiles #19384a, boxes #0f2a38, light words #dde9ef, second words #a9c3cf, peacock blue #0f7fb3 and teal, borders #1f4658 to #4f7f95; orange, green and red kept as lighter tones that read on dark) */
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
   /* 🔴 CSS CHANGED (2026-11-14): the login page rebuilt in the design language of Apple's sign-in page (the earlier styles of this page are replaced, not kept beside it) | from: two halves (a picture side with "Welcome back", three points and the logo with "UK" beside it; a sign-in box with a black button) | to: one calm centred column on Apple's light grey (#f5f5f7): the NIEC logo alone at the top (no "UK"), a large "Sign in" title, a short line under it, an off-white rounded panel with tall rounded fields (blue ring while typing) and a blue pill button (#0071e3), a quiet note at the foot; the system font (SF Pro on Apple devices, Inter elsewhere) */
   @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/fonts/inter-latin.woff2") format("woff2"); }
-  :root { --ink: #dde9ef; --dim: #dde9ef; --line: #3d6a80; --bg: #0b2230; --panel: #13303f; --blue: #0a6fae; --blue-hover: #0c86b8; --link: #6fd8e0; --danger: #ff8a7e; --note-bg: #13303f; }
+  :root { --ink: #000; --dim: #333; --line: #9a9a9a; --bg: #e6e6e6; --panel: #f3f3f3; --blue: #0071e3; --blue-hover: #0077ed; --link: #0050aa; --danger: #b42318; --note-bg: #eef4fc; }
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
   body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; background: var(--bg); color: var(--ink);
     font: 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
-  /* 🔴 CSS CHANGED (2026-11-22): the top of the login page | from: the Vishnu lotus with the word "Vishnu" in gold, and the consultancy (NIEC) logo under it | to: the Vishnu peacock feather logo alone, 120px high, on a soft off-white tile (#faf8f4, 16px corners, 10px inside) so its navy word reads on the dark page; no NIEC logo */
   .top { display: flex; justify-content: center; margin-bottom: 28px; }
-  .top .vishnu-logo { display: block; height: 120px; width: auto; padding: 10px 14px; border-radius: 16px; background: #faf8f4; }
+  .top img { display: block; height: 64px; width: auto; }
   .top img[hidden] { display: none; }
-  main.card { width: 100%; max-width: 440px; padding: 40px 40px 30px; border-radius: 22px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; }
+  .top b { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+  .top b[hidden] { display: none; }
+  main.card { width: 100%; max-width: 440px; padding: 40px 40px 30px; border-radius: 22px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, .05); animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { main.card { animation: none; } }
   h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.022em; line-height: 1.1; text-align: center; }
@@ -29,31 +29,30 @@
   form { display: flex; flex-direction: column; gap: 6px; }
   form[hidden] { display: none; }
   label { margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--dim); }
-  input { font: inherit; height: 52px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #0f2a38; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
-  input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.32); }
+  input { font: inherit; height: 52px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #f7f7f7; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+  input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0, 113, 227, .2); }
   .note { margin: 0 0 6px; padding: 12px 14px; border-radius: 12px; background: var(--note-bg); font-size: 15px; }
   .note ol { margin: 4px 0 0; padding-left: 18px; }
   .hint { margin: 2px 0 0; color: var(--dim); font-size: 14px; }
   .error { margin: 12px 0 0; color: var(--danger); font-size: 15px; text-align: center; }
   .error[hidden] { display: none; }
-  /* 🔴 CSS CHANGED (2026-11-22): the Sign in button | from: flat blue | to: the blue to teal peacock gradient, white words */
-  button { margin-top: 22px; height: 50px; padding: 0 22px; border: 0; border-radius: 980px; background: linear-gradient(135deg, #0a5ca8, #12a1a6); color: #ffffff; font: inherit; font-weight: 500; cursor: pointer; transition: background .15s; }
-  button:hover:not(:disabled) { background: linear-gradient(135deg, #0b68bd, #16b3b8); }
+  button { margin-top: 22px; height: 50px; padding: 0 22px; border: 0; border-radius: 980px; background: var(--blue); color: #fff; font: inherit; font-weight: 500; cursor: pointer; transition: background .15s; }
+  button:hover:not(:disabled) { background: var(--blue-hover); }
   button:focus-visible, .pw-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   button:disabled { opacity: .55; cursor: default; }
   .pw { position: relative; display: flex; }
   .pw input { flex: 1; min-width: 0; padding-right: 70px; }
   .pw-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); margin: 0; height: auto; padding: 6px 10px; border-radius: 8px; background: none; color: var(--link); font-size: 14px; font-weight: 500; }
-  .pw-toggle:hover:not(:disabled) { background: rgba(15, 127, 179, 0.08); }
-  .caps { margin: 4px 0 0; color: #f0a463; font-size: 14px; font-weight: 500; }
+  .pw-toggle:hover:not(:disabled) { background: rgba(0, 102, 204, .08); }
+  .caps { margin: 4px 0 0; color: #a15c00; font-size: 14px; font-weight: 500; }
   .caps[hidden] { display: none; }
   .link { margin-top: 12px; height: auto; padding: 0; background: none; color: var(--link); font-weight: 400; font-size: 15px; }
   .link:hover:not(:disabled) { background: none; text-decoration: underline; }
-  .footnote { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid #3d6a80; font-size: 13px; color: #dde9ef; text-align: center; }
+  .footnote { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid #b8b8b8; font-size: 13px; color: #333; text-align: center; }
 </style>
 </head>
 <body>
-<div class="top"><img class="vishnu-logo" src="/vishnu-logo.png" alt="Vishnu" width="126" height="146" /></div>
+<div class="top"><img id="brandLogo" src="/brand-logo.png" alt="Logo" width="198" height="96" /><b id="brandName" hidden>ISR</b></div>
 <main class="card">
   <h1>Sign in</h1>
   <p class="sub" id="subtitle">Log in to continue</p>
@@ -94,9 +93,11 @@
   <p class="footnote">🔒 Staff only. Log in with your own username and password.</p>
 </main>
 <script>
-  // The menu remembered by this tab is forgotten here.
+  // Only the consultancy's logo above the box; "ISR" if there is no logo. The menu remembered by this tab is forgotten here.
   (function () {
     try { sessionStorage.removeItem('isrMe'); sessionStorage.removeItem('isrUnread'); } catch (e) { /* nothing kept */ }
+    const logo = document.getElementById('brandLogo');
+    logo.addEventListener('error', () => { logo.hidden = true; document.getElementById('brandName').hidden = false; });
   })();
 (function () {
   const $ = (id) => document.getElementById(id);

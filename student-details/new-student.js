@@ -69,10 +69,10 @@
           ok.disabled = false;
           if (dlg) delete dlg.dataset.busy;
           if (!dup) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.focus(); return; }
-          // Already in Vishnu: never a second copy. Open them, or fill in only what is blank on them (nothing already there is replaced).
+          // Already in ISR: never a second copy. Open them, or fill in only what is blank on them (nothing already there is replaced).
           msg.className = 'p-msg ns-dup';
-          if (dup.name) msg.replaceChildren(el('b', '', `${dup.name} is already in Vishnu`), el('span', '', ` (${dup.intake}, ${dup.stage || 'no stage'}${dup.source ? ', ' + dup.source : ''}), ${dup.sameName ? 'with exactly the same name.' : `with this ${dup.maybeOther ? 'phone number, under another name' : 'email or phone number'}.`}`));
-          else msg.replaceChildren(el('b', '', 'A student is already in Vishnu with this phone number, under another name.'));
+          if (dup.name) msg.replaceChildren(el('b', '', `${dup.name} is already in ISR`), el('span', '', ` (${dup.intake}, ${dup.stage || 'no stage'}${dup.source ? ', ' + dup.source : ''}), ${dup.sameName ? 'with exactly the same name.' : `with this ${dup.maybeOther ? 'phone number, under another name' : 'email or phone number'}.`}`));
+          else msg.replaceChildren(el('b', '', 'A student is already in ISR with this phone number, under another name.'));
           const row = el('div', 'p-bar');
           if (dup.id) row.append(h('button', { class: 'btn', type: 'button', onclick: () => { close(); location.href = '/student?id=' + encodeURIComponent(dup.id); } }, 'Open their card'));
           // The same phone and another first name: maybe a brother or sister on the family phone. The person decides.

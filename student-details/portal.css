@@ -1,4 +1,3 @@
-/* 🔴 CSS CHANGED (2026-11-22): Vishnu Peacock Ocean, every colour in this file | from: the light ISR colours (page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, black words #000, grey words #333, blue #0071e3, borders #9a9a9a to #6f6f6f) | to: the dark Peacock Ocean colours (page #0b2230, panels #13303f, tiles #19384a, boxes #0f2a38, light words #dde9ef, second words #a9c3cf, peacock blue #0f7fb3 and teal, borders #1f4658 to #4f7f95; orange, green and red kept as lighter tones that read on dark) */
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 
@@ -108,8 +107,8 @@ html:has(body.p-body) { scrollbar-gutter: stable; }
 /* notes and messages, newest first */
 
 /* the message writer */
-.p-preview { width: 100%; height: 460px; border: 1px solid var(--border); border-radius: var(--r-md); background: #13303f; }
-.p-wa-preview { margin: 0; padding: 12px 14px; border-radius: var(--r-md); background: #0d2736; color: #dde9ef; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13.5px; }
+.p-preview { width: 100%; height: 460px; border: 1px solid var(--border); border-radius: var(--r-md); background: #eef1f5; }
+.p-wa-preview { margin: 0; padding: 12px 14px; border-radius: var(--r-md); background: #e2f5d8; color: #1f2933; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13.5px; }
 .p-sent { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
 .p-sent:last-child { border-bottom: 0; }
 
@@ -136,7 +135,7 @@ html:has(body.p-body) { scrollbar-gutter: stable; }
 dialog.p-dialog { width: min(680px, calc(100vw - 24px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--border-strong); border-radius: var(--r-lg); background: var(--panel); color: var(--text); box-shadow: var(--sh-3); font: 14px/1.5 var(--font); overflow: hidden; }
 dialog.p-dialog[open] { display: flex; flex-direction: column; }
 dialog.p-dialog-wide { width: min(880px, calc(100vw - 24px)); }
-dialog.p-dialog::backdrop { background: rgba(0, 0, 0, 0.63); }
+dialog.p-dialog::backdrop { background: rgba(15, 23, 42, .45); }
 .p-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px 12px; border-bottom: 1px solid var(--border); }
 .p-dialog-head h2 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 22px; letter-spacing: -.02em; }
 .p-dialog-body { padding: 16px 22px 20px; overflow: auto; }
@@ -153,10 +152,10 @@ dialog.p-dialog::backdrop { background: rgba(0, 0, 0, 0.63); }
 .p-pick small { display: block; color: var(--text-dim); }
 
 /* ---- the card window that slides in over the sheet ---- */
-.p-drawer-back { position: fixed; inset: 0; z-index: 9000; background: rgba(0, 0, 0, 0.532); }
+.p-drawer-back { position: fixed; inset: 0; z-index: 9000; background: rgba(15, 23, 42, .38); }
 /* 🔴 CSS CHANGED (2026-11-13): the student card panel | from: 600px wide (a narrow strip, too little room for the details) | to: always 920px (about two thirds of a laptop screen, so a third of All Students stays in view), the same size at every zoom; only a window narrower than that shows it full width */
 /* 🔴 CSS CHANGED (2026-11-21): the student card opens across the whole working area | from: 920px wide | to: every pixel to the right of the menu */
-.p-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 9001; width: calc(100% - var(--side-w, 0px)); max-width: 100%; background: var(--bg); box-shadow: -18px 0 48px rgba(0, 0, 0, 0.448); animation: p-slide .18s ease-out both; }
+.p-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 9001; width: calc(100% - var(--side-w, 0px)); max-width: 100%; background: var(--bg); box-shadow: -18px 0 48px rgba(15, 23, 42, .28); animation: p-slide .18s ease-out both; }
 .p-drawer iframe { display: block; width: 100%; height: 100%; border: 0; }
 @keyframes p-slide { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .p-drawer { animation: none; } }
@@ -180,8 +179,8 @@ body.p-embed .p-embed-bar { display: flex; }
 .p-bars { display: grid; gap: 6px; }
 .p-bar-row { display: grid; grid-template-columns: minmax(110px, 30%) minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 13px; }
 .p-bar-track { height: 12px; border-radius: 0 6px 6px 0; background: var(--soft); border-left: 1px solid var(--border-strong); overflow: hidden; }
-.p-bar-fill { display: block; height: 100%; border-radius: 0 6px 6px 0; background: var(--s1, #0f7fb3); min-width: 2px; }
-.p-bar-fill.quiet { background: var(--quiet, #1f4256); }
+.p-bar-fill { display: block; height: 100%; border-radius: 0 6px 6px 0; background: var(--s1, #1f5fc0); min-width: 2px; }
+.p-bar-fill.quiet { background: var(--quiet, #b6b4ab); }
 .p-bar-row .num { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 
 /* ---- the intake proposal, on paper ---- */
@@ -190,12 +189,12 @@ body.p-embed .p-embed-bar { display: flex; }
 .p-proposal h2:first-of-type { margin-top: 18px; }
 .p-proposal h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 30px; letter-spacing: -.02em; }
 
-.doc-brand { font-weight: 800; font-size: 18px; letter-spacing: -.01em; color: var(--ink, #dde9ef); }
+.doc-brand { font-weight: 800; font-size: 18px; letter-spacing: -.01em; color: var(--ink, #000); }
 .p-proposal p, .p-proposal li { max-width: 86ch; }
 .p-proposal ul { margin: 6px 0 10px; padding-left: 20px; }
 @media (max-width: 700px) { .p-proposal { padding: 20px 16px; } }
 @media print {
-  body.p-body { background: #0f2a38; }
+  body.p-body { background: #f7f7f7; }
   .niec-header, .no-print, .p-tabs, .p-head { display: none !important; }
   .p-page { max-width: none; padding: 0; }
   .p-proposal { border: 0; box-shadow: none; padding: 0; }

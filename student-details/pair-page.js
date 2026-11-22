@@ -30,13 +30,13 @@
   };
   // When the phone said no to notifications: exactly where to turn them back on, for this kind of phone.
   const blockedHelp = () => (isIos
-    ? [['Open the Settings app', 'Then Notifications, then Vishnu.'], ['Turn on "Allow Notifications"', ''], ['Come back here and tap "Turn on" again', '']]
+    ? [['Open the Settings app', 'Then Notifications, then ISR.'], ['Turn on "Allow Notifications"', ''], ['Come back here and tap "Turn on" again', '']]
     : [['Tap the icon left of the address at the top', 'A small lock or settings icon in Chrome.'], ['Tap Permissions (or Notifications), then Allow', ''], ['Tap "Turn on" again', '']]);
 
   // On an iPhone the Home Screen icon must come back to this same page (with its code) to finish.
   const m = document.createElement('link'); m.rel = 'manifest'; m.href = '/manifest.webmanifest' + (/^[\w-]{20,40}$/.test(token) ? '?pair=' + token : ''); document.head.append(m);
 
-  // This phone's id and secret, kept on the phone for Vishnu's service worker (sw.js), so the phone hands over a new push address by
+  // This phone's id and secret, kept on the phone for ISR's service worker (sw.js), so the phone hands over a new push address by
   // itself and never has to be connected again.
   const STORE = 'isr-device'; const ME = '/__isr-device';
   const mine = async () => { try { const r = await (await caches.open(STORE)).match(ME); return r ? await r.json() : null; } catch (e) { return null; } };
@@ -53,7 +53,7 @@
     const hello = state.name ? `Hello ${state.name}` : 'Hello';
     if (isIos && !standalone) {
       show(hello, 'On an iPhone, Apple asks for one extra step. It takes ten seconds, once:');
-      steps([['Tap the Share button', 'At the bottom of Safari (at the top on an iPad).', true], ['Tap "Add to Home Screen", then "Add"', 'Scroll down the list if you do not see it.'], ['Open Vishnu from your Home Screen', 'Then tap "Turn on" and "Allow". That is all.']]);
+      steps([['Tap the Share button', 'At the bottom of Safari (at the top on an iPad).', true], ['Tap "Add to Home Screen", then "Add"', 'Scroll down the list if you do not see it.'], ['Open ISR from your Home Screen', 'Then tap "Turn on" and "Allow". That is all.']]);
       $('note').hidden = false;
       return;
     }
@@ -66,7 +66,7 @@
     go.hidden = false;
     $('note').hidden = false;
     // Notifications blocked on this phone before: show where to turn them back on, before the tap.
-    if (Notification.permission === 'denied') { $('words').textContent = 'Notifications are turned off for Vishnu on this phone. Turn them on, then tap "Turn on":'; steps(blockedHelp()); }
+    if (Notification.permission === 'denied') { $('words').textContent = 'Notifications are turned off for ISR on this phone. Turn them on, then tap "Turn on":'; steps(blockedHelp()); }
     go.addEventListener('click', async () => {
       go.disabled = true;
       go.textContent = 'Turning on...';

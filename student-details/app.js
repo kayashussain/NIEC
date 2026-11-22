@@ -70,13 +70,9 @@
   const HIDDEN_COLUMNS_BY_SHEET = [
     {
       matches: (name) => /\bsep/i.test(name) && /2026/.test(name),
-      columns: ['REMARKS', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE'],
-    },
-    // The mock interviews were removed from Vishnu (the owner, 22 Nov 2026): their nine columns are not shown on any sheet. What is
-    // already in them stays in the file.
-    {
-      matches: () => true,
-      columns: ['MOCK SCHEDULE 1', 'FEEDBACK 1', 'MOCK SCHEDULE 2', 'FEEDBACK 2', 'MOCK SCHEDULE 3', 'FEEDBACK 3', 'MOCK SCHEDULE 4', 'FEEDBACK 4', 'PRE CAS INTERVIEW'],
+      columns: ['REMARKS', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE',
+        // No mock interviews were recorded for this intake (the owner, 14 Nov 2026): the eight mock columns are not shown on it.
+        'MOCK SCHEDULE 1', 'FEEDBACK 1', 'MOCK SCHEDULE 2', 'FEEDBACK 2', 'MOCK SCHEDULE 3', 'FEEDBACK 3', 'MOCK SCHEDULE 4', 'FEEDBACK 4'],
     },
   ];
   // Column names are stored in capitals (they match the imported spreadsheet). On screen they're shown
@@ -106,7 +102,7 @@
   // and the notes (what Remarks held) are on the student's card, which opens with a double-click on the student's name. The data of
   // these two columns stays in the file and keeps working (branch students, the Dashboard, Incentive): the sheet just does not show them.
   // The application and offer days too (the owner, 17 Nov 2026): a student applies to many universities, so the days are kept per
-  // university on the card (Applications); the two columns stay in the file, filled by Vishnu with the first application and offer.
+  // university on the card (Applications); the two columns stay in the file, filled by ISR with the first application and offer.
   const CARD_COLUMNS = new Set(['REMARKS', 'STUDENT SOURCE', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE']);
   // Only columns whose values are a short list of choices get a filter. Dates, numbers, ids, names, emails and feedback do not.
   // The name, email and phone columns have one too (the owner, 14 Nov 2026): its search box finds a student among the values.
@@ -114,7 +110,11 @@
   // A double-click on any of these opens the student card (Enter or F2 still types in the cell). Date cells are not among them: one
   // click on a date opens its calendar, and a double-click there used to open the calendar and the card at once.
   const CARD_OPEN_COLUMNS = new Set(['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'UNIVERSITY NAME', 'COURSE NAME']);
+  // The Mock Team's columns (the owner, 22 Nov 2026): who the student is, where they go, and the four mocks with the Pre-CAS interview.
+  const MOCK_SHEET_COLUMNS = ['APPLICATION STATUS', 'FIRST NAME', 'LAST NAME', 'CONTACT NUMBER', 'EMAIL', 'UNIVERSITY NAME', 'COURSE NAME', 'UNIVERSITY PARTNER',
+    'MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW'];
   const visibleColumns = (sheet) => {
+    if (mockOwn()) return MOCK_SHEET_COLUMNS.filter((c) => sheet.columns.includes(c));
     const hidden = new Set(HIDDEN_COLUMNS_BY_SHEET.filter((h) => h.matches(sheet.name || '')).flatMap((h) => h.columns));
     return sheet.columns.filter((c) => !CARD_COLUMNS.has(c) && (!hidden.has(c) || (isTeam() && Teams.canEdit(me, c))));
   };
@@ -150,7 +150,10 @@
   // The Application Team changes a student on the student card, not in the sheet (the owner, 22 Nov 2026). Only Status stays
   // open: moving a student on to Mock Stage is done there and nowhere else.
   const appOwn = () => Boolean(me && Teams.ownTeamApplication && Teams.ownTeamApplication(me));
-  const sheetLocked = () => appOwn();
+  // The Mock Team only looks at the sheet too (the owner, 22 Nov 2026): Status stays open to move a student on to Payment; the mocks are
+  // written in the window after a mock on Bookings and corrected on the student card. A double-click shows a cut-short cell in full.
+  const mockOwn = () => Boolean(me && Teams.ownTeamMock && Teams.ownTeamMock(me));
+  const sheetLocked = () => appOwn() || mockOwn();
   // Every detail of a student is changed on the student card by the Application Team (the owner, 22 Nov 2026: Application details).
   const sheetOpen = () => !sheetLocked();
   const canEditCol = (col, row = null) => sheetOpen(col) && Teams.canEdit(me, col, row); // row: a student the person's team added can have its basics filled in
@@ -395,7 +398,7 @@
   }
 
   // A YYYY-MM-DD date the way the browser's own date box shows it (e.g. 05/01/2026 in the US).
-  // A date in a cell is written as every other date in Vishnu: "25 Aug 2026" (the day first, the month in words, so it can never be
+  // A date in a cell is written as every other date in ISR: "25 Aug 2026" (the day first, the month in words, so it can never be
   // read the wrong way round). What is kept is unchanged.
   const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const dateFormat = { format: (d) => `${d.getUTCDate()} ${MONTH_SHORT[d.getUTCMonth()]} ${d.getUTCFullYear()}` };
@@ -755,9 +758,12 @@
         { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = sheetLocked(); } quietSaved();
           // 🔴 CSS CHANGED (2026-11-22): the bar under the sheet (rows count, Shortcuts, colour key), for the Application Team only | from: shown | to: hidden (the owner, 22 Nov 2026)
           const foot = document.querySelector('.footbar'); if (foot) foot.style.display = appOwn() ? 'none' : ''; } // no line at the top for the Application Team (the owner, 22 Nov 2026)
+        syncFollowupButton();
         if (cameFromEl) { if (sheetLocked()) { cameFrom = ''; cameFromEl.value = ''; } cameFromEl.hidden = sheetLocked() || !sourceListReady; }
         document.body.toggleAttribute('data-viewonly', Teams.isReadOnly(me));
         document.body.toggleAttribute('data-candelete', Teams.canDelete(me));
+        // 🔴 CSS CHANGED (2026-11-22): Add student, Colour rows, Delete rows, Undo and Redo for the Mock Team | from: shown | to: hidden (the sheet is to look at, the owner, 22 Nov 2026)
+        ['#addRow', '#colorRow', '#delRow', '#undoBtn', '#redoBtn'].forEach((sel) => { const b = $(sel); if (b) b.hidden = mockOwn(); });
       }
       if (!res.ok || !me) throw new Error('HTTP ' + res.status);
       json = await res.json();
@@ -1951,6 +1957,43 @@
   }
 
   // replaceWith: the first character typed (typing over a cell replaces it, like Sheets).
+  // A cut-short cell read in full (the Mock Team, the owner, 22 Nov 2026): a small box under the cell, never a way to change it. A mock's
+  // feedback shows with its date. It closes with Escape, a click anywhere or another double-click.
+  let peekBox = null;
+  let peekAt = 0;
+  function closePeek() { if (peekBox) { peekBox.remove(); peekBox = null; } }
+  function peekCell(td, col, row) {
+    closePeek();
+    const value = String((row && row[col]) ?? '').trim();
+    const n = (/^MOCK SCHEDULE (\d)$/.exec(col) || [])[1];
+    const feedback = n ? String((row && row[`FEEDBACK ${n}`]) || '').trim() : '';
+    if (!value && !feedback) return;
+    const box = document.createElement('div');
+    box.className = 'cell-peek';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-label', 'The full text of the cell');
+    const label = document.createElement('small');
+    label.textContent = [col.charAt(0) + col.slice(1).toLowerCase(), describeRow(row)].join(' | ');
+    const body = document.createElement('p');
+    const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    body.textContent = iso ? new Date(Date.UTC(+iso[1], +iso[2] - 1, +iso[3])).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : value || 'No date';
+    box.append(label, body);
+    if (n) { const f = document.createElement('p'); f.className = 'cell-peek-more'; f.textContent = feedback ? `Feedback ${n}: ${feedback}` : `Feedback ${n}: not written yet`; box.append(f); }
+    document.body.append(box);
+    const r = window.isrPos.rect(td);
+    const w = Math.min(360, window.isrPos.width() - 16);
+    box.style.width = `${w}px`;
+    box.style.left = `${Math.max(8, Math.min(r.left, window.isrPos.width() - w - 8))}px`;
+    const h = 120; // about the box's height: shown above the cell when there is no room under it
+    box.style.top = `${r.bottom + 6 + h > window.isrPos.height() ? Math.max(8, r.top - 6 - h) : r.bottom + 6}px`;
+    peekBox = box;
+    peekAt = Date.now();
+  }
+  document.addEventListener('mousedown', (e) => { if (peekBox && !peekBox.contains(e.target)) closePeek(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePeek(); });
+  // A scroll closes it, but not the sheet's own small scroll that brings the double-clicked cell into view.
+  window.addEventListener('scroll', () => { if (peekBox && Date.now() - peekAt > 400) closePeek(); }, true);
+
   function startEdit({ replaceWith = null } = {}) {
     if (!activeCell || editing) return;
     const { rowIdx, col } = activeCell;
@@ -1958,6 +2001,7 @@
     const td = cellTd(rowIdx, col);
     if (!td || !rows[rowIdx] || CALC_COLS[col]) return;
     // The Application Team still moves a student on with Status (Application Stage to Mock Stage): the student card has no stage control.
+    if (mockOwn() && col !== 'APPLICATION STATUS') { peekCell(td, col, rows[rowIdx]); return; }
     if (!sheetOpen(col) && col !== 'APPLICATION STATUS') { flashStatus('Open the student card to change a detail'); return; }
     if (!canEditCol(col, rows[rowIdx]) && col !== 'APPLICATION STATUS') { flashStatus(isViewOnly() ? 'This account is view only' : "Your team can't change this column"); return; }
     const busy = peerOnCell(rowIdx, col, isTextCell(col));
@@ -2520,6 +2564,17 @@
     }
   }
 
+  // The menu already has Follow-up for Admin, the Follow-up Team and the branches: the button is shown only to those without it
+  // (never two controls for the same thing). The menu draws itself after the page, so this runs again whenever the menu changes.
+  // Never for the Application Team (the owner, 22 Nov 2026): following students up is not its work.
+  function syncFollowupButton() {
+    const bs = document.getElementById('bulkSend');
+    if (bs) bs.hidden = !me || Teams.isReadOnly(me) || Teams.ownTeamApplication(me) || mockOwn() || Boolean(document.querySelector('.niec-nav a[href="/bulk"]'));
+  }
+  { const menu = document.querySelector('.niec-header') || document.body; new MutationObserver(syncFollowupButton).observe(menu, { childList: true, subtree: menu !== document.body }); }
+  const bulkBtn = document.getElementById('bulkSend');
+  if (bulkBtn) bulkBtn.addEventListener('click', () => { location.href = '/bulk'; });
+
   function describeRow(row) {
     return [row['FIRST NAME'], row['LAST NAME']].filter(Boolean).join(' ') || 'this row';
   }
@@ -2630,7 +2685,7 @@
     const safeSheetName = sheetName.replace(/[\\/*?:[\]]/g, ' ').slice(0, 31) || 'Export';
 
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'Vishnu';
+    wb.creator = 'ISR';
     wb.created = new Date();
 
     const ws = wb.addWorksheet(safeSheetName, { views: [{ state: 'frozen', ySplit: 1 }] });
@@ -2676,7 +2731,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Vishnu-students-${sheetName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.xlsx`;
+    a.download = `ISR-students-${sheetName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -2941,6 +2996,11 @@
     // A double-click on the name, email, number, university or course opens the card too; Enter or F2 still edits the cell.
     if (td && body.contains(td) && !td.parentElement.classList.contains('pad-row') && !e.target.closest('select, input')
       && CARD_OPEN_COLUMNS.has(columns[Number(td.dataset.colIndex)])) { openCardOfRow(Number(td.parentElement.dataset.rowIdx)); return; }
+    // The Mock Team reads a cut-short cell in full, a date cell too (its box never opens for them); Status keeps its own list.
+    if (mockOwn() && td && body.contains(td) && !td.classList.contains('col-idx') && !td.parentElement.classList.contains('pad-row')) {
+      const c = columns[Number(td.dataset.colIndex)];
+      if (c !== undefined && c !== 'APPLICATION STATUS') { peekCell(td, c, rows[Number(td.parentElement.dataset.rowIdx)]); return; }
+    }
     if (!td || !body.contains(td) || td.classList.contains('col-idx') || e.target.closest('select, input')
       || td.parentElement.classList.contains('pad-row')) return;
     const rowIdx = Number(td.parentElement.dataset.rowIdx);

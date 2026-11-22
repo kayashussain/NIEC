@@ -62,31 +62,24 @@ The owner does not want old versions, copies or rewrites lying around, because a
 - The live server holds the real students, intakes, partners and Universities. The students, intakes and figures in any preview, demo, screenshot
   or test run (`scripts/local-demo.js`, `scripts/demo-data.js`) are **made up by Claude** and must always be called that. Never present
   them as real, and never let the owner think a number from them is real.
-- How Claude works with the real data (the owner, 22 Nov 2026), in three ways, each switched on by the owner in the hosting settings:
-  1. **Reading:** the read-only Claude connector (`student-details/advisor-mcp.js`, `NIEC_ADVISOR_TOKEN`) shows Claude the live students, tasks,
-     Universities and partners. Claude uses it to check the design and the data (long names, empty fields, figures) and says plainly what it saw.
-  2. **Changing a student's plain details:** the write door (`student-details/advisor-write.js`, `NIEC_ADVISOR_WRITE_TOKEN` and `NIEC_ADVISOR_WRITE_AS`).
-     Two steps always: Claude previews the exact before and after, shows the owner in plain words, and applies it only after the owner says yes to that
-     change. One student at a time, only First name, Last name, Student ID and NOC number, never a deletion, a user, a password, a setting or Incentive.
-     Claude never uses it without the owner's yes, and never to "tidy up" on its own.
-  3. **Code going live:** a push to `master` that passes the tests is put on the live server by `.github/workflows/deploy.yml`, once the owner has set its
-     four secrets. Claude cannot log in to the live server; it can only push to `master`. The data lives outside git, so a deploy never touches a student.
-  If a way is not switched on, or the owner asks for something it cannot do, say so plainly and give the steps (and `scripts/local-live.js` on the owner's
-  computer is always there). Do not invent data.
+- The owner wants to see and work with the real data before pushing to the live server. Claude cannot reach the live server or the owner's
+  browser, so the way is `scripts/local-live.js`: the owner downloads a backup from the live server (Admin, Restore, or the daily backup)
+  and runs `node scripts/local-live.js <the file>` on their own computer, then opens http://localhost:8080 (no login page, this computer only; `--login` brings the login page back). When the owner asks again for live data, give these steps again,
+  say plainly what Claude cannot do, and do not invent data.
 - Real data never goes in git, in code, in tests or in screenshots sent anywhere. `live-data/` and the daily backups are ignored by git.
 - Every change must work with the data that already exists on the live server: stored values keep their meaning (for example a
   student's Student Source stays "Chitwan Branch"), and new fields are optional.
 
 ## Rule 4: the Application Team's pages and system are frozen (the owner, 22 Nov 2026, strictly)
 
-The Application Team's side of Vishnu is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule). The owner then asked for the whole system, the Application Team included, to be renamed Vishnu and recoloured in Peacock Ocean (22 Nov 2026): that new look is part of what is frozen; only colours and the name changed, nothing was added, moved or removed. The same day the owner removed the Mock and Follow-up sections from everywhere, Admin included: the Mock interviews box left the student card, Mock interview left the kinds of task, and the Mock and Follow-up Teams are no longer teams.
+The Application Team's side of ISR is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule).
 It must stay exactly the same until the owner asks for a change and approves it.
 
 - **What is frozen:** everything a person whose own team is Application sees and uses (`Teams.ownTeamApplication`): the menu,
   Today (Today, Later, Missing details with every Profile and Application detail from the step where it exists, the kinds of task, the task cards), All Students as they see it (look only: only Status is changed on the sheet;
   the four numbers; no blue line; nothing at the top or under the sheet), the student card (Profile with the Student source in it, a branch
   Source staying Admin's; Application details, whose University, Course and University partner come by themselves from the Priority
-  application and whose other details are changed with its Edit; notes of every change,
+  application and whose other details are changed with its Edit; Mock interviews, which the team only looks at; notes of every change,
   Undo and Redo), Universities
   (Share, Apply now), and the server rules behind them (`teamSave` with `fromSheet`, `appReach`, the page redirects, `noteCardChanges`).
 - **Never change any of it on your own.** No new feature, button, tab, number, message, hint, help text, paragraph or explanation is
@@ -108,44 +101,35 @@ It must stay exactly the same until the owner asks for a change and approves it.
   change it only after the owner approves. This holds even when it is a fix, and even when it is a better idea.
 - **A reviewer may suggest better features**, but only as suggestions for the owner to approve, never built on the reviewer's own.
 - **A deep review checks that the data lines up everywhere:** what the Application Team does on Today, All Students and the student
-  card must match the sheet, the student, Admin's view, the Dashboard and every other team (the branches, the Manager),
+  card must match the sheet, the student, Admin's view, the Dashboard and every other team (Mock, Follow-up, branches, the Manager),
   with the data that already exists on the live server (Rule 3).
 
-## The Vishnu colours: Peacock Ocean (the owner chose the dark Peacock Ocean look for the whole system, 22 Nov 2026, because light colours hurt the team's eyes; every page uses them, nothing else)
+## The ISR colours (the owner accepted these, 21 Nov 2026; every page uses them, nothing else)
 
 | Use | Colour |
 |---|---|
-| Page (canvas) | deep sea #0b2230 |
-| Side menu | night-sea gradient, top to bottom #0b1d3a, #0a3050, #0b4a4f, #173d22 |
-| Cards and panels | #13303f, 1px border #1f4658 to #3d6a80, 10px corners, no shadow |
-| Tiles inside a card, title bars | #19384a, 1px border #284f66, 8px corners |
-| Boxes, fields and grey buttons | #0f2a38, field border #4f7f95 |
-| Text | #dde9ef, semi-bold (600); titles 700 (#e3eef2) |
-| Second text (labels, hints) | #a9c3cf (nothing darker) |
-| Main button, "where you are now" | the peacock gradient, blue #0a5ca8 to teal #12a1a6, with white words |
-| Menu: where you are now | teal glass rgba(18, 161, 166, .28), words #8ff5ec, a gold #c9a227 bar at the left |
-| Links | #6fd8e0 |
-| Missing or needs attention | orange #f0a463 (dot #d9712a) |
-| Done, visa granted | green #6fd69a |
-| Error, rejected | red #ff8a7e |
-| Brand mark | the Vishnu peacock feather logo (`shared/vishnu-logo.png`, the owner's own picture) on a soft off-white tile #faf8f4 |
-| Peacock feather line (under the menu logo) | indigo #1b1f5e, blue #0a5ca8, teal #12a1a6, green #3c7a2a, gold #c9a227 |
+| Page (canvas) | #e6e6e6 |
+| Side menu, the student card's Profile column | #ececec |
+| Cards and panels | #f3f3f3, 1px border #9a9a9a, 10px corners, no shadow |
+| Tiles inside a card, title bars | #e2e2e2, 1px border #b8b8b8, 8px corners |
+| Boxes, fields and grey buttons | #f7f7f7, field border #6f6f6f (never pure white) |
+| Text | #000, semi-bold (600); titles 700 |
+| Second text (labels, hints) | #333 (nothing lighter) |
+| Main button, "where you are now" | blue #0071e3 with white words |
+| Links | #0050aa |
+| Missing or needs attention | orange #b85300 (dot #d9650b) |
+| Done, visa granted | green #1e8e4a |
+| Error, rejected | red #b42318 |
+| Logo blue (soft tints only) | #00a8ec |
 | Charts (Dashboard and every chart, in this order) | blue #0071e3, orange #d9650b, green #1e8e4a, purple #6e47d1, teal #0b8a95, pink #c2255c, amber #b7791f, slate #52606d, light blue #4aa3f0, olive #6b8e23 |
 | The same stage, the same colour on every chart | Inquiries teal, Applied and Students blue, Offers purple, Paid orange, CAS amber, Visas green |
 
 - The Dashboard is the one page in colour: each number tile has its stage colour as a band across its top and in its little chart.
-  Every other page stays deep sea, light grey words and the one peacock gradient, with colour only where it means something.
-- Text size: every page opens at Large, except the Application Team, whose pages open at Medium (the owner, 22 Nov 2026); a size picked in the account menu is always kept.
+  Every other page stays black, grey and one blue, with colour only where it means something.
+- Text size: every page opens at Large; Small and Medium are in the account menu.
 - Every card on every page looks the same (the row above). Cards side by side end on the same line.
-- The CSS that holds this is the "One system on every page" block and, after it, the "Vishnu in Peacock Ocean" finishing layer at the end of `shared/theme.css`. A new page uses these colours and
+- The CSS that holds this is the "One system on every page" block at the end of `shared/theme.css`. A new page uses these colours and
   that card; it never brings its own.
-
-## The Application Team's NIEC look (the owner approved it, 22 Nov 2026; it replaces the frozen Peacock Ocean look for that team only)
-
-- A person whose own team is the Application Team (`html[data-team="application"]`, set by `shared/header.js`) sees the NIEC portal look; every other account keeps the Vishnu Peacock Ocean look above, unchanged. The rules in Rule 4 about what that team sees and does still hold: only the look and feel changed, nothing was added, moved or removed.
-- Where it lives: `shared/niec-app.css` (loaded after `theme.css` by Today, All Students, the student card and Universities). The first part is generated by `scripts/build-niec-app-css.js` from the other stylesheets (run it whenever one of them changes; `test/niec-app-css.test.js` fails if it is out of date, and also checks that every rule is limited to the Application Team); the hand-made layer follows it.
-- The look: the owner's NIEC logo (`shared/niec-logo.png`, transparent) on a white band with an orange rule at the top of a deep NIEC navy menu; an open white page with no boxes, fine lines, filled soft-grey fields and buttons; NIEC blue (#0a5a94) for the one main action; the logo's orange (#f77e21) as the one mark of where you are; a sky blue (#00adef) keyboard ring; one type scale (12, 14, 16, 18, 22, 26, 32, 40px); text contrast at least 4.5 to 1; short quiet motion that stops when the computer asks for less. The Application Team's pages open at text size Medium.
-- Nothing is copied from another site or brand: no borrowed habits, and nothing is added that a page did not have.
 
 ## Other standing decisions (the owner's wishes)
 
@@ -154,8 +138,8 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Always run the complete test suite (`npm test`) before pushing**, not just the browser tests, because rules like the one
   above live in other tests.
 
-- The product is called **Vishnu** (the owner, 22 Nov 2026; it was "International Student Recruitment", ISR, before). Titles, emails, tabs, the menu and the login page say Vishnu, with the Vishnu peacock feather logo. Notes written by the system say "Vishnu (automatic)"; older notes that say "ISR (automatic)" keep their meaning. It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
-- There is **one look only: the dark Peacock Ocean theme, no light mode and no alternative themes** (the owner, 22 Nov 2026: light colours hurt the team's eyes). It must be easy on older eyes: no pure black and no pure white, soft light words on a deep sea canvas, larger type and larger buttons.
+- The product is called **International Student Recruitment**, short name **ISR** (titles, emails and tabs say ISR; the login page and the big logo say the full name). It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
+- There is **one look only: a light theme, no dark mode and no alternative themes** (the owner asked). It must be easy on older eyes: no pure white panels (soft off-white on a soft grey canvas), strong dark text, larger type and larger buttons.
 - The login page must not mention incentives or commissions. Incentive is Admin-only and behind its own password.
 - **Never add something that is already on the page (the owner, 17 Nov 2026, strictly).** Improving, changing and making a page
   much better is welcome. What is not allowed is a copy: if a page already has a button or a feature that does something, never
@@ -165,6 +149,6 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Front end: follow DESIGN.md, always (the owner, 20 Nov 2026).** The front end is the product. Before any change to a page, a card, a window or a style, read `DESIGN.md` and build to it: Apple's own standard, measured on apple.com: calm, quiet, premium, one blue, black and grey text, Apple's type scale and timings, no pop-ups, confetti or sticky bars the person did not ask for (the owner, 20 Nov 2026), using the shared motion kit (`shared/motion.js`), never reinventing it. Section 0 of DESIGN.md is the prompt to use. Finish every front-end change with an independent reviewer pass that scores each screen 9/10 or more.
 - **Desktop and laptop only for now (the owner, 20 Nov 2026).** Design, build and check every page for a laptop or desktop screen. Do not spend work on the phone (mobile) version until the owner asks for it; phone styles already in the code stay as they are.
 - One font everywhere (`--font` in `shared/theme.css`): the system font (SF Pro on Apple devices), Inter (in `shared/fonts`) elsewhere; no serif (the owner, 14 Nov 2026).
-- The look (the owner, 14 Nov 2026, made dark on 22 Nov 2026): the design language of Apple's website and apps (calm, quiet, segmented tabs, pill buttons, Text size Large for everyone; see DESIGN.md) in the Vishnu Peacock Ocean colours above: a deep sea canvas, sea panels, soft light words, the peacock gradient on main buttons and grey-sea pills for the rest. The top of the menu and the login page show the Vishnu peacock feather logo (`shared/vishnu-logo.png`) on a soft off-white tile; no consultancy (NIEC) logo anywhere (the owner, 22 Nov 2026). The page icon is the feather from that logo.
+- The look (the owner, 14 Nov 2026): the design language of Apple's website and apps: a light grey canvas, soft grey panels and black text, now in the "Strong contrast" colours (the owner, 21 Nov 2026, option H: page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, no pure white, text #000 in a semi-bold weight, grey words #333, firm lines, Text size Large for everyone; see DESIGN.md), blue pill buttons (#0071e3) and grey pills for the rest, segmented tabs. Only the consultancy's logo at the top of the menu and on the login page (no name or "UK" beside it). The logo is `brand-logo.png` in the data folder, else the starting one in `shared/`.
 - Never put the real Incentive password, tokens or personal data in code, tests or git. It is the `INCENTIVE_PASSWORD`
   setting on the server only.

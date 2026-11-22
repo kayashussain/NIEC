@@ -27,8 +27,8 @@
   const state = { student: null, options: [], listeners: [], order: null, open: false, shareOnly: false };
   // The Application Team does not shortlist (it does not give itself applications): beside each course it has Share, and no tray
   // (the owner, 21 Nov 2026). The page tells this module who is looking (useMe) before it draws anything.
-  // Share instead of Shortlist for the Application Team.
-  function useMe(me) { const T = root.TeamRules; state.shareOnly = Boolean(T && (T.ownTeamApplication && T.ownTeamApplication(me))); }
+  // Share instead of Shortlist for the Application Team, and for the Mock Team's own people (the owner, 22 Nov 2026: Universities the same).
+  function useMe(me) { const T = root.TeamRules; state.shareOnly = Boolean(T && ((T.ownTeamApplication && T.ownTeamApplication(me)) || (T.ownTeamMock && T.ownTeamMock(me)))); }
   const optKey = (universityId, course, intake) => `${universityId}|${String(course).toLowerCase()}|${String(intake || '').toLowerCase()}`;
   // A shortlist change only repaints the Shortlist buttons and the tray, at once (the owner, 17 Nov 2026: quick, fast and smooth);
   // the page itself is redrawn only when the student changes (its "Shortlisting for ..." bars).

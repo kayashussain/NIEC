@@ -1,6 +1,7 @@
 // Finishing a task (the owner, 16 Nov 2026): nothing is filled in by itself. The team answers, the answers are shown back (preview)
 // and only confirmed answers are written: an Application task writes Application submitted (only when empty; a second application
-// stays in University options and the notes), a NOC task writes NOC (Pending or Submitted) and NOC Number, a Medical task books the test (Booked, and on that day the team is
+// stays in University options and the notes), a NOC task writes NOC (Pending or Submitted) and NOC Number, a Mock task writes the next
+// Mock Schedule and gives the team "Write the feedback" on that day, a Medical task books the test (Booked, and on that day the team is
 // asked whether the report is received). Every answer is also a note on the student. All students are made up.
 const test = require('node:test');
 const assert = require('node:assert');
@@ -70,6 +71,13 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finish(n2, { noc: 'Received', nocNumber: 'NOC-123456' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Received');
   assert.strictEqual((await row())['NOC NUMBER'], 'NOC-123456');
+
+  // Mock: the next empty Mock Schedule, and the feedback reminder waiting for that day.
+  const m1 = await give('Set the first mock', 'mock');
+  assert.strictEqual((await finish(m1, { scheduled: true, date: add(3), remind: true })).status, 200);
+  assert.strictEqual((await row())['MOCK SCHEDULE 1'], add(3));
+  const rem = (await admin('GET', `/api/cards/${id}`)).json.card.tasks.find((x) => /Write the feedback of mock interview 1/.test(x.text));
+  assert.ok(rem && rem.doOn === add(3) && rem.team === 'application' && !rem.done, 'the reminder waits for the day');
 
   // Medical: booked (Booked on the sheet, and "is the report received?" waiting for that day), booked again; never Received by itself.
   const d1 = await give('Book the medical test', 'medical');
@@ -253,9 +261,9 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     const soloTask = (await admin('POST', `/api/cards/${solo}/tasks`, { team: 'application', text: 'Check on the NOC', tag: 'noc' })).json.card.tasks[0].id;
     const soloFinish = (f) => app('POST', `/api/cards/${solo}/tasks/${soloTask}`, { done: true, finish: { next: 'none', ...f, confirmed: true } });
     assert.strictEqual((await soloFinish({ note: 'Spoke to the student, ok' })).status, 200, 'the last open task, words only, no next day asked');
-    // A task of the old Mock interview kind (now Other) asks no follow-up day: words are enough, even as the last open task, and none is made.
+    // A Mock task asks no follow-up day: words are enough, even as the last open task, and none is made.
     const solo4 = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Mock', 'LAST NAME': 'Only', 'CONTACT NUMBER': '9800000096' } })).json.id;
-    const mockT = (await admin('POST', `/api/cards/${solo4}/tasks`, { team: 'application', text: 'Ask the university for the mock feedback', tag: 'other' })).json.card.tasks[0].id;
+    const mockT = (await admin('POST', `/api/cards/${solo4}/tasks`, { team: 'application', text: 'Ask the university for the mock feedback', tag: 'mock' })).json.card.tasks[0].id;
     assert.strictEqual((await app('POST', `/api/cards/${solo4}/tasks/${mockT}`, { finishState: true })).json.state.needsNext, undefined, 'no follow-up question is asked');
     assert.strictEqual((await app('POST', `/api/cards/${solo4}/tasks/${mockT}`, { done: true, finish: { note: 'Asked for the feedback.', confirmed: true } })).status, 200);
     assert.strictEqual((await admin('GET', `/api/cards/${solo4}`)).json.card.tasks.filter((x) => !x.done).length, 0, 'no follow-up task was made');
@@ -327,6 +335,17 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
     const kept = (await cardT()).options.find((x) => x.university === 'Revert University');
     assert.ok(kept && kept.offer === today && !kept.applied, 'the offer stays, only the application day this task wrote is taken off');
   }
+  // Mock: the feedback of a mock held goes to its Feedback column; the Pre-CAS result to Pre-CAS Interview.
+  const mT1 = await giveT('Set the mock', 'mock');
+  assert.strictEqual((await finishT(mT1, { mock: 'set', date: today, remind: true })).status, 200);
+  const fbTask = (await cardT()).tasks.find((x) => /Write the feedback of mock interview 1/.test(x.text));
+  assert.ok(fbTask, 'the reminder');
+  assert.strictEqual((await finishT(fbTask.id, { mock: 'feedback', slot: 1, feedback: 'Confident answers' })).status, 200);
+  assert.strictEqual((await rowT())['FEEDBACK 1'], 'Confident answers');
+  const mT2 = await giveT('Pre-CAS interview', 'mock');
+  assert.strictEqual((await finishT(mT2, { mock: 'precas', result: 'Maybe' })).status, 400);
+  assert.strictEqual((await finishT(mT2, { mock: 'precas', result: 'Passed' })).status, 200);
+  assert.strictEqual((await rowT())['PRE CAS INTERVIEW'], 'Passed');
   // Visa refused: the stage goes to Visa Rejected.
   {
     const wbV = (await admin('GET', '/api/data')).json;

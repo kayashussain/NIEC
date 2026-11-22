@@ -69,10 +69,10 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   const code = fs.readFileSync(path.join(dir, 'first-admin-code.txt'), 'utf8').trim();
   await admin('POST', '/api/login/first-admin', { setupCode: code, username: 'owner', name: 'Owner' });
   await admin('POST', '/api/login/new-password', { password: 'Strong-Pass-2026' });
-  const made = (await admin('POST', '/api/users', { username: 'sunita', name: 'Sunita', email: '', departments: ['chitwan'] })).json;
+  const made = (await admin('POST', '/api/users', { username: 'sunita', name: 'Sunita', email: '', departments: ['followup'] })).json;
   const fu = person();
   await fu('POST', '/api/login', { username: 'sunita', password: made.temporaryPassword }); await fu('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
-  const sita = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Sita', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000091', 'STUDENT SOURCE': 'Chitwan Branch' } })).json.id;
+  const sita = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Sita', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000091' } })).json.id;
   const far = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Hari', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000092' } })).json.id;
 
   // The phone's own keys, as a browser makes them.
@@ -130,7 +130,7 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   // A student the Follow-up Team does not see is never sent; a test reaches the phone; a phone that has gone is forgotten.
   assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: far })).status, 404);
   assert.strictEqual((await fu('POST', '/api/push/whatsapp', { test: true })).status, 200);
-  assert.strictEqual(decrypt(got[got.length - 1].body, ua, auth).title, 'Vishnu is connected');
+  assert.strictEqual(decrypt(got[got.length - 1].body, ua, auth).title, 'ISR is connected');
   // A phone whose push address stopped working is marked "not answering", never forgotten, and renews itself with its secret.
   answer = 410;
   const lost = await fu('POST', '/api/push/whatsapp', { id: sita, text: 'Hello' });

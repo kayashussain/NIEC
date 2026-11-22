@@ -38,7 +38,7 @@ function createCourseWatch({ dir, getIndex, facts, finder, courseLinks, fetchFn 
     // Redirects are followed one by one, and only while they stay on the university's own website.
     let at = url; let res;
     for (let hop = 0; hop < 5; hop += 1) {
-      res = await fetchFn(at, { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Vishnu-portal)' }, signal: AbortSignal.timeout(20000) });
+      res = await fetchFn(at, { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ISR-portal)' }, signal: AbortSignal.timeout(20000) });
       const to = res.status >= 300 && res.status < 400 && res.headers && res.headers.get ? res.headers.get('location') : '';
       if (!to) break;
       let next; try { next = new URL(to, at).href; } catch (e) { return { status: res.status, ok: false, finalUrl: at, html: '' }; }

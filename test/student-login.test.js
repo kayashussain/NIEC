@@ -67,8 +67,8 @@ test('a student login opens their own portal only', { timeout: 120000 }, async (
   assert.strictEqual(mine.linked, true);
   assert.strictEqual(mine.firstName, 'Sita');
   assert.deepStrictEqual(mine.applications, [], 'nothing applied for yet');
-  assert.strictEqual(mine.progress.length, 5); // Applied, Offer, Payment, CAS, Visa (the mock interviews were removed, the owner, 22 Nov 2026)
+  assert.strictEqual(mine.progress.length, 6);
   assert.ok(!/Hari|9800000102|hari@example/.test(JSON.stringify(mine)), 'nothing about another student');
   assert.strictEqual((await app('GET', '/api/my-portal')).status, 403, 'only for a student login');
-  assert.strictEqual((await stu('GET', '/api/my-portal/guide/universityofwestlondon')).status, 404, 'the interview guides were removed');
+  assert.strictEqual((await stu('GET', '/api/my-portal/guide/universityofwestlondon')).status, 404, 'only the guides of their own universities');
 });

@@ -364,7 +364,7 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
     return p;
   };
   const app = await login('asha', { departments: ['application'] });
-  const follow = await login('bikram', { departments: ['chitwan'] });
+  const follow = await login('bikram', { departments: ['followup'] });
   const manager = await login('chief', { role: 'manager' });
 
   // Admin adds a student with the form: the student goes on the sheet, the details on the card.
@@ -394,9 +394,9 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual(hari.status, 200, JSON.stringify(hari.json));
   wb = (await admin('GET', '/api/data')).json;
   const hariRow = wb.sheets[0].rows.find((r) => r._id === hari.json.id);
-  assert.strictEqual(hariRow['APPLICATION STATUS'], 'Inquiry', "a branch's students start at Inquiry, whatever was sent");
-  assert.strictEqual(hariRow._addedByTeam, 'chitwan');
-  assert.strictEqual(hariRow['STUDENT SOURCE'], 'Chitwan Branch', 'a branch student is always the branch');
+  assert.strictEqual(hariRow['APPLICATION STATUS'], 'Inquiry', "the Follow-up Team's students start at Inquiry, whatever was sent");
+  assert.strictEqual(hariRow._addedByTeam, 'followup');
+  assert.ok(!hariRow['UNIVERSITY NAME'], 'a column the team may not fill in is left out');
   assert.strictEqual((await manager('POST', '/api/students/new', { fields: { 'FIRST NAME': 'X' } })).status, 403, 'the Manager only views');
 
   // Who sees which card: the same students as on the sheet.
@@ -417,7 +417,8 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual((await admin('POST', `/api/cards/${sitaId}/source`, { source: 'Made up' })).status, 400);
   assert.strictEqual((await admin('POST', `/api/cards/${sitaId}/source`, { source: 'Events' })).status, 200);
   assert.strictEqual((await admin('GET', `/api/cards/${sitaId}`)).json.student.source, 'Events');
-  assert.strictEqual((await follow('POST', `/api/cards/${hari.json.id}/source`, { source: 'Visitor' })).status, 403, 'a branch student stays the branch: only Admin changes it');
+  assert.strictEqual((await follow('POST', `/api/cards/${hari.json.id}/source`, { source: 'Visitor' })).status, 200, 'a team sets the source of a student it added, while it is blank');
+  assert.strictEqual((await follow('POST', `/api/cards/${hari.json.id}/source`, { source: 'Events' })).status, 403, 'and only once');
   await admin('POST', `/api/cards/${sitaId}/source`, { source: 'Social Media' });
 
   // Notes.
@@ -471,11 +472,11 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.ok(!/cid:niec-signature|data:image/.test(teamPreview.html || ''), 'and without the office signature picture');
 
   // B2B Partners: the Manager looks with the commission; the Application Team sets B2B partners up (the owner, 15 Nov 2026) without
-  // the commission (see partner-access.test.js). The old Message templates page now leads home (Follow-up was removed, 22 Nov 2026).
+  // the commission (see partner-access.test.js). The old Message templates page now leads to Follow-up's setup.
   // The page itself is no longer the Application Team's (the owner, 21 Nov 2026: no Partners in its menu); the list still answers.
   assert.strictEqual((await app('GET', '/api/b2b')).status, 200, 'the list answers the Application Team');
   assert.strictEqual((await app('GET', '/b2b-partners')).status, 302, 'the page sends the Application Team to Today');
-  assert.strictEqual((await app('GET', '/message-templates')).location, '/today');
+  assert.strictEqual((await app('GET', '/message-templates')).location, '/bulk#setup');
   assert.strictEqual((await app('GET', '/api/b2b')).json.access, 'setup');
   assert.strictEqual((await manager('GET', '/api/b2b')).json.access, 'commission');
   assert.strictEqual((await manager('POST', '/api/b2b', { name: 'X' })).status, 403, 'the Manager does not change B2B Partners');
@@ -500,10 +501,18 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.ok(!/<img src="data:image\/png;base64,/.test(own.html), 'a team member with no signature picture of their own gets none, never the office one');
   const office = (await admin('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'custom', subject: 'Hello', body: 'Dear {first_name},\n\nMy own words.' })).json;
   assert.match(office.html, /<img src="data:image\/png;base64,/, 'the office signature picture ends Admin\'s emails');
-  // Messages to many students (Follow-up) were removed (the owner, 22 Nov 2026): nobody has them any more.
-  for (const who of [app, follow, admin]) assert.notStrictEqual((await who('GET', '/api/bulk/students?stage=Application%20Stage')).status, 200);
-  assert.notStrictEqual((await admin('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'x', body: 'y' })).status, 200);
-  assert.strictEqual((await admin('GET', '/bulk')).location, '/today', 'the old Follow-up page leads home');
+  // Messages to many students are not the Application Team's work (the owner, 22 Nov 2026: no Follow-up for that team): refused.
+  assert.strictEqual((await app('GET', '/api/bulk/students?stage=Application%20Stage')).status, 403);
+  const both = await login('ravi', { departments: ['application', 'mock'] }); // two teams and no own team: still sends to many
+  const bulk = (await both('GET', '/api/bulk/students?stage=Application%20Stage')).json;
+  assert.ok(bulk.students.some((x) => x.id === sitaId) && !bulk.students.some((x) => x.id === hari.json.id), 'the list holds only the students of that stage that the account may change');
+  const prev = (await both('POST', '/api/bulk/preview', { ids: [sitaId, hari.json.id], subject: 'Hi', body: 'Dear {first_name},\n\nA message.', whatsapp: 'Hello {first_name}' })).json;
+  assert.strictEqual(prev.items[0].name, 'Sita Sharma');
+  assert.strictEqual(prev.items[1].error, 'Not in your list.', 'a student the account cannot see is refused');
+  const bulkSent = (await both('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'Hi', body: 'Dear {first_name},\n\nA message.' })).json;
+  assert.strictEqual(bulkSent.results[0].status, 'not-configured', 'nothing leaves a computer with no mailbox');
+  assert.match((await follow('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'x', body: 'y' })).json.error, /sent by Admin/, 'the Follow-up Team sends no messages to many students (the owner, 21 Nov 2026)');
+  assert.strictEqual((await manager('POST', '/api/bulk/preview', { ids: [sitaId], subject: 'x', body: 'y' })).json.items[0].error, 'Not in your list.', 'the Manager only views');
 
   // Agents are their own list, apart from the B2B partners.
   assert.strictEqual((await app('GET', '/api/agents')).json.access, 'team', 'the Application Team looks at Agents without the commission');
@@ -554,7 +563,8 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
 
   // Today: what needs attention, for the students the account sees.
   const todayAdmin = (await admin('GET', '/api/today')).json;
-  assert.deepStrictEqual(todayAdmin.sections.map((x) => x.key), ['check', 'apply', 'passport', 'noSource', 'offers', 'cas']);
+  assert.deepStrictEqual(todayAdmin.sections.map((x) => x.key), ['check', 'inquiries', 'apply', 'passport', 'noSource', 'mock', 'offers', 'cas']);
+  assert.ok(todayAdmin.sections.find((x) => x.key === 'inquiries').students.some((x) => x.id === hari.json.id), 'a new inquiry with no contact is listed');
   const todayApp = (await app('GET', '/api/today')).json;
   assert.ok(!todayApp.sections.some((x) => x.students.some((y) => y.id === hari.json.id)), 'a team sees only the students of its own stages');
   assert.strictEqual((await app('GET', '/today')).status, 200, 'the Today page opens for every account');
@@ -656,8 +666,8 @@ test('each kind of account gets its own workspace, and every branch in the list 
   const Fields = require('../student-details/card-fields.js');
   assert.strictEqual(Teams.kindOf({ role: 'admin' }), 'admin');
   assert.strictEqual(Teams.kindOf({ role: 'manager', departments: [] }), 'manager');
-  assert.strictEqual(Teams.kindOf({ role: 'staff', departments: ['application'] }), 'application');
-  assert.strictEqual(Teams.kindOf({ role: 'staff', departments: ['application', 'chitwan'] }), 'branch');
+  assert.strictEqual(Teams.kindOf({ role: 'staff', departments: ['mock'] }), 'mock');
+  assert.strictEqual(Teams.kindOf({ role: 'staff', departments: ['application', 'followup'] }), 'team');
   Fields.BRANCHES.forEach((b) => {
     const id = b.toLowerCase();
     assert.ok(Teams.DEPARTMENTS[id], `${b} is a team`);

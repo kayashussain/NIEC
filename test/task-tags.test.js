@@ -12,9 +12,9 @@ const { valuesFor } = require('../student-details/messages');
 test('the system guesses what a task is about from its words, the team and the stage', () => {
   assert.strictEqual(Fields.guessTaskTag('Collect the tuition fee deposit receipt', 'application', 'Application Stage'), 'payment');
   assert.strictEqual(Fields.guessTaskTag('Book the VFS appointment', 'application', ''), 'visa');
-  // Mock interview is no longer a kind (the owner, 22 Nov 2026).
-  assert.strictEqual(Fields.guessTaskTag('Prepare the student for the interview', 'head', 'Mock Stage'), 'other');
-  assert.strictEqual(Fields.guessTaskTag('Ask for the missing transcript', 'head', ''), 'application', 'documents are part of the application (the owner, 21 Nov 2026)');
+  assert.strictEqual(Fields.guessTaskTag('Prepare the student for the interview', 'application', ''), 'mock');
+  assert.strictEqual(Fields.guessTaskTag('Ask for the missing transcript', 'mock', ''), 'application', 'documents are part of the application (the owner, 21 Nov 2026)');
+  assert.strictEqual(Fields.guessTaskTag('Call the student', 'mock', ''), 'mock');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'head', 'Payment Stage'), 'payment');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'head', 'Inquiry'), 'other');
   assert.strictEqual(Fields.guessTaskTag('Get the NOC from the ministry', 'application', ''), 'noc', 'NOC is a tag of its own');
@@ -36,8 +36,8 @@ test('a task keeps the tag and the priority it was given, and both can be change
   assert.ok(!made.error, made.error);
   assert.strictEqual(made.task.tag, 'application');
   assert.strictEqual(made.task.priority, 'high', 'every task is Priority unless something else is chosen');
-  assert.strictEqual(cards.addTask(row, { team: 'application', text: 'x', priority: 'super' }, 'Admin').task.priority, 'super');
-  assert.strictEqual(cards.addTask(row, { team: 'application', text: 'x', priority: 'urgent!!' }, 'Admin').task.priority, 'high');
+  assert.strictEqual(cards.addTask(row, { team: 'mock', text: 'x', priority: 'super' }, 'Admin').task.priority, 'super');
+  assert.strictEqual(cards.addTask(row, { team: 'mock', text: 'x', priority: 'urgent!!' }, 'Admin').task.priority, 'high');
   assert.strictEqual(Fields.taskPriorityOf({}), 'high', 'an older task with no priority counts as Priority');
   assert.strictEqual(cards.tagTask(row, made.task.id, { priority: 'medium' }, 'Admin').task.priority, 'medium');
   assert.ok(cards.tagTask(row, made.task.id, { priority: 'nonsense' }, 'Admin').error);
@@ -56,10 +56,9 @@ test('a name typed in capitals reads normally in a message; the sheet keeps it a
   assert.strictEqual(valuesFor({ row: { 'FIRST NAME': 'McKenzie' } }).first_name, 'McKenzie', 'a name in mixed case is left alone');
 });
 
-test('a task is given with Application, NOC, Medical or Other; older tags still read (the owner, 21 and 22 Nov 2026)', () => {
+test('a task is given with Application, Mock interview, NOC, Medical or Other; older tags still read (the owner, 21 Nov 2026)', () => {
   const F = require('../student-details/card-fields');
-  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'noc', 'medical', 'other']);
-  assert.ok(!F.TASK_TAG_IDS.includes('mock'), 'Mock interview is no longer a kind');
+  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'noc', 'medical', 'other']);
   ['offer', 'payment', 'visa'].forEach((k) => assert.ok(F.TASK_TAG_IDS.includes(k), `${k} is still a known tag, so stored tasks keep it`));
 });
 
@@ -95,9 +94,9 @@ test('an Offer request keeps the application it chases, whatever its university 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-offerfor-'));
   const cards = createCards(dir);
   const row = 'row-offerfor01';
-  const t = cards.addTask(row, { team: 'application', text: 'Offer request: has the student received the offer letter from University of Greenwich International College (UGIC) (Foundation)?', tag: 'offer', offerFor: { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' } }, 'Vishnu').task;
+  const t = cards.addTask(row, { team: 'application', text: 'Offer request: has the student received the offer letter from University of Greenwich International College (UGIC) (Foundation)?', tag: 'offer', offerFor: { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' } }, 'ISR').task;
   assert.deepStrictEqual(cards.get(row).tasks[0].offerFor, { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' });
   assert.ok(t.id);
-  const bad = cards.addTask(row, { team: 'application', text: 'x', tag: 'offer', offerFor: { university: '', course: 'y' } }, 'Vishnu').task;
+  const bad = cards.addTask(row, { team: 'application', text: 'x', tag: 'offer', offerFor: { university: '', course: 'y' } }, 'ISR').task;
   assert.strictEqual(bad.offerFor, undefined, 'no university, nothing kept');
 });

@@ -1,39 +1,38 @@
-/* 🔴 CSS CHANGED (2026-11-22): Vishnu Peacock Ocean, every colour in this file | from: the light ISR colours (page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, black words #000, grey words #333, blue #0071e3, borders #9a9a9a to #6f6f6f) | to: the dark Peacock Ocean colours (page #0b2230, panels #13303f, tiles #19384a, boxes #0f2a38, light words #dde9ef, second words #a9c3cf, peacock blue #0f7fb3 and teal, borders #1f4658 to #4f7f95; orange, green and red kept as lighter tones that read on dark) */
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
 :root {
   /* NIEC brand, from the official logo and niec.edu.np: light blue, orange and grey. --niec-blue-text
      is the same blue a few shades deeper, for text on white (the logo blue itself is too light to read). */
-  --niec-blue: #7fd3ee;
-  --niec-blue-text: #7fd3ee;
-  --niec-blue-tint: #13303f;
-  --niec-orange: #f0a463;
-  --niec-grey: #a9c3cf;
-  --bg: #13303f;
-  --panel: #0f2a38;
-  --border: #3d6a80;
-  --border-strong: #3d6a80;
-  --text: #dde9ef;
-  --text-dim: #dde9ef;
-  --accent: #f0a463;
-  --primary: #f0a463; /* orange for buttons with white text: readable (4.6:1), unlike the bright brand orange */
-  --primary-hover: #d9712a;
+  --niec-blue: #00adef;
+  --niec-blue-text: #164a98;
+  --niec-blue-tint: #e8f7fe;
+  --niec-orange: #b86a00;
+  --niec-grey: #9d9d9d;
+  --bg: #f3f3f3;
+  --panel: #f7f7f7;
+  --border: #b8b8b8;
+  --border-strong: #9a9a9a;
+  --text: #000;
+  --text-dim: #333;
+  --accent: #b86a00;
+  --primary: #cc4a0a; /* orange for buttons with white text: readable (4.6:1), unlike the bright brand orange */
+  --primary-hover: #b54008;
   --accent-dim: #fff0e5;
-  --orange: #f0a463;
-  --focus: #7fd3ee;
+  --orange: #b86a00;
+  --focus: #0284c7;
   --focus-dim: #e6f4fb;
-  --focus-strong: rgba(127, 233, 236, 0.16);
-  --range-tint: rgba(15, 127, 179, 0.14);
-  --header-bg: #13303f;
-  --row-alt: #13303f;
-  --row-hover: #13303f;
-  --danger: #ff8a7e;
-  --green-bg: #13303f; --green-fg: #6fd69a;
-  --blue-bg: #0d2736; --blue-fg: #7fd3ee;
-  --amber-bg: #13303f; --amber-fg: #f0a463;
-  --gray-bg: #0b2230; --gray-fg: #dde9ef;
-  --red-bg: #0d2736; --red-fg: #ff8a7e;
-  --rc-green: rgba(46, 158, 91, 0.13); --rc-yellow: rgba(242, 201, 76, 0.02); --rc-orange: rgba(240, 164, 99, 0.14); --rc-red: rgba(255, 138, 126, 0.13); --rc-blue: rgba(127, 233, 236, 0.16); --rc-purple: rgba(185, 166, 255, 0.14); --rc-grey: #1f4256;
+  --focus-strong: #cbe9f8;
+  --range-tint: rgba(2, 132, 199, 0.14);
+  --header-bg: #eef3f8;
+  --row-alt: #f3f3f3;
+  --row-hover: #e8f6fd;
+  --danger: #dc2626;
+  --green-bg: #e6f6ea; --green-fg: #1b7a3d;
+  --blue-bg: #e8f0fe; --blue-fg: #1d4ed8;
+  --amber-bg: #fef3e0; --amber-fg: #b45309;
+  --gray-bg: #e6e6e6; --gray-fg: #333;
+  --red-bg: #fce8e8; --red-fg: #b91c1c;
+  --rc-green: #bbf0c8; --rc-yellow: #fdf0a6; --rc-orange: #fdd5a8; --rc-red: #fbc4c4; --rc-blue: #c3dafc; --rc-purple: #ddd0fa; --rc-grey: #d6dae0;
 }
 
 * { box-sizing: border-box; }
@@ -103,7 +102,7 @@ html, body, .table-wrap { overscroll-behavior-x: none; }
   cursor: pointer;
 }
 .btn:disabled { opacity: .4; cursor: not-allowed; background: var(--panel); }
-.btn-primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .btn-danger { color: var(--danger); }
 
 .save-status { font-size: 11px; color: var(--text-dim); min-width: 110px; }
@@ -194,7 +193,7 @@ thead th.sorted-desc .th-label::after { content: " ▴"; }
   background: var(--panel);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.288);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   font-size: 12px;
   text-transform: none;
   letter-spacing: normal;
@@ -286,7 +285,7 @@ tbody tr.selected td { background: var(--focus-dim); }
 /* Whole rows picked from their S.N: Delete clears these rows, so they look clearly different from the
    light tint a row gets when you only click one of its cells. */
 tbody tr.row-picked td { background: var(--focus-strong); }
-tbody tr.row-picked td.col-idx { background: var(--focus); color: #ffffff; font-weight: 600; }
+tbody tr.row-picked td.col-idx { background: var(--focus); color: #fff; font-weight: 600; }
 td.col-idx { cursor: pointer; user-select: none; }
 
 /* The cell cursor that the arrow keys move. scroll-margin keeps it clear of the sticky header and S.N column. */
@@ -333,7 +332,7 @@ td.date { font-variant-numeric: tabular-nums; color: var(--text-dim); padding: 3
 #body td.date .date-input::-webkit-datetime-edit-fields-wrapper { padding: 0; }
 #body td.date .date-input::-webkit-calendar-picker-indicator { position: absolute; right: 0; top: 0; width: 34px; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 /* A WhatsApp number shared by more than one student on the sheet. !important beats the striped/hover row backgrounds. */
-td.duplicate-phone { background: rgba(242, 201, 76, 0.02) !important; color: #dde9ef; font-weight: 600; }
+td.duplicate-phone { background: #fff176 !important; color: #000; font-weight: 600; }
 /* 🔴 CSS CHANGED (2026-11-14): hint text no longer slanted | from: italic grey | to: plain grey (Apple never slants text) */
 td.date-note { color: var(--text-dim); }
 #body td.lang-test, td.lang-test { padding: 5px 8px; white-space: nowrap; text-overflow: clip; }
@@ -358,7 +357,7 @@ td.lang-test .lt-date .date-input::-webkit-calendar-picker-indicator { position:
   font-variant-numeric: tabular-nums;
   padding: 3px 4px;
   cursor: pointer;
-  color-scheme: dark;
+  color-scheme: light;
 }
 .date-input:focus {
   outline: 2px solid var(--focus);
@@ -509,7 +508,7 @@ tr.defer-warning-row td { background-color: var(--red-bg) !important; }
   background: var(--panel);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.288);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   font-size: 12px;
 }
 .sheet-menu-item {
@@ -558,7 +557,7 @@ tr.defer-warning-row td { background-color: var(--red-bg) !important; }
 #body td.peer-cell::after {
   content: attr(data-peer);
   position: absolute; top: 0; right: 0; /* inside the cell, so cells that clip long text don't hide it */
-  background: var(--peer-color); color: #ffffff; font-size: 10px; line-height: 1; font-weight: 600;
+  background: var(--peer-color); color: #fff; font-size: 10px; line-height: 1; font-weight: 600;
   padding: 2px 5px; border-radius: 0 0 0 3px; white-space: nowrap; pointer-events: none; z-index: 5;
   opacity: 0; transition: opacity .1s;
 }
@@ -570,7 +569,7 @@ tr.defer-warning-row td { background-color: var(--red-bg) !important; }
 .legend > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .legend .key { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border-strong); display: inline-block; }
 .legend .key-calc { background: var(--focus-dim); }
-.legend .key-dup { background: rgba(242, 201, 76, 0.02); }
+.legend .key-dup { background: #fff176; }
 .legend .key-defer { background: var(--red-bg); }
 
 /* ---------------------------------------------------------------------------------------------
@@ -583,30 +582,30 @@ tr.defer-warning-row td { background-color: var(--red-bg) !important; }
 .btn:hover { background: var(--niec-blue-tint); border-color: var(--niec-blue); }
 .btn:disabled:hover { border-color: var(--border-strong); }
 .btn-primary, .topbar .btn-primary {
-  background: var(--primary); border-color: var(--primary); color: #ffffff; font-weight: 600;
+  background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600;
 }
 .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); filter: none; }
 
 /* Summary: white cards with a light-blue edge and blue figures; Total Students in solid NIEC blue. */
 .status-summary { background: var(--niec-blue-tint); }
 .stat-group-title { color: var(--niec-blue-text); }
-.stat-card { border-left: 3px solid var(--niec-blue); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.128); }
+.stat-card { border-left: 3px solid var(--niec-blue); box-shadow: 0 1px 2px rgba(0, 119, 168, 0.08); }
 .stat-card .stat-value { color: var(--niec-blue-text); }
-.stat-card.stat-total { background: #0f7fb3; border-color: #0f7fb3; }
-.stat-card.stat-total .stat-value { color: #ffffff; }
-.stat-card.stat-total .stat-label { color: #ffffff; }
+.stat-card.stat-total { background: #164a98; border-color: #164a98; }
+.stat-card.stat-total .stat-value { color: #fff; }
+.stat-card.stat-total .stat-label { color: #fff; }
 
 /* Column headings: light blue, with the NIEC blue line underneath. */
 thead th {
   background: var(--niec-blue-tint);
-  color: #7fd3ee;
+  color: #0a5878;
   border-bottom: 2px solid var(--niec-blue);
-  border-right-color: rgba(14, 143, 151, 0.384);
+  border-right-color: #cdebf8;
 }
-thead th:hover { background: rgba(14, 143, 151, 0.16); color: #7fd3ee; }
-thead th.col-idx { background: var(--niec-blue-tint); color: #7fd3ee; }
-thead .filter-btn { color: #7fd3ee; }
-thead .filter-btn:hover { background: rgba(14, 143, 151, 0.16); color: #7fd3ee; }
+thead th:hover { background: #d6f1fd; color: #06415a; }
+thead th.col-idx { background: var(--niec-blue-tint); color: #2f6f8a; }
+thead .filter-btn { color: #2f6f8a; }
+thead .filter-btn:hover { background: #c4e9fa; color: #06415a; }
 thead .filter-btn.active { color: var(--niec-orange); }
 
 /* Sheet tabs: the open intake in NIEC blue with an orange underline. */
@@ -677,8 +676,11 @@ body:not([data-role="admin"]) .sheet-tab-menu-btn { display: none; }
 .color-menu .swatch.rc-purple { background: var(--rc-purple); }
 .color-menu .swatch.rc-grey { background: var(--rc-grey); }
 
-.filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 24px 8px; padding: 8px 14px; border-radius: 12px; background: var(--focus-dim, #0d2736); border: 1px solid var(--focus-strong, rgba(14, 143, 151, 0.384)); color: var(--text); font-size: 13px; }
+.filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 24px 8px; padding: 8px 14px; border-radius: 12px; background: var(--focus-dim, #e6eff8); border: 1px solid var(--focus-strong, #cfe2f2); color: var(--text); font-size: 13px; }
 .filter-bar[hidden] { display: none; }
 
-
-/* 🔴 CSS CHANGED (2026-11-22): the Mock Team's small "full text of a cell" box on All Students removed with the team | from: .cell-peek styles | to: gone; nothing else changes */
+/* 🔴 CSS CHANGED (2026-11-22): a cut-short cell read in full, for the Mock Team (the owner, 22 Nov 2026: "if I double click on that cell I can see the details, I could not edit it") | from: no such box (a long University or course was cut with "…" and could not be read) | to: a double-click shows a small box under the cell: the column and the student in small grey words, the full text in black, and under a mock's day its feedback; it closes with Escape, a click anywhere or a scroll */
+.cell-peek { position: fixed; z-index: 70; padding: 12px 14px; border: 1px solid #6f6f6f; border-radius: 10px; background: #f7f7f7; color: #000; font-size: 15px; line-height: 1.45; animation: isr-slide-down .2s cubic-bezier(.16, 1, .3, 1) both; }
+.cell-peek small { display: block; margin-bottom: 4px; color: #333; font-size: 12px; font-weight: 600; }
+.cell-peek p { margin: 0; font-weight: 600; overflow-wrap: anywhere; white-space: pre-wrap; }
+.cell-peek .cell-peek-more { margin-top: 8px; padding-top: 8px; border-top: 1px solid #b8b8b8; font-weight: 500; }
