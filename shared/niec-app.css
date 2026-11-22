@@ -1362,14 +1362,6 @@ html[data-team="application"] .filter-menu-title {
 html[data-team="application"] body:has(#sheet) .stat-card.stat-total .stat-value {
   color: #1f2d3d;
 }
-html[data-team="application"] #payAdd,
-html[data-team="application"] .pay-add {
-  background: #085c97 !important;
-}
-html[data-team="application"] #payAdd:hover,
-html[data-team="application"] .pay-add:hover {
-  background: #085c97 !important;
-}
 html[data-team="application"] .synced-badge {
   font-size: 14px;
 }

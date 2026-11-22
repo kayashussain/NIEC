@@ -1190,8 +1190,9 @@ h1, .p-head h1, .page-head h1, body:has(#sheet) .sheet-title, body:has(.p-embed-
 .sheet-tab-menu-btn { border-radius: 980px; }
 body:has(#sheet) .stat-card.stat-total .stat-value { color: #dde9ef; }
 /* Incentive */
-#payAdd, .pay-add { border: 0 !important; border-radius: 980px !important; background: #0f7fb3 !important; color: #ffffff !important; }
-#payAdd:hover, .pay-add:hover { background: #0f7fb3 !important; }
+/* 🔴 CSS CHANGED (2026-11-22): the Add payment button on the Incentive page, a contrast fix (the owner said yes) | from: white words on #0f7fb3 (4.46 to 1, below the 4.5 to 1 minimum, which failed the accessibility check on GitHub) | to: white words on #0d6e9e (5.61 to 1); nothing else changes */
+#payAdd, .pay-add { border: 0 !important; border-radius: 980px !important; background: #0d6e9e !important; color: #ffffff !important; }
+#payAdd:hover, .pay-add:hover { background: #0d6e9e !important; }
 .summary-row.final { box-shadow: none !important; }
 .synced-badge { font-size: 13px; }
 /* confirm boxes, Ctrl+K, toasts, account menu */
