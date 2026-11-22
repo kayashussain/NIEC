@@ -331,19 +331,31 @@
         picks.forEach((p) => {
           const info = r.universities[p.o.university] || { suggested: '', used: [] };
           const pick = p.o.partner || info.suggested || '';
-          p.sel.replaceChildren(new Option('Choose the partner...', ''), new Option(`Direct with ${p.o.university || 'the university'}`, 'Direct'));
-          const group = document.createElement('optgroup');
-          group.label = 'B2B partners';
-          const names = [...new Set([...info.used.filter((n) => n !== 'Direct'), ...r.b2b])];
-          if (pick && pick !== 'Direct' && !names.includes(pick)) names.unshift(pick);
-          names.forEach((n) => group.append(new Option(n, n)));
-          p.sel.append(group);
+          const uni = p.o.university || 'the university';
+          // How a route reads (the owner, 22 Nov 2026): "Direct with University of West London", "Navitas to Keele University
+          // International College", "QA Higher Education to Ulster University ...", "Apply Board to Aberystwyth University".
+          const routeText = (v) => (v === 'Direct' ? `Direct with ${uni}` : `${v} to ${uni}`);
+          p.sel.replaceChildren(new Option('Choose the partner...', ''));
+          if (info.choices && info.choices.length) {
+            // A place on Apply through: only its own partners (the owner, 22 Nov 2026), and the one this student already has.
+            [...new Set([...(pick ? [pick] : []), ...info.choices])].forEach((n) => p.sel.append(new Option(routeText(n), n)));
+          } else {
+            p.sel.append(new Option(`Direct with ${uni}`, 'Direct'));
+            const group = document.createElement('optgroup');
+            group.label = 'B2B partners';
+            const names = [...new Set([...info.used.filter((n) => n !== 'Direct'), ...r.b2b])];
+            if (pick && pick !== 'Direct' && !names.includes(pick)) names.unshift(pick);
+            names.forEach((n) => group.append(new Option(n, n)));
+            p.sel.append(group);
+          }
           p.sel.value = pick;
           p.sel.disabled = false;
           if (p.sel.value) {
-            p.viaText.textContent = `Applying through: ${p.sel.value === 'Direct' ? `Direct with ${p.o.university || 'the university'}` : p.sel.value}`;
+            p.viaText.textContent = `Applying through: ${routeText(p.sel.value)}`;
             p.via.hidden = false; p.sel.hidden = true;
-            p.change.addEventListener('click', () => { p.via.hidden = true; p.sel.hidden = false; p.sel.focus(); });
+            // Nothing to change to when the place has one route only (a Navitas college): no Change partner then.
+            if (p.sel.options.length > 2) p.change.addEventListener('click', () => { p.via.hidden = true; p.sel.hidden = false; p.sel.focus(); });
+            else p.change.hidden = true;
           }
           p.sel.addEventListener('change', () => {
             p.hint.replaceChildren();

@@ -90,14 +90,21 @@ test('review fixes on the real server', { timeout: 120000 }, async (t) => {
     const offers = (await app('GET', '/api/tasks')).json.tasks.filter((x) => x.studentId === sid && x.tag === 'offer' && !x.done).map((x) => x.offerFor.course).sort();
     assert.deepStrictEqual(offers, ['MSc A', 'MSc B']);
   }
-  // Assign takes the partner Admin set on Apply through (here the starting list's partner for a place on it).
+  // Assign takes the partner from Apply through, named the owner's way (22 Nov 2026): Direct only with no one in between, Navitas and
+  // OIEG by their names, the QA universities as "QA Higher Education"; Change partner offers only that place's partners.
   {
-    const ap = (await admin('GET', '/api/apply-through')).json;
-    const entry = (ap.choices || []).find((e) => e.partner && !e.direct);
-    if (entry) {
-      const got = (await admin('GET', '/api/application-partners?u=' + encodeURIComponent(entry.name))).json;
-      assert.strictEqual(got.universities[entry.name].suggested, entry.partner);
+    await admin('POST', '/api/b2b', { name: 'Adventus' }); // an installation of this kind gets the starting Apply through list
+    const route = async (u) => (await admin('GET', '/api/application-partners?u=' + encodeURIComponent(u))).json.universities[u];
+    const ap = (await admin('GET', '/api/apply-through')).json.choices || [];
+    const named = (re) => (ap.find((e) => re.test(e.name)) || {}).name;
+    const cases = [[/^Keele University International College/i, 'Navitas'], [/^Health Sciences University$/i, 'Oxford International Education Group'], [/\(QA\)$/i, 'QA Higher Education'], [/^University of West London$/i, 'Direct']];
+    for (const [re, want] of cases) {
+      const u = named(re);
+      assert.ok(u, `${re} is on the starting Apply through list`);
+      assert.strictEqual((await route(u)).suggested, want, u);
     }
+    const herts = await route('University of Hertfordshire');
+    assert.deepStrictEqual(herts.choices.slice().sort(), ['Adventus', 'Apply Board', 'Real Dreams Educational Consultancy']);
   }
 
   // Many students moved in one save: each gets its stage line (written to the cards file once).

@@ -356,11 +356,25 @@ function createPortalApi({
       // The partner Admin set for this place on Apply through comes first (the owner, 22 Nov 2026: "the partner has already been
       // selected in our system"): Assign shows it already chosen; Change partner changes it for this student only.
       const at = applyThrough && applyThrough.find ? applyThrough.find(uniName) : null;
-      if (at && at.partner) suggested = at.direct ? 'Direct' : at.partner;
+      // How the owner names each route (22 Nov 2026): a direct agreement with no one in between (West London, Bangor, Middlesex) is
+      // "Direct"; a college or university through Navitas or OIEG goes through that name; the QA universities through "QA Higher
+      // Education"; a B2B partner through its own name. The value is what the course and University Partner keep.
+      const routeOf = (name) => {
+        const n = text(name);
+        if (!n) return '';
+        if (/\(qa\)\s*$/i.test(n) || /^qa\b/i.test(n)) return 'QA Higher Education';
+        const uniKey = squash(at ? at.name : uniName);
+        if (squash(n) === uniKey || squash(n) === squash(uniName) || (/universit|college/i.test(n) && (uniKey.includes(squash(n)) || squash(n).includes(uniKey)))) return 'Direct';
+        return n;
+      };
+      if (at && at.partner) suggested = routeOf(at.partner);
       else if (d && d.type === 'Through a B2B partner' && d.via) suggested = d.via;
       else if (counts.length) suggested = isUni(counts[0][0]) ? 'Direct' : counts[0][0];
       else if (directHere) suggested = 'Direct';
-      out[uniName] = { direct: directHere, suggested, used: counts.map(([n]) => (isUni(n) ? 'Direct' : n)).filter((n, i, a) => a.indexOf(n) === i) };
+      // `choices`: the partners Apply through has for this place (Change partner offers only these, the owner, 22 Nov 2026); null when
+      // the place is not on Apply through (every route is then offered, as before).
+      const choices = at ? [...new Set([at.partner, ...(at.options || [])].map(routeOf).filter(Boolean))] : null;
+      out[uniName] = { direct: directHere, suggested, choices, used: counts.map(([n]) => (isUni(n) ? 'Direct' : n)).filter((n, i, a) => a.indexOf(n) === i) };
     });
     return { b2b: b2bNames, universities: out };
   }
@@ -2793,7 +2807,8 @@ function createPortalApi({
       if (!isStudent(row)) return;
       const name = Fields.plainPartner(row['UNIVERSITY PARTNER']).replace(/\s+/g, ' ');
       const key = squash(name);
-      if (!key || known.has(key) || hidden.has(key) || isUniversityName(name, unis)) return;
+      // "QA Higher Education" is a direct route (the QA universities), never a B2B partner of its own (the owner, 22 Nov 2026).
+      if (!key || known.has(key) || hidden.has(key) || isUniversityName(name, unis) || key === 'qahighereducation') return;
       const f = found.get(key) || { name, students: 0 };
       f.students += 1; found.set(key, f);
     }));
