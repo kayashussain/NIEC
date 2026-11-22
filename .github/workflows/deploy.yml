@@ -72,4 +72,4 @@ jobs:
           fi
           # The tested commit goes live: fetch it, reset the code to it (data is outside the repo), install what the server needs, restart.
           ssh "${ID_OPT[@]}" -p "${PORT:-22}" -o BatchMode=yes -o ConnectTimeout=20 "$USER_NAME@$HOST" \
-            "set -e; cd '$APP_PATH'; git fetch origin master; git reset --hard '$SHA'; (cd student-details && npm install --omit=dev --no-audit --no-fund); mkdir -p student-details/tmp; touch student-details/tmp/restart.txt; echo \"Live is now at \$(git rev-parse --short HEAD)\""
+            "set -e; cd '$APP_PATH'; git fetch origin master; git reset --hard '$SHA'; for d in \$HOME/nodevenv/*/*/bin; do [ -d \"\$d\" ] && PATH=\"\$d:\$PATH\"; done; if command -v npm >/dev/null 2>&1; then (cd student-details && npm install --omit=dev --no-audit --no-fund); else echo 'npm not found on the server, skipped the package install (the code is updated).'; fi; mkdir -p student-details/tmp tmp; touch student-details/tmp/restart.txt tmp/restart.txt; echo \"Live is now at \$(git rev-parse --short HEAD)\""
