@@ -16,6 +16,7 @@ on:
     workflows: ["Tests"]
     types: [completed]
     branches: [master]
+  workflow_dispatch:
 
 concurrency:
   group: deploy-live
@@ -23,7 +24,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master') }}
     runs-on: ubuntu-latest
     steps:
       - name: Update the live server
@@ -34,11 +35,15 @@ jobs:
           APP_PATH: ${{ secrets.DEPLOY_PATH }}
           PORT: ${{ secrets.DEPLOY_PORT }}
           PASSPHRASE: ${{ secrets.DEPLOY_SSH_PASSPHRASE }}
-          SHA: ${{ github.event.workflow_run.head_sha }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           if [ -z "$HOST" ] || [ -z "$USER_NAME" ] || [ -z "$KEY" ] || [ -z "$APP_PATH" ]; then
             echo "The live server is not connected yet (the DEPLOY_ secrets are not all set), so nothing was deployed."
-            exit 0
+            [ -z "$HOST" ] && echo "Missing: DEPLOY_HOST"
+            [ -z "$USER_NAME" ] && echo "Missing: DEPLOY_USER"
+            [ -z "$KEY" ] && echo "Missing: DEPLOY_SSH_KEY"
+            [ -z "$APP_PATH" ] && echo "Missing: DEPLOY_PATH"
+            exit 1
           fi
           install -m 700 -d ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/deploy_key
