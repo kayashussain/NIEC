@@ -32,7 +32,7 @@ const MAX_CELL_CHARS = 5000;
 const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'STUDENT SOURCE'];
 
 function createPortalApi({
-  getWorkbook, writeWorkbook, recordChanges, teamSave, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
+  getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
   insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
@@ -487,6 +487,16 @@ function createPortalApi({
     ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [[`MOCK SCHEDULE ${n}`, (v) => realDay(v)], [`FEEDBACK ${n}`, (v) => text(v).slice(0, 2000)]])),
     'PRE CAS INTERVIEW': (v) => (['', 'Passed', 'Fail'].includes(text(v)) ? text(v) : null),
   };
+  // What each card save replaced, kept for 10 minutes in memory only, so Undo can put back an older value the checks would refuse.
+  const replacedOn = new Map(); // rowId -> { col: { value, at } }
+  const remember = (rowId, before) => {
+    const now = Date.now();
+    const kept = Object.fromEntries(Object.entries(replacedOn.get(rowId) || {}).filter(([, x]) => now - x.at < 600000));
+    Object.entries(before).forEach(([col, value]) => { kept[col] = { value: text(value), at: now }; });
+    replacedOn.set(rowId, kept);
+    if (replacedOn.size > 2000) replacedOn.delete(replacedOn.keys().next().value);
+  };
+  const wasReplaced = (rowId, col, value) => { const x = (replacedOn.get(rowId) || {})[col]; return Boolean(x) && Date.now() - x.at < 600000 && x.value === text(value); };
   // University partner is never typed on the card: it follows the university on the sheet, from that university's application on
   // the card (the partner chosen when it was sent to the Application Team). A direct application is "Direct (<university>)"
   // (the owner, 22 Nov 2026). Nothing changes when the card has no partner for that university.
@@ -1150,6 +1160,9 @@ function createPortalApi({
     const onItsSheet = view.sheets.some((sh) => sh.id === found.sheet.id && sh.rows.some((r) => r._id === found.row._id));
     if (!onItsSheet) {
       if (!appReach(req.user, found)) return { error: 'This student cannot be changed from your account.', status: 403 };
+      // The same checks as every save of the sheet (the column exists, a Source from the list, a branch only by a branch, the size).
+      const bad = cellValueError(Object.entries(changes).map(([col, value]) => ({ col, value })), found.sheet, req.user);
+      if (bad) return { error: bad, status: 400 };
       const next = { ...wb, revision: wb.revision + 1, sheets: wb.sheets.map((sh) => (sh.id !== found.sheet.id ? sh : { ...sh, rows: apply(sh.rows) })) };
       writeWorkbook(next, req.user && req.user.id);
       recordChanges(req, wb, next);
@@ -1778,8 +1791,9 @@ function createPortalApi({
     } else if (part === 'notes' && !sub) {
       // A note may carry the next follow-up date (Events and marketing asks for it, the same rule as the follow-up list).
       const next = text(body.next);
-      if (next && (!/^\d{4}-\d{2}-\d{2}$/.test(next) || next <= cards.today())) { sendJSON(res, 400, { error: 'The next follow-up date is after today.' }); return true; }
-      out = cards.addNote(rowId, { text: body.text, kind: body.kind }, by(req));
+      if (next && (!realDay(next) || next <= cards.today())) { sendJSON(res, 400, { error: 'The next follow-up date is after today.' }); return true; } // a real day ("2099-99-99" is not)
+      // The stage lines and "no answer" lines are written by ISR itself (server.js, followAction): a person's note is always a note.
+      out = cards.addNote(rowId, { text: body.text, kind: ['stage', 'try'].includes(text(body.kind)) ? 'note' : body.kind }, by(req));
       if (!out.error && next) cards.setFollow(rowId, { next: { date: next, by: by(req), at: out.note.at } }, by(req));
       if (!out.error) note(req, [`${who}: added a note${next ? `, next follow-up ${niceDay(next)}` : ''}`]);
     } else if (part === 'sheet') {
@@ -1787,8 +1801,9 @@ function createPortalApi({
       for (const [col, clean] of Object.entries(CARD_EDITABLE)) {
         if (body.fields && Object.prototype.hasOwnProperty.call(body.fields, col)) {
           let v = clean(body.fields[col]);
-          // Undo puts back exactly what was there, also a value kept in an older form ("17/07/2026", an older NOC word).
-          if (v === null && body.undo === true && col !== 'EMAIL') v = text(body.fields[col]).slice(0, 2000);
+          // Undo puts back exactly what was there, also a value kept in an older form ("17/07/2026", an older NOC word), but only the
+          // value this server itself replaced a moment ago (replacedOn): Undo is never a way round the checks.
+          if (v === null && body.undo === true && wasReplaced(rowId, col, body.fields[col])) v = text(body.fields[col]);
           if (v === null) { sendJSON(res, 400, { error: col === 'CONTACT NUMBER' ? 'That phone number does not look right. Use digits, for example 9800000001.' : `${col} is not a real date.` }); return true; }
           if (v !== text(found.row[col])) changes[col] = v;
         }
@@ -1832,6 +1847,7 @@ function createPortalApi({
         const before = Object.fromEntries(Object.keys(all).map((col) => [col, text(found.row[col])]));
         const done = setColumns(req, found, all);
         if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }
+        if (body.undo !== true) remember(rowId, before);
         changesOut = Object.keys(all);
         pairs.push(...changesOut.map((col) => [Fields.columnLabel(col), before[col], all[col]]));
       }

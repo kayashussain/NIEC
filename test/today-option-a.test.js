@@ -189,6 +189,19 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
       assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: 'Yes', 'LANGUAGE TEST DATE': '17/07/2026' }, undo: true })).status, 200);
       const back = await rowNow();
       assert.deepStrictEqual([back.NOC, back['LANGUAGE TEST DATE']], ['Yes', '17/07/2026']);
+      // Undo is never a way round the checks: only the value this server just replaced is put back.
+      assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: '<img src=x>' }, undo: true })).status, 400);
+      assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'OFFER RECEIVED DATE': 'garbage' }, undo: true })).status, 400);
+      // A person's note is always a note (stage and "no answer" lines are ISR's own), and a next follow-up day must be a real day.
+      const fake = await app('POST', `/api/cards/${id}/notes`, { text: 'Moved to Visa Issued', kind: 'stage' });
+      assert.strictEqual(fake.status, 200);
+      assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.notes.find((n) => n.text === 'Moved to Visa Issued').kind, 'note');
+      assert.strictEqual((await app('POST', `/api/cards/${id}/notes`, { text: 'Call back', next: '2099-99-99' })).status, 400);
+      // A Mock Stage student (written outside the team's sheet) gets the same checks as the sheet: never made a branch student.
+      const blankSrc = (await admin('POST', '/api/students/new', { stage: 'Mock Stage', fields: { 'FIRST NAME': 'Ravi', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000089' } })).json.id;
+      const merged = await app('POST', '/api/students/merge', { id: blankSrc, fields: { 'STUDENT SOURCE': 'Chitwan Branch' } });
+      assert.notStrictEqual(merged.status, 200, JSON.stringify(merged.json));
+      assert.notStrictEqual((await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === blankSrc)['STUDENT SOURCE'], 'Chitwan Branch');
     }
     // The Student Source is changed on the student card.
     const src = await app('POST', `/api/cards/${id}/source`, { source: 'Social Media' });
