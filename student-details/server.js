@@ -58,6 +58,11 @@ const ROOT = __dirname;
 // DATA_DIR lets a host's persistent disk (mounted anywhere) hold data.json instead of
 // the app folder itself. Unset locally, so local behavior is unchanged.
 const DATA_DIR = process.env.STUDENT_DETAILS_DATA_DIR || ROOT;
+// One copy of the server per data folder (instance-lock.js): a second copy would overwrite the first one's saves, so it refuses to start.
+const instanceLock = require('./instance-lock').acquire(DATA_DIR);
+if (instanceLock.error) { console.error('[startup]', instanceLock.error); process.exit(1); }
+setInterval(instanceLock.beat, require('./instance-lock').BEAT_MS).unref();
+process.on('exit', instanceLock.release);
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const BACKUP_FILE = path.join(DATA_DIR, 'data.backup.json');
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
@@ -1207,7 +1212,7 @@ async function handleRestore(req, res, urlPath) {
     if (snap.mockGuidelines) mockGuidelines.restoreAll(snap.mockGuidelines);
     if (snap.mockGuides) mockGuides.restoreAll(snap.mockGuides);
     if (Array.isArray(snap.applyThrough)) applyThrough.restoreAll(snap.applyThrough);
-    done.push('the B2B partners, the Dashboard records, the email settings and the consultancy name, and the Mock Team\'s bookings and guidelines list');
+    done.push('the B2B partners, the Dashboard records, the email settings and the consultancy name, the Mock Team\'s bookings and guidelines list, the Mock interview guides and the Apply through choices');
   }
   activity.record(req, req.user, 'Restored data', { app: 'Student Details', changes: [`Restored ${done.join(', ')} from the backup ${id}. The data as it was before is saved as ${safety}`] });
   return sendJSON(res, 200, { ok: true, restored: done, safety });

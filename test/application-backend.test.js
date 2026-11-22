@@ -130,3 +130,22 @@ test('the Application Team: who it can reach, what it can change, and every refu
   if (r) { r['COURSE NAME'] = 'TYPED ON SHEET'; await app('POST', '/api/data', { sheets: d.sheets, activeSheetId: d.activeSheetId, baseRevision: d.revision }); }
   assert.notStrictEqual((await row(inMock))['COURSE NAME'], 'TYPED ON SHEET');
 });
+
+test('a task for a student who has moved on (Payment Stage) still writes the sheet and the notes, like the Medical step', { timeout: 120000 }, async (t) => {
+  const { admin, login } = await start(t);
+  const app = await login('asha', ['application']);
+  const id = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Mina', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000099' } })).json.id;
+  const tid = (await admin('POST', `/api/cards/${id}/tasks`, { team: 'application', text: 'Book the medical test', tag: 'medical' })).json.card.tasks[0].id;
+  // The student moves on to Payment Stage (Admin), the task stays with the Application Team.
+  const d = (await admin('GET', '/api/data')).json;
+  d.sheets[0].rows.find((r) => r._id === id)['APPLICATION STATUS'] = 'Payment Stage';
+  assert.strictEqual((await admin('POST', '/api/data', { sheets: d.sheets, activeSheetId: d.activeSheetId, baseRevision: d.revision })).status, 200);
+  const today = (await admin('GET', '/api/tasks')).json.today;
+  const day = new Date(Date.parse(today + 'T00:00:00Z') + 5 * 86400000).toISOString().slice(0, 10);
+  const done = await app('POST', `/api/cards/${id}/tasks/${tid}`, { done: true, finish: { next: 'none', medical: 'booked', date: day, place: 'IOM Kathmandu', confirmed: true } });
+  assert.strictEqual(done.status, 200, JSON.stringify(done.json));
+  const got = (await admin('GET', `/api/cards/${id}`)).json;
+  assert.strictEqual(got.student.row['MEDICAL REPORT'], 'Booked', 'the sheet is written');
+  assert.match(got.card.notes.map((n) => n.text).join('\n'), /Medical test booked/, 'and the notes');
+  assert.strictEqual(got.student.row['APPLICATION STATUS'], 'Payment Stage', 'the stage is not touched');
+});

@@ -36,9 +36,11 @@ Priority application sync (`syncApplicationDays`, `withPartner`), and the storag
 - I cannot prove that no bug exists anywhere. What I can say: the rules above were tried with real requests and hold, one real
   bug was found and fixed, and all 382 tests pass.
 
-## Questions for the owner (answer by letter)
+## Questions for the owner: answered 22 Nov 2026
 
-**Q1. A task for a student who has already moved on (for example to Payment Stage).** Today the Application Team can still open
+Q1: keep as it is (finishing writes the sheet and the notes, like the Medical step). Q2: add the lock. Q3: add the names to the message. All three are done; the questions are kept below for the record.
+
+**Q1 (answered A, with a test: a Payment Stage student's Medical task still writes the sheet and the notes). A task for a student who has already moved on (for example to Payment Stage).** Today the Application Team can still open
 that student while the task is open and for 7 days after it is done, and finishing the task can still write the answers to the sheet.
 What should happen?
 
@@ -46,14 +48,14 @@ What should happen?
 - B. Let the team finish the task, but write only the note, never the sheet columns, once the student is past Application and Mock.
 - C. Refuse to finish the task and show that the student has moved on.
 
-**Q2. Two copies of the server running on the same data.** Nothing stops this today, and it would silently lose saves. The live setup
+**Q2 (done: lock added, `student-details/instance-lock.js`, test `test/instance-lock.test.js`). Two copies of the server running on the same data.** Nothing stops this today, and it would silently lose saves. The live setup
 runs one copy, so the risk is low. A lock would refuse to start a second copy.
 
 - A. Add the lock (recommended). If a second copy is ever started by mistake it refuses and says so, instead of losing saves.
 - B. Add the lock, but only write a warning in the log and still start.
 - C. Leave it as it is.
 
-**Q3. After a restore, the message names what came back.** The Restore message does not mention the Mock interview guides or the
+**Q3 (done: the message now names them). After a restore, the message names what came back.** The Restore message does not mention the Mock interview guides or the
 Apply through choices, which now come back with "the B2B partners, the Dashboard records...". This is text people read.
 
 - A. Add them to the message (recommended).
