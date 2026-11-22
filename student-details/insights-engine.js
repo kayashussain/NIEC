@@ -15,6 +15,7 @@ const { isoDate, progressOf, LEFT, median } = require('./dashboard-stats');
 const { newestSheet } = require('../shared/teams');
 const { localDate } = require('../shared/server-utils');
 const { eventFor } = require('./source-options');
+const { plainPartner } = require('./card-fields');
 
 const MIN_SAMPLE = 10;
 const DAY = 86400000;
@@ -62,7 +63,7 @@ function readStudents(workbook, cards) {
         grade: text(prof.grade), english: text(prof.englishScore), lostReason: text(prof.lostReason),
         // Options were put together for the student: a serious inquiry.
         optioned: (card.options || []).length > 0,
-        university: text(row['UNIVERSITY NAME']), partner: text(row['UNIVERSITY PARTNER']), course: text(row['COURSE NAME']),
+        university: text(row['UNIVERSITY NAME']), partner: plainPartner(row['UNIVERSITY PARTNER']), course: text(row['COURSE NAME']),
         dates: {
           inquiry: text(prof.inquiryDate), applied: isoDate(row['APPLICATION SUBMISSION DATE']), offer: isoDate(row['OFFER RECEIVED DATE']),
           paid: isoDate(row['PAYMENT DATE']), cas: isoDate(row['CAS RECEIVED DATE']), lodged: isoDate(row['VISA LODGE DATE']), visa: isoDate(row['VISA RECEIVED DATE']),

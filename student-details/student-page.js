@@ -28,6 +28,7 @@
     stepToast = window.NiecUI.toast(message, { type: 'success', duration: UNDO_MS, action: { label, onClick } }) || null;
   };
   async function putState(state, undo) {
+    if (state.source !== undefined) await api(`/api/cards/${encodeURIComponent(id)}/source`, { source: state.source, undo });
     if (Object.keys(state.sheet || {}).length) await api(`/api/cards/${encodeURIComponent(id)}/sheet`, { fields: state.sheet, undo });
     if (Object.keys(state.prof || {}).length) await api(`/api/cards/${encodeURIComponent(id)}/profile`, { ...state.prof, markSaved: true, undo });
     data = await api('/api/cards/' + encodeURIComponent(id));
@@ -146,14 +147,23 @@
       fieldBox('nationality', 'Nationality', pick(profile().nationality || 'Nepali', F.NATIONALITIES));
       fieldBox('gender', 'Gender', pick(profile().gender, F.GENDERS, true));
       fieldBox('address', 'Address (as in the passport)', text(profile().address, 200), true);
+      // The Student source is part of the Profile, changed here with the rest (the owner, 22 Nov 2026).
+      group('Student source');
+      const sp = profile();
+      const srcStart = { source: data.student.source || '', detail: sp.sourceDetail || '', remarks: sp.sourceRemarks || '', platform: sp.sourcePlatform || '', way: sp.sourceWay || '' };
+      const picker = window.SourcePicker.create({ lists, initial: srcStart, disabled: !data.can.source });
+      picker.nodes.forEach((n) => { n.classList.add('lg-form-field'); form.append(n); }); // laid out like the other fields; a hidden one takes no room
+      if (!data.can.source && data.student.source) form.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
+      const srcValue = () => { const v = picker.value(); return { source: v.source || '', detail: v.detail || '', remarks: v.remarks || '', platform: v.platform || '', way: v.way || '' }; };
+      const srcChanged = () => { const v = srcValue(); return Object.keys(srcStart).some((k) => (k !== 'source' || data.can.source) && v[k] !== srcStart[k]); };
       const SHEET = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER'];
       const LABEL = { 'FIRST NAME': 'First name', 'LAST NAME': 'Last name', EMAIL: 'Email', 'CONTACT NUMBER': 'WhatsApp number', passportNo: 'Passport number', dob: 'Date of birth', nationality: 'Nationality', gender: 'Gender', address: 'Address' };
       const before = { 'FIRST NAME': row['FIRST NAME'] || '', 'LAST NAME': row['LAST NAME'] || '', EMAIL: data.student.email || '', 'CONTACT NUMBER': data.student.phone || '', passportNo: profile().passportNo || '', dob: profile().dob || '', nationality: profile().nationality || 'Nepali', gender: profile().gender || '', address: profile().address || '' };
       const now = () => { const v = {}; Object.keys(inputs).forEach((k) => { v[k] = String(inputs[k].value || '').trim(); }); v.passportNo = v.passportNo.toUpperCase(); return v; };
-      const changedKeys = () => { const v = now(); return Object.keys(v).filter((k) => v[k] !== before[k]); };
+      const changedKeys = () => { const v = now(); return Object.keys(v).filter((k) => v[k] !== before[k] && k in LABEL); };
       // What will change, said plainly before saving (the owner, 21 Nov 2026: so the team trusts that the details are right).
       const note = el('p', 'lg-form-note');
-      const showChanges = () => { const c = changedKeys(); note.textContent = c.length ? `Will change: ${c.map((k) => LABEL[k]).join(', ')}.` : 'Nothing changed yet.'; };
+      const showChanges = () => { const c = [...changedKeys().map((k) => LABEL[k]), ...(srcChanged() ? ['Student source'] : [])]; note.textContent = c.length ? `Will change: ${c.join(', ')}.` : 'Nothing changed yet.'; };
       form.addEventListener('input', showChanges); form.addEventListener('change', showChanges);
       showChanges();
       form.append(note);
@@ -167,7 +177,9 @@
         e.preventDefault();
         const v = now(); const c = changedKeys();
         const bad = (msg, k) => { say(msg, true); if (k && inputs[k]) inputs[k].focus(); };
-        if (!c.length) { close(); return; }
+        const srcC = srcChanged();
+        if (!c.length && !srcC) { close(); return; }
+        if (srcC) { const missing = picker.check(); if (missing) return bad(missing); }
         if (!v['FIRST NAME'] && !v['LAST NAME']) return bad('A student needs a name.', 'FIRST NAME');
         if (v.EMAIL && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.EMAIL)) return bad('That email does not look right.', 'EMAIL');
         if (v.dob && v.dob > today()) return bad('A date of birth cannot be in the future.', 'dob');
@@ -175,11 +187,16 @@
         try {
           const sheet = {}; const prof = { markSaved: true };
           c.forEach((k) => { if (SHEET.includes(k)) sheet[k] = v[k]; else prof[k] = v[k]; });
+          const was = { sheet: {}, prof: {} }; const now2 = { sheet: {}, prof: {} };
+          c.forEach((k) => { const into = SHEET.includes(k) ? 'sheet' : 'prof'; was[into][k] = before[k]; now2[into][k] = v[k]; });
+          if (srcC) {
+            const sv = srcValue();
+            if (data.can.source && sv.source !== srcStart.source) { await api(`/api/cards/${id}/source`, { source: sv.source }); was.source = srcStart.source; now2.source = sv.source; }
+            [['sourceDetail', 'detail'], ['sourceRemarks', 'remarks'], ['sourcePlatform', 'platform'], ['sourceWay', 'way']].forEach(([key, k]) => { if (sv[k] !== srcStart[k]) { prof[key] = sv[k]; was.prof[key] = srcStart[k]; now2.prof[key] = sv[k]; } });
+          }
           if (Object.keys(sheet).length) await api(`/api/cards/${id}/sheet`, { fields: sheet });
           await api(`/api/cards/${id}/profile`, prof);
           data = await api('/api/cards/' + encodeURIComponent(id));
-          const was = { sheet: {}, prof: {} }; const now2 = { sheet: {}, prof: {} };
-          c.forEach((k) => { const into = SHEET.includes(k) ? 'sheet' : 'prof'; was[into][k] = before[k]; now2[into][k] = v[k]; });
           close(); render(); savedWithUndo('Profile saved', was, now2);
         } catch (err) { ok.disabled = false; ok.textContent = 'Save changes'; say(err.message, true); }
       });
@@ -230,7 +247,6 @@
     }
   }
   // The light that follows the mouse is the shared motion kit's (motion.js), on the tiles, contact buttons and Timeline bubbles too.
-  let sourceSaved = false; // the source was just saved: its panel glows green with a tick once
   let firstDraw = true; // the first drawing: a link to #options goes straight to Applications
   const icon = (name, cls) => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); if (cls) sv.setAttribute('class', cls); sv.innerHTML = ICONS[name] || ''; return sv; };
 
@@ -324,14 +340,191 @@
       } else dd.append(el('span', f.optional ? 'lg-none' : 'lg-missing', f.optional ? 'Not added' : 'Missing'));
       dl.append(el('dt', '', f.label), dd);
     });
-    sec.append(dl);
+    // The Student source, as rows of the Profile (the owner, 22 Nov 2026: not a card of its own); changed in Edit profile.
     const p = profile();
+    const s = data.student;
+    const g = F.sourceGroup(s.source);
+    const plain = (v) => String(v || '').replace(/^(Marketing|Event)\s*:\s*/i, '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '').trim();
+    const row = (label, value, empty) => { const dd = el('dd', ''); if (value) dd.textContent = value; else dd.append(el('span', empty === 'missing' ? 'lg-missing' : 'lg-none', empty === 'missing' ? 'Missing' : 'Not added')); dl.append(el('dt', '', label), dd); };
+    row('Student source', g === 'Branch' ? s.source : g, 'missing');
+    if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
+      row('Platform', p.sourcePlatform);
+      row('How they came', p.sourceWay === 'Advert' ? `Advert: ${plain(p.sourceDetail) || 'campaign not named'}` : 'Organic (by itself)');
+    } else if (g && g !== 'Branch') row(F.SOURCE_DETAIL_LABEL[g] || 'Where exactly', (g === 'Events' && data.event ? plain(data.event.name) : plain(p.sourceDetail)));
+    if (p.inquiryDate) row('First inquiry', `${day(p.inquiryDate)}${p.inquiryTime ? ` at ${p.inquiryTime}` : ''}`);
+    sec.append(dl);
     if (p.savedAt) sec.append(el('div', 'lg-foot', `Last saved ${when(p.savedAt)} by ${p.savedBy || 'someone'}`));
-    side.append(sec);
-    const src = box('Student source', 'lg-source');
-    src.sec.append(origin());
-    side.append(src.sec);
+    side.append(sec, applicationDetails(), mockInterviews());
     return side;
+  }
+
+  // ---- Application details and Mock interviews (the owner, 22 Nov 2026): every detail of the application on the card ----
+  // University, course and University partner come by themselves from the Priority application; the rest is changed with Edit, in
+  // one window. Every save is written in the student's notes and can be undone for 5 seconds. The Application Team changes these
+  // here, never on the sheet. Mock interviews are changed by the Mock Team (and Admin); the Application Team only looks.
+  const rowOf = () => data.student.row || {};
+  const mayEdit = (col) => (data.can.cols || []).includes(col);
+  const APP_EDIT = ['RECEIVING PARTNER', 'LANGUAGE TEST DATE', 'STUDENT ID', 'NOC', 'NOC NUMBER', 'MEDICAL REPORT'];
+  const isoDay = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '').trim()) ? String(v).trim() : '');
+  const languageShown = (v) => { const t = String(v || '').trim(); if (!t) return ''; const d = isoDay(t); return d ? `Test date, ${day(d)}` : t; };
+  function detailsList(rows) {
+    const dl = el('dl', 'lg-dl');
+    rows.forEach(([label, value]) => {
+      const dd = el('dd', '');
+      if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'lg-none', 'Not added'));
+      dl.append(el('dt', '', label), dd);
+    });
+    return dl;
+  }
+  function applicationDetails() {
+    const r = rowOf();
+    const { sec, head } = box('Application details', 'lg-appdetails');
+    if (can() && APP_EDIT.some(mayEdit)) head.append(h('button', { class: 'btn lg-edit', type: 'button', onclick: editApplicationDetails }, 'Edit'));
+    const med = (data.card.medical && data.card.medical.date) || '';
+    sec.append(detailsList([
+      ['University', r['UNIVERSITY NAME']], ['Course', r['COURSE NAME']], ['University partner', r['UNIVERSITY PARTNER']],
+      ['Receiving partner', r['RECEIVING PARTNER']], ['Language test', languageShown(r['LANGUAGE TEST DATE'])], ['Student ID', r['STUDENT ID']],
+      ['NOC', r.NOC], ['NOC number', r['NOC NUMBER']], ['Medical report', r['MEDICAL REPORT']], ['Medical booking date', med ? day(med) : ''],
+    ]));
+    return sec;
+  }
+  async function editApplicationDetails() {
+    const r = rowOf();
+    let choices = { offices: [], agents: [] };
+    try { choices = await api('/api/partner-choices'); } catch (e) { /* the list stays short: the current value is still offered */ }
+    const lang = String(r['LANGUAGE TEST DATE'] || '').trim();
+    const before = {
+      'RECEIVING PARTNER': String(r['RECEIVING PARTNER'] || '').trim(), 'LANGUAGE TEST DATE': lang, 'STUDENT ID': String(r['STUDENT ID'] || '').trim(),
+      NOC: String(r.NOC || '').trim(), 'NOC NUMBER': String(r['NOC NUMBER'] || '').trim(), 'MEDICAL REPORT': String(r['MEDICAL REPORT'] || '').trim(),
+      'MEDICAL BOOKING DATE': (data.card.medical && data.card.medical.date) || '',
+    };
+    const LABEL = { 'RECEIVING PARTNER': 'Receiving partner', 'LANGUAGE TEST DATE': 'Language test', 'STUDENT ID': 'Student ID', NOC: 'NOC', 'NOC NUMBER': 'NOC number', 'MEDICAL REPORT': 'Medical report', 'MEDICAL BOOKING DATE': 'Medical booking date' };
+    dialog('Application details', (body, close) => {
+      const form = el('form', 'lg-form');
+      form.noValidate = true;
+      const field = (key, label, input, wide) => {
+        const w = el('div', `lg-form-field${wide ? ' is-wide' : ''}`);
+        input.id = 'ad-' + key.replace(/\W+/g, '-').toLowerCase(); input.classList.add('lg-input');
+        if (!mayEdit(key === 'MEDICAL BOOKING DATE' ? 'MEDICAL REPORT' : key.trim())) input.disabled = true;
+        const l = el('label', 'lg-form-label', label); l.htmlFor = input.id;
+        w.append(l, input); form.append(w); return w;
+      };
+      const pick = (v, list) => { const sel = document.createElement('select'); const all = [...new Set([...(v && !list.includes(v) ? [v] : []), ...list])]; [['', 'Choose'], ...all.map((c) => [c, c])].forEach(([c, t]) => { const o = document.createElement('option'); o.value = c; o.textContent = t; sel.append(o); }); sel.value = v || ''; return sel; };
+      const recv = pick(before['RECEIVING PARTNER'], [...(choices.offices || []), ...(choices.agents || []).filter((n) => !(choices.offices || []).includes(n))]);
+      field('RECEIVING PARTNER', 'Receiving partner', recv);
+      const kindNow = isoDay(lang) || lang === 'Test Date' ? 'Test Date' : lang;
+      const kind = pick(kindNow, ['Test Date', 'Waiver', 'University Internal Test']);
+      field('LANGUAGE TEST DATE', 'Language test', kind);
+      const testDay = h('input', { type: 'date', value: isoDay(lang) });
+      const testBox = field('LANGUAGE TEST DATE ', 'Test date', testDay);
+      const showDay = () => { testBox.hidden = kind.value !== 'Test Date'; };
+      kind.addEventListener('change', showDay); showDay();
+      const sid = h('input', { type: 'text', value: before['STUDENT ID'], maxlength: '60' });
+      field('STUDENT ID', 'Student ID', sid);
+      const noc = pick(before.NOC, ['Pending', 'Received']);
+      field('NOC', 'NOC', noc);
+      const nocNo = h('input', { type: 'text', value: before['NOC NUMBER'], maxlength: '60' });
+      field('NOC NUMBER', 'NOC number', nocNo);
+      const medR = pick(before['MEDICAL REPORT'], ['Pending', 'Booked', 'Received']);
+      field('MEDICAL REPORT', 'Medical report', medR);
+      const medD = h('input', { type: 'date', value: before['MEDICAL BOOKING DATE'] });
+      field('MEDICAL BOOKING DATE', 'Medical booking date', medD);
+      const now = () => ({
+        'RECEIVING PARTNER': recv.value, 'LANGUAGE TEST DATE': kind.value === 'Test Date' ? (testDay.value || 'Test Date') : kind.value,
+        'STUDENT ID': sid.value.trim(), NOC: noc.value, 'NOC NUMBER': nocNo.value.trim(), 'MEDICAL REPORT': medR.value, 'MEDICAL BOOKING DATE': medD.value,
+      });
+      const changed = () => { const v = now(); return Object.keys(v).filter((k) => v[k] !== before[k]); };
+      const note = el('p', 'lg-form-note');
+      const showChanges = () => { const c = changed(); note.textContent = c.length ? `Will change: ${c.map((k) => LABEL[k]).join(', ')}.` : 'Nothing changed yet.'; };
+      form.addEventListener('input', showChanges); form.addEventListener('change', showChanges); showChanges();
+      form.append(note);
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Save changes');
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+      form.append(foot);
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const v = now(); const c = changed();
+        if (!c.length) { close(); return; }
+        ok.disabled = true; ok.textContent = 'Saving...';
+        try {
+          const was = { sheet: {} }; const now2 = { sheet: {} };
+          c.forEach((k) => { was.sheet[k] = before[k]; now2.sheet[k] = v[k]; });
+          await api(`/api/cards/${id}/sheet`, { fields: now2.sheet });
+          data = await api('/api/cards/' + encodeURIComponent(id));
+          close(); render(); savedWithUndo('Application details saved', was, now2);
+        } catch (err) { ok.disabled = false; ok.textContent = 'Save changes'; say(err.message, true); }
+      });
+      body.append(form);
+      setTimeout(() => { const f = form.querySelector('select:not([disabled]), input:not([disabled])'); if (f) f.focus(); }, 0);
+    }, { wide: true });
+  }
+  function mockInterviews() {
+    const r = rowOf();
+    const { sec, head } = box('Mock interviews', 'lg-mocks');
+    if (can() && mayEdit('MOCK SCHEDULE 1')) head.append(h('button', { class: 'btn lg-edit', type: 'button', onclick: editMockInterviews }, 'Edit'));
+    const mock = (n) => {
+      const d = isoDay(r[`MOCK SCHEDULE ${n}`]) || String(r[`MOCK SCHEDULE ${n}`] || '').trim();
+      const fb = String(r[`FEEDBACK ${n}`] || '').trim();
+      if (!d && !fb) return '';
+      const w = el('div', '');
+      w.append(el('div', '', d ? (isoDay(d) ? day(d) : d) : 'No day'));
+      if (fb) w.append(el('div', 'lg-none', fb));
+      return w;
+    };
+    sec.append(detailsList([[`Mock 1`, mock(1)], [`Mock 2`, mock(2)], [`Mock 3`, mock(3)], [`Mock 4`, mock(4)], ['Pre-CAS interview', r['PRE CAS INTERVIEW']]]));
+    return sec;
+  }
+  function editMockInterviews() {
+    const r = rowOf();
+    const COLS = [1, 2, 3, 4].flatMap((n) => [`MOCK SCHEDULE ${n}`, `FEEDBACK ${n}`]).concat('PRE CAS INTERVIEW');
+    const before = Object.fromEntries(COLS.map((c) => [c, c.startsWith('MOCK SCHEDULE') ? isoDay(r[c]) || String(r[c] || '').trim() : String(r[c] || '').trim()]));
+    const LABEL = (c) => c === 'PRE CAS INTERVIEW' ? 'Pre-CAS interview' : c.startsWith('MOCK') ? `Mock ${c.slice(-1)} day` : `Mock ${c.slice(-1)} feedback`;
+    dialog('Mock interviews', (body, close) => {
+      const form = el('form', 'lg-form');
+      form.noValidate = true;
+      const inputs = {};
+      const field = (key, label, input, wide) => {
+        const w = el('div', `lg-form-field${wide ? ' is-wide' : ''}`);
+        input.id = 'mi-' + key.replace(/\W+/g, '-').toLowerCase(); input.classList.add('lg-input');
+        if (!mayEdit(key)) input.disabled = true;
+        const l = el('label', 'lg-form-label', label); l.htmlFor = input.id;
+        w.append(l, input); form.append(w); inputs[key] = input;
+      };
+      [1, 2, 3, 4].forEach((n) => {
+        form.append(el('div', 'lg-form-group', `Mock ${n}`));
+        field(`MOCK SCHEDULE ${n}`, 'Day', h('input', { type: 'date', value: isoDay(before[`MOCK SCHEDULE ${n}`]) }));
+        const fb = document.createElement('textarea'); fb.rows = 2; fb.maxLength = 2000; fb.value = before[`FEEDBACK ${n}`];
+        field(`FEEDBACK ${n}`, 'Feedback', fb, true);
+      });
+      form.append(el('div', 'lg-form-group', 'Pre-CAS interview'));
+      const pc = document.createElement('select'); [['', 'Not yet'], ['Passed', 'Passed'], ['Fail', 'Fail']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; pc.append(o); }); pc.value = before['PRE CAS INTERVIEW'];
+      field('PRE CAS INTERVIEW', 'Result', pc);
+      const now = () => Object.fromEntries(COLS.map((c) => [c, String(inputs[c].value || '').trim()]));
+      const changed = () => { const v = now(); return COLS.filter((c) => v[c] !== before[c]); };
+      const note = el('p', 'lg-form-note');
+      const showChanges = () => { const c = changed(); note.textContent = c.length ? `Will change: ${c.map(LABEL).join(', ')}.` : 'Nothing changed yet.'; };
+      form.addEventListener('input', showChanges); form.addEventListener('change', showChanges); showChanges();
+      form.append(note);
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Save changes');
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+      form.append(foot);
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const v = now(); const c = changed();
+        if (!c.length) { close(); return; }
+        ok.disabled = true; ok.textContent = 'Saving...';
+        try {
+          const was = { sheet: {} }; const now2 = { sheet: {} };
+          c.forEach((k) => { was.sheet[k] = before[k]; now2.sheet[k] = v[k]; });
+          await api(`/api/cards/${id}/sheet`, { fields: now2.sheet });
+          data = await api('/api/cards/' + encodeURIComponent(id));
+          close(); render(); savedWithUndo('Mock interviews saved', was, now2);
+        } catch (err) { ok.disabled = false; ok.textContent = 'Save changes'; say(err.message, true); }
+      });
+      body.append(form);
+    }, { wide: true });
   }
 
   // ---- tasks given to a team about this student ----
@@ -480,74 +673,8 @@
 
 
 
-  // ---- Where the student came from: part of the main card, shown as text and changed only after pressing Edit ----
-  // A student's source is asked when the student is added (it is required there), so the card no longer asks for it in a window when
-  // it opens (the owner, 20 Nov 2026). An older student without one shows "Not recorded yet" here, with Add source.
+  // The Student source is shown in the Profile and changed in Edit profile (the owner, 22 Nov 2026). Kept for the key handlers.
   let editingOrigin = false;
-  const SOURCE_ICON = { Branch: 'pin', Agent: 'globe', Events: 'calendar', 'Social Media': 'whatsapp', 'Language Classes': 'cap', Reference: 'compass', Visitor: 'pin' };
-  function origin() {
-    const p = profile();
-    const s = data.student;
-    const g = F.sourceGroup(s.source);
-    const box = el('div', `sc-source${g ? '' : ' is-missing'}${editingOrigin ? ' is-editing' : ''}`);
-    const ico = el('span', 'sc-source-ico');
-    ico.append(icon(g ? SOURCE_ICON[g] || 'compass' : 'alert'));
-    const words = el('div', 'sc-source-words');
-    words.append(el('span', 'sc-eyebrow', 'Student source'));
-    if (!editingOrigin) {
-      words.append(el('b', 'sc-source-name', g === 'Branch' ? s.source : g || 'Not recorded yet'));
-      // An event or campaign is shown by its name: the date kept beside it in the records is the day the campaign started, not the
-      // student's (the owner, 14 Nov 2026). The student's own first inquiry day and time are shown beside it.
-      const plain = (v) => String(v || '').replace(/^(Marketing|Event)\s*:\s*/i, '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '').trim();
-      const rows = el('dl', 'sc-source-rows');
-      const fact = (k, v) => { if (!v) return; const d = el('div'); d.append(el('dt', '', k), el('dd', '', v)); rows.append(d); };
-      if (g === 'Branch') { /* the branch is named above ("Chitwan Branch") */ } else if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
-        fact('Platform', p.sourcePlatform);
-        fact('How they came', p.sourceWay === 'Advert' ? `Advert: ${plain(p.sourceDetail) || 'campaign not named'}` : 'Organic (by itself)');
-      } else if (g) fact(F.SOURCE_DETAIL_LABEL[g] || (g === 'Agent' ? 'Which agent' : 'Where exactly'), (g === 'Events' && data.event ? plain(data.event.name) : plain(p.sourceDetail)) || 'Not recorded');
-      if (p.inquiryDate) fact('First inquiry', `${day(p.inquiryDate)}${p.inquiryTime ? ` at ${p.inquiryTime}` : ''}`);
-      if (p.sourceRemarks) fact('Remarks', p.sourceRemarks);
-      if (!g && can()) words.append(el('span', 'sc-source-hint', 'Where did this student come from? Add it once and it is counted on the Dashboard.'));
-      if (rows.children.length) words.append(rows);
-      box.append(ico, words);
-      if (sourceSaved) {
-        sourceSaved = false; box.classList.add('is-saved');
-        const tick = icon('check', 'sc-source-tick sc-tick'); box.append(tick);
-        setTimeout(() => { box.classList.remove('is-saved'); tick.remove(); }, calm() ? 0 : 1800);
-      }
-      if (can()) {
-        const b = h('button', { class: `btn btn-sm${g ? '' : ' btn-primary'}`, type: 'button', onclick: () => { editingOrigin = true; render(); } });
-        b.append(icon(g ? 'pencil' : 'plus', 'sc-btn-ico'), g ? 'Edit' : 'Add source');
-        box.append(b);
-      }
-      return box;
-    }
-    const picker = window.SourcePicker.create({ lists, initial: { source: s.source, detail: p.sourceDetail, remarks: p.sourceRemarks, platform: p.sourcePlatform, way: p.sourceWay }, disabled: !data.can.source });
-    const form = el('div', 'p-form');
-    picker.nodes.forEach((n) => form.append(n));
-    words.append(form);
-    if (!data.can.source && s.source) words.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
-    const bar = el('div', 'p-bar');
-    bar.append(h('button', { class: 'btn btn-primary', type: 'button', onclick: async (ev) => {
-      const btn = ev.currentTarget;
-      try {
-        const missing = picker.check();
-        if (missing) { say(missing, true); shake(form); return; }
-        const cancel = btn.nextElementSibling; if (cancel) cancel.disabled = true;
-        await morph(btn, () => saveSource(picker.value())).catch((e) => { if (cancel) cancel.disabled = false; throw e; });
-        editingOrigin = false; sourceSaved = true; render();
-      } catch (e) { /* shown */ }
-    } }, 'Save'), h('button', { class: 'btn', type: 'button', onclick: () => { editingOrigin = false; render(); } }, 'Cancel'));
-    words.append(bar);
-    box.append(ico, words);
-    return box;
-  }
-
-  async function saveSource(v) {
-    const s = data.student;
-    if (data.can.source && v.source !== (s.source || '')) { await save('source', { source: v.source }); data.student.source = v.source; }
-    await save('profile', { sourceDetail: v.detail, sourceRemarks: v.remarks, sourcePlatform: v.platform || '', sourceWay: v.way || '' }, 'Saved');
-  }
 
   // ---- Notes (replace the Remarks column of the sheet) ----
   // A note is a note (the owner, 14 Nov 2026): no kinds to choose (phone call, office visit, message); notes kept with a kind

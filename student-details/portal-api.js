@@ -328,7 +328,7 @@ function createPortalApi({
     const wb = getWorkbook();
     if (wb) wb.sheets.forEach((sheet) => sheet.rows.forEach((row) => {
       const uni = squash(row['UNIVERSITY NAME']);
-      const partner = text(row['UNIVERSITY PARTNER']);
+      const partner = Fields.plainPartner(row['UNIVERSITY PARTNER']);
       if (!uni || !partner) return;
       const name = partnerNamed(partner);
       if (!used.has(uni)) used.set(uni, new Map());
@@ -477,9 +477,30 @@ function createPortalApi({
     'CONTACT NUMBER': (v) => { const t = text(v).slice(0, 40); return phoneOk(t) ? t : null; }, 'UNIVERSITY NAME': (v) => text(v).slice(0, 160), 'COURSE NAME': (v) => text(v).slice(0, 240),
     'APPLICATION SUBMISSION DATE': (v) => realDay(v),
     'OFFER RECEIVED DATE': (v) => realDay(v),
-    // A real day only, never emptied from here (emptying is done on the sheet).
-    'LANGUAGE TEST DATE': (v) => realDay(v) || null,
+    // The Application details card (the owner, 22 Nov 2026): every detail of the application is changed on the card, not the sheet.
+    // Language test: Waiver, University Internal Test, Test Date (no day yet) or the test's day.
+    'LANGUAGE TEST DATE': (v) => { const t = text(v); return ['', 'Waiver', 'University Internal Test', 'Test Date'].includes(t) ? t : realDay(t) || null; },
+    'RECEIVING PARTNER': (v) => text(v).slice(0, 120), 'STUDENT ID': (v) => text(v).slice(0, 60), 'NOC NUMBER': (v) => text(v).slice(0, 60),
+    NOC: (v) => (['', 'Pending', 'Submitted', 'Received'].includes(text(v)) ? text(v) : null),
+    'MEDICAL REPORT': (v) => (['', 'Pending', 'Booked', 'Received'].includes(text(v)) ? text(v) : null),
+    // The Mock interviews card: the Mock Team (and Admin) change it; the Application Team only looks (Teams.canEdit).
+    ...Object.fromEntries([1, 2, 3, 4].flatMap((n) => [[`MOCK SCHEDULE ${n}`, (v) => realDay(v)], [`FEEDBACK ${n}`, (v) => text(v).slice(0, 2000)]])),
+    'PRE CAS INTERVIEW': (v) => (['', 'Passed', 'Fail'].includes(text(v)) ? text(v) : null),
   };
+  // University partner is never typed on the card: it follows the university on the sheet, from that university's application on
+  // the card (the partner chosen when it was sent to the Application Team). A direct application is "Direct (<university>)"
+  // (the owner, 22 Nov 2026). Nothing changes when the card has no partner for that university.
+  const DIRECT_RE = /^direct\b/i;
+  function withPartner(rowId, changes) {
+    if (!('UNIVERSITY NAME' in changes)) return changes;
+    const uni = text(changes['UNIVERSITY NAME']);
+    if (!uni) return changes;
+    const course = 'COURSE NAME' in changes ? text(changes['COURSE NAME']) : '';
+    const opts = ((cards.get(rowId) || {}).options || []).filter((o) => squash(o.university) === squash(uni) && text(o.partner));
+    const o = opts.find((x) => course && squash(x.course) === squash(course)) || opts[0];
+    if (!o) return changes;
+    return { ...changes, 'UNIVERSITY PARTNER': DIRECT_RE.test(text(o.partner)) ? `Direct (${uni})` : text(o.partner) };
+  }
   // ---- finishing a task: asked, checked by the team, then written (the owner, 16 Nov 2026) ----
   // Nothing is filled in by itself any more. When a team marks a task done, the "Mark as done?" window shows what ISR already knows
   // about the student (every application with its days, the sheet's dates) and asks what happened, with no answer chosen in advance
@@ -502,6 +523,7 @@ function createPortalApi({
   //                its column when empty, the stage moving on with it (CAS Issued, Visa Lodge, Visa Issued; Visa Rejected), never back.
   // Every answer is also one note on the student, in plain words.
   function writeColumnsFor(req, rowId, changes) {
+    changes = withPartner(rowId, changes);
     const wb = getWorkbook();
     const keys = Object.keys(changes);
     if (!wb || !keys.length) return;
@@ -1110,7 +1132,7 @@ function createPortalApi({
   function setColumns(req, found, changes) {
     const wb = getWorkbook();
     for (const col of Object.keys(changes)) {
-      if (col !== 'STUDENT SOURCE' && !CARD_EDITABLE[col]) return { error: 'That detail cannot be changed here.', status: 400 };
+      if (col !== 'STUDENT SOURCE' && col !== 'UNIVERSITY PARTNER' && !CARD_EDITABLE[col]) return { error: 'That detail cannot be changed here.', status: 400 }; // University partner: only by itself (withPartner)
       if (!Teams.canEdit(req.user, col, found.row)) return { error: col === 'STUDENT SOURCE' ? "This student's source cannot be changed from your account." : `${col} cannot be changed from your account.`, status: 403 };
     }
     const apply = (rows) => rows.map((r) => (r._id === found.row._id ? { ...r, ...changes } : r));
@@ -1527,7 +1549,7 @@ function createPortalApi({
           // Each option with its fee, scholarship, deposit and course page from Universities when the option has none of its own.
           card: { ...card, options: (card.options || []).map(withFacts) },
           checks: checksOf(found.row, card),
-          can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
+          can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), cols: editable ? Object.keys(CARD_EDITABLE).filter((c) => Teams.canEdit(req.user, c, found.row)) : [], assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
           taskTeams: TASK_TEAMS(),
           handTeams: handTeamsFor(req.user),
           assignTeams: assignTeamsFor(req.user),
@@ -1763,13 +1785,35 @@ function createPortalApi({
           }
         }
       }
-      if (Object.keys(changes).length) {
-        const before = Object.fromEntries(Object.keys(changes).map((col) => [col, text(found.row[col])]));
-        const done = setColumns(req, found, changes);
-        if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }
-        noteCardChanges(req, rowId, Object.keys(changes).map((col) => [Fields.columnLabel(col), before[col], changes[col]]), body.undo === true);
+      // The day the medical test is booked (the Application details card, the owner, 22 Nov 2026): kept with the card's medical booking.
+      const medWas = (card.medical && card.medical.date) || '';
+      let medNow = null;
+      if (body.fields && Object.prototype.hasOwnProperty.call(body.fields, 'MEDICAL BOOKING DATE')) {
+        const d = realDay(body.fields['MEDICAL BOOKING DATE']);
+        if (d === null) { sendJSON(res, 400, { error: 'MEDICAL BOOKING DATE is not a real date.' }); return true; }
+        if (d !== medWas) {
+          if (!Teams.canEdit(req.user, 'MEDICAL REPORT', found.row)) { sendJSON(res, 403, { error: 'The medical booking cannot be changed from your account.' }); return true; }
+          medNow = d;
+        }
       }
-      sendJSON(res, 200, { ok: true, changed: Object.keys(changes) });
+      let changesOut = Object.keys(changes);
+      const pairs = [];
+      if (changesOut.length) {
+        const all = withPartner(rowId, changes);
+        if (text(all['UNIVERSITY PARTNER']) === text(found.row['UNIVERSITY PARTNER'])) delete all['UNIVERSITY PARTNER'];
+        const before = Object.fromEntries(Object.keys(all).map((col) => [col, text(found.row[col])]));
+        const done = setColumns(req, found, all);
+        if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }
+        changesOut = Object.keys(all);
+        pairs.push(...changesOut.map((col) => [Fields.columnLabel(col), before[col], all[col]]));
+      }
+      if (medNow !== null) {
+        cards.setMedical(rowId, medNow ? { ...(card.medical || {}), date: medNow } : null, by(req));
+        pairs.push(['Medical booking date', medWas, medNow]);
+        changesOut.push('MEDICAL BOOKING DATE');
+      }
+      noteCardChanges(req, rowId, pairs, body.undo === true); // one note for the whole save
+      sendJSON(res, 200, { ok: true, changed: changesOut });
       return true;
     } else if (part === 'source') {
       const was = text(found.row['STUDENT SOURCE']);
@@ -2607,6 +2651,7 @@ function createPortalApi({
   // on the student card). Matched by name, ignoring capitals.
   // The partner a name in the University Partner column means: another spelling counts for the partner itself.
   const partnerNamed = (name) => {
+    name = Fields.plainPartner(name);
     const aliases = planning.all().settings.partnerAliases || {};
     const hit = Object.keys(aliases).find((k) => squash(k) === squash(name));
     return hit ? aliases[hit] : name;
@@ -2680,7 +2725,7 @@ function createPortalApi({
     const found = new Map();
     (wb ? wb.sheets : []).forEach((sh) => sh.rows.forEach((row) => {
       if (!isStudent(row)) return;
-      const name = text(row['UNIVERSITY PARTNER']).replace(/\s+/g, ' ');
+      const name = Fields.plainPartner(row['UNIVERSITY PARTNER']).replace(/\s+/g, ' ');
       const key = squash(name);
       if (!key || known.has(key) || hidden.has(key) || isUniversityName(name, unis)) return;
       const f = found.get(key) || { name, students: 0 };
@@ -3402,7 +3447,7 @@ function createPortalApi({
         const agent = rp && !isOffice(rp) ? rp : (src === 'Agent' ? text(card && card.profile.sourceDetail) : '');
         if (agent) add(bump(agentsMap, squash(agent), agent));
         // Where the application was sent: a Partner University or a B2B partner (the University Partner column).
-        const up = text(row['UNIVERSITY PARTNER']);
+        const up = Fields.plainPartner(row['UNIVERSITY PARTNER']);
         if (up) {
           const k = squash(up); const pg = bump(partners, k, up, { kind: directNames.has(k) || /universit|college/i.test(up) ? 'university' : 'b2b', unis: new Map() }); add(pg);
           const uni = text(row['UNIVERSITY NAME']); if (uni) add(bump(pg.unis, squash(uni), uni));

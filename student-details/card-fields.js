@@ -17,6 +17,9 @@
   const branchValue = (name) => `${name} Branch`;
   const isBranchValue = (v) => /\S\s+branch$/i.test(String(v || '').trim());
   // The Student Source as the forms show it (Branch is one choice with a second dropdown) and as the sheet keeps it ("Chitwan Branch").
+  // University Partner of a direct application is written "Direct (<university>)" (the owner, 22 Nov 2026). Counted as before, by the
+  // university's own name, so the Dashboard, Partners and B2B Partners see a direct application as they always did.
+  const plainPartner = (v) => { const t = String(v || '').trim(); const m = /^direct\s*\((.+)\)$/i.exec(t); return m ? m[1].trim() : t; };
   const sourceGroup = (stored) => (isBranchValue(stored) ? 'Branch' : String(stored || '').trim());
   const branchName = (stored) => String(stored || '').trim().replace(/\s+branch$/i, '');
   const storedSource = (group, detail) => (group === 'Branch' ? (detail ? branchValue(detail) : '') : group);
@@ -227,7 +230,7 @@
   const taskPriorityOf = (task) => (TASK_PRIORITY_IDS.includes(task && task.priority) ? task.priority : 'high');
 
   return {
-    TASK_TAGS, TASK_TAG_IDS, TASK_TAGS_CHOOSABLE, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
+    TASK_TAGS, TASK_TAG_IDS, TASK_TAGS_CHOOSABLE, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, plainPartner, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
     OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, FOLLOW_TAGS, DOCUMENTS, documentsFor, PROFILE_FIELDS, GENDERS, SHEET_SECTIONS, columnLabel, whatsappNumber,
   };

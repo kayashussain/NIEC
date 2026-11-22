@@ -134,21 +134,34 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   const rowAfter = (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id);
   assert.strictEqual(rowAfter.EMAIL, 'sarita.demo@example.com', 'a value typed on the sheet by the Application Team is not kept');
   assert.strictEqual(rowAfter._color, 'yellow', 'the row colour is kept');
-  // The details only on the sheet are changed on the sheet; Medical Report and Remarks stay locked (the owner, 22 Nov 2026).
+  // Every detail of the application is changed on the student card, never on the sheet (the owner, 22 Nov 2026).
   {
+    const rowNow = async () => (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id);
     const s3 = (await app('GET', '/api/data')).json;
-    s3.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) Object.assign(r, { 'RECEIVING PARTNER': 'Head Office', 'NOC NUMBER': 'NOC-123', NOC: 'Yes', 'LANGUAGE TEST DATE': '2026-12-01', 'MEDICAL REPORT': 'Received', REMARKS: 'typed' }); }));
-    const r3 = await app('POST', '/api/data', { baseRevision: s3.revision, sheets: s3.sheets, activeSheetId: s3.activeSheetId });
-    assert.strictEqual(r3.status, 200, JSON.stringify(r3.json));
-    const row3 = (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id);
-    assert.deepStrictEqual([row3['RECEIVING PARTNER'], row3['NOC NUMBER'], row3['LANGUAGE TEST DATE']], ['Head Office', 'NOC-123', '2026-12-01']);
-    assert.notStrictEqual(row3.REMARKS, 'typed', 'Remarks stays locked');
-    assert.notStrictEqual(row3['MEDICAL REPORT'], 'Received', 'Medical Report stays locked');
+    s3.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) Object.assign(r, { 'RECEIVING PARTNER': 'Head Office', 'NOC NUMBER': 'NOC-123', 'STUDENT ID': 'typed' }); }));
+    assert.strictEqual((await app('POST', '/api/data', { baseRevision: s3.revision, sheets: s3.sheets, activeSheetId: s3.activeSheetId })).status, 200);
+    const row3 = await rowNow();
+    assert.deepStrictEqual([row3['RECEIVING PARTNER'], row3['NOC NUMBER'], row3['STUDENT ID']].map((v) => v || ''), ['', '', ''], 'typing on the sheet is not kept');
+    // The Application details card: one save, one note, the medical booking date with it.
+    const card3 = await app('POST', `/api/cards/${id}/sheet`, { fields: { 'RECEIVING PARTNER': 'Head Office', 'LANGUAGE TEST DATE': 'Waiver', 'STUDENT ID': 'CU-1', NOC: 'Received', 'NOC NUMBER': 'NOC-123', 'MEDICAL REPORT': 'Booked', 'MEDICAL BOOKING DATE': '2026-12-12' } });
+    assert.strictEqual(card3.status, 200, JSON.stringify(card3.json));
+    const row4 = await rowNow();
+    assert.deepStrictEqual([row4['RECEIVING PARTNER'], row4['LANGUAGE TEST DATE'], row4['STUDENT ID'], row4.NOC, row4['NOC NUMBER'], row4['MEDICAL REPORT']], ['Head Office', 'Waiver', 'CU-1', 'Received', 'NOC-123', 'Booked']);
+    assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.medical.date, '2026-12-12');
+    assert.match(await notesOf(id), /Changed on the student card: .*Student ID: \(empty\) \u2192 "CU-1".*Medical booking date: \(empty\) \u2192 "2026-12-12"\./);
+    assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: 'Maybe' } })).status, 400, 'only the NOC choices');
+    // The Mock interviews card is the Mock Team's: the Application Team only looks.
+    assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'FEEDBACK 1': 'x' } })).status, 403);
+    assert.ok(!(await app('GET', `/api/cards/${id}`)).json.can.cols.includes('FEEDBACK 1'));
+    // University partner follows the Priority university by itself: a direct application says "Direct (<university>)".
+    assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY PARTNER': 'QA' } })).status, 200);
+    assert.notStrictEqual((await rowNow())['UNIVERSITY PARTNER'], 'QA', 'University partner is never typed');
+    assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': 'Coventry University', 'COURSE NAME': 'MSc Data Science and Computational Intelligence' } })).status, 200);
+    assert.strictEqual((await rowNow())['UNIVERSITY PARTNER'], 'Direct (Coventry University)');
     // The Student Source is changed on the student card.
     const src = await app('POST', `/api/cards/${id}/source`, { source: 'Social Media' });
     assert.strictEqual(src.status, 200, JSON.stringify(src.json));
-    const srcRow = (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id)['STUDENT SOURCE'];
-    assert.strictEqual(srcRow, 'Social Media', JSON.stringify(src.json && src.json.source));
+    assert.strictEqual((await rowNow())['STUDENT SOURCE'], 'Social Media');
     assert.match(await notesOf(id), /Student Source: "Visitor" \u2192 "Social Media"/);
   }
   // Status stays open: the Application Team moves a student on to Mock Stage from the sheet (the card has no stage control).

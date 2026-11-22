@@ -143,11 +143,11 @@
   const isViewOnly = () => Teams.isReadOnly(me);
   let scrolledToYours = false;
   const isBranchAccount = () => Boolean(me && (me.departments || []).some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source));
-  // The Application Team changes a student on the student card, not in the sheet (the owner, 22 Nov 2026). Status stays open
-  // (moving a student on to Mock Stage is done there and nowhere else), and so do the details that are only on the sheet.
+  // The Application Team changes a student on the student card, not in the sheet (the owner, 22 Nov 2026). Only Status stays
+  // open: moving a student on to Mock Stage is done there and nowhere else.
   const sheetLocked = () => Boolean(me && Teams.ownTeamApplication && Teams.ownTeamApplication(me));
-  // Receiving Partner, Language test, NOC and NOC Number are only on the sheet, so the Application Team changes them there.
-  const sheetOpen = (col) => !sheetLocked() || (Teams.APPLICATION_SHEET_COLUMNS || []).includes(col);
+  // Every detail of a student is changed on the student card by the Application Team (the owner, 22 Nov 2026: Application details).
+  const sheetOpen = () => !sheetLocked();
   const canEditCol = (col, row = null) => sheetOpen(col) && Teams.canEdit(me, col, row); // row: a student the person's team added can have its basics filled in
   let saving = false;
   let saveQueued = false;

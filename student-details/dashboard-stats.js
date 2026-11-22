@@ -15,6 +15,7 @@
 const { parseNum, netTuitionFee } = require('./calc');
 const { newestSheet } = require('../shared/teams');
 const { localDate } = require('../shared/server-utils');
+const { plainPartner } = require('./card-fields');
 
 // The stages in the order a student moves through them, then the ones that leave the pipeline.
 const PIPELINE = ['Inquiry', 'Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
@@ -252,7 +253,7 @@ function buildDashboard(workbook, { sheetId = '', includeHidden = false, today: 
     // The source column is not shown on the Sep Intake 2026 sheet, so nothing in it is counted either.
     const source = text(row['STUDENT SOURCE']);
     if (isActiveHeadOfficeApplicant(source, status)) k.activeHeadOffice += 1;
-    [[sources, source], [partners, text(row['UNIVERSITY PARTNER'])], [universities, text(row['UNIVERSITY NAME'])], [courses, text(row['COURSE NAME'])]]
+    [[sources, source], [partners, plainPartner(row['UNIVERSITY PARTNER'])], [universities, text(row['UNIVERSITY NAME'])], [courses, text(row['COURSE NAME'])]]
       .forEach(([map, label]) => { if (label) bump(map, label, p, s.left); });
 
     const addTo = (map, month, by = 1) => { if (map.has(month)) map.set(month, map.get(month) + by); };

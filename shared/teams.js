@@ -72,10 +72,6 @@
     DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, start: 'Inquiry', statuses: [], editable: new Set(), source: `${name} Branch` };
   });
   const SOURCE = 'STUDENT SOURCE';
-  // The Application Team's details that are only on the sheet, not on the student card, so they are changed on the sheet (the owner,
-  // 22 Nov 2026: "if the information is in the student card it is changed from the student card, if it is in the sheet and not the
-  // card it is changed from the sheet"). Medical Report and Remarks stay locked (the owner, 22 Nov 2026).
-  const APPLICATION_SHEET_COLUMNS = ['RECEIVING PARTNER', 'LANGUAGE TEST DATE', 'NOC', 'NOC NUMBER'];
 
   // The stage moves a department may make. Follow-up can't move students on.
   const MOVES = [
@@ -429,7 +425,7 @@
   }
 
   return {
-    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, APPLICATION_SHEET_COLUMNS, ownTeamFollowup,
+    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup,
     who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };
