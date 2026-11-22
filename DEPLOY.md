@@ -1,4 +1,4 @@
-# Deploying ISR online (Render)
+# Deploying Vishnu online (Render)
 
 There are two supported ways to host this: **Render** (this file) or **cPanel / Nest Nepal** (see
 `CPANEL_DEPLOY.md`). Pick one; you don't need both.

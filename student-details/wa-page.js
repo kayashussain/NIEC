@@ -2,7 +2,7 @@
 // the student's chat (whatsapp://, no "Continue to chat" page), with one big button in case the phone asks for a tap first.
 // With call=1 (the "Call" notification, the owner, 17 Nov 2026) it rings the student instead (tel:).
 (function () {
-  // A quiet check-in with ISR's service worker, so this phone's push address stays current (sw.js heal). It never delays the chat.
+  // A quiet check-in with Vishnu's service worker, so this phone's push address stays current (sw.js heal). It never delays the chat.
   try { if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage('heal'); } catch (e) { /* fine */ }
   const q = new URLSearchParams(location.search);
   const n = String(q.get('n') || '').replace(/\D/g, '').slice(0, 15);
@@ -12,7 +12,7 @@
   if (n.length < 8) { $('who').textContent = 'This chat link is not complete.'; $('go').hidden = true; $('web').hidden = true; if ($('face')) $('face').hidden = true; return; }
   if (q.get('call') === '1') {
     const tel = `tel:+${n}`;
-    document.title = `Call ${name || '+' + n} · ISR`;
+    document.title = `Call ${name || '+' + n} · Vishnu`;
     document.querySelector('.wa-kicker').textContent = 'Call';
     $('who').textContent = name || 'The student';
     const ini0 = (name || '').split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -26,7 +26,7 @@
   }
   const app = `whatsapp://send?phone=${n}${text ? `&text=${encodeURIComponent(text)}` : ''}`;
   const web = `https://wa.me/${n}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
-  document.title = `WhatsApp ${name || '+' + n} · ISR`;
+  document.title = `WhatsApp ${name || '+' + n} · Vishnu`;
   $('who').textContent = name || 'The student';
   // The student's initials in a soft circle, as on the student card.
   const ini = (name || '').split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();

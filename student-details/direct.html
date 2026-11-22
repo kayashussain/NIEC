@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Partner Universities · ISR</title>
+<title>Partner Universities · Vishnu</title>
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="stylesheet" href="header.css" />
@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="admin.css" />
 <link rel="stylesheet" href="portal.css" />
 <style>
+  /* 🔴 CSS CHANGED (2026-11-22): Vishnu Peacock Ocean, every colour in this file | from: the light ISR colours (page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, black words #000, grey words #333, blue #0071e3, borders #9a9a9a to #6f6f6f) | to: the dark Peacock Ocean colours (page #0b2230, panels #13303f, tiles #19384a, boxes #0f2a38, light words #dde9ef, second words #a9c3cf, peacock blue #0f7fb3 and teal, borders #1f4658 to #4f7f95; orange, green and red kept as lighter tones that read on dark) */
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
   /* 🔴 CSS CHANGED (2026-11-15): clean-up, nothing on screen changes | from: the styles of the old Partner Universities cards (now in the B2B look from theme.css) | to: deleted; the editor's styles stay */
   /* 🔴 CSS CHANGED (2026-11-13): Partner Universities, rebuilt calm and roomy | from: a ten-column table squeezed into a 1200px box (names, phones and emails broken over several lines), and one long editor form under the list with every field at once and no guidance | to: a wider page (up to 1480px) with a search box and a short "Add a partner university" line; each university as a calm card (name in navy, status tag, how you hold it, campuses as soft tags, commission, agreement end, the first contact, and the application link with "Open portal"); the editor opens as its own page with a "Back" button, in seven numbered steps (The university, Application, Contacts, Campuses, Commission and payment, Agreement files, Notes), each in its own soft panel with one line of help, roomy boxes in tidy columns, the B2B partner box only when it applies, a username and password only when the application is a link, and a Save bar that stays at the bottom of the screen */
@@ -24,47 +25,47 @@
   /* 🔴 CSS CHANGED (2026-11-14): hint text no longer slanted | from: italic grey | to: plain grey (Apple never slants text) */
   .pu-none { color: var(--text-dim); }
   .pu-lines { display: grid; gap: 2px; }
-  .pu-link { color: var(--brand-navy, #000); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-bronze, #9a7b4f) 55%, transparent); text-underline-offset: 4px; }
+  .pu-link { color: var(--brand-navy, #dde9ef); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-bronze, #f0a463) 55%, transparent); text-underline-offset: 4px; }
   /* the editor */
-  .pu-back { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600; color: var(--brand-navy, #000); cursor: pointer; }
+  .pu-back { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600; color: var(--brand-navy, #dde9ef); cursor: pointer; }
   .pu-back:hover { text-decoration: underline; }
   .pu-ed-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .pu-ed-head h2 { margin: 0; font-family: var(--serif); font-size: 32px; font-weight: 600; color: var(--brand-navy, #000); }
+  .pu-ed-head h2 { margin: 0; font-family: var(--serif); font-size: 32px; font-weight: 600; color: var(--brand-navy, #dde9ef); }
   .pu-saved { margin: 6px 0 22px; color: var(--text-dim); font-size: 14px; }
-  .pu-step { margin: 0 0 18px; padding: 24px 26px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(20, 27, 41, .04); }
+  .pu-step { margin: 0 0 18px; padding: 24px 26px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.064); }
   .pu-step-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
-  .pu-num { flex: 0 0 34px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--gold-soft, #e2e7f0); color: var(--brand-navy, #000); font-weight: 700; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--brand-bronze, #9a7b4f) 70%, transparent); }
-  #editor .pu-step-head h3 { margin: 4px 0 2px; padding-top: 0; border-top: 0; font-size: 18px; font-weight: 700; color: var(--brand-navy, #000); }
+  .pu-num { flex: 0 0 34px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--gold-soft, #0b2230); color: var(--brand-navy, #dde9ef); font-weight: 700; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--brand-bronze, rgba(255, 255, 255, 0.006)) 70%, transparent); }
+  #editor .pu-step-head h3 { margin: 4px 0 2px; padding-top: 0; border-top: 0; font-size: 18px; font-weight: 700; color: var(--brand-navy, #dde9ef); }
   .pu-step-head p { margin: 0; color: var(--text-dim); font-size: 15px; }
   .pu-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 18px; }
   .pu-fields.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (max-width: 900px) { .pu-fields, .pu-fields.two { grid-template-columns: minmax(0, 1fr); } }
   .pu-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .pu-field.wide { grid-column: 1 / -1; }
-  .pu-field > span { color: var(--brand-navy, #000); font-size: 14px; font-weight: 600; }
-  .pu-field input, .pu-field select, .pu-field textarea { width: 100%; min-height: 46px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--edit-bg, #fbfcfd); font: inherit; font-size: 15px; color: var(--text); }
+  .pu-field > span { color: var(--brand-navy, #dde9ef); font-size: 14px; font-weight: 600; }
+  .pu-field input, .pu-field select, .pu-field textarea { width: 100%; min-height: 46px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--edit-bg, #0f2a38); font: inherit; font-size: 15px; color: var(--text); }
   .pu-field textarea { min-height: 96px; resize: vertical; line-height: 1.55; }
   .pu-field input:focus, .pu-field select:focus, .pu-field textarea:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent); }
   .pu-hint { margin: 2px 0 0; color: var(--text-dim); font-size: 14px; }
-  .pu-kind { display: inline-block; margin-top: 6px; padding: 3px 11px; border-radius: 999px; background: var(--gold-soft, #e2e7f0); color: var(--brand-navy, #000); font-size: 14px; font-weight: 600; }
+  .pu-kind { display: inline-block; margin-top: 6px; padding: 3px 11px; border-radius: 999px; background: var(--gold-soft, #0b2230); color: var(--brand-navy, #dde9ef); font-size: 14px; font-weight: 600; }
   .pu-pass { display: flex; gap: 8px; }
   .pu-pass input { flex: 1 1 auto; }
   .pu-rows { display: grid; gap: 12px; }
-  .pu-row { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)) auto; gap: 12px 14px; align-items: end; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 22%, var(--panel)); }
+  .pu-row { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)) auto; gap: 12px 14px; align-items: end; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: color-mix(in srgb, var(--gold-soft, #0b2230) 22%, var(--panel)); }
   @media (max-width: 900px) { .pu-row { grid-template-columns: minmax(0, 1fr); } }
   .pu-remove { min-height: 46px; padding: 0 14px; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--red-fg); cursor: pointer; }
   .pu-remove:hover { text-decoration: underline; }
   .pu-add-row { margin-top: 12px; }
   .pu-files { display: grid; gap: 10px; margin-bottom: 14px; }
   .pu-file { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; }
-  .pu-savebar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px -4px 0; padding: 14px 18px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(8px); box-shadow: 0 -10px 30px -24px rgba(29, 47, 82, .5); }
+  .pu-savebar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px -4px 0; padding: 14px 18px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(8px); box-shadow: 0 -10px 30px -24px rgba(0, 0, 0, 0.8); }
   .pu-savebar .grow { flex: 1 1 auto; }
   #adminOnly { display: inline-block; margin-left: 8px; }
   /* 🔴 CSS CHANGED (2026-11-13): Partner Universities, application submission on every card | from: the list cards showed only "Open portal" and a "Login saved" tag, so the team had to open each university to see the login; the cards also showed a status tag, "Direct agreement" and Agreement ends | to: the campuses as soft tags straight under the name; a soft navy-tinted "Application submission" box on every card with "Open portal", the username and the password (dots until Show), each with Copy, or the email with Copy and "Write email"; then Commission, Contact and Agreement ("Since ..." and the files); no status tag; in the editor, small "Campuses" and "Login details" headings inside the steps */
-  .pu-submit { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--brand-navy, #1d2f52) 16%, var(--border)); border-radius: 14px; background: color-mix(in srgb, var(--gold-soft, #e2e7f0) 55%, var(--panel)); }
-  .pu-portal { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border: 1px solid var(--brand-navy, #1d2f52); border-radius: 10px; background: var(--panel); color: var(--brand-navy, #000); font-size: 14px; font-weight: 650; text-decoration: none; }
-  .pu-portal:hover { background: var(--gold-soft, #e2e7f0); }
-  #editor .pu-sub-head { margin: 22px 0 12px; padding: 0; border: 0; color: var(--brand-navy, #000); font-size: 15px; font-weight: 700; }
+  .pu-submit { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--brand-navy, #0f7fb3) 16%, var(--border)); border-radius: 14px; background: color-mix(in srgb, var(--gold-soft, #0b2230) 55%, var(--panel)); }
+  .pu-portal { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border: 1px solid var(--brand-navy, #0f7fb3); border-radius: 10px; background: var(--panel); color: var(--brand-navy, #dde9ef); font-size: 14px; font-weight: 650; text-decoration: none; }
+  .pu-portal:hover { background: var(--gold-soft, #0b2230); }
+  #editor .pu-sub-head { margin: 22px 0 12px; padding: 0; border: 0; color: var(--brand-navy, #dde9ef); font-size: 15px; font-weight: 700; }
 </style>
 <link rel="stylesheet" href="theme.css" />
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->

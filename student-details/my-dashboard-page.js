@@ -68,7 +68,7 @@
   }
 
   api('/api/my-dashboard').then((d) => {
-    document.title = 'Dashboard · ISR';
+    document.title = 'Dashboard · Vishnu';
     const page = el('div', 'md-page');
     const head = el('header', 'td-hello');
     head.append(el('span', 'td-kicker', d.intake ? `${d.title} · ${d.intake}` : d.title), el('h1', '', 'Dashboard'), el('p', '', d.lead));

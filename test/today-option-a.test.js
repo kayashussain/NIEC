@@ -192,7 +192,7 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
       // Undo is never a way round the checks: only the value this server just replaced is put back.
       assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: '<img src=x>' }, undo: true })).status, 400);
       assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'OFFER RECEIVED DATE': 'garbage' }, undo: true })).status, 400);
-      // A person's note is always a note (stage and "no answer" lines are ISR's own), and a next follow-up day must be a real day.
+      // A person's note is always a note (stage and "no answer" lines are Vishnu's own), and a next follow-up day must be a real day.
       const fake = await app('POST', `/api/cards/${id}/notes`, { text: 'Moved to Visa Issued', kind: 'stage' });
       assert.strictEqual(fake.status, 200);
       assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.notes.find((n) => n.text === 'Moved to Visa Issued').kind, 'note');

@@ -2,7 +2,7 @@
 // UK/Europe Navitas product toolkit") with, for each of its pathway colleges, the entry requirements, the course list, fees,
 // scholarships and deadlines, sample interview questions, the Flywire payment and refund links, the application process,
 // accommodation links, tips and key selling points. Twice a week (Monday and Thursday from 2 a.m. office time)
-// ISR reads that sheet and writes each UK college into its own university page. Only UK colleges: the German and Dutch ones
+// Vishnu reads that sheet and writes each UK college into its own university page. Only UK colleges: the German and Dutch ones
 // are left out, and so is a college the sheet puts on hold or the owner has closed (Manchester Metropolitan University
 // International College).
 //
@@ -414,7 +414,7 @@ function createNavitasToolkit({ dir, facts, sheetId = DEFAULT_SHEET_ID, fetchImp
   const write = (d) => { cache = d; fs.mkdirSync(dir, { recursive: true }); writeFileAtomic(file, JSON.stringify(d, null, 2)); };
   const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}`;
   async function get(url) {
-    const res = await fetchImpl(url, { headers: { 'User-Agent': 'ISR Universities' }, signal: AbortSignal.timeout(60000) });
+    const res = await fetchImpl(url, { headers: { 'User-Agent': 'Vishnu Universities' }, signal: AbortSignal.timeout(60000) });
     if (!res.ok) throw new Error(`The toolkit sheet answered ${res.status}${res.status === 401 || res.status === 403 ? ': it must be shared as "Anyone with the link can view".' : '.'}`);
     return res.text();
   }

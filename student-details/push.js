@@ -1,6 +1,6 @@
 // "Open on my phone" (the owner, 17 Nov 2026): a click on WhatsApp on the computer makes the person's own phone show a notification,
 // and one tap on it opens that student's WhatsApp chat on the phone. A website cannot open an app on a phone by itself; a
-// notification the person allowed on their phone is the way that works on Android and on iPhone (from iOS 16.4, with ISR added to
+// notification the person allowed on their phone is the way that works on Android and on iPhone (from iOS 16.4, with Vishnu added to
 // the Home Screen).
 //
 // This is the standard Web Push protocol (RFC 8030, the message encrypted for that phone only with RFC 8291 aes128gcm, the server
@@ -15,7 +15,7 @@
 // that a click had worked, and two clicks sent two notifications):
 //   - Each phone gets its own secret when it connects (only its hash is kept here). Phones change their push address from time to
 //     time; with the secret the phone hands over its new address by itself (renew), so it never has to be connected again. A phone
-//     whose address stops working is marked "not answering", never forgotten, and comes back the next time it opens ISR.
+//     whose address stops working is marked "not answering", never forgotten, and comes back the next time it opens Vishnu.
 //   - All phones are sent to at the same time, each with a time limit, so a slow or switched-off phone never holds up a click.
 //   - Each message has an id; the phone says "arrived" and "opened" (ack), so the computer can show it.
 //   - The push service is given a Topic, so a message still waiting for a phone is replaced, never doubled.
@@ -112,7 +112,7 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
   const checkSub = (sub) => {
     const endpoint = String(sub && sub.endpoint || '');
     const k = (sub && sub.keys) || {};
-    if (!allowedEndpoint(endpoint, allowLocal)) return { error: 'This browser cannot get notifications from ISR. Use Chrome on Android, or Safari on iPhone with ISR added to the Home Screen.' };
+    if (!allowedEndpoint(endpoint, allowLocal)) return { error: 'This browser cannot get notifications from Vishnu. Use Chrome on Android, or Safari on iPhone with Vishnu added to the Home Screen.' };
     if (unb64u(k.p256dh).length !== 65 || unb64u(k.auth).length !== 16) return { error: 'The phone sent keys that do not look right.' };
     return { endpoint, p256dh: String(k.p256dh), auth: String(k.auth) };
   };
@@ -123,7 +123,7 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
   return {
     publicKey: () => vapid().publicKey,
     // What a page may know: how many phones, their names and when they were connected (never the push addresses).
-    // "lost": the phone stopped answering; it comes back by itself the next time ISR is opened on it.
+    // "lost": the phone stopped answering; it comes back by itself the next time Vishnu is opened on it.
     devices: (userId) => devicesOf(userId).map((x) => ({ id: x.id, name: x.name, at: x.at, ...(x.usedAt ? { usedAt: x.usedAt } : {}), ...(x.lostAt ? { lost: true } : {}) })),
     // Connects a phone. `secret` (returned once, to that phone only) lets it hand over a new push address later by itself. The same
     // phone connected again (same address, or the old secret it still has) replaces its old entry, never adds a second one.
@@ -210,7 +210,7 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
     },
     // Sends `message` (an object, kept small) to every phone of the person, all at the same time, each with a time limit (a phone
     // that is off never holds up the click). Every message gets an id (m) for the receipt. A phone whose push address has gone is
-    // marked "not answering" (it renews itself the next time ISR opens on it); an old phone with no secret is forgotten as before.
+    // marked "not answering" (it renews itself the next time Vishnu opens on it); an old phone with no secret is forgotten as before.
     // `topic`: the push service keeps only the newest waiting message with the same topic. Resolves { sent, failed, forgotten,
     // lost, names, m, track } (track: at least one phone reached can say "arrived").
     async send(userId, message, subject, topic) {

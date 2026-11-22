@@ -72,7 +72,7 @@ The owner does not want old versions, copies or rewrites lying around, because a
 
 ## Rule 4: the Application Team's pages and system are frozen (the owner, 22 Nov 2026, strictly)
 
-The Application Team's side of ISR is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule).
+The Application Team's side of Vishnu is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule). The owner then asked for the whole system, the Application Team included, to be renamed Vishnu and recoloured in Peacock Ocean (22 Nov 2026): that new look is part of what is frozen; only colours and the name changed, nothing was added, moved or removed.
 It must stay exactly the same until the owner asks for a change and approves it.
 
 - **What is frozen:** everything a person whose own team is Application sees and uses (`Teams.ownTeamApplication`): the menu,
@@ -104,31 +104,33 @@ It must stay exactly the same until the owner asks for a change and approves it.
   card must match the sheet, the student, Admin's view, the Dashboard and every other team (Mock, Follow-up, branches, the Manager),
   with the data that already exists on the live server (Rule 3).
 
-## The ISR colours (the owner accepted these, 21 Nov 2026; every page uses them, nothing else)
+## The Vishnu colours: Peacock Ocean (the owner chose the dark Peacock Ocean look for the whole system, 22 Nov 2026, because light colours hurt the team's eyes; every page uses them, nothing else)
 
 | Use | Colour |
 |---|---|
-| Page (canvas) | #e6e6e6 |
-| Side menu, the student card's Profile column | #ececec |
-| Cards and panels | #f3f3f3, 1px border #9a9a9a, 10px corners, no shadow |
-| Tiles inside a card, title bars | #e2e2e2, 1px border #b8b8b8, 8px corners |
-| Boxes, fields and grey buttons | #f7f7f7, field border #6f6f6f (never pure white) |
-| Text | #000, semi-bold (600); titles 700 |
-| Second text (labels, hints) | #333 (nothing lighter) |
-| Main button, "where you are now" | blue #0071e3 with white words |
-| Links | #0050aa |
-| Missing or needs attention | orange #b85300 (dot #d9650b) |
-| Done, visa granted | green #1e8e4a |
-| Error, rejected | red #b42318 |
-| Logo blue (soft tints only) | #00a8ec |
+| Page (canvas) | deep sea #0b2230 |
+| Side menu | night-sea gradient, top to bottom #0b1d3a, #0a3050, #0b4a4f, #173d22 |
+| Cards and panels | #13303f, 1px border #1f4658 to #3d6a80, 10px corners, no shadow |
+| Tiles inside a card, title bars | #19384a, 1px border #284f66, 8px corners |
+| Boxes, fields and grey buttons | #0f2a38, field border #4f7f95 |
+| Text | #dde9ef, semi-bold (600); titles 700 (#e3eef2) |
+| Second text (labels, hints) | #a9c3cf (nothing darker) |
+| Main button, "where you are now" | the peacock gradient, blue #0a5ca8 to teal #12a1a6, with white words |
+| Menu: where you are now | teal glass rgba(18, 161, 166, .28), words #8ff5ec, a gold #c9a227 bar at the left |
+| Links | #6fd8e0 |
+| Missing or needs attention | orange #f0a463 (dot #d9712a) |
+| Done, visa granted | green #6fd69a |
+| Error, rejected | red #ff8a7e |
+| Brand mark | the Vishnu lotus (`shared/vishnu-lotus.svg`): petals green #3c7a2a, blue #0a5ca8, teal #12a1a6, centre gold #c9a227, edges bronze #c58f3a; the word "Vishnu" in soft gold #f1e6c2 |
+| Peacock feather line (under the menu logo) | indigo #1b1f5e, blue #0a5ca8, teal #12a1a6, green #3c7a2a, gold #c9a227 |
 | Charts (Dashboard and every chart, in this order) | blue #0071e3, orange #d9650b, green #1e8e4a, purple #6e47d1, teal #0b8a95, pink #c2255c, amber #b7791f, slate #52606d, light blue #4aa3f0, olive #6b8e23 |
 | The same stage, the same colour on every chart | Inquiries teal, Applied and Students blue, Offers purple, Paid orange, CAS amber, Visas green |
 
 - The Dashboard is the one page in colour: each number tile has its stage colour as a band across its top and in its little chart.
-  Every other page stays black, grey and one blue, with colour only where it means something.
+  Every other page stays deep sea, light grey words and the one peacock gradient, with colour only where it means something.
 - Text size: every page opens at Large; Small and Medium are in the account menu.
 - Every card on every page looks the same (the row above). Cards side by side end on the same line.
-- The CSS that holds this is the "One system on every page" block at the end of `shared/theme.css`. A new page uses these colours and
+- The CSS that holds this is the "One system on every page" block and, after it, the "Vishnu in Peacock Ocean" finishing layer at the end of `shared/theme.css`. A new page uses these colours and
   that card; it never brings its own.
 
 ## Other standing decisions (the owner's wishes)
@@ -138,8 +140,8 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Always run the complete test suite (`npm test`) before pushing**, not just the browser tests, because rules like the one
   above live in other tests.
 
-- The product is called **International Student Recruitment**, short name **ISR** (titles, emails and tabs say ISR; the login page and the big logo say the full name). It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
-- There is **one look only: a light theme, no dark mode and no alternative themes** (the owner asked). It must be easy on older eyes: no pure white panels (soft off-white on a soft grey canvas), strong dark text, larger type and larger buttons.
+- The product is called **Vishnu** (the owner, 22 Nov 2026; it was "International Student Recruitment", ISR, before). Titles, emails, tabs, the menu and the login page say Vishnu, with the Vishnu lotus. Notes written by the system say "Vishnu (automatic)"; older notes that say "ISR (automatic)" keep their meaning. It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
+- There is **one look only: the dark Peacock Ocean theme, no light mode and no alternative themes** (the owner, 22 Nov 2026: light colours hurt the team's eyes). It must be easy on older eyes: no pure black and no pure white, soft light words on a deep sea canvas, larger type and larger buttons.
 - The login page must not mention incentives or commissions. Incentive is Admin-only and behind its own password.
 - **Never add something that is already on the page (the owner, 17 Nov 2026, strictly).** Improving, changing and making a page
   much better is welcome. What is not allowed is a copy: if a page already has a button or a feature that does something, never
@@ -149,6 +151,6 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Front end: follow DESIGN.md, always (the owner, 20 Nov 2026).** The front end is the product. Before any change to a page, a card, a window or a style, read `DESIGN.md` and build to it: Apple's own standard, measured on apple.com: calm, quiet, premium, one blue, black and grey text, Apple's type scale and timings, no pop-ups, confetti or sticky bars the person did not ask for (the owner, 20 Nov 2026), using the shared motion kit (`shared/motion.js`), never reinventing it. Section 0 of DESIGN.md is the prompt to use. Finish every front-end change with an independent reviewer pass that scores each screen 9/10 or more.
 - **Desktop and laptop only for now (the owner, 20 Nov 2026).** Design, build and check every page for a laptop or desktop screen. Do not spend work on the phone (mobile) version until the owner asks for it; phone styles already in the code stay as they are.
 - One font everywhere (`--font` in `shared/theme.css`): the system font (SF Pro on Apple devices), Inter (in `shared/fonts`) elsewhere; no serif (the owner, 14 Nov 2026).
-- The look (the owner, 14 Nov 2026): the design language of Apple's website and apps: a light grey canvas, soft grey panels and black text, now in the "Strong contrast" colours (the owner, 21 Nov 2026, option H: page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, no pure white, text #000 in a semi-bold weight, grey words #333, firm lines, Text size Large for everyone; see DESIGN.md), blue pill buttons (#0071e3) and grey pills for the rest, segmented tabs. Only the consultancy's logo at the top of the menu and on the login page (no name or "UK" beside it). The logo is `brand-logo.png` in the data folder, else the starting one in `shared/`.
+- The look (the owner, 14 Nov 2026, made dark on 22 Nov 2026): the design language of Apple's website and apps (calm, quiet, segmented tabs, pill buttons, Text size Large for everyone; see DESIGN.md) in the Vishnu Peacock Ocean colours above: a deep sea canvas, sea panels, soft light words, the peacock gradient on main buttons and grey-sea pills for the rest. The top of the menu shows the Vishnu lotus and the word Vishnu; the login page shows the lotus and Vishnu, with the consultancy's logo smaller under it on a soft light tile. The consultancy logo is `brand-logo.png` in the data folder, else the starting one in `shared/`.
 - Never put the real Incentive password, tokens or personal data in code, tests or git. It is the `INCENTIVE_PASSWORD`
   setting on the server only.

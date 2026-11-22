@@ -130,7 +130,7 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   // A student the Follow-up Team does not see is never sent; a test reaches the phone; a phone that has gone is forgotten.
   assert.strictEqual((await fu('POST', '/api/push/whatsapp', { id: far })).status, 404);
   assert.strictEqual((await fu('POST', '/api/push/whatsapp', { test: true })).status, 200);
-  assert.strictEqual(decrypt(got[got.length - 1].body, ua, auth).title, 'ISR is connected');
+  assert.strictEqual(decrypt(got[got.length - 1].body, ua, auth).title, 'Vishnu is connected');
   // A phone whose push address stopped working is marked "not answering", never forgotten, and renews itself with its secret.
   answer = 410;
   const lost = await fu('POST', '/api/push/whatsapp', { id: sita, text: 'Hello' });

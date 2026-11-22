@@ -305,7 +305,7 @@
     const box = el('div');
     const c = pre.counts;
     const counts = el('div', 'ev-counts');
-    [['new', `${c.new} new, added at Inquiry`], ['link', `${c.link} matched on the sheet, will be linked`], ...(c.update ? [['update', `${c.update} already in ISR, new details will be added`]] : []), ['already', `${c.already} already linked, nothing new`], ['other', `${c.other} in another event, left as is`], ...(c.check ? [['check', `${c.check} to check (fits another person or two students)`]] : []), ...(c.removed ? [['removed', `${c.removed} removed from the sheet before, not added back`]] : []), ...(c.joined ? [['joined', `${c.joined} repeated in the file, joined to their first line`]] : []), ['problem', `${c.problem} skipped`]]
+    [['new', `${c.new} new, added at Inquiry`], ['link', `${c.link} matched on the sheet, will be linked`], ...(c.update ? [['update', `${c.update} already in Vishnu, new details will be added`]] : []), ['already', `${c.already} already linked, nothing new`], ['other', `${c.other} in another event, left as is`], ...(c.check ? [['check', `${c.check} to check (fits another person or two students)`]] : []), ...(c.removed ? [['removed', `${c.removed} removed from the sheet before, not added back`]] : []), ...(c.joined ? [['joined', `${c.joined} repeated in the file, joined to their first line`]] : []), ['problem', `${c.problem} skipped`]]
       .forEach(([k, t]) => counts.append(el('span', `ev-count ${LOOK[k] || k}`, t)));
     // Students tagged with this event earlier who are not on this list: they stay as they are, and are named here to be checked.
     let gone = null;
@@ -339,7 +339,7 @@
   function removal(a, pre, onCancel) {
     const box = el('div');
     const counts = el('div', 'ev-counts');
-    [['other', `${pre.remove.length} will be removed`], ['already', `${pre.worked.length} worked on, stay`], ['already', `${pre.before.length} in ISR before the list, stay`]]
+    [['other', `${pre.remove.length} will be removed`], ['already', `${pre.worked.length} worked on, stay`], ['already', `${pre.before.length} in Vishnu before the list, stay`]]
       .forEach(([k, t]) => counts.append(el('span', `ev-count ${k}`, t)));
     const list = el('div', 'ev-review');
     const line = (x, what, look, why) => { const r = el('div', 'ev-rline'); r.append(el('span', `what ${look}`, what), el('b', '', x.name), el('span', '', `${x.intake}, ${x.stage || 'no stage'}`), el('span', 'why', why)); list.append(r); };

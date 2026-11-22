@@ -131,7 +131,7 @@ function normalize(raw) {
     //   from  the intake a deferred student came back from ("Jan 2027"), shown beside the name in the new intake
     //   via   'converted' (the Follow-up Team sent the student on) or 'withdrawn' (the team withdrew them): the team keeps seeing them
     follow: cleanFollow(c.follow),
-    // The last line ISR itself wrote in the sheet's Remarks (finishing a task), so a later one replaces it but never a person's remark.
+    // The last line Vishnu itself wrote in the sheet's Remarks (finishing a task), so a later one replaces it but never a person's remark.
     autoRemark: str(c.autoRemark, 300),
     // The details someone checked and said are correct (the owner, 16 Nov 2026), so they leave "Details to check": { key: ISO time }.
     // A key holds the values it was about, so a later change is checked again.
@@ -349,7 +349,7 @@ function createCards(dir, { now = () => new Date() } = {}) {
       // through in the task's comments. Older tasks keep the date they were given with; it is simply not shown.
       let task;
       const out = update(rowId, by, (card, stamp) => {
-        // The tag chosen when the task was given (Application, Mock interview, NOC, Medical, Other; Offer request by ISR), if any.
+        // The tag chosen when the task was given (Application, Mock interview, NOC, Medical, Other; Offer request by Vishnu), if any.
         const tag = Fields.TASK_TAG_IDS.includes(input && input.tag) ? input.tag : '';
         // How important it is: Priority unless Super priority or Medium was chosen.
         const priority = Fields.TASK_PRIORITY_IDS.includes(input && input.priority) ? input.priority : 'high';

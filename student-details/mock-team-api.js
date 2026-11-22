@@ -215,7 +215,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     if (out.error) return { status: out.status || 400, error: out.error };
     bookings.answer(b.id, { joined: true, feedback, result: body.result, by: req.user.name, rowId, mock: n });
     if (body.result === 'again' && n < 4) {
-      cards.addTask(rowId, { team: 'mock', text: `Mock ${n + 1} is next: Mock ${n} said the student needs another mock`, tag: 'mock', priority: 'high' }, 'ISR (automatic)');
+      cards.addTask(rowId, { team: 'mock', text: `Mock ${n + 1} is next: Mock ${n} said the student needs another mock`, tag: 'mock', priority: 'high' }, 'Vishnu (automatic)');
     }
     activity.record(req, req.user, 'Edited student card', { app: 'Bookings', changes: [`${nameOf(found.row)}: Mock ${n} on ${bookings.niceDay(b.day)}, ${body.result === 'ready' ? 'ready for the final interview' : 'needs another mock'}`] });
     return { status: 200, body: { ok: true, mock: n } };

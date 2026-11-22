@@ -1,4 +1,4 @@
-// ISR motion kit (the owner, 20 Nov 2026: "interactive, engaging, fun to work in, like a game, a surprise every time").
+// Vishnu motion kit (the owner, 20 Nov 2026: "interactive, engaging, fun to work in, like a game, a surprise every time").
 // One small file every page loads (header.js adds it), so every page moves the same way. See DESIGN.md for the rules.
 //
 //   Motion.reveal(root)          the cards and rows of `root` rise in one after another (each element once)
@@ -91,8 +91,8 @@
     const r = (size - stroke) / 2;
     const len = 2 * Math.PI * r;
     const share = total > 0 ? Math.min(1, value / total) : 1;
-    /* 🔴 CSS CHANGED (2026-11-21): the progress ring's colour set here | from: green to blue | to: solid Apple blue */
-    wrap.innerHTML = `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><defs><linearGradient id="mo-ring-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0071e3"/><stop offset="1" stop-color="#0071e3"/></linearGradient></defs>`
+    /* 🔴 CSS CHANGED (2026-11-22): the progress ring's colour set here | from: solid Apple blue #0071e3 | to: the Vishnu peacock blue to teal (#0a5ca8 to #12a1a6) */
+    wrap.innerHTML = `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><defs><linearGradient id="mo-ring-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a5ca8"/><stop offset="1" stop-color="#12a1a6"/></linearGradient></defs>`
       + `<circle class="mo-ring-track" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" fill="none"/>`
       + `<circle class="mo-ring-fill" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" fill="none" stroke-linecap="round" stroke-dasharray="${len}" stroke-dashoffset="${len}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg>`;
     const mid = document.createElement('div');

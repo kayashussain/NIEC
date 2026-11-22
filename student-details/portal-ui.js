@@ -353,7 +353,7 @@
     return wrap;
   }
   // The "Mark as done?" window (the owner, 16 Nov 2026: nothing is filled in by itself; the team is asked, checks, then it is saved).
-  // Step 1 shows what ISR already knows about the student (every application with its days) and asks what the task's tag needs, with
+  // Step 1 shows what Vishnu already knows about the student (every application with its days) and asks what the task's tag needs, with
   // no answer chosen and no day filled in. Step 2 shows the server's own list of exactly what will change, what stays as it is and
   // anything that does not add up; only "Yes, this is correct" saves it. A task with nothing to ask (Documents, Other) takes one
   // optional line and is done. Resolves the confirmed answers ({ ..., confirmed: true }) or null when Not yet is pressed.
@@ -374,7 +374,7 @@
       const msg = el('div', 'p-msg');
       // The message is shown where the person is looking: scrolled into view and announced (a long window hid it below the buttons).
       const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; msg.setAttribute('role', 'alert'); try { msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) { /* older browsers */ } };
-      const wait = el('p', 'p-muted p-small', 'Loading what ISR knows about this student...');
+      const wait = el('p', 'p-muted p-small', 'Loading what Vishnu knows about this student...');
       ask.append(wait);
       api(url, { finishState: true }).then((r) => { wait.remove(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
 
@@ -449,7 +449,7 @@
           read = () => (q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: q.value() === 'closed' ? 'withdrawn' : q.value(), date: dayF.input.value }] } : {});
           check = () => (!q.value() ? 'Choose what the university said.' : !dayF.input.value ? 'Choose the date.' : '');
         } else if (tag === 'application' || tag === 'offer') {
-          // So far: every application ISR knows, each with its days; a press on one starts a line for it below.
+          // So far: every application Vishnu knows, each with its days; a press on one starts a line for it below.
           const apps = state.applications || [];
           const listId = `td-unis-${t.id}`;
           form.append(datalist(listId, state.universities || []));
@@ -573,7 +573,7 @@
           check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'set' && !date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !slot.input.value ? 'Choose which mock.' : q.value() === 'feedback' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !result.value() ? 'Choose Passed or Fail.' : '');
         } else if (tag === 'medical') {
           // The Medical Report as All Students has it: Pending, Booked (with the day) or Received (the owner, 18 Nov 2026). On the day of the
-          // test ISR's own "is the report received?" task keeps its meaning: Pending there is "not received yet".
+          // test Vishnu's own "is the report received?" task keeps its meaning: Pending there is "not received yet".
           nowLine(['MEDICAL REPORT']);
           const isCheck = Boolean(F().isReportCheck && F().isReportCheck(t));
           const q = question('Medical report', [['pending', 'Pending'], ['booked', 'Booked'], ['received', 'Received']], (v) => { show(date.wrap, v === 'booked'); });

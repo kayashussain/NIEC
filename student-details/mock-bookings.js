@@ -10,7 +10,7 @@
 //   the Teams link (from the consultancy's own mailbox) and the person gets a calendar invite in their own email. Reminders go the day
 //   before and an hour before. The student can change or cancel from the email until the booking rule's time before the mock.
 //
-//   ISR finds the student by email or phone. The mock's number (1 to 4) is the next one not yet held on the student's card.
+//   Vishnu finds the student by email or phone. The mock's number (1 to 4) is the next one not yet held on the student's card.
 //   When a mock's time is over, Bookings asks the person, every time it is opened until answered: did the student join? If yes, the
 //   feedback and the result (Ready for the final interview, or Needs another mock) are required; the day and the feedback are written to
 //   MOCK SCHEDULE n and FEEDBACK n on the student's card. "Needs another mock" gives the Mock Team a task for the next mock.
@@ -320,7 +320,7 @@ function calendarInvite({ booking, start, end, title, description, location, org
   const fold = (line) => { const out = []; let rest = line; while (rest.length > 74) { out.push(rest.slice(0, 74)); rest = ' ' + rest.slice(74); } out.push(rest); return out.join('\r\n'); };
   return [
     // A cancelled mock is sent as a cancel of the same event (a higher sequence), so the calendar takes it out.
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ISR//Mock interviews//EN', booking.status === 'cancelled' ? 'METHOD:CANCEL' : 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Vishnu//Mock interviews//EN', booking.status === 'cancelled' ? 'METHOD:CANCEL' : 'METHOD:PUBLISH', 'BEGIN:VEVENT',
     `UID:${booking.id}@isr`, `SEQUENCE:${booking.status === 'cancelled' ? 1 : 0}`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
     fold(`SUMMARY:${esc(title)}`), fold(`DESCRIPTION:${esc(description)}`), fold(`LOCATION:${esc(location)}`),
     ...(organizer ? [fold(`ORGANIZER:mailto:${organizer}`)] : []),

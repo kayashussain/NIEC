@@ -36,7 +36,7 @@
     const bar = el('div', 'p-bar'); bar.append(save);
     if (d.set) {
       bar.append(h('button', { class: 'btn', type: 'button', onclick: async () => {
-        if (!(await window.NiecUI.confirm('Remove your mailbox from ISR? You will not be able to send emails until you set it up again.', { danger: true, confirmText: 'Remove' }))) return;
+        if (!(await window.NiecUI.confirm('Remove your mailbox from Vishnu? You will not be able to send emails until you set it up again.', { danger: true, confirmText: 'Remove' }))) return;
         await api('/api/my-mail/delete', {}); say('Removed'); done();
       } }, 'Remove my mailbox'));
     }

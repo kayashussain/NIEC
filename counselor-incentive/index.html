@@ -3,36 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Incentive · ISR</title>
+<title>Incentive · Vishnu</title>
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="icon" type="image/png" href="/favicon.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="stylesheet" href="header.css" />
 <link rel="stylesheet" href="ui.css" />
 <style>
+  /* 🔴 CSS CHANGED (2026-11-22): Vishnu Peacock Ocean, every colour in this file | from: the light ISR colours (page #e6e6e6, panels #f3f3f3, boxes #f7f7f7, black words #000, grey words #333, blue #0071e3, borders #9a9a9a to #6f6f6f) | to: the dark Peacock Ocean colours (page #0b2230, panels #13303f, tiles #19384a, boxes #0f2a38, light words #dde9ef, second words #a9c3cf, peacock blue #0f7fb3 and teal, borders #1f4658 to #4f7f95; orange, green and red kept as lighter tones that read on dark) */
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
   :root {
-    --bg: #f6f7f9;
-    --panel: #f7f7f7;
-    --border: #b8b8b8;
-    --border-strong: #9a9a9a;
-    --text: #000;
-    --text-dim: #333;
-    --accent: #fc6e1f;
+    --bg: #0f2a38;
+    --panel: #0f2a38;
+    --border: #3d6a80;
+    --border-strong: #3d6a80;
+    --text: #dde9ef;
+    --text-dim: #dde9ef;
+    --accent: #f0a463;
     --accent-dim: #fff0e5;
     /* 🔴 CSS CHANGED (2026-11-13): focus ring in the brand colour | from: bright blue #2563eb | to: navy #2e4c84 */
-    --focus: #2e4c84;
+    --focus: #7fd3ee;
     --focus-dim: #eaf1ff;
-    --focus-strong: #d3e2ff;
-    --range-tint: rgba(37, 99, 235, 0.14);
-    --header-bg: #ececec;
-    --row-alt: #fafbfc;
-    --row-hover: #eef4ff;
-    --danger: #dc2626;
-    --green-bg: #e6f6ea; --green-fg: #1b7a3d;
-    --amber-bg: #fef3e0; --amber-fg: #b45309;
-    --red-bg: #fce8e8; --red-fg: #b91c1c;
-    --edit-bg: #fff8ef;
+    --focus-strong: rgba(127, 233, 236, 0.16);
+    --range-tint: rgba(15, 127, 179, 0.14);
+    --header-bg: #0d2736;
+    --row-alt: #0f2a38;
+    --row-hover: #13303f;
+    --danger: #ff8a7e;
+    --green-bg: #13303f; --green-fg: #6fd69a;
+    --amber-bg: #13303f; --amber-fg: #f0a463;
+    --red-bg: #0d2736; --red-fg: #ff8a7e;
+    --edit-bg: #0f2a38;
   }
   
   * { box-sizing: border-box; }
@@ -53,9 +54,9 @@
 
   /* The page's own top bar. The Incentive page is separate from Student Details and has no shared NIEC header. */
   .top { background: var(--panel); border-bottom: 1px solid var(--border); padding: 8px 18px; }
-  .top .brand h1 { color: #0077a8; font-size: 16px; font-weight: 700; text-transform: none; letter-spacing: .01em; }
+  .top .brand h1 { color: #7fd3ee; font-size: 16px; font-weight: 700; text-transform: none; letter-spacing: .01em; }
   .top .subtitle { color: var(--text-dim); font-size: 11px; }
-  .btn:hover { background: #e8f7fe; border-color: #00adef; }
+  .btn:hover { background: #13303f; border-color: #0f7fb3; }
   .btn:disabled:hover { border-color: var(--border-strong); }
   
 
@@ -120,8 +121,8 @@
   thead th.num, tbody td.num { width: 132px; min-width: 132px; max-width: 132px; }
   thead th.num { white-space: normal; line-height: 1.3; vertical-align: bottom; }
   /* Light-blue NIEC column headings, matching Student Details. */
-  thead th { background: #e8f7fe; color: #0a5878; border-bottom: 2px solid #00adef; border-right-color: #cdebf8; }
-  thead th .info { color: #2f6f8a; }
+  thead th { background: #13303f; color: #7fd3ee; border-bottom: 2px solid #0f7fb3; border-right-color: rgba(14, 143, 151, 0.384); }
+  thead th .info { color: #7fd3ee; }
   
   tbody td {
     padding: 7px 10px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
@@ -140,7 +141,7 @@
     padding: 7px 8px; min-width: 40px; color: var(--text-dim); text-align: center;
     font-variant-numeric: tabular-nums; cursor: pointer;
   }
-  tbody tr.row-picked td.sn { background: var(--focus); color: #fff; font-weight: 600; }
+  tbody tr.row-picked td.sn { background: var(--focus); color: #ffffff; font-weight: 600; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .muted { color: var(--text-dim); }
 
@@ -188,7 +189,7 @@
   .summary-row.subtract .label::after { content: " (-)"; color: var(--danger); }
   .summary-row .hint { font-size: 10.5px; color: var(--text-dim); font-weight: 400; margin-left: 6px; }
   .summary-row.final { background: var(--accent-dim); }
-  .summary-row.final .label, .summary-row.final .value { color: #b54008; font-weight: 700; }
+  .summary-row.final .label, .summary-row.final .value { color: #f0a463; font-weight: 700; }
   
   .adv-input {
     width: 120px; text-align: right; padding: 5px 8px; border-radius: 6px;
@@ -206,10 +207,10 @@
   .pay-fields #payAmount { width: 160px; }
   .pay-fields .pay-note { width: 200px; text-align: left; font-weight: 400; }
   .pay-add {
-    padding: 6px 14px; border-radius: 6px; border: 1px solid #17324d; background: #17324d; color: #fff;
+    padding: 6px 14px; border-radius: 6px; border: 1px solid #0f7fb3; background: #0f7fb3; color: #ffffff;
     font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
-  .pay-add:hover { background: #0f2538; }
+  .pay-add:hover { background: #0f7fb3; }
   .pay-right { display: inline-flex; align-items: center; gap: 14px; }
   .pay-remove { border: 0; background: none; padding: 2px 4px; color: var(--text-dim); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
   .pay-remove:hover { color: var(--danger); }
@@ -260,7 +261,7 @@
       <span class="grid-key">
         <span><i style="background: var(--edit-bg)"></i>Type here</span>
         <span><em>Grey italic</em> = worked out automatically</span>
-        <span>Everything else comes from ISR</span>
+        <span>Everything else comes from Vishnu</span>
       </span>
     </div>
   </div>
@@ -407,7 +408,7 @@ const { num, flywireIncentive, universityCommission, DEFAULT_BASIC_SALARY, DEFAU
 const FLEX_HINT = "Type it the way it was agreed: 40000 (or Rs 40000) for rupees, £500 for pounds, or 15% for a percentage of this student's Commission Amount. A plain number keeps the unit already in the cell.";
 const POLL_MS = 3000; // safety net only: changes normally arrive at once over /api/live
 
-// Student details are synced read-only from ISR; the money columns are edited here.
+// Student details are synced read-only from Vishnu; the money columns are edited here.
 const COLUMNS = [
   { key: 'source', label: 'Student Source', width: 20 },
   { key: 'name', label: 'Student Name', width: 24 },
@@ -416,7 +417,7 @@ const COLUMNS = [
   { key: 'agent', label: 'University Partner', width: 24 },
   { key: 'studentId', label: 'Student ID', width: 14 },
   { key: 'tuitionFee', label: 'Total Tuition Fee (£)', width: 18, amount: true,
-    title: 'Synced from ISR: Gross Fee − Scholarship − Early Bird Discount − Additional Discount.' },
+    title: 'Synced from Vishnu: Gross Fee − Scholarship − Early Bird Discount − Additional Discount.' },
   { key: 'uniCommissionRate', label: 'Commission %', width: 18, money: true, percent: true,
     title: "The % of the tuition fee the university pays us as commission. Type it in, e.g. 15." },
   { key: 'uniCommissionAmount', label: 'Commission Amount (£)', width: 18, amount: true,
@@ -435,7 +436,7 @@ const COLUMNS = [
 ];
 const FIRST_KEY = COLUMNS[0].key;
 const LAST_KEY = COLUMNS[COLUMNS.length - 1].key;
-const INFO_HINT = 'Student details come from ISR. Change them there.';
+const INFO_HINT = 'Student details come from Vishnu. Change them there.';
 const CALC_HINT = 'Commission Amount is worked out from Total Tuition Fee × Commission %. Change the Commission % instead.';
 
 const state = { intakes: [], byIntake: {}, commissions: {}, advances: {}, activeIntake: null, syncOk: true };
@@ -1314,7 +1315,7 @@ $('#payList').addEventListener('click', (ev) => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Spreadsheet grid, like Google Sheets and the ISR tracker: click a cell, drag or
+// Spreadsheet grid, like Google Sheets and the Vishnu tracker: click a cell, drag or
 // Shift+Click/Shift+Arrow for a range, Ctrl+Click to add cells, Ctrl+A for everything. Type or
 // Enter/F2/double-click to edit an incentive; Delete clears the selection; Ctrl+C/X/V copy, cut and
 // paste. Picking rows from their S.N and pressing Delete clears all of those students' incentives.
@@ -1826,7 +1827,7 @@ $('#exportExcelBtn').addEventListener('click', async () => {
   }
   const students = intakeStudents();
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'ISR';
+  wb.creator = 'Vishnu';
   wb.created = new Date();
 
   const sheetName = (state.activeIntake || 'Export').replace(/[\\/*?:[\]]/g, ' ').slice(0, 31) || 'Export';
@@ -1922,7 +1923,7 @@ $('#exportExcelBtn').addEventListener('click', async () => {
   URL.revokeObjectURL(url);
 });
 
-// Pick up changes made over in ISR. Skipped while a cell or field is being typed in or a
+// Pick up changes made over in Vishnu. Skipped while a cell or field is being typed in or a
 // range is being dragged, and only redraws when something actually changed.
 function refreshIfIdle() {
   if (editing || dragMode || document.hidden || (window.EditGuard && window.EditGuard.isOpen())) return;

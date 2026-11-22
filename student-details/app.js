@@ -102,7 +102,7 @@
   // and the notes (what Remarks held) are on the student's card, which opens with a double-click on the student's name. The data of
   // these two columns stays in the file and keeps working (branch students, the Dashboard, Incentive): the sheet just does not show them.
   // The application and offer days too (the owner, 17 Nov 2026): a student applies to many universities, so the days are kept per
-  // university on the card (Applications); the two columns stay in the file, filled by ISR with the first application and offer.
+  // university on the card (Applications); the two columns stay in the file, filled by Vishnu with the first application and offer.
   const CARD_COLUMNS = new Set(['REMARKS', 'STUDENT SOURCE', 'APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE']);
   // Only columns whose values are a short list of choices get a filter. Dates, numbers, ids, names, emails and feedback do not.
   // The name, email and phone columns have one too (the owner, 14 Nov 2026): its search box finds a student among the values.
@@ -398,7 +398,7 @@
   }
 
   // A YYYY-MM-DD date the way the browser's own date box shows it (e.g. 05/01/2026 in the US).
-  // A date in a cell is written as every other date in ISR: "25 Aug 2026" (the day first, the month in words, so it can never be
+  // A date in a cell is written as every other date in Vishnu: "25 Aug 2026" (the day first, the month in words, so it can never be
   // read the wrong way round). What is kept is unchanged.
   const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const dateFormat = { format: (d) => `${d.getUTCDate()} ${MONTH_SHORT[d.getUTCMonth()]} ${d.getUTCFullYear()}` };
@@ -2685,7 +2685,7 @@
     const safeSheetName = sheetName.replace(/[\\/*?:[\]]/g, ' ').slice(0, 31) || 'Export';
 
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'ISR';
+    wb.creator = 'Vishnu';
     wb.created = new Date();
 
     const ws = wb.addWorksheet(safeSheetName, { views: [{ state: 'frozen', ySplit: 1 }] });
@@ -2731,7 +2731,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ISR-students-${sheetName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.xlsx`;
+    a.download = `Vishnu-students-${sheetName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();

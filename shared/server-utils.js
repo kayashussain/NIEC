@@ -258,11 +258,13 @@ const SHARED_FILES = {
   '/ui.css': 'text/css; charset=utf-8',
   '/theme.css': 'text/css; charset=utf-8',
   '/login.html': 'text/html; charset=utf-8',
+  // The Vishnu lotus (the owner, 22 Nov 2026): the product's mark in the menu, on the login page and in the browser tab.
+  '/vishnu-lotus.svg': 'image/svg+xml',
   // The portal's typeface where the computer has no SF Pro (Inter, SIL Open Font License, see fonts/Inter-LICENSE.txt).
   '/fonts/inter-latin.woff2': 'font/woff2',
   '/fonts/inter-latin-ext.woff2': 'font/woff2',
 };
-const PUBLIC_SHARED = new Set(['/login.html', '/fonts/inter-latin.woff2', '/fonts/inter-latin-ext.woff2']);
+const PUBLIC_SHARED = new Set(['/login.html', '/vishnu-lotus.svg', '/fonts/inter-latin.woff2', '/fonts/inter-latin-ext.woff2']);
 
 // Each file is read and compressed once, then kept in memory (the files only change with a deploy,
 // which restarts the server). Pages are always re-checked, so a deploy shows on a normal reload, but every

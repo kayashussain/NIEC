@@ -1023,7 +1023,7 @@ try {
     const gone = accounts.removeStudentLogins();
     planning.saveSettings({ tidied: [...(planning.all().settings.tidied || []), TIDY] });
     if (gone.length) {
-      activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Removed user', { app: 'Users', changes: gone.map((n) => `Removed the old student login of ${n} (Universities only); a student login is now for the student's own portal`) });
+      activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, 'Removed user', { app: 'Users', changes: gone.map((n) => `Removed the old student login of ${n} (Universities only); a student login is now for the student's own portal`) });
       console.log('[startup] old student logins removed:', gone.length);
     }
   }
@@ -1042,22 +1042,22 @@ try {
 try {
   const out = tidyPartners({
     getWorkbook: () => current, writeWorkbook, direct, b2b, planning,
-    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
   });
   if (out.changes && out.changes.length) console.log('[startup] partners tidied:', out.changes.join('; '));
   const rep = tidyOfficialRep({
     getWorkbook: () => current, writeWorkbook, b2b, planning,
-    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
   });
   if (rep.changes && rep.changes.length) console.log('[startup] The Official Representative:', rep.changes.join('; '));
   const nov20 = tidyNov20({
     b2b, planning,
-    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
   });
   if (nov20.changes && nov20.changes.length) console.log('[startup] partners tidied (20 Nov):', nov20.changes.join('; '));
   const names = tidyNames({
     getWorkbook: () => current, writeWorkbook, b2b, cards, planning,
-    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, 'Edited partners', { app: 'Partner tidy-up', changes }),
   });
   if (names.changes && names.changes.length) console.log('[startup] partner names:', names.changes.join('; '));
 } catch (e) {
@@ -1067,7 +1067,7 @@ try {
 // every start and changes only what is still Documents (nothing after the first time); each change is written in Activity. Open tasks
 // that show as Payment or Visa and CAS are only counted and reported, never changed by themselves.
 try {
-  const sysRecord = (action, changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, action, { app: 'Task kinds', changes });
+  const sysRecord = (action, changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, action, { app: 'Task kinds', changes });
   const moved = cards.retagTasks('documents', 'application');
   if (moved.changed) {
     sysRecord('Changed task kinds', [`${moved.changed} task${moved.changed === 1 ? '' : 's'} of the kind Documents now of the kind Application`]);
@@ -1085,7 +1085,7 @@ try {
 try {
   const out = tidyData({
     getWorkbook: () => current, writeWorkbook,
-    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Tidied the data', { app: 'Data tidy-up', changes }),
+    record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, 'Tidied the data', { app: 'Data tidy-up', changes }),
   });
   if (out.changes.length) console.log('[startup] data tidied:', out.changes.join('; '));
 } catch (e) {
@@ -1228,7 +1228,7 @@ const server = http.createServer(async (req, res) => {
     // The product name and the company name, for the login page and the menu: nothing private.
     if (urlPath === '/api/brand' && req.method === 'GET') {
       const sig = messages.signature();
-      return sendJSON(res, 200, { product: 'ISR', company: sig.company, short: sig.short });
+      return sendJSON(res, 200, { product: 'Vishnu', company: sig.company, short: sig.short });
     }
     // The consultancy's logo, for the menu and the login page (nothing private): the consultancy's own brand-logo.png in the data
     // folder wins; the file shipped in shared/ is only the first installation's starting logo.
@@ -1238,14 +1238,14 @@ const server = http.createServer(async (req, res) => {
       return logo ? send(res, 200, logo, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' }) : send(res, 404, 'Not found');
     }
     if (urlPath === '/favicon.png' || urlPath === '/apple-touch-icon.png') return serveStatic(req, res);
-    // What a phone needs to keep ISR on its Home Screen (the name, the icon, the first page): nothing private, so before the login
+    // What a phone needs to keep Vishnu on its Home Screen (the name, the icon, the first page): nothing private, so before the login
     // (a browser asks for it without the login cookie).
     if (urlPath === '/manifest.webmanifest' && req.method === 'GET') {
       const sig = messages.signature();
-      // Added to an iPhone's Home Screen from the pairing page, ISR opens on that page again to finish turning WhatsApp on.
+      // Added to an iPhone's Home Screen from the pairing page, Vishnu opens on that page again to finish turning WhatsApp on.
       const pairing = new URL(req.url, 'http://x').searchParams.get('pair') || '';
       const start = /^[\w-]{20,40}$/.test(pairing) ? `/pair?t=${pairing}` : '/today';
-      return send(res, 200, JSON.stringify({ name: `ISR · ${sig.short || 'International Student Recruitment'}`, short_name: 'ISR', start_url: start, scope: '/', display: 'standalone', background_color: '#f5f5f7', theme_color: '#f5f5f7',
+      return send(res, 200, JSON.stringify({ name: `Vishnu · ${sig.short || 'Vishnu'}`, short_name: 'Vishnu', start_url: start, scope: '/', display: 'standalone', background_color: '#0b2230', theme_color: '#0b2230',
         icons: [{ src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }, { src: '/favicon.png', sizes: '128x128', type: 'image/png' }] }), { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache' });
     }
     // The service worker shows the notification on the phone and opens the chat when it is tapped (see push.js). It must be at the
@@ -1425,7 +1425,7 @@ const server = http.createServer(async (req, res) => {
       activity.record(req, req.user, 'Downloaded backup', { changes: [which === 'students' ? 'Downloaded a copy of all students' : 'Downloaded a copy of Universities'] });
       return send(res, 200, JSON.stringify(data, null, 1), {
         'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store',
-        'Content-Disposition': `attachment; filename="ISR-backup-${which}-${localDate()}.json"`,
+        'Content-Disposition': `attachment; filename="Vishnu-backup-${which}-${localDate()}.json"`,
       });
     }
     // Who can go where (eligibility.js): one student's level, grade, gap and English against every university in Universities that
@@ -1533,7 +1533,7 @@ server.requestTimeout = 5 * 60 * 1000;
 // HOST=127.0.0.1 keeps a copy on the owner's own computer (scripts/start-local.js, scripts/local-live.js) closed to the office
 // network. Unset on the live server, which answers on every address as before.
 server.listen(PORT, process.env.HOST || undefined, () => {
-  console.log(`ISR running at http://localhost:${PORT}`);
+  console.log(`Vishnu running at http://localhost:${PORT}`);
 });
 
 // The weekly check of the course pages (course-watch.js): a slice of the courses every six hours, so each is visited about once a week.
@@ -1544,7 +1544,7 @@ portalRef = portal;
 // Every Thursday from 2 a.m. office time, the universities' January 2027 courses, requirements and dates are read again from Real Dreams
 // (Route2Uni) and Adventus with the logins on their B2B cards (partner-refresh.js). PARTNER_REFRESH=off switches it off.
 const partnerRefresh = createPartnerRefresh({ dir: DATA_DIR, facts, b2b, enabled: process.env.PARTNER_REFRESH !== 'off',
-  record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Edited universities', { app: 'Thursday refresh', changes }) });
+  record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Vishnu (automatic)' }, 'Edited universities', { app: 'Thursday refresh', changes }) });
 if (partnerRefresh.enabled()) {
   setTimeout(() => partnerRefresh.tick(), 5 * 60 * 1000).unref();
   setInterval(() => partnerRefresh.tick(), 30 * 60 * 1000).unref();

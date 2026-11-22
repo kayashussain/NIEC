@@ -229,8 +229,8 @@
 
     r.classList.add('is-open');
     const body = el('div', 'tdx-body');
-    // An Offer request is made by ISR when the application is submitted; any other task says who gave it.
-    const given = el('p', 'tdx-given', x.tag === 'offer' ? `Made by ISR when the application was submitted${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}` : `Given by ${x.by === me ? 'you' : x.by || 'someone'}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`);
+    // An Offer request is made by Vishnu when the application is submitted; any other task says who gave it.
+    const given = el('p', 'tdx-given', x.tag === 'offer' ? `Made by Vishnu when the application was submitted${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}` : `Given by ${x.by === me ? 'you' : x.by || 'someone'}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`);
     body.append(given, factsOf(x));
     // The updates: the conversation on the task, and the box to write one.
     const ups = el('div', 'tdx-updates');
@@ -265,7 +265,7 @@
     }
     if (x.mayHand) acts.append(h('button', { class: 'btn', type: 'button', onclick: async () => { if (await handOn(x, { rowId: x.studentId, teams: handTeams })) { window.NiecUI.toast('Reassigned.', { type: 'success' }); refresh(true); } } }, 'Reassign'));
     acts.append(h('a', { class: 'btn tdx-profile', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'View student profile'));
-    const mayEdit = canAssignAll || (x.by === me && x.tag !== 'offer'); // an Offer request is ISR's own: Admin may change it
+    const mayEdit = canAssignAll || (x.by === me && x.tag !== 'offer'); // an Offer request is Vishnu's own: Admin may change it
     const menu = window.Portal.taskMenu([
       mayEdit && ['Edit the task', async () => { if (await window.Portal.editTask(x, { rowId: x.studentId, stage: x.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
       mayEdit && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
@@ -742,7 +742,7 @@
     me = d.name || '';
     let tasks = { tasks: [], canAssign: false };
     try { tasks = await api('/api/tasks'); } catch (e) { /* the rest of Today still shows */ }
-    document.title = 'Today · ISR';
+    document.title = 'Today · Vishnu';
     const page = el('div', 'td-page');
     const head = el('header', 'td-hello');
     const first = String(d.name || '').split(/\s+/)[0] || '';

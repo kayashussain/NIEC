@@ -42,20 +42,20 @@ function tidyPartners({ getWorkbook, writeWorkbook, direct, b2b, planning, recor
     const card = b2b.all().find((p) => squash(p.name) === squash(name));
     let uni = direct.all().find((u) => squash(u.name) === squash(name));
     if (!uni) {
-      const made = direct.create(card ? card.name : name, 'ISR tidy-up');
+      const made = direct.create(card ? card.name : name, 'Vishnu tidy-up');
       if (made.error) continue;
       uni = made.university;
       if (card) {
         const moved = direct.update(uni.id, { ...uni, status: card.status, agreementStart: card.agreementStart, agreementEnd: card.agreementEnd, contacts: card.contacts,
           notes: [card.notes, card.city ? `City: ${card.city}` : ''].filter(Boolean).join('\n'),
-          apply: card.applyPortal || card.applyEmail || '', applyUser: card.applyUser || '', applyPassword: card.applyPassword || '' }, 'ISR tidy-up');
+          apply: card.applyPortal || card.applyEmail || '', applyUser: card.applyUser || '', applyPassword: card.applyPassword || '' }, 'Vishnu tidy-up');
         if (!moved.error) uni = moved.university;
       }
       changes.push(`${uni.name}: added to Partner Universities (a direct university)`);
     }
     if (card) {
       // A card with agreement files is kept (Ended) so no file is lost; otherwise it is removed.
-      if ((card.agreements || []).length) { b2b.update(card.id, { ...card, status: 'Ended' }, 'ISR tidy-up'); changes.push(`${card.name}: B2B card marked Ended (it is a direct university now; its files are kept)`); }
+      if ((card.agreements || []).length) { b2b.update(card.id, { ...card, status: 'Ended' }, 'Vishnu tidy-up'); changes.push(`${card.name}: B2B card marked Ended (it is a direct university now; its files are kept)`); }
       else { b2b.remove(card.id); changes.push(`${card.name}: removed from B2B Partners (it is a direct university now)`); }
     }
   }
@@ -116,7 +116,7 @@ function tidyOfficialRep({ getWorkbook, writeWorkbook, b2b, planning, record = (
     const main = cards.find((p) => /representative/i.test(p.name) && p.status !== 'Ended') || cards.find((p) => p.status !== 'Ended') || null;
     const target = main ? main.name : 'The Official Representative';
     cards.filter((p) => p !== main && p.status !== 'Ended').forEach((p) => {
-      if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'ISR tidy-up'); changes.push(`${p.name}: B2B card marked Ended (the same partner as ${target})`); }
+      if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'Vishnu tidy-up'); changes.push(`${p.name}: B2B card marked Ended (the same partner as ${target})`); }
       else { b2b.remove(p.id); changes.push(`${p.name}: B2B card removed (the same partner as ${target})`); }
     });
     const wb = getWorkbook();
@@ -158,7 +158,7 @@ function tidyNov20({ b2b, planning, record = () => {} }) {
   const changes = [];
   const gone = new Set(NOT_B2B.map(squash));
   b2b.all().filter((p) => gone.has(squash(p.name)) && p.status !== 'Ended').forEach((p) => {
-    if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'ISR tidy-up'); changes.push(`${p.name}: B2B card marked Ended (it is a university, not a B2B partner; its files are kept)`); }
+    if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'Vishnu tidy-up'); changes.push(`${p.name}: B2B card marked Ended (it is a university, not a B2B partner; its files are kept)`); }
     else { b2b.remove(p.id); changes.push(`${p.name}: removed from B2B Partners (it is a university, not a B2B partner)`); }
   });
   const isOieg = (n) => /^(oig|oieg|oiegroup|oxfordinternational)/.test(squash(n));
@@ -167,7 +167,7 @@ function tidyNov20({ b2b, planning, record = () => {} }) {
   if (b2b.all().some((p) => /^(realdreams|realdreamseducationalconsultancy|adventus|applyboard)$/.test(squash(p.name)))) {
     NEW_B2B.forEach((name) => {
       if (b2b.all().some((p) => samePartner(p.name, name))) return;
-      const made = b2b.create(name, 'ISR tidy-up');
+      const made = b2b.create(name, 'Vishnu tidy-up');
       if (!made.error) changes.push(`${name}: added to B2B Partners`);
     });
   }
@@ -192,11 +192,11 @@ function tidyNames({ getWorkbook, writeWorkbook, b2b, cards, planning, record = 
     const mine = b2b.all().filter((p) => samePartner(p.name, target));
     const main = mine.find((p) => p.name === target && p.status !== 'Ended') || mine.find((p) => p.status !== 'Ended') || null;
     if (main && main.name !== target) {
-      const out = b2b.update(main.id, { ...main, name: target }, 'ISR tidy-up');
+      const out = b2b.update(main.id, { ...main, name: target }, 'Vishnu tidy-up');
       if (!out || !out.error) changes.push(`${main.name}: B2B card renamed to ${target}`);
     }
     mine.filter((p) => p !== main && p.status !== 'Ended').forEach((p) => {
-      if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'ISR tidy-up'); changes.push(`${p.name}: B2B card marked Ended (the same partner as ${target})`); }
+      if ((p.agreements || []).length) { b2b.update(p.id, { ...p, status: 'Ended' }, 'Vishnu tidy-up'); changes.push(`${p.name}: B2B card marked Ended (the same partner as ${target})`); }
       else { b2b.remove(p.id); changes.push(`${p.name}: B2B card removed (the same partner as ${target})`); }
     });
     // The sheet.
@@ -214,7 +214,7 @@ function tidyNames({ getWorkbook, writeWorkbook, b2b, cards, planning, record = 
     if (cards) {
       let n = 0;
       Object.entries(cards.all() || {}).forEach(([rowId, card]) => (card.options || []).forEach((o) => {
-        if (o.partner && isOld(o.partner) && !cards.updateOption(rowId, o.id, { partner: target }, 'ISR tidy-up').error) n += 1;
+        if (o.partner && isOld(o.partner) && !cards.updateOption(rowId, o.id, { partner: target }, 'Vishnu tidy-up').error) n += 1;
       }));
       if (n) changes.push(`Shortlists → ${target}: ${n} course${n === 1 ? '' : 's'}`);
     }
