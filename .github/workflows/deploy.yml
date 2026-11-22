@@ -37,6 +37,7 @@ jobs:
           PORT: ${{ secrets.DEPLOY_PORT }}
           PASSPHRASE: ${{ secrets.DEPLOY_SSH_PASSPHRASE }}
           SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SITE: ${{ secrets.DEPLOY_SITE_URL || 'https://niec.duckdns.org' }}
         run: |
           if [ -z "$HOST" ] || [ -z "$USER_NAME" ] || [ -z "$KEY" ] || [ -z "$APP_PATH" ]; then
             echo "The live server is not connected yet (the DEPLOY_ secrets are not all set), so nothing was deployed."
@@ -71,6 +72,22 @@ jobs:
             DEPLOY_PASSPHRASE="$PASSPHRASE" SSH_ASKPASS=~/.ssh/askpass SSH_ASKPASS_REQUIRE=force DISPLAY=none ssh-add ~/.ssh/deploy_key < /dev/null
             ID_OPT=()
           fi
+          set -o pipefail
           # The tested commit goes live: fetch it, reset the code to it (data is outside the repo), install what the server needs, restart.
           ssh "${ID_OPT[@]}" -p "${PORT:-22}" -o BatchMode=yes -o ConnectTimeout=20 "$USER_NAME@$HOST" \
-            "set -e; cd '$APP_PATH'; git fetch origin master; OLD=\$(git rev-parse HEAD); git reset --hard '$SHA'; for d in \$HOME/nodevenv/*/*/bin; do [ -d \"\$d\" ] && PATH=\"\$d:\$PATH\"; done; if command -v npm >/dev/null 2>&1; then (cd student-details && npm install --omit=dev --no-audit --no-fund); else echo 'npm not found on the server, skipped the package install (the code is updated).'; fi; if command -v node >/dev/null 2>&1; then for f in gateway/server.js student-details/*.js shared/*.js; do node --check \"\$f\" || { echo \"A file does not load (\$f): putting the previous version back, nothing restarted.\"; git reset --hard \"\$OLD\"; exit 1; }; done; fi; mkdir -p student-details/tmp tmp; touch student-details/tmp/restart.txt tmp/restart.txt; echo \"Live is now at \$(git rev-parse --short HEAD)\""
+            "set -e; cd '$APP_PATH'; git fetch origin master; OLD=\$(git rev-parse HEAD); git reset --hard '$SHA'; for d in \$HOME/nodevenv/*/*/bin; do [ -d \"\$d\" ] && PATH=\"\$d:\$PATH\"; done; if command -v npm >/dev/null 2>&1; then (cd student-details && npm install --omit=dev --no-audit --no-fund); else echo 'npm not found on the server, skipped the package install (the code is updated).'; fi; if command -v node >/dev/null 2>&1; then for f in gateway/server.js student-details/*.js shared/*.js; do node --check \"\$f\" || { echo \"A file does not load (\$f): putting the previous version back, nothing restarted.\"; git reset --hard \"\$OLD\"; exit 1; }; done; fi; mkdir -p student-details/tmp tmp; touch student-details/tmp/restart.txt tmp/restart.txt; echo \"PREVIOUS=\$OLD\"; echo \"Live is now at \$(git rev-parse --short HEAD)\"" | tee "$RUNNER_TEMP/deploy.out"
+          # After the restart the live site must answer /healthz. If it does not within about 90 seconds, the previous version is put back
+          # and restarted, and this run fails so you know.
+          ok=0
+          for i in $(seq 1 18); do
+            sleep 5
+            if [ "$(curl -s -o /dev/null -m 10 -w '%{http_code}' "$SITE/healthz")" = "200" ]; then ok=1; break; fi
+          done
+          if [ "$ok" = 1 ]; then echo "The live site answers (healthz 200)."; exit 0; fi
+          PREV=$(sed -n 's/^PREVIOUS=//p' "$RUNNER_TEMP/deploy.out" | head -1)
+          echo "The live site did not answer after the update. Putting back the previous version ${PREV:0:7}."
+          if [ -n "$PREV" ]; then
+            ssh "${ID_OPT[@]}" -p "${PORT:-22}" -o BatchMode=yes -o ConnectTimeout=20 "$USER_NAME@$HOST" \
+              "set -e; cd '$APP_PATH'; git reset --hard '$PREV'; touch student-details/tmp/restart.txt tmp/restart.txt; echo \"Previous version put back.\""
+          fi
+          exit 1
