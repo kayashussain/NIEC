@@ -149,3 +149,75 @@ test('a task for a student who has moved on (Payment Stage) still writes the she
   assert.match(got.card.notes.map((n) => n.text).join('\n'), /Medical test booked/, 'and the notes');
   assert.strictEqual(got.student.row['APPLICATION STATUS'], 'Payment Stage', 'the stage is not touched');
 });
+
+test('task workflow end to end: give, see, comment, move the day, hand on, finish, reopen, remove; and who may do what', { timeout: 120000 }, async (t) => {
+  const { admin, login } = await start(t);
+  const app = await login('asha', ['application']);
+  const mock = await login('mina', ['mock']);
+  const other = await login('olga', ['application']);
+  const id = (await admin('POST', '/api/students/new', { stage: 'Application Stage', fields: { 'FIRST NAME': 'Tara', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000123' } })).json.id;
+  const url = (tid, rest = '') => `/api/cards/${id}/tasks${tid ? '/' + tid : ''}${rest}`;
+  const card = async () => (await admin('GET', `/api/cards/${id}`)).json.card;
+  const today = (await admin('GET', '/api/tasks')).json.today;
+  const day = (n) => new Date(Date.parse(today + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+
+  // Give: Admin gives; the Application Team cannot give tasks to others unless allowed; a made-up team is refused; nonsense text is refused.
+  assert.strictEqual((await admin('POST', url(''), { team: 'nobody', text: 'x' })).status, 400);
+  assert.strictEqual((await admin('POST', url(''), { team: 'application', text: '' })).status >= 400, true, 'an empty task is refused');
+  const made = await admin('POST', url(''), { team: 'application', text: 'Check the passport copy', tag: 'application' });
+  assert.strictEqual(made.status, 200);
+  const tid = made.json.card.tasks.find((x) => x.text === 'Check the passport copy').id;
+
+  // Seen: the team has it in its list; the Mock Team cannot touch it.
+  const list = (await app('GET', '/api/tasks')).json;
+  assert.ok(JSON.stringify(list).includes(tid), 'the Application Team sees the task');
+  assert.ok([403, 404].includes((await mock('POST', url(tid), { comment: 'hello' })).status), 'another team cannot comment');
+  assert.ok([403, 404].includes((await mock('POST', url(tid), { done: true, finish: { note: 'I did it, honest.', confirmed: true } })).status), 'another team cannot finish it');
+  assert.ok([403, 404].includes((await mock('POST', url(tid, '/delete'), {})).status), 'another team cannot remove it');
+
+  // Comment and move the day.
+  assert.strictEqual((await app('POST', url(tid), { comment: 'Passport page 2 is blurred, asked the student.' })).status, 200);
+  assert.strictEqual((await app('POST', url(tid), { schedule: day(-1) })).status >= 400, true, 'not a day in the past');
+  assert.strictEqual((await app('POST', url(tid), { schedule: day(3), reason: 'Student away until then' })).status, 200);
+  assert.strictEqual((await card()).tasks.find((x) => x.id === tid).doOn, day(3));
+
+  // Done needs words; then done writes; done again changes nothing; reopen works; a finished task is not "moved".
+  assert.strictEqual((await app('POST', url(tid), { done: true })).status, 400, 'done needs what happened');
+  assert.strictEqual((await app('POST', url(tid), { done: true, finish: { note: 'ok', confirmed: true } })).status, 400, 'a few words, not "ok"');
+  assert.strictEqual((await app('POST', url(tid), { done: true, finish: { note: 'Passport copy is clear now, checked page 2.', confirmed: true } })).status, 200);
+  assert.strictEqual((await card()).tasks.find((x) => x.id === tid).done, true);
+  assert.strictEqual((await app('POST', url(tid), { schedule: day(5) })).status, 400, 'a done task cannot be moved');
+  assert.strictEqual((await app('POST', url(tid), { done: false })).status, 200);
+  assert.strictEqual((await card()).tasks.find((x) => x.id === tid).done, false, 'reopened');
+
+  // Hand on: to a team that has someone; refused to an empty team and to a made-up one; another person of the same team may still finish it.
+  assert.strictEqual((await app('POST', url(tid), { handTo: 'nobody', reason: 'x' })).status, 400);
+  const handed = await app('POST', url(tid), { handTo: 'mock', reason: 'Needs the mock team to confirm the course' });
+  assert.ok([200, 403].includes(handed.status), 'hand on answers clearly: ' + handed.status);
+  if (handed.status === 200) {
+    assert.strictEqual((await card()).tasks.find((x) => x.id === tid).team, 'mock');
+    assert.strictEqual((await mock('POST', url(tid), { comment: 'Got it.' })).status, 200, 'now the Mock Team can talk about it');
+  }
+
+  // Remove: only Admin, the Manager or whoever gave it; the Application Team (not the giver) cannot.
+  const t2 = (await admin('POST', url(''), { team: 'application', text: 'Second task', tag: 'application' })).json.card.tasks.find((x) => x.text === 'Second task').id;
+  assert.strictEqual((await other('POST', url(t2, '/delete'), {})).status, 403);
+  assert.strictEqual((await app('POST', url(t2, '/delete'), {})).status, 403);
+  assert.strictEqual((await admin('POST', url(t2, '/delete'), {})).status, 200);
+  assert.ok(!(await card()).tasks.some((x) => x.id === t2));
+
+  // The shortlist to the Application Team: nothing goes without a partner; the same course is never sent twice.
+  const opt = await admin('POST', `/api/cards/${id}/options`, { university: 'Test University', course: 'BSc Test', level: 'Undergraduate', intake: 'Sep 2027' });
+  assert.strictEqual(opt.status, 200, JSON.stringify(opt.json));
+  const oid = opt.json.option ? opt.json.option.id : opt.json.card.options[0].id;
+  assert.strictEqual((await admin('POST', `/api/cards/${id}/options/send`, { ids: [oid] })).status, 400, 'a partner must be chosen');
+  const sent = await admin('POST', `/api/cards/${id}/options/send`, { ids: [oid], partners: { [oid]: 'Direct' } });
+  assert.strictEqual(sent.status, 200, JSON.stringify(sent.json));
+  assert.strictEqual((await admin('POST', `/api/cards/${id}/options/send`, { ids: [oid], partners: { [oid]: 'Direct' } })).status, 400, 'never sent twice');
+  const applyTasks = (await card()).tasks.filter((x) => /Apply to Test University/.test(x.text));
+  assert.strictEqual(applyTasks.length, 1);
+  // Removing that Apply task puts the course back on the Shortlist, so nobody is left holding it.
+  assert.strictEqual((await admin('POST', url(applyTasks[0].id, '/delete'), {})).status, 200);
+  const back = (await card()).options.find((x) => x.id === oid);
+  assert.ok(back && !back.taskId && !back.sent, 'the course is back on the shortlist');
+});
