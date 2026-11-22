@@ -74,11 +74,13 @@ test('a done task says what was done and what comes next; the setup and the word
   assert.strictEqual((await fu('GET', '/api/my-mail')).json.phone, '+977 9800000099');
   assert.strictEqual((await fu('POST', '/api/my-mail/phone', { phone: '' })).json.phone, '');
 
-  // 4. Follow-up refuses a misspelt {word}; the old pages lead to Follow-up's setup.
-  const bad = await fu('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {frist_name},' });
+  // 4. Follow-up refuses a misspelt {word}; the Follow-up Team has no Follow-up page (the owner, 21 Nov 2026): its messages to many
+  // students are refused, and the old pages lead to its own email setup on its list.
+  const bad = await admin('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {frist_name},' });
   assert.strictEqual(bad.status, 400);
   assert.match(bad.json.error, /not one of the words/);
+  assert.strictEqual((await fu('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {first_name},' })).status, 403);
   assert.ok((await admin('POST', '/api/bulk/preview', { ids: [id], subject: 'Hello', body: 'Dear {first_name},' })).json.items[0].text.startsWith('Dear Rina,'));
-  assert.strictEqual((await fu('GET', '/my-email')).location, '/bulk#setup');
+  assert.strictEqual((await fu('GET', '/my-email')).location, '/students#setup');
   assert.strictEqual((await fu('GET', '/compose?id=' + id)).location, '/student?id=' + id);
 });

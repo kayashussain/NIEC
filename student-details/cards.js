@@ -98,6 +98,16 @@ function cleanOption(input, old = {}) {
   };
 }
 
+function cleanFollow(f) {
+  const x = f && typeof f === 'object' && !Array.isArray(f) ? f : {};
+  const out = {};
+  if (Fields.FOLLOW_TAGS.some((t) => t.key === x.tag)) out.tag = x.tag;
+  if (x.next && /^\d{4}-\d{2}-\d{2}$/.test(String(x.next.date))) out.next = { date: x.next.date, by: str(x.next.by, 80), at: str(x.next.at, 40) };
+  const from = str(x.from, 80); if (from) out.from = from;
+  if (['converted', 'withdrawn'].includes(x.via)) { out.via = x.via; out.viaBy = str(x.viaBy, 80); out.viaAt = str(x.viaAt, 40); }
+  return out;
+}
+
 const emptyCard = () => ({ profile: {}, notes: [], options: [], messages: [], tasks: [] });
 
 // A card read from the file, made whole: an older or hand-edited file never breaks a page.
@@ -115,6 +125,12 @@ function normalize(raw) {
     // The medical test booked from a Medical task (the owner, 15 Nov 2026): { date, place, by, at }. Nothing changes by itself on that
     // day (the owner, 16 Nov 2026): the team is given "confirm the report is received" for that day and answers it. null when none.
     medical: c.medical && /^\d{4}-\d{2}-\d{2}$/.test(String(c.medical.date)) ? { date: c.medical.date, place: str(c.medical.place, 200), by: str(c.medical.by, 80), at: str(c.medical.at, 40), done: Boolean(c.medical.done) } : null,
+    // The follow-up list (the owner, 21 Nov 2026), all optional so every card already saved keeps working:
+    //   tag   Interested, Decision Making or Cold (one at a time)
+    //   next  the next follow-up day chosen with the last note: { date, by, at }
+    //   from  the intake a deferred student came back from ("Jan 2027"), shown beside the name in the new intake
+    //   via   'converted' (the Follow-up Team sent the student on) or 'withdrawn' (the team withdrew them): the team keeps seeing them
+    follow: cleanFollow(c.follow),
     // The last line ISR itself wrote in the sheet's Remarks (finishing a task), so a later one replaces it but never a person's remark.
     autoRemark: str(c.autoRemark, 300),
     // The details someone checked and said are correct (the owner, 16 Nov 2026), so they leave "Details to check": { key: ISO time }.
@@ -455,6 +471,15 @@ function createCards(dir, { now = () => new Date() } = {}) {
         card.notes = card.notes.slice(-LIMITS.notes);
       });
       return out.error ? out : { ...out, note };
+    },
+
+    // The follow-up details of a student (see cleanFollow): `patch` sets the keys it names; a key set to null is cleared.
+    setFollow(rowId, patch, by) {
+      return update(rowId, by, (card) => {
+        const next = { ...(card.follow || {}) };
+        Object.entries(patch || {}).forEach(([k, v]) => { if (v === null) delete next[k]; else next[k] = v; });
+        card.follow = cleanFollow(next);
+      });
     },
 
     // A note can be removed by the person who wrote it, or by Admin (`force`).

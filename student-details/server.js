@@ -108,6 +108,8 @@ const STATIC_FILES = {
   '/portal-ui.js': 'text/javascript; charset=utf-8',
   '/student.html': 'text/html; charset=utf-8',
   '/bulk.html': 'text/html; charset=utf-8',
+  '/followup.html': 'text/html; charset=utf-8',
+  '/followup-page.js': 'text/javascript; charset=utf-8',
   '/bulk-add.html': 'text/html; charset=utf-8',
   '/bulk-add-page.js': 'text/javascript; charset=utf-8',
   '/student-file.js': 'text/javascript; charset=utf-8',
@@ -157,6 +159,7 @@ const direct = createDirect(DATA_DIR);
 // The student cards (what is known about a student besides the sheet), the email settings (the consultancy name, message-templates.json), the links typed for single
 // courses, the B2B partners and the management records of the Dashboard. Each is a file of its own in the data folder.
 const cards = createCards(DATA_DIR);
+const stageLog = require('./stage-log');
 const messages = createMessages(DATA_DIR);
 const courseLinks = createCourseLinks(DATA_DIR);
 // The university pages' pictures, fetched once and kept in the data folder (media-cache.js).
@@ -278,6 +281,24 @@ async function handleIncentive(req, res, urlPath) {
 function recordChanges(req, before, after) {
   const changes = describeChanges(before, after);
   if (changes.length) activity.record(req, req.user, 'Changed', { app: 'Student Details', changes });
+  stageTimeline(req, before, after);
+}
+
+// Every stage change, however it was made (the sheet, the student card, a task, the follow-up list), is written on the student's
+// timeline by the person who made it (stage-log.js says which moves are written). A student the Follow-up Team moves on from Inquiry or
+// Defer stays in the team's list, view only ("converted"); a deferred student back in a new intake shows where they came from.
+function stageTimeline(req, before, after) {
+  let list;
+  try { list = stageLog.changes(before, after, (rowId) => { const c = cards.has(rowId) ? cards.get(rowId) : null; return (c && c.profile && c.profile.lostReason) || ''; }); } catch (e) { console.error('[stage log]', e); return; }
+  const who = (req && req.user && req.user.name) || '';
+  const followup = Boolean(req && req.user && Array.isArray(req.user.departments) && req.user.departments.includes('followup') && req.user.role !== 'admin');
+  for (const x of list) {
+    try {
+      cards.addNote(x.rowId, { kind: 'stage', text: x.text }, who);
+      if (x.back) cards.setFollow(x.rowId, { from: x.fromIntake, next: null, via: null }, who);
+      else if (followup && ['Inquiry', 'Defer'].includes(x.from) && stageLog.LINE.indexOf(x.to) > 0) cards.setFollow(x.rowId, { via: 'converted', viaBy: who, viaAt: new Date().toISOString() }, who);
+    } catch (e) { console.error('[stage log]', e); }
+  }
 }
 
 // Recent revisions, so a save based on one of them can be merged instead of refused.
@@ -1041,7 +1062,7 @@ function b2bPartnerNames() {
 }
 
 // Whether a person's own team is the Application Team: the one rule in shared/teams.js (the menu in shared/header.js keeps the same).
-const { ownTeamApplication } = require('../shared/teams');
+const { ownTeamApplication, ownTeamFollowup } = require('../shared/teams');
 
 // Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Universities and
 // Partner Universities, each on its own). The data as it is now is saved first, so a restore can be undone.
@@ -1240,7 +1261,13 @@ const server = http.createServer(async (req, res) => {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
         '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/mock-guides': 'mock-guides.html', '/events': 'events.html',
       }[urlPath];
-      if (urlPath === '/') return send(res, 302, '', { Location: '/today' });
+      // The Follow-up Team works from All Students (its follow-up list) and Universities only (the owner, 21 Nov 2026): no Today, no
+      // Dashboard, no Follow-up page (messages to many students stay with Admin and the branches).
+      const fuOwn = ownTeamFollowup(req.user);
+      if (urlPath === '/') return send(res, 302, '', { Location: fuOwn ? '/students' : '/today' });
+      if (fuOwn && ['/my-email', '/message-templates'].includes(urlPath)) return send(res, 302, '', { Location: '/students#setup' });
+      if (fuOwn && ['/today', '/dashboard', '/my-dashboard', '/bulk'].includes(urlPath)) return send(res, 302, '', { Location: '/students' });
+      if (fuOwn && urlPath === '/students') { req.url = '/followup.html'; return serveStatic(req, res); }
       // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): no Dashboard, no Partners pages,
       // no Mock interviews for anyone whose own team is Application (Apply now on a university still shows the partner and its portal).
       // Nor Follow-up (the owner, 22 Nov 2026): following students up is not the Application Team's work.

@@ -74,6 +74,14 @@
   // The kinds notes were once kept with. A new note is always a plain note (the owner, 14 Nov 2026); the others stay readable.
   const NOTE_KINDS = [
     { key: 'note', text: 'Note' }, { key: 'call', text: 'Phone call' }, { key: 'meeting', text: 'Office visit' }, { key: 'message', text: 'Message' },
+    // Written by ISR itself: a stage moved on ("Moved to Mock Stage"), and a call from the follow-up list that nobody answered. Neither
+    // counts as speaking to the student (the owner, 21 Nov 2026).
+    { key: 'stage', text: 'Stage' }, { key: 'try', text: 'Called, no answer' },
+  ];
+  // The Follow-up Team's tags (the owner, 21 Nov 2026): how warm a student is, one at a time, changed with one press in the follow-up
+  // list. The table shows the short form.
+  const FOLLOW_TAGS = [
+    { key: 'Interested', short: 'INT' }, { key: 'Decision Making', short: 'DM' }, { key: 'Cold', short: 'COLD' },
   ];
 
   // The documents a student is asked for to apply (the checklist that goes in the email). CAS and visa documents are asked
@@ -221,6 +229,6 @@
   return {
     TASK_TAGS, TASK_TAG_IDS, TASK_TAGS_CHOOSABLE, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
-    OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, DOCUMENTS, documentsFor, PROFILE_FIELDS, GENDERS, SHEET_SECTIONS, columnLabel, whatsappNumber,
+    OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, FOLLOW_TAGS, DOCUMENTS, documentsFor, PROFILE_FIELDS, GENDERS, SHEET_SECTIONS, columnLabel, whatsappNumber,
   };
 });

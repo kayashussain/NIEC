@@ -145,7 +145,7 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   // The follow-up of the event (the owner, 17 Nov 2026): each student's status, worked out from the stage, the notes and the messages,
   // the last contact, who followed up, and the counts on the list of events.
   const got = (await admin('GET', `/api/activities/${ids['ABC event']}/students`)).json;
-  assert.strictEqual(got.followDays, 3, 'the same rule as Inquiries to follow up on Today');
+  assert.ok(!('followDays' in got), 'no automatic number of days: the team chooses the next follow-up date (the owner, 21 Nov 2026)');
   assert.ok(got.students.every((s) => ['new', 'due', 'ok', 'applied', 'visa', 'inactive'].includes(s.follow)));
   // The note the list writes by itself is not a contact (the owner, 17 Nov 2026): a student with only that note waits for a first call.
   assert.ok(got.students.filter((s) => s.stage === 'Inquiry').every((s) => !s.lastContact && s.contacts === 0 && s.follow === 'new'), 'the list\'s own note is not a contact');
@@ -154,9 +154,10 @@ test('uploading an event list: found and tagged, added at Inquiry, skipped, noth
   const ev = (await admin('GET', '/api/activities')).json.activities.find((x) => x.id === ids['ABC event']);
   assert.strictEqual(Object.values(ev.follow).reduce((n, x) => n + x, 0) + got.students.filter((s) => ['applied', 'visa'].includes(s.follow)).length, ev.leads, 'every student of the event is counted once');
   if (quiet) {
-    assert.strictEqual((await admin('POST', `/api/cards/${quiet.id}/notes`, { text: 'Called from the event page' })).status, 200);
+    const soon = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+    assert.strictEqual((await admin('POST', `/api/cards/${quiet.id}/notes`, { text: 'Called from the event page', next: soon })).status, 200, 'the note carries the next follow-up date');
     const again = (await admin('GET', `/api/activities/${ids['ABC event']}/students`)).json.students.find((s) => s.id === quiet.id);
-    assert.deepStrictEqual([again.follow, again.days, again.lastContact.text], ['ok', 0, 'Called from the event page'], 'a note written today counts as followed up');
+    assert.deepStrictEqual([again.follow, again.days, again.lastContact.text], ['ok', 0, 'Called from the event page'], 'a note written today with its next follow-up date counts as followed up');
   }
   const tags = (await follow('GET', '/api/event-tags')).json;
   assert.ok(Object.values(tags.rows).every((label) => typeof label === 'string'));

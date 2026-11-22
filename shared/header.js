@@ -171,9 +171,17 @@
     const deps = me.departments || [];
     return me.taskTeam ? me.taskTeam === 'application' && deps.includes('application') : deps.length === 1 && deps[0] === 'application';
   };
+  // The same for the Follow-up Team (the server's ownTeamFollowup): All Students (their follow-up list) and Universities only, with
+  // no Today, Dashboard or Follow-up (the owner, 21 Nov 2026).
+  const ownTeamFollowup = (me) => {
+    if (!me || me.role === 'admin' || me.role === 'manager') return false;
+    const deps = me.departments || [];
+    return me.taskTeam ? me.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
+  };
   function render(me) {
     const appOwn = ownTeamApplication(me);
-    const own = (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
+    const fuOwn = ownTeamFollowup(me);
+    const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']] : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
     const extra = appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'mock') } : shared0;
     const at = own.findIndex(([id]) => id === 'factfile');
@@ -205,7 +213,7 @@
     const here = nav.querySelector('[aria-current="page"]');
     if (here) nav.scrollLeft = Math.max(0, here.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft - (nav.clientWidth - here.offsetWidth) / 2);
     // The logo goes home: the dashboard for the Manager, All Students for everyone else.
-    header.querySelector('#niecHome').setAttribute('href', me.role === 'student' ? '/my-portal' : '/today');
+    header.querySelector('#niecHome').setAttribute('href', me.role === 'student' ? '/my-portal' : fuOwn ? '/students' : '/today');
     studentLogin = me.role === 'student';
     const initials = String(me.name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
     const account = header.querySelector('.niec-account');

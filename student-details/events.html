@@ -91,6 +91,9 @@
   .ev-qnote { padding: 12px 20px 14px; border-top: 1px solid rgba(0, 0, 0, .06); background: #e6e6e6; }
   .ev-qnote textarea { width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid #9a9a9a; border-radius: 12px; background: #f3f3f3; font: inherit; font-size: 15px; resize: vertical; }
   .ev-qnote-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  /* 🔴 CSS CHANGED (2026-11-21): Events and marketing, the Note box of a student asks for the next follow-up date | from: the words, Save note and Cancel | to: "Next follow-up" with a date box (#f7f7f7, 1px #6f6f6f, 8px corners) before Save note, the same rule as the Follow-up Team's list */
+  .ev-qnote-next { display: inline-flex; align-items: center; gap: 8px; margin-right: 6px; color: #000; font-size: 14px; font-weight: 600; }
+  .ev-qnote-next input { min-width: 172px; height: 34px; padding: 0 10px; border: 1px solid #6f6f6f; border-radius: 8px; background: #f7f7f7; font: inherit; font-size: 14px; color: #000; }
   @media (max-width: 900px) { .ev-person { grid-template-columns: minmax(0, 1fr); gap: 6px; } .ev-person.head { display: none; } .ev-pact { text-align: left; } .ev-remark:has(.ev-none) { display: none; } .ev-panel-head .btn { margin-bottom: 14px; } }
   /* the upload */
   .ev-panel { margin: 0 0 18px; padding: 22px 24px; border-radius: 18px; background: var(--panel, #f3f3f3); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 12px -6px rgba(0, 0, 0, .08); }
