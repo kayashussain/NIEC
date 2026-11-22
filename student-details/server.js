@@ -14,6 +14,7 @@ const {
 const { buildDashboard } = require('./dashboard-stats');
 const { createFacts, viewFacts, clean: cleanFact } = require('./facts');
 const { createDirect, viewDirect, MAX_FILE_BYTES } = require('./direct');
+const { createOffsite, settingsFrom } = require('./offsite');
 const { createBackups, ID: BACKUP_ID, HOUR: BACKUP_HOUR, KEEP_DAYS } = require('./backups');
 const { createAdvisorMcp } = require('./advisor-mcp');
 const { createAdvisorWrite } = require('./advisor-write');
@@ -209,8 +210,11 @@ const backups = createBackups(DATA_DIR, () => ({
   incentives: { commissions: readIncentiveFile('commissions.json', null), advances: readIncentiveFile('advances.json', null) },
 }));
 // No daily copy is taken while the students could not be read (a damaged file and no good copy): an empty copy would fill the day's place.
-const dailyBackup = () => { if (current) backups.tick(); };
+// Off-site copy (offsite.js): every backup is also sent, encrypted, to a bucket outside this server when the server's settings name one.
+const offsite = createOffsite(DATA_DIR, settingsFrom(), { record: (text) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Backup problem', { app: 'Off-site backup', changes: [text] }) });
+const dailyBackup = () => { if (current) backups.tick(); offsite.sync().catch(() => {}); };
 setInterval(dailyBackup, 5 * 60 * 1000).unref();
+if (offsite.enabled()) setTimeout(() => offsite.sync().catch(() => {}), 60 * 1000).unref();
 
 // The Incentive page's saved figures (commissions, advances, exchange rate), read-only, so the same Claude connector can also answer
 // questions about incentives. They live in the Incentive page's data folder: COUNSELOR_DATA_DIR, or (as on cPanel and with
@@ -1134,6 +1138,7 @@ async function handleRestore(req, res, urlPath) {
       now: { students: current ? current.sheets.reduce((n, s) => n + s.rows.length, 0) : null, facts: facts.list().length, partners: direct.list().length },
     });
   }
+  if (urlPath === '/api/restore/offsite' && req.method === 'GET') return sendJSON(res, 200, offsite.status()); // never the keys, only whether it works
   if (urlPath === '/api/restore/compare' && req.method === 'GET') {
     const id = new URL(req.url, 'http://x').searchParams.get('id') || '';
     if (!BACKUP_ID.test(id)) return sendJSON(res, 400, { error: 'Choose a backup to compare.' });
@@ -1173,6 +1178,7 @@ async function handleRestore(req, res, urlPath) {
   if (urlPath === '/api/restore/backup-now') {
     if (!current) return sendJSON(res, 500, { error: 'Could not read the data file' });
     const id = backups.create('manual');
+    offsite.sync().catch(() => {});
     activity.record(req, req.user, 'Backup made', { app: 'Student Details', changes: [`Saved a backup copy now (${id})`] });
     return sendJSON(res, 200, { id });
   }

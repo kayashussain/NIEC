@@ -108,7 +108,7 @@ function describeDevice(userAgent) {
 // Each entry has a category, used by the page's filter: logins (logged in or out), security (failed
 // logins, refused changes, wrong hidden-sheet password, hidden sheets opened), changes (cell and sheet
 // edits, student cards, tasks, messages, partners, templates, planning) and accounts (people added, access changed, passwords and settings).
-const SECURITY_ACTIONS = new Set(['Failed login', 'Change refused', 'Wrong hidden-sheet password', 'Opened hidden sheets', 'Test email failed', 'Opened Incentive', 'Wrong Incentive password']);
+const SECURITY_ACTIONS = new Set(['Failed login', 'Change refused', 'Wrong hidden-sheet password', 'Opened hidden sheets', 'Test email failed', 'Opened Incentive', 'Wrong Incentive password', 'Backup problem']);
 // What people do on the student cards and the pages around them counts as changes too.
 // Tasks, partner universities, students added in bulk and event lists too (the owner, 15 Nov 2026: they were filed under accounts, and
 // "Changes today" on Activity counted only the edits of the sheet).

@@ -145,6 +145,29 @@ New in the same app, no new setup needed: the data goes in new files of the Stud
 - **WhatsApp on your phone**: nothing to set up on the server. Each person connects their phone once: on the computer, the menu (their name), **Connect my phone** shows a code; they point the phone's camera at it and tap **Turn on** (an iPhone shows one extra step, Add to Home Screen). Then WhatsApp on the computer sends a notification to that phone, and one tap opens the student's chat there. The site must be on https (it is). The server makes its own key the first time (`push-keys.json` in the data folder); deleting that file disconnects every phone. A phone connected before 17 Nov 2026 should be connected once more (Disconnect, then Connect my phone): from then on it keeps itself connected.
 - **The university finder needs nothing set up:** it runs inside the server and reads the entry rules in Universities. No key, no outside service.
 
+## Off-site backup (recommended for every live server)
+
+The server keeps its own daily copies, but they sit on the same disk as the data. The off-site backup also sends every copy, encrypted,
+to a bucket in another place, so losing the server never loses the data. It works with any S3-compatible store: Amazon S3,
+Cloudflare R2, Backblaze B2 or Wasabi. Make a private bucket and a key that may only write to it, then set these on the server
+(hosting settings, never in git):
+
+| Setting | Meaning |
+|---|---|
+| `NIEC_OFFSITE_ENDPOINT` | the store's address, e.g. `https://s3.eu-west-2.amazonaws.com` |
+| `NIEC_OFFSITE_BUCKET` | the bucket name |
+| `NIEC_OFFSITE_REGION` | e.g. `eu-west-2` (Cloudflare R2: `auto`) |
+| `NIEC_OFFSITE_ACCESS_KEY`, `NIEC_OFFSITE_SECRET_KEY` | the write-only key |
+| `NIEC_OFFSITE_PASSPHRASE` | a long secret that encrypts every file before it leaves. **Keep a copy somewhere safe and apart from the server: without it a backup cannot be opened by anyone.** |
+| `NIEC_OFFSITE_PREFIX` | optional folder name in the bucket (default `isr-backups`) |
+
+Without the passphrase nothing is ever sent. A copy that could not be sent is tried again every few minutes, and the first failure is
+written in Activity ("Backup problem"). Admin can see whether it works at `/api/restore/offsite` (never shows a key). To open a copy:
+`NIEC_OFFSITE_PASSPHRASE=... node scripts/decrypt-backup.js <file.enc>`, then put the result in `daily-backups/` or look at it with
+`node scripts/local-live.js`. Only one copy of the server may run on a data folder (`server.lock`); a second one refuses to start.
+
+Also add a free uptime monitor (for example UptimeRobot) on `https://<your site>/healthz`, so you are told if the site is down.
+
 ## Updating the code later
 
 Push to the GitHub repo's default branch and Render redeploys automatically
