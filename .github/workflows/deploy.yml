@@ -1,0 +1,47 @@
+# Puts a tested master on the live cPanel server by itself (the owner, 22 Nov 2026: "I push, you refresh, it is live").
+# Runs only after the "Tests" workflow succeeded on master, and only when the four secrets below are set in GitHub
+# (Settings, Secrets and variables, Actions). Without them it does nothing and says so. The data lives outside the repo
+# (CPANEL_DEPLOY.md), so this never touches a student. To switch it off, delete the secret DEPLOY_SSH_KEY.
+#
+#   DEPLOY_HOST      the server's name, for example niec.duckdns.org (or its SSH host)
+#   DEPLOY_USER      the cPanel user name
+#   DEPLOY_SSH_KEY   a private SSH key made only for this, whose public half is authorised in cPanel (SSH Access)
+#   DEPLOY_PATH      the folder of the cloned repo on the server, for example /home/USER/uk-student-niec
+#   DEPLOY_PORT      optional, the SSH port (22 when empty)
+name: Deploy to the live server
+
+on:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
+    branches: [master]
+
+concurrency:
+  group: deploy-live
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update the live server
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER_NAME: ${{ secrets.DEPLOY_USER }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          APP_PATH: ${{ secrets.DEPLOY_PATH }}
+          PORT: ${{ secrets.DEPLOY_PORT }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -z "$HOST" ] || [ -z "$USER_NAME" ] || [ -z "$KEY" ] || [ -z "$APP_PATH" ]; then
+            echo "The live server is not connected yet (the DEPLOY_ secrets are not all set), so nothing was deployed."
+            exit 0
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${PORT:-22}" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # The tested commit goes live: fetch it, reset the code to it (data is outside the repo), install what the server needs, restart.
+          ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" -o BatchMode=yes "$USER_NAME@$HOST" \
+            "set -e; cd '$APP_PATH'; git fetch origin master; git reset --hard '$SHA'; (cd student-details && npm install --omit=dev --no-audit --no-fund); mkdir -p student-details/tmp; touch student-details/tmp/restart.txt; echo \"Live is now at \$(git rev-parse --short HEAD)\""

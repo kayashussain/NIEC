@@ -75,6 +75,25 @@ team and Manager rules, Universities, Incentive, accessibility) run where Playwr
 Both explain accounts, backups, email and what is stored where. Data lives outside the code folder, so an update
 never touches it. `/healthz` answers `{"ok":true}` for an uptime monitor.
 
+## Claude write door and automatic deploy (off until you switch them on)
+
+**The write door** lets Claude change a student's First name, Last name, Student ID or NOC number, one student at a time, in two steps (preview, then
+apply with a code, only after you say yes in the chat). It is a second address with its own secret, separate from the read-only connector. Set both of these
+in the host settings and restart:
+
+- `NIEC_ADVISOR_WRITE_TOKEN`: a random secret of 32 or more characters (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
+- `NIEC_ADVISOR_WRITE_AS`: the username of the portal account it acts as. It can never do more than that account can do on the student card; use an
+  Application Team account to keep it narrow. Every change is written on the student's card and in Activity as that name followed by "(Claude)", and the
+  server keeps its usual rolling backup and daily snapshot before each write.
+
+Then add `https://<your-site>/advisor-write/<NIEC_ADVISOR_WRITE_TOKEN>` in claude.ai (Settings, Connectors, Add custom connector). Remove either setting and
+restart to switch it off.
+
+**Automatic deploy** (`.github/workflows/deploy.yml`) puts every `master` that passes the tests on the live cPanel server by itself, so a refresh shows the
+change. Set these secrets in GitHub (Settings, Secrets and variables, Actions): `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` (a key made only for this,
+authorised in cPanel under SSH Access), `DEPLOY_PATH` (the cloned repo folder on the server) and optionally `DEPLOY_PORT`. Delete `DEPLOY_SSH_KEY` to switch it
+off. The data folders are outside the repo, so a deploy never touches a student.
+
 ## Claude Strategy Advisor connector (read-only)
 
 Lets a Claude Project read the live sheet (every tab, row and column), the Dashboard numbers and Universities. It cannot

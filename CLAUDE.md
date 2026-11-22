@@ -62,10 +62,17 @@ The owner does not want old versions, copies or rewrites lying around, because a
 - The live server holds the real students, intakes, partners and Universities. The students, intakes and figures in any preview, demo, screenshot
   or test run (`scripts/local-demo.js`, `scripts/demo-data.js`) are **made up by Claude** and must always be called that. Never present
   them as real, and never let the owner think a number from them is real.
-- The owner wants to see and work with the real data before pushing to the live server. Claude cannot reach the live server or the owner's
-  browser, so the way is `scripts/local-live.js`: the owner downloads a backup from the live server (Admin, Restore, or the daily backup)
-  and runs `node scripts/local-live.js <the file>` on their own computer, then opens http://localhost:8080 (no login page, this computer only; `--login` brings the login page back). When the owner asks again for live data, give these steps again,
-  say plainly what Claude cannot do, and do not invent data.
+- How Claude works with the real data (the owner, 22 Nov 2026), in three ways, each switched on by the owner in the hosting settings:
+  1. **Reading:** the read-only Claude connector (`student-details/advisor-mcp.js`, `NIEC_ADVISOR_TOKEN`) shows Claude the live students, tasks,
+     Universities and partners. Claude uses it to check the design and the data (long names, empty fields, figures) and says plainly what it saw.
+  2. **Changing a student's plain details:** the write door (`student-details/advisor-write.js`, `NIEC_ADVISOR_WRITE_TOKEN` and `NIEC_ADVISOR_WRITE_AS`).
+     Two steps always: Claude previews the exact before and after, shows the owner in plain words, and applies it only after the owner says yes to that
+     change. One student at a time, only First name, Last name, Student ID and NOC number, never a deletion, a user, a password, a setting or Incentive.
+     Claude never uses it without the owner's yes, and never to "tidy up" on its own.
+  3. **Code going live:** a push to `master` that passes the tests is put on the live server by `.github/workflows/deploy.yml`, once the owner has set its
+     four secrets. Claude cannot log in to the live server; it can only push to `master`. The data lives outside git, so a deploy never touches a student.
+  If a way is not switched on, or the owner asks for something it cannot do, say so plainly and give the steps (and `scripts/local-live.js` on the owner's
+  computer is always there). Do not invent data.
 - Real data never goes in git, in code, in tests or in screenshots sent anywhere. `live-data/` and the daily backups are ignored by git.
 - Every change must work with the data that already exists on the live server: stored values keep their meaning (for example a
   student's Student Source stays "Chitwan Branch"), and new fields are optional.

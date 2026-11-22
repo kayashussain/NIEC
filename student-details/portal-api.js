@@ -1156,6 +1156,37 @@ function createPortalApi({
   }
 
 
+  // The write door for Claude (advisor-write.js; off unless the server sets NIEC_ADVISOR_WRITE_TOKEN and NIEC_ADVISOR_WRITE_AS, the owner,
+  // 22 Nov 2026). It changes a few plain details of ONE student, through setColumns, so the same account rules and the same value checks as
+  // on the student card apply, and it writes the same note on the card. It never does anything else. `apply: false` only shows the change.
+  // `expect`: the values as the preview saw them; if the student changed since, nothing is written.
+  const ADVISOR_COLUMNS = ['FIRST NAME', 'LAST NAME', 'STUDENT ID', 'NOC NUMBER'];
+  function advisorChange(req, { id, changes, expect = null, apply = false }) {
+    const found = typeof id === 'string' && id ? rowIndex().get(id) : null;
+    if (!found) return { error: 'No student with that id.' };
+    const cols = changes && typeof changes === 'object' && !Array.isArray(changes) ? Object.keys(changes) : [];
+    if (!cols.length) return { error: `Give the details to change. This door can change: ${ADVISOR_COLUMNS.join(', ')}.` };
+    const clean = {};
+    for (const col of cols) {
+      if (!ADVISOR_COLUMNS.includes(col)) return { error: `${col} cannot be changed through this door. It can change: ${ADVISOR_COLUMNS.join(', ')}.` };
+      const v = CARD_EDITABLE[col](changes[col]);
+      if (v === null) return { error: `${col}: that value is not allowed.` };
+      if (!Teams.canEdit(req.user, col, found.row)) return { error: `${col} cannot be changed from the account this door uses.` };
+      clean[col] = v;
+    }
+    const before = Object.fromEntries(cols.map((c) => [c, text(found.row[c])]));
+    if (expect && cols.some((c) => text(expect[c]) !== before[c])) return { error: 'The student changed after the preview. Preview again.' };
+    const diff = cols.filter((c) => clean[c] !== before[c]).map((c) => ({ column: c, before: before[c], after: clean[c] }));
+    if (!diff.length) return { error: 'Nothing would change: the student already has these values.' };
+    const student = `${text(found.row['FIRST NAME'])} ${text(found.row['LAST NAME'])}`.trim();
+    if (!apply) return { id, student, changes: diff, before };
+    const done = setColumns(req, found, Object.fromEntries(diff.map((d) => [d.column, d.after])));
+    if (done.error) return { error: done.error };
+    noteCardChanges(req, id, diff.map((d) => [Fields.columnLabel(d.column), d.before, d.after]));
+    return { id, student, changed: diff };
+  }
+
+
 
   // ---- Today: what needs a person's attention now, for the students this account sees ----
   // The home screen of each kind of account (Teams.kindOf): the same facts, but each team sees the work that is its own, in its own words.
@@ -3409,7 +3440,7 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note };
+  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, advisorChange };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };
