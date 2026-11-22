@@ -474,7 +474,7 @@ function cellValueError(cells, sheet, user) {
 // outside the rules refuses the whole save (the page never offers it, so that means tampering or a
 // stale page).
 // `checked`: the add-student form has already looked for duplicates (it may add a brother or sister on the family phone once a person says so).
-function teamSave(req, parsed, { checked = false } = {}) {
+function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
   const base = current && (parsed.baseRevision === current.revision ? current : history.get(parsed.baseRevision));
   if (!base) return { status: 409, body: { error: 'conflict', revision: current ? current.revision : 0 } };
   const baseView = viewFor(req.user, base);
@@ -487,7 +487,12 @@ function teamSave(req, parsed, { checked = false } = {}) {
   if (!mineView || !Array.isArray(mineView.sheets)
     || !mineView.sheets.every((s) => s && typeof s.id === 'string' && Array.isArray(s.rows)
       && s.rows.every((r) => r && typeof r === 'object' && !Array.isArray(r)))) return { status: 400, body: { error: 'invalid payload' } };
-  const { changes, adds, deletes, errors } = teamChanges(req.user, baseView, mineView, CALCULATED_COLUMNS);
+  const worked = teamChanges(req.user, baseView, mineView, CALCULATED_COLUMNS);
+  const { adds, deletes, errors } = worked;
+  // The Application Team changes a student only on the student card (the owner, 22 Nov 2026): from the sheet only a row's colour and its
+  // Status (to move a student on) are kept (with rows added and deleted); any other cell, such as a value the page tidied by itself, is left as it is, never refused.
+  // The card's own saves (portal-api setColumns) come here too and are not touched (`fromSheet` is false for them).
+  const changes = fromSheet && ownTeamApplication(req.user) ? worked.changes.filter((c) => c.col === '_color' || c.col === 'APPLICATION STATUS') : worked.changes;
   if (errors.length) {
     activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: errors });
     return { status: 403, body: { error: errors.join(' ') } };
@@ -495,7 +500,7 @@ function teamSave(req, parsed, { checked = false } = {}) {
   // Someone else saved after this page's copy: the page is told to fetch its fresh view, so it never claims a revision whose
   // other edits it has not seen (and then sends an old cell back over a newer one).
   const behind = base !== current;
-  if (!changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision, reload: behind } };
+  if (!worked.changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision, reload: behind } };
   if (adds.length > 50) { // a person adds students one or a few at a time; thousands in one save is a mistake or an attack
     activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: [`Tried to add ${adds.length} students in one save`] });
     return { status: 403, body: { error: 'You can add up to 50 students in one save.' } };
@@ -505,9 +510,11 @@ function teamSave(req, parsed, { checked = false } = {}) {
   // started meanwhile) is sent the fresh view instead of changing the earlier one.
   const intake = newestSheet(current.sheets.filter((s) => !s.hidden));
   const inIntake = (sheetId) => Boolean(intake) && sheetId === intake.id;
-  const cellError = cellValueError(changes.map((c) => ({ col: c.col, value: c.value }))
+  // Every cell sent is checked, also the ones the Application Team's sheet save then leaves out, so a damaged value is still refused.
+  const cellError = cellValueError(worked.changes.map((c) => ({ col: c.col, value: c.value }))
     .concat(adds.flatMap((a) => Object.keys(a.row).map((col) => ({ col, value: a.row[col] })))), intake, req.user);
   if (cellError) return { status: 400, body: { error: cellError } };
+  if (!changes.length && !adds.length && !deletes.length) return { status: 200, body: { ok: true, revision: current.revision, reload: behind } };
   // A Student Source is stored with the portal's own spelling ("social media" is kept as "Social Media"), so it is counted as one source.
   const sourceSpelling = (v) => CardFields.STORED_SOURCES.find((x) => x.toLowerCase() === String(v ?? '').trim().toLowerCase()) || v;
   changes.forEach((c) => { if (c.col === 'STUDENT SOURCE') c.value = sourceSpelling(c.value); });
@@ -612,7 +619,7 @@ function teamSave(req, parsed, { checked = false } = {}) {
 
 // Answers a team's save (see teamSave, which does the work and is also used when a team adds a student from the card form).
 function handleTeamSave(req, res, parsed) {
-  const out = teamSave(req, parsed);
+  const out = teamSave(req, parsed, { fromSheet: true });
   return sendJSON(res, out.status, out.body);
 }
 

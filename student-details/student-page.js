@@ -16,6 +16,62 @@
   const SECTIONS = { details: 'lg-timeline', options: 'lg-apps' };
   const view = document.getElementById('view');
   const say = (text, error) => window.NiecUI.toast(text, { type: error ? 'error' : 'success' });
+  // ---- Undo and Redo of a change saved on the card (the owner, 22 Nov 2026): for 5 seconds after saving, Undo (the button on the
+  // message, or Ctrl+Z / Cmd+Z) puts the details back as they were; for 5 seconds after an Undo, Redo (Ctrl+Y / Cmd+Shift+Z) puts the
+  // change back again. Each step is a save of its own and is written in the student's notes ("Undone on the student card"). ----
+  const UNDO_MS = 5000;
+  let lastChange = null; // { before: { sheet, prof }, after: { sheet, prof }, at, undone }
+  // One Undo or Redo message at a time: the next one closes the one before, so an old Undo button is never left on screen.
+  let stepToast = null;
+  const stepSay = (message, label, onClick) => {
+    if (stepToast) stepToast();
+    stepToast = window.NiecUI.toast(message, { type: 'success', duration: UNDO_MS, action: { label, onClick } }) || null;
+  };
+  async function putState(state, undo) {
+    if (Object.keys(state.sheet || {}).length) await api(`/api/cards/${encodeURIComponent(id)}/sheet`, { fields: state.sheet, undo });
+    if (Object.keys(state.prof || {}).length) await api(`/api/cards/${encodeURIComponent(id)}/profile`, { ...state.prof, markSaved: true, undo });
+    data = await api('/api/cards/' + encodeURIComponent(id));
+    render();
+  }
+  // `before` and `after`: { sheet: { COLUMN: value }, prof: { key: value } }, only what changed.
+  function savedWithUndo(message, before, after) {
+    lastChange = { before, after, at: Date.now(), undone: false };
+    stepSay(message, 'Undo', undoLast);
+  }
+  const fresh = () => lastChange && Date.now() - lastChange.at <= UNDO_MS;
+  let stepping = false;
+  async function undoLast() {
+    if (stepping || !fresh() || lastChange.undone) return false;
+    stepping = true;
+    try {
+      await putState(lastChange.before, true);
+      lastChange.undone = true; lastChange.at = Date.now();
+      stepSay('Change undone', 'Redo', redoLast);
+    } catch (e) { say(e.message, true); } finally { stepping = false; }
+    return true;
+  }
+  async function redoLast() {
+    if (stepping || !fresh() || !lastChange.undone) return false;
+    stepping = true;
+    try {
+      await putState(lastChange.after, false);
+      lastChange.undone = false; lastChange.at = Date.now();
+      stepSay('Change redone', 'Undo', undoLast);
+    } catch (e) { say(e.message, true); } finally { stepping = false; }
+    return true;
+  }
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    // Typing in a box keeps the box's own undo; a window open keeps its own keys.
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') || document.querySelector('dialog[open]')) return;
+    const k = e.key.toLowerCase();
+    const isUndo = k === 'z' && !e.shiftKey;
+    const isRedo = k === 'y' || (k === 'z' && e.shiftKey);
+    if (!(isUndo || isRedo) || !fresh()) return;
+    if (isUndo ? lastChange.undone : !lastChange.undone) return;
+    e.preventDefault();
+    if (isUndo) undoLast(); else redoLast();
+  });
 
   if (embedded) {
     document.body.classList.add('p-embed');
@@ -122,7 +178,9 @@
           if (Object.keys(sheet).length) await api(`/api/cards/${id}/sheet`, { fields: sheet });
           await api(`/api/cards/${id}/profile`, prof);
           data = await api('/api/cards/' + encodeURIComponent(id));
-          close(); say('Profile saved'); render();
+          const was = { sheet: {}, prof: {} }; const now2 = { sheet: {}, prof: {} };
+          c.forEach((k) => { const into = SHEET.includes(k) ? 'sheet' : 'prof'; was[into][k] = before[k]; now2[into][k] = v[k]; });
+          close(); render(); savedWithUndo('Profile saved', was, now2);
         } catch (err) { ok.disabled = false; ok.textContent = 'Save changes'; say(err.message, true); }
       });
       body.append(form);
@@ -837,8 +895,11 @@
   const appName = (o) => [o.university, o.course].filter(Boolean).join(', ');
   async function goAhead(o) {
     try {
-      await api(`/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': o.university || '', 'COURSE NAME': o.course || '' } });
-      say(`Priority: ${o.university}. All Students is updated.`);
+      const row0 = data.student.row || {};
+      const was = { sheet: { 'UNIVERSITY NAME': row0['UNIVERSITY NAME'] || '', 'COURSE NAME': row0['COURSE NAME'] || '' } };
+      const now2 = { sheet: { 'UNIVERSITY NAME': o.university || '', 'COURSE NAME': o.course || '' } };
+      await api(`/api/cards/${id}/sheet`, { fields: now2.sheet });
+      savedWithUndo(`Priority: ${o.university}. All Students is updated.`, was, now2);
       refreshCard();
     } catch (e) { say(e.message, true); }
   }
@@ -1053,10 +1114,11 @@
       ok.addEventListener('click', async () => {
         ok.disabled = true;
         try {
+          const was = { sheet: { [step.col]: (data.student.row || {})[step.col] || '' } };
           await api(`/api/cards/${encodeURIComponent(id)}/sheet`, { fields: { [step.col]: input.value } });
           data = await api('/api/cards/' + encodeURIComponent(id));
-          say(`Saved: ${step.label.toLowerCase()} ${day(input.value)}`);
           render();
+          savedWithUndo(`Saved: ${step.label.toLowerCase()} ${day(input.value)}`, was, { sheet: { [step.col]: input.value } });
         } catch (e) { say(e.message, true); ok.disabled = false; }
       });
       act.append(input, ok);

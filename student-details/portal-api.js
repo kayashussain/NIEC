@@ -435,6 +435,16 @@ function createPortalApi({
     return sendJSON(res, 200, { status: 'sent', message: logged.message, card: logged.card, from: cfg.from });
   }
 
+  // Every change saved on the student card is written in the student's notes (the owner, 22 Nov 2026), for everyone: what changed, from
+  // what to what, by whom (the note keeps the author and the time), so a value typed over is never lost. `pairs`: [label, before, after].
+  // `undo`: the change was taken back with Undo.
+  function noteCardChanges(req, rowId, pairs, undo = false) {
+    const shown = (v) => { const t = text(v); return t ? `"${t.length > 160 ? t.slice(0, 157) + '...' : t}"` : '(empty)'; };
+    const lines = pairs.filter(([, a, b]) => text(a) !== text(b)).map(([label, a, b]) => `${label}: ${shown(a)} \u2192 ${shown(b)}`);
+    if (!lines.length) return;
+    cards.addNote(rowId, { kind: 'note', text: `${undo ? 'Undone on the student card' : 'Changed on the student card'}: ${lines.join('; ')}.` }, by(req));
+  }
+
   // The Student Source is a column of the sheet (hidden there: it is chosen on the card). Changed with the same rules as on the
   // sheet: Admin any time; a team only while it is blank on a student its own team added (shared/teams.js).
   function setSource(req, found, value) {
@@ -1691,6 +1701,8 @@ function createPortalApi({
         const changed = Fields.PROFILE_FIELDS.filter((f) => f.key !== 'savedAt' && f.key !== 'savedBy' && (card.profile[f.key] || '') !== (out.card.profile[f.key] || ''))
           .map((f) => `${who} › ${f.label}: "${card.profile[f.key] || '(blank)'}" → "${out.card.profile[f.key] || '(blank)'}"`);
         if (changed.length) note(req, changed);
+        // And in the student's own notes (the owner, 22 Nov 2026).
+        noteCardChanges(req, rowId, Fields.PROFILE_FIELDS.filter((f) => !['savedAt', 'savedBy', 'leadContact', 'fromList'].includes(f.key)).map((f) => [f.label, card.profile[f.key], out.card.profile[f.key]]), body.undo === true);
       }
     } else if (part === 'notes' && sub && del) {
       out = cards.removeNote(rowId, sub, by(req), Teams.isAdmin(req.user));
@@ -1728,14 +1740,18 @@ function createPortalApi({
         }
       }
       if (Object.keys(changes).length) {
+        const before = Object.fromEntries(Object.keys(changes).map((col) => [col, text(found.row[col])]));
         const done = setColumns(req, found, changes);
         if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }
+        noteCardChanges(req, rowId, Object.keys(changes).map((col) => [Fields.columnLabel(col), before[col], changes[col]]), body.undo === true);
       }
       sendJSON(res, 200, { ok: true, changed: Object.keys(changes) });
       return true;
     } else if (part === 'source') {
+      const was = text(found.row['STUDENT SOURCE']);
       const done = setSource(req, found, text(body.source).slice(0, 60));
       if (done.error) { sendJSON(res, done.status, { error: done.error }); return true; }
+      noteCardChanges(req, rowId, [['Student Source', was, done.source]], body.undo === true);
       sendJSON(res, 200, { ok: true, source: done.source, card });
       return true;
     } else if (part === 'options' && sub === 'send') {
@@ -2208,7 +2224,8 @@ function createPortalApi({
   //   kept (worked on): added by this list, but someone has worked on the student since: never removed here; listed with the reason.
   //   kept (in ISR before): linked by the list but in ISR before it: stays as it is.
   // { preview: true } only lists them. Before anything is removed, a copy of everything is saved (Admin, Restore, a "manual" copy).
-  const LIST_NOTE = /^([EI]nquiry from .*, from its [ei]nquiry list|More from the list of |From the updated list of |Linked to .* from its [ei]nquiry list)/; // "Enquiry" in notes written before 14 Nov 2026
+  const LIST_NOTE = /^([EI]nquiry from .*, from its [ei]nquiry list|More from the list of |From the updated list of |Linked to .* from its [ei]nquiry list|(Changed|Undone) on the student card: )/; // "Enquiry" in notes written before 14 Nov 2026
+  // A note a card change writes by itself ("Changed on the student card: ...", the owner, 22 Nov 2026) is a record, not a contact either.
   // The contacts with a student: the team's notes and the messages that went out. The note an uploaded list writes by itself
   // ("Enquiry from <event>, from its enquiry list") and a message that failed or is only a preview are not a contact (the owner,
   // 17 Nov 2026: a list just uploaded showed every student as followed up). Events and marketing, Today and the dashboards all

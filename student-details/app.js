@@ -112,7 +112,7 @@
   const CARD_OPEN_COLUMNS = new Set(['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'UNIVERSITY NAME', 'COURSE NAME']);
   const visibleColumns = (sheet) => {
     const hidden = new Set(HIDDEN_COLUMNS_BY_SHEET.filter((h) => h.matches(sheet.name || '')).flatMap((h) => h.columns));
-    return sheet.columns.filter((c) => !CARD_COLUMNS.has(c) && (!hidden.has(c) || (isTeam() && canEditCol(c))));
+    return sheet.columns.filter((c) => !CARD_COLUMNS.has(c) && (!hidden.has(c) || (isTeam() && Teams.canEdit(me, c))));
   };
   let columns = []; // the active sheet's shown columns (see visibleColumns)
   let rows = [];    // reference to the active sheet's rows array
@@ -143,7 +143,12 @@
   const isViewOnly = () => Teams.isReadOnly(me);
   let scrolledToYours = false;
   const isBranchAccount = () => Boolean(me && (me.departments || []).some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source));
-  const canEditCol = (col, row = null) => Teams.canEdit(me, col, row); // row: a student the person's team added can have its basics filled in
+  // The Application Team changes a student only on the student card (the owner, 22 Nov 2026: a detail changed there is written in the
+  // notes and can be undone); on the sheet it looks, adds a student, colours and deletes rows. The server holds the same rule.
+  // The Application Team changes a student on the student card, not in the sheet (the owner, 22 Nov 2026). Only Status stays
+  // open, because moving a student on (Application Stage to Mock Stage) is done there and nowhere else.
+  const sheetLocked = () => Boolean(me && Teams.ownTeamApplication && Teams.ownTeamApplication(me));
+  const canEditCol = (col, row = null) => !sheetLocked() && Teams.canEdit(me, col, row); // row: a student the person's team added can have its basics filled in
   let saving = false;
   let saveQueued = false;
   let loginEnded = false; // a save was refused because the login ran out (see NiecSession.holdWhile)
@@ -194,6 +199,7 @@
   const cameFromEl = $('#cameFrom');
   let cameFrom = '';
   let eventTags = { rows: {}, events: [], sources: {}, groups: [] };
+  let sourceListReady = false; // the Source choice has its list
   const SOURCE_NAMES = { Events: 'Events and marketing', Agent: 'Agents', Branch: 'Branches' };
   const sourceName = (g) => SOURCE_NAMES[g] || g;
   function sourceMatches(row) {
@@ -227,7 +233,9 @@
       cameFromEl.replaceChildren(...opts);
       if (keep && ![...cameFromEl.options].some((o) => o.value === keep)) cameFromEl.append(new Option(sourceText(keep), keep));
       cameFromEl.value = keep;
-      cameFromEl.hidden = false;
+      sourceListReady = true;
+      // No Source choice for the Application Team (the owner, 22 Nov 2026); shown once it is known who is looking.
+      cameFromEl.hidden = !me || sheetLocked();
     } catch (e) { /* offline for a moment: the filter keeps what it had */ }
   }
   const undoBtn = $('#undoBtn');
@@ -736,8 +744,9 @@
         if (BACKUP) document.body.dataset.backup = '1';
         document.body.dataset.role = me.role;
         $('#viewOnly').hidden = !Teams.isReadOnly(me);
-        { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = false; } }
+        { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : sheetLocked() ? 'Open a student card to change a detail' : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = false; } }
         syncFollowupButton();
+        if (cameFromEl) { if (sheetLocked()) { cameFrom = ''; cameFromEl.value = ''; } cameFromEl.hidden = sheetLocked() || !sourceListReady; }
         document.body.toggleAttribute('data-viewonly', Teams.isReadOnly(me));
         document.body.toggleAttribute('data-candelete', Teams.canDelete(me));
       }
@@ -1624,7 +1633,7 @@
         // the other dropdowns outside its columns.
         const isStatus = col === 'APPLICATION STATUS';
         const choices = isStatus ? Teams.statusChoices(me, val, SELECT_COLS[col], rows[rowIdx]) : SELECT_COLS[col];
-        if (isStatus ? choices.length < 2 && isTeam() : !canEditCol(col, rows[rowIdx])) {
+        if (isStatus ? (choices.length < 2 && isTeam()) : !canEditCol(col, rows[rowIdx])) {
           select.disabled = true;
           select.title = 'Your team can\'t change this';
         }
@@ -1939,6 +1948,8 @@
     revealRow(rowIdx);
     const td = cellTd(rowIdx, col);
     if (!td || !rows[rowIdx] || CALC_COLS[col]) return;
+    // The Application Team still moves a student on with Status (Application Stage to Mock Stage): the student card has no stage control.
+    if (sheetLocked() && col !== 'APPLICATION STATUS') { flashStatus('Open the student card to change a detail'); return; }
     if (!canEditCol(col, rows[rowIdx]) && col !== 'APPLICATION STATUS') { flashStatus(isViewOnly() ? 'This account is view only' : "Your team can't change this column"); return; }
     const busy = peerOnCell(rowIdx, col, isTextCell(col));
     if (busy) { warnPeerOnCell(busy); return; }
@@ -2218,6 +2229,19 @@
       statusSummaryEl.appendChild(el);
       return cards;
     };
+    // The Application Team's numbers (the owner, 22 Nov 2026): only its own four, counted from the students on its sheet now (a student
+    // moved on to Mock Stage leaves the sheet, so the numbers follow).
+    if (sheetLocked()) {
+      const has = (i, col) => String(rows[i][col] || '').trim() !== '';
+      const submitted = indices.filter((i) => has(i, 'APPLICATION SUBMISSION DATE')).length;
+      const offered = indices.filter((i) => has(i, 'OFFER RECEIVED DATE')).length;
+      const waiting = indices.filter((i) => has(i, 'APPLICATION SUBMISSION DATE') && !has(i, 'OFFER RECEIVED DATE')).length;
+      const appCards = group('Applications');
+      const total = card(indices.length, 'Total students');
+      total.classList.add('stat-total');
+      appCards.append(total, card(submitted, 'Submitted', '', 'Application submitted'), card(offered, 'Offer received'), card(waiting, 'Offer waiting', '', 'Submitted, no offer yet'));
+      return;
+    }
     const countStatus = (status) => indices.reduce((acc, i) => acc + (rows[i]['APPLICATION STATUS'] === status ? 1 : 0), 0);
     const totalCard = card(indices.length, 'Total Students');
     totalCard.classList.add('stat-total');

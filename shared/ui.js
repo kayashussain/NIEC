@@ -24,7 +24,8 @@
   let toastBox = null;
   let openDialogs = 0;
 
-  function toast(message, { type = 'info', duration } = {}) {
+  // `action`: { label, onClick } adds one small button (for example Undo, the owner, 22 Nov 2026); pressing it closes the message.
+  function toast(message, { type = 'info', duration, action } = {}) {
     if (!toastBox) {
       toastBox = document.createElement('div');
       toastBox.className = 'ui-toasts';
@@ -33,7 +34,7 @@
       document.body.appendChild(toastBox);
     }
     // The same message already showing is not shown twice (the owner, 21 Nov 2026: two "Shortlisted" messages stacked up).
-    if ([...toastBox.querySelectorAll('.ui-toast-text')].some((x) => x.textContent === String(message))) return;
+    if ([...toastBox.querySelectorAll('.ui-toast:not(.leaving) .ui-toast-text')].some((x) => x.textContent === String(message))) return;
     const el = document.createElement('div');
     el.className = 'ui-toast ' + type;
     const text = document.createElement('div');
@@ -43,7 +44,16 @@
     close.type = 'button';
     close.setAttribute('aria-label', 'Dismiss');
     close.textContent = '×';
-    el.append(text, close);
+    el.append(text);
+    if (action && action.label && typeof action.onClick === 'function') {
+      const act = document.createElement('button');
+      act.type = 'button';
+      act.className = 'btn btn-sm ui-toast-action';
+      act.textContent = String(action.label);
+      act.addEventListener('click', () => { remove(); action.onClick(); });
+      el.append(act);
+    }
+    el.append(close);
     toastBox.appendChild(el);
     while (toastBox.children.length > 4) toastBox.firstChild.remove();
     let timer = null;

@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-22 · shared/theme.css (end) · the Undo and Redo button in the small message after a save on the student card · from: no button, the message only said "Saved" · to: a grey pill button 32px high (#f7f7f7, border #6f6f6f, black semi-bold words) beside the words · why: the owner asked to undo and redo a recent save within 5 seconds, like in a Google sheet (22 Nov 2026).**
+
 - **2026-11-22 · shared/theme.css (end) · the folded menu · from: a thin grey line under the menu button when the menu is folded (the divider under the logo stayed while the logo was hidden) · to: no line, the folded rail shows only the menu button · why: the owner asked why there was a thin line in the folded menu (22 Nov 2026). The open menu keeps its divider under the logo.**
 
 - **2026-11-22 · shared/theme.css (end) and student-details/today-page.js · Today's points 7 and 8 taken back · from: Today, Later and Missing details at the left with the search box beside them on one line (no "Tasks" title), and one line "Application Team · Sunday, 22 November" above the greeting · to: as before: "Tasks" as a title with the switches at the right and the search box below, and the team name, the greeting and the date on its own line · why: the owner saw the page break when the menu was folded on the Application Team's Today and asked to keep what was there before (22 Nov 2026).**

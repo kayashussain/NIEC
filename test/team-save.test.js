@@ -79,7 +79,10 @@ test('team saves from an old page are checked against the students as they are n
   assert.strictEqual((await staff('POST', '/api/data', { sheets: bad.sheets, activeSheetId: bad.activeSheetId, baseRevision: view.revision })).status, 400);
 
   // Two people change the same detail from the same copy: the second is refused and told which detail, never silently winning.
+  // The Manager types on the sheet here: a person whose own team is Application changes a student on the card instead
+  // (the owner, 22 Nov 2026), so what that person types on the sheet is not kept at all.
   {
+    const staff = manager;
     const staffCopy = (await staff('GET', '/api/data')).json; // Asha's page, before Admin's edit
     const adminCopy = (await admin('GET', '/api/data')).json;
     adminCopy.sheets[0].rows.find((x) => x._id === 'r2').REMARKS = 'From Admin';
@@ -121,6 +124,7 @@ test('team saves from an old page are checked against the students as they are n
   assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
   const late = JSON.parse(JSON.stringify(view));
   late.sheets[0].rows[0]['UNIVERSITY NAME'] = 'Too late';
+  late.sheets[0].rows[0]._color = 'red'; // a row colour: the one thing the Application Team's sheet save still changes
   assert.strictEqual((await staff('POST', '/api/data', { sheets: late.sheets, activeSheetId: late.activeSheetId, baseRevision: view.revision })).status, 409);
   now = (await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2');
   assert.strictEqual(now['UNIVERSITY NAME'], '');

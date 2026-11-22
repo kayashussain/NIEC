@@ -116,6 +116,31 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   assert.strictEqual((await app('GET', `/api/cards/${casId}`)).status, 404, 'a CAS Stage student is not the team\'s');
   assert.ok(!((await app('GET', '/api/today')).json.missing.find((m) => m.id === casId)));
 
+  // A change saved on the student card is written in the student's notes, old to new, and an Undo says so (the owner, 22 Nov 2026).
+  const notesOf = async (sid) => (await admin('GET', `/api/cards/${sid}`)).json.card.notes.map((n) => n.text).join('\n');
+  assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { EMAIL: 'sarita.new@example.com' } })).status, 200);
+  assert.match(await notesOf(id), /Changed on the student card: Email: "sarita\.demo@example\.com" \u2192 "sarita\.new@example\.com"\./);
+  const undone = await app('POST', `/api/cards/${id}/sheet`, { fields: { EMAIL: 'sarita.demo@example.com' }, undo: true });
+  assert.deepStrictEqual([undone.status, undone.json && undone.json.changed], [200, ['EMAIL']], JSON.stringify(undone.json));
+  assert.match(await notesOf(id), /Undone on the student card: Email: "sarita\.new@example\.com" \u2192 "sarita\.demo@example\.com"\./);
+  assert.strictEqual((await app('POST', `/api/cards/${id}/profile`, { address: 'Bharatpur-11, Chitwan' })).status, 200);
+  assert.match(await notesOf(id), /Address \(as in the passport\): "Bharatpur-10, Chitwan" \u2192 "Bharatpur-11, Chitwan"/);
+
+  // The sheet: the Application Team's typing is not kept (it changes a student on the card), its row colour is (the owner, 22 Nov 2026).
+  const sheetNow = (await app('GET', '/api/data')).json;
+  sheetNow.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) { r.EMAIL = 'typed.on.sheet@example.com'; r._color = 'yellow'; } }));
+  const saved = await app('POST', '/api/data', { baseRevision: sheetNow.revision, sheets: sheetNow.sheets, activeSheetId: sheetNow.activeSheetId });
+  assert.strictEqual(saved.status, 200, JSON.stringify(saved.json));
+  const rowAfter = (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id);
+  assert.strictEqual(rowAfter.EMAIL, 'sarita.demo@example.com', 'a value typed on the sheet by the Application Team is not kept');
+  assert.strictEqual(rowAfter._color, 'yellow', 'the row colour is kept');
+  // Status stays open: the Application Team moves a student on to Mock Stage from the sheet (the card has no stage control).
+  const sheet2 = (await app('GET', '/api/data')).json;
+  sheet2.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) r['APPLICATION STATUS'] = 'Mock Stage'; }));
+  const moved = await app('POST', '/api/data', { baseRevision: sheet2.revision, sheets: sheet2.sheets, activeSheetId: sheet2.activeSheetId });
+  assert.strictEqual(moved.status, 200, JSON.stringify(moved.json));
+  assert.strictEqual((await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id)['APPLICATION STATUS'], 'Mock Stage', 'the Application Team still moves a student on');
+
   // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): Dashboard, Partners, Apply through
   // and Mock interviews send it back to Today; Apply now on a university still finds the partner.
   for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk']) {

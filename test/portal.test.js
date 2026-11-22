@@ -569,10 +569,12 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.ok(activity.some((e) => e.action === 'Edited student card' && e.changes.some((c) => /added a note/.test(c))));
   assert.ok(activity.some((e) => e.action === 'Sent message'));
   const copy = (await admin('POST', '/api/restore/backup-now', {})).json.id;
+  // Counted from the notes in the backup (a change on the card writes its own note, the owner, 22 Nov 2026).
+  const notesInBackup = (await admin('GET', `/api/cards/${sitaId}`)).json.card.notes.length;
   await app('POST', `/api/cards/${sitaId}/notes`, { text: 'Written after the backup.' });
-  assert.strictEqual((await admin('GET', `/api/cards/${sitaId}`)).json.card.notes.length, 3);
+  assert.strictEqual((await admin('GET', `/api/cards/${sitaId}`)).json.card.notes.length, notesInBackup + 1);
   assert.strictEqual((await admin('POST', '/api/restore', { id: copy, parts: ['cards'] })).status, 200);
-  assert.strictEqual((await admin('GET', `/api/cards/${sitaId}`)).json.card.notes.length, 2, 'the cards are back as they were in the backup');
+  assert.strictEqual((await admin('GET', `/api/cards/${sitaId}`)).json.card.notes.length, notesInBackup, 'the cards are back as they were in the backup');
 });
 
 test('the signature picture travels inside the email, shown in the text of the email by its content id', () => {
