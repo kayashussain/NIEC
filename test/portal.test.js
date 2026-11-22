@@ -501,12 +501,15 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.ok(!/<img src="data:image\/png;base64,/.test(own.html), 'a team member with no signature picture of their own gets none, never the office one');
   const office = (await admin('POST', `/api/cards/${sitaId}/messages/preview`, { template: 'custom', subject: 'Hello', body: 'Dear {first_name},\n\nMy own words.' })).json;
   assert.match(office.html, /<img src="data:image\/png;base64,/, 'the office signature picture ends Admin\'s emails');
-  const bulk = (await app('GET', '/api/bulk/students?stage=Application%20Stage')).json;
+  // Messages to many students are not the Application Team's work (the owner, 22 Nov 2026: no Follow-up for that team): refused.
+  assert.strictEqual((await app('GET', '/api/bulk/students?stage=Application%20Stage')).status, 403);
+  const both = await login('ravi', { departments: ['application', 'mock'] }); // two teams and no own team: still sends to many
+  const bulk = (await both('GET', '/api/bulk/students?stage=Application%20Stage')).json;
   assert.ok(bulk.students.some((x) => x.id === sitaId) && !bulk.students.some((x) => x.id === hari.json.id), 'the list holds only the students of that stage that the account may change');
-  const prev = (await app('POST', '/api/bulk/preview', { ids: [sitaId, hari.json.id], subject: 'Hi', body: 'Dear {first_name},\n\nA message.', whatsapp: 'Hello {first_name}' })).json;
+  const prev = (await both('POST', '/api/bulk/preview', { ids: [sitaId, hari.json.id], subject: 'Hi', body: 'Dear {first_name},\n\nA message.', whatsapp: 'Hello {first_name}' })).json;
   assert.strictEqual(prev.items[0].name, 'Sita Sharma');
   assert.strictEqual(prev.items[1].error, 'Not in your list.', 'a student the account cannot see is refused');
-  const bulkSent = (await app('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'Hi', body: 'Dear {first_name},\n\nA message.' })).json;
+  const bulkSent = (await both('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'Hi', body: 'Dear {first_name},\n\nA message.' })).json;
   assert.strictEqual(bulkSent.results[0].status, 'not-configured', 'nothing leaves a computer with no mailbox');
   assert.match((await follow('POST', '/api/bulk/send-email', { ids: [sitaId], subject: 'x', body: 'y' })).json.error, /sent by Admin/, 'the Follow-up Team sends no messages to many students (the owner, 21 Nov 2026)');
   assert.strictEqual((await manager('POST', '/api/bulk/preview', { ids: [sitaId], subject: 'x', body: 'y' })).json.items[0].error, 'Not in your list.', 'the Manager only views');
