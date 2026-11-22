@@ -155,6 +155,17 @@ The web server must be allowed to reach the mail server on that port. You can al
 variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURITY`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`,
 `MAIL_FROM_NAME` and `SITE_URL` instead of the file.
 
+**A Gmail address as the office mailbox (the owner, 22 Nov 2026: the team and the students use Gmail).** No company email is
+needed. The Mock Team's booking emails, reminders and the new-person emails all go from this one mailbox.
+
+1. In that Google account: turn on 2-Step Verification, then make an **App password** (Google Account, Security, App passwords).
+   Google gives 16 letters; that is the password ISR uses (never the normal Gmail password).
+2. On the server, in the project folder: `node scripts/email.js setup`. Mailbox: the Gmail address. Password: the 16-letter app
+   password. Mail server: `smtp.gmail.com`, port `465`, SSL.
+3. `node scripts/email.js test` followed by your own address, and check the message arrives.
+4. Set **`SITE_URL`** to the site's own address (for example `https://isr.example.com`) in the app's environment variables (or
+   answer it in `setup`), then Restart. The links in the students' booking emails (Change or cancel) always use this address.
+
 ## Universities
 
 Every account has a **Universities** page: a list of universities, and for each one a page with its entry

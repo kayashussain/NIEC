@@ -227,6 +227,23 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   assert.ok(JSON.stringify(card).includes('Mock 2 is next'), 'a task for the next mock');
   assert.strictEqual((await mock('POST', `/api/bookings/${id}/answer`, { joined: false })).status, 400, 'answered once only');
 
+  // A mock already planned on the card from a task (a day, no feedback) gets its feedback in that slot, never the next one.
+  wb = (await admin('GET', '/api/data')).json;
+  wb.sheets[0].rows.find((r) => r._id === 'r2')['MOCK SCHEDULE 1'] = '2026-01-06';
+  assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
+  const free2 = (await student('GET', '/api/book/bikram')).json.days[2];
+  const ram = await student('POST', '/api/book/bikram', { day: free2.day, time: free2.times[0].time, name: 'Ram Example', email: 'ram@example.com' });
+  assert.strictEqual(ram.status, 200, JSON.stringify(ram.json));
+  const stored = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const rb = stored.bookings.find((b) => b.email === 'ram@example.com');
+  assert.strictEqual(rb.mock, 1, 'the planned Mock 1');
+  assert.strictEqual(rb.siteUrl, base, 'the email link is the site the person set up from, never a visitor\'s Host');
+  rb.day = '2026-01-06';
+  fs.writeFileSync(file, JSON.stringify(stored));
+  assert.strictEqual((await mock('POST', `/api/bookings/${rb.id}/answer`, { joined: true, feedback: 'Fine', result: 'ready' })).status, 200);
+  const r2 = (await admin('GET', '/api/data')).json.sheets[0].rows.find((r) => r._id === 'r2');
+  assert.deepStrictEqual([r2['MOCK SCHEDULE 1'], r2['FEEDBACK 1'], r2['MOCK SCHEDULE 2']], ['2026-01-06', 'Fine', '']);
+
   // The sheet is only to look at: a cell typed there is not kept (Status still moves a student on).
   const mine = (await mock('GET', '/api/data')).json;
   const edited = JSON.parse(JSON.stringify(mine));
@@ -259,6 +276,6 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   assert.ok(backups.length >= 1);
   const gz = fs.readdirSync(path.join(dir, 'daily-backups')).find((f) => /^niec-manual-.*\.json\.gz$/.test(f)); // the copy made just now
   const snap = JSON.parse(require('node:zlib').gunzipSync(fs.readFileSync(path.join(dir, 'daily-backups', gz))).toString('utf8'));
-  assert.strictEqual(snap.mockBookings.bookings.filter((b) => b.status === 'booked').length, 1);
+  assert.strictEqual(snap.mockBookings.bookings.filter((b) => b.status === 'booked').length, 2);
   assert.strictEqual(snap.mockGuidelines.files.length, 1);
 });

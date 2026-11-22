@@ -1009,6 +1009,7 @@ const mockApi = createMockApi({ guides: mockGuides, portal, cards, facts, direct
 const mockTeam = createMockTeamApi({
   bookings: mockBookings, guidelines: mockGuidelines, portal, cards, facts, accounts, activity, mailer: require('../shared/mailer'),
   company: () => { try { return messages.signature().company || ''; } catch (e) { return ''; } },
+  configuredSite: () => require('../shared/mailer').loadConfig(DATA_DIR).siteUrl || '',
   siteUrlOf: (req) => { const set = require('../shared/mailer').loadConfig(DATA_DIR).siteUrl; if (set) return set; const host = /^[A-Za-z0-9.-]+(:\d+)?$/.test(String(req.headers.host || '')) ? req.headers.host : 'localhost'; const https = (req.socket && req.socket.encrypted) || String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https'; return `${https ? 'https' : 'http'}://${host}`; },
 });
 portalBookings = mockTeam;

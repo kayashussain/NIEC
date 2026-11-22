@@ -13,6 +13,7 @@ const { sendJSON, send, readJSONBody, readRawBody, clientIp } = require('../shar
 const Teams = require('../shared/teams');
 const { calendarInvite, RESULTS } = require('./mock-bookings');
 const { MAX_FILE_BYTES } = require('./direct');
+const { isoDate } = require('./dashboard-stats');
 
 const text = (v) => String(v ?? '').trim();
 const STATUS = 'APPLICATION STATUS';
@@ -31,7 +32,7 @@ const guidelinesAccess = (user) => {
   return Teams.isManager(user) ? 'view' : null;
 };
 
-function createMockTeamApi({ bookings, guidelines, portal, cards, facts, accounts, activity, mailer, company, siteUrlOf, now = () => new Date() }) {
+function createMockTeamApi({ bookings, guidelines, portal, cards, facts, accounts, activity, mailer, company, siteUrlOf, configuredSite = () => '', now = () => new Date() }) {
   // ---- who the student is ----
   // The student with this email or phone, in the newest intake first (Mock Stage first), with the next mock not held yet (0 when all
   // four are held).
@@ -39,6 +40,16 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   // The review of 22 Nov 2026: only by the email (a phone alone could be anyone's), and only a Mock Stage student of the newest intake,
   // the students the Mock Team has. Nothing about the student is ever shown on the open page; a student who already has all four mocks
   // is booked as not matched, so the page never tells whether someone is on the sheet.
+  // Which mock slot a mock goes into (the deep review, 22 Nov 2026), the same way the task flow already does it: a slot whose day is
+  // this mock's day and has no feedback; else the first slot with a day but no feedback (a mock planned from a task); else the first
+  // empty slot. 0 when all four are held with their feedback.
+  function slotFor(row, day = '') {
+    const d = (n) => isoDate(row[`MOCK SCHEDULE ${n}`]);
+    const fb = (n) => text(row[`FEEDBACK ${n}`]);
+    return [1, 2, 3, 4].find((n) => day && d(n) === day && !fb(n))
+      || [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !fb(n))
+      || [1, 2, 3, 4].find((n) => !text(row[`MOCK SCHEDULE ${n}`])) || 0;
+  }
   function matchStudent(email) {
     const e = text(email).toLowerCase();
     if (!e) return null;
@@ -47,12 +58,16 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const intake = Teams.newestSheet([...sheets].filter((x) => !x.hidden));
     for (const { sheet, row } of wb.values()) {
       if (!row || !row._id || sheet !== intake || text(row[STATUS]) !== 'Mock Stage' || text(row.EMAIL).toLowerCase() !== e) continue;
-      const n = [1, 2, 3, 4].find((k) => !text(row[`MOCK SCHEDULE ${k}`])) || 0;
+      const n = slotFor(row);
       if (!n) return null;
       return { rowId: row._id, mock: n, university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']) };
     }
     return null;
   }
+
+  // The address in the emails' links: the site's own address (SITE_URL, or the email settings), else the one the Mock Team person used
+  // when they saved Setup (logged in), never the address an anonymous visitor's request names.
+  const siteOf = (ownerId) => configuredSite() || text(bookings.person(ownerId).site);
 
   // ---- emails ----
   const office = () => accounts.emailConfig();
@@ -107,7 +122,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const d = detailsBlock(b, p);
     const head = cancelled ? `${b.name} cancelled the mock interview.` : `${b.name} booked a mock interview with you.`;
     const html = `<div style="font-family:-apple-system,Segoe UI,Inter,Arial,sans-serif;font-size:16px;line-height:1.5;color:#000"><p>${htmlEsc(head)}</p>${d.html}<p>${cancelled ? 'The time is free again on your booking link.' : 'The calendar invite is attached: open it to add the mock to your calendar.'}</p></div>`;
-    return mail(p.email, `${cancelled ? 'Cancelled' : 'Booked'}: ${title}, ${bookings.niceDay(b.day)} ${bookings.niceTime(b.time)}`, html, `${head}\n\n${d.text}`, [{ name: 'mock-interview.ics', type: 'text/calendar; charset=UTF-8; method=PUBLISH', data: Buffer.from(ics, 'utf8') }]);
+    return mail(p.email, `${cancelled ? 'Cancelled' : 'Booked'}: ${title}, ${bookings.niceDay(b.day)} ${bookings.niceTime(b.time)}`, html, `${head}\n\n${d.text}`, [{ name: 'mock-interview.ics', type: `text/calendar; charset=UTF-8; method=${cancelled ? 'CANCEL' : 'PUBLISH'}`, data: Buffer.from(ics, 'utf8') }]);
   }
   // The reminders, every few minutes (server.js).
   async function tick() {
@@ -194,8 +209,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const found = portal.rowIndex().get(rowId);
     if (!found) return { status: 404, error: 'That student is no longer on the sheet.' };
     if (!sees(rowId)) return { status: 403, error: 'That student is not one of your students.' };
-    const empty = (n) => !text(found.row[`MOCK SCHEDULE ${n}`]);
-    const n = [1, 2, 3, 4].find(empty); // always the first mock not recorded, so the numbers never skip one
+    const n = slotFor(found.row, b.day); // the slot of this mock's day, a planned mock without feedback, or the first empty one
     if (!n) return { status: 400, error: 'All four mocks are already recorded for this student. Correct them on the student card.' };
     const out = portal.writeCardColumns(req, rowId, { [`MOCK SCHEDULE ${n}`]: b.day, [`FEEDBACK ${n}`]: feedback });
     if (out.error) return { status: out.status || 400, error: out.error };
@@ -209,14 +223,19 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
 
   // ---- rate limit for the page without a login ----
   const tries = new Map(); // ip -> [times]
-  function tooMany(req, max = 8) {
+  // Only bookings, moves and cancels that went through are counted, 20 an hour from one address (the per-email limit stops the rest):
+  // behind a second proxy many students may share one address, and a typing mistake must never lock them out.
+  function tooMany(req, max = 20) {
     const ip = clientIp(req) || 'unknown';
     const t = Date.now();
     const list = (tries.get(ip) || []).filter((x) => t - x < 3600000);
-    list.push(t);
     tries.set(ip, list);
+    return list.length >= max;
+  }
+  function counted(req) {
+    const ip = clientIp(req) || 'unknown';
+    tries.set(ip, [...(tries.get(ip) || []), Date.now()]);
     if (tries.size > 5000) tries.delete(tries.keys().next().value);
-    return list.length > max;
   }
   async function bodyOf(req, res, max = 16 * 1024) {
     try { return (await readJSONBody(req, max)) || {}; } catch (e) { sendJSON(res, e.statusCode || 400, { error: e.message }); return null; }
@@ -252,11 +271,12 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const mail = text(body.email).toLowerCase();
       const t0 = now().getTime();
       if (mail && bookings.all().bookings.filter((x) => x.status === 'booked' && x.email === mail && bookings.endOf(x) > t0).length >= 2) { sendJSON(res, 400, { error: 'You already have two mock interviews booked. Change or cancel one from its email first.' }); return true; }
-      const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteUrlOf(req));
+      const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteOf(owner));
       if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;
       activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} booked a mock with ${p.shown || 'the Mock Team'} on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}${b.rowId ? '' : ' (not matched to a student yet)'}`] });
-      const sent = await emailStudent(b, 'booked', siteUrlOf(req));
+      counted(req);
+      const sent = await emailStudent(b, 'booked', siteOf(owner));
       emailOwner(b).catch(() => {});
       sendJSON(res, 200, { ok: true, token: b.token, emailed: sent === 'sent', booking: publicBooking(b) });
       return true;
@@ -273,6 +293,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       if (m[2] === '/cancel') {
         const out = bookings.cancel(b.id, `${b.name} (the student)`);
         if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
+        counted(req);
         activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} cancelled the mock on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}`] });
         emailStudent(out.booking, 'cancelled').catch(() => {});
         emailOwner(out.booking, true).catch(() => {});
@@ -282,11 +303,13 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const body = await bodyOf(req, res);
       if (!body) return true;
       // Another time: the new time is booked first (with this booking's own slot free for it), then this one is cancelled.
-      const made = bookings.book(b.owner, { day: body.day, time: body.time, name: b.name, email: b.email, phone: b.phone, except: b.id }, () => (b.rowId ? { rowId: b.rowId, mock: b.mock, university: b.university, course: b.course } : null), b.siteUrl || siteUrlOf(req));
+      const made = bookings.book(b.owner, { day: body.day, time: body.time, name: b.name, email: b.email, phone: b.phone, except: b.id }, () => (b.rowId ? { rowId: b.rowId, mock: b.mock, university: b.university, course: b.course } : null), siteOf(b.owner));
       if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
       bookings.cancel(b.id, `${b.name} (moved to another time)`);
       activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} moved the mock from ${bookings.niceDay(b.day)} ${bookings.niceTime(b.time)} to ${bookings.niceDay(made.booking.day)} ${bookings.niceTime(made.booking.time)}`] });
-      emailStudent(made.booking, 'booked', siteUrlOf(req)).catch(() => {});
+      counted(req);
+      emailStudent(made.booking, 'booked', siteOf(b.owner)).catch(() => {});
+      emailOwner({ ...b, status: 'cancelled' }, true).catch(() => {}); // the old time leaves the person's calendar
       emailOwner(made.booking).catch(() => {});
       sendJSON(res, 200, { ok: true, token: made.booking.token, booking: publicBooking(made.booking) });
       return true;
@@ -305,7 +328,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const body = await bodyOf(req, res, 64 * 1024);
       if (!body) return true;
       if (urlPath === '/api/bookings/setup') {
-        const out = bookings.saveSetup(req.user.id, body, `${String(req.user.name || '').split(/\s+/)[0]}, Mock Team`);
+        const out = bookings.saveSetup(req.user.id, { ...body, site: siteUrlOf(req) }, `${String(req.user.name || '').split(/\s+/)[0]}, Mock Team`);
         if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
         activity.record(req, req.user, 'Changed settings', { app: 'Bookings', changes: [`Set up their booking link (/book/${out.person.slug}) and Teams meeting link`] });
         sendJSON(res, 200, pageFor(req.user));

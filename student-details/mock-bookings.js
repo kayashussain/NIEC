@@ -112,7 +112,8 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
     if (cache && cache.mtimeMs === stat.mtimeMs && cache.size === stat.size) return cache.data;
     try {
       const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
-      const data = { people: raw && raw.people && typeof raw.people === 'object' ? raw.people : {}, bookings: Array.isArray(raw && raw.bookings) ? raw.bookings : [] };
+      // A booking without a real day and time (only possible by hand) is left out, so one bad line never stops the page or the reminders.
+      const data = { people: raw && raw.people && typeof raw.people === 'object' ? raw.people : {}, bookings: (Array.isArray(raw && raw.bookings) ? raw.bookings : []).filter((b) => b && DAY.test(String(b.day)) && HHMM.test(String(b.time))) };
       cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
       return data;
     } catch (e) {
@@ -185,6 +186,7 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       p.slug = slug;
       p.shown = text(input.shown, 80) || text(fallbackName, 80);
       p.email = email;
+      if (/^https?:\/\/[A-Za-z0-9.-]+(:\d+)?$/.test(String(input.site || ''))) p.site = String(input.site); // the address the person saved this from
       p.updatedAt = now().toISOString();
       write({ ...data, people: { ...data.people, [ownerId]: p } });
       return { person: p };
@@ -317,8 +319,9 @@ function calendarInvite({ booking, start, end, title, description, location, org
   const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
   const fold = (line) => { const out = []; let rest = line; while (rest.length > 74) { out.push(rest.slice(0, 74)); rest = ' ' + rest.slice(74); } out.push(rest); return out.join('\r\n'); };
   return [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ISR//Mock interviews//EN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
-    `UID:${booking.id}@isr`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
+    // A cancelled mock is sent as a cancel of the same event (a higher sequence), so the calendar takes it out.
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ISR//Mock interviews//EN', booking.status === 'cancelled' ? 'METHOD:CANCEL' : 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+    `UID:${booking.id}@isr`, `SEQUENCE:${booking.status === 'cancelled' ? 1 : 0}`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
     fold(`SUMMARY:${esc(title)}`), fold(`DESCRIPTION:${esc(description)}`), fold(`LOCATION:${esc(location)}`),
     ...(organizer ? [fold(`ORGANIZER:mailto:${organizer}`)] : []),
     booking.status === 'cancelled' ? 'STATUS:CANCELLED' : 'STATUS:CONFIRMED',
