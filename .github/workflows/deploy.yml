@@ -48,7 +48,11 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${PORT:-22}" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          if ! ssh-keyscan -T 10 -p "${PORT:-22}" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+            echo "Cannot reach the server on SSH port ${PORT:-22}. Check DEPLOY_HOST (the SSH host) and DEPLOY_PORT (the SSH port, for example 22 or the one cPanel shows)."
+            exit 1
+          fi
+          [ -s ~/.ssh/known_hosts ] || { echo "The server gave no SSH answer on port ${PORT:-22}. Check DEPLOY_HOST and DEPLOY_PORT."; exit 1; }
           # A key with a password is unlocked once into an agent (the password is never written to a file or printed).
           ID_OPT=(-i ~/.ssh/deploy_key)
           if [ -n "$PASSPHRASE" ]; then
@@ -59,5 +63,5 @@ jobs:
             ID_OPT=()
           fi
           # The tested commit goes live: fetch it, reset the code to it (data is outside the repo), install what the server needs, restart.
-          ssh "${ID_OPT[@]}" -p "${PORT:-22}" -o BatchMode=yes "$USER_NAME@$HOST" \
+          ssh "${ID_OPT[@]}" -p "${PORT:-22}" -o BatchMode=yes -o ConnectTimeout=20 "$USER_NAME@$HOST" \
             "set -e; cd '$APP_PATH'; git fetch origin master; git reset --hard '$SHA'; (cd student-details && npm install --omit=dev --no-audit --no-fund); mkdir -p student-details/tmp; touch student-details/tmp/restart.txt; echo \"Live is now at \$(git rev-parse --short HEAD)\""
