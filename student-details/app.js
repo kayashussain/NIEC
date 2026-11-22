@@ -762,8 +762,8 @@
         if (cameFromEl) { if (sheetLocked()) { cameFrom = ''; cameFromEl.value = ''; } cameFromEl.hidden = sheetLocked() || !sourceListReady; }
         document.body.toggleAttribute('data-viewonly', Teams.isReadOnly(me));
         document.body.toggleAttribute('data-candelete', Teams.canDelete(me));
-        // 🔴 CSS CHANGED (2026-11-22): Add student, Colour rows and Delete rows for the Mock Team | from: shown | to: hidden (the sheet is to look at, the owner, 22 Nov 2026)
-        ['#addRow', '#colorRow', '#delRow'].forEach((sel) => { const b = $(sel); if (b) b.hidden = mockOwn(); });
+        // 🔴 CSS CHANGED (2026-11-22): Add student, Colour rows, Delete rows, Undo and Redo for the Mock Team | from: shown | to: hidden (the sheet is to look at, the owner, 22 Nov 2026)
+        ['#addRow', '#colorRow', '#delRow', '#undoBtn', '#redoBtn'].forEach((sel) => { const b = $(sel); if (b) b.hidden = mockOwn(); });
       }
       if (!res.ok || !me) throw new Error('HTTP ' + res.status);
       json = await res.json();

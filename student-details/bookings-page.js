@@ -16,7 +16,7 @@
   const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const MINUTES = [15, 20, 30, 45, 60, 90];
   const AHEAD = [[1, '1 day'], [2, '2 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']];
-  const NOTICE = [[60, '1 hour'], [120, '2 hours'], [240, '4 hours'], [1440, '1 day']];
+  const NOTICE = [[60, '1 hour before'], [120, '2 hours before'], [240, '4 hours before'], [1440, '1 day before']];
   let data = null;
   let tab = (location.hash || '').replace('#', '') || 'upcoming';
   let asked = false; // the window after a mock is opened once per visit of the page (it comes back on the next visit)
@@ -76,7 +76,7 @@
     else {
       const withOwner = data.access !== 'own';
       const table = el('table', 'mt-table');
-      const head = h('tr', {}, h('th', { scope: 'col' }, 'Time'), h('th', { scope: 'col' }, 'Student'), h('th', { scope: 'col' }, 'University'), h('th', { scope: 'col' }, 'Course'),
+      const head = h('tr', {}, h('th', { scope: 'col' }, 'Time'), h('th', { scope: 'col' }, 'Student, University and course'),
         h('th', { scope: 'col' }, 'Mock'), ...(withOwner ? [h('th', { scope: 'col' }, 'With')] : []), h('th', { scope: 'col' }, h('span', { class: 'p-offscreen' }, 'Join')));
       table.append(h('thead', {}, head));
       const body = el('tbody');
@@ -85,7 +85,7 @@
       data.upcoming.forEach((b) => {
         if (b.day !== lastDay) {
           lastDay = b.day;
-          body.append(h('tr', { class: 'mt-day' }, h('th', { colspan: String(withOwner ? 7 : 6), scope: 'colgroup' }, b.dayLabel)));
+          body.append(h('tr', { class: 'mt-day' }, h('th', { colspan: String(withOwner ? 5 : 4), scope: 'colgroup' }, b.dayLabel)));
         }
         const join = b.teams ? h('a', { class: `btn ${b.id === firstNext ? 'btn-primary' : ''} mt-join`, href: b.teams, target: '_blank', rel: 'noopener' }, 'Join in Teams') : el('span', 'mt-muted', 'No Teams link');
         const actions = h('td', { class: 'mt-actions' }, join);
@@ -94,8 +94,9 @@
         }
         body.append(h('tr', {},
           h('td', { class: 'mt-time' }, niceTime(b.time)),
-          h('td', {}, b.rowId ? h('a', { href: `/student?id=${encodeURIComponent(b.rowId)}` }, b.name) : h('span', {}, b.name, el('small', 'mt-unmatched', 'Not matched to a student yet'))),
-          h('td', {}, b.university || '-'), h('td', {}, b.course || '-'), h('td', { class: 'mt-nowrap' }, b.mock ? `${b.mock} of 4` : '-'),
+          h('td', { class: 'mt-who' }, b.rowId ? h('a', { href: `/student?id=${encodeURIComponent(b.rowId)}` }, b.name) : el('span', '', b.name),
+            b.rowId ? el('small', 'mt-sub', [b.university, b.course].filter(Boolean).join(' | ') || 'No University yet') : el('small', 'mt-unmatched', 'Not matched to a student yet')),
+          h('td', { class: 'mt-nowrap' }, b.mock ? `${b.mock} of 4` : '-'),
           ...(withOwner ? [h('td', {}, b.owner || '-')] : []),
           actions));
       });
@@ -195,6 +196,8 @@
           err.textContent = e.message;
         }
       });
+      body.addEventListener('input', () => { err.textContent = ''; });
+      body.addEventListener('click', (e) => { if (e.target.closest('.mt-seg button')) err.textContent = ''; });
       body.append(err, h('div', { class: 'p-bar mt-ask-bar' }, later, save));
     }).then((r) => {
       if (r === 'saved') { toast('Saved on the student\'s card.'); draw(); askNext(0); }
@@ -251,8 +254,8 @@
     const ahead = h('select', { class: 'p-input', id: 'mtAhead', onchange: (e) => { state.ahead = Number(e.target.value); } }, ...AHEAD.map(([v, l]) => h('option', { value: String(v), ...(v === state.ahead ? { selected: true } : {}) }, l)));
     const notice = h('select', { class: 'p-input', id: 'mtNotice', onchange: (e) => { state.notice = Number(e.target.value); } }, ...NOTICE.map(([v, l]) => h('option', { value: String(v), ...(v === state.notice ? { selected: true } : {}) }, l)));
     rules.append(el('h2', '', 'Booking rules'),
-      h('label', { class: 'mt-inline', for: 'mtAhead' }, 'Students can book up to', ahead, 'ahead'),
-      h('label', { class: 'mt-inline', for: 'mtNotice' }, 'Book, change or cancel at least', notice, 'before'),
+      h('label', { class: 'mt-rule', for: 'mtAhead' }, el('span', '', 'How far ahead students can book'), ahead),
+      h('label', { class: 'mt-rule', for: 'mtNotice' }, el('span', '', 'Last time to book, change or cancel, before the mock'), notice),
       el('p', 'mt-hint', 'A slot that is booked disappears for everyone else.'));
     side.append(one, rules);
     grid.append(side);

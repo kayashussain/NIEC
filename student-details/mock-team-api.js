@@ -36,20 +36,22 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   // The student with this email or phone, in the newest intake first (Mock Stage first), with the next mock not held yet (0 when all
   // four are held).
   const phoneKey = (v) => { const d = text(v).replace(/\D/g, ''); return d.length >= 7 ? d.slice(-10) : ''; };
-  function matchStudent(email, phone) {
+  // The review of 22 Nov 2026: only by the email (a phone alone could be anyone's), and only a Mock Stage student of the newest intake,
+  // the students the Mock Team has. Nothing about the student is ever shown on the open page; a student who already has all four mocks
+  // is booked as not matched, so the page never tells whether someone is on the sheet.
+  function matchStudent(email) {
     const e = text(email).toLowerCase();
-    const p = phoneKey(phone);
-    const hits = [];
-    for (const { sheet, row } of portal.rowIndex().values()) {
-      if (!row || !row._id) continue;
-      const same = (e && text(row.EMAIL).toLowerCase() === e) || (p && phoneKey(row['CONTACT NUMBER']) === p);
-      if (same) hits.push({ sheet, row });
+    if (!e) return null;
+    const wb = portal.rowIndex();
+    const sheets = new Set([...wb.values()].map((x) => x.sheet));
+    const intake = Teams.newestSheet([...sheets].filter((x) => !x.hidden));
+    for (const { sheet, row } of wb.values()) {
+      if (!row || !row._id || sheet !== intake || text(row[STATUS]) !== 'Mock Stage' || text(row.EMAIL).toLowerCase() !== e) continue;
+      const n = [1, 2, 3, 4].find((k) => !text(row[`MOCK SCHEDULE ${k}`])) || 0;
+      if (!n) return null;
+      return { rowId: row._id, mock: n, university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']) };
     }
-    if (!hits.length) return null;
-    hits.sort((a, b) => (text(b.row[STATUS]) === 'Mock Stage') - (text(a.row[STATUS]) === 'Mock Stage'));
-    const { row } = hits[0];
-    const n = [1, 2, 3, 4].find((k) => !text(row[`MOCK SCHEDULE ${k}`])) || 0;
-    return { rowId: row._id, mock: n, university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']) };
+    return null;
   }
 
   // ---- emails ----
@@ -137,7 +139,8 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       .sort((a, b) => bookings.startOf(a) - bookings.startOf(b)).map((b) => viewOf(b, access !== 'own'));
     // The window after a mock: only the person's own mocks (Admin answers from a booking of their own too).
     const waiting = data.bookings.filter((b) => b.owner === user.id && b.status === 'booked' && !b.answer && bookings.startOf(b) <= t)
-      .sort((a, b) => bookings.startOf(a) - bookings.startOf(b)).map((b) => viewOf(b, false));
+      .sort((a, b) => bookings.startOf(a) - bookings.startOf(b)).map((b) => viewOf(b, false))
+      .map((v) => (v.rowId && (access === 'all' || visible.has(v.rowId)) ? v : { ...v, rowId: '' })); // not one of theirs: the window asks who it was
     // The latest answer of each student, and who has a mock booked to come.
     const last = new Map();
     const comingFor = new Set();
@@ -184,13 +187,15 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const feedback = String(body.feedback || '').trim();
     if (!feedback) return { status: 400, error: 'Write the feedback.' };
     if (!RESULTS.includes(body.result)) return { status: 400, error: 'Choose the result.' };
-    const rowId = b.rowId || text(body.rowId);
+    const sees = (id) => Teams.isAdmin(req.user) || portal.visibleStudents(req.user).some(({ row }) => row._id === id);
+    // A booking matched to a student this person cannot see (moved on, another intake) is given to the student chosen in the window.
+    const rowId = b.rowId && sees(b.rowId) ? b.rowId : text(body.rowId);
     if (!rowId) return { status: 400, error: 'Choose the student this mock was with.' };
     const found = portal.rowIndex().get(rowId);
     if (!found) return { status: 404, error: 'That student is no longer on the sheet.' };
-    if (!Teams.isAdmin(req.user) && !portal.visibleStudents(req.user).some(({ row }) => row._id === rowId)) return { status: 403, error: 'That student is not one of your students.' };
+    if (!sees(rowId)) return { status: 403, error: 'That student is not one of your students.' };
     const empty = (n) => !text(found.row[`MOCK SCHEDULE ${n}`]);
-    const n = b.mock && empty(b.mock) ? b.mock : [1, 2, 3, 4].find(empty);
+    const n = [1, 2, 3, 4].find(empty); // always the first mock not recorded, so the numbers never skip one
     if (!n) return { status: 400, error: 'All four mocks are already recorded for this student. Correct them on the student card.' };
     const out = portal.writeCardColumns(req, rowId, { [`MOCK SCHEDULE ${n}`]: b.day, [`FEEDBACK ${n}`]: feedback });
     if (out.error) return { status: out.status || 400, error: out.error };
@@ -204,7 +209,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
 
   // ---- rate limit for the page without a login ----
   const tries = new Map(); // ip -> [times]
-  function tooMany(req, max = 20) {
+  function tooMany(req, max = 8) {
     const ip = clientIp(req) || 'unknown';
     const t = Date.now();
     const list = (tries.get(ip) || []).filter((x) => t - x < 3600000);
@@ -220,7 +225,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const p = bookings.person(b.owner);
     return {
       status: b.status, day: b.day, time: b.time, dayLabel: bookings.niceDay(b.day), timeLabel: bookings.niceTime(b.time), minutes: b.minutes,
-      name: b.name, with: p.shown || 'The Mock Team', teams: b.status === 'booked' ? p.teams : '', university: b.university || '', course: b.course || '', mock: b.mock || 0,
+      name: b.name, with: p.shown || 'The Mock Team', teams: b.status === 'booked' ? p.teams : '', // nothing from the student's record
       canChange: bookings.changeable(b), slug: p.slug,
     };
   };
@@ -243,6 +248,10 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       if (tooMany(req)) { sendJSON(res, 429, { error: 'Too many tries. Please wait a while and try again.' }); return true; }
       const body = await bodyOf(req, res);
       if (!body) return true;
+      // At most two bookings to come for one email address, so the page cannot fill a calendar or send many emails to one address.
+      const mail = text(body.email).toLowerCase();
+      const t0 = now().getTime();
+      if (mail && bookings.all().bookings.filter((x) => x.status === 'booked' && x.email === mail && bookings.endOf(x) > t0).length >= 2) { sendJSON(res, 400, { error: 'You already have two mock interviews booked. Change or cancel one from its email first.' }); return true; }
       const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteUrlOf(req));
       if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;

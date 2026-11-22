@@ -33,8 +33,10 @@ html, body { margin: 0; }
 .bk-time { min-height: 46px; border-radius: 8px; border: 1px solid #6f6f6f; background: #f7f7f7; color: #0050aa; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color .1s linear; }
 .bk-time:hover { background: #e2e2e2; }
 .bk-time.is-on { border-color: #0071e3; background: #0071e3; color: #fff; }
-.bk-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 14px; padding-top: 18px; border-top: 1px solid #b8b8b8; }
-.bk-form:has(> .bk-go:only-child) { grid-template-columns: auto; justify-content: start; }
+/* 🔴 CSS CHANGED (2026-11-22): the booking form after the review | from: the Book button beside the Phone box | to: name, email and phone in one row, the Book button on its own line at the right */
+.bk-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px; padding-top: 18px; border-top: 1px solid #b8b8b8; }
+.bk-form > .bk-go { grid-column: 1 / -1; justify-self: end; }
+.bk-form:has(> .bk-go:only-child) > .bk-go { justify-self: start; }
 .bk-form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #333; }
 .bk-form label b { color: #b42318; }
 .bk-form input { min-height: 44px; padding: 0 12px; border: 1px solid #6f6f6f; border-radius: 8px; background: #f7f7f7; color: #000; font: inherit; font-size: 16px; }

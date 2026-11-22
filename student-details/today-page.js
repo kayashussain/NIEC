@@ -311,7 +311,8 @@
       // A line about a Medical task is fixed by finishing that task; everything else on the student's profile.
       const onTask = m.lines.every((ln) => ln.taskId) ? (tasksNow.find((t) => t.id === m.lines[0].taskId) || null) : null;
       // The Mock Team's lines say what to do (Write feedback, Answer, Copy booking link) and where (the owner, 22 Nov 2026).
-      const act = (m.lines.find((ln) => ln.action && /^\/[\w-]/.test(ln.action.href || '')) || {}).action;
+      const acts = m.lines.filter((ln) => ln.action && /^\/[\w-]/.test(ln.action.href || '')).map((ln) => ln.action);
+      const act = acts.find((a) => a.label === 'Answer') || acts[0]; // a mock to answer comes first
       const fix = act ? h('a', { class: 'btn btn-primary tdx-fix', href: act.href }, act.label)
         : onTask ? h('button', { class: 'btn btn-primary tdx-fix', type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
         : h('a', { class: 'btn btn-primary tdx-fix', href: '/student?id=' + encodeURIComponent(m.id) }, 'Fix it');

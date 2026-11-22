@@ -227,7 +227,8 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       if (!isSetUp(p)) return { error: 'This booking link is not open yet.' };
       const day = String(input.day || '');
       const time = String(input.time || '');
-      const name = text(input.name, 80);
+      // Letters, spaces and . ' - only: the name is in the email's greeting, where a link or an address must never appear.
+      const name = text(String(input.name || '').replace(/[^\p{L}\p{M} .'-]/gu, ' '), 80);
       const email = text(input.email, 120).toLowerCase();
       const phone = text(input.phone, 30);
       if (!name) return { error: 'Please write your name.' };
@@ -236,8 +237,8 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       const free = freeSlots(ownerId, input.except || '');
       if (!DAY.test(day) || !free.days.some((d) => d.day === day && d.times.some((t) => t.time === time))) return { error: 'That time is no longer free. Please pick another one.' };
       const data = load();
-      const found = match(email, phone) || null;
-      if (found && found.mock === 0) return { error: 'All four mock interviews are already done. Please contact the consultancy.' };
+      const m = match(email, phone) || null;
+      const found = m && m.mock ? m : null; // all four held: booked as not matched (the page never says why)
       // Two bookings of the same student waiting at once: the second takes the next number.
       const waiting = found ? data.bookings.filter((b) => b.rowId === found.rowId && b.status === 'booked' && !b.answer && b.id !== input.except).map((b) => b.mock) : [];
       let mock = found ? found.mock : 0;

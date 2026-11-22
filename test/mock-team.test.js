@@ -71,7 +71,12 @@ test('bookings: free slots, booking, the mock number, cancelling, reminders and 
   assert.strictEqual(B.byToken('nonsense'), null);
   assert.ok(B.cancel(two.booking.id, 'Sita').booking);
   assert.ok(B.freeSlots('u1').days[0].times.some((t) => t.time === '12:00'), 'a cancelled slot is free again');
-  assert.match(B.book('u1', { day: '2026-11-22', time: '12:00', name: 'X', email: 'x@example.com' }, () => ({ rowId: 'r9', mock: 0 })).error, /four mock/);
+  const full = B.book('u1', { day: '2026-11-22', time: '12:00', name: 'X Y', email: 'x@example.com' }, () => ({ rowId: 'r9', mock: 0 }));
+  assert.strictEqual(full.booking.rowId, '', 'all four held: booked as not matched, the page never says why');
+  B.cancel(full.booking.id, 'test');
+  const odd = B.book('u1', { day: '2026-11-22', time: '12:00', name: 'Win http://evil.example', email: 'y@example.com' }, () => null);
+  assert.ok(!/[:/]/.test(odd.booking.name), 'no link or address in a name');
+  B.cancel(odd.booking.id, 'test');
   // Reminders: the booking 1.5 hours away gets the day-before one marked already, then the hour-before one when the time comes.
   assert.deepStrictEqual(B.dueReminders(), []);
   now = new Date('2026-11-22T04:50:00Z'); // 10:35, 55 minutes before
@@ -179,7 +184,8 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   const d = open.json.days[1];
   const booked = await student('POST', '/api/book/bikram', { day: d.day, time: d.times[0].time, name: 'Sita Example', email: 'SITA@example.com', phone: '' });
   assert.strictEqual(booked.status, 200, JSON.stringify(booked.json));
-  assert.strictEqual(booked.json.booking.university, 'Test University', 'matched by email');
+  assert.strictEqual(booked.json.booking.university, undefined, 'the open page never shows the student\'s record');
+  assert.ok(!JSON.stringify(booked.json).includes('Test University'));
   assert.strictEqual(booked.json.booking.teams, 'https://teams.live.com/meet/9300000000000');
   assert.strictEqual((await student('POST', '/api/book/bikram', { day: d.day, time: d.times[0].time, name: 'Ram', email: 'ram@example.com' })).status, 400, 'the slot is taken');
   const view = await student('GET', `/api/booking/${booked.json.token}`);
@@ -190,6 +196,11 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   let page = (await mock('GET', '/api/bookings')).json;
   assert.strictEqual(page.upcoming.length, 1);
   assert.strictEqual(page.upcoming[0].mock, 1);
+  assert.strictEqual(page.upcoming[0].university, 'Test University', 'matched by email, shown to the Mock Team only');
+  const byPhone = await student('POST', '/api/book/bikram', { day: d.day, time: d.times[1].time, name: 'Someone', email: 'someone@example.com', phone: '9800000001' });
+  assert.strictEqual(byPhone.status, 200);
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'mock-bookings.json'), 'utf8')).bookings.find((b) => b.email === 'someone@example.com').rowId, '', 'a phone alone matches nobody');
+  await student('POST', `/api/booking/${byPhone.json.token}/cancel`, {});
   const id = page.upcoming[0].id;
   assert.strictEqual((await mock('POST', `/api/bookings/${id}/answer`, { joined: true, feedback: 'x', result: 'ready' })).status, 400);
 
@@ -248,6 +259,6 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   assert.ok(backups.length >= 1);
   const gz = fs.readdirSync(path.join(dir, 'daily-backups')).find((f) => /^niec-manual-.*\.json\.gz$/.test(f)); // the copy made just now
   const snap = JSON.parse(require('node:zlib').gunzipSync(fs.readFileSync(path.join(dir, 'daily-backups', gz))).toString('utf8'));
-  assert.strictEqual(snap.mockBookings.bookings.length, 1);
+  assert.strictEqual(snap.mockBookings.bookings.filter((b) => b.status === 'booked').length, 1);
   assert.strictEqual(snap.mockGuidelines.files.length, 1);
 });

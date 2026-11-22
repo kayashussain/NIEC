@@ -1393,12 +1393,13 @@ function createPortalApi({
           const d = dateOf(row[`MOCK SCHEDULE ${n}`]);
           if (d && d <= today && !text(row[`FEEDBACK ${n}`])) missOne(row, sheet, `Feedback ${n} is missing (Mock ${n} was on ${niceDay(d)}).`, { action: { label: 'Write feedback', href: `/student?id=${id}` } });
         }
-        if (![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`])) && !coming.has(row._id)) missOne(row, sheet, 'Mock Schedule 1 is missing: no mock held or booked yet.', { action: { label: 'Copy booking link', href: '/bookings' } });
+        if (![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`])) && !coming.has(row._id)) missOne(row, sheet, 'Mock Schedule 1 is missing: no mock held or booked yet.', { action: { label: 'Booking link', href: '/bookings' } });
       }
       if (mt) {
         const rows = rowIndex();
         asked.forEach((b) => {
-          const line = `Did the student join? Not answered (${b.mock ? `Mock ${b.mock}, ` : ''}${niceDay(b.day)}, ${b.time}).`;
+          const hm = b.time.split(':').map(Number);
+          const line = `Did the student join? Not answered (${b.mock ? `Mock ${b.mock}, ` : ''}${niceDay(b.day)}, ${hm[0] % 12 || 12}:${String(hm[1]).padStart(2, '0')} ${hm[0] < 12 ? 'AM' : 'PM'}).`;
           const found = b.rowId && rows.get(b.rowId);
           if (found) missOne(found.row, found.sheet, line, { action: { label: 'Answer', href: '/bookings' } });
           else missing.set(`booking:${b.id}`, { id: '', name: b.name, stage: 'Not matched to a student yet', intake: '', lines: [{ text: line, action: { label: 'Answer', href: '/bookings' } }] });

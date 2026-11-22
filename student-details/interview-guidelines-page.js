@@ -36,7 +36,11 @@
     };
     search.addEventListener('input', () => { q = search.value; fill(); });
     fill();
-    card.append(search, el('p', 'mt-hint', `${data.universities.length} Universities, from your Universities list`), list);
+    const count = el('p', 'mt-hint');
+    const say = () => { const n = list.querySelectorAll('.mt-uni').length; count.textContent = q.trim() ? `${n} of ${data.universities.length} Universities` : `${data.universities.length} Universities, from your Universities list`; };
+    search.addEventListener('input', say);
+    say();
+    card.append(search, count, list);
     return card;
   }
   function uniCard() {

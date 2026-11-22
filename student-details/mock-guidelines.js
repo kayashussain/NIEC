@@ -4,7 +4,7 @@
 // title), and anyone who may open the page downloads it. Admin and the Mock Team upload and remove; the Manager looks.
 //
 // The list is mock-guidelines.json and the files are in guideline-files/ in the data folder (never in git), each stored under its own
-// id (never under the name typed). Both are copied into the daily backup.
+// id (never under the name typed). The list is copied into the daily backup; the files stay on the server, as agreement files do.
 
 const fs = require('fs');
 const path = require('path');

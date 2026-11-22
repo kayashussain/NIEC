@@ -37,7 +37,7 @@
     const byDay = new Map(days.map((d) => [d.day, d]));
     let chosenDay = days[0] ? days[0].day : '';
     let chosenTime = '';
-    let month = chosenDay ? chosenDay.slice(0, 7) : new Date().toISOString().slice(0, 7);
+    let month = chosenDay ? chosenDay.slice(0, 7) : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kathmandu' }).slice(0, 7);
     const wrap = h('div', { class: 'bk-picker' });
     const cal = h('section', { class: 'bk-cal', 'aria-label': 'Pick a day' });
     const times = h('section', { class: 'bk-times', 'aria-label': 'Pick a time' });
@@ -89,7 +89,7 @@
       foot.append(
         h('label', { for: 'bkName' }, h('span', {}, 'Your name ', h('b', { 'aria-hidden': 'true' }, '*')), name),
         h('label', { for: 'bkEmail' }, h('span', {}, 'Email ', h('b', { 'aria-hidden': 'true' }, '*')), email),
-        h('label', { for: 'bkPhone' }, h('span', {}, 'Phone'), phone));
+        h('label', { for: 'bkPhone' }, h('span', {}, 'Phone (optional)'), phone));
     }
     foot.append(go);
     wrap.append(foot, msg);
