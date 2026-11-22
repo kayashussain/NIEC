@@ -91,7 +91,7 @@ restart to switch it off.
 
 **Automatic deploy** (`.github/workflows/deploy.yml`) puts every `master` that passes the tests on the live cPanel server by itself, so a refresh shows the
 change. Set these secrets in GitHub (Settings, Secrets and variables, Actions): `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` (a key made only for this,
-authorised in cPanel under SSH Access), `DEPLOY_PATH` (the cloned repo folder on the server) and optionally `DEPLOY_PORT`. Delete `DEPLOY_SSH_KEY` to switch it
+authorised in cPanel under SSH Access), `DEPLOY_PATH` (the cloned repo folder on the server), and if the key has a password, `DEPLOY_SSH_PASSPHRASE` (typed only into GitHub, never into a chat); optionally `DEPLOY_PORT`. Delete `DEPLOY_SSH_KEY` to switch it
 off. The data folders are outside the repo, so a deploy never touches a student.
 
 ## Claude Strategy Advisor connector (read-only)

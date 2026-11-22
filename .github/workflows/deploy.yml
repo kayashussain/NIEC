@@ -8,6 +8,7 @@
 #   DEPLOY_SSH_KEY   a private SSH key made only for this, whose public half is authorised in cPanel (SSH Access)
 #   DEPLOY_PATH      the folder of the cloned repo on the server, for example /home/USER/uk-student-niec
 #   DEPLOY_PORT      optional, the SSH port (22 when empty)
+#   DEPLOY_SSH_PASSPHRASE   optional, the key's password if it has one (cPanel often insists on one)
 name: Deploy to the live server
 
 on:
@@ -32,6 +33,7 @@ jobs:
           KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           APP_PATH: ${{ secrets.DEPLOY_PATH }}
           PORT: ${{ secrets.DEPLOY_PORT }}
+          PASSPHRASE: ${{ secrets.DEPLOY_SSH_PASSPHRASE }}
           SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           if [ -z "$HOST" ] || [ -z "$USER_NAME" ] || [ -z "$KEY" ] || [ -z "$APP_PATH" ]; then
@@ -42,6 +44,15 @@ jobs:
           printf '%s\n' "$KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${PORT:-22}" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # A key with a password is unlocked once into an agent (the password is never written to a file or printed).
+          ID_OPT=(-i ~/.ssh/deploy_key)
+          if [ -n "$PASSPHRASE" ]; then
+            eval "$(ssh-agent -s)" > /dev/null
+            printf '#!/bin/sh\nprintf "%s\\n" "$DEPLOY_PASSPHRASE"\n' '%s' > ~/.ssh/askpass
+            chmod 700 ~/.ssh/askpass
+            DEPLOY_PASSPHRASE="$PASSPHRASE" SSH_ASKPASS=~/.ssh/askpass SSH_ASKPASS_REQUIRE=force DISPLAY=none ssh-add ~/.ssh/deploy_key < /dev/null
+            ID_OPT=()
+          fi
           # The tested commit goes live: fetch it, reset the code to it (data is outside the repo), install what the server needs, restart.
-          ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" -o BatchMode=yes "$USER_NAME@$HOST" \
+          ssh "${ID_OPT[@]}" -p "${PORT:-22}" -o BatchMode=yes "$USER_NAME@$HOST" \
             "set -e; cd '$APP_PATH'; git fetch origin master; git reset --hard '$SHA'; (cd student-details && npm install --omit=dev --no-audit --no-fund); mkdir -p student-details/tmp; touch student-details/tmp/restart.txt; echo \"Live is now at \$(git rev-parse --short HEAD)\""
