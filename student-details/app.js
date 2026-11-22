@@ -143,10 +143,12 @@
   const isViewOnly = () => Teams.isReadOnly(me);
   let scrolledToYours = false;
   const isBranchAccount = () => Boolean(me && (me.departments || []).some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source));
-  // The Application Team changes a student on the student card, not in the sheet (the owner, 22 Nov 2026). Only Status stays
-  // open, because moving a student on (Application Stage to Mock Stage) is done there and nowhere else.
+  // The Application Team changes a student on the student card, not in the sheet (the owner, 22 Nov 2026). Status stays open
+  // (moving a student on to Mock Stage is done there and nowhere else), and so do the details that are only on the sheet.
   const sheetLocked = () => Boolean(me && Teams.ownTeamApplication && Teams.ownTeamApplication(me));
-  const canEditCol = (col, row = null) => !sheetLocked() && Teams.canEdit(me, col, row); // row: a student the person's team added can have its basics filled in
+  // Receiving Partner, Language test, NOC and NOC Number are only on the sheet, so the Application Team changes them there.
+  const sheetOpen = (col) => !sheetLocked() || (Teams.APPLICATION_SHEET_COLUMNS || []).includes(col);
+  const canEditCol = (col, row = null) => sheetOpen(col) && Teams.canEdit(me, col, row); // row: a student the person's team added can have its basics filled in
   let saving = false;
   let saveQueued = false;
   let loginEnded = false; // a save was refused because the login ran out (see NiecSession.holdWhile)
@@ -1166,7 +1168,7 @@
       th.style.width = width + 'px';
       tableWidth += width;
       if (col === sortCol) th.classList.add(sortDir === 1 ? 'sorted' : 'sorted-desc');
-      if (isTeam() && !isBranchAccount() && canEditCol(col)) th.classList.add('col-yours'); // the columns this team fills in
+      if (isTeam() && !isBranchAccount() && !sheetLocked() && canEditCol(col)) th.classList.add('col-yours'); // the columns this team fills in
 
       const label = document.createElement('span');
       label.className = 'th-label';
@@ -1952,7 +1954,7 @@
     const td = cellTd(rowIdx, col);
     if (!td || !rows[rowIdx] || CALC_COLS[col]) return;
     // The Application Team still moves a student on with Status (Application Stage to Mock Stage): the student card has no stage control.
-    if (sheetLocked() && col !== 'APPLICATION STATUS') { flashStatus('Open the student card to change a detail'); return; }
+    if (!sheetOpen(col) && col !== 'APPLICATION STATUS') { flashStatus('Open the student card to change a detail'); return; }
     if (!canEditCol(col, rows[rowIdx]) && col !== 'APPLICATION STATUS') { flashStatus(isViewOnly() ? 'This account is view only' : "Your team can't change this column"); return; }
     const busy = peerOnCell(rowIdx, col, isTextCell(col));
     if (busy) { warnPeerOnCell(busy); return; }

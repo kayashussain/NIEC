@@ -510,10 +510,10 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
       && s.rows.every((r) => r && typeof r === 'object' && !Array.isArray(r)))) return { status: 400, body: { error: 'invalid payload' } };
   const worked = teamChanges(req.user, baseView, mineView, CALCULATED_COLUMNS);
   const { adds, deletes, errors } = worked;
-  // The Application Team changes a student only on the student card (the owner, 22 Nov 2026): from the sheet only a row's colour and its
-  // Status (to move a student on) are kept (with rows added and deleted); any other cell, such as a value the page tidied by itself, is left as it is, never refused.
+  // The Application Team changes a student only on the student card (the owner, 22 Nov 2026): from the sheet only a row's colour, its
+  // Status (to move a student on) and the details that are only on the sheet (Teams.APPLICATION_SHEET_COLUMNS) are kept (with rows added and deleted); any other cell, such as a value the page tidied by itself, is left as it is, never refused.
   // The card's own saves (portal-api setColumns) come here too and are not touched (`fromSheet` is false for them).
-  const changes = fromSheet && ownTeamApplication(req.user) ? worked.changes.filter((c) => c.col === '_color' || c.col === 'APPLICATION STATUS') : worked.changes;
+  const changes = fromSheet && ownTeamApplication(req.user) ? worked.changes.filter((c) => c.col === '_color' || c.col === 'APPLICATION STATUS' || APPLICATION_SHEET_COLUMNS.includes(c.col)) : worked.changes;
   if (errors.length) {
     activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: errors });
     return { status: 403, body: { error: errors.join(' ') } };
@@ -1062,7 +1062,7 @@ function b2bPartnerNames() {
 }
 
 // Whether a person's own team is the Application Team: the one rule in shared/teams.js (the menu in shared/header.js keeps the same).
-const { ownTeamApplication, ownTeamFollowup } = require('../shared/teams');
+const { ownTeamApplication, ownTeamFollowup, APPLICATION_SHEET_COLUMNS } = require('../shared/teams');
 
 // Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Universities and
 // Partner Universities, each on its own). The data as it is now is saved first, so a restore can be undone.

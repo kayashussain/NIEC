@@ -76,8 +76,9 @@ The Application Team's side of ISR is finished and approved as it is on 22 Nov 2
 It must stay exactly the same until the owner asks for a change and approves it.
 
 - **What is frozen:** everything a person whose own team is Application sees and uses (`Teams.ownTeamApplication`): the menu,
-  Today (Today, Later, Missing details, the kinds of task, the task cards), All Students as they see it (look only, Status open,
-  the four numbers, nothing at the top or under the sheet), the student card (notes of every change, Undo and Redo), Universities
+  Today (Today, Later, Missing details, the kinds of task, the task cards), All Students as they see it (a detail on the student card is changed on the card,
+  Student Source included, except a branch Source, which stays Admin's; only Status, Receiving Partner, Language test, NOC and NOC Number are changed on the sheet; Medical Report
+  and Remarks stay locked; the four numbers; no blue line; nothing at the top or under the sheet), the student card (notes of every change, Undo and Redo), Universities
   (Share, Apply now), and the server rules behind them (`teamSave` with `fromSheet`, `appReach`, the page redirects, `noteCardChanges`).
 - **Never change any of it on your own.** No new feature, button, tab, number, message, hint, help text, paragraph or explanation is
   added, and nothing is moved, renamed, restyled or removed, unless the owner asked for exactly that.

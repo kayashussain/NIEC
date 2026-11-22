@@ -411,7 +411,9 @@ test('on the real server: cards follow the rules of the sheet, messages are reco
   assert.strictEqual((await app('GET', '/api/students/search?q=9800000001')).json.students[0].name, 'Sita Sharma');
 
   // The Student Source is chosen on the card (it is no longer a column of the sheet), with the rules of the sheet.
-  assert.strictEqual((await app('POST', `/api/cards/${sitaId}/source`, { source: 'Events' })).status, 403, 'a team cannot change the source of a student it did not add');
+  // The Application Team changes the Source on the card (the owner, 22 Nov 2026), but never to a branch: Admin does that.
+  assert.strictEqual((await app('POST', `/api/cards/${sitaId}/source`, { source: 'Chitwan Branch' })).status, 403, 'only Admin sets a branch as the source');
+  assert.strictEqual((await app('POST', `/api/cards/${sitaId}/source`, { source: 'Visitor' })).status, 200, 'the Application Team changes the source on the card');
   assert.strictEqual((await admin('POST', `/api/cards/${sitaId}/source`, { source: 'Made up' })).status, 400);
   assert.strictEqual((await admin('POST', `/api/cards/${sitaId}/source`, { source: 'Events' })).status, 200);
   assert.strictEqual((await admin('GET', `/api/cards/${sitaId}`)).json.student.source, 'Events');

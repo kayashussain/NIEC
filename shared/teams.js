@@ -72,6 +72,10 @@
     DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, start: 'Inquiry', statuses: [], editable: new Set(), source: `${name} Branch` };
   });
   const SOURCE = 'STUDENT SOURCE';
+  // The Application Team's details that are only on the sheet, not on the student card, so they are changed on the sheet (the owner,
+  // 22 Nov 2026: "if the information is in the student card it is changed from the student card, if it is in the sheet and not the
+  // card it is changed from the sheet"). Medical Report and Remarks stay locked (the owner, 22 Nov 2026).
+  const APPLICATION_SHEET_COLUMNS = ['RECEIVING PARTNER', 'LANGUAGE TEST DATE', 'NOC', 'NOC NUMBER'];
 
   // The stage moves a department may make. Follow-up can't move students on.
   const MOVES = [
@@ -191,6 +195,9 @@
     // Only Admin can change a student's source (Branch, Head Office, ...). Others may only set it once, while
     // it is still blank, on a student their own department added.
     if (col === SOURCE && row) {
+      // The Application Team changes the Student Source on the student card of a student it has (the owner, 22 Nov 2026).
+      // A branch student's Source stays Admin's (the branch finds its students by it).
+      if (ownTeamApplication(x) && ['Application Stage', 'Mock Stage'].includes(String(row[STATUS] || '').trim()) && !BRANCH_LIST.some((n) => `${n} Branch` === String(row[SOURCE] || '').trim())) return true;
       // A Manager who works in a team still only changes that team's stages (they see every student, so this matters here).
       if (team.manager && !team.statuses.has(String(row[STATUS] || '').trim())) return false;
       return isBlank(row[SOURCE]) && team.departments.includes(row._addedByTeam) && NEW_STUDENT_COLUMNS.includes(col);
@@ -422,7 +429,7 @@
   }
 
   return {
-    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup,
+    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, APPLICATION_SHEET_COLUMNS, ownTeamFollowup,
     who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };

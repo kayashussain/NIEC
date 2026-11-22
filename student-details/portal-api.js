@@ -455,6 +455,8 @@ function createPortalApi({
   // sheet: Admin any time; a team only while it is blank on a student its own team added (shared/teams.js).
   function setSource(req, found, value) {
     if (value && !Fields.STORED_SOURCES.includes(value) && !Fields.isBranchValue(value)) return { error: 'That is not one of the sources.', status: 400 };
+    // The Application Team never moves a student to a branch (Admin does; the branch would then find the student by it).
+    if (value && Fields.isBranchValue(value) && !Teams.isAdmin(req.user) && Teams.ownTeamApplication(req.user)) return { error: 'Only Admin sets a branch as the source.', status: 403 };
     const done = setColumns(req, found, { 'STUDENT SOURCE': value });
     return done.error ? done : { source: value };
   }

@@ -561,6 +561,9 @@ test('only Admin can change an existing student source', () => {
     assert.ok(!Teams.canEdit({ role: 'staff', departments: [d] }, src, row), d);
   });
   assert.ok(!Teams.canEdit({ role: 'manager', departments: ['application'] }, src, row));
+  // the Application Team changes a Source that is not a branch (the owner, 22 Nov 2026); a branch student's Source stays Admin's (above)
+  assert.ok(Teams.canEdit({ role: 'staff', departments: ['application'] }, src, { ...row, [src]: 'Social Media' }));
+  assert.ok(!Teams.canEdit({ role: 'staff', departments: ['mock'] }, src, { ...row, [src]: 'Social Media' }));
   // a blank source on a student the department just added can still be set once
   assert.ok(Teams.canEdit({ role: 'staff', departments: ['application'] }, src, { ...row, [src]: '' }));
 });

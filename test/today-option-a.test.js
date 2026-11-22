@@ -134,6 +134,23 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   const rowAfter = (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id);
   assert.strictEqual(rowAfter.EMAIL, 'sarita.demo@example.com', 'a value typed on the sheet by the Application Team is not kept');
   assert.strictEqual(rowAfter._color, 'yellow', 'the row colour is kept');
+  // The details only on the sheet are changed on the sheet; Medical Report and Remarks stay locked (the owner, 22 Nov 2026).
+  {
+    const s3 = (await app('GET', '/api/data')).json;
+    s3.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) Object.assign(r, { 'RECEIVING PARTNER': 'Head Office', 'NOC NUMBER': 'NOC-123', NOC: 'Yes', 'LANGUAGE TEST DATE': '2026-12-01', 'MEDICAL REPORT': 'Received', REMARKS: 'typed' }); }));
+    const r3 = await app('POST', '/api/data', { baseRevision: s3.revision, sheets: s3.sheets, activeSheetId: s3.activeSheetId });
+    assert.strictEqual(r3.status, 200, JSON.stringify(r3.json));
+    const row3 = (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id);
+    assert.deepStrictEqual([row3['RECEIVING PARTNER'], row3['NOC NUMBER'], row3['LANGUAGE TEST DATE']], ['Head Office', 'NOC-123', '2026-12-01']);
+    assert.notStrictEqual(row3.REMARKS, 'typed', 'Remarks stays locked');
+    assert.notStrictEqual(row3['MEDICAL REPORT'], 'Received', 'Medical Report stays locked');
+    // The Student Source is changed on the student card.
+    const src = await app('POST', `/api/cards/${id}/source`, { source: 'Social Media' });
+    assert.strictEqual(src.status, 200, JSON.stringify(src.json));
+    const srcRow = (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id)['STUDENT SOURCE'];
+    assert.strictEqual(srcRow, 'Social Media', JSON.stringify(src.json && src.json.source));
+    assert.match(await notesOf(id), /Student Source: "Visitor" \u2192 "Social Media"/);
+  }
   // Status stays open: the Application Team moves a student on to Mock Stage from the sheet (the card has no stage control).
   const sheet2 = (await app('GET', '/api/data')).json;
   sheet2.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) r['APPLICATION STATUS'] = 'Mock Stage'; }));
