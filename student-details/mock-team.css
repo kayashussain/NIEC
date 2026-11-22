@@ -1,0 +1,120 @@
+/* The Mock Team's own pages (the owner, 22 Nov 2026): Bookings and Interview guidelines. Built on the shared page (portal.css) and the
+   one card of every page (theme.css, "One system on every page"); only what those pages need beyond them is here, in the ISR colours
+   (CLAUDE.md): tiles #e2e2e2 with #b8b8b8 and 8px corners, boxes #f7f7f7 with a #6f6f6f line, text #000 and #333, the one blue #0071e3,
+   links #0050aa, orange #b85300 for something missing, green #1e8e4a for done. */
+/* 🔴 CSS CHANGED (2026-11-22): the Mock Team's Bookings and Interview guidelines pages (new file) | from: no such pages | to: Bookings: the booking link in a bar with a blue "Copy link" button; under it, side by side, "Upcoming mocks" (a table by day: time, student, University, course, which mock, a "Join in Teams" button, the next one blue) and two lists, "Ready for the final interview" and "Next mock to book"; Available slots: each day with its slots as start and end boxes, + and copy buttons, a small copy menu with the days to tick; Setup: four numbered steps (green tick when done); the window after a mock with two-choice switches; Interview guidelines: the Universities in a list at the left (the chosen one grey-filled), the chosen University's files at the right as grey tiles with their type, title, where they came from and Download */
+.mt-page { max-width: 1320px; }
+.mt-page .p-head h1 { font-family: inherit; font-size: 40px; line-height: 44px; font-weight: 700; letter-spacing: -.015em; }
+.mt-tabs { margin: 0; }
+.mt-hint { margin: 4px 0 0; color: #333; font-size: 14px; line-height: 20px; }
+.mt-note { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px; background: #e2e2e2; border: 1px solid #b8b8b8; color: #b85300; font-size: 14px; }
+.mt-empty { margin: 10px 0 0; color: #333; font-size: 15px; }
+.mt-muted { color: #333; font-size: 14px; }
+.mt-grid { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+.mt-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.mt-side > .p-card { margin: 0; }
+.mt-grid > .p-card { margin: 0; }
+.mt-page .p-card h2 { margin: 0; font-size: 21px; line-height: 25px; font-weight: 700; color: #000; }
+.mt-list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mt-count { min-width: 26px; padding: 1px 9px; border-radius: 999px; background: #e2e2e2; border: 1px solid #b8b8b8; font-size: 13px; text-align: center; }
+
+/* The booking link */
+.mt-linkbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px 22px; }
+.mt-linkbar-title { font-size: 17px; font-weight: 700; }
+.mt-linkbox { flex: 1 1 280px; min-width: 0; }
+.mt-linkbar-note { color: #333; font-size: 14px; }
+.mt-linkbar-missing { flex: 1; color: #b85300; font-size: 15px; }
+
+/* Upcoming mocks */
+.mt-table-wrap { overflow-x: auto; margin-top: 10px; }
+.mt-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.mt-table thead th { padding: 8px 10px 8px 0; text-align: left; color: #333; font-size: 13px; font-weight: 600; border-bottom: 1px solid #9a9a9a; white-space: nowrap; }
+.mt-table td { padding: 12px 10px 12px 0; border-bottom: 1px solid #b8b8b8; vertical-align: middle; }
+.mt-table tr.mt-day th { padding: 16px 0 6px; text-align: left; color: #333; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; border-bottom: 1px solid #b8b8b8; }
+.mt-table .mt-time { font-size: 17px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mt-table a { color: #0050aa; text-decoration: none; }
+.mt-table a:hover { text-decoration: underline; }
+.mt-table a.btn { color: #000; }
+.mt-table a.btn.btn-primary { color: #fff; }
+.mt-table a.btn:hover { text-decoration: none; }
+.mt-actions { white-space: nowrap; text-align: right; }
+.mt-nowrap { white-space: nowrap; }
+.mt-join { min-height: 36px; }
+.mt-cancel { margin-left: 12px; font-size: 14px; color: #333; }
+.mt-unmatched { display: block; color: #b85300; font-size: 13px; }
+.mt-person { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1px solid #b8b8b8; }
+.mt-person:first-of-type { margin-top: 8px; }
+.mt-person a { color: #0050aa; text-decoration: none; font-size: 16px; }
+.mt-person a:hover { text-decoration: underline; }
+.mt-person span { color: #333; font-size: 14px; }
+
+/* Available slots */
+.mt-slots-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.mt-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; font-size: 15px; }
+.mt-inline .p-input { width: auto; min-width: 110px; }
+.mt-days { display: flex; flex-direction: column; margin-top: 10px; }
+.mt-day-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid #b8b8b8; }
+.mt-day-name { padding-top: 9px; font-size: 16px; font-weight: 700; }
+.mt-day-slots { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 40px; }
+.mt-slot { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 4px; border: 1px solid #b8b8b8; border-radius: 8px; background: #e2e2e2; }
+.mt-slot .p-input { width: 118px; min-height: 34px; padding: 2px 8px; }
+.mt-to { color: #333; font-size: 14px; }
+.mt-day-tools { display: flex; gap: 6px; padding-top: 3px; }
+.mt-tool, .mt-x { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid #6f6f6f; border-radius: 8px; background: #f7f7f7; color: #000; font: inherit; font-size: 18px; line-height: 1; cursor: pointer; transition: background-color .1s linear; }
+.mt-x { width: 28px; height: 28px; border-color: transparent; background: transparent; color: #333; }
+.mt-tool:hover, .mt-x:hover { background: #e2e2e2; }
+.mt-tool svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.mt-copy-menu { position: fixed; z-index: 60; width: 240px; display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border: 1px solid #6f6f6f; border-radius: 10px; background: #f7f7f7; animation: isr-slide-down .24s cubic-bezier(.16, 1, .3, 1) both; }
+.mt-copy-menu small { color: #333; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.mt-check { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
+.mt-check input { width: 18px; height: 18px; accent-color: #0071e3; }
+.mt-add-date { display: flex; gap: 10px; margin-top: 12px; }
+.mt-add-date .p-input { flex: 1; }
+
+/* Setup */
+.mt-setup { max-width: 1000px; }
+.mt-step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; padding: 18px 0; border-top: 1px solid #b8b8b8; }
+.mt-step:first-of-type { margin-top: 14px; }
+.mt-step-n { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 14px; font-weight: 700; }
+.mt-step-n.is-done { background: #1e8e4a; }
+.mt-step h3 { margin: 4px 0 0; font-size: 17px; font-weight: 700; color: #000; text-transform: none; letter-spacing: -.01em; }
+.mt-step-body > .p-input { margin-top: 6px; width: 100%; }
+.mt-label { display: block; margin: 10px 0 6px; color: #333; font-size: 14px; }
+.mt-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.mt-three .p-input { width: 100%; }
+.mt-prefix { display: flex; align-items: center; border: 1px solid #6f6f6f; border-radius: 8px; background: #f7f7f7; padding-left: 12px; color: #333; font-size: 15px; }
+.mt-prefix .p-input { border: 0; background: transparent; flex: 1; min-width: 0; padding-left: 2px; }
+
+/* The window after a mock */
+.mt-ask { display: flex; flex-direction: column; gap: 14px; min-width: min(560px, 80vw); }
+.mt-ask-when { margin: 0; color: #333; font-size: 15px; }
+.mt-ask-row { display: flex; flex-direction: column; gap: 8px; }
+.mt-ask-label { font-size: 16px; font-weight: 700; color: #000; }
+.mt-ask-more { display: flex; flex-direction: column; gap: 10px; }
+.mt-ask-text { width: 100%; min-height: 120px; }
+.mt-ask-note { margin: 0; padding: 10px 14px; border-radius: 8px; background: #e2e2e2; border: 1px solid #b8b8b8; color: #000; font-size: 14px; }
+.mt-ask-bar { justify-content: flex-end; }
+.mt-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; border: 1px solid #b8b8b8; border-radius: 10px; background: #e2e2e2; width: fit-content; }
+.mt-seg button { min-height: 38px; padding: 0 18px; border: 0; border-radius: 8px; background: transparent; color: #000; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: background-color .1s linear; }
+.mt-seg button:hover { background: #ececec; }
+.mt-seg button[aria-checked="true"] { background: #0071e3; color: #fff; }
+
+/* Interview guidelines */
+.mt-guides { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items: start; }
+.mt-guides > .p-card { margin: 0; }
+.mt-unis .p-input { width: 100%; }
+.mt-uni-list { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; max-height: 70vh; overflow-y: auto; }
+.mt-uni { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #000; font: inherit; font-size: 15px; text-align: left; cursor: pointer; transition: background-color .1s linear; }
+.mt-uni:hover { background: #ececec; }
+.mt-uni.is-on { background: #e2e2e2; border-color: #b8b8b8; }
+.mt-uni-name { flex: 1; min-width: 0; }
+.mt-uni-n { font-size: 13px; }
+.mt-uni-n.is-none { color: #333; font-weight: 500; }
+.mt-uni-card h2 { font-size: 24px; line-height: 28px; }
+.mt-kind { margin: 20px 0 8px; color: #333; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.mt-file { display: flex; align-items: center; gap: 16px; margin-top: 8px; padding: 12px 14px; border: 1px solid #b8b8b8; border-radius: 8px; background: #e2e2e2; }
+.mt-file-type { display: grid; place-items: center; flex: none; width: 42px; height: 50px; border: 1px solid #6f6f6f; border-radius: 6px; background: #f7f7f7; font-size: 12px; font-weight: 700; }
+.mt-file-words { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mt-file-title { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.mt-upload { margin-top: 16px; padding: 16px 18px; border: 1px dashed #6f6f6f; border-radius: 8px; background: #e2e2e2; }
+.mt-upload-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }

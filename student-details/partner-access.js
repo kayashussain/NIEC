@@ -30,7 +30,7 @@ function appTeam(user) {
   return Boolean(user && user.taskTeam === 'application');
 }
 
-// Apply through (the owner, 20 Nov 2026): Admin chooses the partner; the Application Team looks; nobody else sees it.
+// Apply through (the owner, 20 Nov 2026): Admin chooses the partner; the Application Team (and the Mock Team's own people) look.
 function partnerAccess(user) {
   const w = Teams.who(user);
   if (w.role === 'admin') return { direct: 'full', b2b: 'full', agents: 'full', applyThrough: 'full' };
@@ -43,7 +43,9 @@ function partnerAccess(user) {
     direct: manager ? 'commission' : (appMock || branch ? 'team' : null),
     b2b: manager ? 'commission' : application ? 'setup' : team,
     agents: manager ? 'commission' : team,
-    applyThrough: application ? 'view' : null,
+    // The Mock Team's own people have Universities as the Application Team has it (the owner, 22 Nov 2026): Apply now shows where to
+    // apply (the partner, the portal link, the contacts), never a portal login (seesLogins stays the Application Team's).
+    applyThrough: application || Teams.ownTeamMock(user) ? 'view' : null,
   };
 }
 

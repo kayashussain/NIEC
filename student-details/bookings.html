@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Bookings · ISR</title>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="stylesheet" href="header.css" />
+<link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="portal.css" />
+<link rel="stylesheet" href="theme.css" />
+<link rel="stylesheet" href="mock-team.css" />
+<link rel="expect" href="#isr-ready" blocking="render" />
+</head>
+<body class="p-body">
+  <header class="niec-header" data-page="bookings"></header>
+  <main class="p-page mt-page" id="page">
+    <div class="p-head">
+      <div><h1>Bookings</h1></div>
+      <div class="p-tabs mt-tabs" role="tablist" aria-label="Bookings" id="tabs"></div>
+    </div>
+    <div id="view"><p class="p-muted">Loading…</p></div>
+    <p class="p-msg" id="msg" role="status"></p>
+  </main>
+<script src="session.js"></script>
+<script src="ui.js"></script>
+<script src="header.js"></script>
+<script src="portal-ui.js"></script>
+<script src="bookings-page.js"></script>
+<span id="isr-ready" hidden></span>
+</body>
+</html>

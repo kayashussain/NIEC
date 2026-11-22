@@ -113,7 +113,8 @@ const SECURITY_ACTIONS = new Set(['Failed login', 'Change refused', 'Wrong hidde
 // Tasks, partner universities, students added in bulk and event lists too (the owner, 15 Nov 2026: they were filed under accounts, and
 // "Changes today" on Activity counted only the edits of the sheet).
 const CHANGE_ACTIONS = new Set(['Edited student card', 'Sent message', 'Edited templates', 'Edited partners', 'Edited planning', 'Edited partner universities',
-  'Task', 'Task comment', 'Gave a task', 'Removed a task', 'Handed a task on', 'Filled in a student', 'Added students', 'Uploaded event students', 'Removed an event list', 'Restored data', 'Tidied the data']);
+  'Task', 'Task comment', 'Gave a task', 'Removed a task', 'Handed a task on', 'Filled in a student', 'Added students', 'Uploaded event students', 'Removed an event list', 'Restored data', 'Tidied the data',
+  'Booked mock', 'Uploaded guideline']); // the Mock Team's Bookings and Interview guidelines (the owner, 22 Nov 2026)
 function activityCategory(action) {
   if (action === 'Logged in' || action === 'Logged out') return 'logins';
   if (SECURITY_ACTIONS.has(action)) return 'security';

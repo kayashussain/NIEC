@@ -418,6 +418,14 @@
     const deps = Array.isArray(u.departments) ? u.departments : [];
     return u.taskTeam ? u.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
   }
+  // Whether a person's own team is the Mock Team, by the same rule (the owner, 22 Nov 2026): they work from Today, Bookings, All
+  // Students (to look at; mocks are written in the window after a mock and corrected on the student card), Universities and
+  // Interview guidelines, without the Dashboard, Partners or Mock interviews (the guides students read stay with Admin and the Manager).
+  function ownTeamMock(u) {
+    if (!u || u.role === 'admin' || u.role === 'manager') return false;
+    const deps = Array.isArray(u.departments) ? u.departments : [];
+    return u.taskTeam ? u.taskTeam === 'mock' && deps.includes('mock') : deps.length === 1 && deps[0] === 'mock';
+  }
   function ownTeamApplication(u) {
     if (!u || u.role === 'admin' || u.role === 'manager') return false;
     const deps = Array.isArray(u.departments) ? u.departments : [];
@@ -425,7 +433,7 @@
   }
 
   return {
-    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup,
+    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup, ownTeamMock,
     who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };

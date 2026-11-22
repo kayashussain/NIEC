@@ -113,7 +113,7 @@ students, columns and moves of every team they hold.
 | Admin (the owner) | everything, all pages | everything |
 | Manager | the **Dashboard** and every student on every sheet, earlier intakes too, view only | nothing; can use Export Excel; no Incentive page |
 | Application Team | students at *Application Stage*, in the newest intake only | columns up to NOC Number; can move a student to *Mock Stage* (warned about anything still blank) |
-| Mock Team | students at *Mock Stage* | Remarks and the mock columns up to Pre-CAS Interview; can move to *Payment Stage* only once those are all filled |
+| Mock Team | students at *Mock Stage* | the sheet only to look at (Status still moves a student on); the mocks are written in the window after a mock on Bookings and corrected on the student card; can move to *Payment Stage* once the mocks held have feedback and the Pre-CAS Interview is filled |
 | Follow-up Team | *Inquiry* and *Defer* students | Remarks only |
 | Each branch (Chitwan, Pokhara, Palpa, Butwal) | the students whose *Student Source* is that branch, at any stage (current intake) | every column of those students, any stage move; can add students (tagged with the branch) |
 

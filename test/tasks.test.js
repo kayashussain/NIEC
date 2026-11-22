@@ -69,9 +69,9 @@ test('tasks: given by Admin, seen and ticked by that team only, listed for Admin
   assert.strictEqual((await admin('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200);
   assert.strictEqual((await admin('GET', `/api/cards/${id}`)).json.card.tasks.filter((x) => x.id === taskId).length, 0, 'the deleted task is gone (its follow-up task stays)');
 
-  // Each team has a Dashboard of its own; Admin keeps the full one.
-  assert.strictEqual((await mock('GET', '/dashboard')).location, '/my-dashboard', 'a team that opens Dashboard gets its own');
-  assert.strictEqual((await mock('GET', '/my-dashboard')).status, 200);
+  // The Mock Team has no Dashboard (the owner, 22 Nov 2026: its work is on Today and Bookings); Admin keeps the full one.
+  assert.strictEqual((await mock('GET', '/dashboard')).location, '/today', 'the Mock Team goes to Today');
+  assert.strictEqual((await mock('GET', '/my-dashboard')).location, '/today');
   assert.strictEqual((await admin('GET', '/my-dashboard')).location, '/dashboard', 'Admin keeps the full Dashboard');
   assert.strictEqual((await admin('GET', '/api/my-dashboard')).status, 403);
   await admin('POST', `/api/cards/${id}/tasks`, { team: 'mock', text: 'Another one' });

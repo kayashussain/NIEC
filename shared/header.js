@@ -112,6 +112,9 @@
     // The student's portal (a graduation cap) and the mock interview guides (a speech bubble).
     portal: svg('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/>'),
     mock: svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
+    // Bookings (a calendar) and Interview guidelines (a document), the Mock Team's own pages (the owner, 22 Nov 2026).
+    bookings: svg('<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+    guidelines: svg('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'),
     factfile: svg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>'),
   };
   const LINKS = {
@@ -178,12 +181,22 @@
     const deps = me.departments || [];
     return me.taskTeam ? me.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
   };
+  // The same for the Mock Team (the server's ownTeamMock): Today, Bookings, All Students, Universities and Interview guidelines, with no
+  // Dashboard, Partners or Mock interviews (the owner, 22 Nov 2026).
+  const ownTeamMock = (me) => {
+    if (!me || me.role === 'admin' || me.role === 'manager') return false;
+    const deps = me.departments || [];
+    return me.taskTeam ? me.taskTeam === 'mock' && deps.includes('mock') : deps.length === 1 && deps[0] === 'mock';
+  };
   function render(me) {
     const appOwn = ownTeamApplication(me);
     const fuOwn = ownTeamFollowup(me);
-    const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']] : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
+    const mockOwn = ownTeamMock(me);
+    const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
+      : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
+        : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
-    const extra = appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'mock') } : shared0;
+    const extra = mockOwn ? { before: [], after: [] } : appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'mock') } : shared0;
     const at = own.findIndex(([id]) => id === 'factfile');
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];

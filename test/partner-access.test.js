@@ -59,8 +59,8 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
     assert.strictEqual(one.json.applyPortal, 'https://apply.example.org/', `${who} sees where to submit`);
     assert.strictEqual(one.json.contacts[0].name, 'Ann Example', `${who} sees the contacts`);
     assert.strictEqual((await p('POST', `/api/direct/${uni.id}`, { name: 'Changed' })).status, 403, `${who} cannot change it`);
-    // The Application Team no longer opens the Partners pages (the owner, 21 Nov 2026); the Mock Team and a branch still do.
-    assert.strictEqual((await p('GET', '/partner-universities')).status, who === 'asha' ? 302 : 200);
+    // The Application Team no longer opens the Partners pages (the owner, 21 Nov 2026), nor the Mock Team (the owner, 22 Nov 2026); a branch still does.
+    assert.strictEqual((await p('GET', '/partner-universities')).status, who === 'chitwan' ? 200 : 302);
     assert.strictEqual((await p('GET', '/message-templates')).status, 302, 'Message templates is gone: it leads to Follow-up');
   }
   // A university, a Partner University or its short form (OIG, OIEG) is never listed on B2B Partners, not even as hidden (the owner, 20 Nov 2026).
@@ -107,7 +107,7 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   // Partners: one menu entry; it opens the first of the three lists the account may see (the owner, 17 Nov 2026).
   assert.strictEqual((await chitwan('GET', '/partners')).location, '/partner-universities', 'a branch lands on Partner Universities');
   assert.strictEqual((await asha('GET', '/partners')).location, '/today', 'the Application Team has no Partners (the owner, 21 Nov 2026)');
-  assert.strictEqual((await bikram('GET', '/partners')).location, '/partner-universities', 'the Mock Team keeps Partners');
+  assert.strictEqual((await bikram('GET', '/partners')).location, '/today', 'the Mock Team has no Partners (the owner, 22 Nov 2026)');
   assert.ok(!String((await sunita('GET', '/partners')).location).startsWith('/partner'), 'the Follow-up Team is sent home');
   assert.strictEqual((await sunita('GET', '/message-templates')).status, 302);
   const mgr = (await chief('GET', `/api/direct/${uni.id}`)).json;

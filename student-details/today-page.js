@@ -301,14 +301,19 @@
       av.setAttribute('aria-hidden', 'true');
       const main = el('div', 'tdx-main');
       const nameLine = el('div', 'tdx-name-line');
-      nameLine.append(h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, window.Portal.niceName ? window.Portal.niceName(m.name) : m.name));
+      const shownName = window.Portal.niceName ? window.Portal.niceName(m.name) : m.name;
+      // A booking not matched to a student yet (the Mock Team) has no card to open.
+      nameLine.append(m.id ? h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, shownName) : el('span', 'tdx-name', shownName));
       main.append(nameLine, el('p', 'tdx-meta', [m.stage, m.intake].filter(Boolean).join(' · ')));
       const ul = el('ul', 'tdx-problems');
       m.lines.forEach((ln) => ul.append(el('li', '', ln.text)));
       main.append(ul);
       // A line about a Medical task is fixed by finishing that task; everything else on the student's profile.
       const onTask = m.lines.every((ln) => ln.taskId) ? (tasksNow.find((t) => t.id === m.lines[0].taskId) || null) : null;
-      const fix = onTask ? h('button', { class: 'btn btn-primary tdx-fix', type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
+      // The Mock Team's lines say what to do (Write feedback, Answer, Copy booking link) and where (the owner, 22 Nov 2026).
+      const act = (m.lines.find((ln) => ln.action && /^\/[\w-]/.test(ln.action.href || '')) || {}).action;
+      const fix = act ? h('a', { class: 'btn btn-primary tdx-fix', href: act.href }, act.label)
+        : onTask ? h('button', { class: 'btn btn-primary tdx-fix', type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
         : h('a', { class: 'btn btn-primary tdx-fix', href: '/student?id=' + encodeURIComponent(m.id) }, 'Fix it');
       head.append(av, main, fix);
       r.append(head);

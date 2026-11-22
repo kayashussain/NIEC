@@ -34,6 +34,7 @@ const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER
 function createPortalApi({
   getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, applyThrough = null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
   insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
+  mockTeam = () => null, // Bookings (mock-team-api.js), for the Mock Team's Missing details
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
   // Names compared ignoring case, spaces, punctuation and a part in brackets ("Ulster University (QA)" is "Ulster University").
@@ -1189,6 +1190,25 @@ function createPortalApi({
     return out.status === 200 ? { ok: true } : { error: out.body.error === 'conflict' ? 'The sheet changed at the same moment. Please try again.' : out.body.error, status: out.status };
   }
 
+  // A few columns of one student changed from another page (the window after a mock on Bookings, the owner, 22 Nov 2026): the card's own
+  // checks of each value, the sheet's rules (setColumns) and one note on the card, as when the same is changed with the card's Edit.
+  function writeCardColumns(req, rowId, changes) {
+    const found = rowIndex().get(text(rowId));
+    if (!found) return { error: 'That student is no longer on the sheet.', status: 404 };
+    const clean = {};
+    for (const [col, value] of Object.entries(changes)) {
+      if (!CARD_EDITABLE[col]) return { error: 'That detail cannot be changed here.', status: 400 };
+      const v = CARD_EDITABLE[col](value);
+      if (v === null) return { error: `${Fields.columnLabel(col)} is not right.`, status: 400 };
+      clean[col] = v;
+    }
+    const before = Object.fromEntries(Object.keys(clean).map((col) => [col, text(found.row[col])]));
+    const done = setColumns(req, found, clean);
+    if (done.error) return done;
+    noteCardChanges(req, found.row._id, Object.keys(clean).map((col) => [Fields.columnLabel(col), before[col], clean[col]]));
+    return { ok: true, row: found.row };
+  }
+
   // ---- Today: what needs a person's attention now, for the students this account sees ----
   // The home screen of each kind of account (Teams.kindOf): the same facts, but each team sees the work that is its own, in its own words.
   const WORKSPACES = {
@@ -1239,7 +1259,8 @@ function createPortalApi({
     // Missing details (the owner, 21 Nov 2026), the Application Team's own list on Today: every student it can correct whose application,
     // passport or medical details are missing or do not add up, one plain line each, all of them (never cut short). A line leaves by itself
     // once the detail is right.
-    const missing = kind === 'application' ? new Map() : null;
+    // The Mock Team has its own Missing details too (the owner, 22 Nov 2026): feedback not written, a booked mock not answered, no mock yet.
+    const missing = kind === 'application' || kind === 'mock' ? new Map() : null;
     const missOne = (row, sheet, line, extra = {}) => {
       const m = missing.get(row._id) || { id: row._id, name: nameOf(row), stage: text(row[STATUS]), intake: sheet.name, lines: [] };
       if (!m.lines.some((x) => x.text === line)) m.lines.push({ text: line, ...extra });
@@ -1327,7 +1348,7 @@ function createPortalApi({
       if (cas && !text(row['VISA LODGE DATE'])) add('cas', `CAS received ${Math.max(0, now - dayNo(cas))} days ago`, Math.max(0, now - dayNo(cas)));
     }
     // Missing details covers every student the team can fix: Application Stage and Mock Stage of the current intake (see appReach).
-    if (missing) {
+    if (missing && kind === 'application') {
       for (const found of rowIndex().values()) {
         if (!appReach(user, found) || !isStudent(found.row)) continue; // a row with no name is not a student
         const c = all[found.row._id] || { notes: [], options: [], tasks: [] };
@@ -1336,12 +1357,38 @@ function createPortalApi({
     }
     // The medical step is the team's too, after Application Stage: a Medical task of this person whose test day has passed and whose report
     // is not recorded. It is fixed by finishing that task (it records the report), so the line points at the task.
-    if (missing) {
+    if (missing && kind === 'application') {
       for (const { sheet, row } of rowIndex().values()) {
         const c = all[row._id];
         if (!c || !c.medical || c.medical.done || !(c.medical.date < today) || text(row['MEDICAL REPORT']) === 'Received') continue;
         const t = (c.tasks || []).find((x) => !x.done && forMe(user, x) && Fields.taskTag(x, text(row[STATUS])) === 'medical');
         if (t) missOne(row, sheet, `The medical test was on ${niceDay(c.medical.date)}, the report is not recorded.`, { taskId: t.id });
+      }
+    }
+    // The Mock Team's Missing details: each Mock Stage student it has whose held mock has no feedback, or who has no mock held or booked
+    // yet; and each of the person's own booked mocks whose time is over and not answered (the window on Bookings asks for it).
+    if (missing && kind === 'mock') {
+      const mt = mockTeam();
+      const coming = mt ? mt.comingRows() : new Set();
+      const asked = mt ? mt.unanswered(user) : []; // booked mocks whose time is over, not answered yet
+      asked.forEach((b) => { if (b.rowId) coming.add(b.rowId); });
+      for (const { sheet, row } of visibleStudents(user)) {
+        if (text(row[STATUS]) !== 'Mock Stage') continue;
+        const id = encodeURIComponent(row._id);
+        for (const n of [1, 2, 3, 4]) {
+          const d = dateOf(row[`MOCK SCHEDULE ${n}`]);
+          if (d && d <= today && !text(row[`FEEDBACK ${n}`])) missOne(row, sheet, `Feedback ${n} is missing (Mock ${n} was on ${niceDay(d)}).`, { action: { label: 'Write feedback', href: `/student?id=${id}` } });
+        }
+        if (![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`])) && !coming.has(row._id)) missOne(row, sheet, 'Mock Schedule 1 is missing: no mock held or booked yet.', { action: { label: 'Copy booking link', href: '/bookings' } });
+      }
+      if (mt) {
+        const rows = rowIndex();
+        asked.forEach((b) => {
+          const line = `Did the student join? Not answered (${b.mock ? `Mock ${b.mock}, ` : ''}${niceDay(b.day)}, ${b.time}).`;
+          const found = b.rowId && rows.get(b.rowId);
+          if (found) missOne(found.row, found.sheet, line, { action: { label: 'Answer', href: '/bookings' } });
+          else missing.set(`booking:${b.id}`, { id: '', name: b.name, stage: 'Not matched to a student yet', intake: '', lines: [{ text: line, action: { label: 'Answer', href: '/bookings' } }] });
+        });
       }
     }
     const counts = { toSubmit: by.apply.rows.length, waitingOffer: by.noOffer.rows.length, toSchedule: by.mock.rows.length, feedbackMissing: by.mockFeedback.rows.length, toFollow: by.inquiries.rows.length };
@@ -3648,7 +3695,7 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note };
+  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };
