@@ -747,7 +747,9 @@
         if (BACKUP) document.body.dataset.backup = '1';
         document.body.dataset.role = me.role;
         $('#viewOnly').hidden = !Teams.isReadOnly(me);
-        { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = sheetLocked(); } quietSaved(); } // no line at the top for the Application Team (the owner, 22 Nov 2026)
+        { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = sheetLocked(); } quietSaved();
+          // 🔴 CSS CHANGED (2026-11-22): the bar under the sheet (rows count, Shortcuts, colour key), for the Application Team only | from: shown | to: hidden (the owner, 22 Nov 2026)
+          const foot = document.querySelector('.footbar'); if (foot) foot.style.display = sheetLocked() ? 'none' : ''; } // no line at the top for the Application Team (the owner, 22 Nov 2026)
         syncFollowupButton();
         if (cameFromEl) { if (sheetLocked()) { cameFrom = ''; cameFromEl.value = ''; } cameFromEl.hidden = sheetLocked() || !sourceListReady; }
         document.body.toggleAttribute('data-viewonly', Teams.isReadOnly(me));

@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-22 · student-details/app.js (a style set from JavaScript) · the bar under the All Students sheet ("17 of 17 rows", Shortcuts and the colour key: Worked out automatically, Same phone number as another student, Deferred but no next sheet to move to), for the Application Team only · from: shown · to: hidden · why: the owner asked to remove it (22 Nov 2026).**
+
 - **2026-11-22 · student-details/app.js (a style set from JavaScript) · "All changes saved" beside the All Students title, for the Application Team only · from: always shown · to: hidden; a short message such as "Saving..." or "Open the student card to change a detail" still shows for a moment · why: the owner asked to remove it, with the line "Open a student card to change a detail" at the top of the sheet (22 Nov 2026).**
 
 - **2026-11-22 · shared/theme.css (end) · the Undo and Redo button in the small message after a save on the student card · from: no button, the message only said "Saved" · to: a grey pill button 32px high (#f7f7f7, border #6f6f6f, black semi-bold words) beside the words · why: the owner asked to undo and redo a recent save within 5 seconds, like in a Google sheet (22 Nov 2026).**
