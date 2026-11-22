@@ -1726,10 +1726,20 @@ function createPortalApi({
     const m = /^\/api\/cards\/([\w-]{1,64})(?:\/(profile|notes|options|messages|source|sheet|tasks|checks)(?:\/([a-z0-9]{6,32}|preview|send))?(\/delete)?)?$/.exec(urlPath);
     if (!m) return false;
     const [, rowId, part, sub, del] = m;
-    const found = rowIndex().get(rowId);
+    let found = rowIndex().get(rowId);
     if (!canSee(req.user, found)) { sendJSON(res, 404, { error: 'No such student, or the student is not in your list.' }); return true; }
-    const editable = canChange(req.user, found);
-    const card = cards.get(rowId);
+    let editable = canChange(req.user, found);
+    let card = cards.get(rowId);
+    // A save is worked out from the student and the card as they are when its body has been read, not as they were when the request
+    // arrived: another request (a double press, a second tab) may have changed them in between, and a stale card made the same task
+    // finish twice. Saved cards are replaced, never changed in place, so the copy taken at the start does go stale.
+    const refresh = () => {
+      found = rowIndex().get(rowId);
+      if (!canSee(req.user, found)) return false;
+      editable = canChange(req.user, found);
+      card = cards.get(rowId);
+      return true;
+    };
 
     if (req.method === 'GET') {
       if (!part) {
@@ -1765,6 +1775,7 @@ function createPortalApi({
     if (part === 'tasks') {
       const body = await bodyOf(req, res);
       if (!body) return true;
+      if (!refresh()) { sendJSON(res, 404, { error: 'No such student, or the student is not in your list.' }); return true; }
       const who2 = nameOf(found.row) || 'a student';
       let out;
       if (!sub) {
@@ -1849,6 +1860,8 @@ function createPortalApi({
           const f = body.finish && typeof body.finish === 'object' ? body.finish : null;
           // What the "Mark as done?" window shows before it asks (see finishState).
           if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task, req.user) }); return true; }
+          // Already in the state asked for (a double press, or a second tab): nothing is written again, so the answers are never recorded twice.
+          if (!body.preview && body.done !== undefined && Boolean(body.done) === Boolean(task.done)) { sendJSON(res, 200, { ok: true, card }); return true; }
           // Done needs what happened (an answer, or a few words).
           if (body.done && !task.done && !f) { sendJSON(res, 400, { error: 'Say what was done first.' }); return true; }
           const hasKeys = Boolean(f) && Object.keys(f).some((k) => !['note', 'confirmed', 'next', 'nextText', 'generic', 'waiting'].includes(k) && f[k] !== undefined && f[k] !== '');
@@ -1913,6 +1926,8 @@ function createPortalApi({
     if (part === 'messages' && (sub === 'preview' || sub === 'send')) { await handleMessages(req, res, found, card, sub); return true; }
     const body = await bodyOf(req, res);
     if (!body) return true;
+    if (!refresh()) { sendJSON(res, 404, { error: 'No such student, or the student is not in your list.' }); return true; }
+    if (!editable) { sendJSON(res, 403, { error: Teams.isReadOnly(req.user) ? 'Your account can only view students.' : 'Your team cannot change this student.' }); return true; }
     let out;
     if (part === 'checks') {
       // A detail on "Details to check" someone has looked at and says is correct (see checksOf).
