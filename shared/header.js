@@ -162,6 +162,20 @@
   };
   function render(me) {
     const appOwn = ownTeamApplication(me);
+    // 🔴 CSS CHANGED (2026-11-22): the Application Team starts at text size Medium | from: Large for everyone | to: Medium for a person whose own team is the Application Team and who has not picked a size yet (a size picked in the account menu is kept; every other team stays at Large) | why: the owner asked for it
+    try {
+      let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
+      const kept = localStorage.getItem('isrTextSize');
+      if (appOwn && !framed && !['small', 'medium', 'large'].includes(kept)) document.documentElement.setAttribute('data-size', 'medium');
+    } catch (e) { /* the size stays as it was */ }
+    // The Application Team sees the light NIEC look and the NIEC logo (shared/niec-app.css, the owner, 22 Nov 2026); every
+    // other account keeps the Vishnu look. The menu is drawn from the remembered account before the page shows, so there is no flash.
+    if (appOwn) document.documentElement.setAttribute('data-team', 'application'); else document.documentElement.removeAttribute('data-team');
+    const logo = header.querySelector('.niec-logo');
+    if (logo) {
+      const want = appOwn ? ['/niec-logo.png', 'NIEC, Your Future, Our Responsibility.'] : ['/vishnu-logo.png', 'Vishnu'];
+      if (logo.getAttribute('src') !== want[0]) { logo.setAttribute('src', want[0]); logo.setAttribute('alt', want[1]); }
+    }
     const own = (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
     const extra = appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners') } : shared0;

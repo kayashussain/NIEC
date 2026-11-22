@@ -76,6 +76,7 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   page as built (`html[data-size="large"]`; the owner, 21 Nov 2026: "make the text size large", replacing the earlier 67% default).
   The account menu has **Text size: Small, Medium, Large** (0.67, 0.8, 1, CSS `zoom`), kept in the browser per person (`isrTextSize`);
   it never goes bigger than the page as built.
+  The Application Team's pages open at **Medium** instead (the owner, 22 Nov 2026), unless that person has already picked a size.
   Pages inside the card drawer are not zoomed twice (`data-size="framed"`). Because of the zoom: place any menu or popup with
   `isrPos` (`shared/ui.js`), never with raw `getBoundingClientRect` or `innerWidth`; write a full-height size as
   `calc(100vh / var(--isr-z, 1))` or with `inset`, never plain `100vh`.
