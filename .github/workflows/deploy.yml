@@ -48,6 +48,14 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          # Safe check (no secret shown): can the key be read, does it need a password, and which key is it (public fingerprint).
+          if ssh-keygen -y -P "${PASSPHRASE:-}" -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub 2> ~/.ssh/keycheck.err; then
+            echo "Key check: the private key can be read. Its fingerprint is $(ssh-keygen -lf ~/.ssh/deploy_key.pub | cut -d' ' -f1-2)"
+          else
+            echo "Key check FAILED: $(head -c 200 ~/.ssh/keycheck.err | tr '\n' ' ')"
+            echo "(If it says incorrect passphrase, set DEPLOY_SSH_PASSPHRASE. If it says invalid format, the key was pasted wrongly.)"
+            exit 1
+          fi
           if ! ssh-keyscan -T 10 -p "${PORT:-22}" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
             echo "Cannot reach the server on SSH port ${PORT:-22}. Check DEPLOY_HOST (the SSH host) and DEPLOY_PORT (the SSH port, for example 22 or the one cPanel shows)."
             exit 1
