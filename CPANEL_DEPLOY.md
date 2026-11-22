@@ -86,9 +86,9 @@ wrong passwords lock the account for 15 minutes.
 - **First start:** while there are no accounts, the server makes a one-time **setup code**, prints it
   in the app's log and saves it in `first-admin-code.txt` in the Student Details data folder. The
   login page asks for it to create the first Admin account; you then choose your own password and the code is deleted. Do this straight after deploying.
-- **Intakes:** Admin and the Manager see every intake sheet. The Application, Mock and Follow-up teams see only the newest sheet, so when you start a new intake the earlier one leaves their screens by itself. There is no sheet password.
+- **Intakes:** Admin and the Manager see every intake sheet. The Application Team and the branches see only the newest sheet, so when you start a new intake the earlier one leaves their screens by itself. There is no sheet password.
 - **Adding people:** Admin → **Users** → *Add a person*: name, username (not case sensitive), email, and
-  what they can do. Tick any mix of Application, Mock, Follow-up, Chitwan Branch, Pokhara Branch and Manager (a Manager who also ticks a team can change that team's students in the current intake). They are emailed a link and a temporary
+  what they can do. Tick any mix of Application, Chitwan Branch, Pokhara Branch, Palpa Branch, Butwal Branch and Manager (the Mock and Follow-up Teams were removed, 22 Nov 2026) (a Manager who also ticks a team can change that team's students in the current intake). They are emailed a link and a temporary
   password (see **Email** below); at their first login they choose their own password and link their
   phone. Admin is the owner account: nobody else can ever be made Admin.
 - **When someone leaves:** Users → **Remove**. Their login is deleted and they're logged out of every device at once; they can't
@@ -112,23 +112,19 @@ students, columns and moves of every team they hold.
 |---|---|---|
 | Admin (the owner) | everything, all pages | everything |
 | Manager | the **Dashboard** and every student on every sheet, earlier intakes too, view only | nothing; can use Export Excel; no Incentive page |
-| Application Team | students at *Application Stage*, in the newest intake only | columns up to NOC Number; can move a student to *Mock Stage* (warned about anything still blank) |
-| Mock Team | students at *Mock Stage* | the sheet only to look at (Status still moves a student on); the mocks are written in the window after a mock on Bookings and corrected on the student card; can move to *Payment Stage* once the mocks held have feedback and the Pre-CAS Interview is filled |
-| Follow-up Team | *Inquiry* and *Defer* students | Remarks only |
+| Application Team | students at *Application Stage*, in the newest intake only | columns up to NOC Number; can move a student to *Mock Stage* (warned about anything still blank); moving on from *Mock Stage* is Admin's |
 | Each branch (Chitwan, Pokhara, Palpa, Butwal) | the students whose *Student Source* is that branch, at any stage (current intake) | every column of those students, any stage move; can add students (tagged with the branch) |
 
 **Partner pages** (rules in `student-details/partner-access.js`; the server strips what an account may
 not see before sending anything): Admin sees and changes everything. The **Manager** looks at Partner Universities, B2B Partners
-and Agents **with the commission** (no portal login), and at Events and marketing. The **Mock
-Team** looks at Partner Universities, B2B Partners and Agents **without the commission** (no commission slabs, payment terms,
-commission lists, agreement files, notes or portal login). The **Application Team** works from Today, All Students and Universities
+and Agents **with the commission** (no portal login), and at Events and marketing. The **Application Team** works from Today, All Students and Universities
 instead (the owner, 21 Nov 2026); **Apply now** on a university shows it how to apply. **Branches** look at Partner Universities
-the same way (without the commission). The **Follow-up Team** has none of these pages. A **branch** can
-give a task about its own student to the Application Team or the Mock Team (Assign a task on the student card), sees on Today
+the same way (without the commission: no commission slabs, payment terms, commission lists, agreement files, notes or portal
+login). A **branch** can give a task about its own student to the Application Team or Admin (Assign a task on the student card), sees on Today
 whether it is done, talks it through in the task's comments, and removes only the tasks it gave.
 
-Every team can add a new student with **+ Add student**: it starts at the team's own stage (Application Stage,
-Mock Stage or Inquiry), and the team can also fill in its name, email, contact number and student
+Every team can add a new student with **+ Add student**: it starts at the team's own stage (Application Stage
+for the Application Team, Inquiry for a branch), and the team can also fill in its name, email, contact number and student
 source (on students it added itself). Deleting students and sheets, and the
 Incentive page, are Admin only. Export Excel is for Admin and the Manager.
 
@@ -156,7 +152,7 @@ variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURITY`, `MAIL_USER`, `MAIL_PASSWORD
 `MAIL_FROM_NAME` and `SITE_URL` instead of the file.
 
 **A Gmail address as the office mailbox (the owner, 22 Nov 2026: the team and the students use Gmail).** No company email is
-needed. The Mock Team's booking emails, reminders and the new-person emails all go from this one mailbox.
+needed. The new-person emails and Admin's emails go from this one mailbox.
 
 1. In that Google account: turn on 2-Step Verification, then make an **App password** (Google Account, Security, App passwords).
    Google gives 16 letters; that is the password Vishnu uses (never the normal Gmail password).
@@ -164,7 +160,7 @@ needed. The Mock Team's booking emails, reminders and the new-person emails all 
    password. Mail server: `smtp.gmail.com`, port `465`, SSL.
 3. `node scripts/email.js test` followed by your own address, and check the message arrives.
 4. Set **`SITE_URL`** to the site's own address (for example `https://isr.example.com`) in the app's environment variables (or
-   answer it in `setup`), then Restart. The links in the students' booking emails (Change or cancel) always use this address.
+   answer it in `setup`), then Restart. Links in emails always use this address.
 
 ## Universities
 
@@ -176,7 +172,7 @@ Details data folder (never in git; back it up with the rest of the data folder).
 
 ## Dashboard
 
-Each team (Application, Mock, Follow-up, each branch) has its own **Dashboard** of its work (see README, My dashboard). Admin and the Manager have a **Dashboard** made for planning intakes: the student journey from inquiry to
+Each branch has its own **Dashboard** of its work (see README, My dashboard). Admin and the Manager have a **Dashboard** made for planning intakes: the student journey from inquiry to
 visa with the share that goes on at each step, money (deposits received, still to collect, average fee),
 visa success, a forecast of visas, payments and deposits still to come, how many days each step takes,
 every intake side by side, month by month trends, who needs chasing, and breakdowns by source, university
@@ -210,7 +206,7 @@ site isn't possible any more, since uploads need a login.)
 
 New in the same app, no new setup needed: the data goes in new files of the Student Details data folder (`cards.json`, `message-log.jsonl`, `message-templates.json`, `course-links.json`, `b2b-partners.json` with `b2b-files/`, `planning.json`), never in git. They are in the 6 p.m. backup (restore them from Activity, Restore data) and the first save of each day also copies them into `backups/`.
 
-- **Email to students** goes from **each person's own mailbox** (the owner, 14 Nov 2026). Everyone sets theirs up once on **Follow-up**, **Your setup for sending**, type the address and its password, **Check and save** (a test email is sent first; it is saved only if it works). The password is kept encrypted in `user-mail.json` with its key in `mail-key`, both in the Student Details data folder, never in git, never in the daily backups, never shown on a page. A team member without their own mailbox cannot email (Send email keeps a preview). Admin sends from their own mailbox if set, else from the office mailbox (`node scripts/email.js setup`, see Email above). A team member's email is signed with their name, team, address and phone; a copy goes to their own mailbox and to the office mailbox unless Admin switches copies off (Follow-up, Your setup for sending).
+- **Email to students** goes from **each person's own mailbox** (the owner, 14 Nov 2026). A mailbox set up earlier on Follow-up, Your setup for sending, keeps working (the Follow-up page was removed, 22 Nov 2026). The password is kept encrypted in `user-mail.json` with its key in `mail-key`, both in the Student Details data folder, never in git, never in the daily backups, never shown on a page. A team member without their own mailbox cannot email (Send email keeps a preview). Admin sends from their own mailbox if set, else from the office mailbox (`node scripts/email.js setup`, see Email above). A team member's email is signed with their name, team, address and phone; a copy goes to their own mailbox and to the office mailbox.
 - **WhatsApp on your phone**: nothing to set up on the server. Each person connects their phone once: on the computer, the menu (their name), **Connect my phone** shows a code; they point the phone's camera at it and tap **Turn on** (an iPhone shows one extra step, Add to Home Screen). Then WhatsApp on the computer sends a notification to that phone, and one tap opens the student's chat there. The site must be on https (it is). The server makes its own key the first time (`push-keys.json` in the data folder); deleting that file disconnects every phone. A phone connected before 17 Nov 2026 should be connected once more (Disconnect, then Connect my phone): from then on it keeps itself connected.
 - **The university finder needs nothing set up:** it runs inside the server and reads the entry rules in Universities. No key, no outside service.
 
