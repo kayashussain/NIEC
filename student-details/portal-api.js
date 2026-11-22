@@ -491,14 +491,16 @@ function createPortalApi({
   // the card (the partner chosen when it was sent to the Application Team). A direct application is "Direct (<university>)"
   // (the owner, 22 Nov 2026). Nothing changes when the card has no partner for that university.
   const DIRECT_RE = /^direct\b/i;
-  function withPartner(rowId, changes) {
+  function withPartner(rowId, changes, nowPartner) {
     if (!('UNIVERSITY NAME' in changes)) return changes;
     const uni = text(changes['UNIVERSITY NAME']);
     if (!uni) return changes;
+    // "Direct (<another university>)" written by ISR before no longer fits: it is cleared when no partner is known for the new one.
+    const stale = DIRECT_RE.test(text(nowPartner)) && squash(Fields.plainPartner(nowPartner)) !== squash(uni);
     const course = 'COURSE NAME' in changes ? text(changes['COURSE NAME']) : '';
     const opts = ((cards.get(rowId) || {}).options || []).filter((o) => squash(o.university) === squash(uni) && text(o.partner));
     const o = opts.find((x) => course && squash(x.course) === squash(course)) || opts[0];
-    if (!o) return changes;
+    if (!o) return stale ? { ...changes, 'UNIVERSITY PARTNER': '' } : changes;
     return { ...changes, 'UNIVERSITY PARTNER': DIRECT_RE.test(text(o.partner)) ? `Direct (${uni})` : text(o.partner) };
   }
   // ---- finishing a task: asked, checked by the team, then written (the owner, 16 Nov 2026) ----
@@ -523,7 +525,7 @@ function createPortalApi({
   //                its column when empty, the stage moving on with it (CAS Issued, Visa Lodge, Visa Issued; Visa Rejected), never back.
   // Every answer is also one note on the student, in plain words.
   function writeColumnsFor(req, rowId, changes) {
-    changes = withPartner(rowId, changes);
+    { const f = rowIndex().get(rowId); changes = withPartner(rowId, changes, f ? f.row['UNIVERSITY PARTNER'] : ''); }
     const wb = getWorkbook();
     const keys = Object.keys(changes);
     if (!wb || !keys.length) return;
@@ -1760,7 +1762,9 @@ function createPortalApi({
       const changes = {};
       for (const [col, clean] of Object.entries(CARD_EDITABLE)) {
         if (body.fields && Object.prototype.hasOwnProperty.call(body.fields, col)) {
-          const v = clean(body.fields[col]);
+          let v = clean(body.fields[col]);
+          // Undo puts back exactly what was there, also a value kept in an older form ("17/07/2026", an older NOC word).
+          if (v === null && body.undo === true && col !== 'EMAIL') v = text(body.fields[col]).slice(0, 2000);
           if (v === null) { sendJSON(res, 400, { error: col === 'CONTACT NUMBER' ? 'That phone number does not look right. Use digits, for example 9800000001.' : `${col} is not a real date.` }); return true; }
           if (v !== text(found.row[col])) changes[col] = v;
         }
@@ -1799,7 +1803,7 @@ function createPortalApi({
       let changesOut = Object.keys(changes);
       const pairs = [];
       if (changesOut.length) {
-        const all = withPartner(rowId, changes);
+        const all = withPartner(rowId, changes, found.row['UNIVERSITY PARTNER']);
         if (text(all['UNIVERSITY PARTNER']) === text(found.row['UNIVERSITY PARTNER'])) delete all['UNIVERSITY PARTNER'];
         const before = Object.fromEntries(Object.keys(all).map((col) => [col, text(found.row[col])]));
         const done = setColumns(req, found, all);

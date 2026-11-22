@@ -155,7 +155,12 @@
       picker.nodes.forEach((n) => { n.classList.add('lg-form-field'); form.append(n); }); // laid out like the other fields; a hidden one takes no room
       if (!data.can.source && data.student.source) form.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
       const srcValue = () => { const v = picker.value(); return { source: v.source || '', detail: v.detail || '', remarks: v.remarks || '', platform: v.platform || '', way: v.way || '' }; };
-      const srcChanged = () => { const v = srcValue(); return Object.keys(srcStart).some((k) => (k !== 'source' || data.can.source) && v[k] !== srcStart[k]); };
+      // Compared with the picker's own first reading (taken once it has drawn), not the stored words: an older Social Media or branch
+      // student is shown in today's form, and only opening the window must never count as a change. Undo puts the stored words back.
+      let srcBase = null;
+      setTimeout(() => { srcBase = srcValue(); showChanges(); }, 0);
+      const srcDiff = () => { if (!srcBase) return []; const v = srcValue(); return Object.keys(srcStart).filter((k) => (k !== 'source' || data.can.source) && v[k] !== srcBase[k]); };
+      const srcChanged = () => srcDiff().length > 0;
       const SHEET = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER'];
       const LABEL = { 'FIRST NAME': 'First name', 'LAST NAME': 'Last name', EMAIL: 'Email', 'CONTACT NUMBER': 'WhatsApp number', passportNo: 'Passport number', dob: 'Date of birth', nationality: 'Nationality', gender: 'Gender', address: 'Address' };
       const before = { 'FIRST NAME': row['FIRST NAME'] || '', 'LAST NAME': row['LAST NAME'] || '', EMAIL: data.student.email || '', 'CONTACT NUMBER': data.student.phone || '', passportNo: profile().passportNo || '', dob: profile().dob || '', nationality: profile().nationality || 'Nepali', gender: profile().gender || '', address: profile().address || '' };
@@ -191,7 +196,9 @@
           c.forEach((k) => { const into = SHEET.includes(k) ? 'sheet' : 'prof'; was[into][k] = before[k]; now2[into][k] = v[k]; });
           if (srcC) {
             const sv = srcValue();
-            if (data.can.source && sv.source !== srcStart.source) { await api(`/api/cards/${id}/source`, { source: sv.source }); was.source = srcStart.source; now2.source = sv.source; }
+            const diff = srcDiff();
+            if (data.can.source && diff.includes('source')) { await api(`/api/cards/${id}/source`, { source: sv.source }); was.source = srcStart.source; now2.source = sv.source; }
+            // The whole source is saved together once any part of it changed (as the Source panel did), so its parts always agree.
             [['sourceDetail', 'detail'], ['sourceRemarks', 'remarks'], ['sourcePlatform', 'platform'], ['sourceWay', 'way']].forEach(([key, k]) => { if (sv[k] !== srcStart[k]) { prof[key] = sv[k]; was.prof[key] = srcStart[k]; now2.prof[key] = sv[k]; } });
           }
           if (Object.keys(sheet).length) await api(`/api/cards/${id}/sheet`, { fields: sheet });
@@ -493,7 +500,9 @@
       };
       [1, 2, 3, 4].forEach((n) => {
         form.append(el('div', 'lg-form-group', `Mock ${n}`));
-        field(`MOCK SCHEDULE ${n}`, 'Day', h('input', { type: 'date', value: isoDay(before[`MOCK SCHEDULE ${n}`]) }));
+        // A day kept in an older form ("3/12/2026") is shown as it is, so saving another detail never empties it.
+        const kept = before[`MOCK SCHEDULE ${n}`];
+        field(`MOCK SCHEDULE ${n}`, 'Day', kept && !isoDay(kept) ? h('input', { type: 'text', value: kept, maxlength: '40' }) : h('input', { type: 'date', value: kept }));
         const fb = document.createElement('textarea'); fb.rows = 2; fb.maxLength = 2000; fb.value = before[`FEEDBACK ${n}`];
         field(`FEEDBACK ${n}`, 'Feedback', fb, true);
       });

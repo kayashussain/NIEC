@@ -158,6 +158,22 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
     assert.notStrictEqual((await rowNow())['UNIVERSITY PARTNER'], 'QA', 'University partner is never typed');
     assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': 'Coventry University', 'COURSE NAME': 'MSc Data Science and Computational Intelligence' } })).status, 200);
     assert.strictEqual((await rowNow())['UNIVERSITY PARTNER'], 'Direct (Coventry University)');
+    // Another Priority university with no partner known: the "Direct (Coventry University)" written before is cleared, never left wrong.
+    assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': 'Roehampton University', 'COURSE NAME': 'MSc Data Science' } })).status, 200);
+    assert.strictEqual((await rowNow())['UNIVERSITY PARTNER'] || '', '');
+    assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': 'Coventry University', 'COURSE NAME': 'MSc Data Science and Computational Intelligence' } })).status, 200);
+    assert.strictEqual((await rowNow())['UNIVERSITY PARTNER'], 'Direct (Coventry University)');
+    // Undo puts back a value kept in an older form (an older NOC word, a day written "17/07/2026"), which a normal save would refuse.
+    {
+      const w = (await admin('GET', '/api/data')).json;
+      w.sheets.forEach((sh) => sh.rows.forEach((r) => { if (r._id === id) { r.NOC = 'Yes'; r['LANGUAGE TEST DATE'] = '17/07/2026'; } }));
+      assert.strictEqual((await admin('POST', '/api/data', { baseRevision: w.revision, sheets: w.sheets, activeSheetId: w.activeSheetId })).status, 200);
+      assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: 'Received', 'LANGUAGE TEST DATE': 'Waiver' } })).status, 200);
+      assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: 'Yes' } })).status, 400, 'not as a normal save');
+      assert.strictEqual((await app('POST', `/api/cards/${id}/sheet`, { fields: { NOC: 'Yes', 'LANGUAGE TEST DATE': '17/07/2026' }, undo: true })).status, 200);
+      const back = await rowNow();
+      assert.deepStrictEqual([back.NOC, back['LANGUAGE TEST DATE']], ['Yes', '17/07/2026']);
+    }
     // The Student Source is changed on the student card.
     const src = await app('POST', `/api/cards/${id}/source`, { source: 'Social Media' });
     assert.strictEqual(src.status, 200, JSON.stringify(src.json));
