@@ -4322,8 +4322,8 @@ html body dialog.td-done-app .p-dialog-head .td-done-task { flex: 0 0 100%; orde
 html body dialog.td-done-app .p-dialog-body { padding-top: 24px; }
 html body dialog.td-done-app .td-done-form .p-label { color: #333; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 html body dialog.td-done-app .p-req, html body dialog.td-done-app .td-done-now { display: none; }
-html body dialog.td-done-app .td-answer { min-height: 40px; padding: 0 18px; border: 0; border-radius: 980px; outline: 1px solid #b8b8b8; background: #f7f7f7; color: #000; font-size: 15px; font-weight: 600; }
-html body dialog.td-done-app .td-answer[aria-checked="true"] { outline: 0; background: #000; color: #fff; }
+html body dialog.td-done-app .td-tag-pick .td-answer { min-height: 40px; padding: 0 18px; border: 0; border-radius: 980px; outline: 1px solid #b8b8b8; background: #f7f7f7; color: #000; font-size: 15px; font-weight: 600; }
+html body dialog.td-done-app .td-tag-pick .td-answer[aria-checked="true"] { outline: 0; background: #000; color: #fff; }
 html body dialog.td-done-app .td-check-title { font-size: 22px; line-height: 26px; letter-spacing: -.02em; }
 html body dialog.td-done-app .p-dialog-foot .btn { min-height: 44px; padding: 0 22px; border-radius: 980px; font-size: 15px; font-weight: 600; }
 html body dialog.td-done-app .p-dialog-foot .btn.btn-primary { padding: 0 26px; border: 0; background: #0071e3; color: #fff; font-size: 16px; }
