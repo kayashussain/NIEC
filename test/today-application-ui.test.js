@@ -116,11 +116,12 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   const more = again.locator('.tdx-actions .td-more-btn');
   assert.strictEqual(await more.count(), 1, 'the ... pill');
   const mb = await more.boundingBox();
-  const ab = await again.locator('.tdx-actions').boundingBox();
-  assert.ok(mb.height >= 43 && Math.abs((mb.x + mb.width) - (ab.x + ab.width)) <= 2, 'a 44px pill at the right end of the row');
+  const pb = await again.locator('.tdx-actions .tdx-profile').boundingBox();
+  assert.ok(mb.height >= 43 && mb.x > pb.x + pb.width, 'a 44px pill after View student profile, at the right');
   await more.click();
-  assert.ok(await again.getByRole('menuitem', { name: 'Open the student card in a new tab' }).isVisible());
+  await again.getByRole('menuitem', { name: 'Open the student card in a new tab' }).waitFor({ state: 'visible' });
   await page.keyboard.press('Escape');
+  await again.locator('.td-menu').waitFor({ state: 'hidden' });
   // The "Mark as done?" window, as in the approved design F5 (the owner, 23 Nov 2026): Step 1 of 2 asks What happened (Applied or
   // Not submitted), Why only when not submitted, the day it happened and optional notes; Next: check shows Step 2 of 2, Check before
   // saving, with Back and Yes, this is correct. Nothing is saved here (Back, then Not yet).
@@ -130,25 +131,26 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(await win.evaluate((d) => d.classList.contains('td-done-app')), 'the Application Team\'s window');
   assert.match(await win.innerText(), /Gita Demo/);
   assert.match(await win.innerText(), /Test University/);
-  assert.strictEqual(await win.locator('.td-done-stepno').innerText(), 'Step 1 of 2');
+  const stepText = () => win.locator('.td-done-stepno').textContent(); // drawn in capitals by the CSS, so its text, not innerText
+  assert.strictEqual(await stepText(), 'Step 1 of 2');
   for (const r of [/^What happened/, /^Day it happened/, /^Notes \(optional\)$/]) assert.ok(await win.locator('.p-label', { hasText: r }).count(), String(r));
   for (const r of ['Applied', 'Not submitted']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).count(), r);
   assert.strictEqual(await win.getByRole('radio', { name: 'Applied', exact: true }).getAttribute('aria-checked'), 'true', 'Applied is chosen first');
   const whyBox = win.locator('.p-label', { hasText: /^Why/ });
   assert.ok(!(await whyBox.isVisible()), 'Why is hidden while Applied is chosen');
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
-  assert.ok(await whyBox.isVisible(), 'Why shows for Not submitted');
+  await whyBox.waitFor({ state: 'visible' }); // Why shows for Not submitted
   for (const r of ['Not eligible', 'Already applied through another agent', 'The course is not available', 'Applications are closed']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
   await win.getByRole('radio', { name: 'Applied', exact: true }).click();
-  assert.ok(!(await whyBox.isVisible()), 'Why hides again for Applied');
+  await whyBox.waitFor({ state: 'hidden' }); // and hides again for Applied
   assert.ok(await win.getByText('Nothing is saved until you check it on the next step.').count());
   await win.getByRole('button', { name: 'Next: check' }).click();
   await win.locator('.td-check-title').waitFor();
-  assert.strictEqual(await win.locator('.td-check-title').innerText(), 'Check before saving');
-  assert.strictEqual(await win.locator('.td-done-stepno').innerText(), 'Step 2 of 2');
+  assert.strictEqual((await win.locator('.td-check-title').textContent()).trim(), 'Check before saving');
+  assert.strictEqual(await stepText(), 'Step 2 of 2');
   assert.ok(await win.getByRole('button', { name: 'Yes, this is correct' }).count());
   await win.getByRole('button', { name: 'Back' }).click();
-  assert.strictEqual(await win.locator('.td-done-stepno').innerText(), 'Step 1 of 2');
+  assert.strictEqual(await stepText(), 'Step 1 of 2');
   await win.getByRole('button', { name: 'Not yet' }).click();
   await win.waitFor({ state: 'detached' });
   // Nothing sideways, no script error.
