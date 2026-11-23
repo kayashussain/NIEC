@@ -4293,3 +4293,9 @@ html body .tda-row .tdy-missbody { padding-bottom: 16px; }
 html body .tdy-pr { min-height: 52px; }
 html body .tdy-pr .tdx-fix:not(.btn-primary) { border: 1px solid #b8b8b8; background: #f7f7f7; color: #000; }
 html body .tdy-pr .tdx-fix.btn-primary { border-color: #0071e3; }
+
+/* 🔴 CSS CHANGED (2026-11-23): three small points of the Application Team's Today brought to the approved design F5 (checked against F5 and the live site) | from: the search box with 12px corners and a light #9a9a9a border (an older rule for every box was stronger than the F5 one); the small capital labels (the day, the section titles of an opened task, Updates) in bold 700; the headings over the panels ("Late, do these first", "Today", "N students have something missing") in 600 | to: the search box with 8px corners and the firm #6f6f6f border, as F5 and every other field; the small capital labels in 600, as F5; the headings over the panels in bold 700, as F5 */
+html body .tda-search .td-search-input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]) { border: 1px solid #6f6f6f; border-radius: 8px; }
+html body .tda-search .td-search-input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):focus { border-color: #0071e3; }
+html body .tda-date, html body .tdy-sech, html body .tdy-cap { font-weight: 600; }
+html body .tda-gh { font-weight: 700; }

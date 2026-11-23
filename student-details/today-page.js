@@ -448,7 +448,8 @@
     seg.setAttribute('aria-label', 'Which tasks');
     VIEWS.forEach(([k, label, list]) => {
       const b = h('button', { class: 'tda-view', type: 'button', role: 'tab', 'aria-selected': String(taskView === k) }, label);
-      if (list.length) b.append(el('span', 'tda-view-n', String(list.length > 999 ? '999+' : list.length)));
+      // Every tab shows its number, 0 included (approved design F5: "Today 0", "Missing details 0").
+      b.append(el('span', 'tda-view-n', String(list.length > 999 ? '999+' : list.length)));
       if (list.reduce((m, x) => m + (x.unread || 0), 0)) { const dot = el('span', 'td-view-dot', ''); dot.title = 'Something new'; b.append(dot); }
       b.addEventListener('click', () => { taskView = k; tagFilter = 'all'; refresh(); });
       seg.append(b);
