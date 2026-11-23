@@ -436,8 +436,15 @@
         };
         if (F5 && tag === 'application') {
           const target = courseBlock((state && state.courseTask) || t.app);
-          const q = question('What happened', [['submitted', 'Applied'], ['notsubmitted', 'Not submitted']], (v) => show(why.node.parentNode, v === 'notsubmitted'));
-          const why = question('Why', [['noteligible', 'Not eligible'], ['agent', 'Already applied through another agent'], ['nocourse', 'The course is not available'], ['closed', 'Applications are closed']]);
+          const q = question('What happened', [['submitted', 'Applied'], ['notsubmitted', 'Not submitted']], (v) => {
+            show(why.node.parentNode, v === 'notsubmitted');
+            const l = words && words.wrap.querySelector('.p-label'); if (l) l.textContent = v === 'notsubmitted' && why.value() === 'other' ? 'Notes (say why)' : 'Notes (optional)';
+          });
+          // Every common reason has its own answer, kept as a code so the reasons can be counted (the owner, 24 Nov 2026: "not submitted is
+          // not always not eligible ... we want the best data"); Other asks for the reason in Notes.
+          const why = question('Why', [['noteligible', 'Not eligible'], ['nocourse', 'The course is not available'], ['closed', 'Applications are closed'], ['intakefull', 'The intake is full'],
+            ['agent', 'Already applied through another agent'], ['otheruni', 'The student chose another university'], ['notgoing', 'The student is not going ahead'], ['noreply', 'The student is not responding'], ['other', 'Other']],
+            (v) => { const l = words && words.wrap.querySelector('.p-label'); if (l) l.textContent = v === 'other' ? 'Notes (say why)' : 'Notes (optional)'; });
           show(why.node.parentNode, false);
           const dayF = field('Day it happened', { kind: 'date', value: today, required: true });
           dayF.input.max = today;
@@ -457,7 +464,8 @@
           check = () => {
             const c = target();
             return !c.university ? 'Write the university.' : !q.value() ? 'Choose what happened.' : q.value() === 'submitted' && !c.course ? 'Write the course.'
-              : q.value() === 'notsubmitted' && !why.value() ? 'Choose why it was not submitted.' : !dayF.input.value ? 'Choose the day it happened.' : '';
+              : q.value() === 'notsubmitted' && !why.value() ? 'Choose why it was not submitted.'
+              : q.value() === 'notsubmitted' && why.value() === 'other' && words.input.value.trim().length < minNote ? 'Write the reason in Notes (a few words).' : !dayF.input.value ? 'Choose the day it happened.' : '';
           };
         } else if (F5 && tag === 'offer') {
           const target = courseBlock(state && state.offerTask);

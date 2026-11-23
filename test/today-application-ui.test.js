@@ -135,7 +135,8 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(!(await whyBox.isVisible()), 'Why is hidden while Applied is chosen');
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
   await whyBox.waitFor({ state: 'visible' }); // Why shows for Not submitted
-  for (const r of ['Not eligible', 'Already applied through another agent', 'The course is not available', 'Applications are closed']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
+  // Every common reason has its own answer (the owner, 24 Nov 2026: "not submitted is not always not eligible").
+  for (const r of ['Not eligible', 'The course is not available', 'Applications are closed', 'The intake is full', 'Already applied through another agent', 'The student chose another university', 'The student is not going ahead', 'The student is not responding', 'Other']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
   await win.getByRole('radio', { name: 'Applied', exact: true }).click();
   await whyBox.waitFor({ state: 'hidden' }); // and hides again for Applied
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
@@ -145,6 +146,11 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await save.click();
   await win.locator('.p-msg.error', { hasText: 'Choose why it was not submitted.' }).waitFor();
   assert.ok(await win.isVisible(), 'still open');
+  // Other needs the reason written in Notes.
+  await win.getByRole('radio', { name: 'Other', exact: true }).click();
+  await win.locator('.p-label', { hasText: 'Notes (say why)' }).waitFor();
+  await save.click();
+  await win.locator('.p-msg.error', { hasText: 'Write the reason in Notes' }).waitFor();
   // Not eligible and a short note: saved (the Why is the reason, no 8-letter note needed), and the window closes.
   await win.getByRole('radio', { name: 'Not eligible', exact: true }).click();
   await win.locator('textarea').fill('IELTS');
@@ -156,6 +162,7 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   const answered = card.options.find((x) => x.id === oid);
   assert.ok(answered.skipped, 'the course is kept as not submitted, with its day');
   assert.match(answered.reason, /^Not eligible\. IELTS/, 'the reason chosen and the words typed');
+  assert.strictEqual(answered.whyCode, 'noteligible', 'the reason kept as a code, so reasons can be counted');
   assert.ok(!card.tasks.some((x) => x.tag === 'offer' && !x.done), 'no Offer request for a course not submitted');
   assert.ok(card.notes.some((n) => /^Not submitted to Test University \(BSc Test\): Not eligible\. IELTS\./.test(n.text)), 'the note on the student');
   // The task has left Today's list.

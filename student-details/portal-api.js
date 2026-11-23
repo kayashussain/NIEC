@@ -646,8 +646,14 @@ function createPortalApi({
   // A sheet value as people read it: a date as "16 Nov 2026", anything else as it is, "(empty)" for nothing.
   const shown = (v) => { const t = text(v); if (!t) return '(empty)'; const d = isoDate(t); return d && /^\d{4}-\d{2}-\d{2}$/.test(t) ? niceDay(d) : t; };
   const APP_WHAT = { submitted: 'Applied', conditional: 'Conditional offer', unconditional: 'Unconditional offer', offer: 'Offer', refused: 'Refused', withdrawn: 'Withdrawn', notsubmitted: 'Not submitted' };
-  // Why a course was not submitted, as chosen in the "Mark as done?" window (approved design F5, the owner, 23 Nov 2026).
-  const WHY_NOT = { noteligible: 'Not eligible', agent: 'Already applied through another agent', nocourse: 'The course is not available', closed: 'Applications are closed' };
+  // Why a course was not submitted, as chosen in the "Mark as done?" window (approved design F5, the owner, 23 Nov 2026). Every common
+  // case has its own answer, kept as a code on the university so the reasons can be counted (the owner, 24 Nov 2026: "not submitted is
+  // not always not eligible ... we want the best data"); Other needs the reason written in Notes.
+  const WHY_NOT = {
+    noteligible: 'Not eligible', nocourse: 'The course is not available', closed: 'Applications are closed', intakefull: 'The intake is full',
+    agent: 'Already applied through another agent', otheruni: 'The student chose another university', notgoing: 'The student is not going ahead',
+    noreply: 'The student is not responding', other: 'Other reason',
+  };
   const OFFERS = ['conditional', 'unconditional', 'offer'];
   // Every application ISR knows for a student: University options with a day, and the sheet's own university when it has a date.
   function applicationsOf(row, card) {
@@ -832,7 +838,7 @@ function createPortalApi({
       const unanswered = kind === 'application' ? assignedAll.filter((a) => !list.some((u) => matchAssigned(u) === a)) : [];
       if (unanswered.length) return { error: `${unanswered.map((a) => a.university + (a.course ? ` (${a.course})` : '')).join(', ')} ${unanswered.length > 1 ? 'were' : 'was'} given to the team and ${unanswered.length > 1 ? 'have' : 'has'} no answer yet. For each, choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why).` };
       // A Why chosen in the window (Not eligible, Already applied through another agent, ...) is the reason; else the note must say why.
-      const needsWhy = list.find((u) => ['notsubmitted', 'refused', 'withdrawn'].includes(u.what) && !(u.what === 'notsubmitted' && u.why) && text(note).length < MIN_NOTE);
+      const needsWhy = list.find((u) => ['notsubmitted', 'refused', 'withdrawn'].includes(u.what) && !(u.what === 'notsubmitted' && u.why && u.why !== 'other') && text(note).length < MIN_NOTE);
       if (needsWhy) return { error: `Say why in the note: ${needsWhy.university} was ${APP_WHAT[needsWhy.what].toLowerCase()}.` };
       const noCourse = list.find((u) => ['submitted', ...OFFERS].includes(u.what) && !u.course && !(applicationsOf(row, card).find((a) => squash(a.university) === squash(u.university)) || {}).course && !(squash(u.university) === squash(text(row['UNIVERSITY NAME'])) && text(row['COURSE NAME'])));
       if (noCourse) return { error: `Write the course for ${noCourse.university}.` };
@@ -900,7 +906,8 @@ function createPortalApi({
             // Assigned but not submitted (the owner, 17 Nov 2026: for example the student is not eligible there); the note says why.
             if (prior.applied) return { error: `${name} is recorded as applied on ${niceDay(prior.applied)}: it cannot be "Not submitted".` };
             opt.skipped = d;
-            const reason = [u.why && WHY_NOT[u.why], text(note)].filter(Boolean).join('. ');
+            if (u.why) opt.whyCode = u.why;
+            const reason = [u.why && u.why !== 'other' && WHY_NOT[u.why], text(note)].filter(Boolean).join('. ');
             if (reason) opt.reason = reason.slice(0, 300);
           }
           if (opt.optionId) { // the given course itself carries the answer and the day, even when All Students already shows the same day
@@ -934,7 +941,7 @@ function createPortalApi({
         // One course not submitted (the owner, 24 Nov 2026): "Not submitted to X (Course): Not eligible." and anything typed in Notes.
         if (list.length === 1 && list[0].what === 'notsubmitted') {
           const u = list[0]; const c = u.course || (plan.options[0] && plan.options[0].course) || '';
-          plan.note = `Not submitted to ${u.university || sheetUni}${c ? ` (${c})` : ''}${u.why ? `: ${WHY_NOT[u.why]}` : ''}. ${sentence(note)}`.trim();
+          plan.note = `Not submitted to ${u.university || sheetUni}${c ? ` (${c})` : ''}${u.why && u.why !== 'other' ? `: ${WHY_NOT[u.why]}` : ''}. ${sentence(note)}`.trim();
         } else if (days.length === 1) plan.note = `On ${niceDay(days[0])}: ${join(parts)}. ${sentence(note)}`.trim();
         else { // lines on different days: each says its own day
           const one = (u) => `${{ submitted: 'applied to', conditional: 'conditional offer from', unconditional: 'unconditional offer from', offer: 'offer from', refused: 'refused by', withdrawn: 'withdrawn from', notsubmitted: 'not submitted to' }[u.what]} ${u.university || sheetUni}${u.course ? ` (${u.course})` : ''} on ${niceDay(u.d)}`;
@@ -1135,13 +1142,13 @@ function createPortalApi({
     plan.options.forEach((o) => {
       const opts = cards.get(rowId).options || [];
       const same = (o.optionId && opts.find((x) => x.id === o.optionId)) || pickCourse(opts, o.university, o.course);
-      const dates = Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason'].filter((k) => o[k]).map((k) => [k, o[k]]));
+      const dates = Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason', 'whyCode'].filter((k) => o[k]).map((k) => [k, o[k]]));
       if (o.refused || o.withdrawn) { dates.offer = ''; dates.offerType = ''; } // a refused or withdrawn offer no longer stands
       if (same) {
         // What it was before AND what this task set, so reopening puts back only this task's own answers (a later offer recorded on the
         // same university by its Offer request stays).
         const set = { ...dates, ...(o.course && !same.course ? { course: o.course } : {}) };
-        if (!wrote.options.some((w) => w.id === same.id)) wrote.options.push({ id: same.id, before: Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason', 'course'].map((k) => [k, same[k] || ''])), set });
+        if (!wrote.options.some((w) => w.id === same.id)) wrote.options.push({ id: same.id, before: Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason', 'whyCode', 'course'].map((k) => [k, same[k] || ''])), set });
         cards.updateOption(rowId, same.id, { ...dates, ...(o.course && !same.course ? { course: o.course } : {}) }, by(req));
       } else {
         const made = cards.addOption(rowId, { university: o.university, course: o.course, ...dates }, by(req));

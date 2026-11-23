@@ -86,6 +86,8 @@ function cleanOption(input, old = {}) {
     skipped: (() => { const v = pick('skipped', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     // Why it was refused, withdrawn or not submitted, in a few words (typed on the student card by the Application Team, the owner, 17 Nov 2026).
     reason: pick('reason', 300),
+    // The reason chosen in the "Mark as done?" window as a short code (noteligible, nocourse, closed, ...), so reasons can be counted.
+    whyCode: (() => { const v = pick('whyCode', 20); return /^[a-z]{2,20}$/.test(v) ? v : ''; })(),
     // Sent to the Application Team from the shortlist (the day), and its place in the order it was sent in (1, 2, 3 ...).
     sent: (() => { const v = pick('sent', 10); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''; })(),
     // The Apply task made for this course when it was sent to the team (one task per course, the owner, 18 Nov 2026).
