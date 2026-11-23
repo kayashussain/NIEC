@@ -145,7 +145,11 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await win.getByRole('button', { name: 'Next: check' }).click();
   await win.locator('.td-check-title').waitFor();
   const check1 = await win.locator('.td-done-step:not([hidden])').innerText();
-  assert.match(check1, /Test University \(BSc Test\): Not submitted on /, 'the university line says Not submitted on the day');
+  // Each check line in two columns, as F5 draws it: the university on the left, what happened on the right.
+  const line1 = win.locator('.td-check-block', { hasText: 'University options' }).locator('li.td-check-two');
+  assert.strictEqual(await line1.locator('.td-check-l').innerText(), 'Test University (BSc Test)');
+  assert.match(await line1.locator('.td-check-r').innerText(), /^Not submitted on \d+ \w+ \d{4}$/, 'the university line says Not submitted on the day');
+  assert.doesNotMatch(check1, /also shown in Remarks/, 'the note alone, as in F5');
   assert.match(check1, /Not submitted to Test University \(BSc Test\): Not eligible\. IELTS\./, 'the note says Not submitted, the reason and the words typed');
   assert.doesNotMatch(check1, /Offer request/, 'no Offer request for a course not submitted');
   await win.getByRole('button', { name: 'Back' }).click();
@@ -160,7 +164,9 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.strictEqual((await win.locator('.td-check-title').textContent()).trim(), 'Check before saving');
   assert.strictEqual(await stepText(), 'Step 2 of 2');
   const check2 = await win.locator('.td-done-step:not([hidden])').innerText();
-  assert.match(check2, /Test University \(BSc Test\): Applied on /);
+  assert.match(check2, /Test University \(BSc Test\)\s+Applied on /);
+  // F5's window: no close cross, a 260px day field on step 1 (checked here on the way back), only the blue button big.
+  assert.strictEqual(await win.locator('.p-x').isVisible(), false, 'no close cross');
   assert.match(check2, /Offer request: Test University \(BSc Test\)/);
   assert.doesNotMatch(check2, /Not submitted|Not eligible/, 'nothing left from the first check');
   // Nothing is saved before Yes: the task is still open.

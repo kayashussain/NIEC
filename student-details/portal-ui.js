@@ -703,12 +703,22 @@
           b.append(ul);
           sure.append(b);
         };
+        // The Application Team's check is drawn as F5 draws it (the owner, 24 Nov 2026): each line in two columns, what on the left and
+        // the value on the right ("University of Greenwich (BSc Computing) ...... Applied on 23 Nov 2026").
+        const F5look = Boolean(dlg && dlg.classList.contains('td-done-app'));
+        const two = (left, right) => { const li = el('li', 'td-check-two'); li.append(el('span', 'td-check-l', left), el('span', 'td-check-r', right)); return li; };
+        const split = (s, at) => { const i = at(s); return F5look && i > 0 ? two(s.slice(0, i), s.slice(i + 2)) : s; };
         block('Please look at this first', p.warnings, 'is-warn');
-        block('Changes on All Students', p.changes.map((c) => { const li = el('li', 'td-check-change'); li.append(el('b', '', c.label), el('span', c.from === '(empty)' ? 'td-check-from is-empty' : 'td-check-from', c.from), el('span', 'td-check-arrow', '→'), el('span', 'td-check-to', c.to)); return li; }));
-        block('University options', p.options);
+        block('Changes on All Students', p.changes.map((c) => {
+          const li = el('li', `td-check-change${F5look ? ' td-check-two' : ''}`);
+          const from = el('span', c.from === '(empty)' ? 'td-check-from is-empty' : 'td-check-from', c.from); const arrow = el('span', 'td-check-arrow', '→'); const to = el('span', 'td-check-to', c.to);
+          if (F5look) { const r = el('span', 'td-check-r'); r.append(from, arrow, to); li.append(el('b', 'td-check-l', c.label), r); } else li.append(el('b', '', c.label), from, arrow, to);
+          return li;
+        }));
+        block('University options', p.options.map((s) => split(s, (x) => x.lastIndexOf(': '))));
         block('A new task for the team', [...(p.remind ? [p.remind] : []), ...(p.offerTasks || [])]);
-        block('Stays as it is', p.kept, 'is-quiet');
-        block('Note on the student', p.note ? [p.note + (p.remarks ? ' (also shown in Remarks)' : '')] : []);
+        block('Stays as it is', p.kept.map((s) => split(s, (x) => (/^(University|Course): /.test(x) ? x.indexOf(': ') : -1))), 'is-quiet');
+        block('Note on the student', p.note ? [p.note + (p.remarks && !F5look ? ' (also shown in Remarks)' : '')] : []);
         if (!p.changes.length && !p.options.length && !p.remind) sure.append(el('p', 'p-muted', `Nothing changes on All Students. The task is marked done${p.note ? ' and the note is saved' : ''}.`));
         const foot = el('div', 'p-dialog-foot');
         const yes = h('button', { class: 'btn btn-primary', type: 'button' }, 'Yes, this is correct');

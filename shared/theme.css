@@ -4327,3 +4327,18 @@ html body dialog.td-done-app .td-answer[aria-checked="true"] { outline: 0; backg
 html body dialog.td-done-app .td-check-title { font-size: 22px; line-height: 26px; letter-spacing: -.02em; }
 html body dialog.td-done-app .p-dialog-foot .btn { min-height: 44px; padding: 0 22px; border-radius: 980px; font-size: 15px; font-weight: 600; }
 html body dialog.td-done-app .p-dialog-foot .btn.btn-primary { padding: 0 26px; border: 0; background: #0071e3; color: #fff; font-size: 16px; }
+/* 🔴 CSS CHANGED (2026-11-24): the Application Team's "Mark as done?" window, second pass against F5 (the owner: "find the gaps and fill it") | from: a "×" close button in the grey header, 28px side padding, the day field as wide as the window, a two-line Notes box, Not yet and Back as big 44px pills, bold section labels, and the check lines run together ("University of Greenwich (BSc Computing): Applied on 23 Nov 2026") | to: no "×" (Not yet, Back and Escape close it), 32px side padding, the day field 260px wide, a 72px Notes box, Not yet and Back as 40px grey pills (only the blue button is big), semi-bold section labels, and every check line in two columns (what on the left, the value on the right) as F5 draws it */
+html body dialog.td-done-app .p-dialog-head .p-x { display: none; }
+html body dialog.td-done-app .p-dialog-head { padding: 22px 32px 18px; }
+html body dialog.td-done-app .p-dialog-body { padding: 24px 32px 0; }
+html body dialog.td-done-app .td-done-step > .p-dialog-foot, html body dialog.td-done-app .p-dialog-body > .p-dialog-foot { margin: 30px -32px 0; padding: 18px 32px; }
+html body dialog.td-done-app .td-done-form input[type="date"] { max-width: 260px; }
+html body dialog.td-done-app .td-done-form input, html body dialog.td-done-app .td-done-form textarea { min-height: 44px; border: 1px solid #6f6f6f; border-radius: 8px; background: #f7f7f7; color: #000; font-size: 15px; }
+html body dialog.td-done-app .td-done-form textarea { min-height: 72px; }
+html body dialog.td-done-app .p-dialog-foot .btn:not(.btn-primary) { min-height: 40px; padding: 0 18px; border: 0; outline: 1px solid #b8b8b8; background: #f7f7f7; color: #000; }
+html body dialog.td-done-app .td-check-block > .p-label { font-weight: 600; }
+html body dialog.td-done-app .td-check-list li.td-check-two { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+html body dialog.td-done-app .td-check-two .td-check-l { min-width: 0; font-weight: 600; }
+html body dialog.td-done-app .td-check-two .td-check-r { flex: none; max-width: 60%; text-align: right; color: #000; }
+html body dialog.td-done-app .td-check-two .td-check-from { margin-right: 6px; color: #333; font-weight: 600; }
+html body dialog.td-done-app .td-check-two .td-check-arrow { margin-right: 6px; }
