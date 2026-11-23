@@ -4303,3 +4303,7 @@ html body .tda-gh { font-weight: 700; }
 /* 🔴 CSS CHANGED (2026-11-23): the page you are on, in the side menu, for every team and Admin (the owner chose "Blue, every team", as in the approved design F5 and the ISR colour table: "where you are now" is blue) | from: a light grey pill (6% black) with black words and a black icon | to: a blue #0071e3 pill with white words and a white icon; the other menu items and their grey hover are unchanged */
 html body .niec-nav a[aria-current="page"], html body .niec-nav a[aria-current="page"]:hover { background: #0071e3; color: #fff; font-weight: 600; box-shadow: none; }
 html body .niec-nav a[aria-current="page"] .niec-ico { color: #fff; }
+
+/* 🔴 CSS CHANGED (2026-11-23): the width of the Application Team's Today, as the approved laptop artifact "Fills the width" (the owner chose it after looking at the artifact) | from: a centred column 1,040 wide with empty grey space on both sides of it | to: the lists, search row and tabs start beside the menu (40px in) and run to the right edge (40px in), as in F5 */
+html body .p-page:has(.tda-page) { max-width: none; padding-left: 40px; padding-right: 40px; }
+html body .tda-page { max-width: none; margin: 0; }
