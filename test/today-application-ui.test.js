@@ -75,14 +75,15 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.match(await page.locator('.tda-gh').first().innerText(), /^(Late, do these first|Today) \u00b7 \d+$/, 'a heading over its panel');
   assert.strictEqual(await page.locator('.td-hello, .td-pulse, .td-tasks').count(), 0, 'no greeting, no progress card, no Tasks box');
   const closed = page.locator('.tdx', { hasText: 'Apply to Test University' });
-  assert.match(await closed.locator('.tdy-hint').innerText(), /2 details missing/, 'the closed task says what is missing');
+  assert.match(await closed.locator('.tdy-hint').innerText(), /3 details missing/, 'the closed task says what is missing');
   await closed.locator('.tdx-head').click();
   const body = closed.locator('.tdy-body');
   await body.waitFor();
   const text = await body.locator('.tdy-details').innerText(); // the details; the updates are the conversation (the system's own assignment line may name the partner)
-  assert.match(text, /Add these 2 before you submit/i);
+  assert.match(text, /Add these 3 before you submit/i);
   assert.match(text, /Passport number[\s\S]*Missing/);
   assert.match(text, /Address[\s\S]*Missing/);
+  assert.match(text, /Nationality[\s\S]*Missing/, 'a student with no nationality saved has it listed as missing');
   for (const l of ['University', 'Course', 'Level', 'Intake', 'Language test', 'Email', 'WhatsApp', 'Date of birth', 'Nationality']) assert.match(text, new RegExp(l), l + ' is shown');
   assert.match(text, /Test University/); assert.match(text, /Waiver/); assert.match(text, /12 Mar 2003/);
   assert.doesNotMatch(text, /Student source|Social Media|Real Dreams|Partner/i, 'no source and no partner');

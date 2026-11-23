@@ -211,7 +211,8 @@
       const langOk = Boolean(lang) && lang !== 'Test Date';
       add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], ['Language test', langOk ? languageShown(lang) : '']]);
       add('Student', [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]]);
-      [['Email', email], ['WhatsApp number', phone], ['Passport number', d.passport], ['Date of birth', d.dob], ['Address', d.address], [lang === 'Test Date' ? 'Language test date' : 'Language test', langOk]].forEach(([l, v]) => { if (!v) missing.push(l); });
+      // F5: every detail of the two sections that is empty is listed first as missing (University, Course, Level, Intake, Language test, Email, WhatsApp, Passport number, Date of birth, Nationality, Address).
+      [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang === 'Test Date' ? 'Language test date' : 'Language test', langOk], ['Email', email], ['WhatsApp number', phone], ['Passport number', d.passport], ['Date of birth', d.dob], ['Nationality', d.nationality], ['Address', d.address]].forEach(([l, v]) => { if (!v) missing.push(l); });
     } else if (x.tag === 'offer') {
       add('Application', [['University', c && c.university], ['Course', c && c.course], ['Intake', c && c.intake], ['Applied on', longDay(c && c.applied)]]);
       add('Student', student);

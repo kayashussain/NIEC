@@ -720,7 +720,7 @@ function createPortalApi({
   function detailsOf(row, card) {
     const p = (card && card.profile) || {};
     return {
-      passport: text(p.passportNo).slice(0, 20), dob: text(p.dob).slice(0, 10), nationality: text(p.nationality) || 'Nepali', address: text(p.address).slice(0, 200),
+      passport: text(p.passportNo).slice(0, 20), dob: text(p.dob).slice(0, 10), nationality: text(p.nationality), address: text(p.address).slice(0, 200),
       language: text(row['LANGUAGE TEST DATE']).slice(0, 40), medicalReport: text(row['MEDICAL REPORT']).slice(0, 20), medicalDate: text(card && card.medical && card.medical.date).slice(0, 10),
     };
   }
