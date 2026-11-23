@@ -23,6 +23,17 @@
 - Before it is called finished, review it deeply as a user, as a developer and as a tester: no CSS or front-end crash, nothing broken on
   any size or state, the code read through, the tests run. Give it your best first; then ask for the owner's feedback (multiple choice).
 
+## Rule 0c: HOW TO WORK WITH GITHUB RUNS (STRICT, the owner, 23 Nov 2026)
+
+- **Keep watching a run until it is finished. Never wait a fixed time and never say "about 3 minutes".** A run may finish in
+  5 seconds or in 5 minutes. After a push, check the Tests run, then the Deploy run, again and again, back to back, with no
+  waiting between checks, until each one says `completed`.
+- **Report the moment a run finishes**: success, or failure with the reason. Do not make the owner ask.
+- Use the light call `actions_get` with `get_workflow_run` and the run id. Avoid `list_workflow_runs` (it returns every run).
+- If a job fails, read its log (`get_job_logs`). If it is the known slow-runner timeout in a browser test, run the failed jobs
+  again; if it is a real failure, fix it and push again. Never skip or weaken a test to get green.
+- A push is finished only when the Deploy run is `success` and the live check (`/healthz`) passed. Say so in the reply.
+
 ## Rule 1: every CSS change is marked, logged and announced (the owner asked for this, and it must never be skipped)
 
 The owner is not a developer and wants to see every change to how the site looks. Whenever you change **any CSS**
