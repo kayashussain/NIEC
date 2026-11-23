@@ -1,5 +1,28 @@
 # Standing rules for this project
 
+## Rule 0: QUESTIONS TO THE OWNER ARE ALWAYS MULTIPLE CHOICE (STRICT, MANDATORY, the owner, 23 Nov 2026) ***
+
+**\*\*\* NEVER ASK THE OWNER A QUESTION INSIDE A PARAGRAPH OR A SENTENCE. \*\*\***
+
+- **Every question goes through the AskUserQuestion tool as a multiple-choice question** (2 to 4 short options, the recommended one first
+  and marked "(Recommended)"). The owner picks an option, or picks "Other" and explains. This holds for every question, every time,
+  in every session, however small, and also for the question that asks for feedback at the end of a piece of work.
+- **The owner does not have time to read paragraphs.** Replies are short: the "🔴 CSS CHANGED" part (Rule 1) first, then a few plain
+  lines of what was done, what was checked, and what the owner should look at. No long paragraphs, no questions hidden inside them.
+- If a reply has no question, it says so by simply ending. If it has one, the question is the multiple-choice card, not text.
+- Never forget this and never repeat the mistake. If an earlier reply broke it, fix the next one.
+
+## Rule 0b: APPROVED ONCE MEANS DONE AND LIVE (STRICT, the owner, 23 Nov 2026)
+
+- **When the owner has looked at a design or a plan and says go, approve, build or deploy, that is the approval for the whole job,
+  including putting it on the live server.** Do all of it: build, test, review, push to `master` (the deploy follows when the tests pass),
+  check the deploy went through, and only then report.
+- **Never split an approved job into parts and ask for approval again for each part** (for example: the opened task, then the window, then the tab).
+  Do every part that was shown and approved in one go. Ask only when something truly new or different is needed, and then as a
+  multiple-choice question (Rule 0).
+- Before it is called finished, review it deeply as a user, as a developer and as a tester: no CSS or front-end crash, nothing broken on
+  any size or state, the code read through, the tests run. Give it your best first; then ask for the owner's feedback (multiple choice).
+
 ## Rule 1: every CSS change is marked, logged and announced (the owner asked for this, and it must never be skipped)
 
 The owner is not a developer and wants to see every change to how the site looks. Whenever you change **any CSS**
