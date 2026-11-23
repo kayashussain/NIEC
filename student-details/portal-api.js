@@ -1494,6 +1494,7 @@ function createPortalApi({
     const value = { ...totals, ...counts };
     return {
       today, name: user.name, totals, kind, title: space.title, tagline: space.tagline,
+      appTeam: Teams.ownTeamApplication(user), // the Missing details tab is drawn in the Application Team's own look for that team only (the owner, 23 Nov 2026)
       tiles: space.tiles.map((k) => ({ key: k, label: TILE_LABEL[k], value: value[k] })),
       missing: missing ? [...missing.values()].sort((a, b) => b.lines.length - a.lines.length || a.name.localeCompare(b.name)) : null,
       // How many different students wait in these lists: a student in two lists (no passport details and not applied yet) counts once.

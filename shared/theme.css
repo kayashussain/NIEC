@@ -4224,3 +4224,14 @@ html body dialog.td-done-app .td-check-to { color: #000; font-weight: 700; }
 html body dialog.td-done-app .td-check-list li:last-child { border-bottom: 0; }
 html body dialog.td-done-app .td-check-block:last-of-type { margin-bottom: 0; }
 html body dialog.td-done-app .td-done-step > .p-dialog-foot, html body dialog.td-done-app .p-dialog-body > .p-dialog-foot { position: static; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 30px -28px 0; padding: 16px 28px; border-top: 1px solid #b8b8b8 !important; background: #ececec; }
+
+/* 🔴 CSS CHANGED (2026-11-23): the Missing details tab on Today, for the Application Team only (approved design F5) | from: every student's problems always listed under the name, with one Fix it button at the right of the row, the row not opening | to: one student per row with an arrow like the tasks: the name and stage, then an orange dot and "Needs attention" in grey ("2 to fix" for two or more) when closed; opened, each problem on its own line with its own button (the first in blue, the others grey) between hairlines; the first student starts open; what is listed and where the buttons go are unchanged */
+html body .tdy-missrow .tdx-head { cursor: pointer; }
+html body .tdy-missrow .tdx-head:hover { background: #ececec; }
+html body .tdy-misscount { position: relative; flex: none; align-self: center; padding-left: 16px; color: #333; font-size: 14px; font-weight: 600; white-space: nowrap; }
+html body .tdy-misscount::before { content: ""; position: absolute; left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: #d9650b; }
+html body .tdy-missbody { margin-bottom: 0; padding: 0 0 12px; border-top: 1px solid #b8b8b8; }
+html body .tdy-pr { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; box-sizing: border-box; padding: 6px 0; border-bottom: 1px solid #b8b8b8; }
+html body .tdy-pr:last-child { border-bottom: 0; }
+html body .tdy-pr-text { min-width: 0; color: #000; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+html body .tdy-pr .tdx-fix { min-height: 40px; padding: 0 20px; }

@@ -402,12 +402,62 @@
   }
   // Missing details (the owner, 21 Nov 2026): every student the Application Team can correct whose application, passport or medical
   // details are missing or do not add up; one line per problem and one button, Fix it.
+  // The Application Team's Missing details (the owner, 23 Nov 2026, approved design F5): one student per row with an arrow, "N things missing"
+  // when closed; opened, each problem on its own line with its button. The first student's row starts open. What is listed and where the
+  // buttons go are exactly as before.
+  const missOpen = new Set();
+  let missStarted = false;
+  function missingRowApp(m, refresh, key) {
+    const open = missOpen.has(key);
+    const r = el('article', `tdx tdx-miss tdy-missrow${open ? ' is-open' : ''}`);
+    const head = h('div', { class: 'tdx-head', role: 'button', tabindex: '0', 'aria-expanded': String(open), title: open ? 'Close' : 'Open' });
+    const av = el('span', 'tdx-av', initials(m.name));
+    av.setAttribute('aria-hidden', 'true');
+    const main = el('div', 'tdx-main');
+    const shownName = window.Portal.niceName ? window.Portal.niceName(m.name) : m.name;
+    const nameLine = el('div', 'tdx-name-line');
+    nameLine.append(m.id ? h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, shownName) : el('span', 'tdx-name', shownName));
+    main.append(nameLine, el('p', 'tdx-meta', [m.stage, m.intake].filter(Boolean).join(' \u00b7 ')));
+    const n = m.lines.length;
+    const count = el('span', 'tdy-misscount', n === 1 ? 'Needs attention' : `${n} to fix`); // a line can name several details, so a number is only shown for two or more lines
+    const chev = el('span', 'tdx-chev');
+    chev.setAttribute('aria-hidden', 'true');
+    head.append(av, main, count, chev);
+    r.append(head);
+    const toggle = () => { if (missOpen.has(key)) missOpen.delete(key); else missOpen.add(key); refresh(); };
+    head.addEventListener('click', (e) => { if (e.target.closest('a')) return; toggle(); });
+    head.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); toggle(); } });
+    if (!open) return r;
+    const body = el('div', 'tdx-body tdy-body tdy-missbody');
+    // The same place as before: a line about a Medical task is fixed by finishing that task; everything else on the student card.
+    const onTask = m.lines.every((ln) => ln.taskId) ? (tasksNow.find((t) => t.id === m.lines[0].taskId) || null) : null;
+    const acts = m.lines.filter((ln) => ln.action && /^\/[\w-]/.test(ln.action.href || '')).map((ln) => ln.action);
+    const act = acts.find((a) => a.label === 'Answer') || acts[0];
+    m.lines.forEach((ln, i) => {
+      const cls = `${i === 0 ? 'btn btn-primary' : 'btn'} tdx-fix`;
+      const fix = act ? h('a', { class: cls, href: act.href }, act.label)
+        : onTask ? h('button', { class: cls, type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
+        : h('a', { class: cls, href: '/student?id=' + encodeURIComponent(m.id) }, 'Fix it');
+      const line = el('div', 'tdy-pr');
+      line.append(el('span', 'tdy-pr-text', String(ln.text).replace(/\.$/, '')), fix);
+      body.append(line);
+    });
+    r.append(body);
+    return r;
+  }
   function missingPanel(refresh) {
     const box = el('div', 'td-group');
     const all = (todayData && todayData.missing) || [];
     const list = all.filter((m) => !searchQ || fold(`${m.name} ${m.lines.map((l) => l.text).join(' ')}`).includes(fold(searchQ)));
     if (!list.length) { box.append(emptyNote(searchQ ? `No student matches “${searchQ}”.` : 'Nothing is missing. Every detail is in.')); return box; }
     const l = el('div', 'tdx-list');
+    if (todayData && todayData.appTeam) {
+      // The first student's row starts open, once; after that the person's own choice stands.
+      if (!missStarted) { missStarted = true; const f = list[0]; missOpen.add(f.id || f.name); }
+      list.forEach((m) => l.append(missingRowApp(m, refresh, m.id || m.name)));
+      box.append(l);
+      return box;
+    }
     list.forEach((m) => {
       const r = el('article', 'tdx tdx-miss');
       const head = el('div', 'tdx-head');

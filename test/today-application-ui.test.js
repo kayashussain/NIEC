@@ -117,6 +117,21 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no sideways scroll');
   assert.deepStrictEqual(errors, []);
 
+  // The Missing details tab: one student per row with an arrow, "Needs attention" when closed, the problems with their buttons when open.
+  await page.getByText('Missing details').first().click();
+  const miss = page.locator('.tdy-missrow').filter({ hasText: 'Gita Demo' });
+  await miss.waitFor();
+  assert.match(await miss.locator('.tdy-misscount').innerText(), /^Needs attention$/);
+  const missHead = miss.locator('.tdx-head');
+  if ((await missHead.getAttribute('aria-expanded')) !== 'true') await missHead.click();
+  assert.strictEqual(await missHead.getAttribute('aria-expanded'), 'true');
+  const line = await miss.locator('.tdy-pr-text').first().innerText();
+  assert.match(line, /passport number/i); assert.match(line, /address/i);
+  assert.ok(await miss.locator('.tdy-pr .tdx-fix', { hasText: 'Fix it' }).count(), 'a Fix it button on the line');
+  await missHead.click();
+  assert.strictEqual(await missHead.getAttribute('aria-expanded'), 'false');
+  assert.strictEqual(await miss.locator('.tdy-pr').count(), 0, 'closed again');
+
   // The Mock Team's Today is as it was.
   const mockPage = await mina.newPage();
   await mockPage.goto('/today');
@@ -132,4 +147,10 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await wait(400);
   assert.ok(await mw.evaluate((d) => !d.classList.contains('td-done-app')), 'the Mock Team\'s window keeps its look');
   assert.strictEqual(await mw.locator('.td-done-stepno').count(), 0);
+  await mw.getByRole('button', { name: 'Not yet' }).click();
+  await mw.waitFor({ state: 'detached' });
+  // ... and its Missing details tab keeps its own rows.
+  await mockPage.getByText('Missing details').first().click().catch(() => {});
+  await wait(500);
+  assert.strictEqual(await mockPage.locator('.tdy-missrow').count(), 0, 'the Mock Team keeps its Missing details as before');
 });
