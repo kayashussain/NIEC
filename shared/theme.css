@@ -4313,6 +4313,17 @@ html body .tda-page { max-width: none; margin: 0; }
   html body .niec-nav a { padding: 10px 12px; }
   html body .niec-nav { gap: 3px; }
 }
-/* 🔴 CSS CHANGED (2026-11-23): the "..." of an opened Application Team task, as in the approved design F5 | from: a small round 30px grey icon at the right, shown only to whoever could edit the task | to: a 44px pill like Reschedule and Reassign (grey #f7f7f7, #9a9a9a edge, round ends) at the right end of the row, on every task; its menu is unchanged */
-html body .tda-row .tdx-actions .td-more-btn { width: auto; min-width: 48px; height: auto; min-height: 44px; padding: 0 14px; border: 1px solid #9a9a9a; border-radius: 999px; background: #f7f7f7; color: #000; }
-html body .tda-row .tdx-actions .td-more-btn:hover, html body .tda-row .tdx-actions .td-more-btn[aria-expanded="true"] { background: #e2e2e2; color: #000; }
+/* 🔴 CSS CHANGED (2026-11-24): the Application Team's task row and its "Mark as done?" window, as in the approved design F5 (the owner, 24 Nov 2026) | from: a 44px "..." pill at the end of every task; the window 880px wide with "Mark as done?" as a 19px title, the student's name as a 22px line in the body, red asterisks, labels in plain words, choice boxes with 8px corners, "Check before saving" at 18px and 8px-cornered buttons | to: no "..." on the Application Team's tasks; a 640px window with a grey #e2e2e2 header: "MARK AS DONE?" and "STEP 1 OF 2" as small capitals, the student's name under them at 26px bold; small capital labels (WHAT HAPPENED, WHY, DAY IT HAPPENED, NOTES (OPTIONAL)) with no asterisks; round pill choices (#f7f7f7, #b8b8b8 edge; chosen black with white words); "Check before saving" at 22px; round 44px footer buttons; the "Now on All Students" line not shown */
+html body dialog.p-dialog.td-done-app { width: min(640px, calc(100vw - 24px)); border-color: #9a9a9a; border-radius: 10px; background: #f3f3f3; }
+html body dialog.td-done-app .p-dialog-head { flex-wrap: wrap; gap: 6px 14px; padding: 22px 28px 18px; border-bottom: 1px solid #b8b8b8 !important; background: #e2e2e2; }
+html body dialog.td-done-app .p-dialog-head h2 { color: #333; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+html body dialog.td-done-app .td-done-stepno { font-weight: 600; }
+html body dialog.td-done-app .p-dialog-head .td-done-task { flex: 0 0 100%; order: 9; margin: 0; padding: 0; border: 0; font-size: 26px; line-height: 30px; }
+html body dialog.td-done-app .p-dialog-body { padding-top: 24px; }
+html body dialog.td-done-app .td-done-form .p-label { color: #333; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+html body dialog.td-done-app .p-req, html body dialog.td-done-app .td-done-now { display: none; }
+html body dialog.td-done-app .td-answer { min-height: 40px; padding: 0 18px; border: 0; border-radius: 980px; outline: 1px solid #b8b8b8; background: #f7f7f7; color: #000; font-size: 15px; font-weight: 600; }
+html body dialog.td-done-app .td-answer[aria-checked="true"] { outline: 0; background: #000; color: #fff; }
+html body dialog.td-done-app .td-check-title { font-size: 22px; line-height: 26px; letter-spacing: -.02em; }
+html body dialog.td-done-app .p-dialog-foot .btn { min-height: 44px; padding: 0 22px; border-radius: 980px; font-size: 15px; font-weight: 600; }
+html body dialog.td-done-app .p-dialog-foot .btn.btn-primary { padding: 0 26px; border: 0; background: #0071e3; color: #fff; font-size: 16px; }

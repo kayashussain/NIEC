@@ -112,30 +112,22 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(await again.locator('.tdy-upd-body').isVisible());
   // Mark as done, Reschedule, Reassign and View student profile are still there.
   for (const b of ['Mark as done', 'Reschedule', 'Reassign', 'View student profile']) assert.ok(await again.locator('.tdx-actions', { hasText: b }).count(), b);
-  // ... and the "..." pill at the right end, as in F5, which opens a menu with the student card in a new tab.
-  const more = again.locator('.tdx-actions .td-more-btn');
-  assert.strictEqual(await more.count(), 1, 'the ... pill');
-  const mb = await more.boundingBox();
-  const pb = await again.locator('.tdx-actions .tdx-profile').boundingBox();
-  // Its own size is 44px (the page is drawn at the text size the person chose, so the box on screen can be smaller).
-  assert.strictEqual(await more.evaluate((e) => getComputedStyle(e).minHeight), '44px', 'a 44px pill');
-  assert.ok(mb.x > pb.x + pb.width, 'after View student profile, at the right');
-  await more.click();
-  await again.getByRole('menuitem', { name: 'Open the student card in a new tab' }).waitFor({ state: 'visible' });
-  await page.keyboard.press('Escape');
-  await again.locator('.td-menu').waitFor({ state: 'hidden' });
-  // The "Mark as done?" window, as in the approved design F5 (the owner, 23 Nov 2026): Step 1 of 2 asks What happened (Applied or
-  // Not submitted), Why only when not submitted, the day it happened and optional notes; Next: check shows Step 2 of 2, Check before
-  // saving, with Back and Yes, this is correct. Nothing is saved here (Back, then Not yet).
+  // ... and no "..." on the Application Team's tasks (the owner, 24 Nov 2026: removed).
+  assert.strictEqual(await again.locator('.tdx-actions .td-more-btn').count(), 0, 'no ... pill');
+  // The "Mark as done?" window, as in the approved design F5 (the owner, 23-24 Nov 2026): a grey header with MARK AS DONE?, STEP 1 OF 2
+  // and the student's name; What happened (Applied or Not submitted), Why only when not submitted, the day it happened and optional
+  // notes, no asterisks; Next: check shows Step 2 of 2, Check before saving, with Back and Yes, this is correct.
   await again.locator('.tdx-done').click();
   const win = page.locator('dialog.p-dialog[open]');
   await win.locator('.td-done-form').waitFor();
   assert.ok(await win.evaluate((d) => d.classList.contains('td-done-app')), 'the Application Team\'s window');
-  assert.match(await win.innerText(), /Gita Demo/);
+  assert.strictEqual((await win.locator('.p-dialog-head .td-done-task').textContent()).trim(), 'Gita Demo', 'only the name, in the header');
+  assert.strictEqual(await win.evaluate((d) => getComputedStyle(d).width), '640px', 'a 640px window');
   assert.match(await win.innerText(), /Test University/);
   const stepText = () => win.locator('.td-done-stepno').textContent(); // drawn in capitals by the CSS, so its text, not innerText
   assert.strictEqual(await stepText(), 'Step 1 of 2');
   for (const r of [/^What happened/, /^Day it happened/, /^Notes \(optional\)$/]) assert.ok(await win.locator('.p-label', { hasText: r }).count(), String(r));
+  assert.strictEqual(await win.locator('.p-req:visible').count(), 0, 'no asterisks');
   for (const r of ['Applied', 'Not submitted']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).count(), r);
   assert.strictEqual(await win.getByRole('radio', { name: 'Applied', exact: true }).getAttribute('aria-checked'), 'true', 'Applied is chosen first');
   const whyBox = win.locator('.p-label', { hasText: /^Why/ });
@@ -143,14 +135,37 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
   await whyBox.waitFor({ state: 'visible' }); // Why shows for Not submitted
   for (const r of ['Not eligible', 'Already applied through another agent', 'The course is not available', 'Applications are closed']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
-  await win.getByRole('radio', { name: 'Applied', exact: true }).click();
-  await whyBox.waitFor({ state: 'hidden' }); // and hides again for Applied
-  assert.ok(await win.getByText('Nothing is saved until you check it on the next step.').count());
+  // Not submitted with no Why: told in the window, still on step 1.
+  await win.getByRole('button', { name: 'Next: check' }).click();
+  await win.locator('.p-msg.error', { hasText: 'Choose why it was not submitted.' }).waitFor();
+  assert.strictEqual(await stepText(), 'Step 1 of 2');
+  // Not submitted, Not eligible and a short note: the Why is the reason (no 8-letter note needed), and the check says it all.
+  await win.getByRole('radio', { name: 'Not eligible', exact: true }).click();
+  await win.locator('textarea').fill('IELTS');
   await win.getByRole('button', { name: 'Next: check' }).click();
   await win.locator('.td-check-title').waitFor();
+  const check1 = await win.locator('.td-done-step:not([hidden])').innerText();
+  assert.match(check1, /Test University \(BSc Test\): Not submitted on /, 'the university line says Not submitted on the day');
+  assert.match(check1, /Not submitted to Test University \(BSc Test\): Not eligible\. IELTS\./, 'the note says Not submitted, the reason and the words typed');
+  assert.doesNotMatch(check1, /Offer request/, 'no Offer request for a course not submitted');
+  await win.getByRole('button', { name: 'Back' }).click();
+  assert.strictEqual(await stepText(), 'Step 1 of 2');
+  // Back, Applied: the check now shows the application, the Offer request in F5's words, and nothing left over from the first check.
+  await win.getByRole('radio', { name: 'Applied', exact: true }).click();
+  await whyBox.waitFor({ state: 'hidden' }); // and Why hides again for Applied
+  await win.locator('textarea').fill('');
+  assert.ok(await win.getByText('Nothing is saved until you check it on the next step.').count());
+  await win.getByRole('button', { name: 'Next: check' }).click();
+  await win.locator('.td-check-block', { hasText: 'A new task for the team' }).waitFor();
   assert.strictEqual((await win.locator('.td-check-title').textContent()).trim(), 'Check before saving');
   assert.strictEqual(await stepText(), 'Step 2 of 2');
-  assert.ok(await win.getByRole('button', { name: 'Yes, this is correct' }).count());
+  const check2 = await win.locator('.td-done-step:not([hidden])').innerText();
+  assert.match(check2, /Test University \(BSc Test\): Applied on /);
+  assert.match(check2, /Offer request: Test University \(BSc Test\)/);
+  assert.doesNotMatch(check2, /Not submitted|Not eligible/, 'nothing left from the first check');
+  // Nothing is saved before Yes: the task is still open.
+  const before = (await (await asha.request.get(`/api/cards/${id}`)).json()).card.tasks.find((x) => x.id === task.id);
+  assert.ok(!before.done, 'not done before Yes');
   await win.getByRole('button', { name: 'Back' }).click();
   assert.strictEqual(await stepText(), 'Step 1 of 2');
   await win.getByRole('button', { name: 'Not yet' }).click();

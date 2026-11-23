@@ -62,7 +62,7 @@ test('answers are checked and confirmed before they are written, and can be put 
   assert.deepStrictEqual(state.applications.map((x) => [x.university, x.applied, x.onSheet]), [['Alpha University', add(-20), true]], 'the dialog sees the applications so far');
   const pv = (await a.call(t1, { done: true, finish: offer, preview: true })).json.preview;
   assert.deepStrictEqual(pv.changes.find((c) => c.column === 'OFFER RECEIVED DATE').from, '(empty)');
-  assert.match(pv.options.join('\n'), /Alpha University \(MSc Nursing\): conditional offer/);
+  assert.match(pv.options.join('\n'), /Alpha University \(MSc Nursing\): Conditional offer on /);
   assert.strictEqual((await a.row())['OFFER RECEIVED DATE'], '', 'the preview writes nothing');
   assert.strictEqual((await a.card()).card.tasks.find((x) => x.id === t1).done, false);
 

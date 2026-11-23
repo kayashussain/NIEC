@@ -579,16 +579,28 @@ function createPortalApi({
   // the columns' own university joins the card first, so nothing recorded before is lost.
   function syncApplicationDays(req, rowId) {
     const found = rowIndex().get(rowId);
-    if (!found) return;
+    if (!found) return {};
     const row = found.row;
     let opts = cards.get(rowId).options || [];
-    if (!opts.some((o) => o.applied || o.offer)) return;
+    if (!opts.some((o) => o.applied || o.offer)) return {};
     const uni = text(row['UNIVERSITY NAME']);
     const a0 = isoDate(row['APPLICATION SUBMISSION DATE']) || ''; const o0 = isoDate(row['OFFER RECEIVED DATE']) || '';
     if (uni && (a0 || o0) && !opts.some((o) => squash(o.university) === squash(uni))) {
       cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students', ...(text(row['UNIVERSITY PARTNER']) ? { partner: text(row['UNIVERSITY PARTNER']) } : {}) }, 'ISR'); // the partner too, so it is never lost
       opts = cards.get(rowId).options || [];
     }
+    const changes = syncChanges(row, opts);
+    const before = Object.fromEntries(Object.keys(changes).map((c) => [c, text(row[c])]));
+    if (Object.keys(changes).length) writeColumnsFor(req, rowId, changes);
+    return Object.fromEntries(Object.entries(changes).map(([c, v]) => [c, [before[c], v]]));
+  }
+  // What All Students' first application and first offer columns become for these University options (no writing): used when the days
+  // are kept in step, and by the check before saving, so what the team checks is what is written (the owner, 24 Nov 2026).
+  function syncChanges(row, opts) {
+    if (!opts.some((o) => o.applied || o.offer)) return {};
+    const uni = text(row['UNIVERSITY NAME']);
+    const a0 = isoDate(row['APPLICATION SUBMISSION DATE']) || ''; const o0 = isoDate(row['OFFER RECEIVED DATE']) || '';
+    if (uni && (a0 || o0) && !opts.some((o) => squash(o.university) === squash(uni))) opts = [...opts, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0 }];
     // A refused or withdrawn university no longer holds an offer: only standing offers count as the first offer.
     const first = (k) => opts.filter((o) => o[k] && !(k === 'offer' && (o.refused || o.withdrawn))).sort((x, y) => x[k].localeCompare(y[k]))[0] || null;
     const fa = first('applied'); const fo = first('offer');
@@ -612,7 +624,8 @@ function createPortalApi({
     // An empty university or course on All Students takes the first offer's (else the first application's); a typed one stays.
     const pick = fo || fa;
     if (pick && !uni) { changes['UNIVERSITY NAME'] = pick.university; if (!text(row['COURSE NAME']) && pick.course) changes['COURSE NAME'] = pick.course; }
-    if (Object.keys(changes).length) writeColumnsFor(req, rowId, changes);
+    Object.keys(changes).forEach((c) => { if (text(row[c]) === text(changes[c])) delete changes[c]; });
+    return changes;
   }
   // One plain line for the timeline when an application's days change on the card ('' when nothing to say).
   function applicationNote(before, after) {
@@ -633,6 +646,8 @@ function createPortalApi({
   // A sheet value as people read it: a date as "16 Nov 2026", anything else as it is, "(empty)" for nothing.
   const shown = (v) => { const t = text(v); if (!t) return '(empty)'; const d = isoDate(t); return d && /^\d{4}-\d{2}-\d{2}$/.test(t) ? niceDay(d) : t; };
   const APP_WHAT = { submitted: 'Applied', conditional: 'Conditional offer', unconditional: 'Unconditional offer', offer: 'Offer', refused: 'Refused', withdrawn: 'Withdrawn', notsubmitted: 'Not submitted' };
+  // Why a course was not submitted, as chosen in the "Mark as done?" window (approved design F5, the owner, 23 Nov 2026).
+  const WHY_NOT = { noteligible: 'Not eligible', agent: 'Already applied through another agent', nocourse: 'The course is not available', closed: 'Applications are closed' };
   const OFFERS = ['conditional', 'unconditional', 'offer'];
   // Every application ISR knows for a student: University options with a day, and the sheet's own university when it has a date.
   function applicationsOf(row, card) {
@@ -791,7 +806,7 @@ function createPortalApi({
     const hasApp = (kind === 'application' || kind === 'offer') && f.app !== 'none' && (legacy || f.app === 'record' || Array.isArray(f.unis));
     if (hasApp) {
       let list = (Array.isArray(f.unis) ? f.unis : (f.university ? [{ university: f.university, course: f.course }] : []))
-        .map((u) => ({ university: text(u && u.university).replace(/\s+/g, ' ').slice(0, 160), course: text(u && u.course).replace(/\s+/g, ' ').slice(0, 240), what: APP_WHAT[u && u.what] ? u.what : legacy, date: text(u && u.date).slice(0, 10) }))
+        .map((u) => ({ university: text(u && u.university).replace(/\s+/g, ' ').slice(0, 160), course: text(u && u.course).replace(/\s+/g, ' ').slice(0, 240), what: APP_WHAT[u && u.what] ? u.what : legacy, date: text(u && u.date).slice(0, 10), why: WHY_NOT[u && u.why] ? u.why : '' }))
         .filter((u) => u.university).slice(0, 20);
       // "Submitted" with no university named: the sheet's own university (an older way of answering).
       if (!list.length && legacy === 'submitted') list = [{ university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']), what: 'submitted' }];
@@ -807,6 +822,8 @@ function createPortalApi({
       const matchAssigned = (u) => {
         const cands = assignedAll.filter((a) => squash(a.university) === squash(u.university));
         if (!cands.length) return null;
+        // A task made for one course answers that course, even when its course was renamed on the student card after the task was given.
+        if (ownCourse) return cands.find((a) => a.id === ownCourse.id) || null;
         if (u.course) return cands.find((a) => strictKey(a.course) === strictKey(u.course)) || null;
         return cands.length === 1 ? cands[0] : 'ambiguous';
       };
@@ -814,7 +831,8 @@ function createPortalApi({
       if (vague) return { error: `Write the course for ${vague.university}: more than one course was given to the team there.` };
       const unanswered = kind === 'application' ? assignedAll.filter((a) => !list.some((u) => matchAssigned(u) === a)) : [];
       if (unanswered.length) return { error: `${unanswered.map((a) => a.university + (a.course ? ` (${a.course})` : '')).join(', ')} ${unanswered.length > 1 ? 'were' : 'was'} given to the team and ${unanswered.length > 1 ? 'have' : 'has'} no answer yet. For each, choose Applied, an offer, Refused, Withdrawn or Not submitted (and say why).` };
-      const needsWhy = list.find((u) => ['notsubmitted', 'refused', 'withdrawn'].includes(u.what) && text(note).length < MIN_NOTE);
+      // A Why chosen in the window (Not eligible, Already applied through another agent, ...) is the reason; else the note must say why.
+      const needsWhy = list.find((u) => ['notsubmitted', 'refused', 'withdrawn'].includes(u.what) && !(u.what === 'notsubmitted' && u.why) && text(note).length < MIN_NOTE);
       if (needsWhy) return { error: `Say why in the note: ${needsWhy.university} was ${APP_WHAT[needsWhy.what].toLowerCase()}.` };
       const noCourse = list.find((u) => ['submitted', ...OFFERS].includes(u.what) && !u.course && !(applicationsOf(row, card).find((a) => squash(a.university) === squash(u.university)) || {}).course && !(squash(u.university) === squash(text(row['UNIVERSITY NAME'])) && text(row['COURSE NAME'])));
       if (noCourse) return { error: `Write the course for ${noCourse.university}.` };
@@ -852,6 +870,12 @@ function createPortalApi({
               }
               fill('APPLICATION SUBMISSION DATE', d, 'for the first application');
               if (u.university && !sheetUni && !('UNIVERSITY NAME' in plan.columns)) { plan.columns['UNIVERSITY NAME'] = u.university; if (u.course && !text(row['COURSE NAME'])) plan.columns['COURSE NAME'] = u.course; }
+              // Already on All Students: never written over (a student may apply to five universities); the check says so, as in F5.
+              if (sheetUni) {
+                if (opt.course && !text(row['COURSE NAME']) && !('COURSE NAME' in plan.columns)) plan.columns['COURSE NAME'] = opt.course;
+                plan.kept.push(`University: ${sheetUni}`);
+                if (text(row['COURSE NAME'])) plan.kept.push(`Course: ${text(row['COURSE NAME'])}`);
+              }
             }
           } else if (OFFERS.includes(u.what)) {
             const appliedDay = prior.applied || (isSheet(u) ? sheetApplied : '');
@@ -875,7 +899,9 @@ function createPortalApi({
           } else if (u.what === 'notsubmitted') {
             // Assigned but not submitted (the owner, 17 Nov 2026: for example the student is not eligible there); the note says why.
             if (prior.applied) return { error: `${name} is recorded as applied on ${niceDay(prior.applied)}: it cannot be "Not submitted".` };
-            opt.skipped = d; if (text(note)) opt.reason = text(note).slice(0, 300);
+            opt.skipped = d;
+            const reason = [u.why && WHY_NOT[u.why], text(note)].filter(Boolean).join('. ');
+            if (reason) opt.reason = reason.slice(0, 300);
           }
           if (opt.optionId) { // the given course itself carries the answer and the day, even when All Students already shows the same day
             if (u.what === 'submitted') opt.applied = d;
@@ -905,7 +931,11 @@ function createPortalApi({
           groups.unconditional && `unconditional offer from ${names(groups.unconditional)}`, groups.offer && `offer from ${names(groups.offer)}`,
           groups.refused && `refused by ${names(groups.refused)}`, groups.withdrawn && `withdrawn from ${names(groups.withdrawn)}`, groups.notsubmitted && `not submitted to ${names(groups.notsubmitted)}`].filter(Boolean);
         const days = [...new Set(list.map((u) => u.d))];
-        if (days.length === 1) plan.note = `On ${niceDay(days[0])}: ${join(parts)}. ${sentence(note)}`.trim();
+        // One course not submitted (the owner, 24 Nov 2026): "Not submitted to X (Course): Not eligible." and anything typed in Notes.
+        if (list.length === 1 && list[0].what === 'notsubmitted') {
+          const u = list[0]; const c = u.course || (plan.options[0] && plan.options[0].course) || '';
+          plan.note = `Not submitted to ${u.university || sheetUni}${c ? ` (${c})` : ''}${u.why ? `: ${WHY_NOT[u.why]}` : ''}. ${sentence(note)}`.trim();
+        } else if (days.length === 1) plan.note = `On ${niceDay(days[0])}: ${join(parts)}. ${sentence(note)}`.trim();
         else { // lines on different days: each says its own day
           const one = (u) => `${{ submitted: 'applied to', conditional: 'conditional offer from', unconditional: 'unconditional offer from', offer: 'offer from', refused: 'refused by', withdrawn: 'withdrawn from', notsubmitted: 'not submitted to' }[u.what]} ${u.university || sheetUni}${u.course ? ` (${u.course})` : ''} on ${niceDay(u.d)}`;
           plan.note = `${list.map(one).join('; ')}. ${sentence(note)}`.replace(/^./, (c) => c.toUpperCase()).trim();
@@ -1043,20 +1073,40 @@ function createPortalApi({
     Object.keys(plan.columns).forEach((c) => { if (text(row[c]) === plan.columns[c]) delete plan.columns[c]; });
     // University options: only the days that are new.
     plan.options = plan.options.filter((o) => ['applied', 'offer', 'refused', 'withdrawn', 'skipped', 'offerType'].some((k) => o[k]));
+    // All Students' first application and first offer follow University options once saved (syncApplicationDays): worked out here too,
+    // so the check shows every column that will change and the save writes exactly what was checked.
+    if (plan.options.length) {
+      const sim = (card.options || []).map((o) => ({ ...o }));
+      plan.options.forEach((o) => {
+        const same = (o.optionId && sim.find((x) => x.id === o.optionId)) || pickCourse(sim, o.university, o.course);
+        const dates = Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped'].filter((k) => o[k]).map((k) => [k, o[k]]));
+        if (o.refused || o.withdrawn) { dates.offer = ''; dates.offerType = ''; }
+        if (same) Object.assign(same, dates); else sim.push({ university: o.university, course: o.course, ...dates });
+      });
+      const after = { ...row, ...plan.columns };
+      Object.entries(syncChanges(after, sim)).forEach(([c, v]) => { if (text(row[c]) !== text(v)) plan.columns[c] = v; else delete plan.columns[c]; });
+    }
+    // "Stays as it is" never names a column that the check lists as changing.
+    plan.kept = plan.kept.filter((k) => !(/^University: /.test(k) && 'UNIVERSITY NAME' in plan.columns) && !(/^Course: /.test(k) && 'COURSE NAME' in plan.columns));
     return plan;
   }
   // The plan in the words the team checks before confirming.
   function planWords(found, plan) {
     const row = found.row;
+    // In the words of the approved design F5 (the owner, 23 Nov 2026): "University (Course): Applied on 23 Nov 2026".
     const optLine = (o) => {
-      const bits = [o.applied && `applied ${niceDay(o.applied)}`, o.offer && `${o.offerType ? o.offerType.toLowerCase() + ' offer' : 'offer'} ${niceDay(o.offer)}`, !o.offer && o.offerType && `${o.offerType.toLowerCase()} offer`, o.refused && `refused ${niceDay(o.refused)}`, o.withdrawn && `withdrawn ${niceDay(o.withdrawn)}`].filter(Boolean);
+      const bits = [o.applied && `Applied on ${niceDay(o.applied)}`, o.offer && `${o.offerType ? o.offerType + ' offer' : 'Offer'} on ${niceDay(o.offer)}`, !o.offer && o.offerType && `${o.offerType} offer`,
+        o.refused && `Refused on ${niceDay(o.refused)}`, o.withdrawn && `Withdrawn on ${niceDay(o.withdrawn)}`, o.skipped && `Not submitted on ${niceDay(o.skipped)}`].filter(Boolean);
       return `${o.university}${o.course ? ` (${o.course})` : ''}: ${bits.join(', ')}`;
     };
+    // An Offer request already open for the same course is not made a second time (applyPlan), so the check does not promise it.
+    const openTasks = (cards.get(row._id).tasks || []).filter((x) => !x.done);
+    const willMake = (r) => !openTasks.some((x) => courseKey(x.text) === courseKey(offerRequestText(r)));
     return {
       changes: Object.entries(plan.columns).map(([c, v]) => ({ column: c, label: Fields.columnLabel(c), from: shown(row[c]), to: v === '' ? '(empty)' : shown(v) })),
       options: plan.options.map(optLine),
       kept: plan.kept, warnings: plan.warnings, note: plan.note,
-      offerTasks: (plan.offerRequests || []).map((r) => offerRequestText(r)),
+      offerTasks: (plan.offerRequests || []).filter(willMake).map((r) => `Offer request: ${r.university}${r.course ? ` (${r.course})` : ''}`),
       remind: plan.remind ? `${plan.remind.text}${plan.remind.day > cards.today() ? `, on ${niceDay(plan.remind.day)}` : ''}` : '',
       remarks: plan.note && (!text(row.REMARKS) || text(row.REMARKS) === text(cards.get(row._id).autoRemark)),
     };
@@ -1088,7 +1138,10 @@ function createPortalApi({
       const dates = Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason'].filter((k) => o[k]).map((k) => [k, o[k]]));
       if (o.refused || o.withdrawn) { dates.offer = ''; dates.offerType = ''; } // a refused or withdrawn offer no longer stands
       if (same) {
-        if (!wrote.options.some((w) => w.id === same.id)) wrote.options.push({ id: same.id, before: Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason', 'course'].map((k) => [k, same[k] || ''])) });
+        // What it was before AND what this task set, so reopening puts back only this task's own answers (a later offer recorded on the
+        // same university by its Offer request stays).
+        const set = { ...dates, ...(o.course && !same.course ? { course: o.course } : {}) };
+        if (!wrote.options.some((w) => w.id === same.id)) wrote.options.push({ id: same.id, before: Object.fromEntries(['applied', 'offer', 'offerType', 'refused', 'withdrawn', 'skipped', 'reason', 'course'].map((k) => [k, same[k] || ''])), set });
         cards.updateOption(rowId, same.id, { ...dates, ...(o.course && !same.course ? { course: o.course } : {}) }, by(req));
       } else {
         const made = cards.addOption(rowId, { university: o.university, course: o.course, ...dates }, by(req));
@@ -1113,7 +1166,8 @@ function createPortalApi({
       const made = cards.addTask(rowId, { team: task.team === HEAD ? 'application' : task.team, text: words, tag: 'offer', offerFor: r }, by(req));
       if (!made.error) wrote.offerRequests.push(made.task.id);
     });
-    if (wrote.options.length) syncApplicationDays(req, rowId);
+    // The days kept in step on All Students are kept on the task too, so reopening it puts them back.
+    if (wrote.options.length) Object.entries(syncApplicationDays(req, rowId) || {}).forEach(([c, [from, to]]) => { wrote.columns[c] = [c in wrote.columns ? wrote.columns[c][0] : from, to]; });
     if (Object.keys(wrote.columns).length || wrote.options.length || plan.medical !== undefined || wrote.remind || wrote.offerRequests.length) cards.setTaskWrote(rowId, task.id, wrote, by(req));
     return wrote;
   }
@@ -1143,7 +1197,14 @@ function createPortalApi({
         if (later) { cards.updateOption(rowId, o.id, Object.fromEntries((o.keys || []).map((k) => [k, ''])), by(req)); undone.push(`${now.university}: what this task wrote is taken off; the later answers on it are kept`); }
         else { cards.removeOption(rowId, o.id, by(req)); undone.push(`${now.university}: taken out of University options`); }
       }
-      else { cards.updateOption(rowId, o.id, o.before, by(req)); undone.push(`${now.university}: University options as before`); }
+      else if (o.set) {
+        // Only what this task set, and only where it still holds what this task set: a later answer on the same university stays.
+        const putBack = {}; const changedSince = [];
+        Object.entries(o.set).forEach(([k, v]) => { if (text(now[k]) === text(v)) putBack[k] = o.before[k] || ''; else changedSince.push(k); });
+        if (Object.keys(putBack).length) cards.updateOption(rowId, o.id, putBack, by(req));
+        if (changedSince.length) left.push(`${now.university}: a later answer was recorded on it since: it stays`);
+        else undone.push(`${now.university}: University options as before`);
+      } else { cards.updateOption(rowId, o.id, o.before, by(req)); undone.push(`${now.university}: University options as before`); }
     });
     (w.offerRequests || []).forEach((tid) => { const r = (cards.get(rowId).tasks || []).find((x) => x.id === tid); if (r && !r.done) { cards.removeTask(rowId, tid, by(req)); undone.push(`The task "${r.text.slice(0, 60)}" removed`); } });
     if (w.remind) { const r = (cards.get(rowId).tasks || []).find((x) => x.id === w.remind); if (r && !r.done) { cards.removeTask(rowId, w.remind, by(req)); undone.push(`The task "${r.text.slice(0, 60)}" removed`); } }
@@ -1870,11 +1931,14 @@ function createPortalApi({
           if (!out.error) note(req, [`${who2}: commented on the task for ${teamLabel(task.team)}: ${String(body.comment).slice(0, 120)}`], 'Task comment');
         } else {
           // A view-only account (a Manager with no team) cannot finish a task: finishing writes the student's columns.
-          if (Teams.isReadOnly(req.user) || (!canAssign(req.user) && !forMe(req.user, task))) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
+          if (Teams.isReadOnly(req.user)) { sendJSON(res, 403, { error: 'Your account can only view students.' }); return true; }
+          if (!canAssign(req.user) && !forMe(req.user, task)) { sendJSON(res, 403, { error: 'This task is for another team.' }); return true; }
           const f = body.finish && typeof body.finish === 'object' ? body.finish : null;
           // What the "Mark as done?" window shows before it asks (see finishState).
           if (body.finishState) { sendJSON(res, 200, { state: finishState(found, task, req.user) }); return true; }
           // Already in the state asked for (a double press, or a second tab): nothing is written again, so the answers are never recorded twice.
+          // A check asked for on a task already done (another tab, another person) writes nothing.
+          if (body.preview && body.done && task.done) { sendJSON(res, 409, { error: 'This task was marked as done already (in another tab or by someone else). Close this window: Today shows it as done.' }); return true; }
           if (!body.preview && body.done !== undefined && Boolean(body.done) === Boolean(task.done)) { sendJSON(res, 200, { ok: true, card }); return true; }
           // Done needs what happened (an answer, or a few words).
           if (body.done && !task.done && !f) { sendJSON(res, 400, { error: 'Say what was done first.' }); return true; }
