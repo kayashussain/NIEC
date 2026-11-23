@@ -4307,3 +4307,9 @@ html body .niec-nav a[aria-current="page"] .niec-ico { color: #fff; }
 /* 🔴 CSS CHANGED (2026-11-23): the width of the Application Team's Today, as the approved laptop artifact "Fills the width" (the owner chose it after looking at the artifact) | from: a centred column 1,040 wide with empty grey space on both sides of it | to: the lists, search row and tabs start beside the menu (40px in) and run to the right edge (40px in), as in F5 */
 html body .p-page:has(.tda-page) { max-width: none; padding-left: 40px; padding-right: 40px; }
 html body .tda-page { max-width: none; margin: 0; }
+
+/* 🔴 CSS CHANGED (2026-11-23): side-menu row height on laptop-height windows (700 to 820 px tall), as in the approved design F5 (42px rows) | from: the short-screen rule made every menu row about 34px tall (6px padding, 1px gap), so the blue "Today" pill was shorter than F5 | to: 42px rows (10px padding, 3px gap) on windows 700px tall or more; windows shorter than 700px keep the tight menu so Admin items still fit */
+@media (min-width: 901px) and (min-height: 700px) and (max-height: 820px) {
+  html body .niec-nav a { padding: 10px 12px; }
+  html body .niec-nav { gap: 3px; }
+}
