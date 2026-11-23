@@ -362,7 +362,7 @@
       done.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
       done.append('Mark as done');
       done.addEventListener('click', async () => {
-        const finish = await window.Portal.doneDialog(x, { rowId: x.studentId, stage: x.stage, student: { name: x.student }, today: todayIso });
+        const finish = await window.Portal.doneDialog(x, { rowId: x.studentId, stage: x.stage, student: { name: x.student }, today: todayIso, app: Boolean(x.details) });
         if (!finish) return;
         done.disabled = true;
         try {

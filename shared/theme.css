@@ -4194,3 +4194,33 @@ html body .tdy-upd-body .tk-av.mine { background: #d9f1fb; color: #000; }
 html body .tdy-upd-body .tk-text { margin-top: 4px; padding: 10px 14px; border: 1px solid #b8b8b8; border-radius: 4px 14px 14px 14px; background: #f7f7f7; max-width: 620px; }
 html body .tdy-upd-body .tk-msg:has(.tk-av.mine) .tk-text { border-color: #9fd9f3; background: #e6f6fd; }
 html body .tdy-upd-body .tk-compose { margin-top: 6px; border: 1px solid #6f6f6f; background: #f7f7f7; }
+
+/* 🔴 CSS CHANGED (2026-11-23): the "Mark as done?" window, for the Application Team only (approved design F5) | from: the student's name and the university and course each in a grey rounded tile, the intake and level as grey pills, small labels, the check step as a list of grey rounded tiles, buttons floating at the right | to: flat lines with hairlines and no tiles: the student's name as a 22px bold title with a hairline under it, the university (19px bold) and course with the intake and level as plain grey words, labels in plain 14px grey words, a two-step window says "Step 1 of 2" and "Step 2 of 2" at the top, the check step as labelled sections (a black rule under each title, orange for "Please look at this first") with one hairline line each, and a grey footer bar with a hairline above it (Not yet or Back on the left, the blue button on the right); the choices, the fields and what is saved are unchanged */
+html body dialog.td-done-app .p-dialog-body { padding: 22px 28px 0; }
+html body dialog.td-done-app .p-dialog-head { display: flex; align-items: center; gap: 14px; }
+html body dialog.td-done-app .p-dialog-head h2 { margin-right: auto; }
+html body dialog.td-done-app .td-done-stepno { color: #333; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+html body dialog.td-done-app .td-done-task { margin: 0 0 18px; padding: 0 0 16px; border: 0; border-bottom: 1px solid #b8b8b8; border-radius: 0; background: transparent; color: #000; font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: -.02em; }
+html body dialog.td-done-app .td-course { gap: 4px 0; padding: 0 0 16px; border: 0; border-bottom: 1px solid #b8b8b8; border-radius: 0; background: transparent; }
+html body dialog.td-done-app .td-course b { flex: 1 0 100%; font-size: 19px; line-height: 25px; font-weight: 700; letter-spacing: -.015em; }
+html body dialog.td-done-app .td-course .td-sofar-course { color: #333; font-size: 15px; font-weight: 600; }
+html body dialog.td-done-app .td-app-chips { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 0; margin: 0; }
+html body dialog.td-done-app .td-app-chips span { padding: 0; border-radius: 0; background: none; color: #333; font-size: 15px; font-weight: 600; }
+html body dialog.td-done-app .td-app-chips span + span::before { content: "\00b7"; margin: 0 8px; }
+html body dialog.td-done-app .td-done-form { gap: 18px; }
+html body dialog.td-done-app .td-done-form .p-label { color: #333; font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html body dialog.td-done-app .td-done-step > .p-msg:empty { display: none; }
+html body dialog.td-done-app .td-done-step > .p-muted, html body dialog.td-done-app .td-done-form > .p-muted { margin: 16px 0 0; color: #333; font-size: 14px; font-weight: 500; }
+html body dialog.td-done-app .td-uni-more { margin-top: 6px; }
+html body dialog.td-done-app .td-check-title { margin: 0 0 18px; font-size: 18px; line-height: 24px; font-weight: 700; letter-spacing: -.015em; }
+html body dialog.td-done-app .td-check-block { margin: 0 0 22px; }
+html body dialog.td-done-app .td-check-block > .p-label { display: block; padding-bottom: 8px; border-bottom: 2px solid #000; color: #000; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+html body dialog.td-done-app .td-check-block.is-warn > .p-label { border-bottom-color: #b85300; color: #b85300; }
+html body dialog.td-done-app .td-check-list { display: block; margin: 0; }
+html body dialog.td-done-app .td-check-list li, html body dialog.td-done-app .td-check-block.is-warn .td-check-list li, html body dialog.td-done-app .td-check-block.is-quiet .td-check-list li { padding: 11px 0; border-bottom: 1px solid #b8b8b8; border-radius: 0; background: transparent; color: #000; font-size: 15px; font-weight: 600; }
+html body dialog.td-done-app .td-check-block.is-warn .td-check-list li { color: #b85300; }
+html body dialog.td-done-app .td-check-block.is-quiet .td-check-list li { color: #333; }
+html body dialog.td-done-app .td-check-to { color: #000; font-weight: 700; }
+html body dialog.td-done-app .td-check-list li:last-child { border-bottom: 0; }
+html body dialog.td-done-app .td-check-block:last-of-type { margin-bottom: 0; }
+html body dialog.td-done-app .td-done-step > .p-dialog-foot, html body dialog.td-done-app .p-dialog-body > .p-dialog-foot { position: static; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 30px -28px 0; padding: 16px 28px; border-top: 1px solid #b8b8b8 !important; background: #ececec; }

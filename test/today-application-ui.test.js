@@ -101,6 +101,18 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(await again.locator('.tdy-upd-body').isVisible());
   // Mark as done, Reschedule, Reassign and View student profile are still there.
   for (const b of ['Mark as done', 'Reschedule', 'Reassign', 'View student profile']) assert.ok(await again.locator('.tdx-actions', { hasText: b }).count(), b);
+  // The "Mark as done?" window is drawn in the Application Team's own look: flat title, the course with the intake and level, the
+  // result choices, a footer bar; what it asks is unchanged (the result and the date, then Save).
+  await again.locator('.tdx-done').click();
+  const win = page.locator('dialog.p-dialog[open]');
+  await win.locator('.td-done-form').waitFor();
+  assert.ok(await win.evaluate((d) => d.classList.contains('td-done-app')), 'the Application Team\'s window');
+  assert.match(await win.innerText(), /Gita Demo/);
+  assert.match(await win.innerText(), /Test University/);
+  for (const r of ['Application submitted', 'Not eligible', 'Already applied through another agent', 'Course not available', 'Application closed']) assert.ok(await win.getByText(r, { exact: true }).count(), r);
+  assert.ok(await win.getByRole('button', { name: 'Save' }).count() && await win.getByRole('button', { name: 'Not yet' }).count());
+  await win.getByRole('button', { name: 'Not yet' }).click();
+  await win.waitFor({ state: 'detached' });
   // Nothing sideways, no script error.
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no sideways scroll');
   assert.deepStrictEqual(errors, []);
@@ -113,4 +125,11 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await mockPage.waitForSelector('.tdx-body');
   assert.strictEqual(await mockPage.locator('.tdy-body, .tdy-hint').count(), 0, 'the Mock Team sees the opened task as before');
   assert.ok(await mockPage.locator('.tdx-facts').count(), 'with its facts tile');
+  // ... and its "Mark as done?" window is as before (no Application Team class, no step number).
+  await mockPage.locator('.tdx-done').first().click();
+  const mw = mockPage.locator('dialog.p-dialog[open]');
+  await mw.waitFor();
+  await wait(400);
+  assert.ok(await mw.evaluate((d) => !d.classList.contains('td-done-app')), 'the Mock Team\'s window keeps its look');
+  assert.strictEqual(await mw.locator('.td-done-stepno').count(), 0);
 });

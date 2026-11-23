@@ -754,6 +754,8 @@ function createPortalApi({
       // A task for one course, and an Offer request, have simple windows with no follow-up question: the Offer request is made by itself.
       courseTask: own ? { id: own.id, university: own.university, course: own.course, partner: own.partner || '', answered: !assignedOf(card).some((a) => a.id === own.id) } : null,
       offerTask: offerFor,
+      // The "Mark as done?" window is drawn in the Application Team's own look for that team only (the owner, 23 Nov 2026).
+      appTeam: Boolean(user && Teams.ownTeamApplication(user)),
       // Mock tasks ask no follow-up day either (the owner, 18 Nov 2026): a mock set makes its own feedback task, and the rest is the team's work.
       stage: text(row[STATUS]), minNote: MIN_NOTE, // (no follow-up question when a task is done: the owner, 18 Nov 2026)
     };

@@ -367,6 +367,12 @@
       // An application task and an Offer request show only the student's name here (their university and course follow): no long sentence.
       const isOfferReq = /^Offer request: /.test(String(t.text || ''));
       body.append(el('p', 'td-done-task', t.app || isOfferReq ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`));
+      // The Application Team's own look (the owner, 23 Nov 2026): the window carries a class, and a two-step window says which step it is on.
+      const dlg = body.closest('dialog');
+      const dlgHead = dlg && dlg.querySelector('.p-dialog-head');
+      let stepNo = null;
+      const appLook = () => { if (dlg) dlg.classList.add('td-done-app'); };
+      if (o.app) appLook();
       const ask = el('div', 'td-done-step');
       const sure = el('div', 'td-done-step');
       sure.hidden = true;
@@ -376,7 +382,7 @@
       const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; msg.setAttribute('role', 'alert'); try { msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) { /* older browsers */ } };
       const wait = el('p', 'p-muted p-small', 'Loading what ISR knows about this student...');
       ask.append(wait);
-      api(url, { finishState: true }).then((r) => { wait.remove(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
+      api(url, { finishState: true }).then((r) => { wait.remove(); if (r.state && r.state.appTeam) appLook(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
 
       function build(state) {
         const form = el('div', 'p-form td-done-form');
@@ -600,6 +606,7 @@
           check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Say why the visa was refused, in the note below.' : '');
         }
         const simple = Boolean(t.app || (state && (state.courseTask || state.offerTask))) || tag === 'noc' || tag === 'medical'; // few questions, then Save
+        if (dlg && dlg.classList.contains('td-done-app') && asks && !simple && dlgHead && !stepNo) { stepNo = el('span', 'td-done-stepno', 'Step 1 of 2'); dlgHead.insertBefore(stepNo, dlgHead.lastChild); }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
         const minNote = (state && state.minNote) || 8;
         const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
@@ -652,10 +659,11 @@
         const foot = el('div', 'p-dialog-foot');
         const yes = h('button', { class: 'btn btn-primary', type: 'button' }, 'Yes, this is correct');
         yes.addEventListener('click', () => { answer = { ...answers, confirmed: true }; close(true); });
-        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => { sure.hidden = true; ask.hidden = false; } }, 'Back'), yes);
+        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => { sure.hidden = true; ask.hidden = false; if (stepNo) stepNo.textContent = 'Step 1 of 2'; } }, 'Back'), yes);
         sure.append(foot);
         ask.hidden = true;
         sure.hidden = false;
+        if (stepNo) stepNo.textContent = 'Step 2 of 2';
         yes.focus();
       }
     }, { wide: tag === 'application' || tag === 'offer' }).then(() => answer);
