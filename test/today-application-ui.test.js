@@ -117,7 +117,9 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.strictEqual(await more.count(), 1, 'the ... pill');
   const mb = await more.boundingBox();
   const pb = await again.locator('.tdx-actions .tdx-profile').boundingBox();
-  assert.ok(mb.height >= 43 && mb.x > pb.x + pb.width, 'a 44px pill after View student profile, at the right');
+  // Its own size is 44px (the page is drawn at the text size the person chose, so the box on screen can be smaller).
+  assert.strictEqual(await more.evaluate((e) => getComputedStyle(e).minHeight), '44px', 'a 44px pill');
+  assert.ok(mb.x > pb.x + pb.width, 'after View student profile, at the right');
   await more.click();
   await again.getByRole('menuitem', { name: 'Open the student card in a new tab' }).waitFor({ state: 'visible' });
   await page.keyboard.press('Escape');
