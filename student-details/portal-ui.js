@@ -373,7 +373,10 @@
       const dlgHead = dlg && dlg.querySelector('.p-dialog-head');
       let stepNo = null;
       const appLook = () => { if (dlg) dlg.classList.add('td-done-app'); };
+      // The Mock Team's window is in the same look, in one step with Save (the owner, 23 Nov 2026: "no need of step 2").
+      const mockLook = () => { if (dlg) dlg.classList.add('td-done-app', 'td-done-mock'); };
       if (o.app) appLook();
+      if (o.mockLook) mockLook();
       const ask = el('div', 'td-done-step');
       const sure = el('div', 'td-done-step');
       sure.hidden = true;
@@ -383,7 +386,7 @@
       const fail = (e) => { msg.textContent = e.message || String(e); msg.className = 'p-msg error'; msg.setAttribute('role', 'alert'); try { msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (err) { /* older browsers */ } };
       const wait = el('p', 'p-muted p-small', 'Loading what ISR knows about this student...');
       ask.append(wait);
-      api(url, { finishState: true }).then((r) => { wait.remove(); if (r.state && r.state.appTeam) appLook(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
+      api(url, { finishState: true }).then((r) => { wait.remove(); if (r.state && r.state.appTeam) appLook(); if (r.state && r.state.mockTeam) mockLook(); build(r.state); }).catch((e) => { wait.remove(); ask.append(msg); fail(e); });
 
       function build(state) {
         const form = el('div', 'p-form td-done-form');
@@ -418,6 +421,7 @@
         // The Application Team's window follows the approved design F5 for every kind of task (the owner, 23-24 Nov 2026): the student's
         // name in the header, What happened, the day it happened and Notes (optional), then Check before saving. Other teams keep theirs.
         const F5 = Boolean(dlg && dlg.classList.contains('td-done-app'));
+        const oneStep = Boolean(dlg && dlg.classList.contains('td-done-mock')); // the Mock Team: no Check before saving
         if (F5 && o.student && o.student.name) { taskLine.textContent = niceName(o.student.name); if (dlgHead) dlgHead.append(taskLine); }
         // The university and course the task is about: shown when the task names them; a task typed by hand gets two boxes to fill.
         const courseBlock = (c) => {
@@ -616,7 +620,7 @@
           check = () => (!q.value() ? 'Choose Pending or Received.' : q.value() === 'Received' && !num.input.value.trim() ? 'Write the NOC number.' : '');
         } else if (tag === 'mock') {
           nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW']);
-          const q = question('What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
+          const q = question(F5 ? 'What happened' : 'What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
             show([date.wrap, rem], v === 'set'); show([slot.wrap, fb.wrap], v === 'feedback'); show(res, v === 'precas');
           });
           const date = dateField('Mock interview on');
@@ -625,7 +629,14 @@
           rem.append(remind, el('span', '', 'Remind the team to write the feedback on that day'));
           form.append(rem);
           const said = /mock interview (\d)/i.exec(String(t.text || ''));
-          const slot = field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: said ? said[1] : String(state.nextFeedback || '') });
+          const slotStart = said ? said[1] : String(state.nextFeedback || '');
+          // In the Mock Team's look, Which mock is four round choices instead of a list (the approved design, 23 Nov 2026).
+          const slot = oneStep ? (() => {
+            const w = el('div', 'p-field p-wide');
+            const p = picker([['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], slotStart, (k) => `td-prio td-answer ans-mock${k}`, 'Which mock');
+            w.append(el('span', 'p-label', 'Which mock'), p.node);
+            return { wrap: w, input: { get value() { return p.value() || ''; } } };
+          })() : field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: slotStart });
           const fb = field('Feedback', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Confident; work on the finance answers.' });
           fb.input.rows = 3;
           form.append(slot.wrap, fb.wrap);
@@ -674,7 +685,7 @@
         const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
         words.input.rows = 2; words.input.dataset.words = '1'; words.input.dataset.was = words.input.placeholder;
         form.append(words.wrap);
-        if (simple || notesOptional) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(!F5 && (tag === 'noc' || tag === 'medical') ? 'Comments (optional)' : 'Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
+        if ((simple && (!oneStep || asks)) || notesOptional) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(!F5 && (tag === 'noc' || tag === 'medical') ? 'Comments (optional)' : 'Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
         if (noNotes) words.wrap.hidden = true;
         // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
         ask.append(msg);

@@ -4162,6 +4162,9 @@ html body .tdy-v { flex: 1 1 auto; min-width: 0; color: #000; font-size: 16px; f
 html body .tdy-miss { color: #b85300; }
 html body .tdy-add { flex: none; color: #0050aa; font-size: 14px; font-weight: 600; text-decoration: none; }
 html body .tdy-add:hover { text-decoration: underline; }
+/* 🔴 CSS CHANGED (2026-11-23): the Mock Team's opened task on Today (approved design) | from: no such lines | to: a mock's feedback as a grey 14px line under its day; "Not yet" and "No result yet" in grey #333 */
+html body .tdy-fb { display: block; margin-top: 2px; color: #333; font-size: 14px; font-weight: 500; }
+html body .tdy-quiet { color: #333; }
 html body .tdy-cp { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; height: 34px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: #333; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .1s linear; }
 html body .tdy-cp:hover { background: #e2e2e2; color: #000; }
 html body .tdy-cp:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 1px; }

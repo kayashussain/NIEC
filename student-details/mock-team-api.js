@@ -187,6 +187,14 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const t = now().getTime();
     return bookings.all().bookings.filter((b) => b.owner === user.id && b.status === 'booked' && !b.answer && bookings.startOf(b) <= t);
   }
+  // Each student's next booked mock that is not over yet (the Mock Team's Today shows it on the task: the owner, 23 Nov 2026).
+  const nextBooked = () => {
+    const t = now().getTime(); const out = new Map();
+    bookings.all().bookings.filter((b) => b.rowId && b.status === 'booked' && !b.answer && bookings.endOf(b) > t)
+      .sort((a, b) => `${a.day} ${a.time}`.localeCompare(`${b.day} ${b.time}`))
+      .forEach((b) => { if (!out.has(b.rowId)) out.set(b.rowId, { day: b.day, time: b.time, mock: Number(b.mock) || 0 }); });
+    return out;
+  };
   const comingRows = () => { const t = now().getTime(); return new Set(bookings.all().bookings.filter((b) => b.rowId && b.status === 'booked' && !b.answer && bookings.endOf(b) > t).map((b) => b.rowId)); };
 
   // ---- the answer after a mock ----
@@ -410,7 +418,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     return false;
   }
 
-  return { handle, handlePublic, tick, matchStudent, pageFor, unanswered, comingRows };
+  return { handle, handlePublic, tick, matchStudent, pageFor, unanswered, comingRows, nextBooked };
 }
 
 module.exports = { createMockTeamApi, bookingsAccess, guidelinesAccess };

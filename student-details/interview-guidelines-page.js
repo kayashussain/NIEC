@@ -112,6 +112,9 @@
   async function load() {
     try {
       data = await api('/api/guidelines');
+      // A link from a task on Today names the University (?university=...): it opens that University's files (the owner, 23 Nov 2026).
+      const asked = (() => { try { return new URLSearchParams(location.search).get('university') || ''; } catch (e) { return ''; } })().trim().toLowerCase();
+      if (!chosen && asked) chosen = (data.universities.find((u) => u.name.toLowerCase() === asked) || {}).name || '';
       if (!chosen) chosen = (data.universities.find((u) => filesOf(u.name).length) || {}).name || '';
       draw();
     } catch (e) { $('view').replaceChildren(el('p', 'p-msg error', e.message)); }

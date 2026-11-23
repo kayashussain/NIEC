@@ -1,5 +1,6 @@
 // The Application Team's opened task on Today (the owner, 23 Nov 2026, approved design F5), in a real browser: what is missing first, the
-// details with a copy button each, the updates folded, no student source or partner; and the other teams' Today unchanged.
+// details with a copy button each, the updates folded, no student source or partner; the Mock Team's Today in the same look (the owner,
+// 23 Nov 2026, approved design: the mocks first, a one-step window with Save); and Admin's Today unchanged.
 // Skips itself where Playwright or its browser is not installed (as on a production server).
 const test = require('node:test');
 const assert = require('node:assert');
@@ -58,6 +59,9 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok((await tasksOf(asha)).every((x) => x.details && x.details.dob === '2003-03-12'), 'the Application Team gets the details');
   assert.ok((await tasksOf(admin)).every((x) => !x.details), 'Admin does not');
   assert.ok((await tasksOf(mina)).length > 0 && (await tasksOf(mina)).every((x) => !x.details), 'the Mock Team does not');
+  // The Mock Team gets each task's mocks instead (the approved design, 23 Nov 2026); nobody else does.
+  assert.ok((await tasksOf(mina)).every((x) => x.mock && x.mock.mocks.length === 4), 'the Mock Team gets the mocks');
+  assert.ok((await tasksOf(asha)).every((x) => !x.mock) && (await tasksOf(admin)).every((x) => !x.mock), 'the Application Team and Admin do not');
 
   // The Application Team's Today.
   const page = await asha.newPage();
@@ -192,26 +196,47 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.strictEqual(await missHead.getAttribute('aria-expanded'), 'false');
   assert.strictEqual(await miss.locator('.tdy-pr').count(), 0, 'closed again');
 
-  // The Mock Team's Today is as it was.
+  // The Mock Team's Today, in the same look (the owner, 23 Nov 2026, approved design).
   const mockPage = await mina.newPage();
+  const mockErrors = []; mockPage.on('pageerror', (e) => mockErrors.push(e.message));
   await mockPage.goto('/today');
   await mockPage.waitForSelector('.tdx');
+  assert.ok(await mockPage.locator('.tda-top').count(), 'the day and "Today" at the top, as the Application Team');
+  assert.strictEqual(await mockPage.locator('.td-hello').count(), 0, 'no greeting card');
+  assert.ok(await mockPage.locator('.tda-row').count(), 'the rows in the same look');
+  assert.match(await mockPage.locator('.tdy-hint').first().innerText(), /^No mock booked yet$/, 'what holds the student up, under the waiting time');
   await mockPage.locator('.tdx-head').first().click();
   await mockPage.waitForSelector('.tdx-body');
-  assert.strictEqual(await mockPage.locator('.tdy-body, .tdy-hint, .tda-top, .tda-row').count(), 0, 'the Mock Team sees the opened task as before');
-  assert.ok(await mockPage.locator('.td-hello').count(), 'and keeps its own greeting and layout');
-  assert.ok(await mockPage.locator('.tdx-facts').count(), 'with its facts tile');
-  // ... and its "Mark as done?" window is as before (no Application Team class, no step number).
+  const mockOpen = mockPage.locator('.tdx.is-open');
+  assert.match(await mockOpen.locator('.tdy-sech').first().innerText(), /^Mocks \u00b7 0 of 4 done$/i, 'the mocks first');
+  assert.deepStrictEqual(await mockOpen.locator('.tdy-first .tdy-l').allInnerTexts(), ['Mock 1', 'Mock 2', 'Mock 3', 'Mock 4', 'Pre-CAS interview']);
+  assert.strictEqual(await mockOpen.locator('.tdy-first .tdy-miss').innerText(), 'Not booked', 'the next mock to book in orange');
+  assert.ok(await mockOpen.locator('.tdy-cp').count(), 'copy buttons on the Student details');
+  assert.strictEqual(await mockOpen.locator('.tdx-facts').count(), 0, 'no old facts tile');
+  assert.strictEqual(await mockOpen.locator('.p-taskmenu, .td-more').count(), 0, 'no "..." menu');
+  // ... and its "Mark as done?" window: the same look, one step, Save.
   await mockPage.locator('.tdx-done').first().click();
   const mw = mockPage.locator('dialog.p-dialog[open]');
   await mw.waitFor();
   await wait(400);
-  assert.ok(await mw.evaluate((d) => !d.classList.contains('td-done-app')), 'the Mock Team\'s window keeps its look');
-  assert.strictEqual(await mw.locator('.td-done-stepno').count(), 0);
+  assert.ok(await mw.evaluate((d) => d.classList.contains('td-done-app') && d.classList.contains('td-done-mock')), 'the Mock Team\'s window in the same look');
+  assert.strictEqual(await mw.locator('.td-done-stepno').count(), 0, 'one step, no step number');
+  await mw.getByRole('radio', { name: 'Feedback of a mock' }).click();
+  await wait(200);
+  assert.ok(await mw.getByRole('radio', { name: 'Mock 2' }).isVisible(), 'Which mock as round choices');
+  assert.ok(await mw.getByRole('button', { name: 'Save' }).count(), 'Save, with no Check before saving');
   await mw.getByRole('button', { name: 'Not yet' }).click();
   await mw.waitFor({ state: 'detached' });
-  // ... and its Missing details tab keeps its own rows.
-  await mockPage.getByText('Missing details').first().click().catch(() => {});
+  // ... and its Missing details tab in the same look.
+  await mockPage.locator('.tda-view', { hasText: 'Missing details' }).click();
   await wait(500);
-  assert.strictEqual(await mockPage.locator('.tdy-missrow').count(), 0, 'the Mock Team keeps its Missing details as before');
+  assert.ok(await mockPage.locator('.tdy-missrow, .tda-clear').count(), 'Missing details in the same look');
+  assert.deepStrictEqual(mockErrors, []);
+
+  // Admin's Today is as it was.
+  const adminPage = await admin.newPage();
+  await adminPage.goto('/today');
+  await adminPage.waitForSelector('.td-page');
+  await wait(500);
+  assert.strictEqual(await adminPage.locator('.tda-top, .tda-row, .tdy-body').count(), 0, 'Admin keeps its own Today');
 });

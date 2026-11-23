@@ -266,6 +266,66 @@
     if (info.sections.length) box.append(cols);
     return box;
   }
+  // ---- The Mock Team's opened task, in the same look (the owner, 23 Nov 2026, approved design) ----
+  // The server sends `mock` only to the Mock Team's own Today: each mock's day and feedback, the Pre-CAS result, the University and course,
+  // and the next mock booked on Bookings. What is held up is said in orange under the waiting time, as the Application Team's missing details.
+  const niceTime = (hm) => { const [hh, mm] = String(hm || '').split(':').map(Number); return Number.isFinite(hh) ? `${hh % 12 || 12}:${String(mm || 0).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}` : ''; };
+  function mockInfo(x) {
+    const m = x.mock || {}; const mocks = m.mocks || [];
+    const held = mocks.filter((k) => k.on && k.on <= todayIso);
+    const noFeedback = held.find((k) => !k.feedback);
+    const done = mocks.filter((k) => k.feedback).length;
+    const next = mocks.find((k) => !k.on && !k.said);
+    const booked = m.booked || null;
+    // The first thing that holds the student up, in the same words as Missing details where it has one.
+    let hint = '';
+    if (noFeedback) hint = `Feedback ${noFeedback.n} not written`;
+    else if (!mocks.some((k) => k.on || k.said) && !booked) hint = 'No mock booked yet';
+    else if (!m.preCas && next && !booked && !mocks.some((k) => k.on && k.on > todayIso)) hint = `Mock ${next.n} not booked`;
+    return { m, mocks, done, next, booked, hint };
+  }
+  function mockDetails(x, mk) {
+    const box = el('div', 'tdy-details');
+    const first = el('div', 'tdy-first');
+    first.append(el('div', 'tdy-sech', `Mocks \u00b7 ${mk.done} of 4 done`));
+    mk.mocks.forEach((k) => {
+      const r = el('div', 'tdy-dl');
+      const v = el('span', 'tdy-v');
+      const bookedHere = mk.booked && !k.on && !k.said && (mk.booked.mock === k.n || (!mk.booked.mock && mk.next && mk.next.n === k.n));
+      if (k.feedback) { v.append(k.on ? `Done on ${longDay(k.on)}` : (k.said || 'Done')); v.append(el('span', 'tdy-fb', k.feedback)); }
+      else if (k.on && k.on <= todayIso) { v.classList.add('tdy-miss'); v.textContent = `Held on ${longDay(k.on)}, feedback not written`; }
+      else if (k.on) v.textContent = `Booked for ${longDay(k.on)}`;
+      else if (k.said) v.textContent = k.said;
+      else if (bookedHere) v.textContent = `Booked for ${longDay(mk.booked.day)}, ${niceTime(mk.booked.time)}`;
+      else if (mk.next && mk.next.n === k.n && !mk.m.preCas && !mk.booked) { v.classList.add('tdy-miss'); v.textContent = 'Not booked'; }
+      else { v.classList.add('tdy-quiet'); v.textContent = 'Not yet'; }
+      r.append(el('span', 'tdy-l', `Mock ${k.n}`), v);
+      first.append(r);
+    });
+    const pre = el('div', 'tdy-dl');
+    const pv = el('span', `tdy-v${mk.m.preCas ? '' : ' tdy-quiet'}`, mk.m.preCas || 'No result yet');
+    pre.append(el('span', 'tdy-l', 'Pre-CAS interview'), pv);
+    first.append(pre);
+    box.append(first);
+    const k = x.contact || {};
+    const cols = el('div', 'tdy-cols');
+    const app = el('div', 'tdy-sec');
+    app.append(el('div', 'tdy-sech', 'Application'));
+    [['University', mk.m.university], ['Course', mk.m.course], ['Intake', x.intake]].forEach(([l, v]) => { if (v) app.append(appLine(l, v)); });
+    if (mk.m.university) {
+      const g = el('div', 'tdy-dl');
+      const v = el('span', 'tdy-v');
+      v.append(h('a', { class: 'tdy-add', href: '/interview-guidelines?university=' + encodeURIComponent(mk.m.university) }, `${mk.m.university} guide`));
+      g.append(el('span', 'tdy-l', 'Interview guide'), v);
+      app.append(g);
+    }
+    const stu = el('div', 'tdy-sec');
+    stu.append(el('div', 'tdy-sech', 'Student'));
+    [['Email', k.emailText], ['WhatsApp', k.phone]].forEach(([l, v]) => { if (v) stu.append(appLine(l, v)); });
+    [app, stu].forEach((sec) => { if (sec.children.length > 1) cols.append(sec); });
+    if (cols.children.length) box.append(cols);
+    return box;
+  }
   // The updates, folded away with the latest one as a preview; open at once when something is new on them.
   function appUpdates(x, thread, n) {
     const wrap = el('div', 'tdy-updates');
@@ -315,10 +375,15 @@
     chev.setAttribute('aria-hidden', 'true');
     // The Application Team sees how many details an application task still lacks before it is opened (the owner, 23 Nov 2026).
     const info = x.details ? appInfo(x) : null;
-    if (info) r.classList.add('tda-row'); // the server sends `details` only to the Application Team's own Today (the Mock Team has a Missing details list too, so that is not the sign)
+    const mk = x.mock ? mockInfo(x) : null; // the Mock Team's own Today (the owner, 23 Nov 2026)
+    if (info || mk) r.classList.add('tda-row'); // the server sends `details` only to the Application Team's own Today (the Mock Team has a Missing details list too, so that is not the sign)
     if (info && x.tag === 'application' && !x.done && info.missing.length) {
       const side = el('div', 'tdy-side');
       side.append(age, el('span', 'tdy-hint', `${info.missing.length} detail${info.missing.length === 1 ? '' : 's'} missing`));
+      head.append(av, main, side, chev);
+    } else if (mk && !x.done && mk.hint) {
+      const side = el('div', 'tdy-side');
+      side.append(age, el('span', 'tdy-hint', mk.hint));
       head.append(av, main, side, chev);
     } else head.append(av, main, age, chev);
     r.append(head);
@@ -348,6 +413,13 @@
       top.append(given);
       if (info.ready) top.append(el('span', 'tdy-ready', 'Ready to submit'));
       body.append(top, appDetails(x, info), appUpdates(x, thread, n));
+    } else if (mk) {
+      // The Mock Team, in the same look: who gave it, the mocks so far, Application and Student, the folded updates.
+      body.classList.add('tdy-body');
+      given.classList.add('tdy-given');
+      const top = el('div', 'tdy-top');
+      top.append(given);
+      body.append(top, mockDetails(x, mk), appUpdates(x, thread, n));
     } else {
       body.append(given, factsOf(x));
       // The updates: the conversation on the task, and the box to write one.
@@ -367,7 +439,7 @@
       done.addEventListener('click', async () => {
         if (done.disabled) return;
         done.disabled = true; // one window at a time: a second press while it is open does nothing
-        const finish = await window.Portal.doneDialog(x, { rowId: x.studentId, stage: x.stage, student: { name: x.student }, today: todayIso, app: Boolean(x.details) });
+        const finish = await window.Portal.doneDialog(x, { rowId: x.studentId, stage: x.stage, student: { name: x.student }, today: todayIso, app: Boolean(x.details), mockLook: Boolean(x.mock) });
         if (!finish) { done.disabled = false; return; }
         try {
           await api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { done: true, finish });
@@ -385,7 +457,7 @@
     acts.append(h('a', { class: 'btn tdx-profile', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'View student profile'));
     const mayEdit = canAssignAll || (x.by === me && x.tag !== 'offer'); // an Offer request is ISR's own: Admin may change it
     // The Application Team's task has no "..." (the owner, 24 Nov 2026: removed); a task is edited or removed on the student card.
-    const menu = info ? null : window.Portal.taskMenu([
+    const menu = info || mk ? null : window.Portal.taskMenu([ // the Mock Team's neither (the approved design, 23 Nov 2026)
       mayEdit && ['Edit the task', async () => { if (await window.Portal.editTask(x, { rowId: x.studentId, stage: x.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
       mayEdit && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
     ]);
@@ -413,7 +485,8 @@
   // panel, one row per task with an arrow; Missing details and the "everything is done" state in the same look. Only the Application Team
   // gets it (the server says so with `appTeam`); every other team and the Admin board keep their own Today.
   let appSegSlot = null;
-  const isAppToday = () => Boolean(todayData && todayData.appTeam);
+  // The Mock Team gets the same screen (the owner, 23 Nov 2026, approved design): the server says so with `mockTeam`.
+  const isAppToday = () => Boolean(todayData && (todayData.appTeam || todayData.mockTeam));
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   function appGroup(title, items, refresh, late) {
     const g = el('div', 'tda-group');
@@ -586,9 +659,11 @@
     const onTask = m.lines.every((ln) => ln.taskId) ? (tasksNow.find((t) => t.id === m.lines[0].taskId) || null) : null;
     const acts = m.lines.filter((ln) => ln.action && /^\/[\w-]/.test(ln.action.href || '')).map((ln) => ln.action);
     const act = acts.find((a) => a.label === 'Answer') || acts[0];
+    const ownAct = Boolean(todayData && todayData.mockTeam); // the Mock Team's lines each have their own button (Answer, Booking link, Write feedback)
     lines.forEach((ln, i) => {
       const cls = `${i === 0 ? 'btn btn-primary' : 'btn'} tdx-fix`;
-      const fix = act ? h('a', { class: cls, href: act.href }, act.label)
+      const mine = ownAct && ln.action && /^\/[\w-]/.test(ln.action.href || '') ? ln.action : null;
+      const fix = mine ? h('a', { class: cls, href: mine.href }, mine.label) : act ? h('a', { class: cls, href: act.href }, act.label)
         : onTask ? h('button', { class: cls, type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
         : h('a', { class: cls, href: '/student?id=' + encodeURIComponent(m.id) }, 'Fix it');
       const line = el('div', 'tdy-pr');
@@ -1055,7 +1130,7 @@
     try { tasks = await api('/api/tasks'); } catch (e) { /* the rest of Today still shows */ }
     document.title = 'Today · ISR';
     const page = el('div', 'td-page');
-    const appLook = Boolean(d.appTeam); // the Application Team's own Today (approved design F5)
+    const appLook = Boolean(d.appTeam || d.mockTeam); // the Application Team's own Today (approved design F5), and the Mock Team's (23 Nov 2026)
     let head; let bellHost;
     if (appLook) {
       page.classList.add('tda-page');

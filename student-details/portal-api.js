@@ -738,6 +738,17 @@ function createPortalApi({
   // Profile's passport number, date of birth, nationality and address, the language test and the medical details of the Application
   // details. Sent only to the Application Team's own Today (never to the other teams or in the Admin board): the team already sees and
   // changes all of it on the student card.
+  // What the Mock Team's Today shows on a task (the owner, 23 Nov 2026, approved design): each mock's day and feedback, the Pre-CAS result,
+  // the student's University and course, and the next mock booked on Bookings. Sent only to the Mock Team's own Today: the team already
+  // sees all of it on All Students.
+  function mockOf(row, booked) {
+    const b = booked && booked.get(row._id);
+    return {
+      mocks: [1, 2, 3, 4].map((n) => ({ n, on: isoDate(row[`MOCK SCHEDULE ${n}`]) || '', said: text(row[`MOCK SCHEDULE ${n}`]).slice(0, 40), feedback: text(row[`FEEDBACK ${n}`]).slice(0, 400) })),
+      preCas: text(row['PRE CAS INTERVIEW']).slice(0, 20), university: text(row['UNIVERSITY NAME']).slice(0, 160), course: text(row['COURSE NAME']).slice(0, 240),
+      booked: b ? { day: b.day, time: b.time, mock: b.mock } : null,
+    };
+  }
   function detailsOf(row, card) {
     const p = (card && card.profile) || {};
     return {
@@ -777,6 +788,8 @@ function createPortalApi({
       offerTask: offerFor,
       // The "Mark as done?" window is drawn in the Application Team's own look for that team only (the owner, 23 Nov 2026).
       appTeam: Boolean(user && Teams.ownTeamApplication(user)),
+      // The Mock Team's window is drawn in the same look, in one step with Save (the owner, 23 Nov 2026).
+      mockTeam: Boolean(user && Teams.ownTeamMock(user)),
       // Mock tasks ask no follow-up day either (the owner, 18 Nov 2026): a mock set makes its own feedback task, and the rest is the team's work.
       stage: text(row[STATUS]), minNote: MIN_NOTE, // (no follow-up question when a task is done: the owner, 18 Nov 2026)
     };
@@ -1562,6 +1575,7 @@ function createPortalApi({
     const value = { ...totals, ...counts };
     return {
       today, name: user.name, totals, kind, title: space.title, tagline: space.tagline,
+      mockTeam: Teams.ownTeamMock(user), // the Mock Team's Today in the same look (the owner, 23 Nov 2026, approved design)
       appTeam: Teams.ownTeamApplication(user), // the Missing details tab is drawn in the Application Team's own look for that team only (the owner, 23 Nov 2026)
       tiles: space.tiles.map((k) => ({ key: k, label: TILE_LABEL[k], value: value[k] })),
       missing: missing ? [...missing.values()].sort((a, b) => b.lines.length - a.lines.length || a.name.localeCompare(b.name)) : null,
@@ -3551,6 +3565,9 @@ function createPortalApi({
       const all = cards.all();
       const everyone = seesAllTasks(req.user);
       const seen = cards.seenBy(req.user.username);
+      const mockLook = Teams.ownTeamMock(req.user); // the Mock Team's own Today (the owner, 23 Nov 2026)
+      const mt = mockLook ? mockTeam() : null;
+      const booked = mt && mt.nextBooked ? mt.nextBooked() : new Map();
       const out = [];
       for (const { sheet, row } of rowIndex().values()) {
         const c = all[row._id];
@@ -3564,7 +3581,7 @@ function createPortalApi({
           // only if it is handed back. It stays on the student card.
           if (!everyone && !mine && !gaveIt(req.user, t)) return;
           const tag = Fields.taskTag(t, text(row[STATUS]));
-          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row), ...(Teams.ownTeamApplication(req.user) ? { details: detailsOf(row, c) } : {}) });
+          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row), ...(Teams.ownTeamApplication(req.user) ? { details: detailsOf(row, c) } : {}), ...(mockLook ? { mock: mockOf(row, booked) } : {}) });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.
