@@ -1393,7 +1393,7 @@ function createPortalApi({
           ...(text(row['PRE CAS INTERVIEW']) === 'Passed' ? [['medical report', row['MEDICAL REPORT']]] : []),
           ...(text(row['MEDICAL REPORT']) === 'Booked' ? [['medical booking date', card.medical && card.medical.date]] : []),
         ].filter(([, v]) => !text(v)).map(([k]) => k);
-        if (gone.length) missOne(row, sheet, `No ${gone.length > 1 ? `${gone.slice(0, -1).join(', ')} or ${gone[gone.length - 1]}` : gone[0]}.`);
+        if (gone.length) missOne(row, sheet, `No ${gone.length > 1 ? `${gone.slice(0, -1).join(', ')} or ${gone[gone.length - 1]}` : gone[0]}.`, { items: gone });
       }
     }
     const dateOf = (v) => isoDate(v);

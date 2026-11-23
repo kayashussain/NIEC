@@ -244,7 +244,7 @@
       b.setAttribute('aria-label', ok ? `Copied ${label}` : `Could not copy ${label}`);
       timer = setTimeout(() => { b.classList.remove('is-done'); b.innerHTML = COPY_ICON; b.setAttribute('aria-label', `Copy ${label}`); }, 1600);
     });
-    r.append(el('span', 'tdy-l', label), el('span', 'tdy-v', value), b);
+    r.append(el('span', 'tdy-l', label), el('span', 'tdy-v', String(value).replace(/@/g, '@\u200b')), b); // a long email may break after the @, never in the middle of a word (the copy button copies the value as it is)
     return r;
   }
   // The opened task's details: what is missing first, then the sections.
@@ -313,7 +313,8 @@
     const chev = el('span', 'tdx-chev');
     chev.setAttribute('aria-hidden', 'true');
     // The Application Team sees how many details an application task still lacks before it is opened (the owner, 23 Nov 2026).
-    const info = x.details ? appInfo(x) : null; // the server sends `details` only to the Application Team's own Today (the Mock Team has a Missing details list too, so that is not the sign)
+    const info = x.details ? appInfo(x) : null;
+    if (info) r.classList.add('tda-row'); // the server sends `details` only to the Application Team's own Today (the Mock Team has a Missing details list too, so that is not the sign)
     if (info && x.tag === 'application' && !x.done && info.missing.length) {
       const side = el('div', 'tdy-side');
       side.append(age, el('span', 'tdy-hint', `${info.missing.length} detail${info.missing.length === 1 ? '' : 's'} missing`));
@@ -403,6 +404,145 @@
   }
   // Missing details (the owner, 21 Nov 2026): every student the Application Team can correct whose application, passport or medical
   // details are missing or do not add up; one line per problem and one button, Fix it.
+
+  // ---- The Application Team's Today screen (the owner, 23 Nov 2026, approved design F5, to be followed strictly) ----
+  // The date and "Today", the three tabs at the right, a search box and the kinds in one row, "Late, do these first" and "Today" each in its own
+  // panel, one row per task with an arrow; Missing details and the "everything is done" state in the same look. Only the Application Team
+  // gets it (the server says so with `appTeam`); every other team and the Admin board keep their own Today.
+  let appSegSlot = null;
+  const isAppToday = () => Boolean(todayData && todayData.appTeam);
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  function appGroup(title, items, refresh, late) {
+    const g = el('div', 'tda-group');
+    g.append(el('h3', `tda-gh${late ? ' is-late' : ''}`, `${title} · ${items.length}`));
+    const panel = el('div', 'tdx-list tda-panel');
+    items.forEach((x) => panel.append(rowFor(x, refresh)));
+    g.append(panel);
+    return g;
+  }
+  function appClear(title, line, button) {
+    const c = el('div', 'tda-clear');
+    const ring = el('span', 'tda-clear-ring');
+    ring.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>';
+    c.append(ring, el('div', 'tda-clear-title', title), el('div', 'tda-clear-line', line));
+    if (button) c.append(button);
+    return c;
+  }
+  function appTasksPanel(t, refresh) {
+    canAssignAll = Boolean(t.canAssign);
+    seesAll = Boolean(t.seesAll);
+    todayIso = t.today || todayIso;
+    allTeams = t.teams || [];
+    handTeams = t.handTeams || [];
+    if (t.me) me = t.me;
+    const box = el('section', 'tda-tasks');
+    const later = (x) => x.doOn && todayIso && x.doOn > todayIso;
+    const open = t.tasks.filter((x) => x.forMe && !x.done);
+    const missingAll = (todayData && todayData.missing) || [];
+    const VIEWS = [['mine', 'Today', open.filter((x) => !later(x))], ['upcoming', 'Later', open.filter(later)], ['missing', 'Missing details', missingAll]];
+    if (!VIEWS.some((v) => v[0] === taskView)) taskView = 'mine';
+    // The three tabs, at the right of the title.
+    const seg = el('div', 'tda-seg');
+    seg.setAttribute('role', 'tablist');
+    seg.setAttribute('aria-label', 'Which tasks');
+    VIEWS.forEach(([k, label, list]) => {
+      const b = h('button', { class: 'tda-view', type: 'button', role: 'tab', 'aria-selected': String(taskView === k) }, label);
+      if (list.length) b.append(el('span', 'tda-view-n', String(list.length > 999 ? '999+' : list.length)));
+      if (list.reduce((m, x) => m + (x.unread || 0), 0)) { const dot = el('span', 'td-view-dot', ''); dot.title = 'Something new'; b.append(dot); }
+      b.addEventListener('click', () => { taskView = k; tagFilter = 'all'; refresh(); });
+      seg.append(b);
+    });
+    if (appSegSlot) appSegSlot.replaceChildren(seg);
+    const view = VIEWS.find((v) => v[0] === taskView);
+    // The search box and the kinds, in one row.
+    const bar = el('div', 'tda-bar');
+    if (t.tasks.length || missingAll.length) {
+      const field = el('label', 'tda-search');
+      const q = el('input', 'td-search-input');
+      q.type = 'search'; q.placeholder = view[0] === 'missing' ? 'Search a student' : 'Search a student or a task'; q.value = searchQ;
+      q.setAttribute('aria-label', 'Search a student or a task');
+      let timer = null;
+      q.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          const at = q.selectionStart;
+          searchQ = q.value.trim();
+          refresh();
+          const again = document.querySelector('.tda-search .td-search-input');
+          if (again) { again.focus(); try { again.setSelectionRange(at, at); } catch (e) { /* not a text box */ } }
+        }, 180);
+      });
+      q.addEventListener('keydown', (e) => { if (e.key === 'Escape' && q.value) { e.preventDefault(); q.value = ''; q.dispatchEvent(new Event('input')); } });
+      field.append(q);
+      bar.append(field);
+      if (searchQ && view[0] !== 'missing') {
+        const n = open.filter(matches).length;
+        bar.append(el('span', 'td-search-n', n ? `${n} open task${n === 1 ? '' : 's'} found` : 'No open task found'));
+      }
+    }
+    if (view[0] === 'missing') {
+      box.append(bar, appMissingPanel(refresh));
+      return box;
+    }
+    const pool = view[2].filter(matches);
+    const count = {};
+    pool.forEach((x) => { const k = tagOf(x, x.stage); count[k] = (count[k] || 0) + 1; });
+    if (tagFilter !== 'all' && !count[tagFilter]) tagFilter = 'all';
+    if (pool.length) {
+      const pill = (k, label, n) => {
+        const b = h('button', { class: 'tda-pill', type: 'button', role: 'tab', 'aria-selected': String(tagFilter === k) }, label);
+        b.append(el('span', 'tda-pill-n', String(n)));
+        b.addEventListener('click', () => { tagFilter = k; refresh(); });
+        bar.append(b);
+      };
+      pill('all', 'All', pool.length);
+      ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k]) pill(k, label, count[k]); });
+    }
+    box.append(bar);
+    const list = (tagFilter === 'all' ? pool : pool.filter((x) => tagOf(x, x.stage) === tagFilter));
+    if (!list.length) {
+      if (searchQ) box.append(appClear(`No ${view[0] === 'mine' ? 'task for today' : 'later task'} matches “${searchQ}”`, 'Try another word.', null));
+      else if (view[0] === 'upcoming') box.append(appClear('Nothing is planned for a later day', 'A task you reschedule waits here.', null));
+      else {
+        const next = open.filter(later).sort((a, b) => a.doOn.localeCompare(b.doOn) || taskPriority(b) - taskPriority(a))[0];
+        const nMiss = missingAll.length;
+        let line = nMiss ? `Nothing is waiting today. ${plural(nMiss, 'student has', 'students have')} something missing.` : 'Nothing is waiting and no detail is missing.';
+        if (next) { const lab = window.Portal.dayLabel(next.doOn, todayIso); line += ` The next task is ${lab === 'Tomorrow' ? 'tomorrow' : `on ${lab}`}: ${titleOf(next)}${next.student ? ` for ${window.Portal.niceName ? window.Portal.niceName(next.student) : next.student}` : ''}.`; }
+        const nLater = open.filter(later).length;
+        const go = nLater ? h('button', { class: 'tda-pill tda-clear-btn', type: 'button' }, `See Later (${nLater})`) : (nMiss ? h('button', { class: 'tda-pill tda-clear-btn', type: 'button' }, `See Missing details (${nMiss})`) : null);
+        if (go) go.addEventListener('click', () => { taskView = nLater ? 'upcoming' : 'missing'; tagFilter = 'all'; refresh(); });
+        box.append(appClear(nMiss ? 'Nothing is waiting today' : 'Everything is done for today', line, go));
+      }
+      return box;
+    }
+    if (view[0] === 'upcoming') {
+      const sorted = list.slice().sort((a, b) => a.doOn.localeCompare(b.doOn) || taskPriority(b) - taskPriority(a));
+      let day = ''; let bucket = [];
+      const flush = () => { if (bucket.length) box.append(appGroup(window.Portal.dayLabel(day, todayIso), bucket, refresh, false)); bucket = []; };
+      sorted.forEach((x) => { if (x.doOn !== day) { flush(); day = x.doOn; } bucket.push(x); });
+      flush();
+      return box;
+    }
+    const sorted = list.slice().sort((a, b) => taskPriority(b) - taskPriority(a));
+    const lateOnes = sorted.filter(isLate);
+    const rest = sorted.filter((x) => !isLate(x));
+    if (lateOnes.length) box.append(appGroup('Late, do these first', lateOnes, refresh, true));
+    if (rest.length) box.append(appGroup('Today', rest, refresh, false));
+    return box;
+  }
+  // Missing details in the same look: how many students, then one row each.
+  function appMissingPanel(refresh) {
+    const box = el('div', 'tda-group');
+    const all = (todayData && todayData.missing) || [];
+    const list = all.filter((m) => !searchQ || fold(`${m.name} ${m.lines.map((l) => l.text).join(' ')}`).includes(fold(searchQ)));
+    if (!list.length) { box.append(appClear(searchQ ? `No student matches “${searchQ}”` : 'Nothing is missing', searchQ ? 'Try another word.' : 'Every detail is in.', null)); return box; }
+    box.append(el('h3', 'tda-gh', `${plural(list.length, 'student has', 'students have')} something missing`));
+    const panel = el('div', 'tdx-list tda-panel');
+    if (!missStarted) { missStarted = true; const f = list[0]; missOpen.add(f.id || f.name); }
+    list.forEach((m) => panel.append(missingRowApp(m, refresh, m.id || m.name)));
+    box.append(panel);
+    return box;
+  }
   // The Application Team's Missing details (the owner, 23 Nov 2026, approved design F5): one student per row with an arrow, "N things missing"
   // when closed; opened, each problem on its own line with its button. The first student's row starts open. What is listed and where the
   // buttons go are exactly as before.
@@ -410,7 +550,7 @@
   let missStarted = false;
   function missingRowApp(m, refresh, key) {
     const open = missOpen.has(key);
-    const r = el('article', `tdx tdx-miss tdy-missrow${open ? ' is-open' : ''}`);
+    const r = el('article', `tdx tdx-miss tdy-missrow tda-row${open ? ' is-open' : ''}`);
     r.dataset.missKey = key;
     const head = h('div', { class: 'tdx-head', role: 'button', tabindex: '0', 'aria-expanded': String(open), title: open ? 'Close' : 'Open' });
     const av = el('span', 'tdx-av', initials(m.name));
@@ -420,8 +560,10 @@
     const nameLine = el('div', 'tdx-name-line');
     nameLine.append(m.id ? h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, shownName) : el('span', 'tdx-name', shownName));
     main.append(nameLine, el('p', 'tdx-meta', [m.stage, m.intake].filter(Boolean).join(' \u00b7 ')));
-    const n = m.lines.length;
-    const count = el('span', 'tdy-misscount', n === 1 ? 'Needs attention' : `${n} to fix`); // a line can name several details, so a number is only shown for two or more lines
+    // One line per thing missing: a line that names several details ("No passport number, address or receiving partner") is shown as one line each.
+    const lines = m.lines.flatMap((ln) => (Array.isArray(ln.items) && ln.items.length ? ln.items.map((it) => ({ ...ln, text: `No ${it}`, items: null })) : [ln]));
+    const n = lines.length;
+    const count = el('span', 'tdy-misscount', `${n} ${n === 1 ? 'thing' : 'things'} missing`);
     const chev = el('span', 'tdx-chev');
     chev.setAttribute('aria-hidden', 'true');
     head.append(av, main, count, chev);
@@ -440,7 +582,7 @@
     const onTask = m.lines.every((ln) => ln.taskId) ? (tasksNow.find((t) => t.id === m.lines[0].taskId) || null) : null;
     const acts = m.lines.filter((ln) => ln.action && /^\/[\w-]/.test(ln.action.href || '')).map((ln) => ln.action);
     const act = acts.find((a) => a.label === 'Answer') || acts[0];
-    m.lines.forEach((ln, i) => {
+    lines.forEach((ln, i) => {
       const cls = `${i === 0 ? 'btn btn-primary' : 'btn'} tdx-fix`;
       const fix = act ? h('a', { class: cls, href: act.href }, act.label)
         : onTask ? h('button', { class: cls, type: 'button', onclick: () => goTo(onTask, refresh) }, 'Fix it')
@@ -458,13 +600,6 @@
     const list = all.filter((m) => !searchQ || fold(`${m.name} ${m.lines.map((l) => l.text).join(' ')}`).includes(fold(searchQ)));
     if (!list.length) { box.append(emptyNote(searchQ ? `No student matches “${searchQ}”.` : 'Nothing is missing. Every detail is in.')); return box; }
     const l = el('div', 'tdx-list');
-    if (todayData && todayData.appTeam) {
-      // The first student's row starts open, once; after that the person's own choice stands.
-      if (!missStarted) { missStarted = true; const f = list[0]; missOpen.add(f.id || f.name); }
-      list.forEach((m) => l.append(missingRowApp(m, refresh, m.id || m.name)));
-      box.append(l);
-      return box;
-    }
     list.forEach((m) => {
       const r = el('article', 'tdx tdx-miss');
       const head = el('div', 'tdx-head');
@@ -587,6 +722,7 @@
   }
 
   function tasksPanel(t, refresh) {
+    if (isAppToday() && !t.seesAll) return appTasksPanel(t, refresh); // the Application Team's own Today (approved design F5)
     canAssignAll = Boolean(t.canAssign);
     seesAll = Boolean(t.seesAll);
     todayIso = t.today || todayIso;
@@ -915,12 +1051,27 @@
     try { tasks = await api('/api/tasks'); } catch (e) { /* the rest of Today still shows */ }
     document.title = 'Today · ISR';
     const page = el('div', 'td-page');
-    const head = el('header', 'td-hello');
-    const first = String(d.name || '').split(/\s+/)[0] || '';
-    const hi = el('h1', '', `${greeting()}${first ? ', ' : ''}`);
-    if (first) hi.append(el('span', 'td-name', first));
-    head.append(el('span', 'td-kicker', d.title), hi,
-      el('p', '', new Date(d.today + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })));
+    const appLook = Boolean(d.appTeam); // the Application Team's own Today (approved design F5)
+    let head; let bellHost;
+    if (appLook) {
+      page.classList.add('tda-page');
+      head = el('header', 'tda-top');
+      const left = el('div', 'tda-title');
+      left.append(el('div', 'tda-date', new Date(d.today + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })), el('h1', '', 'Today'));
+      const right = el('div', 'tda-right');
+      appSegSlot = el('div', 'tda-segslot');
+      right.append(appSegSlot);
+      head.append(left, right);
+      bellHost = right;
+    } else {
+      head = el('header', 'td-hello');
+      const first = String(d.name || '').split(/\s+/)[0] || '';
+      const hi = el('h1', '', `${greeting()}${first ? ', ' : ''}`);
+      if (first) hi.append(el('span', 'td-name', first));
+      head.append(el('span', 'td-kicker', d.title), hi,
+        el('p', '', new Date(d.today + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })));
+      bellHost = head;
+    }
     const slot = el('div');
     const top = el('div');
     // Notifications behind a bell at the top right (the owner, 15 Nov 2026): the red count shows what is new; a press opens them over
@@ -933,7 +1084,7 @@
     const pop = el('div', 'td-bell-pop');
     pop.hidden = true;
     bellWrap.append(bell, pop);
-    head.append(bellWrap);
+    bellHost.append(bellWrap);
     let popOpen = false;
     const outside = (e) => { if (!bellWrap.contains(e.target)) setPop(false); };
     const onKey = (e) => { if (e.key === 'Escape') { setPop(false); bell.focus(); } };
@@ -971,7 +1122,7 @@
       paintBell();
       const own = ownTeamCard(tasks);
       page.classList.toggle('is-board', Boolean(tasks.canAssign));
-      top.replaceChildren(...(own ? [own] : []), pulse(tasks));
+      top.replaceChildren(...(own ? [own] : []), ...(appLook ? [] : [pulse(tasks)])); // the Application Team's F5 screen has no greeting card
       slot.replaceChildren(tasksPanel(tasks, refresh));
       if (window.Motion && firstDraw) window.Motion.reveal(slot, '.tdx-list > *, .tb-col');
       firstDraw = false;

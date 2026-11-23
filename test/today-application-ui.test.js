@@ -64,6 +64,16 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/today');
   await page.waitForSelector('.tdx');
+  // The screen is the approved F5 layout: the day and "Today", three tabs, a search box with the kinds (All first), headings over panels;
+  // none of the old greeting or the progress card.
+  assert.strictEqual(await page.locator('.tda-top h1').innerText(), 'Today');
+  assert.ok(await page.locator('.tda-date').innerText(), 'the day is shown');
+  assert.deepStrictEqual((await page.locator('.tda-view').allInnerTexts()).map((x) => x.replace(/\s*\d+$/, '').replace(/\s+/g, ' ').trim()), ['Today', 'Later', 'Missing details'], 'the three tabs');
+  assert.strictEqual(await page.locator('.tda-view[aria-selected="true"]').count(), 1);
+  assert.match(await page.locator('.tda-bar .tda-pill[aria-selected="true"]').innerText(), /^All\s*\d+$/, 'All is first and chosen');
+  assert.ok(await page.locator('.tda-bar .tda-search input').count(), 'the search box is in the same row');
+  assert.match(await page.locator('.tda-gh').first().innerText(), /^(Late, do these first|Today) \u00b7 \d+$/, 'a heading over its panel');
+  assert.strictEqual(await page.locator('.td-hello, .td-pulse, .td-tasks').count(), 0, 'no greeting, no progress card, no Tasks box');
   const closed = page.locator('.tdx', { hasText: 'Apply to Test University' });
   assert.match(await closed.locator('.tdy-hint').innerText(), /2 details missing/, 'the closed task says what is missing');
   await closed.locator('.tdx-head').click();
@@ -121,12 +131,13 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await page.getByText('Missing details').first().click();
   const miss = page.locator('.tdy-missrow').filter({ hasText: 'Gita Demo' });
   await miss.waitFor();
-  assert.match(await miss.locator('.tdy-misscount').innerText(), /^Needs attention$/);
+  assert.match(await miss.locator('.tdy-misscount').innerText(), /^\d+ things? missing$/);
+  assert.match(await page.locator('.tda-gh').first().innerText(), /^\d+ students? (has|have) something missing$/);
   const missHead = miss.locator('.tdx-head');
   if ((await missHead.getAttribute('aria-expanded')) !== 'true') await missHead.click();
   assert.strictEqual(await missHead.getAttribute('aria-expanded'), 'true');
-  const line = await miss.locator('.tdy-pr-text').first().innerText();
-  assert.match(line, /passport number/i); assert.match(line, /address/i);
+  const lines = await miss.locator('.tdy-pr-text').allInnerTexts();
+  assert.ok(lines.includes('No passport number') && lines.includes('No address'), 'one line for each thing missing: ' + lines.join(' | '));
   assert.ok(await miss.locator('.tdy-pr .tdx-fix', { hasText: 'Fix it' }).count(), 'a Fix it button on the line');
   // From the keyboard: Enter closes it and the focus stays on the same row.
   await missHead.focus();
@@ -143,7 +154,8 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await mockPage.waitForSelector('.tdx');
   await mockPage.locator('.tdx-head').first().click();
   await mockPage.waitForSelector('.tdx-body');
-  assert.strictEqual(await mockPage.locator('.tdy-body, .tdy-hint').count(), 0, 'the Mock Team sees the opened task as before');
+  assert.strictEqual(await mockPage.locator('.tdy-body, .tdy-hint, .tda-top, .tda-row').count(), 0, 'the Mock Team sees the opened task as before');
+  assert.ok(await mockPage.locator('.td-hello').count(), 'and keeps its own greeting and layout');
   assert.ok(await mockPage.locator('.tdx-facts').count(), 'with its facts tile');
   // ... and its "Mark as done?" window is as before (no Application Team class, no step number).
   await mockPage.locator('.tdx-done').first().click();
