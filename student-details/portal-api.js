@@ -713,6 +713,17 @@ function createPortalApi({
     const email = text(row.EMAIL).trim();
     return { phone, wa: Fields.whatsappNumber(phone), email: /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email) ? email.slice(0, 120) : '', emailText: email.slice(0, 120), source: text(row['STUDENT SOURCE']).slice(0, 80) };
   }
+  // The details the Application Team needs to submit an application, for the task opened on its Today (the owner, 23 Nov 2026): the
+  // Profile's passport number, date of birth, nationality and address, the language test and the medical details of the Application
+  // details. Sent only to the Application Team's own Today (never to the other teams or in the Admin board): the team already sees and
+  // changes all of it on the student card.
+  function detailsOf(row, card) {
+    const p = (card && card.profile) || {};
+    return {
+      passport: text(p.passportNo).slice(0, 20), dob: text(p.dob).slice(0, 10), nationality: text(p.nationality) || 'Nepali', address: text(p.address).slice(0, 200),
+      language: text(row['LANGUAGE TEST DATE']).slice(0, 40), medicalReport: text(row['MEDICAL REPORT']).slice(0, 20), medicalDate: text(card && card.medical && card.medical.date).slice(0, 10),
+    };
+  }
   function finishState(found, task, user = null) {
     const row = found.row;
     const card = cards.get(row._id);
@@ -3479,7 +3490,7 @@ function createPortalApi({
           // only if it is handed back. It stays on the student card.
           if (!everyone && !mine && !gaveIt(req.user, t)) return;
           const tag = Fields.taskTag(t, text(row[STATUS]));
-          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row) });
+          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row), ...(Teams.ownTeamApplication(req.user) ? { details: detailsOf(row, c) } : {}) });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

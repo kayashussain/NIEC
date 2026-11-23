@@ -190,6 +190,104 @@
     cell('Email', mail, true).classList.add('is-contact');
     return box;
   }
+
+  // ---- The Application Team's opened task (the owner, 23 Nov 2026, approved design F5) ----
+  // Used only on the Application Team's own Today (the server sends it the task's `details`, and nobody else); every other team and the Admin board
+  // keep the opened task as it was. It shows only what the task needs: for an application, the details needed to submit it, with what is
+  // missing listed first, a copy button on every value (the team copies them into the university's portal) and the updates folded away.
+  // Student source and the partner are not shown (not needed to submit). The names are those of the student card (Profile, Application details).
+  const updOpen = new Set(); // the tasks whose updates are unfolded on this page
+  const longDay = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(String(iso || '')) ? new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '');
+  const languageShown = (v) => { const t = String(v || '').trim(); return /^\d{4}-\d{2}-\d{2}$/.test(t) ? `Test date, ${longDay(t)}` : t; };
+  // What an opened task shows (sections of label and value, only the details that exist) and what is still missing before it can be submitted.
+  function appInfo(x) {
+    const c = x.course; const k = x.contact || {}; const d = x.details || {};
+    const email = k.emailText || ''; const phone = k.phone || '';
+    const sections = []; const missing = [];
+    const add = (title, list) => { const rows = list.filter(([, v]) => v); if (rows.length) sections.push({ title, rows }); };
+    const student = [['WhatsApp', phone], ['Email', email]];
+    if (x.tag === 'application') {
+      const lang = String(d.language || '').trim();
+      const langOk = Boolean(lang) && lang !== 'Test Date';
+      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], ['Language test', langOk ? languageShown(lang) : '']]);
+      add('Student', [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob)], ['Nationality', d.nationality], ['Address', d.address]]);
+      [['Email', email], ['WhatsApp number', phone], ['Passport number', d.passport], ['Date of birth', d.dob], ['Address', d.address], [lang === 'Test Date' ? 'Language test date' : 'Language test', langOk]].forEach(([l, v]) => { if (!v) missing.push(l); });
+    } else if (x.tag === 'offer') {
+      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Intake', c && c.intake], ['Applied on', longDay(c && c.applied)]]);
+      add('Student', student);
+    } else if (x.tag === 'medical') {
+      add('Medical', [['Medical report', d.medicalReport], ['Medical booking date', longDay(d.medicalDate)]]);
+      add('Student', student);
+    } else {
+      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake]]);
+      add('Student', student);
+    }
+    return { sections, missing, ready: x.tag === 'application' && !missing.length };
+  }
+  function copyText(v) {
+    try { if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(v).then(() => true, () => false); } catch (e) { /* the older way below */ }
+    return Promise.resolve((() => { const t = document.createElement('textarea'); t.value = v; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;opacity:0'; document.body.append(t); t.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } t.remove(); return ok; })());
+  }
+  const COPY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></svg>';
+  const TICK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function appLine(label, value) {
+    const r = el('div', 'tdy-dl');
+    const b = h('button', { class: 'tdy-cp', type: 'button', 'aria-label': `Copy ${label}`, title: `Copy ${label}` });
+    b.innerHTML = COPY_ICON;
+    let timer = null;
+    b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const ok = await copyText(value);
+      clearTimeout(timer);
+      b.classList.toggle('is-done', ok);
+      b.innerHTML = ok ? `${TICK_ICON}<span>Copied</span>` : '<span>Could not copy</span>';
+      b.setAttribute('aria-label', ok ? `Copied ${label}` : `Could not copy ${label}`);
+      timer = setTimeout(() => { b.classList.remove('is-done'); b.innerHTML = COPY_ICON; b.setAttribute('aria-label', `Copy ${label}`); }, 1600);
+    });
+    r.append(el('span', 'tdy-l', label), el('span', 'tdy-v', value), b);
+    return r;
+  }
+  // The opened task's details: what is missing first, then the sections.
+  function appDetails(x, info) {
+    const box = el('div', 'tdy-details');
+    if (info.missing.length) {
+      const first = el('div', 'tdy-first');
+      first.append(el('div', 'tdy-sech is-missing', info.missing.length === 1 ? 'Add this before you submit' : `Add these ${info.missing.length} before you submit`));
+      info.missing.forEach((l) => {
+        const r = el('div', 'tdy-dl');
+        r.append(el('span', 'tdy-l', l), el('span', 'tdy-v tdy-miss', 'Missing'), h('a', { class: 'tdy-add', href: '/student?id=' + encodeURIComponent(x.studentId), 'aria-label': `Add ${l} on the student card` }, 'Add on the student card'));
+        first.append(r);
+      });
+      box.append(first);
+    }
+    const cols = el('div', 'tdy-cols');
+    info.sections.forEach((sec) => { const s = el('div', 'tdy-sec'); s.append(el('div', 'tdy-sech', sec.title)); sec.rows.forEach(([l, v]) => s.append(appLine(l, v))); cols.append(s); });
+    if (info.sections.length) box.append(cols);
+    return box;
+  }
+  // The updates, folded away with the latest one as a preview; open at once when something is new on them.
+  function appUpdates(x, thread, n) {
+    const wrap = el('div', 'tdy-updates');
+    const open = updOpen.has(x.id) || Boolean(x.unread);
+    const last = (x.comments || []).filter((m) => m.text).pop();
+    const fold = h('button', { class: 'tdy-upd', type: 'button', 'aria-expanded': String(open) });
+    const prev = el('span', 'tdy-prev');
+    if (last) prev.append(el('span', 'tdy-prev-by', `${last.by || 'Someone'} · ${dayShort(isoDay(last.at))}:`), ` ${String(last.text).replace(/\s+/g, ' ')}`); else prev.append(el('span', 'tdy-prev-by', 'No updates yet'));
+    prev.hidden = open;
+    fold.append(el('span', 'tdy-cap', `Updates${n ? ` · ${n}` : ''}`), prev, el('span', 'tdy-mini'));
+    const panel = el('div', 'tdy-upd-body');
+    panel.hidden = !open;
+    panel.append(thread);
+    fold.addEventListener('click', () => {
+      const now = panel.hidden;
+      panel.hidden = !now; prev.hidden = now;
+      fold.setAttribute('aria-expanded', String(now));
+      if (now) updOpen.add(x.id); else updOpen.delete(x.id);
+      if (now && thread.markRead) thread.markRead();
+    });
+    wrap.append(fold, panel);
+    return wrap;
+  }
   // One task. `refresh(true)` reads the tasks again.
   function rowFor(x, refresh) {
     const r = el('article', `tdx${x.unread ? ' has-unread' : ''}`);
@@ -213,7 +311,13 @@
     const age = el('span', `tdx-age${later ? ' is-later' : w >= LATE ? ' is-late' : ''}`, later ? window.Portal.dayLabel(x.doOn, todayIso) : w >= LATE ? `Waiting ${w} days` : w === 0 ? 'New today' : `${w} day${w === 1 ? '' : 's'}`);
     const chev = el('span', 'tdx-chev');
     chev.setAttribute('aria-hidden', 'true');
-    head.append(av, main, age, chev);
+    // The Application Team sees how many details an application task still lacks before it is opened (the owner, 23 Nov 2026).
+    const info = x.details ? appInfo(x) : null; // the server sends `details` only to the Application Team's own Today (the Mock Team has a Missing details list too, so that is not the sign)
+    if (info && x.tag === 'application' && !x.done && info.missing.length) {
+      const side = el('div', 'tdy-side');
+      side.append(age, el('span', 'tdy-hint', `${info.missing.length} detail${info.missing.length === 1 ? '' : 's'} missing`));
+      head.append(av, main, side, chev);
+    } else head.append(av, main, age, chev);
     r.append(head);
     // Opened or closed, the task's own line stays in view (its close button never scrolls away).
     const toggle = () => {
@@ -231,14 +335,24 @@
     const body = el('div', 'tdx-body');
     // An Offer request is made by ISR when the application is submitted; any other task says who gave it.
     const given = el('p', 'tdx-given', x.tag === 'offer' ? `Made by ISR when the application was submitted${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}` : `Given by ${x.by === me ? 'you' : x.by || 'someone'}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`);
-    body.append(given, factsOf(x));
-    // The updates: the conversation on the task, and the box to write one.
-    const ups = el('div', 'tdx-updates');
     const n = (x.comments || []).filter((m) => m.text).length;
-    ups.append(el('p', 'tdx-label', `Updates on this task${n ? ` · ${n}` : ''}`));
     const thread = window.Portal.taskThread(x, { rowId: x.studentId, me, canWrite: !x.done && (x.forMe || x.by === me || canAssignAll), unread: x.unread || 0, teams: allTeams, today: todayIso, always: true });
-    ups.append(thread);
-    body.append(ups);
+    if (info) {
+      // The Application Team (the owner, 23 Nov 2026): who gave it and whether it is ready, the details, the folded updates.
+      body.classList.add('tdy-body');
+      given.classList.add('tdy-given');
+      const top = el('div', 'tdy-top');
+      top.append(given);
+      if (info.ready) top.append(el('span', 'tdy-ready', 'Ready to submit'));
+      body.append(top, appDetails(x, info), appUpdates(x, thread, n));
+    } else {
+      body.append(given, factsOf(x));
+      // The updates: the conversation on the task, and the box to write one.
+      const ups = el('div', 'tdx-updates');
+      ups.append(el('p', 'tdx-label', `Updates on this task${n ? ` · ${n}` : ''}`));
+      ups.append(thread);
+      body.append(ups);
+    }
     if (x.unread && thread.markRead) { thread.markRead(); r.classList.remove('has-unread'); }
     r.openThread = () => { if (thread.markRead) thread.markRead(); };
     // Mark as done, Reschedule, Reassign, View student profile (the owner, 21 Nov 2026); Edit and Remove for whoever gave it.

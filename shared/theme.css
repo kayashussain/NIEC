@@ -4143,3 +4143,54 @@ html[data-nav="closed"] body .niec-brand { border-bottom: 0; padding-bottom: 6px
 /* 🔴 CSS CHANGED (2026-11-22): the Undo and Redo button in the small message after a save on the student card (new) | from: no button (the message only said "Saved") | to: a grey pill button 32px high (#f7f7f7, border #6f6f6f, black semi-bold words) beside the words, the same as the other grey buttons */
 html body .ui-toast .ui-toast-action { flex: none; display: inline-flex; align-items: center; min-height: 32px; margin: -4px 0 -4px 4px; padding: 0 16px; border: 1px solid #6f6f6f; border-radius: 980px; background: #f7f7f7; color: #000; font-size: 15px; font-weight: 600; line-height: 1.3; }
 html body .ui-toast .ui-toast-action:hover { background: #e2e2e2; color: #000; }
+
+/* 🔴 CSS CHANGED (2026-11-23): a task opened on Today, for the Application Team only (approved design F5) | from: one grey tile of boxed facts (university, course, intake, level, source, WhatsApp, email), then a boxed list of updates always open | to: flat labelled lines on a grid with hairlines, no boxes: "Add this before you submit" (what is missing, orange) first, then Application and Student side by side with a copy button on every value, then the updates folded under one line with the latest as a preview; the closed task says "1 detail missing" in small orange (14px) under its age; the updates shown as plain flat messages with no pink tint (as before); no Student source, no partner */
+html body .tdy-body { gap: 0; margin-right: 4px; margin-bottom: 24px; }
+html body .tdy-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 14px 0 20px; border-top: 1px solid #b8b8b8; }
+html body .tdy-top .tdy-given { margin: 0; color: #333; font-size: 14px; font-weight: 600; }
+html body .tdy-ready { position: relative; padding-left: 16px; color: #1e8e4a; font-size: 15px; font-weight: 600; }
+html body .tdy-ready::before { content: ""; position: absolute; left: 0; top: 7px; width: 8px; height: 8px; border-radius: 50%; background: #1e8e4a; }
+html body .tdy-details { display: flex; flex-direction: column; gap: 26px; }
+html body .tdy-cols { display: flex; flex-wrap: wrap; gap: 26px 48px; }
+html body .tdy-sec { flex: 1 1 300px; min-width: 0; }
+html body .tdy-first { min-width: 0; }
+html body .tdy-sech { padding-bottom: 8px; border-bottom: 2px solid #000; color: #000; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+html body .tdy-sech.is-missing { border-bottom-color: #b85300; color: #b85300; }
+html body .tdy-dl { display: flex; align-items: center; gap: 12px; min-height: 48px; box-sizing: border-box; padding: 6px 0; border-bottom: 1px solid #b8b8b8; }
+html body .tdy-l { flex: 0 0 132px; color: #333; font-size: 14px; font-weight: 600; }
+html body .tdy-v { flex: 1 1 auto; min-width: 0; color: #000; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+html body .tdy-miss { color: #b85300; }
+html body .tdy-first .tdy-v { flex: 0 0 auto; }
+html body .tdy-add { flex: none; color: #0050aa; font-size: 14px; font-weight: 500; text-decoration: none; }
+html body .tdy-add:hover { text-decoration: underline; }
+html body .tdy-cp { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; height: 34px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: #333; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .1s linear; }
+html body .tdy-cp:hover { background: #e2e2e2; color: #000; }
+html body .tdy-cp:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 1px; }
+html body .tdy-cp.is-done { color: #1e8e4a; }
+html body .tdy-cp svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+html body .tdy-cp.is-done svg { stroke-width: 3; }
+html body .tdy-updates { margin-top: 26px; }
+html body .tdy-upd { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid #b8b8b8; background: transparent; color: #000; font: inherit; text-align: left; cursor: pointer; }
+html body .tdy-upd:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+html body .tdy-cap { flex: none; color: #000; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+html body .tdy-prev { flex: 1 1 auto; min-width: 0; overflow: hidden; color: #000; font-size: 14px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+html body .tdy-prev-by { color: #333; font-weight: 600; }
+html body .tdy-upd[aria-expanded="true"] .tdy-cap { flex: 1 1 auto; }
+html body .tdy-mini { flex: none; width: 9px; height: 9px; margin: 0 4px 3px 0; border-right: 2px solid #000; border-bottom: 2px solid #000; transform: rotate(45deg); transform-origin: 65% 65%; transition: transform .32s cubic-bezier(.4, 0, .6, 1); }
+html body .tdy-upd[aria-expanded="true"] .tdy-mini { transform: rotate(-135deg); }
+html body .tdy-upd-body { padding-top: 8px; }
+html body .tdy-upd-body[hidden], html body .tdy-prev[hidden] { display: none; }
+html body .tdy-body .tdx-actions { margin-top: 24px; }
+html body .tdy-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+html body .tdy-side .tdx-age { margin-top: 4px; }
+html body .tdy-hint { color: #b85300; font-size: 14px; font-weight: 600; }
+html body .tdy-upd-body .tk-thread { margin: 0; }
+html body .tdy-upd-body .tk-list { margin: 0; border-radius: 0; background: transparent; }
+html body .tdy-upd-body .tk-msg { padding: 8px 0; }
+html body .tdy-upd-body .tk-msg + .tk-msg { border-top: 0; }
+html body .tdy-upd-body .tk-msg.is-new { background: none; }
+html body .tdy-upd-body .tk-av { width: 34px; height: 34px; line-height: 34px; background: #b8b8b8; color: #000; }
+html body .tdy-upd-body .tk-av.mine { background: #d9f1fb; color: #000; }
+html body .tdy-upd-body .tk-text { margin-top: 4px; padding: 10px 14px; border: 1px solid #b8b8b8; border-radius: 4px 14px 14px 14px; background: #f7f7f7; max-width: 620px; }
+html body .tdy-upd-body .tk-msg:has(.tk-av.mine) .tk-text { border-color: #9fd9f3; background: #e6f6fd; }
+html body .tdy-upd-body .tk-compose { margin-top: 6px; border: 1px solid #6f6f6f; background: #f7f7f7; }

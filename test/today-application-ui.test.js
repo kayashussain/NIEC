@@ -1,0 +1,116 @@
+// The Application Team's opened task on Today (the owner, 23 Nov 2026, approved design F5), in a real browser: what is missing first, the
+// details with a copy button each, the updates folded, no student source or partner; and the other teams' Today unchanged.
+// Skips itself where Playwright or its browser is not installed (as on a production server).
+const test = require('node:test');
+const assert = require('node:assert');
+const os = require('node:os');
+const fs = require('node:fs');
+const net = require('node:net');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
+
+let playwright = null;
+try { playwright = require('playwright'); } catch (e) { /* skipped below */ }
+const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout: 180000, skip: !playwright && 'Playwright is not installed' }, async (t) => {
+  let browser;
+  try { browser = await playwright.chromium.launch(); } catch (e) { t.skip('no Chromium browser available'); return; }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-today-app-'));
+  const port = await freePort();
+  const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, COUNSELOR_DATA_DIR: path.join(dir, 'incentive') };
+  delete env.ANTHROPIC_API_KEY;
+  const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env, stdio: 'ignore' });
+  t.after(async () => { server.kill(); await browser.close(); });
+  const base = `http://127.0.0.1:${port}`;
+  for (let i = 0; i < 60; i += 1) { try { if ((await fetch(base + '/login')).ok) break; } catch (e) { /* not up yet */ } await wait(250); }
+
+  const admin = await browser.newContext({ baseURL: base });
+  const code = fs.readFileSync(path.join(dir, 'first-admin-code.txt'), 'utf8').trim();
+  assert.ok((await admin.request.post('/api/login/first-admin', { data: { setupCode: code, username: 'owner', name: 'Owner Test' } })).ok());
+  assert.ok((await admin.request.post('/api/login/new-password', { data: { password: 'Strong-Pass-2026' } })).ok());
+  const person = async (username, departments) => {
+    const made = await admin.request.post('/api/users', { data: { username, name: username + ' Test', email: '', departments } });
+    const temp = (await made.json()).temporaryPassword;
+    const ctx = await browser.newContext({ baseURL: base, viewport: { width: 1440, height: 900 }, permissions: ['clipboard-read', 'clipboard-write'] });
+    assert.ok((await ctx.request.post('/api/login', { data: { username, password: temp } })).ok());
+    assert.ok((await ctx.request.post('/api/login/new-password', { data: { password: 'Team-Strong-2026' } })).ok());
+    return ctx;
+  };
+  const asha = await person('asha', ['application']);
+  const mina = await person('mina', ['mock']);
+
+  // A student with a university to apply to, some details in and some missing (no passport number, no address), and an update.
+  const made = await (await admin.request.post('/api/students/new', { data: { stage: 'Application Stage', fields: { 'FIRST NAME': 'Gita', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9800000555', EMAIL: 'gita.demo@example.com', 'STUDENT SOURCE': 'Social Media' } } })).json();
+  const id = made.id;
+  assert.ok((await admin.request.post(`/api/cards/${id}/profile`, { data: { dob: '2003-03-12' } })).ok());
+  assert.ok((await admin.request.post(`/api/cards/${id}/sheet`, { data: { fields: { 'LANGUAGE TEST DATE': 'Waiver' } } })).ok());
+  const opt = await (await admin.request.post(`/api/cards/${id}/options`, { data: { university: 'Test University', course: 'BSc Test', level: 'Undergraduate', intake: 'Sep 2027' } })).json();
+  const oid = opt.option ? opt.option.id : opt.card.options.slice(-1)[0].id;
+  assert.ok((await admin.request.post(`/api/cards/${id}/options/send`, { data: { ids: [oid], partners: { [oid]: 'Real Dreams' } } })).ok());
+  const task = (await (await admin.request.get(`/api/cards/${id}`)).json()).card.tasks.find((x) => /Apply to/.test(x.text));
+  assert.ok((await admin.request.post(`/api/cards/${id}/tasks/${task.id}`, { data: { comment: 'Asked the student to resend the passport.' } })).ok());
+  assert.ok((await admin.request.post(`/api/cards/${id}/tasks`, { data: { team: 'mock', text: 'Set the first mock', tag: 'mock' } })).ok());
+
+  // The server sends the details to the Application Team's own Today only.
+  const tasksOf = async (ctx) => (await (await ctx.request.get('/api/tasks')).json()).tasks;
+  assert.ok((await tasksOf(asha)).every((x) => x.details && x.details.dob === '2003-03-12'), 'the Application Team gets the details');
+  assert.ok((await tasksOf(admin)).every((x) => !x.details), 'Admin does not');
+  assert.ok((await tasksOf(mina)).length > 0 && (await tasksOf(mina)).every((x) => !x.details), 'the Mock Team does not');
+
+  // The Application Team's Today.
+  const page = await asha.newPage();
+  const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/today');
+  await page.waitForSelector('.tdx');
+  const closed = page.locator('.tdx', { hasText: 'Apply to Test University' });
+  assert.match(await closed.locator('.tdy-hint').innerText(), /2 details missing/, 'the closed task says what is missing');
+  await closed.locator('.tdx-head').click();
+  const body = closed.locator('.tdy-body');
+  await body.waitFor();
+  const text = await body.locator('.tdy-details').innerText(); // the details; the updates are the conversation (the system's own assignment line may name the partner)
+  assert.match(text, /Add these 2 before you submit/i);
+  assert.match(text, /Passport number[\s\S]*Missing/);
+  assert.match(text, /Address[\s\S]*Missing/);
+  for (const l of ['University', 'Course', 'Level', 'Intake', 'Language test', 'Email', 'WhatsApp', 'Date of birth', 'Nationality']) assert.match(text, new RegExp(l), l + ' is shown');
+  assert.match(text, /Test University/); assert.match(text, /Waiver/); assert.match(text, /12 Mar 2003/);
+  assert.doesNotMatch(text, /Student source|Social Media|Real Dreams|Partner/i, 'no source and no partner');
+  assert.doesNotMatch(text, /Highest qualification|English test|Passport expiry/i, 'nothing the system does not show');
+  // Missing items are never also listed in the sections: Passport number appears once.
+  assert.strictEqual((text.match(/Passport number/g) || []).length, 1);
+  // Copy: the value is copied and the button says so.
+  const email = body.locator('.tdy-dl', { hasText: 'Email' }).locator('.tdy-cp');
+  await email.click();
+  await wait(150);
+  assert.strictEqual(await page.evaluate(() => navigator.clipboard.readText()), 'gita.demo@example.com');
+  assert.match(await email.innerText(), /Copied/);
+  // The updates: open at once while something is new on them (they were just given), folded with the latest as a preview once read.
+  const fold = body.locator('.tdy-upd');
+  assert.strictEqual(await fold.getAttribute('aria-expanded'), 'true', 'new updates are open');
+  await page.reload();
+  await page.waitForSelector('.tdx');
+  const again = page.locator('.tdx', { hasText: 'Apply to Test University' });
+  await again.locator('.tdx-head').click();
+  const fold2 = again.locator('.tdy-upd');
+  await fold2.waitFor();
+  assert.strictEqual(await fold2.getAttribute('aria-expanded'), 'false', 'read updates are folded');
+  assert.match(await fold2.innerText(), /Asked the student to resend the passport/);
+  await fold2.click();
+  assert.strictEqual(await fold2.getAttribute('aria-expanded'), 'true');
+  assert.ok(await again.locator('.tdy-upd-body').isVisible());
+  // Mark as done, Reschedule, Reassign and View student profile are still there.
+  for (const b of ['Mark as done', 'Reschedule', 'Reassign', 'View student profile']) assert.ok(await again.locator('.tdx-actions', { hasText: b }).count(), b);
+  // Nothing sideways, no script error.
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no sideways scroll');
+  assert.deepStrictEqual(errors, []);
+
+  // The Mock Team's Today is as it was.
+  const mockPage = await mina.newPage();
+  await mockPage.goto('/today');
+  await mockPage.waitForSelector('.tdx');
+  await mockPage.locator('.tdx-head').first().click();
+  await mockPage.waitForSelector('.tdx-body');
+  assert.strictEqual(await mockPage.locator('.tdy-body, .tdy-hint').count(), 0, 'the Mock Team sees the opened task as before');
+  assert.ok(await mockPage.locator('.tdx-facts').count(), 'with its facts tile');
+});
