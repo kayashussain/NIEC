@@ -656,8 +656,9 @@
           read = () => (q.value() && q.value() !== 'none' ? { step: q.value(), date: date.input.value } : {});
           check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Say why the visa was refused, in the note below.' : '');
         }
-        // Few questions, then Save, for the other teams. The Application Team's window is always two steps with Check before saving (F5).
-        const simple = !F5 && (Boolean(t.app || (state && (state.courseTask || state.offerTask))) || tag === 'noc' || tag === 'medical');
+        // Few questions, then Save. The Application Team's window has no Check before saving step (the owner, 24 Nov 2026: "no need");
+        // its answers are still checked by the server before the window closes, so a problem shows here and nothing is saved.
+        const simple = F5 || Boolean(t.app || (state && (state.courseTask || state.offerTask))) || tag === 'noc' || tag === 'medical';
         if (F5 && asks) notesOptional = true;
         if (F5 && !simple && dlgHead && !stepNo) { stepNo = el('span', 'td-done-stepno', 'Step 1 of 2'); dlgHead.insertBefore(stepNo, dlgHead.querySelector('.p-x')); }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
@@ -679,6 +680,13 @@
           if (!recorded && words.input.value.trim().length < minNote) { fail({ message: 'Write in a few words what was done, so the next person knows.' }); words.input.focus(); return; }
           // The words the window supplies (an offer refused, an application closed) come first, then anything typed in Notes.
           const answers = { ...read(), note: [fallbackNote(), words.input.value.trim()].filter(Boolean).join(' ') };
+          // The Application Team's window: the server checks the answers first (nothing is written), and the window closes only when
+          // they add up; otherwise the reason shows here.
+          if (F5) {
+            next.disabled = true;
+            try { await api(url, { done: true, finish: answers, preview: true }); answer = { ...answers, confirmed: true }; close(true); } catch (e) { fail(e); next.disabled = false; }
+            return;
+          }
           // The simple windows save at once: the few answers are already clear (no second check screen).
           if (simple) { answer = { ...answers, confirmed: true }; close(true); return; }
           if (!asks && !F5) { answer = answers; close(true); return; }
