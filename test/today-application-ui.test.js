@@ -112,16 +112,43 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(await again.locator('.tdy-upd-body').isVisible());
   // Mark as done, Reschedule, Reassign and View student profile are still there.
   for (const b of ['Mark as done', 'Reschedule', 'Reassign', 'View student profile']) assert.ok(await again.locator('.tdx-actions', { hasText: b }).count(), b);
-  // The "Mark as done?" window is drawn in the Application Team's own look: flat title, the course with the intake and level, the
-  // result choices, a footer bar; what it asks is unchanged (the result and the date, then Save).
+  // ... and the "..." pill at the right end, as in F5, which opens a menu with the student card in a new tab.
+  const more = again.locator('.tdx-actions .td-more-btn');
+  assert.strictEqual(await more.count(), 1, 'the ... pill');
+  const mb = await more.boundingBox();
+  const ab = await again.locator('.tdx-actions').boundingBox();
+  assert.ok(mb.height >= 43 && Math.abs((mb.x + mb.width) - (ab.x + ab.width)) <= 2, 'a 44px pill at the right end of the row');
+  await more.click();
+  assert.ok(await again.getByRole('menuitem', { name: 'Open the student card in a new tab' }).isVisible());
+  await page.keyboard.press('Escape');
+  // The "Mark as done?" window, as in the approved design F5 (the owner, 23 Nov 2026): Step 1 of 2 asks What happened (Applied or
+  // Not submitted), Why only when not submitted, the day it happened and optional notes; Next: check shows Step 2 of 2, Check before
+  // saving, with Back and Yes, this is correct. Nothing is saved here (Back, then Not yet).
   await again.locator('.tdx-done').click();
   const win = page.locator('dialog.p-dialog[open]');
   await win.locator('.td-done-form').waitFor();
   assert.ok(await win.evaluate((d) => d.classList.contains('td-done-app')), 'the Application Team\'s window');
   assert.match(await win.innerText(), /Gita Demo/);
   assert.match(await win.innerText(), /Test University/);
-  for (const r of ['Application submitted', 'Not eligible', 'Already applied through another agent', 'Course not available', 'Application closed']) assert.ok(await win.getByText(r, { exact: true }).count(), r);
-  assert.ok(await win.getByRole('button', { name: 'Save' }).count() && await win.getByRole('button', { name: 'Not yet' }).count());
+  assert.strictEqual(await win.locator('.td-done-stepno').innerText(), 'Step 1 of 2');
+  for (const r of [/^What happened/, /^Day it happened/, /^Notes \(optional\)$/]) assert.ok(await win.locator('.p-label', { hasText: r }).count(), String(r));
+  for (const r of ['Applied', 'Not submitted']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).count(), r);
+  assert.strictEqual(await win.getByRole('radio', { name: 'Applied', exact: true }).getAttribute('aria-checked'), 'true', 'Applied is chosen first');
+  const whyBox = win.locator('.p-label', { hasText: /^Why/ });
+  assert.ok(!(await whyBox.isVisible()), 'Why is hidden while Applied is chosen');
+  await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
+  assert.ok(await whyBox.isVisible(), 'Why shows for Not submitted');
+  for (const r of ['Not eligible', 'Already applied through another agent', 'The course is not available', 'Applications are closed']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
+  await win.getByRole('radio', { name: 'Applied', exact: true }).click();
+  assert.ok(!(await whyBox.isVisible()), 'Why hides again for Applied');
+  assert.ok(await win.getByText('Nothing is saved until you check it on the next step.').count());
+  await win.getByRole('button', { name: 'Next: check' }).click();
+  await win.locator('.td-check-title').waitFor();
+  assert.strictEqual(await win.locator('.td-check-title').innerText(), 'Check before saving');
+  assert.strictEqual(await win.locator('.td-done-stepno').innerText(), 'Step 2 of 2');
+  assert.ok(await win.getByRole('button', { name: 'Yes, this is correct' }).count());
+  await win.getByRole('button', { name: 'Back' }).click();
+  assert.strictEqual(await win.locator('.td-done-stepno').innerText(), 'Step 1 of 2');
   await win.getByRole('button', { name: 'Not yet' }).click();
   await win.waitFor({ state: 'detached' });
   // Nothing sideways, no script error.

@@ -7,6 +7,8 @@ To find every marked change in the code, search the project for `CSS CHANGED`.
 
 Format: **date · file · what · from → to · why**
 
+- **2026-11-23 · shared/theme.css (and student-details/today-page.js, portal-ui.js) · the "..." and the Mark as done window of an opened Application Team task · from: a small round 30px "..." shown only to whoever could edit the task; a one-step window (Result, Date, Save) · to: a 44px "..." pill at the right end of every task (it opens the student card in a new tab, and holds Edit and Remove when allowed); a two-step window as in F5: What happened (Applied or Not submitted), Why when not submitted, Day it happened, Notes (optional), Next: check, then Check before saving with Back and Yes, this is correct · why: found by checking the live site against F5, the owner chose "Match F5" for both**
+
 - **2026-11-23 · shared/theme.css · the side-menu row height on laptop-height windows (700 to 820 px tall) · from: about 34px rows (6px padding, 1px gap) from the 13 Nov short-screen rule, so the blue Today pill was shorter than F5 · to: 42px rows (10px padding, 3px gap) as in F5; windows shorter than 700px keep the tight menu · why: found by measuring the live Application Team Today against F5, the owner asked for the fix**
 
 - **2026-11-23 · shared/theme.css · the width of the Application Team's Today (Today, Later, Missing details, Everything done) · from: a centred column 1,040 wide with empty grey space on both sides · to: the lists, search row and tabs start beside the menu and run to the right edge, 40px in on each side, as in F5 · why: the owner looked at the laptop artifact (1440 by 900, real menu) and chose "Fills the width". Other teams and Admin are unchanged.**

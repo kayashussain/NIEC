@@ -383,7 +383,10 @@
     if (x.mayHand) acts.append(h('button', { class: 'btn', type: 'button', onclick: async () => { if (await handOn(x, { rowId: x.studentId, teams: handTeams })) { window.NiecUI.toast('Reassigned.', { type: 'success' }); refresh(true); } } }, 'Reassign'));
     acts.append(h('a', { class: 'btn tdx-profile', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'View student profile'));
     const mayEdit = canAssignAll || (x.by === me && x.tag !== 'offer'); // an Offer request is ISR's own: Admin may change it
+    // The Application Team's task always ends with the "..." pill at the right, as in the approved design F5 (the owner, 23 Nov 2026):
+    // it opens the student card in a new tab for everyone, and holds Edit and Remove for whoever may change the task.
     const menu = window.Portal.taskMenu([
+      info && ['Open the student card in a new tab', () => { window.open('/student?id=' + encodeURIComponent(x.studentId), '_blank', 'noopener'); }],
       mayEdit && ['Edit the task', async () => { if (await window.Portal.editTask(x, { rowId: x.studentId, stage: x.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
       mayEdit && ['Remove the task', async () => { if (await window.NiecUI.confirm('Remove this task and its updates?', { danger: true, confirmText: 'Remove' })) { try { await api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}/delete`, {}); refresh(true); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, true],
     ]);

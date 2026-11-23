@@ -4313,3 +4313,6 @@ html body .tda-page { max-width: none; margin: 0; }
   html body .niec-nav a { padding: 10px 12px; }
   html body .niec-nav { gap: 3px; }
 }
+/* 🔴 CSS CHANGED (2026-11-23): the "..." of an opened Application Team task, as in the approved design F5 | from: a small round 30px grey icon at the right, shown only to whoever could edit the task | to: a 44px pill like Reschedule and Reassign (grey #f7f7f7, #9a9a9a edge, round ends) at the right end of the row, on every task; its menu is unchanged */
+html body .tda-row .tdx-actions .td-more-btn { width: auto; min-width: 48px; height: auto; min-height: 44px; padding: 0 14px; border: 1px solid #9a9a9a; border-radius: 999px; background: #f7f7f7; color: #000; }
+html body .tda-row .tdx-actions .td-more-btn:hover, html body .tda-row .tdx-actions .td-more-btn[aria-expanded="true"] { background: #e2e2e2; color: #000; }

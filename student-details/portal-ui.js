@@ -412,7 +412,8 @@
         let onWhat = () => {}; // the answer chosen changes what the notes box asks
         const specificFrom = form.children.length; // everything added from here to the "What was done?" box belongs to the task's own question
         let check = () => '';
-        let noNotes = false; // the application window has no notes box (the owner, 20 Nov 2026)
+        let noNotes = false; // the Offer request window has no notes box (the owner, 20 Nov 2026)
+        let notesOptional = false; // the application window has an optional notes box, as in F5 (the owner, 23 Nov 2026)
         if (t.app || (state && state.courseTask)) {
           // One application, one university and course (the owner, 20 Nov 2026): what to apply for is shown, and the answer is one of
           // five, with its day (the owner, 21 Nov 2026): Application submitted, Not eligible, Already applied through another agent (an
@@ -424,17 +425,21 @@
           const chips = [c.intake, c.level, c.location].filter(Boolean);
           if (chips.length) { const cs = el('span', 'td-app-chips'); chips.forEach((x) => cs.append(el('span', '', x))); who.append(cs); }
           form.append(who);
-          const q = question('Result', [['submitted', 'Application submitted'], ['noteligible', 'Not eligible'], ['agent', 'Already applied through another agent'], ['nocourse', 'Course not available'], ['closed', 'Application closed']]);
-          const dayF = field('Date', { kind: 'date', value: today, required: true });
+          // As in the approved design F5 (the owner, 23 Nov 2026): What happened (Applied or Not submitted), Why when it was not
+          // submitted, the day it happened and optional notes; then a second step shows what will be saved (Check before saving).
+          const q = question('What happened', [['submitted', 'Applied'], ['notsubmitted', 'Not submitted']], (v) => show(why.node.parentNode, v === 'notsubmitted'));
+          const why = question('Why', [['noteligible', 'Not eligible'], ['agent', 'Already applied through another agent'], ['nocourse', 'The course is not available'], ['closed', 'Applications are closed']]);
+          show(why.node.parentNode, false);
+          const dayF = field('Day it happened', { kind: 'date', value: today, required: true });
           dayF.input.max = today;
           form.append(dayF.wrap);
           q.set('submitted');
-          noNotes = true;
+          notesOptional = true;
           const NOTE = { noteligible: `Not eligible for ${c.university}.`, agent: `Already applied to ${c.university} through another agent; an agent change is not possible.`, nocourse: `The course is not available at ${c.university}.`, closed: `Applications to ${c.university} are closed: the deadline has passed.` };
-          fallbackNote = () => NOTE[q.value()] || '';
+          fallbackNote = () => (q.value() === 'notsubmitted' ? NOTE[why.value()] || '' : '');
           read = () => (q.value() === 'submitted' ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'submitted', date: dayF.input.value }] }
-            : q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'notsubmitted', date: dayF.input.value }] } : {});
-          check = () => (!q.value() ? 'Choose the result.' : !dayF.input.value ? 'Choose the date.' : '');
+            : q.value() === 'notsubmitted' && why.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: 'notsubmitted', date: dayF.input.value }] } : {});
+          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'notsubmitted' && !why.value() ? 'Choose why it was not submitted.' : !dayF.input.value ? 'Choose the day it happened.' : '');
         } else if (state && state.offerTask) {
           // The Offer request (the owner, 21 Nov 2026): only the university, the course, the intake and the day applied, then what the
           // university said, with its day: Conditional offer, Unconditional offer, Application rejected or Application closed. No notes.
@@ -605,14 +610,15 @@
           read = () => (q.value() && q.value() !== 'none' ? { step: q.value(), date: date.input.value } : {});
           check = () => (!q.value() ? 'Choose the step.' : q.value() !== 'none' && !date.input.value ? 'Choose the day.' : q.value() === 'refused' && words.input.value.trim().length < minNote ? 'Say why the visa was refused, in the note below.' : '');
         }
-        const simple = Boolean(t.app || (state && (state.courseTask || state.offerTask))) || tag === 'noc' || tag === 'medical'; // few questions, then Save
+        // Few questions, then Save. The application window is two steps with a check screen, as in F5 (the owner, 23 Nov 2026).
+        const simple = Boolean(state && state.offerTask && !t.app && !state.courseTask) || tag === 'noc' || tag === 'medical';
         if (dlg && dlg.classList.contains('td-done-app') && asks && !simple && dlgHead && !stepNo) { stepNo = el('span', 'td-done-stepno', 'Step 1 of 2'); dlgHead.insertBefore(stepNo, dlgHead.lastChild); }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
         const minNote = (state && state.minNote) || 8;
         const words = field(asks ? 'What was done? (required unless you record something above)' : 'What was done?', { kind: 'area', max: 2000, wide: true, placeholder: tag === 'application' ? 'e.g. Application ID 12345.' : tag === 'noc' ? 'e.g. Documents uploaded.' : tag === 'medical' ? 'e.g. The student will bring the report on Monday.' : 'e.g. Sent the document checklist on WhatsApp.' });
         words.input.rows = 2; words.input.dataset.words = '1'; words.input.dataset.was = words.input.placeholder;
         form.append(words.wrap);
-        if (simple) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(tag === 'noc' || tag === 'medical' ? 'Comments (optional)' : 'Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
+        if (simple || notesOptional) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(tag === 'noc' || tag === 'medical' ? 'Comments (optional)' : 'Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
         if (noNotes) words.wrap.hidden = true;
         // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
         ask.append(msg);
