@@ -210,7 +210,7 @@
       const lang = String(d.language || '').trim();
       const langOk = Boolean(lang) && lang !== 'Test Date';
       add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], ['Language test', langOk ? languageShown(lang) : '']]);
-      add('Student', [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob)], ['Nationality', d.nationality], ['Address', d.address]]);
+      add('Student', [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]]);
       [['Email', email], ['WhatsApp number', phone], ['Passport number', d.passport], ['Date of birth', d.dob], ['Address', d.address], [lang === 'Test Date' ? 'Language test date' : 'Language test', langOk]].forEach(([l, v]) => { if (!v) missing.push(l); });
     } else if (x.tag === 'offer') {
       add('Application', [['University', c && c.university], ['Course', c && c.course], ['Intake', c && c.intake], ['Applied on', longDay(c && c.applied)]]);
@@ -268,7 +268,8 @@
   // The updates, folded away with the latest one as a preview; open at once when something is new on them.
   function appUpdates(x, thread, n) {
     const wrap = el('div', 'tdy-updates');
-    const open = updOpen.has(x.id) || Boolean(x.unread);
+    if (x.unread) updOpen.add(x.id); // opened because something is new: it stays open when the list is read again, while the person reads
+    const open = updOpen.has(x.id);
     const last = (x.comments || []).filter((m) => m.text).pop();
     const fold = h('button', { class: 'tdy-upd', type: 'button', 'aria-expanded': String(open) });
     const prev = el('span', 'tdy-prev');
@@ -410,6 +411,7 @@
   function missingRowApp(m, refresh, key) {
     const open = missOpen.has(key);
     const r = el('article', `tdx tdx-miss tdy-missrow${open ? ' is-open' : ''}`);
+    r.dataset.missKey = key;
     const head = h('div', { class: 'tdx-head', role: 'button', tabindex: '0', 'aria-expanded': String(open), title: open ? 'Close' : 'Open' });
     const av = el('span', 'tdx-av', initials(m.name));
     av.setAttribute('aria-hidden', 'true');
@@ -424,7 +426,12 @@
     chev.setAttribute('aria-hidden', 'true');
     head.append(av, main, count, chev);
     r.append(head);
-    const toggle = () => { if (missOpen.has(key)) missOpen.delete(key); else missOpen.add(key); refresh(); };
+    const toggle = () => {
+      if (missOpen.has(key)) missOpen.delete(key); else missOpen.add(key);
+      refresh();
+      // The row is drawn again: the keyboard stays on it.
+      setTimeout(() => { const again = [...document.querySelectorAll('.tdy-missrow')].find((n) => n.dataset.missKey === key); const hd = again && again.querySelector('.tdx-head'); if (hd) hd.focus({ preventScroll: true }); }, 0);
+    };
     head.addEventListener('click', (e) => { if (e.target.closest('a')) return; toggle(); });
     head.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); toggle(); } });
     if (!open) return r;

@@ -4144,11 +4144,11 @@ html[data-nav="closed"] body .niec-brand { border-bottom: 0; padding-bottom: 6px
 html body .ui-toast .ui-toast-action { flex: none; display: inline-flex; align-items: center; min-height: 32px; margin: -4px 0 -4px 4px; padding: 0 16px; border: 1px solid #6f6f6f; border-radius: 980px; background: #f7f7f7; color: #000; font-size: 15px; font-weight: 600; line-height: 1.3; }
 html body .ui-toast .ui-toast-action:hover { background: #e2e2e2; color: #000; }
 
-/* 🔴 CSS CHANGED (2026-11-23): a task opened on Today, for the Application Team only (approved design F5) | from: one grey tile of boxed facts (university, course, intake, level, source, WhatsApp, email), then a boxed list of updates always open | to: flat labelled lines on a grid with hairlines, no boxes: "Add this before you submit" (what is missing, orange) first, then Application and Student side by side with a copy button on every value, then the updates folded under one line with the latest as a preview; the closed task says "1 detail missing" in small orange (14px) under its age; the updates shown as plain flat messages with no pink tint (as before); no Student source, no partner */
+/* 🔴 CSS CHANGED (2026-11-23): a task opened on Today, for the Application Team only (approved design F5) | from: one grey tile of boxed facts (university, course, intake, level, source, WhatsApp, email), then a boxed list of updates always open | to: flat labelled lines on a grid with hairlines, no boxes: "Add this before you submit" (what is missing, orange) first, then Application and Student side by side with a copy button on every value (the words "Ready to submit" and "Copied" in a deeper green, #146a35, so they pass the AA contrast bar; the dot and the tick keep the accepted green), then the updates folded under one line with the latest as a preview; the closed task says "1 detail missing" in small orange (14px) under its age; the updates shown as plain flat messages with no pink tint (as before); no Student source, no partner */
 html body .tdy-body { gap: 0; margin-right: 4px; margin-bottom: 24px; }
 html body .tdy-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 14px 0 20px; border-top: 1px solid #b8b8b8; }
 html body .tdy-top .tdy-given { margin: 0; color: #333; font-size: 14px; font-weight: 600; }
-html body .tdy-ready { position: relative; padding-left: 16px; color: #1e8e4a; font-size: 15px; font-weight: 600; }
+html body .tdy-ready { position: relative; padding-left: 16px; color: #146a35; font-size: 15px; font-weight: 600; }
 html body .tdy-ready::before { content: ""; position: absolute; left: 0; top: 7px; width: 8px; height: 8px; border-radius: 50%; background: #1e8e4a; }
 html body .tdy-details { display: flex; flex-direction: column; gap: 26px; }
 html body .tdy-cols { display: flex; flex-wrap: wrap; gap: 26px 48px; }
@@ -4166,9 +4166,9 @@ html body .tdy-add:hover { text-decoration: underline; }
 html body .tdy-cp { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; height: 34px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: #333; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .1s linear; }
 html body .tdy-cp:hover { background: #e2e2e2; color: #000; }
 html body .tdy-cp:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 1px; }
-html body .tdy-cp.is-done { color: #1e8e4a; }
+html body .tdy-cp.is-done { color: #146a35; }
 html body .tdy-cp svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-html body .tdy-cp.is-done svg { stroke-width: 3; }
+html body .tdy-cp.is-done svg { stroke: #1e8e4a; stroke-width: 3; }
 html body .tdy-updates { margin-top: 26px; }
 html body .tdy-upd { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid #b8b8b8; background: transparent; color: #000; font: inherit; text-align: left; cursor: pointer; }
 html body .tdy-upd:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }

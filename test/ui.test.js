@@ -752,6 +752,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     // "+ Add student" opens the form; the student goes on the sheet at the filtered stage, and a "Student saved" notice shows (no second card opens by itself).
     await page.click('#addRow');
     await page.waitForSelector('dialog.p-dialog[open]');
+    await page.waitForTimeout(500); // the form settles first (on a slow machine it was filled while still being drawn, and a name went missing)
     await page.fill('.p-dialog-body input >> nth=0', 'Newly');
     await page.fill('.p-dialog-body input >> nth=1', 'Added');
     // The email is needed too (the owner, 20 Nov 2026); without it, Save says so.
@@ -811,8 +812,9 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
         if (url === incentiveBase + '/') await ctx.request.post('/incentive/api/unlock', { data: { password: 'Test Gate Pass 1' } }); // every other page locks it again
         const page = await ctx.newPage();
         await page.goto(url);
-        if (url === incentiveBase + '/') await page.waitForSelector('#rows tr'); // it keeps a live connection open, so the network is never idle
-        else await page.waitForLoadState('networkidle');
+        // A slow machine (the GitHub runner) needs longer than the 30 seconds a wait gets by default.
+        if (url === incentiveBase + '/') await page.waitForSelector('#rows tr', { timeout: 90000 }); // it keeps a live connection open, so the network is never idle
+        else await page.waitForLoadState('networkidle', { timeout: 90000 });
         await page.waitForTimeout(300);
         await page.evaluate(axeSource);
         const result = await page.evaluate(() => axe.run({ runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'best-practice'] } }));

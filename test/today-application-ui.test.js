@@ -128,7 +128,12 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   const line = await miss.locator('.tdy-pr-text').first().innerText();
   assert.match(line, /passport number/i); assert.match(line, /address/i);
   assert.ok(await miss.locator('.tdy-pr .tdx-fix', { hasText: 'Fix it' }).count(), 'a Fix it button on the line');
-  await missHead.click();
+  // From the keyboard: Enter closes it and the focus stays on the same row.
+  await missHead.focus();
+  await page.keyboard.press('Enter');
+  await wait(200);
+  assert.strictEqual(await miss.locator('.tdx-head').getAttribute('aria-expanded'), 'false');
+  assert.ok(await miss.locator('.tdx-head').evaluate((e) => e === document.activeElement), 'the keyboard stays on the row after it is drawn again');
   assert.strictEqual(await missHead.getAttribute('aria-expanded'), 'false');
   assert.strictEqual(await miss.locator('.tdy-pr').count(), 0, 'closed again');
 
