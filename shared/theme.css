@@ -4299,3 +4299,7 @@ html body .tda-search .td-search-input:not([type="checkbox"]):not([type="radio"]
 html body .tda-search .td-search-input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):focus { border-color: #0071e3; }
 html body .tda-date, html body .tdy-sech, html body .tdy-cap { font-weight: 600; }
 html body .tda-gh { font-weight: 700; }
+
+/* 🔴 CSS CHANGED (2026-11-23): the page you are on, in the side menu, for every team and Admin (the owner chose "Blue, every team", as in the approved design F5 and the ISR colour table: "where you are now" is blue) | from: a light grey pill (6% black) with black words and a black icon | to: a blue #0071e3 pill with white words and a white icon; the other menu items and their grey hover are unchanged */
+html body .niec-nav a[aria-current="page"], html body .niec-nav a[aria-current="page"]:hover { background: #0071e3; color: #fff; font-weight: 600; box-shadow: none; }
+html body .niec-nav a[aria-current="page"] .niec-ico { color: #fff; }

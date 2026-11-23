@@ -12,6 +12,14 @@
 - If a reply has no question, it says so by simply ending. If it has one, the question is the multiple-choice card, not text.
 - Never forget this and never repeat the mistake. If an earlier reply broke it, fix the next one.
 
+## Rule 0d: DESIGNS ARE SHOWN ON A LAPTOP SCREEN FIRST, AS AN ARTIFACT (STRICT, the owner, 23 Nov 2026)
+
+- **Before any front-end change that is a design (not a bug fix), publish an artifact that shows it at laptop and desktop width
+  (1440 px wide, with the real side menu, the real column width and the real text size), never a narrow or portrait mock-up.** The
+  owner approves it, and only then is it built. What is built must look like the approved artifact on the owner's own screen.
+- A difference between an approved design and the live site that was not asked about is reported to the owner as a multiple-choice
+  question (Rule 0), and nothing is changed until the owner answers.
+
 ## Rule 0b: APPROVED ONCE MEANS DONE AND LIVE (STRICT, the owner, 23 Nov 2026)
 
 - **When the owner has looked at a design or a plan and says go, approve, build or deploy, that is the approval for the whole job,
