@@ -22,7 +22,11 @@
   window.NiecApple = {
     on(kind) {
       const mock = kind === 'mock';
-      if (!link()) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
+      if (!link()) {
+        // While the page is still being read, the stylesheet is written into it, so the browser waits for it before the first picture: the menu and the page never draw at the old size and then jump to the new one (the owner, 24 Nov 2026).
+        if (document.readyState === 'loading' && document.currentScript) { document.write('<link rel="stylesheet" href="/apple.css" data-apple="1">'); }
+        else { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
+      }
       document.documentElement.classList.add('app-apple');
       document.documentElement.classList.toggle('app-mock', mock); // the Mock Team's own touches in apple.css hang on this class, so the Application Team is never changed by them
       try { localStorage.setItem('niecApple', mock ? 'mock' : '1'); } catch (e) { /* only the first draw may flash */ }
