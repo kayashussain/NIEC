@@ -48,7 +48,7 @@
         list.append(h('button', { type: 'button', class: `mt-uni${u.name === chosen ? ' is-on' : ''}${n ? '' : ' is-empty'}`, 'aria-pressed': String(u.name === chosen), onclick: () => { chosen = u.name; draw(true); } },
           el('span', 'mt-uni-name', u.name), n ? el('span', 'mt-uni-n', String(n)) : (mockLook() ? '' : el('span', 'mt-uni-n is-none', 'none yet'))));
       });
-      if (!shown.length) list.append(el('p', 'mt-empty', 'No University has that name.'));
+      if (!shown.length) list.append(el('p', 'mt-empty', mockLook() && !q.trim() && only !== 'all' ? (only === 'has' ? 'No University has a guideline yet.' : 'Every University has a guideline.') : 'No University has that name.'));
     };
     search.addEventListener('input', () => { q = search.value; fill(); });
     fill();
@@ -73,7 +73,7 @@
     if (!chosen) { card.append(el('h2', '', 'Choose a University'), el('p', 'mt-hint', 'Its interview guidelines open here.')); return card; }
     const files = filesOf(chosen);
     const head = el('div', 'mt-list-head');
-    head.append(h('div', {}, el('h2', '', chosen), el('p', 'mt-hint', files.length ? `${files.length} file${files.length === 1 ? '' : 's'}` : 'No guideline yet')));
+    head.append(h('div', {}, el('h2', '', chosen), ...(files.length || !mockLook() ? [el('p', 'mt-hint', files.length ? `${files.length} file${files.length === 1 ? '' : 's'}` : 'No guideline yet')] : [])));
     card.append(head);
     if (data.canUpload) {
       const open = h('button', { type: 'button', class: 'btn btn-primary' }, 'Upload a guideline');
@@ -84,6 +84,7 @@
         form.hidden = !form.hidden;
         open.textContent = form.hidden ? 'Upload a guideline' : 'Cancel'; // one main blue button on the screen: the one inside the panel
         open.classList.toggle('btn-primary', form.hidden);
+        const none = card.querySelector('.mt-none-all'); if (none) none.hidden = !form.hidden; // the empty line waits while the panel is open
         if (!form.hidden) form.querySelector('select').focus();
       });
       card.append(form);
@@ -122,6 +123,8 @@
     const file = h('input', { type: 'file', id: 'mtFile', accept: '.pdf,.doc,.docx,.png,.jpg,.jpeg' });
     const go = h('button', { type: 'button', class: 'btn btn-primary' }, 'Upload');
     const err = el('p', 'p-msg error');
+    go.disabled = true; // Upload waits until a file is chosen
+    file.addEventListener('change', () => { go.disabled = !(file.files && file.files.length); });
     const lab = (id, words) => h('label', { class: 'mt-label', for: id }, words);
     box.append(el('p', 'mt-hint', 'A PDF, a Word document or a picture, up to 10 MB.'),
       h('div', { class: 'mt-three' }, h('div', {}, lab('mtKind', 'Kind of guideline'), kind), h('div', {}, lab('mtSource', 'Where it came from'), source), h('div', {}, lab('mtTitle', 'Title'), title)),

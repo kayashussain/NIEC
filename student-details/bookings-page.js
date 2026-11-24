@@ -241,21 +241,18 @@
     const dates = Object.fromEntries(Object.entries(me.dates || {}).map(([k, v]) => [k, v.map((w) => [...w])]));
     const state = { minutes: me.minutes || 30, ahead: me.ahead || 30, notice: me.notice || 60 };
     const wrap = el('div', 'mt-slots');
-    const top = el('div', 'mt-slots-top');
     const save = h('button', { type: 'button', class: 'btn btn-primary' }, 'Save');
     save.disabled = true; // Save is grey until something changes
     let ready = false;
     const dirty = () => { if (ready) save.disabled = false; };
     wrap.addEventListener('input', dirty);
     wrap.addEventListener('change', dirty);
-    top.append(el('p', 'mt-hint', 'Students see only the slots that are still free, in your booking link.'), save);
-    wrap.append(top);
     const grid = el('div', 'mt-grid');
     // Weekly slots.
     const week = el('section', 'p-card mt-week');
     const len = h('select', { class: 'p-input', id: 'mtLength', onchange: (e) => { state.minutes = Number(e.target.value); } }, ...MINUTES.map((m) => h('option', { value: String(m), ...(m === state.minutes ? { selected: true } : {}) }, `${m} min`)));
     const lenLabel = h('label', { class: 'mt-inline', for: 'mtLength' }, 'Each mock lasts', len);
-    week.append(h('div', { class: 'mt-list-head' }, el('h2', '', 'Weekly slots'), lenLabel), el('p', 'mt-hint', 'Add as many slots in a day as you like. Copy a day to other days, or give each day its own slots.'));
+    week.append(h('div', { class: 'mt-list-head' }, el('h2', '', 'Weekly slots'), lenLabel, save), el('p', 'mt-hint', 'Students see only the slots that are still free. Add as many slots in a day as you like, copy a day to other days, or give each day its own slots.'));
     const rows = el('div', 'mt-days');
     const drawDays = () => {
       dirty();
@@ -385,10 +382,12 @@
           h('div', {}, lab('mtEmail', 'Email for your calendar invites'), email))),
       step(3, Boolean(me.weekly && Object.keys(me.weekly).length), 'How long, and your slots',
         h('p', { class: 'mt-hint' }, 'Choose them in ', h('button', { type: 'button', class: 'p-link', onclick: () => { tab = 'slots'; draw(); } }, 'Available slots'), '.')),
-      step(4, me.setUp, 'Ready', el('p', 'mt-hint', me.setUp ? 'Your link is live. Copy it on Upcoming and send it to a student.' : 'Save this, and your link is live.')),
+      step(4, Boolean(me.setUp && me.email), 'Ready', el('p', 'mt-hint', me.setUp ? (me.email ? 'Your link is live. Copy it on Upcoming and send it to a student.' : 'Your link is live. Add your email above to get the calendar invites.') : 'Save this, and your link is live.')),
     );
     const save = h('button', { type: 'button', class: 'btn btn-primary' }, 'Save');
     const err = el('p', 'p-msg error');
+    if (me.setUp) save.disabled = true; // already saved: grey until something changes
+    card.addEventListener('input', () => { save.disabled = false; });
     save.addEventListener('click', async () => {
       err.textContent = '';
       if (!teams.value.trim()) { err.textContent = 'Paste your Teams meeting link.'; teams.focus(); return; }
