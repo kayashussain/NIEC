@@ -863,7 +863,7 @@
     }
     const table = el('table', 'lg-table lg-tl');
     const thead = el('thead'); const hr = el('tr');
-    [['When', 'is-when'], ['What', 'is-kind'], ['What happened', ''], ['By', 'is-by'], ['', 'is-more']].forEach(([t, c]) => { const th = el('th', c, t); th.scope = 'col'; hr.append(th); });
+    [['When', 'is-when'], ['What', 'is-kind'], ['What happened', ''], ['By', 'is-by'], ['', 'is-more']].forEach(([t, c]) => { const th = el('th', c, t); th.scope = 'col'; if (!t) { const sr = el('span', '', 'Actions'); sr.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap'; th.append(sr); } hr.append(th); });
     thead.append(hr); table.append(thead);
     const tb = el('tbody');
     const pad = (n) => String(n).padStart(2, '0');

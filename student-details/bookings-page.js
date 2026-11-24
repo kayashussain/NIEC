@@ -63,6 +63,13 @@
     return bar;
   }
 
+  // A calm monogram (the first letters of the name) so a row is found by eye. Decoration only: the name is always written too.
+  const monogram = (name) => {
+    const m = el('span', 'mt-av', String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?');
+    m.setAttribute('aria-hidden', 'true');
+    return m;
+  };
+
   function upcomingView() {
     const wrap = el('div', 'mt-upcoming');
     const bar = linkBar();
@@ -94,8 +101,8 @@
         }
         body.append(h('tr', {},
           h('td', { class: 'mt-time' }, niceTime(b.time)),
-          h('td', { class: 'mt-who' }, b.rowId ? h('a', { href: `/student?id=${encodeURIComponent(b.rowId)}` }, b.name) : el('span', '', b.name),
-            b.rowId ? el('small', 'mt-sub', [b.university, b.course].filter(Boolean).join(' | ') || 'No University yet') : el('small', 'mt-unmatched', 'Not matched to a student yet')),
+          h('td', { class: 'mt-who' }, monogram(b.name), h('div', { class: 'mt-who-words' }, b.rowId ? h('a', { href: `/student?id=${encodeURIComponent(b.rowId)}` }, b.name) : el('span', '', b.name),
+            b.rowId ? el('small', 'mt-sub', [b.university, b.course].filter(Boolean).join(' | ') || 'No University yet') : el('small', 'mt-unmatched', 'Not matched to a student yet'))),
           h('td', { class: 'mt-nowrap' }, b.mock ? `${b.mock} of 4` : '-'),
           ...(withOwner ? [h('td', {}, b.owner || '-')] : []),
           actions));
@@ -122,7 +129,7 @@
     card.append(head, el('p', 'mt-hint', hint));
     if (!list.length) card.append(el('p', 'mt-empty', empty));
     list.forEach((s) => {
-      card.append(h('div', { class: 'mt-person' }, h('a', { href: `/student?id=${encodeURIComponent(s.rowId)}` }, s.name), el('span', '', sub(s))));
+      card.append(h('div', { class: 'mt-person' }, monogram(s.name), h('div', { class: 'mt-person-words' }, h('a', { href: `/student?id=${encodeURIComponent(s.rowId)}` }, s.name), el('span', '', sub(s)))));
     });
     return card;
   }

@@ -4,11 +4,11 @@
 html:root {
   --bg: #f5f5f7; --panel: #fff; --surface: #fff; --ui-panel: #fff; --edit-bg: #fff; --soft: #f5f5f7;
   --border: #e5e5ea; --border-strong: #d2d2d7; --header-bg: #fff; --row-alt: #fafafc; --row-hover: #f5f5f7;
-  --text: #1d1d1f; --ink: #1d1d1f; --text-dim: #6e6e73; --head-ink: #6e6e73;
+  --text: #1d1d1f; --ink: #1d1d1f; --text-dim: #636366; --head-ink: #636366;
   --r-sm: 12px; --r-md: 18px; --r-lg: 22px;
   --sh-2: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .05); --sh-3: 0 4px 24px rgba(0, 0, 0, .08);
   --apple-card: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .05);
-  --apple-hair: #e5e5ea; --apple-grey: #6e6e73; --apple-chip: #f0f0f2; --apple-btn: #e8e8ed;
+  --apple-hair: #e5e5ea; --apple-grey: #636366; --apple-chip: #f0f0f2; --apple-btn: #e8e8ed;
 }
 html:root body { background: #f5f5f7; color: #1d1d1f; letter-spacing: -.011em; }
 html:root body h1 { color: #1d1d1f; font-weight: 700; letter-spacing: -.03em; }
@@ -37,9 +37,9 @@ html:root body .tda-seg { padding: 3px; border: 0; border-radius: 11px; backgrou
 html:root body .tda-view { min-height: 34px; padding: 0 18px; border-radius: 8px; color: #1d1d1f; font-size: 14px; font-weight: 500; }
 html:root body .tda-view:hover:not([aria-selected="true"]) { background: rgba(0, 0, 0, .05); }
 html:root body .tda-view[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
-html:root body .tda-view-n { color: #6e6e73; font-weight: 500; }
+html:root body .tda-view-n { color: #636366; font-weight: 500; }
 html:root body .tda-search .td-search-input { min-height: 40px; border: 0; border-radius: 10px; background: var(--apple-btn); box-shadow: none; font-weight: 400; }
-html:root body .tda-search .td-search-input::placeholder { color: #6e6e73; font-weight: 400; }
+html:root body .tda-search .td-search-input::placeholder { color: #636366; font-weight: 400; }
 html:root body .tda-search .td-search-input:focus { background: #fff; box-shadow: inset 0 0 0 2px #0071e3; }
 html:root body .tda-pill { min-height: 34px; padding: 0 14px; border: 0; border-radius: 980px; background: var(--apple-btn); outline: 0; color: #1d1d1f; font-size: 14px; font-weight: 500; }
 html:root body .tda-pill:hover { background: #dcdce1; }
@@ -101,14 +101,14 @@ html:root body dialog.td-done-app .td-done-form input, html:root body dialog.td-
 html:root body .lg-box, html:root body .sc-hero, html:root body .sc-next, html:root body .sc-checks, html:root body section.p-card.lg-box { border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); overflow: hidden; }
 html:root body .lg-head, html:root body .p-card-head { border-bottom: 0; background: #fff; padding-top: 20px; padding-bottom: 8px; }
 html:root body .lg-head h2, html:root body .p-card-head h2, html:root body .lg-box > h2 { color: #1d1d1f; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
-html:root body .lg-head-sub, html:root body .sc-tl-count { color: #6e6e73; font-size: 15px; font-weight: 600; }
+html:root body .lg-head-sub, html:root body .sc-tl-count { color: #636366; font-size: 15px; font-weight: 600; }
 html:root body .lg-edit { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
 html:root body .lg-edit:hover { background: #dcdce1; }
 html:root body .lg-dl dt, html:root body .lg-dl dd { border-top-color: var(--apple-hair); }
 html:root body .lg-dl dt { color: var(--apple-grey); font-weight: 400; }
 html:root body .lg-dl dd { font-weight: 500; }
 html:root body .lg-missing { color: #b25000; }
-html:root body .lg-none { color: #6e6e73; font-weight: 400; }
+html:root body .lg-none { color: #636366; font-weight: 400; }
 html:root body .lg-foot { color: var(--apple-grey); }
 html:root body .sc-avatar { border-radius: 50%; background: linear-gradient(180deg, #f0f0f3, #d8d8de); color: #1d1d1f; }
 html:root body .sc-name { font-weight: 700; letter-spacing: -.03em; }
@@ -149,7 +149,7 @@ html:root body .ff-soon, html:root body #ffSoon { border: 0; border-radius: 14px
 html:root body #ffBar.p-seg { padding: 3px; border: 0; border-radius: 11px; background: var(--apple-btn); gap: 2px; }
 html:root body #ffBar.p-seg button { border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font-weight: 500; }
 html:root body #ffBar.p-seg button[aria-pressed="true"], html:root body #ffBar.p-seg button.is-on, html:root body #ffBar.p-seg button[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
-html:root body .ff-n { color: #6e6e73; background: transparent; }
+html:root body .ff-n { color: #636366; background: transparent; }
 html:root body #search { border: 0; border-radius: 10px; background: var(--apple-btn); }
 html:root body .up-hero { border-radius: 28px; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, .14); }
 html:root body .up-doc section, html:root body .up-level, html:root body .up-course, html:root body .up-about { border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); }
@@ -180,7 +180,7 @@ html:root body div.p-seg.ff-kind.has-thumb { padding: 3px; border: 0; border-rad
 html:root body div.p-seg.ff-kind .seg-thumb { border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
 html:root body div.p-seg.ff-kind button { color: #1d1d1f; }
 html:root body div.p-seg.ff-kind button.is-on, html:root body div.p-seg.ff-kind button[aria-pressed="true"], html:root body div.p-seg.ff-kind button[aria-selected="true"] { color: #1d1d1f; font-weight: 600; }
-html:root body div.p-seg.ff-kind .ff-n { background: transparent; color: #6e6e73; }
+html:root body div.p-seg.ff-kind .ff-n { background: transparent; color: #636366; }
 html:root body .up-level-head { border-bottom: 1px solid var(--apple-hair); background: #fff; }
 html:root body ul.up-points, html:root body ul.up-deadlines { border: 0; border-radius: 16px; background: #f5f5f7; }
 html:root body .up-course-money { border-radius: 12px; background: #f5f5f7; }
@@ -272,7 +272,7 @@ html:root body .sc-next .btn { min-height: 40px; }
 /* older controls on the card */
 html:root body select.p-priority-select { border: 0; border-radius: 10px; background: #f5f5f7 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center; box-shadow: none; min-height: 40px; appearance: none; -webkit-appearance: none; padding-right: 36px; }
 html:root body .btn.btn-sm { min-height: 32px; padding: 0 14px; font-size: 14px; }
-html:root body .td-more-btn, html:root body .lg-more { border: 0; border-radius: 50%; background: transparent; color: #6e6e73; }
+html:root body .td-more-btn, html:root body .lg-more { border: 0; border-radius: 50%; background: transparent; color: #636366; }
 html:root body .td-more-btn:hover, html:root body .lg-more:hover { background: var(--apple-btn); }
 html:root body .lg-timeline tr.is-unseen td.is-kind { box-shadow: inset 3px 0 0 #0071e3; }
 html:root body .lg-kind.is-task, html:root body .lg-kind.is-update, html:root body .lg-kind.is-done, html:root body .lg-kind.is-stage { border-radius: 6px; }
@@ -307,7 +307,7 @@ html:root body #sheetTabs, html:root body .sheet-tabs { border: 0; background: t
 html:root body .sheet-tabs button, html:root body .sheet-tab, html:root body #sheetTabsList button { border: 0 !important; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; box-shadow: none; }
 html:root body #finderBox section, html:root body #finderBox .p-card, html:root body section.fd-card { border: 0 !important; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); }
 html:root body .topbar .btn:not(.btn-primary), html:root body .topbar .toolbar-group button:not(.btn-primary), html:root body .sheet-tabs .btn { border: 0 !important; border-radius: 980px !important; background: var(--apple-btn) !important; color: #1d1d1f !important; box-shadow: none !important; }
-html:root body .topbar .btn:disabled { color: #6e6e73 !important; background: transparent !important; }
+html:root body .topbar .btn:disabled { color: #636366 !important; background: transparent !important; }
 html:root body .topbar input[type="search"], html:root body .topbar input#search, html:root body .topbar .search-box input { border: 0 !important; border-radius: 10px !important; background: var(--apple-btn) !important; box-shadow: none !important; }
 html:root body table#sheet thead th, html:root body table#sheet thead th * { text-transform: none !important; letter-spacing: 0 !important; font-weight: 600; }
 
@@ -341,7 +341,7 @@ html:root body main#page #view, html:root body main#page #view > .sc-wrap, html:
 
 /* 🔴 CSS CHANGED (2026-11-24): the sheet, Application Team only | from: dark grey grid lines (#b8b8b8 / #9a9a9a), boxed grey tab | to: light hairlines (#e5e5ea / #d2d2d7) by changing the line colours the sheet reads, grey header words, rounded table corners; no cell, row or status colour is touched */
 html:root body #sheet, html:root body .table-wrap, html:root body .sheet-tabs { --border: #e5e5ea; --border-strong: #d2d2d7; }
-html:root body #sheet thead th { color: #6e6e73; font-weight: 600; }
+html:root body #sheet thead th { color: #636366; font-weight: 600; }
 html:root body .table-wrap { border-radius: 14px; overflow: auto; border: 1px solid #e5e5ea; background: #fff; }
 html:root body #sheet td, html:root body #sheet th { border-color: #e5e5ea !important; }
 html:root body #sheet thead th { border-bottom-color: #d2d2d7 !important; }
@@ -401,7 +401,7 @@ html.app-mock:root body #page.mt-page .p-head p { display: none; }
 html.app-mock:root body #page.mt-page .p-card, html.app-mock:root body #page.mt-page section.p-card { border: 0 !important; border-radius: 18px; background: #fff !important; box-shadow: var(--apple-card) !important; padding: 20px 24px; }
 html.app-mock:root body #page.mt-page .p-card h2 { font-size: 19px; line-height: 24px; font-weight: 700; letter-spacing: -.02em; }
 html.app-mock:root body #page.mt-page .mt-hint, html.app-mock:root body #page.mt-page .mt-muted, html.app-mock:root body #page.mt-page .mt-sub { color: var(--apple-grey); font-weight: 400; }
-html.app-mock:root body #page.mt-page .mt-empty { color: #6e6e73; font-size: 14px; font-weight: 400; }
+html.app-mock:root body #page.mt-page .mt-empty { color: #636366; font-size: 14px; font-weight: 400; }
 html.app-mock:root body #page .mt-tabs { padding: 3px; border: 0; border-radius: 11px; background: var(--apple-btn); gap: 2px; }
 html.app-mock:root body #page .mt-tabs button { border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font-size: 14px; font-weight: 500; }
 html.app-mock:root body #page .mt-tabs button[aria-selected="true"] { background: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
@@ -456,7 +456,7 @@ html.app-mock:root body #page .mt-list-head { padding-bottom: 18px; border-botto
 html.app-mock:root body #page .mt-kind-head { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 10px; }
 html.app-mock:root body #page .mt-kind { margin: 0; color: #1d1d1f; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -.015em; text-transform: none; }
 html.app-mock:root body #page .mt-kind-add { border: 0; background: none; color: #0066cc; font: 500 14px var(--font); cursor: pointer; padding: 0; }
-html.app-mock:root body #page .mt-kind-none { margin: 0; padding: 12px 0 14px; border-top: 1px solid var(--apple-hair); color: #6e6e73; font-size: 14px; }
+html.app-mock:root body #page .mt-kind-none { margin: 0; padding: 12px 0 14px; border-top: 1px solid var(--apple-hair); color: #636366; font-size: 14px; }
 html.app-mock:root body #page .mt-file { margin-top: 0; padding: 14px 0; border: 0; border-top: 1px solid var(--apple-hair); border-radius: 0; background: transparent; }
 html.app-mock:root body #page .mt-file-type { border: 0; border-radius: 8px; background: #f5f5f7; box-shadow: inset 0 0 0 1px var(--apple-hair); color: #1d1d1f; }
 html.app-mock:root body #page .mt-file-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
@@ -476,3 +476,28 @@ html:root body .stat-card, html:root body .stat-card.stat-total { background: #f
 html:root body .stat-card .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
 html:root body .stat-card .stat-label { color: var(--apple-grey); font-size: 13px; font-weight: 500; }
 html:root body:has(#sheet) .stat-group-cards .stat-card, html:root body:has(#sheet) .stat-group-cards .stat-card.stat-total { border: 0 !important; border-color: transparent !important; background: #fff !important; box-shadow: var(--apple-card) !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Mock Team only (html.app-mock): student monograms in Bookings and the two side lists, and a calmer "mock ended" window | from: names only, and the Yes / No choice a dark blue-on-grey block with tight spacing | to: a grey circle with the student's initials beside each name; the window's choice is an Apple segmented control (white pill on light grey), roomier rows, a clear focus ring */
+html.app-mock:root body #page .mt-av { display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--apple-btn); color: #1d1d1f; font-size: 13px; font-weight: 600; letter-spacing: .01em; line-height: 1; }
+html.app-mock:root body #page .mt-table td.mt-who { display: table-cell; }
+html.app-mock:root body #page .mt-table td.mt-who > span.mt-av { display: grid; place-items: center; float: left; margin: 1px 12px 0 0; }
+html.app-mock:root body #page .mt-who-words { overflow: hidden; }
+html.app-mock:root body #page .mt-who-words > a, html.app-mock:root body #page .mt-who-words > span { display: block; }
+html.app-mock:root body #page .mt-person { flex-direction: row; align-items: center; gap: 12px; padding: 12px 0; }
+html.app-mock:root body #page .mt-person-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+html.app-mock:root body dialog.p-dialog .mt-ask { display: flex; flex-direction: column; gap: 18px; padding-bottom: 8px; }
+html.app-mock:root body dialog.p-dialog .mt-ask-when { color: var(--apple-grey); font-size: 15px; font-weight: 400; }
+html.app-mock:root body dialog.p-dialog .mt-ask-label { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
+html.app-mock:root body dialog.p-dialog .mt-seg { padding: 3px; gap: 2px; border: 0; border-radius: 11px; background: var(--apple-btn); }
+html.app-mock:root body dialog.p-dialog .mt-seg button { min-height: 36px; padding: 0 20px; border-radius: 9px; color: #1d1d1f; font-size: 15px; font-weight: 500; transition: background-color .1s linear, color .32s cubic-bezier(.4, 0, .6, 1); }
+html.app-mock:root body dialog.p-dialog .mt-seg button:hover { background: rgba(255, 255, 255, .55); }
+html.app-mock:root body dialog.p-dialog .mt-seg button[aria-checked="true"], html.app-mock:root body dialog.p-dialog .mt-seg button[aria-checked="true"]:hover { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
+html.app-mock:root body dialog.p-dialog .mt-seg button:focus-visible { outline: 2px solid #0071e3; outline-offset: 1px; }
+html.app-mock:root body dialog.p-dialog .mt-ask-note { border: 0; border-radius: 12px; background: #f5f5f7; color: var(--apple-grey); font-size: 14px; font-weight: 400; }
+html.app-mock:root body dialog.p-dialog .mt-ask-text { border: 0; border-radius: 12px; background: #f5f5f7; box-shadow: inset 0 0 0 1px var(--apple-hair); font-size: 16px; font-weight: 400; }
+html.app-mock:root body dialog.p-dialog .mt-ask-text:focus { outline: 2px solid #0071e3; outline-offset: 1px; }
+html.app-mock:root body dialog.p-dialog .mt-ask-bar { margin: 6px -32px 0; padding: 16px 32px; border-top: 1px solid var(--apple-hair); background: #f5f5f7; gap: 10px; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the student card's top, Application Team only | from: a light-blue rounded square with the initials, a 30px name | to: a round grey-gradient avatar (the same as the Today rows, a little bigger), a 34px name, and the intake line in soft grey */
+html:root body #view .sc-hero .sc-avatar { width: 68px; height: 68px; flex: 0 0 68px; border-radius: 50% !important; background: linear-gradient(180deg, #f2f2f4, #d9d9df) !important; color: #1d1d1f !important; font-size: 24px; font-weight: 600; letter-spacing: -.01em; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .06); }
+html:root body #view .sc-hero .sc-name { font-size: 34px; line-height: 38px; }

@@ -383,7 +383,10 @@
     const av = el('span', 'tdx-av', initials(x.student));
     av.setAttribute('aria-hidden', 'true');
     const main = el('div', 'tdx-main');
-    const name = h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(x.studentId), title: 'View student profile' }, window.Portal.niceName ? window.Portal.niceName(x.student) : x.student);
+    // The name opens the student with a click. It is not a link inside the task's button (a control inside a control is an accessibility fault); the opened task has its own View student profile link for the keyboard.
+    const name = h('span', { class: 'tdx-name', title: 'View student profile' }, window.Portal.niceName ? window.Portal.niceName(x.student) : x.student);
+    name.style.cursor = 'pointer';
+    name.addEventListener('click', (e) => { e.stopPropagation(); const go = '/student?id=' + encodeURIComponent(x.studentId); if (e.ctrlKey || e.metaKey) window.open(go, '_blank', 'noopener'); else window.location.href = go; });
     const nameLine = el('div', 'tdx-name-line');
     if (x.unread && !open) { const dot = el('span', 'tdx-new'); dot.title = 'Something new'; nameLine.append(dot); }
     nameLine.append(name);
@@ -514,7 +517,7 @@
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   function appGroup(title, items, refresh, late) {
     const g = el('div', 'tda-group');
-    g.append(el('h3', `tda-gh${late ? ' is-late' : ''}`, `${title} · ${items.length}`));
+    g.append(el('h2', `tda-gh${late ? ' is-late' : ''}`, `${title} · ${items.length}`));
     const panel = el('div', 'tdx-list tda-panel');
     items.forEach((x) => panel.append(rowFor(x, refresh)));
     g.append(panel);
@@ -592,6 +595,7 @@
     pool.forEach((x) => { const k = tagOf(x, x.stage); count[k] = (count[k] || 0) + 1; });
     if (tagFilter !== 'all' && !count[tagFilter]) tagFilter = 'all';
     const pills = F6 ? el('div', 'tda-pills') : bar;
+    if (F6) { pills.setAttribute('role', 'tablist'); pills.setAttribute('aria-label', 'Kind of task'); }
     if (F6) bar.append(pills);
     if (pool.length) {
       const pill = (k, label, n) => {
@@ -652,7 +656,7 @@
     const all = (todayData && todayData.missing) || [];
     const list = all.filter((m) => !searchQ || fold(`${m.name} ${m.lines.map((l) => l.text).join(' ')}`).includes(fold(searchQ)));
     if (!list.length) { box.append(appClear(searchQ ? `No student matches “${searchQ}”` : 'Nothing is missing', searchQ ? 'Try another word.' : 'Every detail is in.', null)); return box; }
-    box.append(el('h3', 'tda-gh', `${plural(list.length, 'student has', 'students have')} something missing`));
+    box.append(el('h2', 'tda-gh', `${plural(list.length, 'student has', 'students have')} something missing`));
     const panel = el('div', 'tdx-list tda-panel');
     if (!missStarted) { missStarted = true; const f = list[0]; missOpen.add(f.id || f.name); }
     list.forEach((m) => panel.append(missingRowApp(m, refresh, m.id || m.name)));
