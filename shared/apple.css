@@ -1,0 +1,242 @@
+/* 🔴 CSS CHANGED (2026-11-24): the Apple look for the Application Team only (the owner approved the design "Application Team F6", Apple style) | from: the grey F5 look (grey canvas #e6e6e6, grey panels, black outlines, small capital labels, 8px corners, black and grey pills) | to: a light canvas #f5f5f7 with white cards (20px corners, soft shadow, no outline), Inter type, a tinted menu with blue icons, a segmented switch for the filters, quiet hairlines #e5e5ea, grey chips and round buttons, small sentence-case labels. This file is loaded only for the Application Team (shared/header.js); no other team, Admin or the Manager ever gets it, and nothing here changes what a page shows or does. */
+
+/* ---------- tokens: every old part of the pages that reads a variable follows ---------- */
+html:root {
+  --bg: #f5f5f7; --panel: #fff; --surface: #fff; --ui-panel: #fff; --edit-bg: #fff; --soft: #f5f5f7;
+  --border: #e5e5ea; --border-strong: #d2d2d7; --header-bg: #fff; --row-alt: #fafafc; --row-hover: #f5f5f7;
+  --text: #1d1d1f; --ink: #1d1d1f; --text-dim: #6e6e73; --head-ink: #6e6e73;
+  --r-sm: 12px; --r-md: 18px; --r-lg: 22px;
+  --sh-2: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .05); --sh-3: 0 4px 24px rgba(0, 0, 0, .08);
+  --apple-card: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .05);
+  --apple-hair: #e5e5ea; --apple-grey: #6e6e73; --apple-chip: #f0f0f2; --apple-btn: #e8e8ed;
+}
+html:root body { background: #f5f5f7; color: #1d1d1f; letter-spacing: -.011em; }
+html:root body h1 { color: #1d1d1f; font-weight: 700; letter-spacing: -.03em; }
+
+/* ---------- the menu ---------- */
+html:root body .niec-header { background: rgba(242, 242, 245, .86); border-right: 1px solid var(--apple-hair); backdrop-filter: saturate(180%) blur(20px); }
+html:root body .niec-nav a { min-height: 40px; padding: 0 12px; border-radius: 8px; color: #1d1d1f; font-size: 15px; font-weight: 500; }
+html:root body .niec-nav a .niec-ico { color: #0071e3; }
+html:root body .niec-nav a:hover { background: rgba(0, 0, 0, .05); color: #1d1d1f; }
+html:root body .niec-nav a[aria-current="page"], html:root body .niec-nav a[aria-current="page"]:hover { background: #0071e3; color: #fff; font-weight: 600; }
+html:root body .niec-nav a[aria-current="page"] .niec-ico { color: #fff; }
+html:root body .niec-account { border-top-color: var(--apple-hair); }
+
+/* ---------- buttons and fields ---------- */
+html:root body .btn:not(.btn-primary):not(.btn-danger) { border: 0; background: var(--apple-btn); color: #1d1d1f; border-radius: 980px; box-shadow: none; font-weight: 500; }
+html:root body .btn:not(.btn-primary):not(.btn-danger):hover:not(:disabled) { background: #dcdce1; }
+html:root body .btn.btn-primary { border: 0; background: #0071e3; color: #fff; border-radius: 980px; font-weight: 600; }
+html:root body .btn.btn-primary:hover:not(:disabled) { background: #0077ed; }
+html:root body input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]), html:root body select, html:root body textarea { border: 0; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1px #d2d2d7; color: #1d1d1f; }
+html:root body input:focus, html:root body select:focus, html:root body textarea:focus { box-shadow: inset 0 0 0 2px #0071e3; outline: none; }
+
+/* ---------- Today ---------- */
+html:root body .tda-date { color: var(--apple-grey); font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+html:root body .tda-top h1 { font-size: 40px; line-height: 46px; font-weight: 700; letter-spacing: -.03em; }
+html:root body .tda-seg { padding: 3px; border: 0; border-radius: 11px; background: var(--apple-btn); }
+html:root body .tda-view { min-height: 34px; padding: 0 18px; border-radius: 8px; color: #1d1d1f; font-size: 14px; font-weight: 500; }
+html:root body .tda-view:hover:not([aria-selected="true"]) { background: rgba(0, 0, 0, .05); }
+html:root body .tda-view[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
+html:root body .tda-view-n { color: #86868b; font-weight: 500; }
+html:root body .tda-search .td-search-input { min-height: 40px; border: 0; border-radius: 10px; background: var(--apple-btn); box-shadow: none; font-weight: 400; }
+html:root body .tda-search .td-search-input::placeholder { color: #86868b; font-weight: 400; }
+html:root body .tda-search .td-search-input:focus { background: #fff; box-shadow: inset 0 0 0 2px #0071e3; }
+html:root body .tda-pill { min-height: 34px; padding: 0 14px; border: 0; border-radius: 980px; background: var(--apple-btn); outline: 0; color: #1d1d1f; font-size: 14px; font-weight: 500; }
+html:root body .tda-pill:hover { background: #dcdce1; }
+html:root body .tda-pill[aria-selected="true"] { background: #1d1d1f; color: #fff; }
+html:root body .tda-pill-n { opacity: .65; }
+html:root body .tda-gh { margin: 26px 0 10px; color: #1d1d1f; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+html:root body .tda-gh.is-late, html:root body .tda-gh.late { color: #1d1d1f; }
+html:root body .tda-panel { border: 0; border-radius: 16px; background: #fff; box-shadow: var(--apple-card); overflow: hidden; }
+html:root body .tda-row { border-color: var(--apple-hair); }
+html:root body .tdx-list > .tdx + .tdx { border-top-color: var(--apple-hair); }
+html:root body .tda-row .tdx-head:hover { background: #fafafc; }
+html:root body .tdx-av { background: linear-gradient(180deg, #f0f0f3, #dcdce2); border: 0; color: #1d1d1f; }
+html:root body .tda-row .tdx-name { font-weight: 600; letter-spacing: -.015em; }
+html:root body .tda-row .tdx-task { font-weight: 500; }
+html:root body .tda-row .tdx-kind { min-height: 20px; padding: 0 8px; border: 0; border-radius: 6px; background: var(--apple-chip); color: var(--apple-grey); font-weight: 600; }
+html:root body .tda-row .tdx-meta, html:root body .tda-row .tdx-age { color: var(--apple-grey); font-weight: 400; }
+html:root body .tda-row .tdx-age.is-late { color: #b25000; font-weight: 500; }
+html:root body .tda-row .tdx-chev::before { border-color: #c7c7cc; }
+html:root body .tda-clear { border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .tda-clear-title { font-weight: 700; letter-spacing: -.03em; }
+html:root body .tda-clear-line { color: var(--apple-grey); font-weight: 400; }
+
+/* opened task: labels in small sentence case, hairlines, no black rules */
+html:root body .tda-row .tdx-body.tdy-body { margin: 0 24px 0 76px; }
+html:root body .tdy-body .tdy-given, html:root body .tdy-body .tdy-sub { color: var(--apple-grey); font-weight: 400; }
+html:root body .tdy-sech, html:root body .tdy-cap { padding-bottom: 6px; border-bottom: 1px solid var(--apple-hair); color: var(--apple-grey); font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html:root body .tdy-dl { border-bottom-color: var(--apple-hair); }
+html:root body .tdy-dl .tdy-l { color: var(--apple-grey); }
+html:root body .tdy-cp { color: #0071e3; }
+html:root body .tdx-updates { border: 0; border-radius: 14px; background: #f5f5f7; }
+html:root body .tdx-updates .tk-text { border: 0; background: #fff; }
+html:root body .tdx-actions .btn { border: 0; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
+html:root body .tdx-actions .btn:hover:not(:disabled) { background: #dcdce1; }
+html:root body .tdx-actions .btn.btn-primary { background: #0071e3; color: #fff; font-weight: 600; }
+html:root body .tdx-actions .tdx-profile { background: none; color: #0066cc; }
+html:root body .tdy-missrow .tdx-head:hover { background: #fafafc; }
+html:root body .tdy-misscount { color: var(--apple-grey); font-weight: 500; }
+html:root body .tdy-missbody { border-top-color: var(--apple-hair); }
+html:root body .tdy-pr { border-bottom-color: var(--apple-hair); }
+html:root body .tdy-pr-text { font-weight: 500; }
+
+/* ---------- the "Mark as done?" window ---------- */
+html:root body dialog.p-dialog.td-done-app { border: 0; border-radius: 22px; background: #fff; box-shadow: 0 30px 80px rgba(0, 0, 0, .28), 0 0 0 .5px rgba(0, 0, 0, .08); }
+html:root body dialog.td-done-app .p-dialog-head { border-bottom: 0 !important; background: #fff; padding: 26px 32px 6px; }
+html:root body dialog.td-done-app .p-dialog-head h2 { color: var(--apple-grey); font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html:root body dialog.td-done-app .td-done-stepno { color: var(--apple-grey); font-weight: 500; letter-spacing: 0; text-transform: none; }
+html:root body dialog.td-done-app .p-dialog-head .td-done-task { font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -.025em; }
+html:root body dialog.td-done-app .p-dialog-body { padding: 8px 32px 0; }
+html:root body dialog.td-done-app .td-done-form .p-label { color: var(--apple-grey); font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html:root body dialog.td-done-app .td-tag-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+html:root body dialog.td-done-app .td-tag-pick .td-answer { min-height: 36px; padding: 0 16px; border: 0; border-radius: 980px; outline: 0; background: var(--apple-btn); color: #1d1d1f; font-size: 14px; font-weight: 500; }
+html:root body dialog.td-done-app .td-tag-pick .td-answer[aria-checked="true"] { background: #1d1d1f; color: #fff; font-weight: 600; }
+html:root body dialog.td-done-app .td-done-step > .p-dialog-foot, html:root body dialog.td-done-app .p-dialog-body > .p-dialog-foot { border-top: 1px solid var(--apple-hair) !important; background: #f5f5f7; border-radius: 0 0 22px 22px; }
+html:root body dialog.td-done-app .p-dialog-foot .btn:not(.btn-primary) { outline: 0; background: var(--apple-btn); }
+html:root body dialog.td-done-app .td-course { border-bottom-color: var(--apple-hair); }
+html:root body dialog.td-done-app .td-done-form input, html:root body dialog.td-done-app .td-done-form textarea { border: 0; box-shadow: inset 0 0 0 1px #d2d2d7; background: #fff; border-radius: 10px; }
+
+/* ---------- the student card ---------- */
+html:root body .lg-box, html:root body .sc-hero, html:root body .sc-next, html:root body .sc-checks, html:root body section.p-card.lg-box { border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); overflow: hidden; }
+html:root body .lg-head, html:root body .p-card-head { border-bottom: 0; background: #fff; padding-top: 20px; padding-bottom: 8px; }
+html:root body .lg-head h2, html:root body .p-card-head h2, html:root body .lg-box > h2 { color: #1d1d1f; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+html:root body .lg-head-sub, html:root body .sc-tl-count { color: #86868b; font-size: 15px; font-weight: 600; }
+html:root body .lg-edit { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
+html:root body .lg-edit:hover { background: #dcdce1; }
+html:root body .lg-dl dt, html:root body .lg-dl dd { border-top-color: var(--apple-hair); }
+html:root body .lg-dl dt { color: var(--apple-grey); font-weight: 400; }
+html:root body .lg-dl dd { font-weight: 500; }
+html:root body .lg-missing { color: #b25000; }
+html:root body .lg-none { color: #86868b; font-weight: 400; }
+html:root body .lg-foot { color: var(--apple-grey); }
+html:root body .sc-avatar { border-radius: 50%; background: linear-gradient(180deg, #f0f0f3, #d8d8de); color: #1d1d1f; }
+html:root body .sc-name { font-weight: 700; letter-spacing: -.03em; }
+html:root body .p-pill.p-pill-blue { border: 0; background: #e8f1fd; color: #0058b8; font-weight: 500; }
+html:root body .sc-reach-btn, html:root body a.btn.btn-sm { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
+html:root body .sc-reach-btn:hover { background: #dcdce1; }
+html:root body .sc-steps-box { border-top-color: var(--apple-hair); }
+html:root body .sc-next-ico { background: #e8f1fd; }
+html:root body .sc-next { background: #e8f1fd; box-shadow: none; }
+html:root body .p-card { border-top-color: var(--apple-hair); }
+html:root body .p-priority { border-top-color: var(--apple-hair); }
+html:root body .p-applied { background: var(--apple-chip); color: #1d1d1f; font-weight: 500; }
+html:root body .p-applied.is-priority { background: #1d1d1f; color: #fff; }
+html:root body .p-applied.is-sent { background: #fff1e5; color: #b25000; }
+html:root body .p-applied.is-offer { background: #e3f5e8; color: #1a7f37; }
+html:root body .td-tag, html:root body .td-tag.tag-application { border-radius: 6px; background: var(--apple-chip); color: var(--apple-grey); font-weight: 600; }
+html:root body .tk-compose { border: 0; border-radius: 12px; background: #f5f5f7; }
+html:root body .lg-seg { padding: 3px; border: 0; border-radius: 10px; background: var(--apple-btn); gap: 2px; }
+html:root body .lg-seg-btn { border-radius: 7px; background: transparent; color: #1d1d1f; font-weight: 500; }
+html:root body .lg-seg-btn[aria-pressed="true"], html:root body .lg-seg-btn.is-on, html:root body .lg-seg-btn[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+html:root body .lg-compose { border-bottom-color: var(--apple-hair); }
+html:root body .lg-timeline th { border-bottom-color: var(--apple-hair); background: transparent; color: var(--apple-grey); font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html:root body .lg-timeline td { border-top-color: var(--apple-hair); }
+html:root body .lg-kind { border-radius: 6px; font-weight: 600; }
+html:root body .lg-kind.is-note { background: var(--apple-chip); color: var(--apple-grey); }
+html:root body .lg-more { border: 0; border-radius: 8px; background: var(--apple-btn); }
+html:root body .td-check { border-color: #c7c7cc; }
+
+/* ---------- Universities ---------- */
+html:root body .uni-card, html:root body .uc-card { border: 0; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); overflow: hidden; }
+html:root body .uc-foot { border-top-color: var(--apple-hair); background: #fff; color: var(--apple-grey); }
+html:root body .uc-next, html:root body .uc-next b { color: #1d1d1f; }
+html:root body .uc-days { border: 0; border-radius: 980px; background: var(--apple-chip); color: #1d1d1f; font-weight: 500; }
+html:root body .uc-days.is-soon { background: #fff1e5; color: #b25000; }
+html:root body .uc-days.is-urgent { background: #ffe9e7; color: #c4291c; }
+html:root body .uni-mono.has-logo { border: 0; border-radius: 15px; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, .14), 0 0 0 .5px rgba(0, 0, 0, .06); }
+html:root body .ff-soon, html:root body #ffSoon { border: 0; border-radius: 14px; background: #fff4e8; color: #b25000; }
+html:root body #ffBar.p-seg { padding: 3px; border: 0; border-radius: 11px; background: var(--apple-btn); gap: 2px; }
+html:root body #ffBar.p-seg button { border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font-weight: 500; }
+html:root body #ffBar.p-seg button[aria-pressed="true"], html:root body #ffBar.p-seg button.is-on, html:root body #ffBar.p-seg button[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+html:root body .ff-n { color: #86868b; background: transparent; }
+html:root body #search { border: 0; border-radius: 10px; background: var(--apple-btn); }
+html:root body .up-hero { border-radius: 28px; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, .14); }
+html:root body .up-doc section, html:root body .up-level, html:root body .up-course, html:root body .up-about { border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .up-facts > * { border: 0; border-radius: 18px; background: #fff; }
+html:root body .up-money > * { border: 0; border-radius: 14px; background: #f5f5f7; }
+html:root body .up-apply { border-radius: 980px; font-weight: 600; }
+html:root body .sl-pick { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
+
+html:root body section.p-card.p-tasks.lg-box, html:root body section.lg-box.lg-timeline.p-tl { border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .p-tasks .p-card-head, html:root body .p-card.lg-box > .p-card-head { background: #fff; border-bottom: 0; }
+html:root body button.btn.lg-edit { background: var(--apple-btn); color: #1d1d1f; border-radius: 980px; font-weight: 500; }
+html:root body .sc-progress-label, html:root body .sc-prog-label { letter-spacing: 0; text-transform: none; color: var(--apple-grey); }
+
+/* ---------- Universities, second pass ---------- */
+html:root body .up-hero h1, html:root body .up-hero .up-sub, html:root body .up-hero .up-id * { color: #fff; }
+html:root body .up-hero .up-chip { border-radius: 980px; background: rgba(255, 255, 255, .22); color: #fff; }
+html:root body .up-logo { border: 0; border-radius: 26px; background: #fff; box-shadow: 0 8px 26px rgba(0, 0, 0, .28); }
+html:root body article.doc.up-doc { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+html:root body a.uni-card.uc-card, html:root body a.uni-card.uc-card.has-cover { border: 0; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); transition: transform .25s ease, box-shadow .25s ease; }
+html:root body a.uni-card.uc-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 16px 40px rgba(0, 0, 0, .1); }
+html:root body .uc-cover, html:root body .uc-cover.is-blank { border-bottom: 0; }
+html:root body .uc-foot { border-top: 1px solid var(--apple-hair); background: #fff; }
+html:root body .uc-next { border-top-color: var(--apple-hair); }
+html:root body span.chip { border-radius: 8px; background: var(--apple-chip); color: #1d1d1f; font-weight: 600; }
+html:root body section.p-card.fd-card { border: 0; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); }
+html:root body div.fd-form { border: 0; border-radius: 16px; background: #f5f5f7; }
+html:root body div.p-seg.ff-kind.has-thumb { padding: 3px; border: 0; border-radius: 11px; background: var(--apple-btn); }
+html:root body div.p-seg.ff-kind .seg-thumb { border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+html:root body div.p-seg.ff-kind button { color: #1d1d1f; }
+html:root body div.p-seg.ff-kind button.is-on, html:root body div.p-seg.ff-kind button[aria-pressed="true"], html:root body div.p-seg.ff-kind button[aria-selected="true"] { color: #1d1d1f; font-weight: 600; }
+html:root body div.p-seg.ff-kind .ff-n { background: transparent; color: #86868b; }
+html:root body .up-level-head { border-bottom: 1px solid var(--apple-hair); background: #fff; }
+html:root body ul.up-points, html:root body ul.up-deadlines { border: 0; border-radius: 16px; background: #f5f5f7; }
+html:root body .up-course-money { border-radius: 12px; background: #f5f5f7; }
+html:root body .up-c-campus, html:root body .up-c-time { border-radius: 6px; background: var(--apple-chip); color: var(--apple-grey); }
+html:root body .up-c-intake { border-radius: 6px; background: #e8f1fd; color: #0058b8; }
+html:root body .up-level-link, html:root body em.up-level-more { border-radius: 980px; }
+
+/* ---------- third pass: older outlined buttons and strips ---------- */
+html:root body button.btn:not(.btn-primary):not(.btn-danger):not(.lg-edit), html:root body a.btn:not(.btn-primary):not(.btn-danger) { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; box-shadow: none; }
+html:root body button.btn:not(.btn-primary):not(.btn-danger):hover:not(:disabled), html:root body a.btn:not(.btn-primary):not(.btn-danger):hover { background: #dcdce1; }
+html:root body a.uni-card.uc-card .uc-foot, html:root body a.uni-card.uc-card.has-cover .uc-foot { border-top: 1px solid var(--apple-hair); background: #fff; }
+html:root body #finderBox section.p-card.fd-card, html:root body section.p-card.fd-card.fd-card { border: 0; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .fd-card button:not(.btn-primary):not(.fd-go) { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
+html:root body .fd-card input, html:root body .fd-card select { border: 0; box-shadow: inset 0 0 0 1px #d2d2d7; border-radius: 10px; }
+html:root body .sc-reach-btn.sc-reach-btn { border: 0; background: var(--apple-btn); }
+html:root body .sc-hero .sc-steps-box { border-top: 1px solid var(--apple-hair); }
+html:root body .lg-seg { border: 0; }
+html:root body .lg-seg-btn.is-active, html:root body .lg-seg-btn.on, html:root body .lg-seg-btn[aria-current="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+
+/* ---------- Today: four numbers at the top, missing rows ---------- */
+html:root body .tda-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 22px 0 0; }
+html:root body .tda-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 18px 22px; border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); color: #1d1d1f; font-family: inherit; text-align: left; cursor: pointer; transition: transform .2s ease; }
+html:root body .tda-tile:hover { transform: translateY(-2px); }
+html:root body .tda-tile-k { color: var(--apple-grey); font-size: 14px; font-weight: 500; }
+html:root body .tda-tile-n { font-size: 40px; line-height: 44px; font-weight: 700; letter-spacing: -.03em; }
+html:root body .tda-tile.is-late .tda-tile-n, html:root body .tda-tile.is-miss .tda-tile-n { color: #b25000; }
+html:root body .tda-tile-s { color: var(--apple-grey); font-size: 13px; }
+html:root body .tda-tiles + .tda-bar { margin-top: 22px; }
+html:root body .tdy-dl.is-missing-row .tdy-miss { color: #b25000; font-weight: 500; }
+html:root body .tdy-dl .tdy-add { margin-left: 8px; color: #0066cc; font-size: 14px; font-weight: 500; text-decoration: none; }
+
+/* ---------- the Timeline by stage ---------- */
+html:root body .lg-timeline .lg-stage-cell { background: #fff; border-top: 1px solid var(--apple-hair); }
+html:root body .lg-timeline .lg-stage-btn { min-height: 52px; padding: 0 24px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+html:root body .lg-timeline .lg-stage-btn:hover { background: #fafafc; }
+html:root body .lg-timeline .lg-stage-chev { border-color: #aeaeb2; }
+html:root body .lg-timeline .lg-stage-meta { color: var(--apple-grey); font-weight: 400; }
+html:root body .lg-timeline .lg-stage-new { background: #fff1e5; color: #b25000; }
+
+/* ---------- the card's most specific older rules (Tasks, Applications buttons, Edit) ---------- */
+html:root body #view#view .sc-main > .p-card.lg-tasks { border: 0 !important; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); overflow: hidden; }
+html:root body #view#view .lg-tasks > .p-card-head { padding: 20px 24px 8px; border-bottom: 0; border-radius: 0; background: #fff; }
+html:root body #view#view .lg-tasks > .p-card-head h2 { font-size: 20px; letter-spacing: -.02em; }
+html:root body #view#view .lg-apps .p-apps > .p-card { border-top-color: var(--apple-hair); }
+html:root body #view#view .lg-apps .p-card h2 { font-size: 15px; }
+html:root body #view#view :is(.lg-apps, .lg-tasks) .btn { border-radius: 980px; }
+html:root body #view#view :is(.lg-apps, .lg-tasks) .btn:not(.btn-primary):not(:disabled) { border: 0; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
+html:root body #view#view .lg-edit, html:root body #view#view button.btn.lg-edit { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; }
+html:root body #view#view .sc-tab-body :is(.p-card-head, .sc-tl-top, .p-card) > h2 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+html:root body .sc-eyebrow { letter-spacing: 0; text-transform: none; color: var(--apple-grey); font-size: 14px; font-weight: 500; }
+html:root body .tdx-body.tdy-body, html:root body .tdx-body { border-top-color: var(--apple-hair); }
+html:root body .tdy-body .tdy-upd { border-bottom-color: var(--apple-hair); border-top-color: var(--apple-hair); }
+
+/* ---------- Mock interviews box ---------- */
+html:root body .lg-mock-row { padding: 13px 24px; border-top-color: var(--apple-hair); }
+html:root body .lg-mock-n { color: var(--apple-grey); font-weight: 500; }
+html:root body #view#view .lg-tasks > *:not(.p-card-head), html:root body .lg-mocks .lg-foot { background: #fff; }
+html:root body .lg-mocks .lg-foot { border-top: 0; padding: 4px 24px 16px; }
+html:root body #view#view .lg-tasks .tk-compose, html:root body #view#view .lg-tasks .td-compose { background: #f5f5f7; }

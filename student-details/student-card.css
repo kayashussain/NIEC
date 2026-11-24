@@ -569,3 +569,29 @@ html body #view .p-apps ol.p-chosen > li.p-chosen-item::before { left: 0; top: 1
 .lg-dl { grid-template-columns: 130px minmax(0, 1fr); }
 .lg-dl dd a[href^="mailto"] { font-size: 14.5px; overflow-wrap: break-word; word-break: normal; }
 html body #view#view .sc-main > .p-card.lg-tasks { border-color: #9a9a9a !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the Timeline on the student card is divided by stage, for every team (the owner) | from: one long table of every event | to: one section for each stage (Inquiry, Application, Mock, Payment, CAS, Visa): a bar with the stage name, Now on the current one, the number of events and the days; the current stage is open and the others folded, a click opens or closes one */
+html body .lg-timeline .lg-stage-cell { padding: 0; background: #e6e6e6; border-top: 1px solid #b8b8b8; }
+html body .lg-timeline .lg-stage-btn { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 16px; border: 0; background: transparent; color: #000; font: 600 15px/1.2 inherit; text-align: left; cursor: pointer; }
+html body .lg-timeline .lg-stage-btn:hover { background: rgba(0, 0, 0, .04); }
+html body .lg-timeline .lg-stage-chev { width: 8px; height: 8px; border-right: 2px solid #333; border-bottom: 2px solid #333; transform: rotate(-45deg); transition: transform .2s ease; flex: none; }
+html body .lg-timeline .lg-stage-btn[aria-expanded="true"] .lg-stage-chev { transform: rotate(45deg) translateY(-2px); }
+html body .lg-timeline .lg-stage-name { flex: 0 1 auto; }
+html body .lg-timeline .lg-stage-now { padding: 2px 10px; border-radius: 980px; background: #0071e3; color: #fff; font-size: 12px; font-weight: 600; }
+html body .lg-timeline .lg-stage-new { padding: 2px 8px; border-radius: 980px; background: #fff1e5; color: #b25000; font-size: 12px; font-weight: 600; }
+html body .lg-timeline .lg-stage-meta { margin-left: auto; color: #333; font-size: 13px; font-weight: 500; }
+html body .lg-timeline tr.lg-stage-body[hidden] { display: none; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the Mock interviews box on the student card, for every team (the owner: it was not fixed as the system works) | from: five plain rows (Mock 1 to 4 and Pre-CAS) with the day and the feedback in grey, "Not added" when empty | to: the box says "n of 4 done"; each mock has a status chip (Done, Held with feedback not written, Booked, Not booked, Not yet), its day and the feedback as plain text; Pre-CAS is Passed (green), Fail (red) or No result yet; what is edited and saved is unchanged */
+html body .lg-mock-list { padding: 0 0 4px; }
+html body .lg-mock-row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; padding: 12px 16px; border-top: 1px solid #b8b8b8; font-size: 14px; }
+html body .lg-mock-row:first-child { border-top: 0; }
+html body .lg-mock-n { color: #333; font-weight: 600; }
+html body .lg-mock-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+html body .lg-mock-day { color: #000; font-weight: 600; }
+html body .lg-mock-fb { margin-top: 6px; color: #000; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+html body .lg-mock-chip { display: inline-flex; align-items: center; min-height: 22px; padding: 0 10px; border-radius: 980px; background: #e2e2e2; color: #333; font-size: 12px; font-weight: 600; }
+html body .lg-mock-chip.is-done { background: #e3f5e8; color: #1a7f37; }
+html body .lg-mock-chip.is-late { background: #fff1e5; color: #b25000; }
+html body .lg-mock-chip.is-booked { background: #e8f1fd; color: #0058b8; }
+html body .lg-mock-chip.is-fail { background: #ffe9e7; color: #c4291c; }

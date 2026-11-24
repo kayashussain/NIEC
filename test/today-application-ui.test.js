@@ -71,6 +71,10 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   // The screen is the approved F5 layout: the day and "Today", three tabs, a search box with the kinds (All first), headings over panels;
   // none of the old greeting or the progress card.
   assert.strictEqual(await page.locator('.tda-top h1').innerText(), 'Today');
+  // The Apple look (the owner, 24 Nov 2026): only the Application Team loads apple.css, and Today shows four numbers at the top.
+  assert.strictEqual(await page.locator('link[data-apple]').count(), 1, 'the Application Team loads the Apple stylesheet');
+  assert.strictEqual(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(245, 245, 247)', 'the Apple canvas');
+  assert.deepStrictEqual((await page.locator('.tda-tile .tda-tile-k').allInnerTexts()).map((x) => x.trim()), ['Late', 'Today', 'Later', 'Missing details'], 'four numbers at the top');
   assert.ok(await page.locator('.tda-date').innerText(), 'the day is shown');
   assert.deepStrictEqual((await page.locator('.tda-view').allInnerTexts()).map((x) => x.replace(/\s*\d+$/, '').replace(/\s+/g, ' ').trim()), ['Today', 'Later', 'Missing details'], 'the three tabs');
   assert.strictEqual(await page.locator('.tda-view[aria-selected="true"]').count(), 1);
@@ -84,10 +88,14 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   const body = closed.locator('.tdy-body');
   await body.waitFor();
   const text = await body.locator('.tdy-details').innerText(); // the details; the updates are the conversation (the system's own assignment line may name the partner)
-  assert.match(text, /Add these 3 before you submit/i);
-  assert.match(text, /Passport number[\s\S]*Missing/);
-  assert.match(text, /Address[\s\S]*Missing/);
-  assert.match(text, /Nationality[\s\S]*Missing/, 'a student with no nationality saved has it listed as missing');
+  // Missing details sit inside their own list as Missing rows, not in a banner on top (the owner, 24 Nov 2026).
+  assert.doesNotMatch(text, /before you submit/i, 'no banner on top');
+  assert.strictEqual(await body.locator('.tdy-details .tdy-first').count(), 0);
+  assert.strictEqual(await body.locator('.tdy-dl.is-missing-row').count(), 3, 'three Missing rows');
+  assert.match(await body.locator('.tdy-sec', { hasText: 'Student' }).innerText(), /Passport number[\s\S]*Missing/);
+  assert.match(await body.locator('.tdy-sec', { hasText: 'Student' }).innerText(), /Address[\s\S]*Missing/);
+  assert.match(await body.locator('.tdy-sec', { hasText: 'Student' }).innerText(), /Nationality[\s\S]*Missing/, 'a student with no nationality saved has it listed as missing');
+  assert.ok(await body.locator('.tdy-dl.is-missing-row .tdy-add', { hasText: 'Add' }).count(), 'each has an Add link');
   for (const l of ['University', 'Course', 'Level', 'Intake', 'Language test', 'Email', 'WhatsApp', 'Date of birth', 'Nationality']) assert.match(text, new RegExp(l), l + ' is shown');
   assert.match(text, /Test University/); assert.match(text, /Waiver/); assert.match(text, /12 Mar 2003/);
   assert.doesNotMatch(text, /Student source|Social Media|Real Dreams|Partner/i, 'no source and no partner');
@@ -202,6 +210,10 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await mockPage.goto('/today');
   await mockPage.waitForSelector('.tdx');
   assert.ok(await mockPage.locator('.tda-top').count(), 'the day and "Today" at the top, as the Application Team');
+  // ... and the Apple look is the Application Team's alone: no stylesheet and no four numbers for the Mock Team.
+  assert.strictEqual(await mockPage.locator('link[data-apple]').count(), 0, 'the Mock Team does not load the Apple stylesheet');
+  assert.strictEqual(await mockPage.locator('.tda-tile').count(), 0, 'no four numbers for the Mock Team');
+  assert.strictEqual(await mockPage.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(230, 230, 230)', 'the Mock Team keeps its canvas');
   assert.strictEqual(await mockPage.locator('.td-hello').count(), 0, 'no greeting card');
   assert.ok(await mockPage.locator('.tda-row').count(), 'the rows in the same look');
   assert.match(await mockPage.locator('.tdy-hint').first().innerText(), /^No mock booked yet$/, 'what holds the student up, under the waiting time');

@@ -223,7 +223,16 @@
       add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake]]);
       add('Student', student);
     }
-    return { sections, missing, ready: x.tag === 'application' && !missing.length };
+    // The owner, 24 Nov 2026: a missing detail is not a banner on top; it sits in its own list (Application or Student) as a Missing row.
+    let full = null;
+    if (x.tag === 'application') {
+      const lang2 = String(d.language || '').trim();
+      full = [
+        { title: 'Application', rows: [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang2 === 'Test Date' ? 'Language test date' : 'Language test', lang2 && lang2 !== 'Test Date' ? languageShown(lang2) : '']] },
+        { title: 'Student', rows: [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]] },
+      ];
+    }
+    return { sections, missing, full, ready: x.tag === 'application' && !missing.length };
   }
   function copyText(v) {
     try { if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(v).then(() => true, () => false); } catch (e) { /* the older way below */ }
@@ -251,6 +260,21 @@
   // The opened task's details: what is missing first, then the sections.
   function appDetails(x, info) {
     const box = el('div', 'tdy-details');
+    if (info.full) {
+      const colsF = el('div', 'tdy-cols');
+      info.full.forEach((sec) => {
+        const sF = el('div', 'tdy-sec'); sF.append(el('div', 'tdy-sech', sec.title));
+        sec.rows.forEach(([l, v]) => {
+          if (v) { sF.append(appLine(l, v)); return; }
+          const r = el('div', 'tdy-dl is-missing-row');
+          r.append(el('span', 'tdy-l', l), el('span', 'tdy-v tdy-miss', 'Missing'), h('a', { class: 'tdy-add', href: '/student?id=' + encodeURIComponent(x.studentId), 'aria-label': `Add ${l} on the student card` }, 'Add'));
+          sF.append(r);
+        });
+        colsF.append(sF);
+      });
+      box.append(colsF);
+      return box;
+    }
     if (info.missing.length) {
       const first = el('div', 'tdy-first');
       first.append(el('div', 'tdy-sech is-missing', info.missing.length === 1 ? 'Add this before you submit' : `Add these ${info.missing.length} before you submit`));
@@ -575,6 +599,17 @@
       pill('all', 'All', pool.length);
       ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k]) pill(k, label, count[k]); });
     }
+    // Four numbers at the top (the Application Team's Apple look, the owner, 24 Nov 2026): what is late, what is for today, what waits
+    // for a later day and who has details missing. Each opens its tab.
+    const nLate = open.filter((x) => !later(x) && isLate(x)).length;
+    const tiles = el('div', 'tda-tiles');
+    [['Late', nLate, 'Waiting 3 days or more', 'mine', nLate ? 'is-late' : ''], ['Today', VIEWS[0][2].length, 'Tasks for today', 'mine', ''], ['Later', VIEWS[1][2].length, 'Planned for a later day', 'upcoming', ''], ['Missing details', missingAll.length, 'Students to complete', 'missing', missingAll.length ? 'is-miss' : '']].forEach(([label, n, line, view2, cls]) => {
+      const tile = h('button', { class: `tda-tile ${cls}`.trim(), type: 'button', 'aria-label': `${label}: ${n}. ${line}` });
+      tile.append(el('span', 'tda-tile-k', label), el('span', 'tda-tile-n', String(n)), el('span', 'tda-tile-s', line));
+      tile.addEventListener('click', () => { taskView = view2; tagFilter = 'all'; refresh(); });
+      tiles.append(tile);
+    });
+    if (todayData && todayData.appTeam) box.append(tiles); // the Application Team only: the Mock Team keeps its own Today
     box.append(bar);
     const list = (tagFilter === 'all' ? pool : pool.filter((x) => tagOf(x, x.stage) === tagFilter));
     if (!list.length) {

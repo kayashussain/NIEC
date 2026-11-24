@@ -9,6 +9,7 @@
   const embedded = params.get('embed') === '1';
   let data = null; // { student, card, can, me, mail, today }
   let lists = { sourceOptions: {}, partners: [] };
+  let openStages = null; // the stages of the Timeline that are open (kept across redraws)
   let historyFilter = 'all'; // the student's History: everything, the notes only, or the tasks only
   // Named for what they hold (the owner, 17 Nov 2026): Timeline (every step, day by day) and Applications (shortlist and applications).
   // No tabs any more (the owner, 21 Nov 2026, the Ledger design): Applications, the tasks and the Timeline are panels one under
@@ -474,16 +475,44 @@
     const r = rowOf();
     const { sec, head } = box('Mock interviews', 'lg-mocks');
     if (can() && mayEdit('MOCK SCHEDULE 1')) head.append(h('button', { class: 'btn lg-edit', type: 'button', onclick: editMockInterviews }, 'Edit'));
-    const mock = (n) => {
-      const d = isoDay(r[`MOCK SCHEDULE ${n}`]) || String(r[`MOCK SCHEDULE ${n}`] || '').trim();
-      const fb = String(r[`FEEDBACK ${n}`] || '').trim();
-      if (!d && !fb) return '';
-      const w = el('div', '');
-      w.append(el('div', '', d ? (isoDay(d) ? day(d) : d) : 'No day'));
-      if (fb) w.append(el('div', 'lg-none', fb));
-      return w;
-    };
-    sec.append(detailsList([[`Mock 1`, mock(1)], [`Mock 2`, mock(2)], [`Mock 3`, mock(3)], [`Mock 4`, mock(4)], ['Pre-CAS interview', r['PRE CAS INTERVIEW']]]));
+    // As the system works (the owner, 24 Nov 2026), in the words of Today for the Mock Team: each mock says whether it is Done, held with
+    // no feedback written yet, Booked for a day to come, Not booked (the next one, at Mock Stage) or Not yet; the feedback is plain text,
+    // and the Pre-CAS result is Passed, Fail or No result yet. Only the display changes: what is edited and saved is the same.
+    const todayIso = (data && data.today) || new Date().toISOString().slice(0, 10);
+    const inMock = String((data.student && data.student.stage) || '') === 'Mock Stage';
+    const rows = [1, 2, 3, 4].map((n) => ({ n, d: isoDay(r[`MOCK SCHEDULE ${n}`]), raw: String(r[`MOCK SCHEDULE ${n}`] || '').trim(), fb: String(r[`FEEDBACK ${n}`] || '').trim() }));
+    const nextOpen = rows.find((m) => !m.d && !m.raw && !m.fb);
+    const done = rows.filter((m) => m.fb).length;
+    const title = head.querySelector('h2');
+    if (title) title.append(el('span', 'lg-head-sub', `${done} of 4 done`));
+    const wrap = el('div', 'lg-mock-list');
+    rows.forEach((m) => {
+      let chip = ['Not yet', ''];
+      if (m.fb) chip = ['Done', 'is-done'];
+      else if (m.d && m.d <= todayIso) chip = ['Held, feedback not written', 'is-late'];
+      else if (m.d) chip = ['Booked', 'is-booked'];
+      else if (m.raw) chip = ['Day noted', ''];
+      else if (inMock && nextOpen && nextOpen.n === m.n) chip = ['Not booked', 'is-late'];
+      const row = el('div', 'lg-mock-row');
+      row.append(el('b', 'lg-mock-n', `Mock ${m.n}`));
+      const body = el('div', 'lg-mock-body');
+      const top = el('div', 'lg-mock-top');
+      top.append(el('span', `lg-mock-chip ${chip[1]}`.trim(), chip[0]));
+      if (m.d || m.raw) top.append(el('span', 'lg-mock-day', m.d ? day(m.d) : m.raw));
+      body.append(top);
+      if (m.fb) body.append(el('div', 'lg-mock-fb', m.fb));
+      row.append(body);
+      wrap.append(row);
+    });
+    const pre = String(r['PRE CAS INTERVIEW'] || '').trim();
+    const preRow = el('div', 'lg-mock-row lg-mock-pre');
+    preRow.append(el('b', 'lg-mock-n', 'Pre-CAS'));
+    const preBody = el('div', 'lg-mock-body');
+    preBody.append(el('span', `lg-mock-chip ${/^pass/i.test(pre) ? 'is-done' : /^fail/i.test(pre) ? 'is-fail' : ''}`.trim(), pre || 'No result yet'));
+    preRow.append(preBody);
+    wrap.append(preRow);
+    sec.append(wrap);
+    if (!(can() && mayEdit('MOCK SCHEDULE 1'))) sec.append(el('div', 'lg-foot', 'Written by the Mock Team.'));
     return sec;
   }
   function editMockInterviews() {
@@ -787,13 +816,13 @@
     const events = data.card.notes.map((n) => ({ kind: n.by === AUTO ? 'auto' : n.kind === 'stage' ? 'stage' : n.kind === 'try' ? 'try' : 'note', at: n.at, by: n.by, text: n.text, note: n }));
     (data.card.tasks || []).forEach((t) => {
       const tag = window.Portal.tagOf(t, data.student.stage);
-      events.push({ kind: 'task', at: t.at, by: t.by, label: 'Task given', lead: `To ${teamName(t.team)}`, text: t.text, tag });
+      events.push({ kind: 'task', at: t.at, by: t.by, label: 'Task given', lead: `To ${teamName(t.team)}`, text: t.text, tag, tid: t.id, given: true });
       (t.comments || []).forEach((c) => {
-        if (c.handoff) events.push({ kind: 'task', at: c.at, by: c.by, label: 'Reassigned', lead: `${teamName(c.handoff.from)} to ${teamName(c.handoff.to)}`, ref: t.text, text: c.text || '' });
-        else if (c.schedule) events.push({ kind: 'task', at: c.at, by: c.by, label: 'Moved', lead: c.schedule.to ? `Moved to ${window.Portal.dayLabel(c.schedule.to, data.today)}` : 'Moved back to today', ref: t.text, text: c.text || '' });
-        else if (c.text) events.push({ kind: 'update', at: c.at, by: c.by, label: 'Task update', ref: t.text, text: c.text });
+        if (c.handoff) events.push({ kind: 'task', at: c.at, by: c.by, label: 'Reassigned', lead: `${teamName(c.handoff.from)} to ${teamName(c.handoff.to)}`, ref: t.text, text: c.text || '', tid: t.id });
+        else if (c.schedule) events.push({ kind: 'task', at: c.at, by: c.by, label: 'Moved', lead: c.schedule.to ? `Moved to ${window.Portal.dayLabel(c.schedule.to, data.today)}` : 'Moved back to today', ref: t.text, text: c.text || '', tid: t.id });
+        else if (c.text) events.push({ kind: 'update', at: c.at, by: c.by, label: 'Task update', ref: t.text, text: c.text, tid: t.id });
       });
-      if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, label: 'Task done', ref: t.text, text: '', task: t });
+      if (t.done && t.doneAt) events.push({ kind: 'done', at: t.doneAt, by: t.doneBy, label: 'Task done', ref: t.text, text: '', task: t, tid: t.id });
     });
     (data.card.messages || []).forEach((m) => {
       const label = m.channel === 'whatsapp' ? 'WhatsApp' : m.status === 'sent' ? 'Email sent' : m.status === 'failed' ? 'Email not sent' : 'Email prepared';
@@ -835,7 +864,7 @@
       return [dayWord, d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })];
     };
     const KIND = { note: 'Note', auto: 'Automatic', update: 'Task update', done: 'Task done', stage: 'Stage', try: 'No answer' };
-    shown.forEach((e) => {
+    const rowFor = (e) => {
       const tr = el('tr', `is-${e.kind}`);
       const [d1, d2] = whenText(e.at);
       const tdW = el('td', 'is-when'); tdW.append(el('b', '', d1), el('span', '', d2)); tdW.title = when(e.at);
@@ -861,16 +890,61 @@
       if (n && can() && (n.by === meName || data.can.removeAnyNote)) items.push(['Remove the note', async () => { if (await window.NiecUI.confirm('Remove this note?', { danger: true })) { await save('notes/' + n.id + '/delete', {}, 'Note removed'); render(); } }, true]);
       if (items.length) moreMenu(tdM, items);
       tr.append(tdW, tdK, tdT, tdB, tdM);
-      tb.append(tr);
+      return tr;
+    };
+    // The Timeline is divided by stage (the owner, 24 Nov 2026): Inquiry, Application, Mock, Payment, CAS and Visa each have their own
+    // section, the current stage open and the others folded with their count and days, so nobody scrolls through everything. An entry is
+    // placed by its day against the days the student moved stage (the "Moved to ..." notes ISR writes); a task's whole thread stays in the
+    // stage where the task was given. What belongs to no stage goes under Earlier.
+    const STAGES = ['Inquiry', 'Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
+    const stageNamed = (txt) => { const t = String(txt || ''); const hit = STAGES.slice().sort((a, b) => b.length - a.length).find((n) => t.includes(n)); return hit || (/Visa Rejected/.test(t) ? 'Visa Rejected' : /Withdrawn/.test(t) ? 'Withdrawn' : /Defer/.test(t) ? 'Deferred' : /Hold/.test(t) ? 'On hold' : ''); };
+    const moves = [];
+    events.forEach((e) => {
+      if (e.kind === 'stage') { const m = /^(?:Moved to|Back from .+? to)\s+(.+)$/i.exec(String(e.text || '')); const st = stageNamed(m ? m[1] : e.text); if (st) moves.push({ at: String(e.at), stage: st }); }
+      else if (e.kind === 'auto') { const m = /Stage moved to ([A-Za-z ]+?)\./.exec(String(e.text || '')); const st = m && stageNamed(m[1]); if (st) moves.push({ at: String(e.at), stage: st }); }
     });
-    if (remark && (historyFilter === 'all' || historyFilter === 'note')) {
-      const tr = el('tr', 'is-auto');
-      const tdW = el('td', 'is-when'); tdW.append(el('b', '', 'Earlier'));
-      const tdK = el('td', 'is-kind'); tdK.append(el('span', 'lg-kind is-auto', 'Remark'));
-      const tdT = el('td', 'is-what'); tdT.append(el('p', 'lg-text', remark));
-      tr.append(tdW, tdK, tdT, el('td', 'is-by', 'All Students'), el('td', 'is-more'));
-      tb.append(tr);
-    }
+    moves.sort((a, b) => a.at.localeCompare(b.at));
+    const nowStage = data.student.stage || '';
+    const byDate = (at) => {
+      if (!moves.length) return nowStage || 'Earlier';
+      let cur = null; moves.forEach((m) => { if (m.at <= String(at)) cur = m.stage; });
+      if (cur) return cur;
+      const i = STAGES.indexOf(moves[0].stage);
+      return i > 0 ? STAGES[i - 1] : 'Earlier';
+    };
+    const givenStage = new Map();
+    events.forEach((e) => { if (e.given) givenStage.set(e.tid, byDate(e.at)); });
+    events.forEach((e) => { e.stage = (e.tid && givenStage.get(e.tid)) || byDate(e.at); });
+    const order = (st) => { const i = STAGES.indexOf(st); return st === nowStage ? 1000 : i === -1 ? -1 : i; };
+    const groups = new Map();
+    shown.forEach((e) => { if (!groups.has(e.stage)) groups.set(e.stage, []); groups.get(e.stage).push(e); });
+    const showRemark = Boolean(remark) && (historyFilter === 'all' || historyFilter === 'note');
+    if (showRemark && !groups.has('Earlier')) groups.set('Earlier', []);
+    const stageList = [...groups.keys()].sort((a, b) => order(b) - order(a));
+    if (!openStages) openStages = new Set([nowStage]);
+    const dayRange = (list) => { const ds = list.map((e) => new Date(e.at)).filter((d) => !Number.isNaN(d.getTime())).sort((a, b) => a - b); if (!ds.length) return ''; const f = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); return ds.length > 1 && f(ds[0]) !== f(ds[ds.length - 1]) ? `${f(ds[0])} to ${f(ds[ds.length - 1])}` : f(ds[ds.length - 1]); };
+    stageList.forEach((st) => {
+      const list = groups.get(st);
+      const isOpen = openStages.has(st);
+      const trH = el('tr', 'lg-stage-row');
+      const tdH = el('td', 'lg-stage-cell'); tdH.colSpan = 5;
+      const btn = h('button', { class: 'lg-stage-btn', type: 'button', 'aria-expanded': String(isOpen) });
+      const unseen = list.some((e) => tlLastSeen && String(e.at) > tlLastSeen && e.by !== meName);
+      const count = list.length + (st === 'Earlier' && showRemark ? 1 : 0);
+      btn.append(el('span', 'lg-stage-chev'), el('span', 'lg-stage-name', st), st === nowStage ? el('span', 'lg-stage-now', 'Now') : '', unseen ? el('span', 'lg-stage-new', 'New') : '', el('span', 'lg-stage-meta', `${count} ${count === 1 ? 'event' : 'events'}${dayRange(list) ? ` \u00b7 ${dayRange(list)}` : ''}`));
+      const rows = [];
+      btn.addEventListener('click', () => { const open = btn.getAttribute('aria-expanded') !== 'true'; if (open) openStages.add(st); else openStages.delete(st); btn.setAttribute('aria-expanded', String(open)); rows.forEach((r) => { r.hidden = !open; }); });
+      tdH.append(btn); trH.append(tdH); tb.append(trH);
+      list.forEach((e) => { const r = rowFor(e); r.classList.add('lg-stage-body'); r.hidden = !isOpen; rows.push(r); tb.append(r); });
+      if (st === 'Earlier' && showRemark) {
+        const tr = el('tr', 'is-auto lg-stage-body'); tr.hidden = !isOpen;
+        const tdW = el('td', 'is-when'); tdW.append(el('b', '', 'Earlier'));
+        const tdK = el('td', 'is-kind'); tdK.append(el('span', 'lg-kind is-auto', 'Remark'));
+        const tdT = el('td', 'is-what'); tdT.append(el('p', 'lg-text', remark));
+        tr.append(tdW, tdK, tdT, el('td', 'is-by', 'All Students'), el('td', 'is-more'));
+        rows.push(tr); tb.append(tr);
+      }
+    });
     if (!tb.children.length) { const tr = el('tr'); const td = el('td', 'lg-empty', 'No history yet. Notes, tasks and messages about this student will show here.'); td.colSpan = 5; tr.append(td); tb.append(tr); }
     table.append(tb);
     wrap.append(table);

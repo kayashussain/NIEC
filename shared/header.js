@@ -15,6 +15,25 @@
   document.documentElement.setAttribute('data-size', framed ? 'framed' : size);
 })();
 
+// The Application Team's Apple look (the owner, 24 Nov 2026): one stylesheet, apple.css, that only that team loads, over the pages as they are.
+// Nobody else gets it. It is added at once from what this browser remembers (no flash), and kept or removed when the account is known.
+(function () {
+  const link = () => document.querySelector('link[data-apple]');
+  window.NiecApple = {
+    on() {
+      if (!link()) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
+      document.documentElement.classList.add('app-apple');
+      try { localStorage.setItem('niecApple', '1'); } catch (e) { /* only the first draw may flash */ }
+    },
+    off() {
+      const l = link(); if (l) l.remove();
+      document.documentElement.classList.remove('app-apple');
+      try { localStorage.removeItem('niecApple'); } catch (e) { /* nothing kept */ }
+    },
+  };
+  try { if (localStorage.getItem('niecApple') === '1') window.NiecApple.on(); } catch (e) { /* not remembered */ }
+})();
+
 (function () {
   const header = document.querySelector('.niec-header');
   if (!header) return;
@@ -187,6 +206,7 @@
   };
   function render(me) {
     const appOwn = ownTeamApplication(me);
+    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else window.NiecApple.off(); }
     const fuOwn = ownTeamFollowup(me);
     const mockOwn = ownTeamMock(me);
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]

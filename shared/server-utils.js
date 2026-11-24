@@ -257,6 +257,7 @@ const SHARED_FILES = {
   '/motion.js': 'text/javascript; charset=utf-8', // the motion kit every page loads (header.js)
   '/ui.css': 'text/css; charset=utf-8',
   '/theme.css': 'text/css; charset=utf-8',
+  '/apple.css': 'text/css; charset=utf-8', // the Application Team's Apple look, loaded only for that team (header.js)
   '/login.html': 'text/html; charset=utf-8',
   // The portal's typeface where the computer has no SF Pro (Inter, SIL Open Font License, see fonts/Inter-LICENSE.txt).
   '/fonts/inter-latin.woff2': 'font/woff2',
