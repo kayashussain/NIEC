@@ -245,3 +245,8 @@ html:root body.p-student .lg-empty { text-align:left !important; }
 html:root body.p-student .lg-empty-chips { justify-content:flex-start !important; }
 html:root body.p-student dl.lg-dl > dd a { font-size: inherit !important; font-weight: 500 !important; }
 html:root body.p-student dl.lg-dl > dd a[href^="mailto:"] { font-size: .92em !important; }
+/* 🔴 CSS CHANGED (2026-11-24): the header of the student card gets the soft blue tint of the approved design | from: plain white | to: a pale blue (#eef6ff) fading to white across the card */
+html:root body.p-student .sc-hero { background: linear-gradient(135deg, #eef6ff 0%, #fff 48%) !important; }
+/* 🔴 CSS CHANGED (2026-11-24): the student card keeps its width when the browser is zoomed out | from: the page stopped growing at 1480px, so zooming out shrank the card and widened the empty margins | to: no width limit, the card always fills the space beside the menu with the same slim margin */
+html:root body.p-student main#page.p-page { max-width: none !important; }
+html:root body.p-student dl.lg-dl > dd a[href^="mailto:"] { font-size: .84em !important; overflow-wrap: normal !important; }
