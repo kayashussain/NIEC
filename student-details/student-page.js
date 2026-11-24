@@ -911,16 +911,6 @@
       const dayWord = ago === 0 ? 'Today' : ago === 1 ? 'Yesterday' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(iso.slice(0, 4) === todayIso.slice(0, 4) ? {} : { year: 'numeric' }) });
       return [dayWord, d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })];
     };
-    const parseChangeNote = (txt) => {
-      const m = /^(Changed|Undone) on the student card: ([\s\S]+)\.$/.exec(String(txt || ''));
-      if (!m) return null;
-      const VAL = '(\\(empty\\)|"[\\s\\S]*?")';
-      const rx = new RegExp(`^(.+?): ${VAL} → ${VAL}$`);
-      const parts = m[2].split(/; (?=[^";]+?: (?:\(empty\)|"))/);
-      const rows = [];
-      for (const p of parts) { const x = rx.exec(p); if (!x) return null; const clean = (v) => (v === '(empty)' ? '' : v.slice(1, -1)); rows.push({ label: x[1], from: clean(x[2]), to: clean(x[3]) }); }
-      return rows.length ? { undone: m[1] === 'Undone', rows } : null;
-    };
     const KIND = { note: 'Note', auto: 'Automatic', update: 'Task update', done: 'Task done', stage: 'Stage', try: 'No answer' };
     const rowFor = (e) => {
       const tr = el('tr', `is-${e.kind}`);
@@ -928,9 +918,9 @@
       const tdW = el('td', 'is-when'); tdW.append(el('b', '', d1), el('span', '', d2)); tdW.title = when(e.at);
       // Student Card G2: a note the system wrote when details were saved ("Changed on the student card: Label: "a" → "b"; ...") is shown as
       // one clear line with the names of what changed and a quiet Show changes; anything that does not read exactly so stays as written.
-      // A note saved after 25 Nov 2026 carries the changes as data (note.changes); an older one is read from its sentence.
+      // A note saved after 25 Nov 2026 carries the changes as data (note.changes, set only by the server). Text is never read back for them: an older note, or one a person typed, stays exactly as written.
       const nc = e.kind === 'note' && e.note && Array.isArray(e.note.changes) && e.note.changes.length ? e.note.changes : null;
-      const diff = nc ? { undone: Boolean(e.note.undo), rows: nc.map((c) => ({ label: String(c.label || ''), from: String(c.from || ''), to: String(c.to || '') })) } : e.kind === 'note' ? parseChangeNote(e.text) : null;
+      const diff = nc ? { undone: Boolean(e.note.undo), rows: nc.map((c) => ({ label: String(c.label || ''), from: String(c.from || ''), to: String(c.to || '') })) } : null;
       const tdK = el('td', 'is-kind'); tdK.append(el('span', `lg-kind is-${e.kind}`, diff ? (diff.undone ? 'Change undone' : 'Details changed') : KIND[e.kind] || e.label || ''));
       if (tlLastSeen && String(e.at) > tlLastSeen && e.by !== meName) { tr.classList.add('is-unseen'); tdK.title = 'New since you last opened this student'; }
       const tdT = el('td', 'is-what');

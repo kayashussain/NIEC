@@ -80,3 +80,11 @@ live-data/
 **/apply-through.json
 student-details/brand-logo.png
 **/server.lock
+
+# More runtime files the server writes into the data folder (private student names, emails and phones): never in git (review of 25 Nov 2026).
+**/mock-bookings.json
+**/mock-guidelines.json
+**/guideline-files/
+**/users.json
+**/sessions.json
+**/session-secret

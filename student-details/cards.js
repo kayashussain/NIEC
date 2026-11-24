@@ -175,7 +175,15 @@ function createCards(dir, { now = () => new Date(), store = createFileStore(dir,
         cache = { version, data: { ...data, cards } };
         return cache.data;
       }
-    } catch (e) { /* unreadable: set aside below */ }
+    } catch (e) {
+      // Only a file that is really damaged (it exists but is not valid) is set aside below. A read that failed for another reason (a lock by
+      // a backup program or OneDrive, a busy disk) says nothing about the file: it is never moved, and the cards carry on as they were.
+      if (!e || !e.damaged) {
+        console.error('[cards] cards.json could not be read just now (the file is left where it is):', e && e.message);
+        if (cache) return cache.data;
+        throw e;
+      }
+    }
     // A damaged file is kept next to the data (never overwritten), and the cards carry on from the newest daily copy.
     store.quarantine('cards');
     const recovered = recover() || { cards: {} };
