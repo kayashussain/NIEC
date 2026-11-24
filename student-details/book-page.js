@@ -124,21 +124,21 @@
     try { info = await call(`/api/book/${slug}`); } catch (e) { view.replaceChildren(h('div', { class: 'bk-card bk-done' }, h('div', { class: 'bk-main' }, logo(), h('h1', {}, 'This link is not open'), h('p', { class: 'bk-dim' }, e.message)))); return; }
     document.title = `Book a mock interview with ${info.with}`;
     view.replaceChildren(shell(info.with, info.minutes, picker(info, {
-      onBook: async (x) => { const r = await call(`/api/book/${slug}`, x); history.replaceState(null, '', `/booking/${r.token}`); done(r.booking, r.emailed, 'Your mock interview is booked'); },
+      onBook: async (x) => { const r = await call(`/api/book/${slug}`, x); history.replaceState(null, '', `/booking/${r.token}`); bookingPage(r.token, 'Your mock interview is booked', r.emailed); },
       button: 'Book',
     })));
   }
 
-  async function bookingPage() {
+  async function bookingPage(tk = token, title = 'Your mock interview', emailed = true) {
     let r;
-    try { r = await call(`/api/booking/${token}`); } catch (e) { view.replaceChildren(h('div', { class: 'bk-card bk-done' }, h('div', { class: 'bk-main' }, logo(), h('h1', {}, 'Booking not found'), h('p', { class: 'bk-dim' }, e.message)))); return; }
+    try { r = await call(`/api/booking/${tk}`); } catch (e) { view.replaceChildren(h('div', { class: 'bk-card bk-done' }, h('div', { class: 'bk-main' }, logo(), h('h1', {}, 'Booking not found'), h('p', { class: 'bk-dim' }, e.message)))); return; }
     const b = r.booking;
     if (b.status !== 'booked') {
       view.replaceChildren(h('div', { class: 'bk-card bk-done' }, h('div', { class: 'bk-main' }, logo(), h('h1', {}, 'This booking is cancelled'),
         h('p', { class: 'bk-dim' }, `It was ${b.dayLabel}, ${b.timeLabel}.`), b.slug ? h('a', { class: 'bk-go', href: `/book/${b.slug}` }, 'Book another time') : null)));
       return;
     }
-    done(b, true, 'Your mock interview');
+    done(b, emailed, title);
     const main = view.querySelector('.bk-main');
     if (!b.canChange) { main.append(h('p', { class: 'bk-dim' }, 'It is too close to the mock to change it now. Please contact the consultancy if you cannot come.')); return; }
     const change = h('button', { type: 'button', class: 'bk-plain' }, 'Change the time');
@@ -147,14 +147,14 @@
     cancel.addEventListener('click', async () => {
       if (!window.confirm('Cancel your mock interview?')) return;
       cancel.disabled = true;
-      try { await call(`/api/booking/${token}/cancel`, {}); bookingPage(); } catch (e) { msg.textContent = e.message; cancel.disabled = false; }
+      try { await call(`/api/booking/${tk}/cancel`, {}); bookingPage(tk); } catch (e) { msg.textContent = e.message; cancel.disabled = false; }
     });
     change.addEventListener('click', async () => {
       let slots;
-      try { slots = await call(`/api/booking/${token}/slots`); } catch (e) { msg.textContent = e.message; return; }
+      try { slots = await call(`/api/booking/${tk}/slots`); } catch (e) { msg.textContent = e.message; return; }
       view.replaceChildren(shell(b.with, slots.minutes, h('p', { class: 'bk-dim bk-now' }, `Now: ${b.dayLabel}, ${b.timeLabel}`), picker(slots, {
         form: false, button: 'Move to',
-        onBook: async (x) => { const out = await call(`/api/booking/${token}/move`, { day: x.day, time: x.time }); history.replaceState(null, '', `/booking/${out.token}`); done(out.booking, true, 'Your mock interview is moved'); },
+        onBook: async (x) => { const out = await call(`/api/booking/${tk}/move`, { day: x.day, time: x.time }); history.replaceState(null, '', `/booking/${out.token}`); bookingPage(out.token, 'Your mock interview is moved'); },
       })));
     });
     main.append(h('div', { class: 'bk-actions' }, change, cancel), msg);

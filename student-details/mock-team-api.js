@@ -297,9 +297,10 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;
       activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} booked a mock with ${p.shown || 'the Mock Team'} on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}${b.rowId ? '' : ' (not matched to a student yet)'}`] });
-      const sent = await emailStudent(b, 'booked', siteOf(owner));
+      // The page does not wait for a slow mailbox: after 2.5 seconds it answers while the email is still being sent ('pending').
+      const sent = await Promise.race([emailStudent(b, 'booked', siteOf(owner)), new Promise((resolve) => { setTimeout(() => resolve('pending'), 2500); })]);
       emailOwner(b).catch(() => {});
-      sendJSON(res, 200, { ok: true, token: b.token, emailed: sent === 'sent', booking: publicBooking(b) });
+      sendJSON(res, 200, { ok: true, token: b.token, emailed: sent === 'sent' || sent === 'pending', booking: publicBooking(b) });
       return true;
     }
     m = urlPath.match(/^\/api\/booking\/([A-Za-z0-9_-]{20,40})(\/cancel|\/move|\/slots)?$/);
