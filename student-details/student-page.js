@@ -259,6 +259,7 @@
     }
   }
   // The light that follows the mouse is the shared motion kit's (motion.js), on the tiles, contact buttons and Timeline bubbles too.
+  let openChecks = false; // Details to check is folded behind its count on the Next step line until it is pressed
   let firstDraw = true; // the first drawing: a link to #options goes straight to Applications
   const icon = (name, cls) => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); if (cls) sv.setAttribute('class', cls); sv.innerHTML = ICONS[name] || ''; return sv; };
 
@@ -307,10 +308,16 @@
     const av = el('div', 'sc-avatar', initials(s.name));
     av.setAttribute('aria-hidden', 'true');
     const who = el('div', 'sc-id');
-    who.append(el('h1', 'sc-name', s.name));
+    // The Student Card G1 look (the owner, 24 Nov 2026): the name with the stage beside it, then one quiet line: intake, phone, email, source.
+    const titleRow = el('div', 'sc-titlerow');
+    titleRow.append(el('h1', 'sc-name', s.name), stagePill(s.stage));
+    who.append(titleRow);
     const meta = el('div', 'sc-meta');
-    if (s.intake) meta.append(el('span', 'sc-meta-text', s.intake));
-    meta.append(stagePill(s.stage));
+    const metaBit = (txt, ico) => { const m = el('span', 'sc-meta-text'); if (ico) m.append(icon(ico, 'sc-meta-ico')); m.append(txt); meta.append(m); };
+    if (s.intake) metaBit(s.intake);
+    if (s.phone) metaBit(s.phone, 'phone');
+    if (s.email) metaBit(s.email, 'mail');
+    if (s.source) metaBit(s.source, 'pin');
     who.append(meta);
     const act = el('div', 'sc-actions');
     const reach = contactBar();
@@ -332,12 +339,25 @@
     return { sec, head };
   }
 
+  // What is not added yet, as small chips under the facts (G1, the owner, 24 Nov 2026): each chip opens the same Edit window, so the
+  // card is not a long list of "Not added". What is missing and needed stays a row, in orange.
+  function emptyChips(labels, onEdit) {
+    if (!labels.length) return null;
+    const wrap = el('div', 'lg-empty');
+    wrap.append(el('span', 'lg-empty-k', 'Not added yet'));
+    const chips = el('div', 'lg-empty-chips');
+    labels.forEach((l) => { if (onEdit) chips.append(h('button', { class: 'lg-chip', type: 'button', onclick: onEdit }, l)); else chips.append(el('span', 'lg-chip is-plain', l)); });
+    wrap.append(chips);
+    return wrap;
+  }
+
   // ---- the left column: the profile as a table with one Edit profile, and the student source ----
   function profileColumn() {
     const side = el('aside', 'sc-side');
     const { sec, head } = box('Profile', 'lg-profile');
     if (can()) head.append(h('button', { class: 'btn lg-edit', type: 'button', onclick: editProfile }, 'Edit profile'));
     const dl = el('dl', 'lg-dl');
+    const empties = [];
     FIELDS.forEach((f) => {
       const v = f.get();
       const dd = el('dd', '');
@@ -349,7 +369,8 @@
           if (f.wa && wa) a.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(wa, data.student.name, '', id); });
           dd.append(a);
         } else dd.textContent = shown;
-      } else dd.append(el('span', f.optional ? 'lg-none' : 'lg-missing', f.optional ? 'Not added' : 'Missing'));
+      } else if (f.optional) { empties.push(f.label); return; }
+      else dd.append(el('span', 'lg-missing', 'Missing'));
       dl.append(el('dt', '', f.label), dd);
     });
     // The Student source, as rows of the Profile (the owner, 22 Nov 2026: not a card of its own); changed in Edit profile.
@@ -357,7 +378,7 @@
     const s = data.student;
     const g = F.sourceGroup(s.source);
     const plain = (v) => String(v || '').replace(/^(Marketing|Event)\s*:\s*/i, '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '').trim();
-    const row = (label, value, empty) => { const dd = el('dd', ''); if (value) dd.textContent = value; else dd.append(el('span', empty === 'missing' ? 'lg-missing' : 'lg-none', empty === 'missing' ? 'Missing' : 'Not added')); dl.append(el('dt', '', label), dd); };
+    const row = (label, value, empty) => { if (!value && empty !== 'missing') { empties.push(label); return; } const dd = el('dd', ''); if (value) dd.textContent = value; else dd.append(el('span', empty === 'missing' ? 'lg-missing' : 'lg-none', empty === 'missing' ? 'Missing' : 'Not added')); dl.append(el('dt', '', label), dd); };
     row('Student source', g === 'Branch' ? s.source : g, 'missing');
     if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
       row('Platform', p.sourcePlatform);
@@ -365,6 +386,7 @@
     } else if (g && g !== 'Branch') row(F.SOURCE_DETAIL_LABEL[g] || 'Where exactly', (g === 'Events' && data.event ? plain(data.event.name) : plain(p.sourceDetail)));
     if (p.inquiryDate) row('First inquiry', `${day(p.inquiryDate)}${p.inquiryTime ? ` at ${p.inquiryTime}` : ''}`);
     sec.append(dl);
+    { const ec = emptyChips(empties, can() ? editProfile : null); if (ec) sec.append(ec); }
     if (p.savedAt) sec.append(el('div', 'lg-foot', `Last saved ${when(p.savedAt)} by ${p.savedBy || 'someone'}`));
     side.append(sec, applicationDetails(), mockInterviews());
     return side;
@@ -379,14 +401,18 @@
   const APP_EDIT = ['RECEIVING PARTNER', 'LANGUAGE TEST DATE', 'STUDENT ID', 'NOC', 'NOC NUMBER', 'MEDICAL REPORT'];
   const isoDay = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '').trim()) ? String(v).trim() : '');
   const languageShown = (v) => { const t = String(v || '').trim(); if (!t) return ''; const d = isoDay(t); return d ? `Test date, ${day(d)}` : t; };
-  function detailsList(rows) {
+  function detailsList(rows, onEdit) {
     const dl = el('dl', 'lg-dl');
+    const empties = [];
     rows.forEach(([label, value]) => {
+      if (!(value instanceof Node) && !value) { empties.push(label); return; }
       const dd = el('dd', '');
-      if (value instanceof Node) dd.append(value); else if (value) dd.textContent = value; else dd.append(el('span', 'lg-none', 'Not added'));
+      if (value instanceof Node) dd.append(value); else dd.textContent = value;
       dl.append(el('dt', '', label), dd);
     });
-    return dl;
+    const ec = emptyChips(empties, onEdit);
+    if (!ec) return dl;
+    const wrap = el('div', 'lg-dl-wrap'); wrap.append(dl, ec); return wrap;
   }
   function applicationDetails() {
     const r = rowOf();
@@ -397,7 +423,7 @@
       ['University', r['UNIVERSITY NAME']], ['Course', r['COURSE NAME']], ['University partner', r['UNIVERSITY PARTNER']],
       ['Receiving partner', r['RECEIVING PARTNER']], ['Language test', languageShown(r['LANGUAGE TEST DATE'])], ['Student ID', r['STUDENT ID']],
       ['NOC', r.NOC], ['NOC number', r['NOC NUMBER']], ['Medical report', r['MEDICAL REPORT']], ['Medical booking date', med ? day(med) : ''],
-    ]));
+    ], can() && APP_EDIT.some(mayEdit) ? editApplicationDetails : null));
     return sec;
   }
   async function editApplicationDetails() {
@@ -1221,7 +1247,7 @@
     { const head = el('div', 'p-card-head'); const t = el('h2', '', 'Universities applied to'); t.append(el('span', 'sc-tl-count', String(apps.length))); head.append(t);
       if (can()) head.append(h('button', { class: 'btn btn-sm lg-add-app', type: 'button', title: 'Add an application made outside the portal', onclick: () => addApplication() }, '+ Add application'));
       box.append(head); }
-    if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses above and press "Assign to the Application Team", or press + Add application for one made outside the portal.')); return box; }
+    if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses in the Shortlist and press "Assign to the Application Team", or press + Add application for one made outside the portal.')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
     box.append(el('p', 'p-apps-summary', [`${submitted} submitted`, `${offers} ${offers === 1 ? 'offer' : 'offers'}`, waitingTeam ? `${waitingTeam} with the Application Team` : ''].filter(Boolean).join(' · ')));
     // The priority university (the owner, 17 Nov 2026): chosen here from the applications; it writes the university and course
@@ -1253,7 +1279,7 @@
   // or applied to, with the course, the day it was submitted and the answer (offer, refused or withdrawn with the reason).
   function optionsTab() {
     const wrap = el('div', 'p-apps');
-    wrap.append(chosenOptions(), applicationsList());
+    wrap.append(applicationsList(), chosenOptions());
     return wrap;
   }
 
@@ -1342,7 +1368,7 @@
     const wa = F.whatsappNumber(s.phone);
     if (!s.phone && !s.email) return null;
     const bar = el('div', 'sc-reach');
-    const btn = (cls, ico, text, attrs) => { const a = h('a', { class: `sc-reach-btn ${cls}`, ...attrs }); const i = el('span', 'sc-reach-ico'); i.append(icon(ico)); a.append(i, el('span', '', text)); return a; };
+    const btn = (cls, ico, text, attrs) => { const a = h('a', { class: `sc-reach-btn ${cls}`, ...attrs }); const i = el('span', 'sc-reach-ico'); i.append(icon(ico)); a.title = text; a.setAttribute('aria-label', text); a.append(i, el('span', 'sc-reach-text', text)); return a; };
     // Call rings the student from the person's own phone, as WhatsApp does (phone-link.js); with no phone connected it says how.
     if (s.phone) bar.append(btn('is-call', 'phone', 'Call', { href: 'tel:' + String(s.phone).replace(/[^\d+]/g, ''), onclick: (e) => { if (!window.PhoneLink || !wa) return; e.preventDefault(); window.PhoneLink.call({ id, number: wa, name: s.name }); } }));
     if (wa) bar.append(btn('is-wa', 'whatsapp', 'WhatsApp', { href: 'https://wa.me/' + wa, target: '_blank', rel: 'noopener', onclick: (e) => { e.preventDefault(); window.Portal.whatsapp(wa, s.name, '', id); } }));
@@ -1427,8 +1453,17 @@
     // Next step, Applications, the open tasks and the whole Timeline on the right, one under another.
     const layout = el('div', 'sc-layout');
     const main = el('div', 'sc-main');
-    { const n = nextStep(); if (n) main.append(n); }
-    if ((data.checks || []).length) main.append(checksBox());
+    let top = []; // Next step and Details to check sit full width under the header (G1)
+    // Next step and Details to check share one line (G1): the count on the line opens the list under it.
+    { const n = nextStep(); const cb = (data.checks || []).length ? checksBox() : null;
+      if (n && cb) {
+        cb.hidden = !openChecks;
+        const chip = h('button', { class: 'sc-checks-chip', type: 'button', 'aria-expanded': String(openChecks) });
+        chip.append(icon('alert'), `${data.checks.length} ${data.checks.length === 1 ? 'detail' : 'details'} to check`);
+        chip.addEventListener('click', () => { openChecks = cb.hidden; cb.hidden = !openChecks; chip.setAttribute('aria-expanded', String(openChecks)); });
+        const act = n.querySelector('.sc-next-act'); if (act) act.prepend(chip); else n.append(chip);
+      }
+      top = [n, cb].filter(Boolean); }
     if (!can()) main.append(el('div', 'p-notice', 'View only.'));
     const ap = appStats();
     const apps = box('Applications', 'lg-apps', ap.submitted || ap.offers ? `${ap.submitted} submitted, ${ap.offers} ${ap.offers === 1 ? 'offer' : 'offers'}` : '');
@@ -1438,7 +1473,7 @@
     if (tc) { tc.classList.add('lg-box', 'lg-tasks'); main.append(tc); }
     main.append(notes());
     layout.append(profileColumn(), main);
-    frag.append(layout);
+    frag.append(...top, layout);
     view.replaceChildren(frag);
     window.scrollTo(0, keepY);
     focusForm();

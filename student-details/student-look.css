@@ -147,3 +147,100 @@ html:root body.p-student dialog.p-dialog input:focus, html:root body.p-student d
 html:root body.p-student dialog.p-dialog .td-tag-pick .td-tag { min-height: 40px !important; border: 0 !important; border-radius: 980px !important; background: #efeff3 !important; color: #1d1d1f !important; font-weight: 400 !important; }
 html:root body.p-student dialog.p-dialog .td-tag-pick .td-tag[aria-checked="true"] { background: #1d1d1f !important; color: #fff !important; font-weight: 500 !important; }
 html:root body.p-student dialog.p-dialog .p-dialog-foot { border: 0 !important; background: transparent !important; }
+
+/* ---------- Student Card G1 (the owner, 24 Nov 2026) ---------- */
+/* 🔴 CSS CHANGED (2026-11-24): the student card is redesigned as "Student Card G1" (approved by the owner on 24 Nov 2026), for every person | from: a tall header (name 44px light, big progress line with dots, phone and email as large icons), Next step and Details to check as two stacked boxes, label-above-value lists with "Not added" rows, a table-style Timeline | to: a slim header (name semi-bold with the stage beside it, one line of intake, phone, email and source, round Call, WhatsApp and Email icons, a slim 8-segment progress bar), Next step full width with the Details to check count on its line, a left column of label-left value-right rows with "Not added yet" chips, Applications before the Shortlist, a one-line pill note box and a Timeline drawn as a dotted line grouped by stage. Sizes are written for the page zoom of 80 percent that every page has, so on screen they match the approved artifact */
+html:root body.p-student .sc-hero { padding:27.5px 35px 25px !important;margin:0 0 15px !important;background:#fff !important; }
+html:root body.p-student .sc-head { gap:22.5px !important; }
+html:root body.p-student .sc-avatar { flex:0 0 75px !important;width:75px !important;height:75px !important;font-size:26px !important;font-weight:500 !important; }
+html:root body.p-student .sc-titlerow { display:flex !important;align-items:center !important;flex-wrap:wrap !important;gap:7.5px 15px !important; }
+html:root body.p-student .sc-name { font-size:40px !important;line-height:47.5px !important;font-weight:600 !important;letter-spacing:-.025em !important; }
+html:root body.p-student .sc-titlerow .p-pill,html:root body.p-student .sc-titlerow .p-pill-blue { font-size:16px !important;font-weight:500 !important; }
+html:root body.p-student .sc-meta { flex-wrap:wrap !important;gap:5px 22.5px !important;margin-top:4px !important; }
+html:root body.p-student .sc-meta-text { display:inline-flex !important;align-items:center !important;gap:7.5px !important;color:#515154 !important;font-size:17.5px !important;font-weight:400 !important;white-space:nowrap !important; }
+html:root body.p-student .sc-meta-ico { width:17.5px !important;height:17.5px !important;flex:0 0 17.5px !important;fill:none !important;stroke:#6e6e73 !important;stroke-width:1.7 !important;stroke-linecap:round !important;stroke-linejoin:round !important; }
+html:root body.p-student .sc-reach { gap:10px !important; }
+html:root body.p-student .sc-reach-btn { width:45px !important;min-height:45px !important;padding:0 !important;justify-content:center !important;gap:0 !important; }
+html:root body.p-student .sc-reach-text { position:absolute !important;width:1px !important;height:1px !important;overflow:hidden !important;clip:rect(0 0 0 0) !important;white-space:nowrap !important; }
+html:root body.p-student .sc-reach-ico,html:root body.p-student .sc-reach-ico svg { width:21px !important;height:21px !important; }
+html:root body.p-student .sc-steps-box { margin-top:22.5px !important;padding-top:0 !important; }
+html:root body.p-student .sc-steps-head { display:none !important; }
+html:root body.p-student .sc-steps { margin:0 !important;gap:7.5px !important; }
+html:root body.p-student .sc-steps::before,html:root body.p-student .sc-steps::after { display:none !important; }
+html:root body.p-student .sc-steps li { justify-items:start !important;gap:9px !important;text-align:left !important; }
+html:root body.p-student .sc-steps li::before { content:"" !important;display:block !important;width:100% !important;height:6px !important;border-radius:4px !important;background:#e3e3e8 !important; }
+html:root body.p-student .sc-steps li.is-done::before { background:#0071e3 !important; }
+html:root body.p-student .sc-steps li.is-now::before { background:linear-gradient(90deg,#0071e3 0 50%,#e3e3e8 50%) !important; }
+html:root body.p-student .sc-step-dot { display:none !important; }
+html:root body.p-student .sc-step-label { font-size:15.5px !important;font-weight:400 !important; }
+html:root body.p-student .sc-steps li.is-now .sc-step-label { font-weight:600 !important; }
+html:root body.p-student .sc-steps-box.is-lost .sc-steps li::before { background:#e3e3e8 !important; }
+html:root body.p-student .sc-next { margin:0 0 15px !important;padding:15px 17.5px 15px 22.5px !important;border-radius:22.5px !important; }
+html:root body.p-student .sc-next-ico { flex:0 0 42.5px !important;width:42.5px !important;height:42.5px !important;border-radius:12.5px !important; }
+html:root body.p-student .sc-next-words b { font-size:21px !important;line-height:27.5px !important;font-weight:600 !important;letter-spacing:-.014em !important; }
+html:root body.p-student .sc-next-why { font-size:17px !important; }
+html:root body.p-student .sc-next-act { flex-wrap:nowrap !important;gap:10px !important; }
+html:root body.p-student .sc-checks-chip { display:inline-flex !important;align-items:center !important;gap:9px !important;min-height:40px !important;padding:0 16px !important;border:0 !important;border-radius:1225px !important;background:#fff1e5 !important;color:#a24800 !important;font:500 16px "SF Pro Text",-apple-system,BlinkMacSystemFont,Inter,"Segoe UI",sans-serif !important;cursor:pointer !important;white-space:nowrap !important; }
+html:root body.p-student .sc-checks-chip:hover { background:#ffe6d0 !important; }
+html:root body.p-student .sc-checks-chip svg { width:19px !important;height:19px !important;fill:none !important;stroke:currentColor !important;stroke-width:1.9 !important;stroke-linecap:round !important;stroke-linejoin:round !important; }
+html:root body.p-student .sc-checks { margin:-5px 0 15px !important;padding:17.5px 25px !important;border-radius:20px !important;background:#fff1e5 !important; }
+html:root body.p-student .sc-checks[hidden] { display:none !important; }
+html:root body.p-student .sc-layout { grid-template-columns:450px minmax(0,1fr) !important;gap:17.5px !important;margin-top:0 !important; }
+html:root body.p-student .sc-side,html:root body.p-student .sc-main { gap:17.5px !important; }
+html:root body.p-student .lg-head,html:root body.p-student .p-card-head { padding:20px 25px 10px !important; }
+html:root body.p-student .lg-head h2,html:root body.p-student .p-card-head h2 { font-size:21px !important;line-height:27.5px !important;font-weight:600 !important;letter-spacing:-.014em !important; }
+html:root body.p-student .lg-edit { min-height:37.5px !important;padding:0 16px !important;font-size:16px !important; }
+html:root body.p-student dl.lg-dl { display:grid !important;grid-template-columns:auto minmax(0,1fr) !important;padding:0 25px 10px !important; }
+html:root body.p-student dl.lg-dl>dt { padding:11px 20px 11px 0 !important;border-top:1px solid #ececf0 !important;color:#6e6e73 !important;font-size:17px !important;line-height:26px !important; }
+html:root body.p-student dl.lg-dl>dd { padding:11px 0 !important;border-top:1px solid #ececf0 !important;text-align:right !important;font-size:18px !important;line-height:26px !important;font-weight:500 !important;overflow-wrap:anywhere !important; }
+html:root body.p-student dl.lg-dl>dt:first-of-type,html:root body.p-student dl.lg-dl>dt:first-of-type+dd { border-top:0 !important; }
+html:root body.p-student .lg-dl-wrap dl.lg-dl { padding-bottom:0 !important; }
+html:root body.p-student .lg-empty { margin:0 25px 7.5px !important;padding:14px 0 10px !important;border-top:1px solid #ececf0 !important; }
+html:root body.p-student .lg-empty-k { display:block !important;margin-bottom:9px !important;color:#6e6e73 !important;font-size:15.5px !important; }
+html:root body.p-student .lg-empty-chips { display:flex !important;flex-wrap:wrap !important;gap:7.5px !important; }
+html:root body.p-student .lg-chip { display:inline-flex !important;align-items:center !important;gap:5px !important;min-height:32.5px !important;padding:0 14px !important;border:0 !important;border-radius:1225px !important;background:#f5f5f7 !important;color:#515154 !important;font:500 15.5px "SF Pro Text",-apple-system,BlinkMacSystemFont,Inter,"Segoe UI",sans-serif !important;cursor:pointer !important;transition:background .1s linear !important; }
+html:root body.p-student .lg-chip:hover { background:#e9e9ed !important; }
+html:root body.p-student .lg-chip::before { content:"+" !important;color:#0058b8 !important;font-weight:600 !important; }
+html:root body.p-student .lg-chip.is-plain { cursor:default}.lg-chip.is-plain::before{content:none !important; }
+html:root body.p-student .lg-foot { padding:0 25px 17.5px !important; }
+html:root body.p-student .lg-mock-row { padding:10px 25px !important; }
+html:root body.p-student .lg-apps .p-apps { padding:0 0 10px !important; }
+html:root body.p-student .lg-apps .p-card { padding:7.5px 25px 0 !important; }
+html:root body.p-student .lg-apps .p-card-head { padding:12.5px 0 7.5px !important; }
+html:root body.p-student .lg-apps .p-card-head h2 { font-size:15px !important;line-height:20px !important;font-weight:600 !important;color:#6e6e73 !important;text-transform:uppercase !important;letter-spacing:.05em !important; }
+html:root body.p-student .lg-apps .p-card + .p-card { margin-top:7.5px !important;padding-top:7.5px !important; }
+html:root body.p-student .p-apps-summary { display:none !important; }
+html:root body.p-student .p-priority { margin-top:5px !important; }
+html:root body.p-student .td-list { padding:0 25px 17.5px !important; }
+html:root body.p-student .lg-compose { gap:12.5px !important;margin:2px 25px 10px !important;padding:6px 7.5px 6px 20px !important;border-radius:1225px !important;background:#f5f5f7 !important; }
+html:root body.p-student .lg-compose .lg-input,html:root body.p-student .lg-compose textarea { min-height:42.5px !important;padding:7.5px 0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;resize:none !important; }
+html:root body.p-student .lg-compose .lg-input:focus { box-shadow:none !important; }
+html:root body.p-student table.lg-table,html:root body.p-student table.lg-table tbody { display:block !important;width:auto !important;padding:0 25px 10px !important; }
+html:root body.p-student table.lg-table thead { display:none !important; }
+html:root body.p-student table.lg-table tr.lg-stage-row { display:block !important;border-top:1px solid #ececf0 !important; }
+html:root body.p-student table.lg-table tr.lg-stage-row:first-child { border-top:0 !important; }
+html:root body.p-student table.lg-table tr.lg-stage-row td,html:root body.p-student tr.lg-stage-row td { display:block !important;padding:0 !important;border:0 !important;background:transparent !important; }
+html:root body.p-student .lg-stage-btn { padding:16px 0 !important;gap:12.5px !important; }
+html:root body.p-student .lg-stage-name { font-size:19.5px !important;font-weight:600 !important;letter-spacing:-.012em !important; }
+html:root body.p-student .lg-stage-btn[aria-expanded="true"] .lg-stage-name { color:#1d1d1f !important; }
+html:root body.p-student table.lg-table tr.lg-stage-body { position:relative !important;display:grid !important;grid-template-columns:105px 15px minmax(0,1fr) 35px !important;grid-template-areas:"when dot kind more" "when dot what more" "when dot by more" !important;column-gap:17.5px !important;align-items:start !important;padding:11px 0 !important;border:0 !important; }
+html:root body.p-student table.lg-table tr.lg-stage-body[hidden] { display:none !important; }
+html:root body.p-student table.lg-table tr.lg-stage-body>td { padding:0 !important;border:0 !important;background:transparent !important; }
+html:root body.p-student tr.lg-stage-body>td.is-when { grid-area:when !important;text-align:right !important; }
+html:root body.p-student tr.lg-stage-body>td.is-kind { grid-area:kind !important; }
+html:root body.p-student tr.lg-stage-body>td.is-what { grid-area:what !important; }
+html:root body.p-student tr.lg-stage-body>td.is-by { grid-area:by !important;padding-top:2px !important;font-size:15px !important;color:#6e6e73 !important; }
+html:root body.p-student tr.lg-stage-body>td.is-more { grid-area:more !important;justify-self:end !important; }
+html:root body.p-student tr.lg-stage-body::before { content:"" !important;grid-area:dot !important;width:14px !important;height:14px !important;margin-top:6px !important;border-radius:50% !important;background:#0071e3 !important;position:relative !important;z-index:1 !important;box-shadow:0 0 0 5px #fff !important; }
+html:root body.p-student tr.lg-stage-body.is-note::before,html:root body.p-student tr.lg-stage-body.is-auto::before,html:root body.p-student tr.lg-stage-body.is-stage::before,html:root body.p-student tr.lg-stage-body.is-try::before { background:#fff !important;box-shadow:inset 0 0 0 1.6px #b5b5ba,0 0 0 5px #fff !important; }
+html:root body.p-student tr.lg-stage-body.is-done::before { background:#1a7f37 !important; }
+html:root body.p-student tr.lg-stage-body::after { content:"" !important;position:absolute !important;left:130px !important;top:30px !important;bottom:-11px !important;width:1.5px !important;background:#e3e3e8 !important; }
+html:root body.p-student tr.lg-stage-body:last-child::after,html:root body.p-student tr.lg-stage-body:has(+ tr.lg-stage-row)::after { display:none !important; }
+html:root body.p-student tr.lg-stage-body.is-unseen>td.is-kind::after { content:"" !important;display:inline-block !important;margin-left:9px !important;width:9px !important;height:9px !important;border-radius:50% !important;background:#0071e3 !important;vertical-align:middle !important; }
+html:root body.p-student table.lg-table .is-when b { font-size:16px !important;font-weight:600 !important; }
+html:root body.p-student table.lg-table td.is-what { font-size:18px !important; }
+html:root body.p-student table.lg-table td.lg-empty { padding:22.5px 0 !important; }
+html:root body.p-student dl.lg-dl>dt { padding-right:15px !important; }
+html:root body.p-student .lg-empty { text-align:left !important; }
+html:root body.p-student .lg-empty-chips { justify-content:flex-start !important; }
+html:root body.p-student dl.lg-dl > dd a { font-size: inherit !important; font-weight: 500 !important; }
