@@ -648,3 +648,9 @@ html.app-mock:root body #page .mt-day-slots { grid-template-columns: repeat(auto
 html.app-mock:root body #page .mt-slot { width: 300px; }
 html.app-mock:root body #page .mt-slot .p-input { width: 128px; }
 html.app-mock:root body #page .mt-banner + .mt-upcoming .mt-linkbar { margin-top: 0; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the opened task on Today, Application Team only | from: the copy icons and the "Add" links ended at slightly different places on the right of each row | to: both sit in the same 44px box at the right end of the row, so the icons and the links line up in one clean column */
+html:root body .tdy-dl .tdy-cp, html:root body .tdy-dl .tdy-add { flex: 0 0 44px; display: inline-flex; align-items: center; justify-content: flex-end; width: 44px; margin: 0 0 0 8px; padding: 0; text-align: right; }
+
+/* 🔴 CSS CHANGED (2026-11-24): long names in the sheet's dropdown pills, Application Team only | from: a long partner name was cut off with no sign (for example "Koshi Career Centre (d") | to: the name ends with "..." inside the pill and the whole name shows when you hover it */
+html:root body #sheet td select.status-select:disabled { appearance: none !important; display: inline-block !important; width: auto !important; max-width: calc(100% - 4px) !important; line-height: 30px !important; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; vertical-align: middle; } /* a locked answer never opens a list, so it is a plain select: it can end with ... */
