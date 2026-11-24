@@ -53,7 +53,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   // Anyone can type any email, so the email alone must not tie a booking to a student's card (it would take that student's next mock
   // number and drop them from the lists): the name typed on the booking page must also share a word with the name on the card. A student
   // who writes a different name is booked as not matched, and the Mock person picks the student in the window after the mock.
-  const words = (v) => text(v).toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 2);
+  const words = (v) => text(v).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').split(/[^a-z]+/).filter((w) => w.length >= 2);
   function nameFits(typed, row) {
     const card = new Set(words(`${row['FIRST NAME'] || ''} ${row['LAST NAME'] || ''}`));
     return words(typed).some((w) => card.has(w));
@@ -137,8 +137,10 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   async function tick() {
     for (const { booking, kind } of bookings.dueReminders()) {
       bookings.markSent(booking.id, kind); // marked first: a reminder is never sent twice, even when the mailbox is slow
-      // A send that failed (the mailbox was down for a moment) is tried again at the next round; "not set up" is not retried.
-      if ((await emailStudent(booking, kind)) === 'failed') bookings.markSent(booking.id, kind, false);
+      // A send that failed (the mailbox was down for a moment) is tried again at the next round, three times at most (an address the mail
+      // server always refuses must not be tried every five minutes for a day); "not set up" is not retried.
+      const tries = Number((booking.sent || {})[`${kind}Tries`]) || 0;
+      if ((await emailStudent(booking, kind)) === 'failed') bookings.markSent(booking.id, kind, tries + 1 >= 3, tries + 1);
     }
   }
 
@@ -292,7 +294,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       // At most two bookings to come for one email address, so the page cannot fill a calendar or send many emails to one address.
       const mail = text(body.email).toLowerCase();
       const t0 = now().getTime();
-      if (mail && bookings.all().bookings.filter((x) => x.status === 'booked' && x.email === mail && bookings.endOf(x) > t0).length >= 2) { sendJSON(res, 400, { error: 'You already have two mock interviews booked. Change or cancel one from its email first.' }); return true; }
+      if (mail && bookings.all().bookings.filter((x) => x.status === 'booked' && x.email === mail && bookings.endOf(x) > t0).length >= 2) { release(); sendJSON(res, 400, { error: 'You already have two mock interviews booked. Change or cancel one from its email first.' }); return true; }
       const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteOf(owner));
       if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;
@@ -300,7 +302,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       // The page does not wait for a slow mailbox: after 2.5 seconds it answers while the email is still being sent ('pending').
       const sent = await Promise.race([emailStudent(b, 'booked', siteOf(owner)), new Promise((resolve) => { setTimeout(() => resolve('pending'), 2500); })]);
       emailOwner(b).catch(() => {});
-      sendJSON(res, 200, { ok: true, token: b.token, emailed: sent === 'sent' || sent === 'pending', booking: publicBooking(b) });
+      sendJSON(res, 200, { ok: true, token: b.token, emailed: sent === 'sent', booking: publicBooking(b) });
       return true;
     }
     m = urlPath.match(/^\/api\/booking\/([A-Za-z0-9_-]{20,40})(\/cancel|\/move|\/slots)?$/);

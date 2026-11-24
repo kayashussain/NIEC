@@ -343,3 +343,21 @@ test('bookings: a wrong "did not join" can be taken back, a joined answer cannot
   assert.match(B.reopen(two.id).error, /student card/, 'a joined answer is corrected on the student card, not here');
   assert.match(B.reopen('000000000000').error, /No such/);
 });
+
+test('bookings: a failed reminder is counted so it can stop after three tries', () => {
+  const dir = tmp('isr-bookings-tries-');
+  const now = new Date('2026-11-22T04:15:00Z');
+  const B = createMockBookings(dir, { now: () => now, timeZone: 'Asia/Kathmandu' });
+  assert.ok(B.saveSetup('u1', { teams: 'https://teams.live.com/meet/1', slug: 'bikram', shown: 'Bikram', email: 'b@example.com' }).person);
+  assert.ok(B.saveSlots('u1', { minutes: 30, ahead: 7, notice: 60, weekly: { 0: [['11:30', '13:00']] }, dates: {} }).person);
+  const b = B.book('u1', { day: '2026-11-22', time: '11:30', name: 'Tries Student', email: 't@example.com', phone: '' }, () => null, '').booking;
+  assert.ok(b);
+  B.markSent(b.id, 'hourBefore'); // marked before sending
+  assert.strictEqual(B.get(b.id).sent.hourBefore, true);
+  B.markSent(b.id, 'hourBefore', false, 1); // the send failed once: tried again, counted
+  assert.strictEqual(B.get(b.id).sent.hourBefore, false);
+  assert.strictEqual(B.get(b.id).sent.hourBeforeTries, 1);
+  B.markSent(b.id, 'hourBefore', true, 3); // third failure: given up
+  assert.strictEqual(B.get(b.id).sent.hourBefore, true);
+  assert.strictEqual(B.get(b.id).sent.hourBeforeTries, 3);
+});

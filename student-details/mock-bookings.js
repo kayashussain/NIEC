@@ -308,12 +308,12 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       write({ ...data, bookings });
       return { booking: bookings[i] };
     },
-    markSent(id, key, value = true) {
+    markSent(id, key, value = true, tries) {
       const data = load();
       const i = data.bookings.findIndex((b) => b.id === id);
       if (i === -1) return;
       const bookings = [...data.bookings];
-      bookings[i] = { ...bookings[i], sent: { ...(bookings[i].sent || {}), [key]: value } };
+      bookings[i] = { ...bookings[i], sent: { ...(bookings[i].sent || {}), [key]: value, ...(tries === undefined ? {} : { [`${key}Tries`]: tries }) } };
       write({ ...data, bookings });
     },
     // Reminders that are due now: [{ booking, kind: 'dayBefore' | 'hourBefore' }].

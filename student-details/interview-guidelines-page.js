@@ -82,8 +82,10 @@
       form.hidden = true;
       open.addEventListener('click', () => {
         form.hidden = !form.hidden;
-        open.textContent = form.hidden ? 'Upload a guideline' : 'Cancel'; // one main blue button on the screen: the one inside the panel
-        open.classList.toggle('btn-primary', form.hidden);
+        if (mockLook()) { // one main blue button on the screen: the one inside the panel
+          open.textContent = form.hidden ? 'Upload a guideline' : 'Cancel';
+          open.classList.toggle('btn-primary', form.hidden);
+        }
         const none = card.querySelector('.mt-none-all'); if (none) none.hidden = !form.hidden; // the empty line waits while the panel is open
         if (!form.hidden) form.querySelector('select').focus();
       });

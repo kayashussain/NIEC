@@ -44,6 +44,13 @@
     view.replaceChildren(...(banner ? [banner, body] : [body]));
     if (openAnswer && data.waiting.length) { openAnswer = false; history.replaceState(null, '', `#${tab}`); askNext(0); }
   }
+  // After an answer: the Upcoming tab is drawn again; on Slots or Setup only the banner changes, so nothing typed there is lost.
+  function refresh() {
+    if (tab === 'upcoming') { draw(); return; }
+    const old = $('view').querySelector('.mt-banner');
+    const fresh = waitingBanner();
+    if (old && fresh) old.replaceWith(fresh); else if (old) old.remove(); else if (fresh) $('view').prepend(fresh);
+  }
   // Mocks that have ended and are not answered: said once, calmly, at the top; the window opens only when the person presses Answer.
   function waitingBanner() {
     if (data.access === 'view' || !data.waiting.length) return null;
@@ -227,8 +234,8 @@
       body.append(err, h('div', { class: 'p-bar mt-ask-bar' }, later, save));
       setTimeout(() => { const first = body.querySelector('.mt-seg button'); if (first) first.focus(); }, 60); // the first choice has the focus, not the close button
     }).then((r) => {
-      if (r === 'saved' || r === 'noshow') { toast(r === 'saved' ? 'Saved on the student\'s card.' : 'Saved. The student goes to Next mock to book.'); draw(); askNext(0); }
-      else if (r === 'stale') { api('/api/bookings').then((d) => { data = d; draw(); if (data.waiting[0]) askNext(0); }).catch(() => {}); }
+      if (r === 'saved' || r === 'noshow') { toast(r === 'saved' ? 'Saved on the student\'s card.' : 'Saved. The student goes to Next mock to book.'); refresh(); askNext(0); }
+      else if (r === 'stale') { api('/api/bookings').then((d) => { data = d; refresh(); if (data.waiting[0]) askNext(0); }).catch(() => {}); }
       else if (data.waiting[i + 1]) askNext(i + 1);
     });
   }
