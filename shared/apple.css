@@ -548,9 +548,53 @@ html.app-mock:root body #page .mt-upload input[type="file"]::file-selector-butto
 /* 🔴 CSS CHANGED (2026-11-24): Mock Team only: the line under the title of the "mock ended" window | from: a dark grey line (#9a9a9a) | to: the soft hairline used everywhere else in the Apple look (#e5e5ea) */
 html.app-mock:root body dialog.p-dialog .p-dialog-head { border-bottom: 1px solid var(--apple-hair) !important; }
 
+/* 🔴 CSS CHANGED (2026-11-24): the sheet's Language Test column (Application Team only) | from: the Test Date cell showed a big empty white box with a grey ring instead of the date, because the general Apple field style (white box, ring) also reached the sheet's invisible date field | to: the date field in the sheet stays invisible over the date text, as before, and the date shows (for example 17 Jul 2026); every other field inside the sheet keeps its plain cell look */
+html:root body #sheet td input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]) { background: transparent; box-shadow: none; border-radius: 0; }
+html:root body #sheet td input.typing { background: var(--panel); box-shadow: inset 0 0 0 2px #0071e3; }
+/* 🔴 CSS CHANGED (2026-11-24): long names in the sheet's pills (for example University Partner), Application Team only | from: the pill ran wider than its cell and the name was cut off hard | to: the pill stays inside its cell and a long name ends with ... */
+html:root body #sheet td .status-select { max-width: calc(100% - 10px); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+
+/* 🔴 CSS CHANGED (2026-11-24): every window on the student card and Today (Edit profile, Application details, Assign a task, Update application, Record offer, Email the options), Application Team only | from: a grey title bar, a grey window, dropdowns and message boxes with a dark outline, outlined option buttons | to: the same look as the Mark as done window: a white rounded window with a soft shadow, a white title with a hairline under it, white fields with a thin soft ring and a blue ring when you click in, dropdowns the same as the fields, option buttons as grey pills (the chosen one black), a light grey button bar */
+html:root body dialog.p-dialog { border: 0 !important; border-radius: 22px !important; background: #fff !important; box-shadow: 0 30px 80px rgba(0, 0, 0, .28), 0 0 0 .5px rgba(0, 0, 0, .08) !important; overflow: hidden; }
+html:root body dialog.p-dialog .p-dialog-head { background: #fff !important; border-bottom: 1px solid var(--apple-hair) !important; padding: 22px 28px 16px; }
+html:root body dialog.p-dialog .p-dialog-head h2 { color: #1d1d1f; font-size: 20px; font-weight: 700; letter-spacing: -.02em; text-transform: none; }
+html:root body dialog.p-dialog .p-dialog-body { background: #fff; }
+html:root body dialog.p-dialog .p-label { color: var(--apple-grey); font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html:root body dialog.p-dialog input:not([type="checkbox"]):not([type="radio"]), html:root body dialog.p-dialog select, html:root body dialog.p-dialog textarea { min-height: 44px; border: 0 !important; border-radius: 10px !important; background-color: #fff !important; box-shadow: inset 0 0 0 1px #d2d2d7 !important; color: #1d1d1f; }
+html:root body dialog.p-dialog textarea { min-height: 96px; }
+html:root body dialog.p-dialog input:focus, html:root body dialog.p-dialog select:focus, html:root body dialog.p-dialog textarea:focus { outline: 0 !important; box-shadow: inset 0 0 0 2px #0071e3 !important; }
+html:root body dialog.p-dialog input:disabled, html:root body dialog.p-dialog input[readonly] { background-color: #f5f5f7 !important; color: var(--apple-grey); }
+html:root body dialog.p-dialog .td-tag-pick .td-answer { min-height: 40px; border: 0 !important; outline: 0 !important; border-radius: 980px !important; background: var(--apple-btn) !important; color: #1d1d1f !important; font-weight: 500; }
+html:root body dialog.p-dialog .td-tag-pick .td-answer[aria-checked="true"] { background: #1d1d1f !important; color: #fff !important; font-weight: 600; }
+html:root body dialog.p-dialog .p-dialog-foot { background: #f5f5f7 !important; border-top: 1px solid var(--apple-hair) !important; }
+html:root body dialog.p-dialog .p-dialog-foot .btn:not(.btn-primary) { border: 0 !important; outline: 0 !important; background: var(--apple-btn) !important; }
+html:root body dialog.p-dialog .p-dialog-head .p-x { border: 0; background: var(--apple-btn); border-radius: 50%; }
+html:root body dialog.p-dialog .td-tag-pick .td-tag { min-height: 40px; border: 0 !important; border-radius: 980px !important; background: var(--apple-btn) !important; color: #1d1d1f !important; font-weight: 500; }
+html:root body dialog.p-dialog .td-tag-pick .td-tag[aria-checked="true"] { background: #1d1d1f !important; color: #fff !important; font-weight: 600; }
+html:root body dialog.p-dialog:not(.td-done-app) .p-dialog-foot { background: transparent !important; border-top: 0 !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): every dropdown in the sheet (Receiving Partner, University Partner, NOC, Language Test, Medical Report and the others), Application Team only | from: a grey "Select" and a blue "Pending" were different shapes and sat in different places, clicking one turned it into a square dark-outlined box, and the list that opened was a plain square box with a blue bar | to: every dropdown is the same rounded pill in the same place whatever it says (only its colour follows the answer), the same arrow, a soft blue glow instead of a box when it is open, and the list is a white rounded panel with a soft shadow, comfortable rows, a light highlight under the mouse and a blue tick row for the chosen answer, with group titles in small grey words */
+html:root body #sheet td select.status-select { appearance: base-select !important; display: inline-flex !important; align-items: center; justify-content: flex-start; width: auto !important; min-width: 92px; max-width: calc(100% - 4px); height: 30px !important; margin: 0 !important; padding: 0 30px 0 14px !important; border: 0 !important; border-radius: 980px !important; box-shadow: none !important; font-size: 13.5px !important; font-weight: 600 !important; line-height: 30px; text-align: left; vertical-align: middle; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%23636366' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3.5l3 3 3-3'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 11px center !important; background-size: 10px 10px !important; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; transition: box-shadow .15s ease, background-color .15s ease; }
+html:root body #sheet td:has(> select.status-select) { padding-left: 8px !important; padding-right: 8px !important; }
+html:root body #sheet td select.status-select::picker-icon { display: none; }
+html:root body #sheet td select.status-select:hover:not(:disabled) { box-shadow: 0 0 0 1px rgba(0, 0, 0, .1) !important; }
+html:root body #sheet td select.status-select:focus-visible, html:root body #sheet td select.status-select:open { outline: 0 !important; box-shadow: 0 0 0 3px rgba(0, 113, 227, .35) !important; }
+html:root body #sheet td select.status-select:disabled { opacity: 1; cursor: default; }
+html:root body #sheet td select.status-select::picker(select) { box-sizing: border-box; min-width: max(anchor-size(width), 220px); max-height: min(420px, calc(100vh - 24px)); margin-top: 6px; padding: 6px; border: 0; border-radius: 14px; background: #fff; box-shadow: 0 18px 50px rgba(0, 0, 0, .2), 0 0 0 .5px rgba(0, 0, 0, .08); }
+html:root body #sheet td select.status-select option { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; border-radius: 8px; background: transparent; color: #1d1d1f; font-size: 14px; font-weight: 400; white-space: normal; }
+html:root body #sheet td select.status-select option:hover, html:root body #sheet td select.status-select option:focus-visible { background: #f2f2f7; }
+html:root body #sheet td select.status-select option:checked { background: #e8f1fd; color: #0058b8; font-weight: 600; }
+html:root body #sheet td select.status-select option::checkmark { color: #0058b8; }
+html:root body #sheet td select.status-select optgroup { padding: 4px 0 0; }
+html:root body #sheet td select.status-select optgroup::before, html:root body #sheet td select.status-select optgroup > legend { color: #636366; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+
 /* 🔴 CSS CHANGED (2026-11-24): Mock Team only: the field rows of "Upload a guideline" and of Setup, and dropdown text | from: three fields side by side (the Kind dropdown wrapped onto 2 lines and the Title hint was cut on a 1280px laptop; the booking link could squeeze a long name) | to: Kind and Where it came from side by side with the Title on its own full row; in Setup the booking link takes a full row with Name and Email under it; dropdown text never wraps (it ends in ...) */
 html.app-mock:root body #page .mt-upload .mt-three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 html.app-mock:root body #page .mt-upload .mt-three > div:nth-child(3) { grid-column: 1 / -1; }
 html.app-mock:root body #page .mt-setup .mt-three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 html.app-mock:root body #page .mt-setup .mt-three > div:first-child { grid-column: 1 / -1; }
 html.app-mock:root body #page select.p-input { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the sheet's locked dropdowns, Application Team only (the team cannot change student details from the sheet) | from: a locked dropdown still showed an arrow and a hover outline as if it could be opened | to: a locked answer is a plain read-only pill: no arrow, no hover outline, normal cursor, so nothing invites a click; only the Application Status dropdown (the one the team may use) keeps its arrow */
+html:root body #sheet td select.status-select:disabled { background-image: none !important; padding-right: 14px !important; cursor: default !important; box-shadow: none !important; pointer-events: none; }
+html:root body #sheet td select.status-select:disabled::picker-icon { display: none; }
