@@ -141,7 +141,11 @@
     card.append(head, el('p', 'mt-hint', hint));
     if (!list.length) card.append(el('p', 'mt-empty', empty));
     list.forEach((s) => {
-      card.append(h('div', { class: 'mt-person' }, monogram(s.name), h('div', { class: 'mt-person-words' }, h('a', { href: `/student?id=${encodeURIComponent(s.rowId)}` }, s.name), el('span', '', sub(s)))));
+      const undo = s.bookingId && data.access !== 'view' ? h('button', { type: 'button', class: 'p-link mt-undo', title: 'Take back the "did not join" answer', onclick: async () => {
+        if (!(await window.NiecUI.confirm(`Take back the "did not join" answer for ${s.name}? The mock will ask again.`, { confirmText: 'Take it back', cancelText: 'Keep it' }))) return;
+        try { data = await api(`/api/bookings/${s.bookingId}/reopen`, {}); toast('Taken back. The mock asks again.'); draw(); } catch (e) { toast(e.message, 'error'); }
+      } }, 'Undo') : null;
+      card.append(h('div', { class: 'mt-person' }, monogram(s.name), h('div', { class: 'mt-person-words' }, h('a', { href: `/student?id=${encodeURIComponent(s.rowId)}` }, s.name), el('span', '', sub(s))), ...(undo ? [undo] : [])));
     });
     return card;
   }
@@ -210,7 +214,7 @@
         try {
           data = await api(`/api/bookings/${b.id}/answer`, { joined, feedback: fb.value, result, rowId: pick ? pick.value : '' });
           delete body.closest('dialog').dataset.busy;
-          close('saved');
+          close(joined ? 'saved' : 'noshow');
         } catch (e) {
           delete body.closest('dialog').dataset.busy;
           save.disabled = false; save.textContent = 'Save';
@@ -223,7 +227,7 @@
       body.append(err, h('div', { class: 'p-bar mt-ask-bar' }, later, save));
       setTimeout(() => { const first = body.querySelector('.mt-seg button'); if (first) first.focus(); }, 60); // the first choice has the focus, not the close button
     }).then((r) => {
-      if (r === 'saved') { toast('Saved on the student\'s card.'); draw(); askNext(0); }
+      if (r === 'saved' || r === 'noshow') { toast(r === 'saved' ? 'Saved on the student\'s card.' : 'Saved. The student goes to Next mock to book.'); draw(); askNext(0); }
       else if (r === 'stale') { api('/api/bookings').then((d) => { data = d; draw(); if (data.waiting[0]) askNext(0); }).catch(() => {}); }
       else if (data.waiting[i + 1]) askNext(i + 1);
     });
@@ -374,7 +378,7 @@
         el('p', 'mt-hint', 'In Teams choose Meet, then Create a meeting link, then Copy, and paste it here. Every mock uses this link, and the Teams lobby keeps the next student waiting until you let them in.'),
         lab('mtTeams', 'Your Teams meeting link'), teams,
         el('p', 'mt-hint mt-teams-note', 'To join as the interviewer, sign in to the Teams app with the Microsoft account that made this meeting. Any other account waits in the lobby.')),
-      step(2, Boolean(me.slug), 'Your link, your name and your email',
+      step(2, Boolean(me.slug && me.email), 'Your link, your name and your email',
         h('div', { class: 'mt-three' },
           h('div', {}, lab('mtSlug', 'Booking link'), h('div', { class: 'mt-prefix' }, el('span', '', `${location.host}/book/`), slug)),
           h('div', {}, lab('mtShown', 'Name students see'), shown),

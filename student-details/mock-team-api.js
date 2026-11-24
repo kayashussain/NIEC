@@ -181,7 +181,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const held = [1, 2, 3, 4].filter((n) => text(found.row[`MOCK SCHEDULE ${n}`])).length;
       const item = { rowId, name: nameOf(found.row), university: text(found.row['UNIVERSITY NAME']), course: text(found.row['COURSE NAME']), held };
       if (b.answer.joined && b.answer.result === 'ready') { if (!text(found.row['PRE CAS INTERVIEW'])) ready.push(item); }
-      else if (!comingFor.has(rowId) && held < 4) next.push({ ...item, nextMock: [1, 2, 3, 4].find((n) => !text(found.row[`MOCK SCHEDULE ${n}`])) || 0, noShow: !b.answer.joined });
+      else if (!comingFor.has(rowId) && held < 4) next.push({ ...item, nextMock: [1, 2, 3, 4].find((n) => !text(found.row[`MOCK SCHEDULE ${n}`])) || 0, noShow: !b.answer.joined, bookingId: b.answer.joined ? '' : b.id });
     }
     // The students a booking that matched nobody can be given to (the Mock Stage students this account sees).
     const students = [...visible.values()].filter(({ row }) => text(row[STATUS]) === 'Mock Stage').map(({ row }) => ({ id: row._id, name: nameOf(row) }))
@@ -365,10 +365,17 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
         sendJSON(res, 200, pageFor(req.user));
         return true;
       }
-      const m = urlPath.match(/^\/api\/bookings\/([a-f0-9]{12})\/(answer|cancel)$/);
+      const m = urlPath.match(/^\/api\/bookings\/([a-f0-9]{12})\/(answer|cancel|reopen)$/);
       if (!m) { sendJSON(res, 404, { error: 'Not found' }); return true; }
       const b = bookings.get(m[1]);
       if (!b || (access === 'own' && b.owner !== req.user.id)) { sendJSON(res, 404, { error: 'No such booking.' }); return true; }
+      if (m[2] === 'reopen') {
+        const out = bookings.reopen(b.id);
+        if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
+        activity.record(req, req.user, 'Booked mock', { app: 'Bookings', changes: [`Took back the "did not join" answer for ${b.name} on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}`] });
+        sendJSON(res, 200, pageFor(req.user));
+        return true;
+      }
       if (m[2] === 'cancel') {
         if (b.answer) { sendJSON(res, 400, { error: 'This mock is already answered, so it cannot be cancelled.' }); return true; }
         const out = bookings.cancel(b.id, req.user.name);

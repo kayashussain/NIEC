@@ -628,3 +628,13 @@ html.app-mock:root body #page .mt-upload .p-input { background: #f5f5f7; }
 html.app-mock:root body #page .mt-cancel { padding: 12px 10px; margin: -12px -4px -12px 4px; }
 html.app-mock:root body #page .mt-join { min-height: 36px; }
 html.app-mock:root body #page .mt-none-all { margin: 22px 0 6px; padding: 0; border: 0; color: var(--apple-grey); font-size: 15px; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Mock Team only: Available slots rows, the Setup card and the Undo link | from: slot pills wrapping raggedly (two on one line, one alone below), the Setup card two thirds wide | to: slot pills in an even grid of equal width so day rows line up, the Setup card as wide as the page; a small grey Undo link at the right of a "did not join" row */
+html.app-mock:root body #page .mt-day-slots { display: grid; grid-template-columns: repeat(auto-fill, 282px); gap: 8px 10px; align-items: center; }
+html.app-mock:root body #page .mt-day-slots > .mt-muted { grid-column: 1 / -1; }
+html.app-mock:root body #page .mt-slot { width: 282px; justify-content: space-between; }
+html.app-mock:root body #page .mt-slot .p-input { width: 118px; }
+html.app-mock:root body #page .mt-setup { max-width: none; }
+html.app-mock:root body #page .mt-person-words { flex: 1; }
+html.app-mock:root body #page .mt-undo { flex: none; border: 0; background: none; padding: 8px 4px; color: var(--apple-grey); font: 500 13px var(--font); cursor: pointer; }
+html.app-mock:root body #page .mt-undo:hover { color: #1d1d1f; text-decoration: underline; }

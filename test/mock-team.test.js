@@ -324,3 +324,22 @@ test('bookings: the file limit never drops a booking that is still waiting for i
   assert.strictEqual(after.filter((b) => b.status === 'booked' && !b.answer).length, 6, 'the five waiting ones and the new one are all kept');
   assert.strictEqual(after.filter((b) => b.status === 'booked' && b.answer).length, 1995, 'answered ones are not touched while cancelled ones can go');
 });
+
+test('bookings: a wrong "did not join" can be taken back, a joined answer cannot', () => {
+  const dir = tmp('isr-bookings-undo-');
+  let now = new Date('2026-11-22T04:15:00Z');
+  const B = createMockBookings(dir, { now: () => now, timeZone: 'Asia/Kathmandu' });
+  assert.ok(B.saveSetup('u1', { teams: 'https://teams.live.com/meet/1', slug: 'bikram', shown: 'Bikram', email: 'b@example.com' }).person);
+  assert.ok(B.saveSlots('u1', { minutes: 30, ahead: 7, notice: 60, weekly: { 0: [['11:30', '15:00']] }, dates: {} }).person);
+  const one = B.book('u1', { day: '2026-11-22', time: '11:30', name: 'First Student', email: 'a@example.com', phone: '' }, () => null, '').booking;
+  const two = B.book('u1', { day: '2026-11-22', time: '12:00', name: 'Second Student', email: 'c@example.com', phone: '' }, () => null, '').booking;
+  assert.ok(one && two);
+  now = new Date('2026-11-22T08:00:00Z'); // both mocks are over
+  assert.ok(B.answer(one.id, { joined: false, by: 'u1' }).booking.answer, 'answered: did not join');
+  assert.ok(B.answer(two.id, { joined: true, feedback: 'Good', result: 'ready', by: 'u1' }).booking.answer, 'answered: joined');
+  const back = B.reopen(one.id);
+  assert.strictEqual(back.booking.answer, null, 'the wrong No is taken back');
+  assert.match(B.reopen(one.id).error, /no answer/, 'nothing left to take back');
+  assert.match(B.reopen(two.id).error, /student card/, 'a joined answer is corrected on the student card, not here');
+  assert.match(B.reopen('000000000000').error, /No such/);
+});

@@ -295,6 +295,19 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       write({ ...data, bookings });
       return { booking: bookings[i] };
     },
+    // Takes back a "did not join" answer (a wrong click): it wrote nothing on the student's card, so the mock simply asks again.
+    reopen(id) {
+      const data = load();
+      const i = data.bookings.findIndex((b) => b.id === id);
+      if (i === -1) return { error: 'No such booking.' };
+      const b = data.bookings[i];
+      if (b.status !== 'booked' || !b.answer) return { error: 'This mock has no answer to take back.' };
+      if (b.answer.joined) return { error: 'Only a "did not join" answer can be taken back here. Correct the feedback on the student card.' };
+      const bookings = [...data.bookings];
+      bookings[i] = { ...b, answer: null };
+      write({ ...data, bookings });
+      return { booking: bookings[i] };
+    },
     markSent(id, key, value = true) {
       const data = load();
       const i = data.bookings.findIndex((b) => b.id === id);
