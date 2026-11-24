@@ -91,3 +91,5 @@ html, body { margin: 0; }
   .bk-form > .bk-go, .bk-form:has(> .bk-go:only-child) > .bk-go { justify-self: stretch; width: 100%; }
   .bk-times { padding-bottom: 16px; }
 }
+/* 🔴 CSS CHANGED (2026-11-24): the student's booking page, the line "Times are in Nepal time." | from: tight against the line below it | to: a little space around it */
+.bk-tz { margin: 14px 0 10px; }
