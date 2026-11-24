@@ -281,3 +281,75 @@ html:root body .as-miss.is-miss { color: #b25000; }
 html:root body .as-chev { width: 9px; height: 9px; border-right: 2px solid #aeaeb2; border-bottom: 2px solid #aeaeb2; transform: rotate(-45deg); }
 html:root body .as-empty { padding: 28px; color: var(--apple-grey); text-align: center; }
 html:root body .lg-mock-who { color: var(--apple-grey); }
+
+/* ---------- finishing pass: size, motion, the card's header and the older controls ---------- */
+/* Text size for the Application Team (the owner: "the text looks small"): drawn at 92% instead of the 80% every page uses, so the small
+   words (labels, chips, secondary lines) read comfortably on a laptop. Other teams are not changed. */
+@media (min-width: 900px) {
+  html.app-apple[data-size="medium"] { zoom: .92; --isr-z: .92; }
+}
+html:root body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-feature-settings: "cv11", "ss01"; }
+html:root body .btn, html:root body .tda-pill, html:root body .tda-view, html:root body .as-sw, html:root body .lg-seg-btn, html:root body .sc-reach-btn, html:root body .sl-pick { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease; }
+html:root body .btn:active, html:root body .tda-pill:active, html:root body .as-sw:active { transform: scale(.97); }
+html:root body .tda-panel, html:root body .lg-box, html:root body .as-card, html:root body .tda-tile { animation: apple-in .4s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes apple-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  html:root body *, html:root body *::before, html:root body *::after { animation: none !important; transition: none !important; }
+}
+html:root body :focus-visible { outline: 3px solid rgba(0, 113, 227, .4); outline-offset: 2px; border-radius: 8px; }
+
+/* the card's header: no thin lines, a calm progress line */
+html:root body .sc-hero { padding-bottom: 6px; }
+html:root body .sc-hero .sc-head { border-bottom: 0; }
+html:root body .sc-hero .sc-steps-box { border-top: 0; padding-top: 4px; }
+html:root body .sc-hero .sc-steps-now { color: #1d1d1f; font-weight: 500; }
+html:root body .sc-steps-box .sc-step-label, html:root body .sc-steps-box li, html:root body .sc-steps-box span { letter-spacing: 0; }
+html:root body .sc-next { padding: 16px 24px; }
+html:root body .sc-next .sc-next-title, html:root body .sc-next h2 { font-size: 18px; font-weight: 700; letter-spacing: -.02em; }
+html:root body .sc-next .btn { min-height: 40px; }
+
+/* older controls on the card */
+html:root body select.p-priority-select { border: 0; border-radius: 10px; background: #f5f5f7 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center; box-shadow: none; min-height: 40px; appearance: none; -webkit-appearance: none; padding-right: 36px; }
+html:root body .btn.btn-sm { min-height: 32px; padding: 0 14px; font-size: 14px; }
+html:root body .td-more-btn, html:root body .lg-more { border: 0; border-radius: 50%; background: transparent; color: #6e6e73; }
+html:root body .td-more-btn:hover, html:root body .lg-more:hover { background: var(--apple-btn); }
+html:root body .lg-timeline tr.is-unseen td.is-kind { box-shadow: inset 3px 0 0 #0071e3; }
+html:root body .lg-kind.is-task, html:root body .lg-kind.is-update, html:root body .lg-kind.is-done, html:root body .lg-kind.is-stage { border-radius: 6px; }
+html:root body .lg-kind.is-done { background: #e3f5e8; color: #1a7f37; }
+
+/* the sheet (All Students, shown as the sheet): quieter lines and header */
+html:root body .topbar { background: transparent; border: 0; }
+html:root body #sheet th { background: #fafafc; color: var(--apple-grey); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; border-color: var(--apple-hair); }
+html:root body #sheet td { border-color: var(--apple-hair); }
+html:root body .sheet-wrap, html:root body .table-wrap, html:root body #sheet { border-radius: 14px; }
+html:root body .sheet-tabs button, html:root body .sheet-tab { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
+
+/* the list while it loads, and when it is empty */
+html:root body .as-skel { height: 64px; margin: 0 28px; border-bottom: 1px solid var(--apple-hair); background: linear-gradient(90deg, #f5f5f7 25%, #ececf0 37%, #f5f5f7 63%); background-size: 400% 100%; animation: apple-shimmer 1.3s ease infinite; border-radius: 10px; }
+@keyframes apple-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+html:root body .as-empty { padding: 56px 28px; font-size: 17px; }
+html:root body #view section.sc-hero.lg-box { border: 0; background: #fff; border-radius: 20px; box-shadow: var(--apple-card); }
+html:root body #view section.sc-hero .sc-head { border-bottom: 0; background: transparent; }
+html:root body #view section.sc-hero .sc-steps-box, html:root body #view section.sc-hero > div:last-child { border-top: 0; background: transparent; }
+html:root body #view section.sc-next { border: 0; background: #e8f1fd; border-radius: 20px; box-shadow: none; }
+html:root body #view section.sc-next .sc-next-ico { background: #fff; }
+html:root body #view .sc-next-eyebrow, html:root body #view .sc-next .sc-eyebrow { color: #0058b8; }
+html:root body #view a.sc-reach-btn, html:root body #view .sc-actions .sc-reach-btn { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; box-shadow: none; }
+html:root body #view a.sc-reach-btn:hover { background: #dcdce1; }
+html:root body .as-row, html:root body a.as-row { border: 0; border-bottom: 0; box-shadow: none; text-decoration: none; }
+html:root body .as-row + .as-row { border-top: 0; }
+html:root body .tdy-top { border-top-color: var(--apple-hair); }
+
+/* the sheet and the finder: the last older outlines */
+html:root body .topbar .btn:not(.btn-primary), html:root body .topbar button:not(.btn-primary) { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; box-shadow: none; }
+html:root body .topbar .btn.btn-primary { border: 0; border-radius: 980px; background: #0071e3; color: #fff; }
+html:root body .topbar input, html:root body .topbar .search { border: 0; border-radius: 10px; background: var(--apple-btn); box-shadow: none; }
+html:root body table#sheet th, html:root body table#sheet thead th { background: #fafafc; color: var(--apple-grey); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; border-color: var(--apple-hair); }
+html:root body table#sheet td { border-color: var(--apple-hair); }
+html:root body #sheetTabs, html:root body .sheet-tabs { border: 0; background: transparent; }
+html:root body .sheet-tabs button, html:root body .sheet-tab, html:root body #sheetTabsList button { border: 0 !important; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; box-shadow: none; }
+html:root body #finderBox section, html:root body #finderBox .p-card, html:root body section.fd-card { border: 0 !important; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .topbar .btn:not(.btn-primary), html:root body .topbar .toolbar-group button:not(.btn-primary), html:root body .sheet-tabs .btn { border: 0 !important; border-radius: 980px !important; background: var(--apple-btn) !important; color: #1d1d1f !important; box-shadow: none !important; }
+html:root body .topbar .btn:disabled { color: #6e6e73 !important; background: transparent !important; }
+html:root body .topbar input[type="search"], html:root body .topbar input#search, html:root body .topbar .search-box input { border: 0 !important; border-radius: 10px !important; background: var(--apple-btn) !important; box-shadow: none !important; }
+html:root body table#sheet thead th, html:root body table#sheet thead th * { text-transform: none !important; letter-spacing: 0 !important; font-weight: 600; }

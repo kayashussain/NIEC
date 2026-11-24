@@ -134,7 +134,7 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await win.locator('.td-done-form').waitFor();
   assert.ok(await win.evaluate((d) => d.classList.contains('td-done-app')), 'the Application Team\'s window');
   assert.strictEqual((await win.locator('.p-dialog-head .td-done-task').textContent()).trim(), 'Gita Demo', 'only the name, in the header');
-  assert.strictEqual(await win.evaluate((d) => getComputedStyle(d).width), '640px', 'a 640px window');
+  assert.ok(Math.abs(parseFloat(await win.evaluate((d) => getComputedStyle(d).width)) - 640) < 1, 'a 640px window (to the rounding of the text size)');
   assert.match(await win.innerText(), /Test University/);
   assert.strictEqual(await win.locator('.td-done-stepno').count(), 0, 'one step: no step number');
   assert.strictEqual(await win.locator('.p-x').isVisible(), false, 'no close cross');

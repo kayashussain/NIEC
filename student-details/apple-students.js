@@ -50,7 +50,7 @@
     left.append(el('div', 'as-eyebrow', data ? `${data.students.length} students with the Application Team` : 'Loading the students...'), el('h1', 'as-title', 'All Students'));
     top.append(left, bar());
     wrap.append(top);
-    if (!data) return;
+    if (!data) { const sk = el('div', 'as-card'); for (let i = 0; i < 7; i += 1) sk.append(el('div', 'as-skel')); wrap.append(sk); return; }
     const tools = el('div', 'as-tools');
     const search = el('input', 'as-search'); search.type = 'search'; search.placeholder = 'Search a student, a university or a course'; search.value = query; search.setAttribute('aria-label', 'Search a student, a university or a course');
     search.addEventListener('input', () => { query = search.value.trim().toLowerCase(); rows(); });
