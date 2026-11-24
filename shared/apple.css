@@ -392,3 +392,81 @@ html:root body dl.lg-dl > dd:last-of-type { border-bottom: 0; }
 html:root body dl.lg-dl > dt { padding: 13px 18px 0 !important; border: 0 !important; background: transparent !important; }
 html:root body dl.lg-dl > dd { padding: 2px 18px 13px !important; border: 0 !important; border-bottom: 1px solid var(--apple-hair) !important; background: transparent !important; }
 html:root body dl.lg-dl > dd:last-of-type { border-bottom: 0 !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the Mock Team in the Apple look, approved design (Bookings and Interview guidelines; Today, All Students and Universities already follow the Application look) | from: Bookings and Interview guidelines in the grey outlined look (black outlines, small capital labels, a table header, a blue Join on the first row, a boxed list); the window after a mock grey with an outlined close box | to: white 18px cards with the soft shadow, a "Mock Team" label above the 40px title, a slim booking link row, a table without a header (time, student and the mock chip, University and course on one line, grey Join in Teams, quiet grey Cancel), the notice as a quiet grey line at the bottom, the guidelines as a grey All / With guidelines / None yet switch, a list under letters with quiet grey names and grey count chips, a selected row in soft grey, kinds as headings with an Add link and a PDF tile in neutral grey, and the window after a mock as a white 22px window with grey pills. Every rule here hangs on html.app-mock, set only for the Mock Team (shared/header.js), so the Application Team, Admin and the Manager are not changed. */
+html.app-mock:root body #page.mt-page .p-head > div:first-child::before { content: "Mock Team"; display: block; color: var(--apple-grey); font-size: 15px; font-weight: 500; letter-spacing: 0; line-height: 20px; }
+html.app-mock:root body #page.mt-page .p-head { align-items: flex-end; }
+html.app-mock:root body #page.mt-page .p-head h1 { font-size: 40px; line-height: 46px; font-weight: 700; letter-spacing: -.03em; }
+html.app-mock:root body #page.mt-page .p-head p { display: none; }
+html.app-mock:root body #page.mt-page .p-card, html.app-mock:root body #page.mt-page section.p-card { border: 0 !important; border-radius: 18px; background: #fff !important; box-shadow: var(--apple-card) !important; padding: 20px 24px; }
+html.app-mock:root body #page.mt-page .p-card h2 { font-size: 19px; line-height: 24px; font-weight: 700; letter-spacing: -.02em; }
+html.app-mock:root body #page.mt-page .mt-hint, html.app-mock:root body #page.mt-page .mt-muted, html.app-mock:root body #page.mt-page .mt-sub { color: var(--apple-grey); font-weight: 400; }
+html.app-mock:root body #page.mt-page .mt-empty { color: #6e6e73; font-size: 14px; font-weight: 400; }
+html.app-mock:root body #page .mt-tabs { padding: 3px; border: 0; border-radius: 11px; background: var(--apple-btn); gap: 2px; }
+html.app-mock:root body #page .mt-tabs button { border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font-size: 14px; font-weight: 500; }
+html.app-mock:root body #page .mt-tabs button[aria-selected="true"] { background: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
+
+/* Bookings */
+html.app-mock:root body #page .mt-upcoming { display: flex; flex-direction: column; }
+html.app-mock:root body #page .mt-upcoming > .mt-note { order: 9; margin: 18px 0 40px; padding: 0; border: 0; background: transparent; color: var(--apple-grey); font-size: 13px; font-weight: 400; }
+html.app-mock:root body #page .mt-linkbar { padding: 12px 18px; margin: 18px 0 14px; }
+html.app-mock:root body #page .mt-linkbar-title { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+html.app-mock:root body #page .mt-linkbar-note { color: var(--apple-grey); font-size: 13px; font-weight: 400; }
+html.app-mock:root body #page .mt-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 17px; align-items: start; }
+html.app-mock:root body #page .mt-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+html.app-mock:root body #page .mt-table tr.mt-day th { padding: 22px 0 10px; color: #1d1d1f; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html.app-mock:root body #page .mt-table tr.mt-day:first-child th, html.app-mock:root body #page .mt-table tbody tr.mt-day:first-child th { padding-top: 10px; }
+html.app-mock:root body #page .mt-table td { padding: 13px 10px 13px 0; border-bottom: 0; border-top: 1px solid var(--apple-hair); }
+html.app-mock:root body #page .mt-table tr.mt-day + tr td { border-top: 1px solid var(--apple-hair); }
+html.app-mock:root body #page .mt-table .mt-time { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+html.app-mock:root body #page .mt-table a { color: #1d1d1f; font-weight: 600; }
+html.app-mock:root body #page .mt-table a:hover { text-decoration: underline; }
+html.app-mock:root body #page .mt-table a.btn, html.app-mock:root body #page .mt-table a.btn:hover { color: #1d1d1f; font-weight: 500; text-decoration: none; }
+html.app-mock:root body #page .mt-table a.btn.btn-primary { background: var(--apple-btn); color: #1d1d1f; }
+html.app-mock:root body #page .mt-who a, html.app-mock:root body #page .mt-who > span { display: inline; font-size: 15px; }
+html.app-mock:root body #page .mt-sub { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
+html.app-mock:root body #page .mt-join { min-height: 30px; padding: 0 14px; font-size: 13px; white-space: nowrap; }
+html.app-mock:root body #page .mt-cancel { color: var(--apple-grey); font-size: 13px; font-weight: 500; }
+html.app-mock:root body #page .mt-cancel:hover { color: #c4291c; }
+html.app-mock:root body #page .mt-person { border-top-color: var(--apple-hair); }
+html.app-mock:root body #page .mt-person a { color: #1d1d1f; font-weight: 600; font-size: 15px; }
+html.app-mock:root body #page .mt-person span { color: var(--apple-grey); font-size: 13px; }
+html.app-mock:root body #page .mt-count { background: var(--apple-chip); color: #1d1d1f; font-weight: 600; }
+
+/* Interview guidelines */
+html.app-mock:root body #page .mt-guides { grid-template-columns: 318px minmax(0, 1fr); gap: 17px; }
+html.app-mock:root body #page .mt-unis { padding: 14px 8px 0; }
+html.app-mock:root body #page .mt-unis .p-input { width: calc(100% - 16px); margin: 0 8px 8px; min-height: 38px; border-radius: 10px; background: var(--apple-btn); box-shadow: none; }
+html.app-mock:root body #page .mt-seg { display: flex; padding: 3px; margin: 0 8px 10px; gap: 2px; border-radius: 11px; background: var(--apple-btn); }
+html.app-mock:root body #page .mt-seg button { flex: 1 1 auto; padding: 0 6px; min-height: 30px; border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font: 500 12px var(--font); white-space: nowrap; cursor: pointer; }
+html.app-mock:root body #page .mt-seg button[aria-pressed="true"] { background: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+html.app-mock:root body #page .mt-seg-n { margin-left: 4px; color: var(--apple-grey); font-weight: 500; }
+html.app-mock:root body #page .mt-uni-list { max-height: 620px; padding: 0 0 24px; margin-top: 0; }
+html.app-mock:root body #page .mt-uni-letter { position: sticky; top: 0; z-index: 1; padding: 12px 12px 4px; background: rgba(255, 255, 255, .92); color: var(--apple-grey); font-size: 12px; font-weight: 600; }
+html.app-mock:root body #page .mt-uni { min-height: 44px; padding: 6px 12px; border: 0; border-radius: 10px; font-size: 14px; font-weight: 500; color: #1d1d1f; }
+html.app-mock:root body #page .mt-uni:hover { background: #f5f5f7; }
+html.app-mock:root body #page .mt-uni.is-empty .mt-uni-name { color: #515154; font-weight: 400; }
+html.app-mock:root body #page .mt-uni.is-on { background: #e8e8ed; border: 0; }
+html.app-mock:root body #page .mt-uni.is-on .mt-uni-name { color: #1d1d1f; font-weight: 600; }
+html.app-mock:root body #page .mt-uni-n { min-width: 24px; padding: 2px 8px; border-radius: 6px; background: var(--apple-chip); color: #1d1d1f; font-size: 13px; font-weight: 600; text-align: center; }
+html.app-mock:root body #page .mt-uni.is-on .mt-uni-n { background: #fff; }
+html.app-mock:root body #page .mt-uni-card { padding: 26px 28px; }
+html.app-mock:root body #page .mt-uni-card h2 { font-size: 26px; line-height: 31px; font-weight: 700; letter-spacing: -.025em; }
+html.app-mock:root body #page .mt-list-head { padding-bottom: 18px; border-bottom: 1px solid var(--apple-hair); }
+html.app-mock:root body #page .mt-kind-head { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 10px; }
+html.app-mock:root body #page .mt-kind { margin: 0; color: #1d1d1f; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -.015em; text-transform: none; }
+html.app-mock:root body #page .mt-kind-add { border: 0; background: none; color: #0066cc; font: 500 14px var(--font); cursor: pointer; padding: 0; }
+html.app-mock:root body #page .mt-kind-none { margin: 0; padding: 12px 0 14px; border-top: 1px solid var(--apple-hair); color: #6e6e73; font-size: 14px; }
+html.app-mock:root body #page .mt-file { margin-top: 0; padding: 14px 0; border: 0; border-top: 1px solid var(--apple-hair); border-radius: 0; background: transparent; }
+html.app-mock:root body #page .mt-file-type { border: 0; border-radius: 8px; background: #f5f5f7; box-shadow: inset 0 0 0 1px var(--apple-hair); color: #1d1d1f; }
+html.app-mock:root body #page .mt-file-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+
+/* the window after a mock, and the other windows of the Mock Team */
+html.app-mock:root body dialog.p-dialog { border: 0; border-radius: 22px; background: #fff; box-shadow: 0 30px 80px rgba(0, 0, 0, .28), 0 0 0 .5px rgba(0, 0, 0, .08); overflow: hidden; }
+html.app-mock:root body dialog.p-dialog .p-dialog-head { border-bottom: 0; background: #fff; padding: 26px 32px 6px; }
+html.app-mock:root body dialog.p-dialog .p-dialog-head h2 { font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -.025em; }
+html.app-mock:root body dialog.p-dialog .p-dialog-body { padding: 8px 32px 0; }
+html.app-mock:root body dialog.p-dialog .p-dialog-foot { border-top: 1px solid var(--apple-hair); background: #f5f5f7; }
+html.app-mock:root body dialog.p-dialog .btn:not(.btn-primary) { outline: 0; background: var(--apple-btn); }
+html.app-mock:root body dialog.p-dialog .p-dialog-head button { border: 0; background: var(--apple-btn); border-radius: 50%; box-shadow: none; outline: 0; }
+html.app-mock:root body #page .mt-unis { padding: 14px 8px 0 !important; }

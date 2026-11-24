@@ -20,18 +20,20 @@
 (function () {
   const link = () => document.querySelector('link[data-apple]');
   window.NiecApple = {
-    on() {
+    on(kind) {
+      const mock = kind === 'mock';
       if (!link()) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
       document.documentElement.classList.add('app-apple');
-      try { localStorage.setItem('niecApple', '1'); } catch (e) { /* only the first draw may flash */ }
+      document.documentElement.classList.toggle('app-mock', mock); // the Mock Team's own touches in apple.css hang on this class, so the Application Team is never changed by them
+      try { localStorage.setItem('niecApple', mock ? 'mock' : '1'); } catch (e) { /* only the first draw may flash */ }
     },
     off() {
       const l = link(); if (l) l.remove();
-      document.documentElement.classList.remove('app-apple');
+      document.documentElement.classList.remove('app-apple', 'app-mock');
       try { localStorage.removeItem('niecApple'); } catch (e) { /* nothing kept */ }
     },
   };
-  try { if (localStorage.getItem('niecApple') === '1') window.NiecApple.on(); } catch (e) { /* not remembered */ }
+  try { const kept = localStorage.getItem('niecApple'); if (kept === '1') window.NiecApple.on(); else if (kept === 'mock') window.NiecApple.on('mock'); } catch (e) { /* not remembered */ }
 })();
 
 (function () {
@@ -206,10 +208,12 @@
   };
   function render(me) {
     const appOwn = ownTeamApplication(me);
-    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else window.NiecApple.off(); }
+    
     // All Students for the Application Team is a student list (the owner, 24 Nov 2026); the sheet is one switch away.
     const fuOwn = ownTeamFollowup(me);
     const mockOwn = ownTeamMock(me);
+    // The Apple look for the Application Team (the owner, 24 Nov 2026) and, the same look, the Mock Team (the owner, 24 Nov 2026).
+    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else window.NiecApple.off(); }
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
       : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
         : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));

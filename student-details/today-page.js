@@ -553,7 +553,7 @@
       b.addEventListener('click', () => { taskView = k; tagFilter = 'all'; refresh(); });
       seg.append(b);
     });
-    const F6 = !!(appSegSlot && todayData && todayData.appTeam); // Application Team only (design F6): the tabs go in the filter row, the search box up by the bell
+    const F6 = !!(appSegSlot && todayData && (todayData.appTeam || todayData.mockTeam)); // Application Team and, the same layout, the Mock Team (design F6): the tabs go in the filter row, the search box up by the bell
     if (appSegSlot && !F6) appSegSlot.replaceChildren(seg);
     const view = VIEWS.find((v) => v[0] === taskView);
     // The search box and the kinds, in one row.
@@ -613,7 +613,7 @@
       tile.addEventListener('click', () => { taskView = view2; tagFilter = 'all'; refresh(); });
       tiles.append(tile);
     });
-    if (todayData && todayData.appTeam) box.append(tiles); // the Application Team only: the Mock Team keeps its own Today
+    if (todayData && (todayData.appTeam || todayData.mockTeam)) box.append(tiles); // the Application Team and, the same four numbers, the Mock Team (the owner, 24 Nov 2026)
     box.append(bar);
     const list = (tagFilter === 'all' ? pool : pool.filter((x) => tagOf(x, x.stage) === tagFilter));
     if (!list.length) {

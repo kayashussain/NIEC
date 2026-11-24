@@ -75,6 +75,7 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.strictEqual(await page.locator('link[data-apple]').count(), 1, 'the Application Team loads the Apple stylesheet');
   assert.strictEqual(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(245, 245, 247)', 'the Apple canvas');
   assert.deepStrictEqual((await page.locator('.tda-tile .tda-tile-k').allInnerTexts()).map((x) => x.trim()), ['Late', 'Today', 'Later', 'Missing details'], 'four numbers at the top');
+  assert.strictEqual(await page.evaluate(() => document.documentElement.classList.contains('app-mock')), false, 'the Application Team never gets the Mock Team touches');
   assert.ok(await page.locator('.tda-date').innerText(), 'the day is shown');
   assert.deepStrictEqual((await page.locator('.tda-view').allInnerTexts()).map((x) => x.replace(/\s*\d+$/, '').replace(/\s+/g, ' ').trim()), ['Today', 'Later', 'Missing details'], 'the three tabs');
   assert.strictEqual(await page.locator('.tda-view[aria-selected="true"]').count(), 1);
@@ -224,10 +225,11 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await mockPage.goto('/today');
   await mockPage.waitForSelector('.tdx');
   assert.ok(await mockPage.locator('.tda-top').count(), 'the day and "Today" at the top, as the Application Team');
-  // ... and the Apple look is the Application Team's alone: no stylesheet and no four numbers for the Mock Team.
-  assert.strictEqual(await mockPage.locator('link[data-apple]').count(), 0, 'the Mock Team does not load the Apple stylesheet');
-  assert.strictEqual(await mockPage.locator('.tda-tile').count(), 0, 'no four numbers for the Mock Team');
-  assert.strictEqual(await mockPage.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(230, 230, 230)', 'the Mock Team keeps its canvas');
+  // ... and the Apple look is the Application Team's and, since 24 Nov 2026 (the owner), the Mock Team's, with the same four numbers.
+  assert.strictEqual(await mockPage.locator('link[data-apple]').count(), 1, 'the Mock Team loads the Apple stylesheet');
+  assert.strictEqual(await mockPage.evaluate(() => document.documentElement.classList.contains('app-mock')), true, 'the Mock Team is marked app-mock, so its own touches never reach the Application Team');
+  assert.deepStrictEqual((await mockPage.locator('.tda-tile .tda-tile-k').allInnerTexts()).map((x) => x.trim()), ['Late', 'Today', 'Later', 'Missing details'], 'the same four numbers');
+  assert.strictEqual(await mockPage.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(245, 245, 247)', 'the Mock Team has the Apple canvas');
   assert.strictEqual(await mockPage.locator('.td-hello').count(), 0, 'no greeting card');
   assert.ok(await mockPage.locator('.tda-row').count(), 'the rows in the same look');
   assert.match(await mockPage.locator('.tdy-hint').first().innerText(), /^No mock booked yet$/, 'what holds the student up, under the waiting time');

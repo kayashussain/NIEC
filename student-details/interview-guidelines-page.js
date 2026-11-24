@@ -19,6 +19,9 @@
     grid.append(listCard(), uniCard());
     view.replaceChildren(grid);
   }
+  // The Mock Team's page is the approved Apple design (24 Nov 2026); Admin and the Manager keep the page as it was.
+  const mockLook = () => document.documentElement.classList.contains('app-mock');
+  let only = 'all'; // all | has | none (the switch above the list, the owner approved it 24 Nov 2026)
   function listCard() {
     const card = el('section', 'p-card mt-unis');
     const search = h('input', { type: 'search', class: 'p-input', placeholder: 'Search a University', 'aria-label': 'Search a University', value: q });
@@ -26,21 +29,33 @@
     const fill = () => {
       list.replaceChildren();
       const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-      const shown = data.universities.filter((u) => words.every((w) => u.name.toLowerCase().includes(w)));
+      const shown = data.universities.filter((u) => words.every((w) => u.name.toLowerCase().includes(w)) && (!mockLook() || only === 'all' || (only === 'has') === Boolean(filesOf(u.name).length)));
+      let letter = '';
       shown.forEach((u) => {
         const n = filesOf(u.name).length;
-        list.append(h('button', { type: 'button', class: `mt-uni${u.name === chosen ? ' is-on' : ''}`, 'aria-pressed': String(u.name === chosen), onclick: () => { chosen = u.name; draw(); } },
-          el('span', 'mt-uni-name', u.name), el('span', `mt-uni-n${n ? '' : ' is-none'}`, n ? String(n) : 'none yet')));
+        const l = u.name.replace(/^University of /i, '').charAt(0).toUpperCase();
+        if (mockLook() && l !== letter) { letter = l; list.append(el('div', 'mt-uni-letter', l)); }
+        list.append(h('button', { type: 'button', class: `mt-uni${u.name === chosen ? ' is-on' : ''}${n ? '' : ' is-empty'}`, 'aria-pressed': String(u.name === chosen), onclick: () => { chosen = u.name; draw(); } },
+          el('span', 'mt-uni-name', u.name), n ? el('span', 'mt-uni-n', String(n)) : (mockLook() ? '' : el('span', 'mt-uni-n is-none', 'none yet'))));
       });
       if (!shown.length) list.append(el('p', 'mt-empty', 'No University has that name.'));
     };
     search.addEventListener('input', () => { q = search.value; fill(); });
     fill();
-    const count = el('p', 'mt-hint');
-    const say = () => { const n = list.querySelectorAll('.mt-uni').length; count.textContent = q.trim() ? `${n} of ${data.universities.length} Universities` : `${data.universities.length} Universities, from your Universities list`; };
-    search.addEventListener('input', say);
-    say();
-    card.append(search, count, list);
+    const withN = data.universities.filter((u) => filesOf(u.name).length).length;
+    const seg = el('div', 'mt-seg');
+    [['all', 'All', data.universities.length], ['has', 'With guidelines', withN], ['none', 'None yet', data.universities.length - withN]].forEach(([k, label, n]) => {
+      const b = h('button', { type: 'button', 'aria-pressed': String(only === k) }, label, el('span', 'mt-seg-n', String(n)));
+      b.addEventListener('click', () => { only = k; draw(); });
+      seg.append(b);
+    });
+    if (mockLook()) card.append(seg, search, list);
+    else {
+      const count = el('p', 'mt-hint');
+      const say = () => { const n = list.querySelectorAll('.mt-uni').length; count.textContent = q.trim() ? `${n} of ${data.universities.length} Universities` : `${data.universities.length} Universities, from your Universities list`; };
+      search.addEventListener('input', say); say();
+      card.append(search, count, list);
+    }
     return card;
   }
   function uniCard() {
@@ -60,8 +75,14 @@
     }
     data.kinds.forEach((kind) => {
       const mine = files.filter((f) => f.kind === kind);
-      if (!mine.length) return;
-      card.append(el('h3', 'mt-kind', kind));
+      const head2 = el('div', 'mt-kind-head');
+      head2.append(el('h3', 'mt-kind', kind));
+      if (!mockLook() && !mine.length) return;
+      if (!mine.length && data.canUpload) {
+        head2.append(h('button', { type: 'button', class: 'mt-kind-add', onclick: () => { const form = card.querySelector('.mt-upload'); if (form) { form.hidden = false; const sel = form.querySelector('select'); sel.value = kind; sel.focus(); } } }, 'Add'));
+      }
+      card.append(head2);
+      if (!mine.length) card.append(el('p', 'mt-kind-none', 'None yet'));
       mine.forEach((f) => card.append(fileRow(f)));
     });
     return card;
@@ -119,5 +140,6 @@
       draw();
     } catch (e) { $('view').replaceChildren(el('p', 'p-msg error', e.message)); }
   }
+  new MutationObserver(() => { if (data) draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   load();
 })();
