@@ -353,3 +353,10 @@ html:root body .topbar .btn:not(.btn-primary), html:root body .topbar .toolbar-g
 html:root body .topbar .btn:disabled { color: #6e6e73 !important; background: transparent !important; }
 html:root body .topbar input[type="search"], html:root body .topbar input#search, html:root body .topbar .search-box input { border: 0 !important; border-radius: 10px !important; background: var(--apple-btn) !important; box-shadow: none !important; }
 html:root body table#sheet thead th, html:root body table#sheet thead th * { text-transform: none !important; letter-spacing: 0 !important; font-weight: 600; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Application Team pages | from: content ran across the whole screen (about 1170px on a 1366px laptop), looked wide and flat | to: a centred column like the design, about 1080px, the search box a fixed comfortable width */
+html:root body .p-page, html:root body .page { max-width: 1080px; margin-left: auto; margin-right: auto; }
+html:root body .p-page.bp-page, html:root body .p-page.pu-page, html:root body .p-page.ev-page { max-width: 1080px; }
+html:root body .as-wrap:not(.is-slim) { max-width: 1080px; margin-left: auto; margin-right: auto; }
+html:root body .tda-page .tdy-search, html:root body .tda-page input[type="search"] { max-width: 420px; }
+html:root body .as-search { max-width: 440px; }

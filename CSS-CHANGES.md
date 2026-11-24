@@ -1,4 +1,5 @@
 # CSS change log
+- 2026-11-24 | shared/apple.css | Application Team pages: content centred in a column of about 1080px (was full screen width), search boxes capped at 420-440px | from: wide and flat on a 1366px laptop | to: like the design | why: owner said the live site looked widened.
 
 Every time the look of the site is changed through CSS, a line is added here (newest first), the change is marked in the
 code with a comment that starts with `🔴 CSS CHANGED`, and the owner is told at the top of the reply. See `CLAUDE.md`.
