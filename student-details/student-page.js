@@ -1112,6 +1112,51 @@
     if (saved) refreshCard();
   }
 
+  // Add an application that was made outside the portal (the owner, 17 and 24 Nov 2026: the + beside "Universities applied to"): the
+  // university, the course and the partner it went through, the day it was submitted and, if it is known, the answer. It is kept in
+  // University options like any other application, so Update, the Priority University and the timeline work on it the same way.
+  async function addApplication() {
+    const todayIso = data.today || new Date().toISOString().slice(0, 10);
+    const saved = await dialog('Add an application', (body, close) => {
+      const form = el('div', 'p-form');
+      const uniF = field('University', { value: '', max: 160, required: true, wide: true, placeholder: 'The university the student applied to' });
+      const courseF = field('Course', { value: '', max: 240, wide: true, placeholder: 'The course applied for' });
+      const partners = (lists && lists.partners) || [];
+      const partnerF = field('University partner', { kind: 'select', choices: [['', 'None'], ['Direct', 'Direct'], ...partners.map((n) => [n, n])], value: '', wide: true });
+      const applied = field('Application submitted on', { kind: 'date', value: '' });
+      const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: '', wide: true });
+      const when2 = field('Day of the answer', { kind: 'date', value: '' });
+      const reason = field('Reason', { wide: true, max: 300, value: '', placeholder: 'e.g. Grades below the entry requirement, course full' });
+      [applied, when2].forEach((f) => { f.input.max = todayIso; });
+      const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; };
+      result.input.addEventListener('change', show);
+      show();
+      form.append(uniF.wrap, courseF.wrap, partnerF.wrap, applied.wrap, result.wrap, when2.wrap, reason.wrap);
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Save');
+      ok.addEventListener('click', async () => {
+        const r = result.input.value; const d = when2.input.value; const a = applied.input.value;
+        const fail = (t) => { msg.textContent = t; msg.className = 'p-msg error'; };
+        if (!uniF.input.value.trim()) return fail('Write the university.');
+        if (r !== 'skipped' && !a) return fail('Fill in the day the application was submitted.');
+        if (r && !d) return fail('Fill in the day of the answer.');
+        if (a && d && d < a) return fail('The answer cannot come before the application was submitted.');
+        if (WITH_REASON.includes(r) && reason.input.value.trim().length < 8) return fail('Write the reason in a few words (at least 8 letters), for example: grades below the entry requirement.');
+        ok.disabled = true;
+        const offer = ['offer', 'Conditional', 'Unconditional'].includes(r);
+        try {
+          await save('options', { university: uniF.input.value.trim(), course: courseF.input.value.trim(), partner: partnerF.input.value, applied: r === 'skipped' ? '' : a, offer: offer ? d : '', offerType: offer && r !== 'offer' ? r : '', refused: r === 'refused' ? d : '', withdrawn: r === 'withdrawn' ? d : '', skipped: r === 'skipped' ? d : '', reason: WITH_REASON.includes(r) ? reason.input.value.trim() : '', note: 'Added by hand: applied outside the portal' }, 'Application added');
+          close({ a });
+        } catch (e) { fail(e.message); ok.disabled = false; }
+      });
+      foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
+      body.append(form, msg, foot);
+      setTimeout(() => uniF.input.focus(), 60);
+    });
+    if (saved) refreshCard();
+  }
+
   // The application the student goes ahead with: the one whose university (and course) All Students names.
   const squashName = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   function isGoingAhead(o) {
@@ -1173,8 +1218,10 @@
     const box = el('section', 'p-card');
     const offers = apps.filter((o) => o.offer).length;
     const submitted = apps.filter((o) => o.applied).length;
-    { const t = el('h2', '', 'Universities applied to'); t.append(el('span', 'sc-tl-count', String(apps.length))); box.append(t); }
-    if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses above and press "Assign to the Application Team".')); return box; }
+    { const head = el('div', 'p-card-head'); const t = el('h2', '', 'Universities applied to'); t.append(el('span', 'sc-tl-count', String(apps.length))); head.append(t);
+      if (can()) head.append(h('button', { class: 'btn btn-sm lg-add-app', type: 'button', title: 'Add an application made outside the portal', onclick: () => addApplication() }, '+ Add application'));
+      box.append(head); }
+    if (!apps.length) { box.append(el('p', 'p-muted', 'Nothing assigned yet. Find courses above and press "Assign to the Application Team", or press + Add application for one made outside the portal.')); return box; }
     const waitingTeam = apps.filter((o) => o.sent && !o.applied && !o.skipped && !o.withdrawn).length;
     box.append(el('p', 'p-apps-summary', [`${submitted} submitted`, `${offers} ${offers === 1 ? 'offer' : 'offers'}`, waitingTeam ? `${waitingTeam} with the Application Team` : ''].filter(Boolean).join(' · ')));
     // The priority university (the owner, 17 Nov 2026): chosen here from the applications; it writes the university and course

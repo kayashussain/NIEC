@@ -261,6 +261,24 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(await mockPage.locator('.tdy-missrow, .tda-clear').count(), 'Missing details in the same look');
   assert.deepStrictEqual(mockErrors, []);
 
+  // The + beside "Universities applied to" adds an application made outside the portal (the owner, 24 Nov 2026).
+  const addPage = await asha.newPage();
+  const addErrors = []; addPage.on('pageerror', (e) => addErrors.push(e.message));
+  await addPage.goto('/student?id=' + id);
+  await addPage.waitForSelector('.lg-apps');
+  await addPage.getByRole('button', { name: '+ Add application' }).click();
+  await addPage.locator('dialog[open]').waitFor();
+  await addPage.locator('dialog[open] input').first().fill('Outside University');
+  await addPage.locator('dialog[open] input').nth(1).fill('BSc Outside Course');
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  await addPage.locator('dialog[open] input[type="date"]').first().fill(yesterday);
+  await addPage.locator('dialog[open]').getByRole('button', { name: 'Save', exact: true }).click();
+  await addPage.locator('dialog[open]').waitFor({ state: 'detached' });
+  const afterAdd = await (await asha.request.get('/api/cards/' + id)).json();
+  assert.ok(afterAdd.card.options.some((o) => o.university === 'Outside University' && o.course === 'BSc Outside Course' && o.applied === yesterday), 'the application made outside the portal is kept on the card');
+  assert.deepStrictEqual(addErrors, []);
+  await addPage.close();
+
   // Admin's Today is as it was.
   const adminPage = await admin.newPage();
   await adminPage.goto('/today');
