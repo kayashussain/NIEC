@@ -93,3 +93,5 @@ html, body { margin: 0; }
 }
 /* 🔴 CSS CHANGED (2026-11-24): the student's booking page, the line "Times are in Nepal time." | from: tight against the line below it | to: a little space around it */
 .bk-tz { margin: 14px 0 10px; }
+/* 🔴 CSS CHANGED (2026-11-24): the student's booking page, a very long name | from: a long "With" name ran out of its grey box on a phone | to: long words break so they stay inside */
+.bk-facts dd { overflow-wrap: anywhere; }

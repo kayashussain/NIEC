@@ -177,6 +177,7 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       const p = { ...blankPerson(), ...(data.people[ownerId] || {}) };
       const teams = cleanTeamsLink(input.teams);
       if (teams === null) return { error: 'Paste the Microsoft Teams meeting link as Teams gives it (it starts with https://teams.microsoft.com or https://teams.live.com).' };
+      if (!teams) return { error: 'Paste your Teams meeting link.' }; // an empty link would close the students' page and take the Join links off every booking
       const slug = text(input.slug, 40).toLowerCase();
       if (!SLUG.test(slug)) return { error: 'The link name can have small letters, numbers and hyphens, 3 to 40 of them.' };
       if (Object.entries(data.people).some(([id, x]) => id !== ownerId && x && x.slug === slug)) return { error: 'That link name is taken. Choose another one.' };
@@ -197,6 +198,7 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       const p = { ...blankPerson(), ...(data.people[ownerId] || {}) };
       const minutes = Number(input.minutes);
       if (!MINUTES.includes(minutes)) return { error: 'Choose how long each mock lasts.' };
+      if (!input.weekly || typeof input.weekly !== 'object') return { error: 'The weekly slots are missing.' }; // a call without them must not wipe the week
       const weekly = {};
       for (let d = 0; d < 7; d += 1) {
         const w = cleanWindows((input.weekly || {})[String(d)] || []);
@@ -207,7 +209,8 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       const dates = {};
       const today = nowParts().day;
       for (const [day, list] of Object.entries(input.dates || {}).slice(0, MAX_DATES)) {
-        if (!DAY.test(day)) return { error: 'One of the dates is not a real date.' };
+        const real = new Date(`${day}T12:00:00Z`);
+        if (!DAY.test(day) || Number.isNaN(real.getTime()) || real.toISOString().slice(0, 10) !== day) return { error: 'One of the dates is not a real date.' };
         if (day < today) continue; // a date that has passed is let go
         const w = cleanWindows(list || []);
         if (w === null) return { error: `A slot on ${niceDay(day)} is not right: each slot needs a start and an end after it.` };

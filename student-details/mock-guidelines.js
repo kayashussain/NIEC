@@ -16,7 +16,8 @@ const KINDS = ['Credibility interview guidelines', 'UKVI interview guidelines', 
 const SOURCES = ['From the University', 'From a student'];
 const MAX_FILES = 2000;
 const text = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
-const fileName = (v) => String(v || '').replace(/[\\/\u0000-\u001f‎‏‪-‮⁦-⁩]/g, '').replace(/^\.+/, '').trim().slice(0, 120);
+const fileName = (v) => String(v || '').replace(/[\\/\u0000-\u001f‎‏‪-‮⁦-⁩]/g, '').replace(/^\.+/, '').trim();
+const shortName = (v) => { const s = fileName(v); if (s.length <= 120) return s; const ext = path.extname(s); return s.slice(0, 120 - ext.length) + ext; }; // a long name keeps its .pdf
 const newId = () => crypto.randomBytes(6).toString('hex');
 
 function createMockGuidelines(dir, { now = () => new Date() } = {}) {
@@ -54,7 +55,7 @@ function createMockGuidelines(dir, { now = () => new Date() } = {}) {
       if (!uni) return { error: 'Choose the University first.' };
       if (!KINDS.includes(kind)) return { error: 'Choose the kind of guideline.' };
       if (!SOURCES.includes(source)) return { error: 'Choose where it came from.' };
-      const shown = fileName(name);
+      const shown = shortName(name);
       const ext = path.extname(shown).toLowerCase();
       if (!shown || !Object.prototype.hasOwnProperty.call(FILE_TYPES, ext)) return { error: 'Please upload a PDF, Word document (.doc, .docx) or a picture (.png, .jpg).' };
       if (!bytes || !bytes.length) return { error: 'That file is empty.' };

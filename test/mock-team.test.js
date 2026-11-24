@@ -98,7 +98,8 @@ test('bookings: free slots, booking, the mock number, cancelling, reminders and 
 test('interview guidelines: only real files of the right kinds, kept under their own id', () => {
   const dir = tmp('isr-guides-');
   const G = createMockGuidelines(dir);
-  const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(100, 32)]);
+  const pdfBytes = () => Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(100, 32)]);
+  const pdf = pdfBytes();
   assert.match(G.add({ university: 'Test University', kind: 'Credibility interview guidelines', source: 'From the University', name: 'a.pdf', bytes: Buffer.from('not a pdf') }).error, /not really/);
   assert.match(G.add({ university: 'Test University', kind: 'Anything', source: 'From the University', name: 'a.pdf', bytes: pdf }).error, /kind/);
   assert.match(G.add({ university: 'Test University', kind: 'Other', source: 'From the University', name: 'a.exe', bytes: pdf }).error, /PDF/);
@@ -257,13 +258,16 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
 
   // Interview guidelines: the Mock Team uploads, anyone with access downloads; a renamed file is refused.
   const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(100, 32)]);
-  const q = new URLSearchParams({ university: 'Test University', kind: 'Interview questions', source: 'From a student', title: 'Questions', name: 'q.pdf' });
+  const uniName = (await mock('GET', '/api/guidelines')).json.universities[0].name; // a University that is in the list
+  const phantom = new URLSearchParams({ university: 'A University that does not exist anywhere', kind: 'Interview questions', source: 'From a student', title: 'Questions', name: 'q.pdf' });
+  assert.strictEqual((await mock('POST', `/api/guidelines?${phantom}`, pdf)).status, 400, 'only a University from the list');
+  const q = new URLSearchParams({ university: uniName, kind: 'Interview questions', source: 'From a student', title: 'Questions', name: 'q.pdf' });
   assert.strictEqual((await mock('POST', `/api/guidelines?${q}`, Buffer.from('MZ fake'))).status, 400);
   const up = await mock('POST', `/api/guidelines?${q}`, pdf);
   assert.strictEqual(up.status, 200, JSON.stringify(up.json));
   const list = (await mock('GET', '/api/guidelines')).json;
   assert.strictEqual(list.files.length, 1);
-  assert.ok(list.universities.some((u) => u.name === 'Test University' && u.count === 1));
+  assert.ok(list.universities.some((u) => u.name === uniName && u.count === 1));
   const got = await mock('GET', `/api/guidelines/${up.json.file.id}`, undefined, true);
   assert.strictEqual(got.status, 200);
   assert.ok(got.body.subarray(0, 5).equals(Buffer.from('%PDF-')));
