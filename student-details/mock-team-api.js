@@ -50,7 +50,15 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       || [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !fb(n))
       || [1, 2, 3, 4].find((n) => !text(row[`MOCK SCHEDULE ${n}`])) || 0;
   }
-  function matchStudent(email) {
+  // Anyone can type any email, so the email alone must not tie a booking to a student's card (it would take that student's next mock
+  // number and drop them from the lists): the name typed on the booking page must also share a word with the name on the card. A student
+  // who writes a different name is booked as not matched, and the Mock person picks the student in the window after the mock.
+  const words = (v) => text(v).toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 2);
+  function nameFits(typed, row) {
+    const card = new Set(words(`${row['FIRST NAME'] || ''} ${row['LAST NAME'] || ''}`));
+    return words(typed).some((w) => card.has(w));
+  }
+  function matchStudent(email, _phone, name) {
     const e = text(email).toLowerCase();
     if (!e) return null;
     const wb = portal.rowIndex();
@@ -58,6 +66,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const intake = Teams.newestSheet([...sheets].filter((x) => !x.hidden));
     for (const { sheet, row } of wb.values()) {
       if (!row || !row._id || sheet !== intake || text(row[STATUS]) !== 'Mock Stage' || text(row.EMAIL).toLowerCase() !== e) continue;
+      if (!nameFits(name, row)) return null;
       const n = slotFor(row);
       if (!n) return null;
       return { rowId: row._id, mock: n, university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']) };
@@ -128,7 +137,8 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   async function tick() {
     for (const { booking, kind } of bookings.dueReminders()) {
       bookings.markSent(booking.id, kind); // marked first: a reminder is never sent twice, even when the mailbox is slow
-      await emailStudent(booking, kind);
+      // A send that failed (the mailbox was down for a moment) is tried again at the next round; "not set up" is not retried.
+      if ((await emailStudent(booking, kind)) === 'failed') bookings.markSent(booking.id, kind, false);
     }
   }
 

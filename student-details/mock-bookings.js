@@ -222,7 +222,7 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       return { person: p };
     },
     freeSlots,
-    // A student books a slot. `match(email, phone)` finds the student ({ rowId, mock, university, course } or null; mock 0 when all
+    // A student books a slot. `match(email, phone, name)` finds the student ({ rowId, mock, university, course } or null; mock 0 when all
     // four mocks are held). Returns { booking } or { error }.
     book(ownerId, input, match, siteUrl) {
       const p = person(ownerId);
@@ -239,7 +239,7 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       const free = freeSlots(ownerId, input.except || '');
       if (!DAY.test(day) || !free.days.some((d) => d.day === day && d.times.some((t) => t.time === time))) return { error: 'That time is no longer free. Please pick another one.' };
       const data = load();
-      const m = match(email, phone) || null;
+      const m = match(email, phone, name) || null;
       const found = m && m.mock ? m : null; // all four held: booked as not matched (the page never says why)
       // Two bookings of the same student waiting at once: the second takes the next number.
       const waiting = found ? data.bookings.filter((b) => b.rowId === found.rowId && b.status === 'booked' && !b.answer && b.id !== input.except).map((b) => b.mock) : [];
@@ -295,12 +295,12 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       write({ ...data, bookings });
       return { booking: bookings[i] };
     },
-    markSent(id, key) {
+    markSent(id, key, value = true) {
       const data = load();
       const i = data.bookings.findIndex((b) => b.id === id);
       if (i === -1) return;
       const bookings = [...data.bookings];
-      bookings[i] = { ...bookings[i], sent: { ...(bookings[i].sent || {}), [key]: true } };
+      bookings[i] = { ...bookings[i], sent: { ...(bookings[i].sent || {}), [key]: value } };
       write({ ...data, bookings });
     },
     // Reminders that are due now: [{ booking, kind: 'dayBefore' | 'hourBefore' }].

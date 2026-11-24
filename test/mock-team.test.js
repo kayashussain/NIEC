@@ -284,7 +284,17 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   // A burst of parallel bookings from one address cannot get past the hourly limit (the place is held before the body is read, so
   // sending them all at once does not help), and the ones that were turned away are told so.
   const openSlots = (await (await fetch(base + '/api/book/bikram')).json()).days.flatMap((d) => d.times.map((x) => [d.day, x.time]));
-  assert.ok(openSlots.length >= 40, 'enough free slots for the test');
+  assert.ok(openSlots.length >= 42, 'enough free slots for the test');
+  // Anyone can type any email: a name that does not fit the card does not tie the booking to that student; the right name does.
+  const ramBook = (name, [day, time]) => fetch(base + '/api/book/bikram', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ day, time, name, email: 'ram@example.com', phone: '' }),
+  }).then((r) => r.status);
+  assert.strictEqual(await ramBook('Totally Different', openSlots[40]), 200);
+  let upcoming = (await mock('GET', '/api/bookings')).json.upcoming;
+  assert.ok(!upcoming.find((b) => b.name === 'Totally Different').rowId, 'a name that does not fit the card is not matched');
+  assert.strictEqual(await ramBook('Ram Example', openSlots[41]), 200);
+  upcoming = (await mock('GET', '/api/bookings')).json.upcoming;
+  assert.strictEqual(upcoming.find((b) => b.name === 'Ram Example').rowId, 'r2', 'the right name is matched');
   const burst = await Promise.all(openSlots.slice(0, 40).map(([day, time], i) => fetch(base + '/api/book/bikram', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ day, time, name: 'Burst Tester', email: `burst${i}@example.com`, phone: '' }),
   }).then((r) => r.status)));
