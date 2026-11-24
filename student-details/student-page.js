@@ -480,7 +480,13 @@
     // and the Pre-CAS result is Passed, Fail or No result yet. Only the display changes: what is edited and saved is the same.
     const todayIso = (data && data.today) || new Date().toISOString().slice(0, 10);
     const inMock = String((data.student && data.student.stage) || '') === 'Mock Stage';
-    const rows = [1, 2, 3, 4].map((n) => ({ n, d: isoDay(r[`MOCK SCHEDULE ${n}`]), raw: String(r[`MOCK SCHEDULE ${n}`] || '').trim(), fb: String(r[`FEEDBACK ${n}`] || '').trim() }));
+    // The booking of each mock (its time, who takes it, the answer after it) comes from Bookings, read only.
+    const info = Array.isArray(data.mockInfo) ? data.mockInfo : [];
+    const rows = [1, 2, 3, 4].map((n) => {
+      const d0 = isoDay(r[`MOCK SCHEDULE ${n}`]);
+      const b = info.find((x) => x.mock === n) || (d0 ? info.find((x) => x.day === d0 && !x.mock) : null) || null;
+      return { n, d: d0 || (b && isoDay(b.day)) || '', raw: String(r[`MOCK SCHEDULE ${n}`] || '').trim(), fb: String(r[`FEEDBACK ${n}`] || '').trim(), b };
+    });
     const nextOpen = rows.find((m) => !m.d && !m.raw && !m.fb);
     const done = rows.filter((m) => m.fb).length;
     const title = head.querySelector('h2');
@@ -498,9 +504,17 @@
       const body = el('div', 'lg-mock-body');
       const top = el('div', 'lg-mock-top');
       top.append(el('span', `lg-mock-chip ${chip[1]}`.trim(), chip[0]));
-      if (m.d || m.raw) top.append(el('span', 'lg-mock-day', m.d ? day(m.d) : m.raw));
+      if (m.d || m.raw) top.append(el('span', 'lg-mock-day', `${m.d ? day(m.d) : m.raw}${m.b && m.b.time ? `, ${m.b.time}` : ''}`));
       body.append(top);
       if (m.fb) body.append(el('div', 'lg-mock-fb', m.fb));
+      if (m.b) {
+        const a = m.b.answer;
+        const bits = [];
+        if (a && a.joined === false) bits.push('Did not join');
+        else if (a) { if (a.by || m.b.by) bits.push(`Taken by ${a.by || m.b.by}`); if (/^ready/i.test(a.result)) bits.push('Ready for the final interview'); else if (/^again/i.test(a.result)) bits.push('Needs another mock'); }
+        else if (m.b.by) bits.push(`With ${m.b.by}`);
+        if (bits.length) body.append(el('div', 'lg-mock-who', bits.join(' · ')));
+      }
       row.append(body);
       wrap.append(row);
     });

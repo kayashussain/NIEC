@@ -207,6 +207,8 @@
   function render(me) {
     const appOwn = ownTeamApplication(me);
     if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else window.NiecApple.off(); }
+    // All Students for the Application Team is a student list (the owner, 24 Nov 2026); the sheet is one switch away.
+    if (appOwn && header.dataset.page === 'sheet' && !document.querySelector('script[data-apple-students]')) { const sc = document.createElement('script'); sc.src = '/apple-students.js'; sc.setAttribute('data-apple-students', '1'); document.body.append(sc); }
     const fuOwn = ownTeamFollowup(me);
     const mockOwn = ownTeamMock(me);
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]

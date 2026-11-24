@@ -595,3 +595,4 @@ html body .lg-mock-chip.is-done { background: #e3f5e8; color: #1a7f37; }
 html body .lg-mock-chip.is-late { background: #fff1e5; color: #b25000; }
 html body .lg-mock-chip.is-booked { background: #e8f1fd; color: #0058b8; }
 html body .lg-mock-chip.is-fail { background: #ffe9e7; color: #c4291c; }
+html body .lg-mock-who { margin-top: 4px; color: #333; font-size: 13px; }

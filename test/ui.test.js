@@ -51,6 +51,9 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
   const made = await admin.request.post('/api/users', { data: { username: 'asha', name: 'Asha Team', email: '', departments: ['application'] } });
   const temp = (await made.json()).temporaryPassword;
   const team = await browser.newContext({ baseURL: base });
+  // The Application Team's All Students is a student list with the sheet one switch away (the owner, 24 Nov 2026): these tests work on
+  // the sheet, so this browser has the sheet chosen (the list itself is tested in today-application-ui.test.js).
+  await team.addInitScript(() => { try { localStorage.setItem('niecAppleStudentsView', 'sheet'); } catch (e) { /* none */ } });
   assert.ok((await team.request.post('/api/login', { data: { username: 'asha', password: temp } })).ok());
   assert.ok((await team.request.post('/api/login/new-password', { data: { password: 'Team-Strong-2026' } })).ok());
   const rowCount = async () => (await (await admin.request.get('/api/data')).json()).sheets[0].rows.length;

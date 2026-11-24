@@ -1407,6 +1407,46 @@ function createPortalApi({
   // team"), so a person in the Application Team with Mock Team access has the Application Team's Today and dashboard.
   const homeKind = (user) => (user && user.taskTeam && teamsOf(user).includes(user.taskTeam) && !Teams.isManager(user) ? Teams.kindOf({ ...user, departments: [user.taskTeam] }) : Teams.kindOf(user));
   // `perList`: how many students each list carries (Today shows 6; the team's Dashboard opens them all with "+N more").
+  // The student list behind All Students for the Application Team (read only): the same students the sheet shows this account, with the
+  // applications of each (the day and what happened), the next open task for the team and the number of missing details.
+  function studentsOverview(user) {
+    const all = cards.all();
+    const today = cards.today();
+    const dayNo = (iso) => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
+    const now = dayNo(today);
+    const missingBy = new Map((todayFor(user).missing || []).map((m) => [m.id, (m.lines || []).reduce((n, l) => n + ((l.items && l.items.length) || 1), 0)]));
+    const students = [];
+    for (const found of rowIndex().values()) {
+      const row = found.row;
+      if (!isStudent(row) || !canSee(user, found)) continue;
+      const c = all[row._id] || { options: [], tasks: [] };
+      const apps = (c.options || []).filter((o) => o.sent || o.applied || o.offer || o.refused || o.withdrawn || o.skipped).map((o) => {
+        let kind = 'wait'; let label = 'To apply'; let at = o.sent || '';
+        if (o.refused) { kind = 'no'; label = 'Refused'; at = o.refused; }
+        else if (o.withdrawn) { kind = 'no'; label = 'Withdrawn'; at = o.withdrawn; }
+        else if (o.skipped) { kind = 'no'; label = 'Not submitted'; at = o.skipped; }
+        else if (o.offer) { kind = 'ok'; label = `${o.offerType ? `${o.offerType} offer` : 'Offer'}`; at = o.offer; }
+        else if (o.applied) { kind = 'sent'; label = 'Applied'; at = o.applied; }
+        return { university: o.university, course: o.course || '', kind, label, at, reason: o.skipped || o.refused || o.withdrawn ? text(o.reason).slice(0, 120) : '' };
+      }).slice(0, 6);
+      // A student recorded before the days were kept per university: the university and days on All Students are the application.
+      if (!apps.length && text(row['UNIVERSITY NAME'])) {
+        const applied = isoDate(row['APPLICATION SUBMISSION DATE']); const offer = isoDate(row['OFFER RECEIVED DATE']);
+        apps.push({ university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']), kind: offer ? 'ok' : applied ? 'sent' : 'wait', label: offer ? 'Offer' : applied ? 'Applied' : 'To apply', at: offer || applied || '', reason: '' });
+      }
+      const open = (c.tasks || []).filter((t) => !t.done && forMe(user, t)).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+      const t = open[0];
+      const waiting = t ? Math.max(0, now - dayNo(String(t.at || today).slice(0, 10))) : 0;
+      students.push({
+        id: row._id, name: nameOf(row), intake: found.sheet.name, stage: text(row[STATUS]), apps,
+        next: t ? { text: text(t.text).slice(0, 140), days: waiting, later: Boolean(t.doOn && t.doOn > today), doOn: t.doOn || '' } : null,
+        missing: missingBy.get(row._id) || 0,
+      });
+    }
+    // The longest waiting first, then the rest by name.
+    students.sort((a, b) => (b.next ? b.next.days : -1) - (a.next ? a.next.days : -1) || a.name.localeCompare(b.name));
+    return { today, students: students.slice(0, 1500) };
+  }
   function todayFor(user, { perList = 6 } = {}) {
     const all = cards.all();
     const today = cards.today();
@@ -1844,6 +1884,8 @@ function createPortalApi({
           // Each option with its fee, scholarship, deposit and course page from Universities when the option has none of its own.
           card: { ...card, options: (card.options || []).map(withFacts) },
           checks: checksOf(found.row, card),
+          // The mock bookings of this student (day, time, who takes it, the answer), for the Mock interviews box: read only.
+          mockInfo: (() => { try { const mt = mockTeam(); return mt && mt.forRow ? mt.forRow(found.row._id) : []; } catch (e) { return []; } })(),
           can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), cols: editable ? Object.keys(CARD_EDITABLE).filter((c) => Teams.canEdit(req.user, c, found.row)) : [], assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
           taskTeams: TASK_TEAMS(),
           handTeams: handTeamsFor(req.user),
@@ -3511,6 +3553,13 @@ function createPortalApi({
       return true;
     }
     if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user) }); return true; }
+    // All Students as a student list (the Application Team's Apple look, the owner, 24 Nov 2026): read only, the students the account
+    // already sees on the sheet, with where each application stands, the next task for the team and how many details are missing.
+    if (urlPath === '/api/students-overview' && req.method === 'GET') {
+      if (!Teams.ownTeamApplication(req.user)) { sendJSON(res, 403, { error: 'This list is for the Application Team.' }); return true; }
+      sendJSON(res, 200, studentsOverview(req.user));
+      return true;
+    }
     if (urlPath === '/api/activities' && req.method === 'GET') {
       if (!managers(req, res, 'Events and marketing')) return true;
       const { list, unlinkedSocial, unlinkedByIntake } = activities(req.user);
