@@ -253,7 +253,14 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
         status: 'booked', at: now().toISOString(), siteUrl: text(siteUrl, 200), answer: null,
         sent: { dayBefore: left < 24 * 3600000, hourBefore: left < 3600000 },
       };
-      const bookings = [...data.bookings.filter((x) => x.status === 'booked' || Date.parse(x.at) > now().getTime() - 400 * 86400000), b].slice(-MAX_BOOKINGS);
+      // Old rows go after 400 days. If the file is still over the limit, the oldest cancelled ones go first, then the oldest answered ones;
+      // a booking that is still waiting for its answer is never dropped (a flood of bookings must not erase a real student's).
+      let bookings = [...data.bookings.filter((x) => x.status === 'booked' || Date.parse(x.at) > now().getTime() - 400 * 86400000), b];
+      for (const drops of [(x) => x.status !== 'booked', (x) => x.status === 'booked' && x.answer]) {
+        let over = bookings.length - MAX_BOOKINGS;
+        if (over <= 0) break;
+        bookings = bookings.filter((x) => { if (over > 0 && x !== b && drops(x)) { over -= 1; return false; } return true; });
+      }
       write({ ...data, bookings });
       return { booking: b, person: p };
     },

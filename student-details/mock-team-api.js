@@ -233,17 +233,18 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   const tries = new Map(); // ip -> [times]
   // Only bookings, moves and cancels that went through are counted, 20 an hour from one address (the per-email limit stops the rest):
   // behind a second proxy many students may share one address, and a typing mistake must never lock them out.
-  function tooMany(req, max = 20) {
+  // The place is held at once, before the body is read (a burst of parallel requests used to all pass, because nothing was counted until
+  // each one had been booked), and given back when the request does not go through (a typing mistake never uses up the hour).
+  // Returns the function that gives the place back, or null when the address has used its 20.
+  function hit(req, max = 20) {
     const ip = clientIp(req) || 'unknown';
     const t = Date.now();
     const list = (tries.get(ip) || []).filter((x) => t - x < 3600000);
+    if (list.length >= max) { tries.set(ip, list); return null; }
+    list.push(t);
     tries.set(ip, list);
-    return list.length >= max;
-  }
-  function counted(req) {
-    const ip = clientIp(req) || 'unknown';
-    tries.set(ip, [...(tries.get(ip) || []), Date.now()]);
     if (tries.size > 5000) tries.delete(tries.keys().next().value);
+    return () => { const l = tries.get(ip) || []; const i = l.indexOf(t); if (i !== -1) l.splice(i, 1); };
   }
   async function bodyOf(req, res, max = 16 * 1024) {
     try { return (await readJSONBody(req, max)) || {}; } catch (e) { sendJSON(res, e.statusCode || 400, { error: e.message }); return null; }
@@ -272,18 +273,20 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const p = bookings.person(owner);
       if (req.method === 'GET') { sendJSON(res, 200, { with: p.shown || 'The Mock Team', company: company(), ...bookings.freeSlots(owner) }); return true; }
       if (req.method !== 'POST') { send(res, 405, 'Method not allowed'); return true; }
-      if (tooMany(req)) { sendJSON(res, 429, { error: 'Too many tries. Please wait a while and try again.' }); return true; }
+      const release = hit(req);
+      if (!release) { sendJSON(res, 429, { error: 'Too many tries. Please wait a while and try again.' }); return true; }
       const body = await bodyOf(req, res);
-      if (!body) return true;
+      if (!body) { release(); return true; }
+      // No more than 30 new bookings an hour for one person, from every address together: a real student never gets near it.
+      if (bookings.all().bookings.filter((x) => x.owner === owner && Date.parse(x.at) > now().getTime() - 3600000).length >= 30) { release(); sendJSON(res, 429, { error: 'This booking page is very busy. Please try again in a little while.' }); return true; }
       // At most two bookings to come for one email address, so the page cannot fill a calendar or send many emails to one address.
       const mail = text(body.email).toLowerCase();
       const t0 = now().getTime();
       if (mail && bookings.all().bookings.filter((x) => x.status === 'booked' && x.email === mail && bookings.endOf(x) > t0).length >= 2) { sendJSON(res, 400, { error: 'You already have two mock interviews booked. Change or cancel one from its email first.' }); return true; }
       const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteOf(owner));
-      if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
+      if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;
       activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} booked a mock with ${p.shown || 'the Mock Team'} on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}${b.rowId ? '' : ' (not matched to a student yet)'}`] });
-      counted(req);
       const sent = await emailStudent(b, 'booked', siteOf(owner));
       emailOwner(b).catch(() => {});
       sendJSON(res, 200, { ok: true, token: b.token, emailed: sent === 'sent', booking: publicBooking(b) });
@@ -296,12 +299,12 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       if (req.method === 'GET' && !m[2]) { sendJSON(res, 200, { booking: publicBooking(b), company: company() }); return true; }
       if (req.method === 'GET' && m[2] === '/slots') { sendJSON(res, 200, bookings.changeable(b) ? bookings.freeSlots(b.owner, b.id) : { days: [], minutes: b.minutes }); return true; }
       if (req.method !== 'POST' || !m[2] || m[2] === '/slots') { send(res, 405, 'Method not allowed'); return true; }
-      if (tooMany(req)) { sendJSON(res, 429, { error: 'Too many tries. Please wait a while and try again.' }); return true; }
-      if (!bookings.changeable(b)) { sendJSON(res, 400, { error: b.status === 'booked' ? 'It is too close to the mock to change it now. Please contact the consultancy.' : 'This booking is already cancelled.' }); return true; }
+      const release = hit(req);
+      if (!release) { sendJSON(res, 429, { error: 'Too many tries. Please wait a while and try again.' }); return true; }
+      if (!bookings.changeable(b)) { release(); sendJSON(res, 400, { error: b.status === 'booked' ? 'It is too close to the mock to change it now. Please contact the consultancy.' : 'This booking is already cancelled.' }); return true; }
       if (m[2] === '/cancel') {
         const out = bookings.cancel(b.id, `${b.name} (the student)`);
-        if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
-        counted(req);
+        if (out.error) { release(); sendJSON(res, 400, { error: out.error }); return true; }
         activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} cancelled the mock on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}`] });
         emailStudent(out.booking, 'cancelled').catch(() => {});
         emailOwner(out.booking, true).catch(() => {});
@@ -309,13 +312,15 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
         return true;
       }
       const body = await bodyOf(req, res);
-      if (!body) return true;
+      if (!body) { release(); return true; }
+      // The booking is read again after the wait for the body: two moves sent together (a double click, two tabs) must not both go through.
+      const now1 = bookings.byToken(m[1]);
+      if (!now1 || !bookings.changeable(now1)) { release(); sendJSON(res, 400, { error: 'This booking was just changed. Please open your booking link again.' }); return true; }
       // Another time: the new time is booked first (with this booking's own slot free for it), then this one is cancelled.
       const made = bookings.book(b.owner, { day: body.day, time: body.time, name: b.name, email: b.email, phone: b.phone, except: b.id }, () => (b.rowId ? { rowId: b.rowId, mock: b.mock, university: b.university, course: b.course } : null), siteOf(b.owner));
-      if (made.error) { sendJSON(res, 400, { error: made.error }); return true; }
+      if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       bookings.cancel(b.id, `${b.name} (moved to another time)`);
       activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} moved the mock from ${bookings.niceDay(b.day)} ${bookings.niceTime(b.time)} to ${bookings.niceDay(made.booking.day)} ${bookings.niceTime(made.booking.time)}`] });
-      counted(req);
       emailStudent(made.booking, 'booked', siteOf(b.owner)).catch(() => {});
       emailOwner({ ...b, status: 'cancelled' }, true).catch(() => {}); // the old time leaves the person's calendar
       emailOwner(made.booking).catch(() => {});
@@ -354,6 +359,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const b = bookings.get(m[1]);
       if (!b || (access === 'own' && b.owner !== req.user.id)) { sendJSON(res, 404, { error: 'No such booking.' }); return true; }
       if (m[2] === 'cancel') {
+        if (b.answer) { sendJSON(res, 400, { error: 'This mock is already answered, so it cannot be cancelled.' }); return true; }
         const out = bookings.cancel(b.id, req.user.name);
         if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
         activity.record(req, req.user, 'Booked mock', { app: 'Bookings', changes: [`Cancelled the mock with ${b.name} on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}`] });

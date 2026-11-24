@@ -150,6 +150,8 @@
       draw();
     } catch (e) { $('view').replaceChildren(el('p', 'p-msg error', e.message)); }
   }
-  new MutationObserver(() => { if (data) draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  // The page is drawn again only when it changes between the Mock look and the old one (any other class change used to throw away an open upload form).
+  let wasMock = mockLook();
+  new MutationObserver(() => { if (data && mockLook() !== wasMock) { wasMock = mockLook(); draw(); } }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   load();
 })();

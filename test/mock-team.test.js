@@ -280,4 +280,37 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   assert.strictEqual(snap.mockGuidelines.files.length, 1);
   // ... and the Mock interview guides with every student's progress, and the Apply through list.
   assert.ok(!snap.mockGuides || snap.mockGuides.guides, 'the guides, if saved, are in the backup');
+
+  // A burst of parallel bookings from one address cannot get past the hourly limit (the place is held before the body is read, so
+  // sending them all at once does not help), and the ones that were turned away are told so.
+  const openSlots = (await (await fetch(base + '/api/book/bikram')).json()).days.flatMap((d) => d.times.map((x) => [d.day, x.time]));
+  assert.ok(openSlots.length >= 40, 'enough free slots for the test');
+  const burst = await Promise.all(openSlots.slice(0, 40).map(([day, time], i) => fetch(base + '/api/book/bikram', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ day, time, name: 'Burst Tester', email: `burst${i}@example.com`, phone: '' }),
+  }).then((r) => r.status)));
+  assert.ok(burst.filter((x) => x === 200).length <= 20, 'no more than 20 bookings from one address in an hour');
+  assert.ok(burst.filter((x) => x === 429).length >= 20, 'the rest are turned away');
+});
+
+test('bookings: the file limit never drops a booking that is still waiting for its answer', () => {
+  const dir = tmp('isr-bookings-cap-');
+  const now = new Date('2026-11-22T04:15:00Z');
+  const B = createMockBookings(dir, { now: () => now, timeZone: 'Asia/Kathmandu' });
+  assert.ok(B.saveSetup('u1', { teams: 'https://teams.live.com/meet/1', slug: 'bikram', shown: 'Bikram', email: 'b@example.com' }).person);
+  assert.ok(B.saveSlots('u1', { minutes: 30, ahead: 7, notice: 60, weekly: { 0: [['11:30', '13:00']] }, dates: {} }).person);
+  const file = path.join(dir, 'mock-bookings.json');
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const at = '2026-11-20T00:00:00.000Z';
+  const row = (i, o) => ({ id: String(i).padStart(12, '0'), token: 'T'.repeat(24) + i, owner: 'u1', day: '2026-11-10', time: '10:00', minutes: 30, name: 'N', email: `x${i}@example.com`, phone: '', rowId: '', mock: 0, university: '', course: '', at, siteUrl: '', answer: null, sent: {}, ...o });
+  const rows = [];
+  for (let i = 0; i < 3000; i += 1) rows.push(row(i, { status: 'cancelled' }));
+  for (let i = 3000; i < 4995; i += 1) rows.push(row(i, { status: 'booked', answer: { joined: true } }));
+  for (let i = 4995; i < 5000; i += 1) rows.push(row(i, { status: 'booked', answer: null }));
+  fs.writeFileSync(file, JSON.stringify({ ...data, bookings: rows }));
+  const made = B.book('u1', { day: '2026-11-22', time: '11:30', name: 'New Student', email: 'new@example.com', phone: '' }, () => null, '');
+  assert.ok(made.booking, JSON.stringify(made));
+  const after = JSON.parse(fs.readFileSync(file, 'utf8')).bookings;
+  assert.strictEqual(after.length, 5000, 'the file stays at its limit');
+  assert.strictEqual(after.filter((b) => b.status === 'booked' && !b.answer).length, 6, 'the five waiting ones and the new one are all kept');
+  assert.strictEqual(after.filter((b) => b.status === 'booked' && b.answer).length, 1995, 'answered ones are not touched while cancelled ones can go');
 });

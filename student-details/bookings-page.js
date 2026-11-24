@@ -202,6 +202,7 @@
           delete body.closest('dialog').dataset.busy;
           save.disabled = false; save.textContent = 'Save';
           err.textContent = e.message;
+          if (/already answered|was cancelled/i.test(e.message)) setTimeout(() => close('stale'), 1400); // answered in another tab: show the page as it is now
         }
       });
       body.addEventListener('input', (e) => { err.textContent = ''; if (e.target.removeAttribute) e.target.removeAttribute('aria-invalid'); });
@@ -209,6 +210,7 @@
       body.append(err, h('div', { class: 'p-bar mt-ask-bar' }, later, save));
     }).then((r) => {
       if (r === 'saved') { toast('Saved on the student\'s card.'); draw(); askNext(0); }
+      else if (r === 'stale') { api('/api/bookings').then((d) => { data = d; draw(); if (data.waiting[0]) askNext(0); }).catch(() => {}); }
       else if (data.waiting[i + 1]) askNext(i + 1);
     });
   }
@@ -254,7 +256,7 @@
       if (!Object.keys(dates).length) dateRows.append(el('p', 'mt-empty', 'No date of its own yet.'));
     };
     drawDates();
-    const pickDay = h('input', { type: 'date', class: 'p-input', 'aria-label': 'The date', min: new Date().toISOString().slice(0, 10) });
+    const pickDay = h('input', { type: 'date', class: 'p-input', 'aria-label': 'The date', min: new Date().toLocaleDateString('en-CA') });
     const add = h('button', { type: 'button', class: 'btn' }, 'Add the date');
     add.addEventListener('click', () => { if (!pickDay.value) { pickDay.focus(); return; } if (!dates[pickDay.value]) dates[pickDay.value] = []; pickDay.value = ''; drawDates(); });
     one.append(dateRows, h('div', { class: 'mt-add-date' }, pickDay, add));
@@ -297,7 +299,8 @@
       const last = list[list.length - 1];
       const start = last ? last[1] : '10:00';
       const [hh, mm] = start.split(':').map(Number);
-      const end = `${String(Math.min(23, hh + (mm + 30 >= 60 ? 1 : 0))).padStart(2, '0')}:${String((mm + 30) % 60).padStart(2, '0')}`;
+      const endMin = Math.min(23 * 60 + 59, hh * 60 + mm + 30); // never past midnight
+      const end = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
       list.push([start, end]);
       redraw();
     } }, '+'));
