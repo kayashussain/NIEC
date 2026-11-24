@@ -387,3 +387,14 @@ html:root body .as-tools .as-search { flex: 0 1 260px; width: 260px; min-width: 
 html:root body .as-seg { flex-wrap: nowrap; }
 html:root body .as-seg .as-sw { padding: 0 11px; font-size: 13px; white-space: nowrap; }
 html:root body main#page #view, html:root body main#page #view > .sc-wrap, html:root body main#page .sc-shell { background: transparent !important; box-shadow: none !important; border: 0 !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): All Students rows with real, long task texts | from: the next-task text ran to 6 lines and names wrapped, rows 130px+ tall | to: the next-task text stops after 2 lines (full text on hover), the Next column is wider, names stay on one line, rows about 80px */
+html:root body .as-head, html:root body .as-row { grid-template-columns: minmax(0, 1.7fr) minmax(0, .9fr) minmax(0, 2.1fr) minmax(0, 2.6fr) minmax(0, .9fr) 12px; gap: 16px; }
+html:root body .as-head { padding-left: 22px; padding-right: 22px; }
+html:root body .as-row { padding: 14px 22px; }
+html:root body .as-nt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+html:root body .as-nm b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .as-apps .as-app { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px; }
+html:root body .as-apps .as-uni { flex: 1 1 100%; }
+html:root body .as-apps { gap: 6px; }
+html:root body .as-head, html:root body .as-row { grid-template-columns: minmax(0, 2.1fr) minmax(0, .9fr) minmax(0, 1.8fr) minmax(0, 2.3fr) minmax(0, .9fr) 12px; }

@@ -96,7 +96,7 @@
       });
       if (s.apps.length > 3) apps.append(el('span', 'as-sub', `and ${s.apps.length - 3} more`));
       const next = el('span', 'as-next');
-      if (s.next) { next.append(el('span', 'as-nt', s.next.text), el('span', `as-sub${!s.next.later && s.next.days >= 3 ? ' is-late' : ''}`, s.next.later ? `On ${day(s.next.doOn)}` : s.next.days >= 3 ? `Waiting ${s.next.days} days` : s.next.days === 0 ? 'New today' : `${s.next.days} day${s.next.days === 1 ? '' : 's'}`)); }
+      if (s.next) { next.title = s.next.text; next.append(el('span', 'as-nt', s.next.text), el('span', `as-sub${!s.next.later && s.next.days >= 3 ? ' is-late' : ''}`, s.next.later ? `On ${day(s.next.doOn)}` : s.next.days >= 3 ? `Waiting ${s.next.days} days` : s.next.days === 0 ? 'New today' : `${s.next.days} day${s.next.days === 1 ? '' : 's'}`)); }
       else next.append(el('span', 'as-sub', 'Nothing for the team'));
       const miss = el('span', `as-miss${s.missing ? ' is-miss' : ''}`, s.missing ? `${s.missing} missing` : 'All in');
       a.append(who, stage, apps, next, miss, el('span', 'as-chev'));
