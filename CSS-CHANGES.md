@@ -1,5 +1,7 @@
 # CSS change log
 - 2026-11-24 | shared/apple.css | Application Team pages: content centred in a column of about 1080px (was full screen width), search boxes capped at 420-440px | from: wide and flat on a 1366px laptop | to: like the design | why: owner said the live site looked widened.
+- 2026-11-24 | shared/apple.css | Today row: the blue "something new" dot sits 6px further left, no longer touching the name (Application Team only)
+- 2026-11-24 | shared/apple.css | Mark as done window (Application Team only): the Cancel and Save bar stays pinned at the bottom; Notes box thin grey ring like the other fields
 - 2026-11-24 | shared/apple.css | Application Team: the student list is removed (All Students is the sheet only); the sheet scrolls again both ways (a hidden overflow I had added is now auto); no dark line in the Universities / Pathway colleges switch; the intake tab is an Apple switch (white chosen button on soft grey)
 - 2026-11-24 | shared/apple.css | The sheet (Application Team only): light hairlines (#e5e5ea) instead of dark grey, grey header words, rounded 14px table corners; no cell, row or status colour touched
 - 2026-11-24 | shared/apple.css | All Students: next-task text limited to 2 lines, wider Next column, names on one line (real long task texts made rows very tall)

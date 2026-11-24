@@ -360,3 +360,11 @@ html:root body .sheet-tabs-list.has-thumb { background: var(--apple-btn) !import
 html:root body .sheet-tabs-list .seg-thumb { background: #fff !important; border-radius: 8px !important; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04) !important; }
 html:root body .sheet-tab, html:root body .sheet-tab.active { background: transparent !important; color: #1d1d1f !important; border-radius: 8px !important; }
 html:root body .sheet-tab.active { font-weight: 600; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Mark as done window on a laptop screen, Application Team only | from: Cancel and Save sat at the end of the scrolling window and were hidden until you scrolled | to: the button bar stays pinned at the bottom of the window, and the Notes box gets the same thin ring as the other fields */
+html:root body dialog.td-done-app .td-done-step > .p-dialog-foot, html:root body dialog.td-done-app .p-dialog-body > .p-dialog-foot { position: sticky !important; bottom: 0; z-index: 3; }
+html:root body dialog.td-done-app .td-done-form textarea { min-height: 72px; border: 0 !important; box-shadow: inset 0 0 0 1px #d2d2d7 !important; background: #fff !important; }
+html:root body dialog.td-done-app .td-done-form input:focus, html:root body dialog.td-done-app .td-done-form textarea:focus { box-shadow: inset 0 0 0 2px #0071e3 !important; outline: 0; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the blue "something new" dot on a Today row, Application Team only | from: touching the first letter of the student's name | to: 6px further left, with a clear gap */
+html:root body .tdx-new { left: -19px; top: 8px; }
