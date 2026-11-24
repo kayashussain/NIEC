@@ -63,6 +63,8 @@
     };
     const drawTimes = () => {
       times.replaceChildren();
+      go.disabled = !chosenTime; // Book is greyed until a time is chosen
+      if (!chosenTime) go.textContent = button; // no stale day and time on the button
       const d = byDay.get(chosenDay);
       times.append(h('h2', {}, d ? d.label.replace(/ \d{4}$/, '') : 'No free time'));
       if (!d) { times.append(h('p', { class: 'bk-dim' }, 'There is no free time just now. Please ask the consultancy.')); return; }
@@ -82,6 +84,7 @@
       try { await onBook({ day: chosenDay, time: chosenTime, name: name.value, email: email.value, phone: phone.value }); }
       catch (e) { msg.textContent = e.message; go.disabled = false; go.textContent = was; }
     });
+    go.disabled = true; // greyed until a time is chosen (drawTimes sets it)
     drawCal(); drawTimes();
     wrap.append(h('div', { class: 'bk-two' }, cal, times));
     const foot = h('section', { class: 'bk-form' });

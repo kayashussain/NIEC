@@ -1,4 +1,5 @@
 # CSS change log
+- 2026-11-24 | student-details/book.css, student-details/book-page.js, student-details/bookings-page.js | Student booking page: lighter shadow, Book greyed until a time is chosen, full width Book and 44px arrows on a phone; Setup wording shortened | from: heavy shadow, Book ready with no time, long Setup sentences | to: calmer and clearer | why: independent review of 24 Nov
 - 2026-11-24 | student-details/book.css (the end) | The booking page on a phone: Pick a day and the month stay on one line, tighter About block | from: two-line headings | why: students book from phones
 - 2026-11-24 | shared/apple.css | Student card opened over the sheet: the thin line under the Close bar is removed (Application Team only; the owner asked)
 - 2026-11-24 | shared/apple.css | Student card opened over the sheet (Application Team only): the Close button is in a slim frosted top bar that stays pinned, no empty band above the card
