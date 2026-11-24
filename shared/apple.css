@@ -661,3 +661,10 @@ html.app-mock:root body #page .mt-who-words { min-width: 0; }
 html.app-mock:root body #page .mt-who-words > a, html.app-mock:root body #page .mt-who-words > span:not(.mt-sub) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 html.app-mock:root body #page .mt-sub { max-width: 100%; }
 html.app-mock:root body #page .mt-actions { width: 1%; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Mock Team only, from the fourth independent review | from: the University and course on an Upcoming row cut with "..." at a narrow width, Cancel small and pale, Setup fields with a very faint edge that look switched off and a placeholder that looks like a typed value, the three small filter tabs on Interview guidelines | to: the University and course wrap onto two lines, Cancel darker and 14px, Setup fields with a clear edge and a pale placeholder, filter tabs 13px */
+html.app-mock:root body #page .mt-sub { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.35; }
+html.app-mock:root body #page .mt-cancel { color: #3a3a3c; font-size: 14px; font-weight: 500; }
+html.app-mock:root body #page .mt-setup .p-input, html.app-mock:root body #page .mt-prefix { box-shadow: inset 0 0 0 1px #c7c7cc; }
+html.app-mock:root body #page .mt-setup .p-input::placeholder { color: #8e8e93; }
+html.app-mock:root body #page .mt-seg button { font-size: 13px; }

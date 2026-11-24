@@ -40,7 +40,7 @@
     drawTabs();
     const view = $('view');
     const body = tab === 'slots' ? slotsView() : tab === 'setup' ? setupView() : upcomingView();
-    const banner = waitingBanner();
+    const banner = tab === 'upcoming' ? waitingBanner() : null; // the notice is about Upcoming: it does not sit above Slots or Setup
     view.replaceChildren(...(banner ? [banner, body] : [body]));
     if (openAnswer && data.waiting.length) { openAnswer = false; history.replaceState(null, '', `#${tab}`); askNext(0); }
   }
