@@ -423,7 +423,7 @@
       if (again) again.scrollIntoView({ block: 'nearest' });
     };
     head.addEventListener('click', (e) => { if (e.target.closest('a')) return; toggle(); });
-    head.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); toggle(); } });
+    head.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); toggle(); setTimeout(() => { const hd = document.querySelector('.tdx[data-task-id="' + x.id + '"] .tdx-head'); if (hd) hd.focus({ preventScroll: true }); }, 0); } }); // the row is drawn again: the keyboard stays on it
     if (!open) return r;
 
     r.classList.add('is-open');
@@ -467,7 +467,7 @@
         if (done.disabled) return;
         done.disabled = true; // one window at a time: a second press while it is open does nothing
         const finish = await window.Portal.doneDialog(x, { rowId: x.studentId, stage: x.stage, student: { name: x.student }, today: todayIso, app: Boolean(x.details), mockLook: Boolean(x.mock) });
-        if (!finish) { done.disabled = false; return; }
+        if (!finish) { done.disabled = false; done.focus(); return; } // closed without saving: the keyboard is back on the button
         try {
           await api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { done: true, finish });
           window.NiecUI.toast(window.Portal.cheer(), { type: 'success' });
@@ -678,7 +678,9 @@
     const main = el('div', 'tdx-main');
     const shownName = window.Portal.niceName ? window.Portal.niceName(m.name) : m.name;
     const nameLine = el('div', 'tdx-name-line');
-    nameLine.append(m.id ? h('a', { class: 'tdx-name', href: '/student?id=' + encodeURIComponent(m.id), title: 'View student profile' }, shownName) : el('span', 'tdx-name', shownName));
+    const nameEl = el('span', 'tdx-name', shownName);
+    if (m.id) { nameEl.title = 'View student profile'; nameEl.style.cursor = 'pointer'; nameEl.addEventListener('click', (e) => { e.stopPropagation(); const go = '/student?id=' + encodeURIComponent(m.id); if (e.ctrlKey || e.metaKey) window.open(go, '_blank', 'noopener'); else window.location.href = go; }); } // not a link inside the row's button (accessibility); the opened row keeps its own link
+    nameLine.append(nameEl);
     main.append(nameLine, el('p', 'tdx-meta', [m.stage, m.intake].filter(Boolean).join(' \u00b7 ')));
     // One line per thing missing: a line that names several details ("No passport number, address or receiving partner") is shown as one line each.
     const lines = m.lines.flatMap((ln) => (Array.isArray(ln.items) && ln.items.length ? ln.items.map((it) => ({ ...ln, text: `No ${it}`, items: null })) : [ln]));
