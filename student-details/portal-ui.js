@@ -446,7 +446,7 @@
           });
           // Every common reason has its own answer, kept as a code so the reasons can be counted (the owner, 24 Nov 2026: "not submitted is
           // not always not eligible ... we want the best data"); Other asks for the reason in Notes.
-          const why = question('Why', [['noteligible', 'Not eligible'], ['nocourse', 'The course is not available'], ['closed', 'Applications are closed'], ['intakefull', 'The intake is full'],
+          const why = question('Why', [['noteligible', 'Not eligible'], ['nocourse', 'The course is not available'], ['closed', 'Applications are closed'],
             ['agent', 'Already applied through another agent'], ['otheruni', 'The student chose another university'], ['notgoing', 'The student is not going ahead'], ['noreply', 'The student is not responding'], ['other', 'Other']],
             (v) => { const l = words && words.wrap.querySelector('.p-label'); if (l) l.textContent = v === 'other' ? 'Notes (say why)' : 'Notes (optional)'; });
           show(why.node.parentNode, false);

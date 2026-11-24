@@ -650,7 +650,7 @@ function createPortalApi({
   // case has its own answer, kept as a code on the university so the reasons can be counted (the owner, 24 Nov 2026: "not submitted is
   // not always not eligible ... we want the best data"); Other needs the reason written in Notes.
   const WHY_NOT = {
-    noteligible: 'Not eligible', nocourse: 'The course is not available', closed: 'Applications are closed', intakefull: 'The intake is full',
+    noteligible: 'Not eligible', nocourse: 'The course is not available', closed: 'Applications are closed',
     agent: 'Already applied through another agent', otheruni: 'The student chose another university', notgoing: 'The student is not going ahead',
     noreply: 'The student is not responding', other: 'Other reason',
   };

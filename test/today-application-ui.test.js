@@ -140,7 +140,7 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
   await whyBox.waitFor({ state: 'visible' }); // Why shows for Not submitted
   // Every common reason has its own answer (the owner, 24 Nov 2026: "not submitted is not always not eligible").
-  for (const r of ['Not eligible', 'The course is not available', 'Applications are closed', 'The intake is full', 'Already applied through another agent', 'The student chose another university', 'The student is not going ahead', 'The student is not responding', 'Other']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
+  for (const r of ['Not eligible', 'The course is not available', 'Applications are closed', 'Already applied through another agent', 'The student chose another university', 'The student is not going ahead', 'The student is not responding', 'Other']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
   await win.getByRole('radio', { name: 'Applied', exact: true }).click();
   await whyBox.waitFor({ state: 'hidden' }); // and hides again for Applied
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
