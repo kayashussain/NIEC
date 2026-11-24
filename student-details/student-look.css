@@ -250,3 +250,10 @@ html:root body.p-student .sc-hero { background: linear-gradient(135deg, #eef6ff 
 /* 🔴 CSS CHANGED (2026-11-24): the student card keeps its width when the browser is zoomed out | from: the page stopped growing at 1480px, so zooming out shrank the card and widened the empty margins | to: no width limit, the card always fills the space beside the menu with the same slim margin */
 html:root body.p-student main#page.p-page { max-width: none !important; }
 html:root body.p-student dl.lg-dl > dd a[href^="mailto:"] { font-size: .84em !important; overflow-wrap: normal !important; }
+/* 🔴 CSS CHANGED (2026-11-24): the student card keeps its proportions at any browser zoom, and its two columns stack when there is little room | from: fixed sizes, so zooming in made the text huge and the card very long, and zooming out stretched it | to: the card is scaled to the space (85 percent to 150 percent of its design size), and under about 1000px of room Profile, Application details and Mock interviews go above Applications, Tasks and Timeline in one column */
+html:root body.p-student #view { container-type: inline-size !important; }
+@container (max-width: 1000px) {
+  html:root body.p-student .sc-layout { grid-template-columns: minmax(0, 1fr) !important; }
+  html:root body.p-student .sc-head { flex-wrap: wrap !important; }
+  html:root body.p-student .sc-steps { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; row-gap: 14px !important; }
+}

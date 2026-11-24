@@ -1444,6 +1444,17 @@
     if (!o.applied && !o.skipped && iso(row['APPLICATION SUBMISSION DATE'])) o.applied = iso(row['APPLICATION SUBMISSION DATE']);
     if (!o.offer && !o.refused && iso(row['OFFER RECEIVED DATE'])) o.offer = iso(row['OFFER RECEIVED DATE']);
   }
+  // The card keeps its proportions at any browser zoom (the owner, 24 Nov 2026): the width it was designed for (about 1480 CSS px, the
+  // usual laptop) is scaled to the space there is, so zooming out does not stretch it and zooming in does not make the text huge and the
+  // card long. It never goes below 85% (text stays readable); narrower than that the two columns stack (see student-look.css).
+  const CARD_REF_WIDTH = 1480;
+  function fitCard() {
+    const w = view.clientWidth;
+    if (!w) return;
+    const z = Math.min(1.5, Math.max(0.85, w / CARD_REF_WIDTH));
+    [...view.children].forEach((c) => { c.style.zoom = String(Math.round(z * 1000) / 1000); });
+  }
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => fitCard()).observe(view);
   function render() {
     sheetDaysOnOptions();
     document.title = `${data.student.name} · Student · ISR`;
@@ -1477,6 +1488,7 @@
     layout.append(profileColumn(), main);
     frag.append(...top, layout);
     view.replaceChildren(frag);
+    fitCard();
     window.scrollTo(0, keepY);
     focusForm();
     interactions();
