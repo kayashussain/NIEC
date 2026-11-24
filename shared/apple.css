@@ -615,3 +615,10 @@ html:root body main#page #view { padding-left: 0 !important; padding-right: 0 !i
 html:root body dl.lg-dl > dt { padding-top: 10px !important; }
 html:root body dl.lg-dl > dd { padding-bottom: 10px !important; }
 html:root body #view .sc-layout { grid-template-columns: 420px minmax(0, 1fr); }
+
+/* 🔴 CSS CHANGED (2026-11-24): the student card opened over the sheet (the Close button), Application Team only | from: a small grey Close pill floating alone above the card with an empty band under it, scrolling away with the page | to: a slim frosted top bar that stays at the top while you scroll, with the Close button (a grey pill with a cross) at its right end, in line with the card's right edge, and no empty band */
+html:root body:has(.p-embed-bar) main#page.p-page { padding-top: 0 !important; }
+html:root body .p-embed-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: flex-end; margin: 0 -14px 14px !important; padding: 10px 14px !important; background: rgba(245, 245, 247, .88); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); border-bottom: 1px solid var(--apple-hair) !important; }
+html:root body .p-embed-bar .btn { min-height: 34px; padding: 0 16px 0 13px; border: 0 !important; border-radius: 980px; background: var(--apple-btn) !important; color: #1d1d1f !important; font-size: 14px; font-weight: 600; box-shadow: none !important; }
+html:root body .p-embed-bar .btn::before { content: "\2715"; margin-right: 7px; font-size: 11px; font-weight: 700; }
+html:root body .p-embed-bar .btn:hover { background: #dcdce1 !important; }
