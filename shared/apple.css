@@ -547,3 +547,10 @@ html.app-mock:root body #page .mt-upload input[type="file"]::file-selector-butto
 
 /* 🔴 CSS CHANGED (2026-11-24): Mock Team only: the line under the title of the "mock ended" window | from: a dark grey line (#9a9a9a) | to: the soft hairline used everywhere else in the Apple look (#e5e5ea) */
 html.app-mock:root body dialog.p-dialog .p-dialog-head { border-bottom: 1px solid var(--apple-hair) !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Mock Team only: the field rows of "Upload a guideline" and of Setup, and dropdown text | from: three fields side by side (the Kind dropdown wrapped onto 2 lines and the Title hint was cut on a 1280px laptop; the booking link could squeeze a long name) | to: Kind and Where it came from side by side with the Title on its own full row; in Setup the booking link takes a full row with Name and Email under it; dropdown text never wraps (it ends in ...) */
+html.app-mock:root body #page .mt-upload .mt-three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.app-mock:root body #page .mt-upload .mt-three > div:nth-child(3) { grid-column: 1 / -1; }
+html.app-mock:root body #page .mt-setup .mt-three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.app-mock:root body #page .mt-setup .mt-three > div:first-child { grid-column: 1 / -1; }
+html.app-mock:root body #page select.p-input { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }

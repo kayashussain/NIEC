@@ -1,4 +1,5 @@
 # CSS change log
+- 2026-11-24 | shared/apple.css | Mock Team only: Upload a guideline and Setup field rows (Title / booking link on their own row), dropdown text never wraps | from: three squeezed fields, a dropdown wrapping onto 2 lines at 1280px | to: two columns plus a full row | why: found in the deep review at laptop width
 - 2026-11-24 | shared/apple.css | Mock Team only: the line under the title of the "mock ended" window | from: dark grey line | to: soft hairline | why: it was the one dark line left in the window
 - 2026-11-24 | shared/apple.css | Mock Team only: the Upload a guideline panel on Interview guidelines in the Apple look | from: dark dashed grey box, dark-outlined fields, boxy file button | to: soft light panel, calm fields with blue focus ring, grey pill Choose file | why: it was still the old look
 - 2026-11-24 | shared/apple.css | Mock Team only: the "Add the date" button on Available slots stays on one line | from: 3 squeezed lines | to: one line | why: it looked broken
