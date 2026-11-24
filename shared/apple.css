@@ -398,3 +398,11 @@ html:root body .as-apps .as-app { display: flex; flex-wrap: wrap; align-items: c
 html:root body .as-apps .as-uni { flex: 1 1 100%; }
 html:root body .as-apps { gap: 6px; }
 html:root body .as-head, html:root body .as-row { grid-template-columns: minmax(0, 2.1fr) minmax(0, .9fr) minmax(0, 1.8fr) minmax(0, 2.3fr) minmax(0, .9fr) 12px; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the sheet, Application Team only | from: dark grey grid lines (#b8b8b8 / #9a9a9a), boxed grey tab | to: light hairlines (#e5e5ea / #d2d2d7) by changing the line colours the sheet reads, grey header words, rounded table corners; no cell, row or status colour is touched */
+html:root body #sheet, html:root body .table-wrap, html:root body .sheet-tabs { --border: #e5e5ea; --border-strong: #d2d2d7; }
+html:root body #sheet thead th { color: #6e6e73; font-weight: 600; }
+html:root body .table-wrap { border-radius: 14px; overflow: hidden; border: 1px solid #e5e5ea; background: #fff; }
+html:root body #sheet td, html:root body #sheet th { border-color: #e5e5ea !important; }
+html:root body #sheet thead th { border-bottom-color: #d2d2d7 !important; }
+html:root body .table-wrap[role="region"] { border: 1px solid #e5e5ea !important; border-radius: 14px !important; }
