@@ -341,12 +341,12 @@
 
   // What is not added yet, as small chips under the facts (G1, the owner, 24 Nov 2026): each chip opens the same Edit window, so the
   // card is not a long list of "Not added". What is missing and needed stays a row, in orange.
-  function emptyChips(labels, onEdit) {
+  function emptyChips(labels, onEdit, plain = []) {
     if (!labels.length) return null;
     const wrap = el('div', 'lg-empty');
     wrap.append(el('span', 'lg-empty-k', 'Not added yet'));
     const chips = el('div', 'lg-empty-chips');
-    labels.forEach((l) => { if (onEdit) chips.append(h('button', { class: 'lg-chip', type: 'button', onclick: onEdit }, l)); else chips.append(el('span', 'lg-chip is-plain', l)); });
+    labels.forEach((l) => { if (onEdit && !plain.includes(l)) chips.append(h('button', { class: 'lg-chip', type: 'button', onclick: onEdit }, l)); else chips.append(el('span', 'lg-chip is-plain', l)); });
     wrap.append(chips);
     return wrap;
   }
@@ -402,6 +402,8 @@
   const isoDay = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '').trim()) ? String(v).trim() : '');
   const languageShown = (v) => { const t = String(v || '').trim(); if (!t) return ''; const d = isoDay(t); return d ? `Test date, ${day(d)}` : t; };
   function detailsList(rows, onEdit) {
+    // These come by themselves (University, Course and partner from the Priority application, the medical day from Bookings): a chip, but not an Edit.
+    const byThemselves = ['University', 'Course', 'University partner', 'Medical booking date'];
     const dl = el('dl', 'lg-dl');
     const empties = [];
     rows.forEach(([label, value]) => {
@@ -410,7 +412,7 @@
       if (value instanceof Node) dd.append(value); else dd.textContent = value;
       dl.append(el('dt', '', label), dd);
     });
-    const ec = emptyChips(empties, onEdit);
+    const ec = emptyChips(empties, onEdit, byThemselves);
     if (!ec) return dl;
     const wrap = el('div', 'lg-dl-wrap'); wrap.append(dl, ec); return wrap;
   }

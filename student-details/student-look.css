@@ -244,3 +244,4 @@ html:root body.p-student dl.lg-dl>dt { padding-right:15px !important; }
 html:root body.p-student .lg-empty { text-align:left !important; }
 html:root body.p-student .lg-empty-chips { justify-content:flex-start !important; }
 html:root body.p-student dl.lg-dl > dd a { font-size: inherit !important; font-weight: 500 !important; }
+html:root body.p-student dl.lg-dl > dd a[href^="mailto:"] { font-size: .92em !important; }
