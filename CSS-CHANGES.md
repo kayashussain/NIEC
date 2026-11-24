@@ -1,5 +1,6 @@
 # CSS change log
 - 2026-11-24 | shared/apple.css | Application Team pages: content centred in a column of about 1080px (was full screen width), search boxes capped at 420-440px | from: wide and flat on a 1366px laptop | to: like the design | why: owner said the live site looked widened.
+- 2026-11-24 | shared/apple.css | Student card in a centred 1180px column; All Students search (260px) and filter tabs on one row (Application Team only)
 - 2026-11-24 | shared/apple.css | University page: Copy summary, Print and All universities are grey pills, not outlined boxes (Application Team only)
 - 2026-11-24 | shared/apple.css | All Students search box: magnifier, thin grey ring, 380px (design F6)
 - 2026-11-24 | shared/apple.css, today-page.js | Application Team Today: search is a 300px grey pill with a magnifier next to the bell; the three tabs and the kinds share one row | from: white search box under the numbers | to: design F6 | why: owner said the search box and layout were not as designed.

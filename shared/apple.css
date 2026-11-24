@@ -379,3 +379,11 @@ html:root body input.as-search { text-align: left !important; padding-left: 38px
 
 /* 🔴 CSS CHANGED (2026-11-24): University page top buttons, design F6 | from: outlined boxes | to: soft grey pills with no outline */
 html:root body .p-page .btn:not(.btn-primary):not(.primary), html:root body .page .btn:not(.btn-primary):not(.primary) { border: 0 !important; border-radius: 980px !important; background: var(--apple-btn) !important; color: #1d1d1f !important; box-shadow: none !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): student card width and All Students filter row, design F6 | from: card full width (about 1070px of a laptop), filter tabs wrapping under the search | to: card in the same centred 1180px column (it has two columns, so a little wider than the lists), filter tabs smaller so search and tabs share one row on a laptop */
+html:root body main#page.p-page { max-width: 1180px; margin-left: auto; margin-right: auto; }
+html:root body .as-tools { flex-wrap: nowrap; gap: 12px; }
+html:root body .as-tools .as-search { flex: 0 1 260px; width: 260px; min-width: 200px; }
+html:root body .as-seg { flex-wrap: nowrap; }
+html:root body .as-seg .as-sw { padding: 0 11px; font-size: 13px; white-space: nowrap; }
+html:root body main#page #view, html:root body main#page #view > .sc-wrap, html:root body main#page .sc-shell { background: transparent !important; box-shadow: none !important; border: 0 !important; }

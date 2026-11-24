@@ -52,7 +52,7 @@
     wrap.append(top);
     if (!data) { const sk = el('div', 'as-card'); for (let i = 0; i < 7; i += 1) sk.append(el('div', 'as-skel')); wrap.append(sk); return; }
     const tools = el('div', 'as-tools');
-    const search = el('input', 'as-search'); search.type = 'search'; search.placeholder = 'Search a student, a university or a course'; search.value = query; search.setAttribute('aria-label', 'Search a student, a university or a course');
+    const search = el('input', 'as-search'); search.type = 'search'; search.placeholder = 'Search students'; search.value = query; search.setAttribute('aria-label', 'Search students, universities or courses');
     search.addEventListener('input', () => { query = search.value.trim().toLowerCase(); rows(); });
     const seg = el('div', 'as-seg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Show');
     FILTERS.forEach(([k, label, fn]) => {
