@@ -381,3 +381,14 @@ html:root body #sheet .status-select.badge-blue { background-color: #e8f1fd !imp
 html:root body #sheet .status-select.badge-green { background-color: #e3f5e8 !important; color: #1a7f37 !important; }
 html:root body #sheet .status-select.badge-red { background-color: #fdeceb !important; color: #b42318 !important; }
 html:root body #sheet .status-select.badge-amber { background-color: #fff1e5 !important; color: #b25000 !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the student card, Application Team only | from: a centred 1180px column with empty sides, the Profile and Application details rows with a 120px label column so labels and values wrapped and looked squeezed | to: the card uses the full width of the page (up to 1480px) with 20px sides, each row shows its label on top and its value below with the full column width, so nothing wraps or is cut; the card simply grows longer down the page */
+html:root body main#page.p-page { max-width: 1480px; padding-left: 20px; padding-right: 20px; }
+html:root body #view .sc-layout { grid-template-columns: 410px minmax(0, 1fr); gap: 18px; }
+html:root body dl.lg-dl { grid-template-columns: minmax(0, 1fr) !important; }
+html:root body dl.lg-dl > dt { padding: 12px 0 0; border-bottom: 0 !important; color: var(--apple-grey); font-size: 13px; font-weight: 500; }
+html:root body dl.lg-dl > dd { margin: 0; padding: 2px 0 12px; border-bottom: 1px solid var(--apple-hair); font-size: 16px; line-height: 22px; word-break: break-word; }
+html:root body dl.lg-dl > dd:last-of-type { border-bottom: 0; }
+html:root body dl.lg-dl > dt { padding: 13px 18px 0 !important; border: 0 !important; background: transparent !important; }
+html:root body dl.lg-dl > dd { padding: 2px 18px 13px !important; border: 0 !important; border-bottom: 1px solid var(--apple-hair) !important; background: transparent !important; }
+html:root body dl.lg-dl > dd:last-of-type { border-bottom: 0 !important; }
