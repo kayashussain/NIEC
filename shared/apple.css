@@ -470,3 +470,9 @@ html.app-mock:root body dialog.p-dialog .p-dialog-foot { border-top: 1px solid v
 html.app-mock:root body dialog.p-dialog .btn:not(.btn-primary) { outline: 0; background: var(--apple-btn); }
 html.app-mock:root body dialog.p-dialog .p-dialog-head button { border: 0; background: var(--apple-btn); border-radius: 50%; box-shadow: none; outline: 0; }
 html.app-mock:root body #page .mt-unis { padding: 14px 8px 0 !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the Show numbers cards on the sheet, Application Team only | from: Total students white with a dark outline, Submitted / Offer received / Offer waiting grey | to: all four the same white card with no dark outline, rounded 16px with a soft shadow, a bigger number */
+html:root body .stat-card, html:root body .stat-card.stat-total { background: #fff !important; border: 0 !important; border-radius: 16px !important; box-shadow: var(--apple-card) !important; color: #1d1d1f; }
+html:root body .stat-card .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+html:root body .stat-card .stat-label { color: var(--apple-grey); font-size: 13px; font-weight: 500; }
+html:root body:has(#sheet) .stat-group-cards .stat-card, html:root body:has(#sheet) .stat-group-cards .stat-card.stat-total { border: 0 !important; border-color: transparent !important; background: #fff !important; box-shadow: var(--apple-card) !important; }
