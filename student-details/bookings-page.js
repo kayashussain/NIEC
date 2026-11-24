@@ -347,7 +347,8 @@
     card.append(
       step(1, Boolean(me.teams), 'Your Microsoft Teams meeting link',
         el('p', 'mt-hint', 'Make one meeting link in Microsoft Teams with your Microsoft account (an account made with Gmail is fine): in Teams, Meet, Create a meeting link, Copy. Paste it here. Every mock uses this link, and the Teams lobby keeps the next student waiting until you let them in.'),
-        lab('mtTeams', 'Your Teams meeting link'), teams),
+        lab('mtTeams', 'Your Teams meeting link'), teams,
+        el('p', 'mt-hint mt-teams-note', 'To join as the interviewer, the Teams app on your computer must be signed in with the same Microsoft account that made this meeting. Any other account waits in the lobby like a student.')),
       step(2, Boolean(me.slug), 'Your link, your name and your email',
         h('div', { class: 'mt-three' },
           h('div', {}, lab('mtSlug', 'Booking link'), h('div', { class: 'mt-prefix' }, el('span', '', `${location.host}/book/`), slug)),
