@@ -358,5 +358,16 @@ html:root body table#sheet thead th, html:root body table#sheet thead th * { tex
 html:root body .p-page, html:root body .page { max-width: 1080px; margin-left: auto; margin-right: auto; }
 html:root body .p-page.bp-page, html:root body .p-page.pu-page, html:root body .p-page.ev-page { max-width: 1080px; }
 html:root body .as-wrap:not(.is-slim) { max-width: 1080px; margin-left: auto; margin-right: auto; }
-html:root body .tda-page .tdy-search, html:root body .tda-page input[type="search"] { max-width: 420px; }
-html:root body .as-search { max-width: 440px; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Application Team Today, same as design F6 | from: a white search box under the numbers, tabs up by the bell | to: a 300px grey search pill with a magnifier up by the bell, the tabs on the left and the kinds on the right of one row */
+html:root body .tda-top { align-items: center; }
+html:root body .tda-segslot { display: block; }
+html:root body .tda-segslot .tda-search { display: block; flex: none; width: 300px; max-width: 300px; }
+html:root body .tda-segslot .td-search-input { width: 300px; min-height: 38px; padding: 0 12px 0 36px; border-radius: 10px; font-size: 15px; background: var(--apple-btn) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2.3' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E") no-repeat 12px center / 15px 15px; }
+html:root body .tda-segslot .td-search-input:focus { background-color: #fff; }
+html:root body .tda-bar { justify-content: space-between; margin-top: 24px; margin-bottom: 0; }
+html:root body .tda-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+html:root body .tda-bar .td-search-n { order: 3; width: 100%; color: var(--apple-grey); font-size: 13px; }
+html:root body .tda-segslot .tda-search .td-search-input:not([type="x"]) { border: 0 !important; border-radius: 10px !important; background-color: var(--apple-btn) !important; padding-left: 36px !important; width: 300px !important; }
+html:root body .tda-segslot .tda-search .td-search-input:not([type="x"]):focus { background-color: #fff !important; box-shadow: inset 0 0 0 2px #0071e3 !important; }
+html:root body .tda-segslot .tda-search .td-search-input:not([type="x"]) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2.3' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: 12px center !important; background-size: 15px 15px !important; }

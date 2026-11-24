@@ -553,10 +553,12 @@
       b.addEventListener('click', () => { taskView = k; tagFilter = 'all'; refresh(); });
       seg.append(b);
     });
-    if (appSegSlot) appSegSlot.replaceChildren(seg);
+    const F6 = !!(appSegSlot && todayData && todayData.appTeam); // Application Team only (design F6): the tabs go in the filter row, the search box up by the bell
+    if (appSegSlot && !F6) appSegSlot.replaceChildren(seg);
     const view = VIEWS.find((v) => v[0] === taskView);
     // The search box and the kinds, in one row.
     const bar = el('div', 'tda-bar');
+    if (F6) bar.append(seg);
     if (t.tasks.length || missingAll.length) {
       const field = el('label', 'tda-search');
       const q = el('input', 'td-search-input');
@@ -575,7 +577,7 @@
       });
       q.addEventListener('keydown', (e) => { if (e.key === 'Escape' && q.value) { e.preventDefault(); q.value = ''; q.dispatchEvent(new Event('input')); } });
       field.append(q);
-      bar.append(field);
+      if (F6) appSegSlot.replaceChildren(field); else bar.append(field);
       if (searchQ && view[0] !== 'missing') {
         const n = open.filter(matches).length;
         bar.append(el('span', 'td-search-n', n ? `${n} open task${n === 1 ? '' : 's'} found` : 'No open task found'));
@@ -589,12 +591,14 @@
     const count = {};
     pool.forEach((x) => { const k = tagOf(x, x.stage); count[k] = (count[k] || 0) + 1; });
     if (tagFilter !== 'all' && !count[tagFilter]) tagFilter = 'all';
+    const pills = F6 ? el('div', 'tda-pills') : bar;
+    if (F6) bar.append(pills);
     if (pool.length) {
       const pill = (k, label, n) => {
         const b = h('button', { class: 'tda-pill', type: 'button', role: 'tab', 'aria-selected': String(tagFilter === k) }, label);
         b.append(el('span', 'tda-pill-n', String(n)));
         b.addEventListener('click', () => { tagFilter = k; refresh(); });
-        bar.append(b);
+        pills.append(b);
       };
       pill('all', 'All', pool.length);
       ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k]) pill(k, label, count[k]); });

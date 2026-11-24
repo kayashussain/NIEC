@@ -79,7 +79,8 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.deepStrictEqual((await page.locator('.tda-view').allInnerTexts()).map((x) => x.replace(/\s*\d+$/, '').replace(/\s+/g, ' ').trim()), ['Today', 'Later', 'Missing details'], 'the three tabs');
   assert.strictEqual(await page.locator('.tda-view[aria-selected="true"]').count(), 1);
   assert.match(await page.locator('.tda-bar .tda-pill[aria-selected="true"]').innerText(), /^All\s*\d+$/, 'All is first and chosen');
-  assert.ok(await page.locator('.tda-bar .tda-search input').count(), 'the search box is in the same row');
+  assert.ok(await page.locator('.tda-top .tda-search input').count(), 'the search box is up by the bell (design F6)');
+  assert.ok(await page.locator('.tda-bar .tda-seg').count(), 'the tabs are in the filter row (design F6)');
   assert.match(await page.locator('.tda-gh').first().innerText(), /^(Late, do these first|Today) \u00b7 \d+$/, 'a heading over its panel');
   assert.strictEqual(await page.locator('.td-hello, .td-pulse, .td-tasks').count(), 0, 'no greeting, no progress card, no Tasks box');
   const closed = page.locator('.tdx', { hasText: 'Apply to Test University' });
