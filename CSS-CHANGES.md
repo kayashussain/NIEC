@@ -1,4 +1,5 @@
 # CSS change log
+- 2026-11-24 | shared/apple.css | Mock Team only: the line under the title of the "mock ended" window | from: dark grey line | to: soft hairline | why: it was the one dark line left in the window
 - 2026-11-24 | shared/apple.css | Mock Team only: the Upload a guideline panel on Interview guidelines in the Apple look | from: dark dashed grey box, dark-outlined fields, boxy file button | to: soft light panel, calm fields with blue focus ring, grey pill Choose file | why: it was still the old look
 - 2026-11-24 | shared/apple.css | Mock Team only: the "Add the date" button on Available slots stays on one line | from: 3 squeezed lines | to: one line | why: it looked broken
 - 2026-11-24 | shared/apple.css (the end) | Mock Team only: Available slots and Setup in the Apple look (soft grey slot pills with white time fields, round grey + / copy / remove buttons, calm grey fields with a blue focus ring, one clean booking link field, hairline steps, white floating copy menu) | from: dark outlines and square buttons | to: no outlines, round buttons | why: these two tabs were still in the old look
