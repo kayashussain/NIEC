@@ -241,45 +241,6 @@ html:root body #view#view .lg-tasks > *:not(.p-card-head), html:root body .lg-mo
 html:root body .lg-mocks .lg-foot { border-top: 0; padding: 4px 24px 16px; }
 html:root body #view#view .lg-tasks .tk-compose, html:root body #view#view .lg-tasks .td-compose { background: #f5f5f7; }
 
-/* ---------- All Students as a student list (loaded only for the Application Team: student-details/apple-students.js) ---------- */
-html.apple-list-on:root body .app-main > :not(#appleStudents), html.apple-list-on:root body #sheetTabs, html.apple-list-on:root body .sheet-tabs { display: none !important; }
-html:root body .as-wrap { padding: 28px 40px 32px; }
-html:root body .as-wrap.is-slim { display: flex; justify-content: flex-end; padding: 12px 40px 0; }
-html:root body .as-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-html:root body .as-eyebrow { color: var(--apple-grey); font-size: 15px; font-weight: 500; }
-html:root body .as-title { margin: 2px 0 0; font-size: 40px; line-height: 46px; font-weight: 700; letter-spacing: -.03em; }
-html:root body .as-switch, html:root body .as-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 11px; background: var(--apple-btn); }
-html:root body .as-sw { display: inline-flex; align-items: center; min-height: 34px; padding: 0 16px; border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font: 500 14px/1 inherit; cursor: pointer; }
-html:root body .as-sw.is-on { background: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
-html:root body .as-n { margin-left: 5px; color: #6e6e73; font-weight: 500; }
-html:root body .as-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin: 24px 0 22px; }
-html:root body .as-search { flex: 0 1 380px; min-height: 40px; padding: 0 14px; font-size: 15px; }
-html:root body .as-head, html:root body .as-row { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr) minmax(0, 2.5fr) minmax(0, 1.9fr) minmax(0, 1.1fr) 16px; align-items: center; gap: 24px; }
-html:root body .as-head { padding: 0 28px 10px; color: var(--apple-grey); font-size: 13px; font-weight: 500; }
-html:root body .as-card { overflow: hidden; border-radius: 18px; background: #fff; box-shadow: var(--apple-card); }
-html:root body .as-row { position: relative; padding: 16px 28px; color: #1d1d1f; text-decoration: none; }
-html:root body .as-row + .as-row::before { content: ""; position: absolute; left: 88px; right: 0; top: 0; height: 1px; background: var(--apple-hair); }
-html:root body .as-row:hover { background: #fafafc; }
-html:root body .as-who { display: flex; align-items: center; gap: 16px; min-width: 0; }
-html:root body .as-av { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(180deg, #f2f2f4, #e3e3e8); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; }
-html:root body .as-nm { display: flex; flex-direction: column; min-width: 0; }
-html:root body .as-nm b { font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
-html:root body .as-sub { color: var(--apple-grey); font-size: 14px; font-weight: 400; }
-html:root body .as-sub.is-late { color: #b25000; font-size: 13px; }
-html:root body .as-chip { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 6px; background: var(--apple-chip); font-size: 13px; font-weight: 500; }
-html:root body .as-apps { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-html:root body .as-app { display: flex; align-items: center; gap: 10px; min-width: 0; }
-html:root body .as-uni { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-html:root body .as-tag { flex: none; display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 980px; background: var(--apple-chip); color: #1d1d1f; font-size: 13px; font-weight: 500; white-space: nowrap; }
-html:root body .as-tag.is-sent { background: #e8f1fd; color: #0058b8; }
-html:root body .as-tag.is-ok { background: #e3f5e8; color: #1a7f37; }
-html:root body .as-tag.is-no { background: var(--apple-chip); color: var(--apple-grey); }
-html:root body .as-next { display: flex; flex-direction: column; min-width: 0; }
-html:root body .as-nt { font-weight: 500; }
-html:root body .as-miss { font-size: 14px; color: var(--apple-grey); }
-html:root body .as-miss.is-miss { color: #b25000; }
-html:root body .as-chev { width: 9px; height: 9px; border-right: 2px solid #aeaeb2; border-bottom: 2px solid #aeaeb2; transform: rotate(-45deg); }
-html:root body .as-empty { padding: 28px; color: var(--apple-grey); text-align: center; }
 html:root body .lg-mock-who { color: var(--apple-grey); }
 
 /* ---------- finishing pass: size, motion, the card's header and the older controls ---------- */
@@ -289,9 +250,9 @@ html:root body .lg-mock-who { color: var(--apple-grey); }
   html.app-apple[data-size="medium"] { zoom: .92; --isr-z: .92; }
 }
 html:root body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-feature-settings: "cv11", "ss01"; }
-html:root body .btn, html:root body .tda-pill, html:root body .tda-view, html:root body .as-sw, html:root body .lg-seg-btn, html:root body .sc-reach-btn, html:root body .sl-pick { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease; }
-html:root body .btn:active, html:root body .tda-pill:active, html:root body .as-sw:active { transform: scale(.97); }
-html:root body .tda-panel, html:root body .lg-box, html:root body .as-card, html:root body .tda-tile { animation: apple-in .4s cubic-bezier(.2, .7, .2, 1) both; }
+html:root body .btn, html:root body .tda-pill, html:root body .tda-view, html:root body .lg-seg-btn, html:root body .sc-reach-btn, html:root body .sl-pick { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease; }
+html:root body .btn:active, html:root body .tda-pill:active { transform: scale(.97); }
+html:root body .tda-panel, html:root body .lg-box, html:root body .tda-tile { animation: apple-in .4s cubic-bezier(.2, .7, .2, 1) both; }
 @keyframes apple-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   html:root body *, html:root body *::before, html:root body *::after { animation: none !important; transition: none !important; }
@@ -325,9 +286,7 @@ html:root body .sheet-wrap, html:root body .table-wrap, html:root body #sheet { 
 html:root body .sheet-tabs button, html:root body .sheet-tab { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; }
 
 /* the list while it loads, and when it is empty */
-html:root body .as-skel { height: 64px; margin: 0 28px; border-bottom: 1px solid var(--apple-hair); background: linear-gradient(90deg, #f5f5f7 25%, #ececf0 37%, #f5f5f7 63%); background-size: 400% 100%; animation: apple-shimmer 1.3s ease infinite; border-radius: 10px; }
 @keyframes apple-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
-html:root body .as-empty { padding: 56px 28px; font-size: 17px; }
 html:root body #view section.sc-hero.lg-box { border: 0; background: #fff; border-radius: 20px; box-shadow: var(--apple-card); }
 html:root body #view section.sc-hero .sc-head { border-bottom: 0; background: transparent; }
 html:root body #view section.sc-hero .sc-steps-box, html:root body #view section.sc-hero > div:last-child { border-top: 0; background: transparent; }
@@ -336,8 +295,6 @@ html:root body #view section.sc-next .sc-next-ico { background: #fff; }
 html:root body #view .sc-next-eyebrow, html:root body #view .sc-next .sc-eyebrow { color: #0058b8; }
 html:root body #view a.sc-reach-btn, html:root body #view .sc-actions .sc-reach-btn { border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-weight: 500; box-shadow: none; }
 html:root body #view a.sc-reach-btn:hover { background: #dcdce1; }
-html:root body .as-row, html:root body a.as-row { border: 0; border-bottom: 0; box-shadow: none; text-decoration: none; }
-html:root body .as-row + .as-row { border-top: 0; }
 html:root body .tdy-top { border-top-color: var(--apple-hair); }
 
 /* the sheet and the finder: the last older outlines */
@@ -357,7 +314,6 @@ html:root body table#sheet thead th, html:root body table#sheet thead th * { tex
 /* 🔴 CSS CHANGED (2026-11-24): Application Team pages | from: content ran across the whole screen (about 1170px on a 1366px laptop), looked wide and flat | to: a centred column like the design, about 1080px, the search box a fixed comfortable width */
 html:root body .p-page, html:root body .page { max-width: 1080px; margin-left: auto; margin-right: auto; }
 html:root body .p-page.bp-page, html:root body .p-page.pu-page, html:root body .p-page.ev-page { max-width: 1080px; }
-html:root body .as-wrap:not(.is-slim) { max-width: 1080px; margin-left: auto; margin-right: auto; }
 
 /* 🔴 CSS CHANGED (2026-11-24): Application Team Today, same as design F6 | from: a white search box under the numbers, tabs up by the bell | to: a 300px grey search pill with a magnifier up by the bell, the tabs on the left and the kinds on the right of one row */
 html:root body .tda-top { align-items: center; }
@@ -373,36 +329,34 @@ html:root body .tda-segslot .tda-search .td-search-input:not([type="x"]):focus {
 html:root body .tda-segslot .tda-search .td-search-input:not([type="x"]) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2.3' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: 12px center !important; background-size: 15px 15px !important; }
 
 /* 🔴 CSS CHANGED (2026-11-24): All Students search box, design F6 | from: plain white box | to: white box with a thin grey ring and a magnifier inside, 380px */
-html:root body .as-search { width: 380px; max-width: 100%; padding-left: 38px; border: 0 !important; border-radius: 10px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E") no-repeat 13px center / 16px 16px; box-shadow: inset 0 0 0 1px #d2d2d7; }
-html:root body .as-search:focus { outline: 0; box-shadow: inset 0 0 0 2px #0071e3; }
-html:root body input.as-search { text-align: left !important; padding-left: 38px !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: 13px center !important; background-size: 16px 16px !important; background-color: #fff !important; }
 
 /* 🔴 CSS CHANGED (2026-11-24): University page top buttons, design F6 | from: outlined boxes | to: soft grey pills with no outline */
 html:root body .p-page .btn:not(.btn-primary):not(.primary), html:root body .page .btn:not(.btn-primary):not(.primary) { border: 0 !important; border-radius: 980px !important; background: var(--apple-btn) !important; color: #1d1d1f !important; box-shadow: none !important; }
 
 /* 🔴 CSS CHANGED (2026-11-24): student card width and All Students filter row, design F6 | from: card full width (about 1070px of a laptop), filter tabs wrapping under the search | to: card in the same centred 1180px column (it has two columns, so a little wider than the lists), filter tabs smaller so search and tabs share one row on a laptop */
 html:root body main#page.p-page { max-width: 1180px; margin-left: auto; margin-right: auto; }
-html:root body .as-tools { flex-wrap: nowrap; gap: 12px; }
-html:root body .as-tools .as-search { flex: 0 1 260px; width: 260px; min-width: 200px; }
-html:root body .as-seg { flex-wrap: nowrap; }
-html:root body .as-seg .as-sw { padding: 0 11px; font-size: 13px; white-space: nowrap; }
 html:root body main#page #view, html:root body main#page #view > .sc-wrap, html:root body main#page .sc-shell { background: transparent !important; box-shadow: none !important; border: 0 !important; }
 
 /* 🔴 CSS CHANGED (2026-11-24): All Students rows with real, long task texts | from: the next-task text ran to 6 lines and names wrapped, rows 130px+ tall | to: the next-task text stops after 2 lines (full text on hover), the Next column is wider, names stay on one line, rows about 80px */
-html:root body .as-head, html:root body .as-row { grid-template-columns: minmax(0, 1.7fr) minmax(0, .9fr) minmax(0, 2.1fr) minmax(0, 2.6fr) minmax(0, .9fr) 12px; gap: 16px; }
-html:root body .as-head { padding-left: 22px; padding-right: 22px; }
-html:root body .as-row { padding: 14px 22px; }
-html:root body .as-nt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
-html:root body .as-nm b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-html:root body .as-apps .as-app { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px; }
-html:root body .as-apps .as-uni { flex: 1 1 100%; }
-html:root body .as-apps { gap: 6px; }
-html:root body .as-head, html:root body .as-row { grid-template-columns: minmax(0, 2.1fr) minmax(0, .9fr) minmax(0, 1.8fr) minmax(0, 2.3fr) minmax(0, .9fr) 12px; }
 
 /* 🔴 CSS CHANGED (2026-11-24): the sheet, Application Team only | from: dark grey grid lines (#b8b8b8 / #9a9a9a), boxed grey tab | to: light hairlines (#e5e5ea / #d2d2d7) by changing the line colours the sheet reads, grey header words, rounded table corners; no cell, row or status colour is touched */
 html:root body #sheet, html:root body .table-wrap, html:root body .sheet-tabs { --border: #e5e5ea; --border-strong: #d2d2d7; }
 html:root body #sheet thead th { color: #6e6e73; font-weight: 600; }
-html:root body .table-wrap { border-radius: 14px; overflow: hidden; border: 1px solid #e5e5ea; background: #fff; }
+html:root body .table-wrap { border-radius: 14px; overflow: auto; border: 1px solid #e5e5ea; background: #fff; }
 html:root body #sheet td, html:root body #sheet th { border-color: #e5e5ea !important; }
 html:root body #sheet thead th { border-bottom-color: #d2d2d7 !important; }
-html:root body .table-wrap[role="region"] { border: 1px solid #e5e5ea !important; border-radius: 14px !important; }
+html:root body .table-wrap[role="region"] { border: 1px solid #e5e5ea !important; border-radius: 14px !important; overflow: auto !important; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Universities / Pathway colleges switch and the sheet's intake tab, Application Team only | from: a dark line between the two switch buttons, a boxed grey intake tab | to: no line (one soft grey switch with a white chosen button), the intake tab as a grey pill, the chosen one black with white words */
+html:root body div.p-seg.ff-kind button, html:root body div.p-seg.ff-kind button + button { border: 0 !important; border-left: 0 !important; border-right: 0 !important; box-shadow: none !important; background: transparent; }
+html:root body div.p-seg.ff-kind button::before, html:root body div.p-seg.ff-kind button::after { display: none !important; }
+html:root body div.p-seg.ff-kind button.is-on, html:root body div.p-seg.ff-kind button[aria-pressed="true"], html:root body div.p-seg.ff-kind button[aria-selected="true"] { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .12) !important; border-radius: 8px; }
+html:root body .sheet-tab { border: 0 !important; border-radius: 980px !important; background: var(--apple-btn) !important; box-shadow: none !important; color: #1d1d1f !important; font-weight: 500; }
+html:root body .sheet-tab.active { background: #1d1d1f !important; color: #fff !important; }
+html:root body .sheet-tab, html:root body .sheet-tab.active { outline: 0 !important; }
+html:root body .sheet-tab::before, html:root body .sheet-tab::after, html:root body .sheet-tabs-list { border: 0 !important; box-shadow: none !important; }
+html:root body .sheet-tabs-list .sheet-tab-label { background: transparent !important; color: inherit !important; }
+html:root body .sheet-tabs-list.has-thumb { background: var(--apple-btn) !important; border-radius: 11px !important; padding: 3px !important; }
+html:root body .sheet-tabs-list .seg-thumb { background: #fff !important; border-radius: 8px !important; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04) !important; }
+html:root body .sheet-tab, html:root body .sheet-tab.active { background: transparent !important; color: #1d1d1f !important; border-radius: 8px !important; }
+html:root body .sheet-tab.active { font-weight: 600; }

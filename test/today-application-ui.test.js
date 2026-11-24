@@ -184,24 +184,16 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no sideways scroll');
   assert.deepStrictEqual(errors, []);
 
-  // All Students for the Application Team is a student list with the sheet one switch away (the owner, 24 Nov 2026); the Mock Team keeps the sheet.
+  // All Students for the Application Team is the sheet only (the owner, 24 Nov 2026: the student list was removed); the Mock Team has the same sheet.
   const listPage = await asha.newPage();
   const listErrors = []; listPage.on('pageerror', (e) => listErrors.push(e.message));
   await listPage.goto('/students');
-  await listPage.waitForSelector('#appleStudents .as-row');
-  assert.ok(await listPage.locator('#appleStudents .as-row', { hasText: 'Gita Demo' }).count(), 'the student is on the list');
-  assert.match(await listPage.locator('#appleStudents .as-row', { hasText: 'Gita Demo' }).innerText(), /Test University/, 'with where the application stands');
-  assert.strictEqual(await listPage.locator('#sheet').isVisible(), false, 'the sheet is hidden while the list shows');
-  await listPage.getByRole('button', { name: 'The sheet', exact: true }).click();
   await listPage.locator('#sheet').waitFor({ state: 'visible' });
-  assert.ok(await listPage.locator('#appleStudents .as-sw', { hasText: 'Student list' }).count(), 'the switch stays to come back');
-  await listPage.getByRole('button', { name: 'Student list', exact: true }).click();
-  await listPage.waitForSelector('#appleStudents .as-row');
+  assert.strictEqual(await listPage.locator('#appleStudents, .as-sw').count(), 0, 'no student list and no switch');
   assert.deepStrictEqual(listErrors, []);
   const mockSheet = await mina.newPage();
   await mockSheet.goto('/students');
   await mockSheet.waitForSelector('#sheet');
-  assert.strictEqual(await mockSheet.locator('#appleStudents').count(), 0, 'the Mock Team keeps the sheet');
   await mockSheet.close();
   await listPage.close();
 

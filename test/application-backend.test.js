@@ -222,9 +222,8 @@ test('task workflow end to end: give, see, comment, move the day, hand on, finis
   assert.ok(back && !back.taskId && !back.sent, 'the course is back on the shortlist');
 });
 
-// The student list behind All Students for the Application Team (the owner, 24 Nov 2026): read only, for that team alone, and the card
-// carries the mock bookings (read only) for its Mock interviews box.
-test('All Students as a list: the Application Team only, read only, and the card carries the mock bookings', { timeout: 120000 }, async (t) => {
+// The card carries the mock bookings (read only) for its Mock interviews box (the owner, 24 Nov 2026).
+test('The card carries the mock bookings, read only, for the Application Team', { timeout: 120000 }, async (t) => {
   const { admin, login } = await start(t);
   const app = await login('asha', ['application']);
   const mock = await login('mina', ['mock']);
@@ -232,19 +231,6 @@ test('All Students as a list: the Application Team only, read only, and the card
   assert.ok(id, 'a student to list');
   assert.ok((await admin('POST', `/api/cards/${id}/sheet`, { fields: { 'UNIVERSITY NAME': 'Example University', 'COURSE NAME': 'BSc Example' } })).json, 'the university on All Students');
   await admin('POST', `/api/cards/${id}/tasks`, { team: 'application', text: 'Apply to Example University', tag: 'application' });
-  const list = await app('GET', '/api/students-overview');
-  assert.strictEqual(list.status, 200, JSON.stringify(list.json));
-  const row = list.json.students.find((s) => s.id === id);
-  assert.ok(row, 'the student is on the list');
-  assert.strictEqual(row.name, 'Gita Demo');
-  assert.strictEqual(row.stage, 'Application Stage');
-  assert.ok(row.apps.length === 1 && row.apps[0].university === 'Example University', 'an older record still shows its application: ' + JSON.stringify(row));
-  assert.ok(row.next && /Apply to Example University/.test(row.next.text), 'the next task for the team');
-  assert.strictEqual(typeof row.missing, 'number');
-  // Nobody else gets the list: the Mock Team and Admin are refused, and the list writes nothing.
-  assert.strictEqual((await mock('GET', '/api/students-overview')).status, 403);
-  assert.strictEqual((await admin('GET', '/api/students-overview')).status, 403);
-  assert.strictEqual((await app('POST', '/api/students-overview', {})).status === 200, false, 'no write through the list');
   // The card carries the mock bookings, an empty list when there are none.
   const card = (await app('GET', `/api/cards/${id}`)).json;
   assert.ok(Array.isArray(card.mockInfo), 'mockInfo is a list');

@@ -120,7 +120,6 @@ const STATIC_FILES = {
   '/bulk.html': 'text/html; charset=utf-8',
   '/followup.html': 'text/html; charset=utf-8',
   '/followup-page.js': 'text/javascript; charset=utf-8',
-  '/apple-students.js': 'text/javascript; charset=utf-8', // All Students as a student list, loaded by header.js for the Application Team only
   '/bulk-add.html': 'text/html; charset=utf-8',
   '/bulk-add-page.js': 'text/javascript; charset=utf-8',
   '/student-file.js': 'text/javascript; charset=utf-8',
