@@ -463,9 +463,11 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
 
   // One student's bookings for the card's Mock interviews box (the owner, 24 Nov 2026): the mock, its day and time, who takes it and,
   // once answered, whether the student joined and the result. Read only; nothing here can change a booking.
-  const forRow = (rowId) => bookings.all().bookings.filter((b) => b.rowId === rowId && b.status !== 'cancelled')
+  // Numbered as the Bookings page numbers them (booked and not answered mocks by their date), so two bookings made before either was held
+  // never both read "Mock 1" on the card while the Bookings page says Mock 1 and Mock 2.
+  const forRow = (rowId) => { const all = bookings.all().bookings; const nums = renumber(all); return all.filter((b) => b.rowId === rowId && b.status !== 'cancelled')
     .sort((a, b) => `${a.day} ${a.time}`.localeCompare(`${b.day} ${b.time}`))
-    .map((b) => ({ mock: Number(b.mock) || 0, day: text(b.day), time: text(b.time), minutes: Number(b.minutes) || 0, by: text(bookings.person(b.owner).shown), answer: b.answer ? { joined: Boolean(b.answer.joined), result: text(b.answer.result), by: text(b.answer.by) } : null }));
+    .map((b) => ({ mock: nums.get(b.id) || Number(b.mock) || 0, day: text(b.day), time: text(b.time), minutes: Number(b.minutes) || 0, by: text(bookings.person(b.owner).shown), answer: b.answer ? { joined: Boolean(b.answer.joined), result: text(b.answer.result), by: text(b.answer.by) } : null })); };
   return { handle, handlePublic, tick, matchStudent, pageFor, unanswered, comingRows, nextBooked, forRow };
 }
 

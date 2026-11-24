@@ -478,7 +478,8 @@ function createPortalApi({
     const shown = (v) => { const t = text(v); return t ? `"${t.length > 160 ? t.slice(0, 157) + '...' : t}"` : '(empty)'; };
     const lines = pairs.filter(([, a, b]) => text(a) !== text(b)).map(([label, a, b]) => `${label}: ${shown(a)} \u2192 ${shown(b)}`);
     if (!lines.length) return;
-    cards.addNote(rowId, { kind: 'note', text: `${undo ? 'Undone on the student card' : 'Changed on the student card'}: ${lines.join('; ')}.` }, by(req));
+    const changes = pairs.filter(([, a, b]) => text(a) !== text(b)).map(([label, a, b]) => ({ label: String(label), from: text(a), to: text(b) }));
+    cards.addNote(rowId, { kind: 'note', text: `${undo ? 'Undone on the student card' : 'Changed on the student card'}: ${lines.join('; ')}.`, changes, undo }, by(req));
   }
 
   // The Student Source is a column of the sheet (hidden there: it is chosen on the card). Changed with the same rules as on the
