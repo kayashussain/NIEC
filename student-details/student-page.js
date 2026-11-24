@@ -519,6 +519,9 @@
     const done = rows.filter((m) => m.fb).length;
     const title = head.querySelector('h2');
     if (title) title.append(el('span', 'lg-head-sub', `${done} of 4 done`));
+    // Student Card G2 (the owner, 24 Nov 2026): the four mocks are four small tiles (status and day) in one row; what was written about a
+    // mock (feedback, who took it, the answer) stays as a line under the tiles, so nothing that was shown before is lost.
+    const tiles = el('div', 'lg-mock-tiles');
     const wrap = el('div', 'lg-mock-list');
     rows.forEach((m) => {
       let chip = ['Not yet', ''];
@@ -527,25 +530,27 @@
       else if (m.d) chip = ['Booked', 'is-booked'];
       else if (m.raw) chip = ['Day noted', ''];
       else if (inMock && nextOpen && nextOpen.n === m.n) chip = ['Not booked', 'is-late'];
-      const row = el('div', 'lg-mock-row');
-      row.append(el('b', 'lg-mock-n', `Mock ${m.n}`));
-      const body = el('div', 'lg-mock-body');
-      const top = el('div', 'lg-mock-top');
-      top.append(el('span', `lg-mock-chip ${chip[1]}`.trim(), chip[0]));
-      if (m.d || m.raw) top.append(el('span', 'lg-mock-day', `${m.d ? day(m.d) : m.raw}${m.b && m.b.time ? `, ${m.b.time}` : ''}`));
-      body.append(top);
-      if (m.fb) body.append(el('div', 'lg-mock-fb', m.fb));
+      const tile = el('div', `lg-mock-tile ${chip[1]}`.trim());
+      tile.append(el('b', '', `Mock ${m.n}`), el('span', 'lg-mock-state', chip[0]));
+      if (m.d || m.raw) tile.append(el('span', 'lg-mock-when', `${m.d ? day(m.d) : m.raw}${m.b && m.b.time ? `, ${m.b.time}` : ''}`));
+      tiles.append(tile);
+      const bits = [];
       if (m.b) {
         const a = m.b.answer;
-        const bits = [];
         if (a && a.joined === false) bits.push('Did not join');
         else if (a) { if (a.by || m.b.by) bits.push(`Taken by ${a.by || m.b.by}`); if (/^ready/i.test(a.result)) bits.push('Ready for the final interview'); else if (/^again/i.test(a.result)) bits.push('Needs another mock'); }
         else if (m.b.by) bits.push(`With ${m.b.by}`);
-        if (bits.length) body.append(el('div', 'lg-mock-who', bits.join(' · ')));
       }
+      if (!m.fb && !bits.length) return;
+      const row = el('div', 'lg-mock-row');
+      row.append(el('b', 'lg-mock-n', `Mock ${m.n}`));
+      const body = el('div', 'lg-mock-body');
+      if (m.fb) body.append(el('div', 'lg-mock-fb', m.fb));
+      if (bits.length) body.append(el('div', 'lg-mock-who', bits.join(' · ')));
       row.append(body);
       wrap.append(row);
     });
+    sec.append(tiles);
     const pre = String(r['PRE CAS INTERVIEW'] || '').trim();
     const preRow = el('div', 'lg-mock-row lg-mock-pre');
     preRow.append(el('b', 'lg-mock-n', 'Pre-CAS'));
@@ -905,17 +910,38 @@
       const dayWord = ago === 0 ? 'Today' : ago === 1 ? 'Yesterday' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(iso.slice(0, 4) === todayIso.slice(0, 4) ? {} : { year: 'numeric' }) });
       return [dayWord, d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })];
     };
+    const parseChangeNote = (txt) => {
+      const m = /^(Changed|Undone) on the student card: ([\s\S]+)\.$/.exec(String(txt || ''));
+      if (!m) return null;
+      const VAL = '(\\(empty\\)|"[\\s\\S]*?")';
+      const rx = new RegExp(`^(.+?): ${VAL} → ${VAL}$`);
+      const parts = m[2].split(/; (?=[^";]+?: (?:\(empty\)|"))/);
+      const rows = [];
+      for (const p of parts) { const x = rx.exec(p); if (!x) return null; const clean = (v) => (v === '(empty)' ? 'empty' : v.slice(1, -1)); rows.push({ label: x[1], from: clean(x[2]), to: clean(x[3]) }); }
+      return rows.length ? { undone: m[1] === 'Undone', rows } : null;
+    };
     const KIND = { note: 'Note', auto: 'Automatic', update: 'Task update', done: 'Task done', stage: 'Stage', try: 'No answer' };
     const rowFor = (e) => {
       const tr = el('tr', `is-${e.kind}`);
       const [d1, d2] = whenText(e.at);
       const tdW = el('td', 'is-when'); tdW.append(el('b', '', d1), el('span', '', d2)); tdW.title = when(e.at);
-      const tdK = el('td', 'is-kind'); tdK.append(el('span', `lg-kind is-${e.kind}`, KIND[e.kind] || e.label || ''));
+      // Student Card G2: a note the system wrote when details were saved ("Changed on the student card: Label: "a" → "b"; ...") is shown as
+      // one clear line with the names of what changed and a quiet Show changes; anything that does not read exactly so stays as written.
+      const diff = e.kind === 'note' ? parseChangeNote(e.text) : null;
+      const tdK = el('td', 'is-kind'); tdK.append(el('span', `lg-kind is-${e.kind}`, diff ? (diff.undone ? 'Change undone' : 'Details changed') : KIND[e.kind] || e.label || ''));
       if (tlLastSeen && String(e.at) > tlLastSeen && e.by !== meName) { tr.classList.add('is-unseen'); tdK.title = 'New since you last opened this student'; }
       const tdT = el('td', 'is-what');
       if (e.ref) tdT.append(el('b', 'lg-ref', e.ref));
       if (e.lead) tdT.append(el('span', 'lg-lead', e.lead));
-      if (e.text) { const p2 = el('p', 'lg-text'); if (e.tag) p2.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' '); p2.append(...linked(e.text)); tdT.append(p2); }
+      if (diff) {
+        tdT.append(el('p', 'lg-text', `${diff.rows.length} ${diff.rows.length === 1 ? 'detail' : 'details'} ${diff.undone ? 'put back' : 'saved'}.`));
+        const names = el('div', 'lg-diff-names'); diff.rows.forEach((r) => names.append(el('span', 'lg-kind', r.label)));
+        const list = el('div', 'lg-diff'); list.hidden = true;
+        diff.rows.forEach((r) => { const line = el('div', 'lg-diff-row'); const was = el('s', '', r.from); line.append(el('span', '', r.label), el('span', 'lg-diff-vals')); line.lastChild.append(was, ' → ', r.to); list.append(line); });
+        const tog = h('button', { class: 'lg-diff-tog', type: 'button', 'aria-expanded': 'false' }, 'Show changes');
+        tog.addEventListener('click', () => { list.hidden = !list.hidden; tog.setAttribute('aria-expanded', String(!list.hidden)); tog.textContent = list.hidden ? 'Show changes' : 'Hide changes'; });
+        tdT.append(names, tog, list);
+      } else if (e.text) { const p2 = el('p', 'lg-text'); if (e.tag) p2.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' '); p2.append(...linked(e.text)); tdT.append(p2); }
       const tdB = el('td', 'is-by', e.kind === 'auto' ? 'ISR' : e.by || 'Someone');
       const tdM = el('td', 'is-more');
       const items = [];
@@ -1447,6 +1473,7 @@
   // The card keeps its proportions at any browser zoom (the owner, 24 Nov 2026): the width it was designed for (about 1480 CSS px, the
   // usual laptop) is scaled to the space there is, so zooming out does not stretch it and zooming in does not make the text huge and the
   // card long. It never goes below 85% (text stays readable); narrower than that the two columns stack (see student-look.css).
+  let miniWatch = null; // watches the header, to show the slim bar when it has scrolled away
   const CARD_REF_WIDTH = 1480;
   function fitCard() {
     const w = view.clientWidth;
@@ -1461,7 +1488,19 @@
     const keepY = window.scrollY;
     const frag = document.createDocumentFragment();
     const q = queueBar(); if (q) frag.append(q);
-    frag.append(hero());
+    const heroEl = hero();
+    frag.append(heroEl);
+    // Student Card G2: when the header has scrolled away, a slim bar keeps who the student is, the stage and the next step in view
+    // (it only appears then; clicking it goes back to the top). It adds no button that does something the card already does.
+    if (miniWatch) { miniWatch.disconnect(); miniWatch = null; }
+    const mini = el('div', 'sc-mini');
+    { const inner = el('button', 'sc-mini-in', ''); inner.type = 'button'; inner.setAttribute('aria-label', 'Back to the top of the card');
+      inner.append(el('span', 'sc-mini-av', initials(data.student.name)), el('b', 'sc-mini-name', data.student.name), stagePill(data.student.stage));
+      const nx = nextStep(); const nxt = nx && nx.querySelector('.sc-next-words b');
+      if (nxt) inner.append(el('span', 'sc-mini-next', `Next: ${nxt.textContent}`));
+      inner.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      mini.append(inner); }
+    frag.append(mini);
     // The Ledger design (the owner, 21 Nov 2026): solid panels and tables, as Route2Uni. The profile and the source on the left;
     // Next step, Applications, the open tasks and the whole Timeline on the right, one under another.
     const layout = el('div', 'sc-layout');
@@ -1489,6 +1528,10 @@
     frag.append(...top, layout);
     view.replaceChildren(frag);
     fitCard();
+    if (typeof IntersectionObserver === 'function') {
+      miniWatch = new IntersectionObserver(([en]) => mini.classList.toggle('is-on', !en.isIntersecting && en.boundingClientRect.top < 0), { threshold: 0 });
+      miniWatch.observe(heroEl);
+    }
     window.scrollTo(0, keepY);
     focusForm();
     interactions();
