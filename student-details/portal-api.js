@@ -1566,7 +1566,7 @@ function createPortalApi({
           const hm = b.time.split(':').map(Number);
           const line = `Did the student join? Not answered (${b.mock ? `Mock ${b.mock}, ` : ''}${niceDay(b.day)}, ${hm[0] % 12 || 12}:${String(hm[1]).padStart(2, '0')} ${hm[0] < 12 ? 'AM' : 'PM'}).`;
           const found = b.rowId && rows.get(b.rowId);
-          if (found) missOne(found.row, found.sheet, line, { action: { label: 'Answer', href: '/bookings' } });
+          if (found) missOne(found.row, found.sheet, line, { action: { label: 'Answer', href: '/bookings#answer' } });
           else missing.set(`booking:${b.id}`, { id: '', name: b.name, stage: 'Not matched to a student yet', intake: '', lines: [{ text: line, action: { label: 'Answer', href: '/bookings' } }] });
         });
       }

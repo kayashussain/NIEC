@@ -7,7 +7,8 @@
 //   Setup             the person's own Microsoft Teams meeting link, the booking link's name, the name students see and the email
 //                     their calendar invites go to.
 //
-// When a mock's time is over, a window asks (every time Bookings is opened, until answered): did the student join? If yes, the feedback
+// When a mock's time is over, a banner at the top says so (every time Bookings is opened, until answered) and its Answer button opens the window
+// that asks: did the student join? (The window no longer opens by itself, the owner, 24 Nov 2026; the Answer button on Today opens it with #answer.) If yes, the feedback
 // and the result are required, and they are written to the student's card (MOCK SCHEDULE n and FEEDBACK n) by the server.
 (function () {
   const { el, h, api, dialog, requiredMark } = window.Portal;
@@ -18,8 +19,9 @@
   const AHEAD = [[1, '1 day'], [2, '2 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']];
   const NOTICE = [[60, '1 hour before'], [120, '2 hours before'], [240, '4 hours before'], [1440, '1 day before']];
   let data = null;
-  let tab = (location.hash || '').replace('#', '') || 'upcoming';
-  let asked = false; // the window after a mock is opened once per visit of the page (it comes back on the next visit)
+  const hash0 = (location.hash || '').replace('#', '');
+  let tab = hash0 && hash0 !== 'answer' ? hash0 : 'upcoming';
+  let openAnswer = hash0 === 'answer'; // the Answer button on Today comes here and opens the window at once
 
   const linkOf = (p) => (p && p.slug ? `${location.origin}/book/${p.slug}` : '');
   const niceTime = (t) => { const [hh, mm] = String(t).split(':').map(Number); return `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`; };
@@ -37,8 +39,18 @@
   function draw() {
     drawTabs();
     const view = $('view');
-    view.replaceChildren(tab === 'slots' ? slotsView() : tab === 'setup' ? setupView() : upcomingView());
-    if (!asked && data.waiting.length) { asked = true; askNext(0); }
+    const body = tab === 'slots' ? slotsView() : tab === 'setup' ? setupView() : upcomingView();
+    const banner = waitingBanner();
+    view.replaceChildren(...(banner ? [banner, body] : [body]));
+    if (openAnswer && data.waiting.length) { openAnswer = false; history.replaceState(null, '', `#${tab}`); askNext(0); }
+  }
+  // Mocks that have ended and are not answered: said once, calmly, at the top; the window opens only when the person presses Answer.
+  function waitingBanner() {
+    if (data.access === 'view' || !data.waiting.length) return null;
+    const n = data.waiting.length;
+    const words = n === 1 ? `Your mock with ${data.waiting[0].name} has ended. Did the student join?` : `${n} mocks have ended. Did the students join?`;
+    return h('section', { class: 'mt-banner', role: 'status' }, el('span', 'mt-banner-dot'), el('span', 'mt-banner-words', words),
+      h('button', { type: 'button', class: 'btn btn-primary', onclick: () => askNext(0) }, 'Answer'));
   }
 
   // ---- Upcoming ----
@@ -383,6 +395,10 @@
     }
   }
   // Back and forward, or a link to #slots or #setup, open that part of the page.
-  window.addEventListener('hashchange', () => { const k = (location.hash || '').replace('#', ''); if (data && k && k !== tab) { tab = k; draw(); } });
+  window.addEventListener('hashchange', () => {
+    const k = (location.hash || '').replace('#', '');
+    if (k === 'answer') { if (data && data.waiting.length) { history.replaceState(null, '', `#${tab}`); askNext(0); } return; }
+    if (data && k && k !== tab) { tab = k; draw(); }
+  });
   load();
 })();
