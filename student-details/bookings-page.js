@@ -32,7 +32,7 @@
     const list = data.access === 'view' ? [['upcoming', 'Upcoming']] : [['upcoming', 'Upcoming'], ['slots', 'Available slots'], ['setup', 'Setup']];
     if (!list.some(([k]) => k === tab)) tab = 'upcoming';
     list.forEach(([k, label]) => {
-      tabs.append(h('button', { type: 'button', role: 'tab', 'aria-selected': String(tab === k), onclick: () => { tab = k; history.replaceState(null, '', `#${k}`); draw(); } }, label));
+      tabs.append(h('button', { type: 'button', role: 'tab', 'aria-selected': String(tab === k), onclick: () => { if (tab === k) return; tab = k; history.pushState(null, '', `#${k}`); draw(); } }, label));
     });
   }
 
@@ -326,6 +326,7 @@
     });
     const tools = el('div', 'mt-day-tools');
     tools.append(h('button', { type: 'button', class: 'mt-tool', 'aria-label': `Add a slot on ${label}`, title: 'Add a slot', onclick: () => {
+      if (list.length >= 24) { toast('A day can have 24 slots at most.', 'error'); return; }
       const last = list[list.length - 1];
       const start = last ? last[1] : '10:00';
       const [hh, mm] = start.split(':').map(Number);
@@ -416,9 +417,10 @@
   }
   // Back and forward, or a link to #slots or #setup, open that part of the page.
   window.addEventListener('hashchange', () => {
-    const k = (location.hash || '').replace('#', '');
+    const k = (location.hash || '').replace('#', '') || 'upcoming';
     if (k === 'answer') { if (data && data.waiting.length) { history.replaceState(null, '', `#${tab}`); askNext(0); } return; }
-    if (data && k && k !== tab) { tab = k; draw(); }
+    if (data && ['upcoming', 'slots', 'setup'].includes(k) && k !== tab) { tab = k; draw(); }
   });
+  window.addEventListener('popstate', () => window.dispatchEvent(new HashChangeEvent('hashchange')));
   load();
 })();

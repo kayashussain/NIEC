@@ -8,7 +8,7 @@
   const view = document.getElementById('view');
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const slug = (location.pathname.match(/^\/book\/([a-z0-9-]{3,40})$/) || [])[1] || '';
+  const slug = ((location.pathname.match(/^\/book\/([A-Za-z0-9-]{3,40})\/?$/) || [])[1] || '').toLowerCase();
   const token = (location.pathname.match(/^\/booking\/([A-Za-z0-9_-]{20,40})$/) || [])[1] || '';
 
   function h(tag, attrs, ...kids) {
@@ -32,7 +32,7 @@
   const logo = () => h('img', { class: 'bk-logo', src: '/brand-logo.png', alt: '', onerror: (e) => e.target.remove() });
 
   // The picker: a month calendar with the days that have free slots, the free times of the chosen day, then the form.
-  function picker(info, { onBook, form = true, button = 'Book' }) {
+  function picker(info, { onBook, form = true, button = 'Book', onStale, keep = {} }) {
     const days = info.days || [];
     const byDay = new Map(days.map((d) => [d.day, d]));
     let chosenDay = days[0] ? days[0].day : '';
@@ -73,6 +73,7 @@
     const name = h('input', { id: 'bkName', autocomplete: 'name', maxlength: '80' });
     const email = h('input', { id: 'bkEmail', type: 'email', autocomplete: 'email', maxlength: '120' });
     const phone = h('input', { id: 'bkPhone', type: 'tel', autocomplete: 'tel', maxlength: '30' });
+    name.value = keep.name || ''; email.value = keep.email || ''; phone.value = keep.phone || ''; // what was typed stays when the times are refreshed
     const msg = h('p', { class: 'bk-msg', role: 'status' });
     const go = h('button', { type: 'button', class: 'bk-go' }, button);
     go.addEventListener('click', async () => {
@@ -82,7 +83,11 @@
       if (form && !email.value.trim()) { msg.textContent = 'Please write your email address.'; email.focus(); return; }
       go.disabled = true; const was = go.textContent; go.textContent = 'Booking…';
       try { await onBook({ day: chosenDay, time: chosenTime, name: name.value, email: email.value, phone: phone.value }); }
-      catch (e) { msg.textContent = e.message; go.disabled = false; go.textContent = was; }
+      catch (e) {
+        msg.textContent = e.message; go.disabled = false; go.textContent = was;
+        // A time that was just taken, or a booking that was just changed elsewhere: the page shows the real state instead of staying stuck.
+        if (onStale && /no longer free|cancelled|just changed/i.test(e.message)) setTimeout(() => onStale(e, { name: name.value, email: email.value, phone: phone.value }), 1400);
+      }
     });
     go.disabled = true; // greyed until a time is chosen (drawTimes sets it)
     drawCal(); drawTimes();
@@ -119,17 +124,19 @@
         h('p', { class: 'bk-dim' }, emailed === false ? 'Keep this page: it has your Teams link. Join 5 minutes early, with your camera on.' : 'We emailed you this with the Teams link. Join 5 minutes early, with your camera on.'))));
   }
 
-  async function bookPage() {
+  async function bookPage(keep = {}, notice = '') {
     let info;
     try { info = await call(`/api/book/${slug}`); } catch (e) { view.replaceChildren(h('div', { class: 'bk-card bk-done' }, h('div', { class: 'bk-main' }, logo(), h('h1', {}, 'This link is not open'), h('p', { class: 'bk-dim' }, e.message)))); return; }
     document.title = `Book a mock interview with ${info.with}`;
     view.replaceChildren(shell(info.with, info.minutes, picker(info, {
+      keep, onStale: (e, kept) => bookPage(kept, `${e.message} The free times are updated.`),
       onBook: async (x) => { const r = await call(`/api/book/${slug}`, x); history.replaceState(null, '', `/booking/${r.token}`); bookingPage(r.token, 'Your mock interview is booked', r.emailed); },
       button: 'Book',
     })));
+    if (notice) { const m = view.querySelector('.bk-msg'); if (m) m.textContent = notice; }
   }
 
-  async function bookingPage(tk = token, title = 'Your mock interview', emailed = true) {
+  async function bookingPage(tk = token, title = 'Your mock interview', emailed = false) {
     let r;
     try { r = await call(`/api/booking/${tk}`); } catch (e) { view.replaceChildren(h('div', { class: 'bk-card bk-done' }, h('div', { class: 'bk-main' }, logo(), h('h1', {}, 'Booking not found'), h('p', { class: 'bk-dim' }, e.message)))); return; }
     const b = r.booking;
@@ -152,8 +159,9 @@
     change.addEventListener('click', async () => {
       let slots;
       try { slots = await call(`/api/booking/${tk}/slots`); } catch (e) { msg.textContent = e.message; return; }
-      view.replaceChildren(shell(b.with, slots.minutes, h('p', { class: 'bk-dim bk-now' }, `Now: ${b.dayLabel}, ${b.timeLabel}`), picker(slots, {
+      view.replaceChildren(shell(b.with, slots.minutes, h('p', { class: 'bk-dim bk-now' }, `Now: ${b.dayLabel}, ${b.timeLabel}`), h('button', { type: 'button', class: 'bk-plain', onclick: () => bookingPage(tk) }, 'Back to my booking'), picker(slots, {
         form: false, button: 'Move to',
+        onStale: (e) => { if (/no longer free/i.test(e.message)) change.click(); else bookingPage(tk); },
         onBook: async (x) => { const out = await call(`/api/booking/${tk}/move`, { day: x.day, time: x.time }); history.replaceState(null, '', `/booking/${out.token}`); bookingPage(out.token, 'Your mock interview is moved'); },
       })));
     });

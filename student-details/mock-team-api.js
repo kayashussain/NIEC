@@ -145,11 +145,23 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   }
 
   // ---- the lists of the Bookings page ----
+  // A student's mocks that are booked and not answered are numbered by their date, not by the order they were booked in.
+  function renumber(list) {
+    const by = new Map();
+    list.forEach((b) => { if (b.rowId && b.status === 'booked' && !b.answer && Number(b.mock)) { if (!by.has(b.rowId)) by.set(b.rowId, []); by.get(b.rowId).push(b); } });
+    const out = new Map();
+    by.forEach((arr) => {
+      const nums = arr.map((b) => Number(b.mock)).sort((x, y) => x - y);
+      arr.slice().sort((a, b) => `${a.day} ${a.time}`.localeCompare(`${b.day} ${b.time}`)).forEach((b, i) => out.set(b.id, nums[i]));
+    });
+    return out;
+  }
+  let numbers = new Map();
   function viewOf(b, withOwner) {
     const p = bookings.person(b.owner);
     const out = {
       id: b.id, day: b.day, time: b.time, minutes: b.minutes, dayLabel: bookings.niceDay(b.day), timeLabel: bookings.niceTime(b.time),
-      name: b.name, email: b.email, phone: b.phone, rowId: b.rowId || '', mock: b.mock || 0, university: b.university || '', course: b.course || '',
+      name: b.name, email: b.email, phone: b.phone, rowId: b.rowId || '', mock: numbers.get(b.id) || b.mock || 0, university: b.university || '', course: b.course || '',
       teams: p.teams || '', status: b.status, answer: b.answer || null,
     };
     if (withOwner) out.owner = p.shown || '';
@@ -158,6 +170,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   function pageFor(user) {
     const access = bookingsAccess(user);
     const data = bookings.all();
+    numbers = renumber(data.bookings);
     const t = now().getTime();
     const mine = (b) => access !== 'own' || b.owner === user.id;
     const p = bookings.person(user.id);
@@ -202,9 +215,10 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   // Each student's next booked mock that is not over yet (the Mock Team's Today shows it on the task: the owner, 23 Nov 2026).
   const nextBooked = () => {
     const t = now().getTime(); const out = new Map();
+    const nums = renumber(bookings.all().bookings);
     bookings.all().bookings.filter((b) => b.rowId && b.status === 'booked' && !b.answer && bookings.endOf(b) > t)
       .sort((a, b) => `${a.day} ${a.time}`.localeCompare(`${b.day} ${b.time}`))
-      .forEach((b) => { if (!out.has(b.rowId)) out.set(b.rowId, { day: b.day, time: b.time, mock: Number(b.mock) || 0 }); });
+      .forEach((b) => { if (!out.has(b.rowId)) out.set(b.rowId, { day: b.day, time: b.time, mock: Number(nums.get(b.id) || b.mock) || 0 }); });
     return out;
   };
   const comingRows = () => { const t = now().getTime(); return new Set(bookings.all().bookings.filter((b) => b.rowId && b.status === 'booked' && !b.answer && bookings.endOf(b) > t).map((b) => b.rowId)); };
@@ -272,15 +286,15 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
 
   // Answers before the login: the booking page and its data. Returns true when it answered.
   async function handlePublic(req, res, urlPath, serveStatic) {
-    if (req.method === 'GET' && (/^\/book\/[a-z0-9-]{3,40}$/.test(urlPath) || /^\/booking\/[A-Za-z0-9_-]{20,40}$/.test(urlPath))) {
+    if (req.method === 'GET' && (/^\/book\/[A-Za-z0-9-]{3,40}\/?$/.test(urlPath) || /^\/booking\/[A-Za-z0-9_-]{20,40}$/.test(urlPath))) {
       req.url = '/book.html';
       serveStatic(req, res);
       return true;
     }
     if (req.method === 'GET' && ['/book-page.js', '/book.css'].includes(urlPath)) { serveStatic(req, res); return true; }
-    let m = urlPath.match(/^\/api\/book\/([a-z0-9-]{3,40})$/);
+    let m = urlPath.match(/^\/api\/book\/([A-Za-z0-9-]{3,40})$/);
     if (m) {
-      const owner = bookings.ownerBySlug(m[1]);
+      const owner = bookings.ownerBySlug(m[1].toLowerCase());
       if (!owner) { sendJSON(res, 404, { error: 'This booking link is not open. Please ask the consultancy for the right link.' }); return true; }
       const p = bookings.person(owner);
       if (req.method === 'GET') { sendJSON(res, 200, { with: p.shown || 'The Mock Team', company: company(), ...bookings.freeSlots(owner) }); return true; }
@@ -380,6 +394,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       }
       if (m[2] === 'cancel') {
         if (b.answer) { sendJSON(res, 400, { error: 'This mock is already answered, so it cannot be cancelled.' }); return true; }
+        if (bookings.endOf(b) <= now().getTime()) { sendJSON(res, 400, { error: 'This mock is over. Answer it instead of cancelling it.' }); return true; }
         const out = bookings.cancel(b.id, req.user.name);
         if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
         activity.record(req, req.user, 'Booked mock', { app: 'Bookings', changes: [`Cancelled the mock with ${b.name} on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}`] });
@@ -416,6 +431,8 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
         const q = new URL(req.url, 'http://x').searchParams;
         let bytes;
         try { bytes = await readRawBody(req, MAX_FILE_BYTES); } catch (e) { sendJSON(res, e.statusCode || 400, { error: e.statusCode === 413 ? 'That file is too large (the limit is 10 MB).' : e.message }); return true; }
+        const known = new Set([...facts.list('').map((u) => String(u.name).toLowerCase()), ...guidelines.list().map((f) => String(f.university).toLowerCase())]);
+        if (!known.has(String(q.get('university') || '').trim().toLowerCase())) { sendJSON(res, 400, { error: 'Choose a University from the list.' }); return true; }
         const out = guidelines.add({ university: q.get('university'), universityId: q.get('universityId'), kind: q.get('kind'), source: q.get('source'), title: q.get('title'), name: q.get('name'), bytes, by: req.user.name });
         if (out.error) { sendJSON(res, 400, { error: out.error }); return true; }
         activity.record(req, req.user, 'Uploaded guideline', { app: 'Interview guidelines', changes: [`Uploaded ${out.file.title} (${out.file.kind}) for ${out.file.university}`] });
