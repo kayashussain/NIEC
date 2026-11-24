@@ -114,6 +114,7 @@ const STATIC_FILES = {
   '/card-fields.js': 'text/javascript; charset=utf-8',
   '/portal.css': 'text/css; charset=utf-8',
   '/student-card.css': 'text/css; charset=utf-8',
+  '/student-look.css': 'text/css; charset=utf-8', // the student card's one look for every person (the owner, 24 Nov 2026)
   '/universities.css': 'text/css; charset=utf-8',
   '/portal-ui.js': 'text/javascript; charset=utf-8',
   '/student.html': 'text/html; charset=utf-8',

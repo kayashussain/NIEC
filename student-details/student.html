@@ -13,10 +13,12 @@
 <link rel="stylesheet" href="theme.css" />
 <!-- The student card's own look (calm and alive, DESIGN.md): loaded after theme.css, only on this page. -->
 <link rel="stylesheet" href="student-card.css" />
+<!-- The one look of the student card for every person (Admin, Application, Mock, Follow-up, Manager), the owner, 24 Nov 2026. It comes last so no team style can change it. -->
+<link rel="stylesheet" href="student-look.css" />
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />
 </head>
-<body class="p-body">
+<body class="p-body p-student">
   <header class="niec-header" data-page="sheet"></header>
   <main class="p-page" id="page">
     <a class="p-back" href="/students" id="back">&larr; Back to All Students</a>

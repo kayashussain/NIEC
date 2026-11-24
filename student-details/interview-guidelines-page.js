@@ -80,17 +80,21 @@
       head.append(open);
       const form = uploadForm();
       form.hidden = true;
-      open.addEventListener('click', () => { form.hidden = !form.hidden; if (!form.hidden) form.querySelector('select').focus(); });
+      open.addEventListener('click', () => {
+        form.hidden = !form.hidden;
+        open.textContent = form.hidden ? 'Upload a guideline' : 'Cancel'; // one main blue button on the screen: the one inside the panel
+        open.classList.toggle('btn-primary', form.hidden);
+        if (!form.hidden) form.querySelector('select').focus();
+      });
       card.append(form);
     }
+    // Nothing uploaded yet: one calm line instead of four empty sections (the one Upload a guideline button is the way to add).
+    if (!files.length && mockLook()) { card.append(el('p', 'mt-kind-none mt-none-all', data.canUpload ? 'No guidelines yet. Press Upload a guideline to add the first one.' : 'No guidelines yet.')); return card; }
     data.kinds.forEach((kind) => {
       const mine = files.filter((f) => f.kind === kind);
       const head2 = el('div', 'mt-kind-head');
       head2.append(el('h3', 'mt-kind', kind));
       if (!mockLook() && !mine.length) return;
-      if (!mine.length && data.canUpload) {
-        head2.append(h('button', { type: 'button', class: 'mt-kind-add', onclick: () => { const form = card.querySelector('.mt-upload'); if (form) { form.hidden = false; const sel = form.querySelector('select'); sel.value = kind; sel.focus(); } } }, 'Add'));
-      }
       card.append(head2);
       if (!mine.length) card.append(el('p', 'mt-kind-none', 'None yet'));
       mine.forEach((f) => card.append(fileRow(f)));

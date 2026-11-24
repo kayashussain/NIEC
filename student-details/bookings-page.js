@@ -192,9 +192,10 @@
       more.append(el('p', 'mt-ask-note', `Saved on the student's card by itself: the day in Mock Schedule ${b.mock || 'n'} and this feedback in Feedback ${b.mock || 'n'}.`));
       const no = el('p', 'mt-ask-note', 'No feedback is asked. The student goes to "Next mock to book".');
       no.hidden = true;
-      body.append(seg('Did the student join the mock?', [[true, 'Yes, joined'], [false, 'No, did not join']], (v) => { joined = v; more.hidden = !v; no.hidden = v; }), more, no);
+      body.append(seg('Did the student join the mock?', [[true, 'Yes, joined'], [false, 'No, did not join']], (v) => { joined = v; more.hidden = !v; no.hidden = v; save.disabled = false; }), more, no);
       const err = el('p', 'p-msg error');
       const save = h('button', { type: 'button', class: 'btn btn-primary' }, 'Save');
+      save.disabled = true; // Save waits until Yes or No is chosen
       const later = h('button', { type: 'button', class: 'btn' }, 'Later');
       later.addEventListener('click', () => close());
       save.addEventListener('click', async () => {
@@ -220,6 +221,7 @@
       body.addEventListener('input', (e) => { err.textContent = ''; if (e.target.removeAttribute) e.target.removeAttribute('aria-invalid'); });
       body.addEventListener('click', (e) => { if (e.target.closest('.mt-seg button')) err.textContent = ''; });
       body.append(err, h('div', { class: 'p-bar mt-ask-bar' }, later, save));
+      setTimeout(() => { const first = body.querySelector('.mt-seg button'); if (first) first.focus(); }, 60); // the first choice has the focus, not the close button
     }).then((r) => {
       if (r === 'saved') { toast('Saved on the student\'s card.'); draw(); askNext(0); }
       else if (r === 'stale') { api('/api/bookings').then((d) => { data = d; draw(); if (data.waiting[0]) askNext(0); }).catch(() => {}); }
@@ -237,6 +239,11 @@
     const wrap = el('div', 'mt-slots');
     const top = el('div', 'mt-slots-top');
     const save = h('button', { type: 'button', class: 'btn btn-primary' }, 'Save');
+    save.disabled = true; // Save is grey until something changes
+    let ready = false;
+    const dirty = () => { if (ready) save.disabled = false; };
+    wrap.addEventListener('input', dirty);
+    wrap.addEventListener('change', dirty);
     top.append(el('p', 'mt-hint', 'Students see only the slots that are still free, in your booking link.'), save);
     wrap.append(top);
     const grid = el('div', 'mt-grid');
@@ -247,6 +254,7 @@
     week.append(h('div', { class: 'mt-list-head' }, el('h2', '', 'Weekly slots'), lenLabel), el('p', 'mt-hint', 'Add as many slots in a day as you like. Copy a day to other days, or give each day its own slots.'));
     const rows = el('div', 'mt-days');
     const drawDays = () => {
+      dirty();
       rows.replaceChildren();
       for (let d = 0; d < 7; d += 1) rows.append(dayRow(DAYS[d], weekly[d], drawDays, (targets) => { targets.forEach((t) => { weekly[t] = weekly[d].map((w) => [...w]); }); drawDays(); }, d));
     };
@@ -259,6 +267,7 @@
     one.append(el('h2', '', 'Slots for one date'), el('p', 'mt-hint', 'Different slots on one date, or a day off. That date uses these instead of the weekly slots.'));
     const dateRows = el('div', 'mt-days');
     const drawDates = () => {
+      dirty();
       dateRows.replaceChildren();
       Object.keys(dates).sort().forEach((day) => {
         const label = new Date(day + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -282,6 +291,7 @@
     side.append(one, rules);
     grid.append(side);
     wrap.append(grid);
+    ready = true;
     save.addEventListener('click', async () => {
       const pack = (list) => list.filter((w) => w[0] && w[1]);
       const body = { minutes: state.minutes, ahead: state.ahead, notice: state.notice,

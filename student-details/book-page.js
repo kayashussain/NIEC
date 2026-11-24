@@ -64,7 +64,7 @@
     const drawTimes = () => {
       times.replaceChildren();
       go.disabled = !chosenTime; // Book is greyed until a time is chosen
-      if (!chosenTime) go.textContent = button; // no stale day and time on the button
+      if (!chosenTime) go.textContent = 'Choose a time'; // says why it is grey; no stale day and time either
       const d = byDay.get(chosenDay);
       times.append(h('h2', {}, d ? d.label.replace(/ \d{4}$/, '') : 'No free time'));
       if (!d) { times.append(h('p', { class: 'bk-dim' }, 'There is no free time just now. Please ask the consultancy.')); return; }

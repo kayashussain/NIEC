@@ -616,14 +616,15 @@ html:root body dl.lg-dl > dt { padding-top: 10px !important; }
 html:root body dl.lg-dl > dd { padding-bottom: 10px !important; }
 html:root body #view .sc-layout { grid-template-columns: 420px minmax(0, 1fr); }
 
-/* 🔴 CSS CHANGED (2026-11-24): the student card opened over the sheet (the Close button), Application Team only | from: a small grey Close pill floating alone above the card with an empty band under it, scrolling away with the page | to: a slim frosted top bar that stays at the top while you scroll, with the Close button (a grey pill with a cross) at its right end, in line with the card's right edge, and no empty band */
-html:root body:has(.p-embed-bar) main#page.p-page { padding-top: 0 !important; }
-html:root body .p-embed-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: flex-end; margin: 0 -14px 14px !important; padding: 10px 14px !important; background: rgba(245, 245, 247, .88); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); border-bottom: 0 !important; box-shadow: none !important; }
-html:root body .p-embed-bar .btn { min-height: 34px; padding: 0 16px 0 13px; border: 0 !important; border-radius: 980px; background: var(--apple-btn) !important; color: #1d1d1f !important; font-size: 14px; font-weight: 600; box-shadow: none !important; }
-html:root body .p-embed-bar .btn::before { content: "\2715"; margin-right: 7px; font-size: 11px; font-weight: 700; }
-html:root body .p-embed-bar .btn:hover { background: #dcdce1 !important; }
 
 /* 🔴 CSS CHANGED (2026-11-24): Mock Team only: the "mock ended" notice on Bookings | from: a window that opened by itself over the page | to: a calm banner at the top of Bookings (a small orange dot, one sentence, a blue Answer button); the window opens only when Answer is pressed */
 html.app-mock:root body #page .mt-banner { padding: 12px 14px 12px 20px; margin: 0 0 16px; border: 0; border-radius: 18px; background: #fff; box-shadow: var(--apple-card); }
 html.app-mock:root body #page .mt-banner-words { color: #1d1d1f; font-size: 15px; font-weight: 500; letter-spacing: -.01em; }
 html.app-mock:root body #page .mt-banner .btn { min-height: 34px; padding: 0 18px; font-size: 14px; }
+
+/* 🔴 CSS CHANGED (2026-11-24): Mock Team only, from the second independent review | from: the upload panel a grey box inside the white card, the Cancel link on Upcoming a tiny target, the empty guidelines page four times "None yet" | to: the upload panel flat inside the card (hairlines, no box in a box), bigger invisible hit areas for Cancel and Join in Teams, one calm line when a University has no guideline */
+html.app-mock:root body #page .mt-upload { padding: 18px 0 20px; margin-top: 16px; border-radius: 0; background: transparent; box-shadow: none; border-top: 1px solid var(--apple-hair); border-bottom: 1px solid var(--apple-hair); }
+html.app-mock:root body #page .mt-upload .p-input { background: #f5f5f7; }
+html.app-mock:root body #page .mt-cancel { padding: 12px 10px; margin: -12px -4px -12px 4px; }
+html.app-mock:root body #page .mt-join { min-height: 36px; }
+html.app-mock:root body #page .mt-none-all { margin: 22px 0 6px; padding: 0; border: 0; color: var(--apple-grey); font-size: 15px; }

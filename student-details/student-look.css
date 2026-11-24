@@ -1,0 +1,149 @@
+/* 🔴 CSS CHANGED (2026-11-24): the student card is now ONE look for every person (Admin, Application, Mock, Follow-up, Manager) | from: the Application and Mock teams had the Apple look and everyone else the older bold, flattened card, and the two were different | to: the approved design "Student Card F7" for everyone: thin calm lettering like apple.com (the name light, titles medium, the rest regular), a slim 28px margin, a wide card, white soft cards on the light canvas, one blue. Every rule here is for the student page only (body.p-student) and is marked important so no team's own style can change it. */
+/* The student card, one look for everyone (the owner, 24 Nov 2026, approved design "Student Card F7").
+   Admin, Application, Mock, Follow-up and the Manager all get this same card. It is scoped to the student page (body.p-student) and
+   loaded in the page head, so the first picture already has it. Slim, calm lettering like apple.com: the name in a light weight,
+   titles medium, everything else regular; one blue; soft greys that pass the contrast check. */
+/* ---------- the page ---------- */
+html:root body.p-student { background: #f5f5f7 !important; color: #1d1d1f !important; font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", sans-serif !important; font-weight: 400 !important; letter-spacing: -.006em !important; }
+html:root body.p-student main#page.p-page { max-width: 1480px !important; padding: 28px 28px 56px !important; }
+html:root body.p-student .p-back { display: inline-block !important; margin: 0 0 20px 8px !important; color: #0066cc !important; font-size: 14px !important; font-weight: 400 !important; text-decoration: none !important; }
+html:root body.p-student #view { padding: 0 !important; background: transparent !important; }
+html:root body.p-student .p-notice { margin: 0 !important; padding: 0 6px 4px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: #636366 !important; font-size: 14px !important; font-weight: 400 !important; box-shadow: none !important; }
+/* ---------- buttons on this page ---------- */
+html:root body.p-student .btn { white-space: nowrap !important; min-height: 38px !important; padding: 0 18px !important; border: 0 !important; border-radius: 980px !important; background: #efeff3 !important; color: #1d1d1f !important; font-size: 15px !important; font-weight: 400 !important; letter-spacing: -.006em !important; box-shadow: none !important; transition: background-color .15s ease, transform .15s ease !important; }
+html:root body.p-student .btn:hover:not(:disabled) { background: #e4e4e9 !important; color: #1d1d1f !important; }
+html:root body.p-student .btn:active:not(:disabled) { transform: scale(.97) !important; }
+html:root body.p-student .btn.btn-sm { min-height: 32px !important; padding: 0 14px !important; font-size: 14px !important; }
+html:root body.p-student .btn.btn-primary { background: #0071e3 !important; color: #fff !important; font-weight: 500 !important; }
+html:root body.p-student .btn.btn-primary:hover:not(:disabled) { background: #0066cc !important; color: #fff !important; }
+html:root body.p-student .btn.btn-danger { color: #b42318 !important; }
+html:root body.p-student .btn:disabled { opacity: .5 !important; }
+html:root body.p-student .btn:focus-visible, html:root body.p-student a:focus-visible, html:root body.p-student button:focus-visible { outline: 0 !important; box-shadow: 0 0 0 3px rgba(0, 113, 227, .4) !important; }
+/* ---------- cards ---------- */
+html:root body.p-student .lg-box, html:root body.p-student section.p-card.lg-box, html:root body.p-student .sc-hero { border: 0 !important; border-radius: 20px !important; background: #fff !important; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 30px rgba(0, 0, 0, .045) !important; overflow: hidden !important; }
+html:root body.p-student .lg-head, html:root body.p-student .p-card-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 20px 24px 10px !important; border: 0 !important; background: transparent !important; }
+html:root body.p-student .lg-head h2, html:root body.p-student .p-card-head h2 { display: flex !important; align-items: baseline !important; gap: 10px !important; margin: 0 !important; color: #1d1d1f !important; font-size: 21px !important; line-height: 26px !important; font-weight: 500 !important; letter-spacing: -.012em !important; text-transform: none !important; }
+html:root body.p-student .lg-head-sub, html:root body.p-student .sc-tl-count { color: #636366 !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0 !important; }
+/* a notice in place of the card (for example a student who cannot be opened) */
+html:root body.p-student #view > section.p-card, html:root body.p-student #view > .p-card:not(.lg-box) { margin: 0 0 20px !important; padding: 28px 32px !important; border: 0 !important; border-radius: 20px !important; background: #fff !important; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 30px rgba(0, 0, 0, .045) !important; }
+html:root body.p-student #view > section.p-card h2, html:root body.p-student #view > .p-card:not(.lg-box) h2 { margin: 0 0 8px !important; color: #1d1d1f !important; font-size: 24px !important; line-height: 30px !important; font-weight: 400 !important; letter-spacing: -.015em !important; }
+html:root body.p-student #view > section.p-card p, html:root body.p-student #view > .p-card:not(.lg-box) p { margin: 0 0 16px !important; color: #515154 !important; font-size: 16px !important; font-weight: 400 !important; }
+/* ---------- the top of the card ---------- */
+html:root body.p-student .sc-hero { padding: 30px 36px 26px !important; margin: 0 0 20px !important; }
+html:root body.p-student .sc-head { display: flex !important; align-items: center !important; gap: 22px !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+html:root body.p-student .sc-avatar { flex: 0 0 76px !important; width: 76px !important; height: 76px !important; border-radius: 50% !important; background: linear-gradient(180deg, #f4f4f6, #dcdce2) !important; color: #1d1d1f !important; font-size: 26px !important; font-weight: 300 !important; letter-spacing: 0 !important; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .06) !important; }
+html:root body.p-student .sc-id { flex: 1 1 auto !important; min-width: 0 !important; }
+html:root body.p-student .sc-name { margin: 0 !important; color: #1d1d1f !important; font-size: 44px !important; line-height: 50px !important; font-weight: 300 !important; letter-spacing: -.022em !important; overflow-wrap: anywhere !important; }
+html:root body.p-student .sc-meta { display: flex !important; align-items: center !important; gap: 12px !important; margin-top: 8px !important; }
+html:root body.p-student .sc-meta-text { color: #515154 !important; font-size: 16px !important; font-weight: 400 !important; }
+html:root body.p-student .p-pill, html:root body.p-student .p-pill-blue { display: inline-flex !important; align-items: center !important; min-height: 24px !important; padding: 0 10px !important; border: 0 !important; border-radius: 980px !important; background: #e8f1fd !important; color: #0058b8 !important; font-size: 13px !important; font-weight: 500 !important; letter-spacing: 0 !important; }
+html:root body.p-student .sc-actions { display: flex !important; align-items: center !important; gap: 10px !important; }
+html:root body.p-student .sc-reach { display: flex !important; gap: 10px !important; }
+html:root body.p-student .sc-reach-btn { display: inline-flex !important; align-items: center !important; gap: 7px !important; min-height: 38px !important; padding: 0 18px !important; border: 0 !important; border-radius: 980px !important; background: #efeff3 !important; color: #1d1d1f !important; font-size: 15px !important; font-weight: 400 !important; text-decoration: none !important; box-shadow: none !important; }
+html:root body.p-student .sc-reach-btn:hover { background: #e4e4e9 !important; color: #1d1d1f !important; }
+html:root body.p-student .sc-steps-box { margin-top: 26px !important; padding-top: 0 !important; border: 0 !important; background: transparent !important; }
+html:root body.p-student .sc-steps-head { align-items: baseline !important; gap: 12px !important; font-size: 15px !important; }
+html:root body.p-student .sc-eyebrow { color: #636366 !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0 !important; text-transform: none !important; }
+html:root body.p-student .sc-steps-now { color: #1d1d1f !important; font-weight: 400 !important; }
+html:root body.p-student .sc-steps-head b { font-weight: 500 !important; }
+html:root body.p-student .sc-step-label { color: #636366 !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0 !important; }
+html:root body.p-student .sc-steps li.is-done .sc-step-label { color: #1d1d1f !important; }
+html:root body.p-student .sc-steps li.is-now .sc-step-label { color: #0058b8 !important; font-weight: 500 !important; }
+/* ---------- the two columns ---------- */
+html:root body.p-student .sc-layout { display: grid !important; grid-template-columns: 420px minmax(0, 1fr) !important; gap: 20px !important; align-items: start !important; margin-top: 20px !important; }
+html:root body.p-student .sc-side, html:root body.p-student .sc-main { display: flex !important; flex-direction: column !important; gap: 20px !important; min-width: 0 !important; }
+html:root body.p-student #view > * + * { margin-top: 0 !important; }
+/* ---------- Profile and Application details ---------- */
+html:root body.p-student dl.lg-dl { display: block !important; margin: 0 !important; padding: 0 0 8px !important; }
+html:root body.p-student dl.lg-dl > dt { margin: 0 !important; padding: 12px 24px 0 !important; border: 0 !important; border-top: 1px solid #efeff2 !important; background: transparent !important; color: #636366 !important; font-size: 13px !important; line-height: 18px !important; font-weight: 400 !important; letter-spacing: 0 !important; text-transform: none !important; }
+html:root body.p-student dl.lg-dl > dt:first-of-type { border-top: 0 !important; }
+html:root body.p-student dl.lg-dl > dd { margin: 0 !important; padding: 2px 24px 12px !important; border: 0 !important; background: transparent !important; color: #1d1d1f !important; font-size: 16px !important; line-height: 22px !important; font-weight: 400 !important; overflow-wrap: anywhere !important; }
+html:root body.p-student dl.lg-dl > dd a { color: #0058b8 !important; text-decoration: none !important; }
+html:root body.p-student .lg-missing { color: #a24800 !important; font-weight: 400 !important; }
+html:root body.p-student .lg-none { color: #6e6e73 !important; font-weight: 400 !important; }
+/* ---------- Next step ---------- */
+html:root body.p-student .sc-next { display: flex !important; align-items: center !important; gap: 20px !important; padding: 22px 28px !important; border: 0 !important; border-radius: 20px !important; background: #eaf3fe !important; box-shadow: none !important; }
+html:root body.p-student .sc-next-ico { flex: 0 0 40px !important; width: 40px !important; height: 40px !important; border-radius: 12px !important; background: #fff !important; color: #0058b8 !important; }
+html:root body.p-student .sc-next-words { flex: 1 1 auto !important; min-width: 0 !important; }
+html:root body.p-student .sc-next-words .sc-eyebrow { display: block !important; color: #0058b8 !important; font-size: 13px !important; font-weight: 500 !important; }
+html:root body.p-student .sc-next-words b { display: block !important; color: #1d1d1f !important; font-size: 24px !important; line-height: 30px !important; font-weight: 400 !important; letter-spacing: -.015em !important; }
+html:root body.p-student .sc-next-why { display: block !important; margin-top: 2px !important; color: #515154 !important; font-size: 15px !important; font-weight: 400 !important; }
+/* ---------- Applications ---------- */
+html:root body.p-student .lg-apps .p-apps { display: flex !important; flex-direction: column !important; gap: 0 !important; padding: 0 28px 24px !important; }
+html:root body.p-student .lg-apps .p-card { margin: 0 !important; padding: 16px 0 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html:root body.p-student .lg-apps .p-card + .p-card { margin-top: 18px !important; border-top: 1px solid #efeff2 !important; }
+html:root body.p-student .lg-apps .p-card-head { padding: 0 !important; }
+html:root body.p-student .lg-apps .p-card h2 { margin: 0 !important; font-size: 16px !important; line-height: 22px !important; font-weight: 500 !important; }
+html:root body.p-student .p-muted { margin: 10px 0 0 !important; color: #636366 !important; font-size: 14px !important; font-weight: 400 !important; }
+html:root body.p-student .p-apps-summary { margin: 4px 0 0 !important; color: #636366 !important; font-size: 14px !important; font-weight: 400 !important; }
+html:root body.p-student .p-priority { display: flex !important; align-items: center !important; gap: 16px !important; margin-top: 16px !important; }
+html:root body.p-student .p-priority-text b { color: #515154 !important; font-size: 15px !important; font-weight: 400 !important; }
+html:root body.p-student .p-priority-select { flex: 1 1 auto !important; min-height: 42px !important; padding: 0 16px !important; border: 0 !important; border-radius: 12px !important; background-color: #f5f5f7 !important; box-shadow: none !important; color: #1d1d1f !important; font-size: 15px !important; font-weight: 400 !important; }
+html:root body.p-student .p-chosen { margin: 16px 0 0 !important; padding: 0 !important; list-style: none !important; }
+html:root body.p-student .p-chosen-item { padding: 14px 0 14px 56px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html:root body.p-student .p-chosen-title h3 { margin: 0 !important; color: #1d1d1f !important; font-size: 18px !important; line-height: 24px !important; font-weight: 500 !important; letter-spacing: -.012em !important; }
+html:root body.p-student .p-chosen-course { margin: 0 !important; color: #515154 !important; font-size: 15px !important; font-weight: 400 !important; }
+html:root body.p-student .p-chosen-sub { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin-top: 8px !important; }
+html:root body.p-student .p-applied { display: inline-flex !important; align-items: center !important; min-height: 24px !important; padding: 0 10px !important; border: 0 !important; border-radius: 980px !important; background: #f0f0f2 !important; color: #515154 !important; font-size: 13px !important; font-weight: 500 !important; }
+html:root body.p-student .p-applied.is-priority { background: #1d1d1f !important; color: #fff !important; }
+html:root body.p-student .p-applied.is-sent { background: #fff1e5 !important; color: #a24800 !important; }
+html:root body.p-student .p-applied.is-offer { background: #e3f5e8 !important; color: #1a7f37 !important; }
+html:root body.p-student .p-applied.is-refused { background: #fdeceb !important; color: #b42318 !important; }
+/* ---------- Tasks ---------- */
+html:root body.p-student .td-list { padding: 0 24px 20px !important; }
+html:root body.p-student .td-task { padding: 12px 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+html:root body.p-student .td-task-text { color: #1d1d1f !important; font-size: 17px !important; line-height: 24px !important; font-weight: 400 !important; letter-spacing: -.008em !important; }
+html:root body.p-student .td-check { border: 0 !important; box-shadow: inset 0 0 0 1.5px #c7c7cc !important; background: #fff !important; }
+html:root body.p-student .td-tag { min-height: 24px !important; padding: 0 10px !important; border: 0 !important; border-radius: 980px !important; background: #f0f0f2 !important; color: #515154 !important; font-size: 13px !important; font-weight: 500 !important; box-shadow: none !important; }
+html:root body.p-student .td-route, html:root body.p-student .td-route span { color: #636366 !important; font-size: 14px !important; font-weight: 400 !important; }
+html:root body.p-student .tk-compose { display: flex !important; align-items: center !important; gap: 10px !important; margin-top: 12px !important; padding: 4px 6px 4px 16px !important; border: 0 !important; border-radius: 12px !important; background: #f5f5f7 !important; }
+html:root body.p-student .tk-input { flex: 1 1 auto !important; min-height: 36px !important; border: 0 !important; background: transparent !important; box-shadow: none !important; font-size: 15px !important; font-weight: 400 !important; }
+/* ---------- Timeline ---------- */
+html:root body.p-student .lg-seg { display: inline-flex !important; gap: 2px !important; padding: 3px !important; border: 0 !important; border-radius: 11px !important; background: #efeff3 !important; }
+html:root body.p-student .lg-seg-btn { min-height: 30px !important; padding: 0 14px !important; border: 0 !important; border-radius: 8px !important; background: transparent !important; color: #1d1d1f !important; font-size: 14px !important; font-weight: 400 !important; box-shadow: none !important; }
+html:root body.p-student .lg-seg-btn[aria-pressed="true"] { background: #fff !important; font-weight: 500 !important; box-shadow: 0 1px 3px rgba(0, 0, 0, .12) !important; }
+html:root body.p-student .lg-compose { display: flex !important; align-items: center !important; gap: 10px !important; padding: 8px 24px 16px !important; border: 0 !important; background: transparent !important; }
+html:root body.p-student .lg-input { flex: 1 1 auto !important; min-height: 44px !important; padding: 10px 16px !important; border: 0 !important; border-radius: 12px !important; background: #fff !important; box-shadow: inset 0 0 0 1px #d2d2d7 !important; color: #1d1d1f !important; font-size: 15px !important; font-weight: 400 !important; }
+html:root body.p-student .lg-input:focus { outline: 0 !important; box-shadow: inset 0 0 0 2px #0071e3 !important; }
+html:root body.p-student table.lg-table { width: 100% !important; border-collapse: collapse !important; }
+html:root body.p-student table.lg-table th { padding: 10px 24px !important; border: 0 !important; border-top: 1px solid #efeff2 !important; background: #fafafc !important; color: #636366 !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0 !important; text-transform: none !important; text-align: left !important; }
+html:root body.p-student table.lg-table td { padding: 14px 24px !important; border: 0 !important; border-top: 1px solid #efeff2 !important; background: transparent !important; color: #1d1d1f !important; font-size: 15px !important; line-height: 22px !important; font-weight: 400 !important; vertical-align: top !important; }
+html:root body.p-student table.lg-table .is-when b { display: block !important; font-size: 14px !important; font-weight: 500 !important; }
+html:root body.p-student table.lg-table .is-when span { color: #636366 !important; font-size: 13px !important; }
+html:root body.p-student table.lg-table .is-by { color: #636366 !important; font-size: 14px !important; }
+html:root body.p-student .lg-kind { display: inline-flex !important; align-items: center !important; min-height: 24px !important; padding: 0 10px !important; border: 0 !important; border-radius: 980px !important; background: #f0f0f2 !important; color: #515154 !important; font-size: 13px !important; font-weight: 500 !important; }
+html:root body.p-student .lg-kind.is-task { background: #e8f1fd !important; color: #0058b8 !important; }
+html:root body.p-student .lg-lead { display: block !important; color: #1d1d1f !important; font-weight: 400 !important; }
+html:root body.p-student .lg-text { margin: 0 !important; color: #1d1d1f !important; font-weight: 400 !important; }
+html:root body.p-student tr.lg-stage-row td { padding: 0 !important; background: #fafafc !important; }
+html:root body.p-student .lg-stage-btn { display: flex !important; align-items: center !important; gap: 10px !important; width: 100% !important; padding: 12px 24px !important; border: 0 !important; background: transparent !important; color: #1d1d1f !important; font-size: 16px !important; font-weight: 500 !important; text-align: left !important; }
+html:root body.p-student .lg-stage-now { display: inline-flex !important; align-items: center !important; min-height: 22px !important; padding: 0 9px !important; border-radius: 980px !important; background: #e8f1fd !important; color: #0058b8 !important; font-size: 12px !important; font-weight: 500 !important; }
+html:root body.p-student .lg-stage-meta { margin-left: auto !important; color: #636366 !important; font-size: 13px !important; font-weight: 400 !important; }
+/* ---------- Mock interviews ---------- */
+html:root body.p-student .lg-mock-list { padding: 0 0 4px !important; }
+html:root body.p-student .lg-mock-row { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 11px 24px !important; border: 0 !important; border-top: 1px solid #efeff2 !important; background: transparent !important; }
+html:root body.p-student .lg-mock-n { color: #1d1d1f !important; font-size: 15px !important; font-weight: 400 !important; }
+html:root body.p-student .lg-mock-chip { display: inline-flex !important; align-items: center !important; min-height: 24px !important; padding: 0 10px !important; border: 0 !important; border-radius: 980px !important; background: #f0f0f2 !important; color: #515154 !important; font-size: 13px !important; font-weight: 500 !important; }
+html:root body.p-student .lg-mock-chip.is-done { background: #e3f5e8 !important; color: #1a7f37 !important; }
+html:root body.p-student .lg-mock-chip.is-fail { background: #fdeceb !important; color: #b42318 !important; }
+html:root body.p-student .lg-foot { padding: 8px 24px 16px !important; border: 0 !important; background: transparent !important; color: #636366 !important; font-size: 13px !important; font-weight: 400 !important; }
+html:root body.p-student:not(.p-embed) .p-embed-bar { display: none !important; }
+/* ---------- the card opened over the sheet: a slim bar with Close that stays at the top ---------- */
+html:root body.p-student.p-embed main#page.p-page { padding-top: 0 !important; }
+html:root body.p-student.p-embed .p-back { display: none !important; }
+html:root body.p-student.p-embed .p-embed-bar { position: sticky !important; top: 0 !important; z-index: 30 !important; display: flex !important; align-items: center !important; justify-content: flex-end !important; margin: 0 -28px 20px !important; padding: 14px 28px 12px !important; background: rgba(245, 245, 247, .88) !important; -webkit-backdrop-filter: saturate(180%) blur(18px) !important; backdrop-filter: saturate(180%) blur(18px) !important; border: 0 !important; box-shadow: none !important; }
+html:root body.p-student.p-embed .p-embed-bar .btn { min-height: 34px !important; padding: 0 16px 0 13px !important; font-size: 14px !important; font-weight: 500 !important; }
+html:root body.p-student.p-embed .p-embed-bar .btn::before { content: "\2715" !important; margin-right: 7px !important; font-size: 11px !important; font-weight: 700 !important; }
+/* ---------- windows on this page (Edit profile, Assign a task, Share, Update, Record offer) ---------- */
+html:root body.p-student dialog.p-dialog { border: 0 !important; border-radius: 22px !important; background: #fff !important; box-shadow: 0 30px 80px rgba(0, 0, 0, .28), 0 0 0 .5px rgba(0, 0, 0, .08) !important; overflow: hidden !important; }
+html:root body.p-student dialog.p-dialog .p-dialog-head { padding: 22px 28px 16px !important; border: 0 !important; border-bottom: 1px solid #efeff2 !important; background: #fff !important; }
+html:root body.p-student dialog.p-dialog .p-dialog-head h2 { color: #1d1d1f !important; font-size: 20px !important; font-weight: 500 !important; letter-spacing: -.012em !important; text-transform: none !important; }
+html:root body.p-student dialog.p-dialog .p-dialog-head .p-x { border: 0 !important; border-radius: 50% !important; background: #efeff3 !important; }
+html:root body.p-student dialog.p-dialog .p-dialog-body { background: #fff !important; }
+html:root body.p-student dialog.p-dialog .p-label { color: #636366 !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0 !important; text-transform: none !important; }
+html:root body.p-student dialog.p-dialog input:not([type="checkbox"]):not([type="radio"]), html:root body.p-student dialog.p-dialog select, html:root body.p-student dialog.p-dialog textarea { min-height: 44px !important; border: 0 !important; border-radius: 10px !important; background-color: #fff !important; box-shadow: inset 0 0 0 1px #d2d2d7 !important; color: #1d1d1f !important; font-size: 15px !important; font-weight: 400 !important; }
+html:root body.p-student dialog.p-dialog textarea { min-height: 96px !important; }
+html:root body.p-student dialog.p-dialog input:focus, html:root body.p-student dialog.p-dialog select:focus, html:root body.p-student dialog.p-dialog textarea:focus { outline: 0 !important; box-shadow: inset 0 0 0 2px #0071e3 !important; }
+html:root body.p-student dialog.p-dialog .td-tag-pick .td-tag { min-height: 40px !important; border: 0 !important; border-radius: 980px !important; background: #efeff3 !important; color: #1d1d1f !important; font-weight: 400 !important; }
+html:root body.p-student dialog.p-dialog .td-tag-pick .td-tag[aria-checked="true"] { background: #1d1d1f !important; color: #fff !important; font-weight: 500 !important; }
+html:root body.p-student dialog.p-dialog .p-dialog-foot { border: 0 !important; background: transparent !important; }

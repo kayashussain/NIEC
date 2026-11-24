@@ -177,7 +177,8 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.waitForTimeout(500);
     assert.strictEqual(await frame.locator('dialog.p-dialog').count(), 0, 'no pop-up when the card opens');
     assert.strictEqual(await frame.locator('.sc-main .sc-source').count(), 0, 'the source is not repeated beside the work');
-    await frame.locator('.sc-hero .sc-meta').click();
+    // Click the card's top corner (a big, safe target: the page's zoom can shift a click on a thin line a few pixels).
+    await frame.locator('.sc-hero').click({ position: { x: 14, y: 14 } });
     // The keyboard is in the card now: typing must not reach the cell of the sheet hidden behind it.
     assert.strictEqual(await page.evaluate(() => document.activeElement && document.activeElement.tagName), 'IFRAME');
     await page.keyboard.type('x');
