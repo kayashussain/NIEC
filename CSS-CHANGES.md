@@ -1,5 +1,6 @@
 # CSS change log
 - 2026-11-24 | student-details/book.css (the end) | The booking page on a phone: Pick a day and the month stay on one line, tighter About block | from: two-line headings | why: students book from phones
+- 2026-11-24 | shared/apple.css | Student card (Application Team only): slim 14px margin on both sides (was about 44px and 54px), field rows 56px tall (were 64px)
 - 2026-11-24 | student-details/book.css (the end) | The booked page: Join the mock in Teams at the left | from: far right | why: it sits under the details it belongs to
 - 2026-11-24 | student-details/book.css (the end) | The student booking page: card centred on tall screens, smaller day heading, meeting details 16px medium | why: final polish of the page
 - 2026-11-24 | shared/apple.css | Mock Team only: "Mock 1 of 4" in Upcoming | from: bold black | to: calm grey 14px | why: the name and time should lead

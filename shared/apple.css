@@ -608,3 +608,10 @@ html.app-mock:root body dialog.p-dialog .mt-ask .p-msg.error { color: #b42318; f
 
 /* 🔴 CSS CHANGED (2026-11-24): Mock Team only: the "Mock 1 of 4" words in Upcoming | from: bold black, as loud as the student's name | to: calm grey 14px medium, so the name and time lead */
 html.app-mock:root body #page .mt-table td.mt-nowrap { color: var(--apple-grey); font-size: 14px; font-weight: 500; }
+
+/* 🔴 CSS CHANGED (2026-11-24): the student card is wider and shows more at once, Application Team only | from: about 44px of space on the left and 54px on the right at laptop size (the page's 20px plus another 28px inside the card area), fields rows 64px tall | to: a slim 14px margin on both sides, so the card is about 60px wider, and field rows 56px tall so more of the Profile and Application details is visible without scrolling */
+html:root body main#page.p-page { padding-left: 14px; padding-right: 14px; }
+html:root body main#page #view { padding-left: 0 !important; padding-right: 0 !important; }
+html:root body dl.lg-dl > dt { padding-top: 10px !important; }
+html:root body dl.lg-dl > dd { padding-bottom: 10px !important; }
+html:root body #view .sc-layout { grid-template-columns: 420px minmax(0, 1fr); }
