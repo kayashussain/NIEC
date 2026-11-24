@@ -88,7 +88,7 @@
       table.append(h('thead', {}, head));
       const body = el('tbody');
       let lastDay = '';
-      const firstNext = data.upcoming[0] && data.upcoming[0].id;
+      const firstNext = data.upcoming[0] && data.upcoming[0].day === new Date().toLocaleDateString('en-CA') ? data.upcoming[0].id : ''; // the one blue button: the next mock, only on the day it is held
       data.upcoming.forEach((b) => {
         if (b.day !== lastDay) {
           lastDay = b.day;
@@ -103,7 +103,7 @@
           h('td', { class: 'mt-time' }, niceTime(b.time)),
           h('td', { class: 'mt-who' }, monogram(b.name), h('div', { class: 'mt-who-words' }, b.rowId ? h('a', { href: `/student?id=${encodeURIComponent(b.rowId)}` }, b.name) : el('span', '', b.name),
             b.rowId ? el('small', 'mt-sub', [b.university, b.course].filter(Boolean).join(' | ') || 'No University yet') : el('small', 'mt-unmatched', 'Not matched to a student yet'))),
-          h('td', { class: 'mt-nowrap' }, b.mock ? `${b.mock} of 4` : '-'),
+          h('td', { class: 'mt-nowrap' }, b.mock ? `Mock ${b.mock} of 4` : '-'),
           ...(withOwner ? [h('td', {}, b.owner || '-')] : []),
           actions));
       });
@@ -188,8 +188,9 @@
       save.addEventListener('click', async () => {
         err.textContent = '';
         if (joined === null) { err.textContent = 'Say whether the student joined.'; return; }
-        if (joined && pick && !pick.value) { err.textContent = 'Choose the student this mock was with.'; pick.focus(); return; }
-        if (joined && !fb.value.trim()) { err.textContent = 'Write the feedback.'; fb.focus(); return; }
+        body.querySelectorAll('[aria-invalid]').forEach((x) => x.removeAttribute('aria-invalid'));
+        if (joined && pick && !pick.value) { err.textContent = 'Choose the student this mock was with.'; pick.setAttribute('aria-invalid', 'true'); pick.focus(); return; }
+        if (joined && !fb.value.trim()) { err.textContent = 'Write the feedback.'; fb.setAttribute('aria-invalid', 'true'); fb.focus(); return; }
         if (joined && !result) { err.textContent = 'Choose the result.'; return; }
         save.disabled = true; save.textContent = 'Saving…';
         body.closest('dialog').dataset.busy = '1';
@@ -203,7 +204,7 @@
           err.textContent = e.message;
         }
       });
-      body.addEventListener('input', () => { err.textContent = ''; });
+      body.addEventListener('input', (e) => { err.textContent = ''; if (e.target.removeAttribute) e.target.removeAttribute('aria-invalid'); });
       body.addEventListener('click', (e) => { if (e.target.closest('.mt-seg button')) err.textContent = ''; });
       body.append(err, h('div', { class: 'p-bar mt-ask-bar' }, later, save));
     }).then((r) => {

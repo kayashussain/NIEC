@@ -54,6 +54,8 @@
   // The soft fade between pages: a second click while one page is still fading in skips the fade, which the browser reports as an
   // error although nothing is wrong. It is caught here so it is never shown as one.
   const quiet = (e) => { if (e.viewTransition) e.viewTransition.finished.catch(() => {}); if (e.viewTransition && e.viewTransition.ready) e.viewTransition.ready.catch(() => {}); };
+  // The same harmless "Page already revealed" report can also come from the fade's other promise, so it is never left as an uncaught error.
+  window.addEventListener('unhandledrejection', (e) => { const r = e.reason; if (r && r.name === 'InvalidStateError' && /already revealed|Transition was aborted/i.test(String(r.message))) e.preventDefault(); });
   window.addEventListener('pageswap', quiet);
   window.addEventListener('pagereveal', quiet);
 

@@ -13,12 +13,21 @@
   const day = (iso) => { try { return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kathmandu' }); } catch (e) { return ''; } };
   const filesOf = (name) => data.files.filter((f) => f.university.toLowerCase() === String(name).toLowerCase());
 
-  function draw() {
+  // Choosing a University redraws the page; the list keeps its place (it used to jump back to A), and the chosen University keeps the
+  // keyboard focus when it was picked from the list.
+  function draw(keepFocus) {
     const view = $('view');
+    const oldList = view.querySelector('.mt-uni-list');
+    const top = oldList ? oldList.scrollTop : 0;
     const grid = el('div', 'mt-guides');
     grid.append(listCard(), uniCard());
     view.replaceChildren(grid);
+    const list = view.querySelector('.mt-uni-list');
+    if (list) list.scrollTop = top;
+    if (keepFocus) { const on = view.querySelector('.mt-uni.is-on'); if (on) on.focus({ preventScroll: true }); }
   }
+  // A University is filed under the first letter of its name without "University of " or "The ", so the A to Z headings are in order.
+  const sortKey = (name) => String(name).replace(/^the\s+/i, '').replace(/^university of\s+/i, '').toLowerCase();
   // The Mock Team's page is the approved Apple design (24 Nov 2026); Admin and the Manager keep the page as it was.
   const mockLook = () => document.documentElement.classList.contains('app-mock');
   let only = 'all'; // all | has | none (the switch above the list, the owner approved it 24 Nov 2026)
@@ -30,12 +39,13 @@
       list.replaceChildren();
       const words = q.toLowerCase().split(/\s+/).filter(Boolean);
       const shown = data.universities.filter((u) => words.every((w) => u.name.toLowerCase().includes(w)) && (!mockLook() || only === 'all' || (only === 'has') === Boolean(filesOf(u.name).length)));
+      if (mockLook()) shown.sort((a, b) => sortKey(a.name).localeCompare(sortKey(b.name), 'en', { sensitivity: 'base', numeric: true }));
       let letter = '';
       shown.forEach((u) => {
         const n = filesOf(u.name).length;
-        const l = u.name.replace(/^University of /i, '').charAt(0).toUpperCase();
+        const l = (sortKey(u.name).charAt(0).toUpperCase().match(/[A-Z]/) || ['#'])[0];
         if (mockLook() && l !== letter) { letter = l; list.append(el('div', 'mt-uni-letter', l)); }
-        list.append(h('button', { type: 'button', class: `mt-uni${u.name === chosen ? ' is-on' : ''}${n ? '' : ' is-empty'}`, 'aria-pressed': String(u.name === chosen), onclick: () => { chosen = u.name; draw(); } },
+        list.append(h('button', { type: 'button', class: `mt-uni${u.name === chosen ? ' is-on' : ''}${n ? '' : ' is-empty'}`, 'aria-pressed': String(u.name === chosen), onclick: () => { chosen = u.name; draw(true); } },
           el('span', 'mt-uni-name', u.name), n ? el('span', 'mt-uni-n', String(n)) : (mockLook() ? '' : el('span', 'mt-uni-n is-none', 'none yet'))));
       });
       if (!shown.length) list.append(el('p', 'mt-empty', 'No University has that name.'));
