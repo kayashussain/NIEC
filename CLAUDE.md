@@ -140,6 +140,7 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Work for other teams must leave the Application Team as it is.** Check it as the Application Team (`asha` in
   `scripts/local-demo.js`) before pushing, and say in the reply that it was checked and did not change.
 - **Bugs:** a fix that changes nothing the team sees can be made, and the owner is told; if a fix would change what they see, ask first.
+- **Update, 24 Nov 2026: the Application Team's look was redesigned and approved by the owner (the Apple look, design "Application Team F6").** The baseline that is frozen is now that look: Today (four numbers), All Students as the sheet only (the student list was removed), the student card (wide, slim margin, labels above values, the same for every team), Universities, and the Mark as done window with its Why reasons. It lives in `shared/apple.css`, loaded only for the Application Team (and, with `app-mock`, the Mock Team's touches); `header.js` writes the stylesheet into the page while it loads so the page never jumps. Every change to it is still logged in `CSS-CHANGES.md`. The Application Team cannot change student details from the sheet except Application Status (the dropdowns are locked), and the server drops any such change.
 
 ## Rule 5: reviews, and what may be changed without asking (the owner, 22 Nov 2026, strictly, for every reviewer and every session)
 
