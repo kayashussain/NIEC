@@ -411,6 +411,20 @@
     return box;
   }
 
+  // The page keeps its proportions at any browser zoom (the owner, 25 Nov 2026), as the student card does: the width it was designed
+  // for is scaled to the space there is, so zooming out does not shrink it into the middle. Never below 88% (text stays readable).
+  const REF_WIDTH = 1300; // at a usual laptop width the words are the size of the side menu's
+  function fitPage() {
+    const page = document.querySelector('.fu-page');
+    const st = getComputedStyle(page);
+    const w = page.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight);
+    if (w <= 0) return;
+    const z = String(Math.round(Math.min(1.5, Math.max(0.88, w / REF_WIDTH)) * 1000) / 1000);
+    [...page.children].forEach((c) => { c.style.zoom = z; });
+  }
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => fitPage()).observe(document.querySelector('.fu-page'));
+  fitPage();
+
   $('find').addEventListener('input', () => { close(); draw(); });
   $('add').addEventListener('click', async () => {
     const me = await fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).catch(() => null);
