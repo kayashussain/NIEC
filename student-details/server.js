@@ -62,7 +62,13 @@ const ROOT = __dirname;
 const DATA_DIR = process.env.STUDENT_DETAILS_DATA_DIR || ROOT;
 // One copy of the server per data folder (instance-lock.js): a second copy would overwrite the first one's saves, so it refuses to start.
 const instanceLock = require('./instance-lock').acquire(DATA_DIR);
-if (instanceLock.error) { console.error('[startup]', instanceLock.error); process.exit(1); }
+if (instanceLock.error) {
+  // A second copy the host started beside a running one holds and writes nothing: it passes each request to that one (one-writer.js).
+  if (!instanceLock.running) { console.error('[startup]', instanceLock.error); process.exit(1); }
+  console.log('[startup] Another copy is running on this data folder, so this one only passes requests to it.');
+  require('./one-writer').passOn(DATA_DIR).listen(PORT, process.env.HOST || undefined);
+  return;
+}
 setInterval(instanceLock.beat, require('./instance-lock').BEAT_MS).unref();
 process.on('exit', instanceLock.release);
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
@@ -1592,6 +1598,7 @@ server.requestTimeout = 5 * 60 * 1000;
 
 // HOST=127.0.0.1 keeps a copy on the owner's own computer (scripts/start-local.js, scripts/local-live.js) closed to the office
 // network. Unset on the live server, which answers on every address as before.
+require('./one-writer').openDoor(DATA_DIR, server);
 server.listen(PORT, process.env.HOST || undefined, () => {
   console.log(`Student Recruit 360 running at http://localhost:${PORT}`);
 });
