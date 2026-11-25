@@ -345,3 +345,10 @@ html:root body.p-student .lg-mock-who { font-size: 16.25px !important; }
 html:root body.p-student .lg-lead { font-size: 17.5px !important; }
 html:root body.p-student .lg-diff-tog { min-height: 38px !important; font-size: 16.25px !important; }
 html:root body.p-student .sc-next-words .sc-eyebrow { font-size: 16.25px !important; }
+/* 🔴 CSS CHANGED (2026-11-25): the student card keeps its two columns at 110% to 150% browser zoom, and the Email in Profile never breaks in the middle | from: the two columns stacked as soon as the card area was under 1000px wide (every laptop at 125% zoom), and the Email broke in the middle of the address ("example.c" and "om" on two lines) | to: two columns down to 800px (the Profile column shrinks between 310px and 450px), and the Email gets its own full-width line under its label, left aligned */
+@container (min-width: 801px) and (max-width: 1000px) {
+  html:root body.p-student .sc-layout { grid-template-columns: clamp(310px, 38cqw, 450px) minmax(0, 1fr) !important; }
+}
+html:root body.p-student dl.lg-dl > dt:has(+ dd a[href^="mailto:"]) { grid-column: 1 / -1 !important; padding-bottom: 0 !important; }
+html:root body.p-student dl.lg-dl > dd:has(a[href^="mailto:"]) { grid-column: 1 / -1 !important; padding-top: 2px !important; text-align: left !important; }
+html:root body.p-student dl.lg-dl > dd a[href^="mailto:"] { font-size: 16px !important; overflow-wrap: anywhere !important; }

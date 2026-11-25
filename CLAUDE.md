@@ -16,6 +16,19 @@
 - If a reply has no question, it says so by simply ending. If it has one, the question is the multiple-choice card, not text.
 - Never forget this and never repeat the mistake. If an earlier reply broke it, fix the next one.
 
+## Rule 00: FINISH THE WORK COMPLETELY, THEN SAY "USE IT" (STRICT, the owner, 25 Nov 2026)
+
+- **When the owner gives a task, do all of it, fully, before replying.** Do not hand back half work, a list of what is wrong, or "you could
+  do this, I suggest that". If something is not fine, fix it yourself, test it, and only then report.
+- **Check everything yourself first:** run the real pages at many browser zooms (50% to 300%), with the real demo accounts, look at the
+  screenshots, fix what is wrong, run `npm test`, and only then tell the owner. Never ask the owner to check something you can check.
+- **The final reply is: it is finished and tested, use it** (with the one thing that only the owner can do, if there is one, for example
+  uploading to the live server). No "please check", no "tell me if you see a problem", no list of suggestions.
+- **Do not ask the owner questions to get unstuck.** Choose the sensible default and say what was chosen. If a real decision is needed
+  that only the owner can make (for example which access is needed), ask it as one multiple-choice question (Rule 0), after doing all
+  the work that does not depend on the answer.
+- **Do not repeat questions the owner already answered.** The owner's standing wishes are in this file: read it first, every session.
+
 ## Rule 0d: DESIGNS ARE SHOWN ON A LAPTOP SCREEN FIRST, AS AN ARTIFACT (STRICT, the owner, 23 Nov 2026)
 
 - **Before any front-end change that is a design (not a bug fix), publish an artifact that shows it at laptop and desktop width

@@ -14,29 +14,30 @@
   :root { --ink: #000; --dim: #333; --line: #9a9a9a; --bg: #e6e6e6; --panel: #f3f3f3; --blue: #0071e3; --blue-hover: #0077ed; --link: #0050aa; --danger: #b42318; --note-bg: #eef4fc; }
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
-  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; background: var(--bg); color: var(--ink);
+  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; background: var(--bg); color: var(--ink);
     font: 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
-  .top { display: flex; justify-content: center; margin-bottom: 28px; }
-  .top img { display: block; height: 64px; width: auto; }
+  /* 🔴 CSS CHANGED (2026-11-25): the sign-in page is narrower, shorter and always fits the screen, and shows the Student Recruit 360 logo | from: a 440px wide card, a 64px logo and 48px of space above and below, so at 125% to 150% browser zoom the Sign in button and the note fell below the screen | to: a 400px card, a 52px logo, tighter spacing, and an extra-compact version when the window is short, so the whole card is on screen at normal size and at 150% zoom; wider logo (332 x 100) */
+  .top { display: flex; justify-content: center; margin-bottom: 22px; }
+  .top img { display: block; height: 52px; width: auto; max-width: 100%; }
   .top img[hidden] { display: none; }
   .top b { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
   .top b[hidden] { display: none; }
-  main.card { width: 100%; max-width: 440px; padding: 40px 40px 30px; border-radius: 22px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, .05); animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; }
+  main.card { width: 100%; max-width: 400px; padding: 32px 36px 24px; border-radius: 22px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, .05); animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { main.card { animation: none; } }
-  h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.022em; line-height: 1.1; text-align: center; }
-  .sub { margin: 8px 0 26px; color: var(--dim); font-size: 17px; text-align: center; }
+  h1 { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -.022em; line-height: 1.1; text-align: center; }
+  .sub { margin: 6px 0 18px; color: var(--dim); font-size: 17px; text-align: center; }
   form { display: flex; flex-direction: column; gap: 6px; }
   form[hidden] { display: none; }
-  label { margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--dim); }
-  input { font: inherit; height: 52px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #f7f7f7; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+  label { margin-top: 8px; font-size: 14px; font-weight: 500; color: var(--dim); }
+  input { font: inherit; height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #f7f7f7; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
   input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0, 113, 227, .2); }
   .note { margin: 0 0 6px; padding: 12px 14px; border-radius: 12px; background: var(--note-bg); font-size: 15px; }
   .note ol { margin: 4px 0 0; padding-left: 18px; }
   .hint { margin: 2px 0 0; color: var(--dim); font-size: 14px; }
   .error { margin: 12px 0 0; color: var(--danger); font-size: 15px; text-align: center; }
   .error[hidden] { display: none; }
-  button { margin-top: 22px; height: 50px; padding: 0 22px; border: 0; border-radius: 980px; background: var(--blue); color: #fff; font: inherit; font-weight: 500; cursor: pointer; transition: background .15s; }
+  button { margin-top: 18px; height: 48px; padding: 0 22px; border: 0; border-radius: 980px; background: var(--blue); color: #fff; font: inherit; font-weight: 500; cursor: pointer; transition: background .15s; }
   button:hover:not(:disabled) { background: var(--blue-hover); }
   button:focus-visible, .pw-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   button:disabled { opacity: .55; cursor: default; }
@@ -48,11 +49,12 @@
   .caps[hidden] { display: none; }
   .link { margin-top: 12px; height: auto; padding: 0; background: none; color: var(--link); font-weight: 400; font-size: 15px; }
   .link:hover:not(:disabled) { background: none; text-decoration: underline; }
-  .footnote { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid #b8b8b8; font-size: 13px; color: #333; text-align: center; }
+  .footnote { margin: 20px 0 0; padding-top: 14px; border-top: 1px solid #b8b8b8; font-size: 13px; color: #333; text-align: center; }
+  @media (max-height: 640px) { body { padding: 16px 20px; } .top { margin-bottom: 12px; } .top img { height: 40px; } main.card { padding: 22px 32px 18px; } h1 { font-size: 28px; } .sub { margin: 4px 0 10px; font-size: 15px; } input { height: 42px; } button { margin-top: 12px; height: 42px; } .footnote { margin-top: 12px; padding-top: 10px; } }
 </style>
 </head>
 <body>
-<div class="top"><img id="brandLogo" src="/brand-logo.png" alt="Logo" width="198" height="96" /><b id="brandName" hidden>Student Recruit 360</b></div>
+<div class="top"><img id="brandLogo" src="/brand-logo.png" alt="Student Recruit 360" width="332" height="100" /><b id="brandName" hidden>Student Recruit 360</b></div>
 <main class="card">
   <h1>Sign in</h1>
   <p class="sub" id="subtitle">Log in to continue</p>

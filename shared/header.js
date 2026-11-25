@@ -51,7 +51,7 @@
   header.innerHTML = `
     <button type="button" class="niec-toggle" aria-label="Open or close the menu" aria-expanded="true" title="Open or close the menu"><span class="niec-burger-ico" aria-hidden="true"></span></button>
     <a class="niec-brand" href="/today" title="Home" id="niecHome">
-      <img class="niec-logo" src="/brand-logo.png" alt="Home" width="198" height="96" />
+      <img class="niec-logo" src="/brand-logo.png" alt="Student Recruit 360 home" width="332" height="100" />
       <span class="niec-name" hidden><b>Student Recruit 360</b></span>
       <span class="niec-mark" aria-hidden="true">SR</span>
     </a>
