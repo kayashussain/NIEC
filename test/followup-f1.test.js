@@ -79,6 +79,13 @@ test('design F1: stopped students, Bring back, progress and tasks reach the Foll
   assert.strictEqual((await post(held, { action: 'return', text: 'New passport', to: 'Inquiry', next: day(3) }, app)).status, 403, 'only the Follow-up Team');
   assert.strictEqual((await post(held, { action: 'return', text: 'New passport has arrived', to: 'Inquiry', next: day(3) })).status, 200);
   assert.strictEqual((await rowOf(held))['APPLICATION STATUS'], 'Inquiry');
+  // The team that stopped the student is told with one task of kind Other, and can open the card.
+  const told = (await app('GET', '/api/tasks')).json.tasks.filter((x) => x.forMe && !x.done && x.studentId === held);
+  assert.strictEqual(told.length, 1, 'one task, not more');
+  assert.strictEqual(told[0].tag, 'other');
+  assert.strictEqual(told[0].priority, 'medium');
+  assert.match(told[0].text, /^For your information: brought back from Hold to Inquiry\. New passport has arrived/);
+  assert.strictEqual((await app('GET', `/api/cards/${held}`)).status, 200);
   s = await of(held);
   assert.strictEqual(s.state, 'ok');
   assert.strictEqual(s.next.date, day(3));
@@ -103,6 +110,10 @@ test('design F1: stopped students, Bring back, progress and tasks reach the Foll
   assert.strictEqual((await post(held, { action: 'return', text: 'Came back to us', to: 'Defer' })).status, 200);
   assert.strictEqual((await rowOf(held))['APPLICATION STATUS'], 'Defer');
   assert.strictEqual((await admin('GET', `/api/cards/${held}`)).json.card.profile.lostReason || '', '');
+  assert.strictEqual((await app('GET', '/api/tasks')).json.tasks.filter((x) => x.forMe && !x.done && x.studentId === held).length, 1, 'the Follow-up Team\'s own stop tells nobody');
+  const Fields = require('../student-details/card-fields');
+  assert.strictEqual(Fields.guessTaskTag('Call the family about the deposit', 'followup', 'Payment Stage'), 'other');
+  assert.strictEqual(Fields.guessTaskTag('Pay the deposit', 'application', 'Payment Stage'), 'payment', 'other teams as before');
 
   // A student who moved on shows where they stand.
   const inq = (await admin('POST', '/api/students/new', { stage: 'Inquiry', fields: { 'FIRST NAME': 'Bikash', 'LAST NAME': 'Demo', 'CONTACT NUMBER': '9811100001' } })).json.id;

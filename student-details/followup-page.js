@@ -307,8 +307,8 @@
       if (miss.length) { fail(miss.length === 2 ? 'Write what changed and choose the next follow-up date.' : miss[0] === area ? 'Write what changed.' : 'Choose the next follow-up date.', ...miss); return; }
       btns.querySelectorAll('button').forEach((b) => { b.disabled = true; }); ok.textContent = 'Saving...';
       try {
-        await api(`/api/followup/${encodeURIComponent(s.id)}`, { action: 'return', from: s.stage, text: area.value, to: to.value, next: needDate ? dateIn.value : '' });
-        say(`${s.name} is back at ${to.value}`); close(); await load();
+        const done = await api(`/api/followup/${encodeURIComponent(s.id)}`, { action: 'return', from: s.stage, text: area.value, to: to.value, next: needDate ? dateIn.value : '' });
+        say(`${s.name} is back at ${to.value}${done && done.told ? `. ${String(done.told).replace(/\s*\(.*\)$/, '')} is told` : ''}`); close(); await load();
       } catch (e) {
         btns.querySelectorAll('button').forEach((b) => { b.disabled = false; }); ok.textContent = 'Bring back';
         const field = e.body && e.body.field;
@@ -321,7 +321,7 @@
     btns.append(ok, cancel);
     grid.append(l1, l2, l3, btns);
     area.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(); draw(); } });
-    box.append(grid, err, el('span', 'fu-hint', 'What you write is saved on the student card and its timeline.'));
+    box.append(grid, err, el('span', 'fu-hint', s.stopped && s.stopped.team && !/follow-up/i.test(s.stopped.team) ? 'Saved on the student card. The team that stopped the student gets a short task to tell them.' : 'What you write is saved on the student card and its timeline.'));
     return box;
   }
 

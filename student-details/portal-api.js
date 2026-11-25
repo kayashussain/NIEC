@@ -2935,13 +2935,25 @@ function createPortalApi({
         if (date <= cards.today()) return { status: 400, json: { error: 'The next follow-up date is after today.', field: 'next' } };
       }
       const from = item.stage;
+      // Who stopped the student (before anything changes): their team is told below.
+      const stopper = item.stopped && item.stopped.by && accounts && accounts.people ? accounts.people().find((p) => p.name === item.stopped.by) : null;
+      const tellTeam = !stopper ? '' : stopper.role === 'admin' ? HEAD : text(stopper.taskTeam || (stopper.departments || [])[0]);
+      const stillOpen = ((cards.get(rowId) || {}).tasks || []).filter((t) => !t.done).length;
       const n = cards.addNote(rowId, { kind: 'call', text: `Brought back from ${from} to ${to}: ${words}`.slice(0, 3900) }, who);
       if (n.error) return { status: 400, json: { error: n.error } };
       try { writeColumnsFor(req, rowId, { [STATUS]: to }); } catch (e) { console.error('[follow-up return]', e); return { status: 500, json: { error: 'save failed' } }; }
       cards.setProfile(rowId, { lostReason: '' }, who); // the student is no longer lost; the old reason stays on the timeline
       cards.setFollow(rowId, { via: null, next: to === 'Inquiry' ? { date, by: who, at: n.note.at } : null }, who);
       note(req, [`${name}: brought back from ${from} to ${to}`], 'Edited student card', 'Follow-up');
-      return { status: 200, json: { ok: true } };
+      // The team that stopped the student gets one medium task (kind Other, so ticking it asks nothing but what was done). It also lets
+      // them open the card. Nothing of theirs is closed or changed. The Follow-up Team is never told about its own stop.
+      let told = '';
+      if (tellTeam && tellTeam !== 'followup' && TASK_TEAMS().some((t) => t.id === tellTeam) && !(tellTeam !== HEAD && nobodyIn(tellTeam))) {
+        const older = stillOpen ? ` ${stillOpen} older ${stillOpen === 1 ? 'task' : 'tasks'} of this student ${stillOpen === 1 ? 'is' : 'are'} still open: please check ${stillOpen === 1 ? 'it' : 'them'}.` : '';
+        const made = cards.addTask(rowId, { team: tellTeam, tag: 'other', priority: 'medium', text: `For your information: brought back from ${from} to ${to}. ${words.length > 400 ? `${words.slice(0, 397)}...` : words}${older}` }, who);
+        if (!made.error) told = teamLabel(tellTeam);
+      }
+      return { status: 200, json: { ok: true, told } };
     }
     if (action === 'note-only') { // a withdrawn student: only a word on the card
       if (item.state !== 'out') return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };

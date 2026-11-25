@@ -199,6 +199,9 @@
   function guessTaskTag(text, team, stage) {
     const t = String(text || '').toLowerCase();
     if (/^offer request\b/.test(t)) return 'offer'; // the task made when an application is submitted
+    // The Follow-up Team calls and talks: a task for it is never read as payment, visa or application work from its words (a word like
+    // "deposit" once made the "Mark as done?" window ask the team about a payment). A kind chosen by the giver still counts.
+    if (team === 'followup') return 'other';
     if (/\bnoc\b|no objection/.test(t)) return 'noc';
     // "medicals", "medical test", "IOM", "TB test", "chest x-ray", "health check" (the owner, 15 Nov 2026: medical tasks were tagged
     // Other or Payment). The health surcharge (IHS) is a payment, not a medical.
