@@ -220,6 +220,22 @@
   });
 
 
+  const freshSay = (text, error) => { $('freshMsg').textContent = text || ''; $('freshMsg').className = 'msg' + (error ? ' error' : ''); };
+  $('freshCheck').addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/restore/fresh-start', { cache: 'no-store' }); const j = await res.json();
+      if (!res.ok) throw new Error(j.error || `Server error ${res.status}`);
+      const names = j.removedList.map((r) => `${r.name} (${r.why})`).join(', ');
+      freshSay(`${j.kept} students stay. ${j.removed} students would be deleted${names ? ': ' + names : ''}. ${j.cards} student cards would be cleared.`);
+      $('freshGo').hidden = false;
+    } catch (err) { freshSay(err.message, true); }
+  });
+  $('freshDo').addEventListener('click', async () => {
+    $('freshDo').disabled = true;
+    try { const r = await post('/api/restore/fresh-start', { confirm: $('freshWords').value.trim() }); freshSay(`Done. ${r.kept} students kept, ${r.removed} deleted.`); $('freshGo').hidden = true; $('freshWords').value = ''; } catch (err) { freshSay(err.message, true); }
+    $('freshDo').disabled = false;
+  });
+
   const tabNames = ['activity', 'restore'];
   function showTab(name) {
     tabNames.forEach((t) => { $('tab-' + t).setAttribute('aria-selected', String(t === name)); $('panel-' + t).hidden = t !== name; });

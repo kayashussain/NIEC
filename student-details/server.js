@@ -15,6 +15,7 @@ const { buildDashboard } = require('./dashboard-stats');
 const { createFacts, viewFacts, clean: cleanFact } = require('./facts');
 const { createDirect, viewDirect, MAX_FILE_BYTES } = require('./direct');
 const { createOffsite, settingsFrom } = require('./offsite');
+const freshStart = require('./fresh-start');
 const { createBackups, ID: BACKUP_ID, HOUR: BACKUP_HOUR, KEEP_DAYS } = require('./backups');
 const { createAdvisorMcp } = require('./advisor-mcp');
 const { createAdvisorWrite } = require('./advisor-write');
@@ -1170,6 +1171,12 @@ async function handleRestore(req, res, urlPath) {
     const one = view.get(itemId);
     return one ? send(res, 200, JSON.stringify(one), noStore) : sendJSON(res, 404, { error: 'No such university in that backup.' });
   }
+  // Start fresh (Admin, two steps): GET shows exactly what stays and what goes, POST with the words START FRESH does it.
+  if (urlPath === '/api/restore/fresh-start' && req.method === 'GET') {
+    if (!current) return sendJSON(res, 500, { error: 'Could not read the data file' });
+    const p = freshStart.plan(current);
+    return sendJSON(res, 200, { keep: freshStart.KEEP, kept: p.kept, removed: p.removed.length, removedList: p.removed.slice(0, 50), cards: Object.keys(cards.all() || {}).length });
+  }
   if (req.method !== 'POST') return send(res, 405, 'Method not allowed');
   let body;
   try {
@@ -1183,6 +1190,17 @@ async function handleRestore(req, res, urlPath) {
     offsite.sync().catch(() => {});
     activity.record(req, req.user, 'Backup made', { app: 'Student Details', changes: [`Saved a backup copy now (${id})`] });
     return sendJSON(res, 200, { id });
+  }
+  if (urlPath === '/api/restore/fresh-start') {
+    if (body.confirm !== 'START FRESH') return sendJSON(res, 400, { error: 'Type START FRESH to confirm. Nothing was changed.' });
+    if (!current) return sendJSON(res, 500, { error: 'Could not read the data file' });
+    const p = freshStart.plan(current);
+    writeWorkbook(ensureRowIds({ revision: current.revision + 1, sheets: p.sheets, activeSheetId: current.activeSheetId }), req.user && req.user.id);
+    cards.restoreAll({});
+    mockBookings.restoreAll({ people: (mockBookings.all() || {}).people || {}, bookings: [] });
+    try { fs.writeFileSync(path.join(DATA_DIR, 'message-log.jsonl'), '', { mode: 0o600 }); } catch (e) { /* no log yet */ }
+    activity.record(req, req.user, 'Started fresh', { app: 'Student Details', changes: [`Kept ${p.kept} students with ${freshStart.KEEP.join(', ').toLowerCase()}; deleted ${p.removed.length} students, every other detail, all student cards and the Mock Team's bookings`] });
+    return sendJSON(res, 200, { ok: true, kept: p.kept, removed: p.removed.length });
   }
   if (urlPath !== '/api/restore') return send(res, 404, 'Not found');
   const id = String(body.id || '');

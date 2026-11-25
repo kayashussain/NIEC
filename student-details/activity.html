@@ -88,6 +88,18 @@
         <div class="msg" id="restoreMsg" role="status"></div>
       </div>
       <div class="card">
+        <h2>Start fresh</h2>
+        <p>Keeps only each student's first name, last name, email, contact number, NOC number and Application Status. Deletes every other detail, all notes and tasks, and students with no contact number or built for testing. Universities and partners stay.</p>
+        <div class="form-actions">
+          <button class="btn" type="button" id="freshCheck">Show what would change</button>
+        </div>
+        <div class="msg" id="freshMsg" role="status"></div>
+        <div id="freshGo" hidden>
+          <p>Type <b>START FRESH</b> to confirm. This cannot be undone from the page.</p>
+          <div class="form-actions"><input type="text" id="freshWords" autocomplete="off" aria-label="Type START FRESH"> <button class="btn btn-primary" type="button" id="freshDo">Start fresh now</button></div>
+        </div>
+      </div>
+      <div class="card">
         <h2>Restore from a backup</h2>
         <p>Pick a day and press <b>Restore</b>. Today’s data is saved first, so a restore can be undone.</p>
         <table>
