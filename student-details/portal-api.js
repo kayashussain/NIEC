@@ -2943,7 +2943,7 @@ function createPortalApi({
       // Who stopped the student (before anything changes): their team is told below.
       const stopper = item.stopped && item.stopped.by && accounts && accounts.people ? accounts.people().find((p) => p.name === item.stopped.by) : null;
       const tellTeam = !stopper ? '' : stopper.role === 'admin' ? HEAD : text(stopper.taskTeam || (stopper.departments || [])[0]);
-      const stillOpen = ((cards.get(rowId) || {}).tasks || []).filter((t) => !t.done).length;
+      const stillOpen = ((cards.get(rowId) || {}).tasks || []).filter((t) => !t.done && t.team === tellTeam).length; // only that team's own
       const n = cards.addNote(rowId, { kind: 'call', text: `Brought back from ${from} to ${to}: ${words}`.slice(0, 3900) }, who);
       if (n.error) return { status: 400, json: { error: n.error } };
       try { writeColumnsFor(req, rowId, { [STATUS]: to }); } catch (e) { console.error('[follow-up return]', e); return { status: 500, json: { error: 'save failed' } }; }
