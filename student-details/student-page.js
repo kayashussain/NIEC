@@ -861,8 +861,8 @@
     }
     // Every note, every task event (given, each update, reassigned, moved, done) and every message sent from Follow-up.
     const teamName = (tid) => (((data.taskTeams || []).find((x) => x.id === tid) || {}).label || tid).replace(/\s*\(.*\)$/, '');
-    const AUTO = 'ISR (automatic)';
-    // A stage moved on and a call with no answer are written by ISR (the owner, 21 Nov 2026) and shown as such.
+    const AUTO = 'Student Recruit 360 (automatic)';
+    // A stage moved on and a call with no answer are written by Student Recruit 360 (the owner, 21 Nov 2026) and shown as such.
     const events = data.card.notes.map((n) => ({ kind: n.by === AUTO ? 'auto' : n.kind === 'stage' ? 'stage' : n.kind === 'try' ? 'try' : 'note', at: n.at, by: n.by, text: n.text, note: n }));
     (data.card.tasks || []).forEach((t) => {
       const tag = window.Portal.tagOf(t, data.student.stage);
@@ -940,7 +940,7 @@
         tog.addEventListener('click', () => { list.hidden = !list.hidden; if (list.hidden) openDiffs.delete(key); else openDiffs.add(key); tog.textContent = list.hidden ? 'Show changes' : 'Hide changes'; tog.setAttribute('aria-expanded', String(!list.hidden)); });
         tdT.append(names, tog, list);
       } else if (e.text) { const p2 = el('p', 'lg-text'); if (e.tag) p2.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' '); p2.append(...linked(e.text)); tdT.append(p2); }
-      const tdB = el('td', 'is-by', e.kind === 'auto' ? 'ISR' : e.by || 'Someone');
+      const tdB = el('td', 'is-by', e.kind === 'auto' ? 'Student Recruit 360' : e.by || 'Someone');
       const tdM = el('td', 'is-more');
       const items = [];
       if (e.message && e.message.channel === 'email') items.push(['Read the email', () => readMessage(e.message)]);
@@ -960,7 +960,7 @@
     };
     // The Timeline is divided by stage (the owner, 24 Nov 2026): Inquiry, Application, Mock, Payment, CAS and Visa each have their own
     // section, the current stage open and the others folded with their count and days, so nobody scrolls through everything. An entry is
-    // placed by its day against the days the student moved stage (the "Moved to ..." notes ISR writes); a task's whole thread stays in the
+    // placed by its day against the days the student moved stage (the "Moved to ..." notes Student Recruit 360 writes); a task's whole thread stays in the
     // stage where the task was given. What belongs to no stage goes under Earlier.
     const STAGES = ['Inquiry', 'Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
     const stageNamed = (txt) => { const t = String(txt || ''); const hit = STAGES.slice().sort((a, b) => b.length - a.length).find((n) => t.includes(n)); return hit || (/Visa Rejected/.test(t) ? 'Visa Rejected' : /Withdrawn/.test(t) ? 'Withdrawn' : /Defer/.test(t) ? 'Deferred' : /Hold/.test(t) ? 'On hold' : ''); };
@@ -1485,7 +1485,7 @@
   if (typeof ResizeObserver === 'function') new ResizeObserver(() => fitCard()).observe(view);
   function render() {
     sheetDaysOnOptions();
-    document.title = `${data.student.name} · Student · ISR`;
+    document.title = `${data.student.name} · Student · Student Recruit 360`;
     const keepY = window.scrollY;
     const frag = document.createDocumentFragment();
     const q = queueBar(); if (q) frag.append(q);

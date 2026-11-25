@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: uk-student-niec
+    name: NIEC
     runtime: node
     plan: starter
     buildCommand: npm install
@@ -8,7 +8,7 @@ services:
     autoDeploy: true
     healthCheckPath: /healthz
     disk:
-      name: uk-student-niec-data
+      name: NIEC-data
       mountPath: /data
       sizeGB: 1
     envVars:

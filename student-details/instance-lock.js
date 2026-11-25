@@ -27,7 +27,7 @@ function acquire(dir, { pid = process.pid, now = () => Date.now(), isAlive = ali
     let other = null;
     try { other = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { other = null; } // unreadable: treated as left over
     const live = other && Number.isInteger(other.pid) && other.pid !== pid && isAlive(other.pid) && now() - Number(other.at) < STALE_MS;
-    if (live) return { error: `Another copy of ISR (process ${other.pid}) is already running on this data folder (${dir}). A second copy would overwrite its saves, so this one is not started. Stop the other copy first.` };
+    if (live) return { error: `Another copy of Student Recruit 360 (process ${other.pid}) is already running on this data folder (${dir}). A second copy would overwrite its saves, so this one is not started. Stop the other copy first.` };
     try { fs.unlinkSync(file); } catch (e) { /* taken by someone else; try again */ }
   }
   return { error: `Could not take the lock ${file}.` };

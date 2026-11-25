@@ -544,7 +544,7 @@ function createPortalApi({
     if (!('UNIVERSITY NAME' in changes)) return changes;
     const uni = text(changes['UNIVERSITY NAME']);
     if (!uni) return changes;
-    // "Direct (<another university>)" written by ISR before no longer fits: it is cleared when no partner is known for the new one.
+    // "Direct (<another university>)" written by Student Recruit 360 before no longer fits: it is cleared when no partner is known for the new one.
     const stale = DIRECT_RE.test(text(nowPartner)) && squash(Fields.plainPartner(nowPartner)) !== squash(uni);
     const course = 'COURSE NAME' in changes ? text(changes['COURSE NAME']) : '';
     const opts = ((cards.get(rowId) || {}).options || []).filter((o) => squash(o.university) === squash(uni) && text(o.partner));
@@ -553,7 +553,7 @@ function createPortalApi({
     return { ...changes, 'UNIVERSITY PARTNER': DIRECT_RE.test(text(o.partner)) ? `Direct (${uni})` : text(o.partner) };
   }
   // ---- finishing a task: asked, checked by the team, then written (the owner, 16 Nov 2026) ----
-  // Nothing is filled in by itself any more. When a team marks a task done, the "Mark as done?" window shows what ISR already knows
+  // Nothing is filled in by itself any more. When a team marks a task done, the "Mark as done?" window shows what Student Recruit 360 already knows
   // about the student (every application with its days, the sheet's dates) and asks what happened, with no answer chosen in advance
   // and no day filled in. The answers are then shown back as the exact list of what will change ("Offer received: (empty) → 16 Nov
   // 2026", "Stage: CAS Stage → CAS Issued", what stays as it is and why, and anything that does not add up), and only when the team
@@ -583,7 +583,7 @@ function createPortalApi({
     recordChanges(req, wb, next);
   }
   // The application and offer days live per university on the card (the owner, 17 Nov 2026: a student applies to many). All
-  // Students no longer shows the two columns; they stay in the file and ISR keeps them as the first application and the first offer,
+  // Students no longer shows the two columns; they stay in the file and Student Recruit 360 keeps them as the first application and the first offer,
   // so the Dashboard and Incentive count as before. A student with no day on the card keeps what the columns hold;
   // the columns' own university joins the card first, so nothing recorded before is lost.
   function syncApplicationDays(req, rowId) {
@@ -595,7 +595,7 @@ function createPortalApi({
     const uni = text(row['UNIVERSITY NAME']);
     const a0 = isoDate(row['APPLICATION SUBMISSION DATE']) || ''; const o0 = isoDate(row['OFFER RECEIVED DATE']) || '';
     if (uni && (a0 || o0) && !opts.some((o) => squash(o.university) === squash(uni))) {
-      cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students', ...(text(row['UNIVERSITY PARTNER']) ? { partner: text(row['UNIVERSITY PARTNER']) } : {}) }, 'ISR'); // the partner too, so it is never lost
+      cards.addOption(rowId, { university: uni, course: text(row['COURSE NAME']), applied: a0, offer: o0, note: 'From All Students', ...(text(row['UNIVERSITY PARTNER']) ? { partner: text(row['UNIVERSITY PARTNER']) } : {}) }, 'Student Recruit 360'); // the partner too, so it is never lost
       opts = cards.get(rowId).options || [];
     }
     const changes = syncChanges(row, opts);
@@ -605,7 +605,7 @@ function createPortalApi({
     // An offer that no longer stands while the student is at Mock Stage reaches the Application Team as one task (once, never twice).
     if (changes['OFFER RECEIVED DATE'] === '' && before['OFFER RECEIVED DATE'] && text(row[STATUS]) === 'Mock Stage' && !nobodyIn('application')
       && !((cards.get(rowId) || {}).tasks || []).some((t) => !t.done && /^The offer no longer stands/.test(t.text))) {
-      cards.addTask(rowId, { team: 'application', tag: 'other', priority: 'high', text: 'The offer no longer stands for a student at Mock Stage. Please check the application, and the stage.' }, 'ISR (automatic)');
+      cards.addTask(rowId, { team: 'application', tag: 'other', priority: 'high', text: 'The offer no longer stands for a student at Mock Stage. Please check the application, and the stage.' }, 'Student Recruit 360 (automatic)');
     }
     // When the sheet moves to another university by itself, the student's notes say what it was before, so it can be put back by hand.
     if ('UNIVERSITY NAME' in changes && uni) {
@@ -642,7 +642,7 @@ function createPortalApi({
     noreply: 'The student is not responding', other: 'Other reason',
   };
   const OFFERS = ['conditional', 'unconditional', 'offer'];
-  // Every application ISR knows for a student: University options with a day, and the sheet's own university when it has a date.
+  // Every application Student Recruit 360 knows for a student: University options with a day, and the sheet's own university when it has a date.
   function applicationsOf(row, card) {
     const out = (card.options || []).filter((o) => o.applied || o.offer || o.refused || o.withdrawn || o.skipped)
       .map((o) => ({ id: o.id, university: o.university, course: o.course, applied: o.applied || '', offer: o.offer || '', offerType: o.offerType || '', refused: o.refused || '', withdrawn: o.withdrawn || '', skipped: o.skipped || '', reason: o.reason || '' }));
@@ -998,7 +998,7 @@ function createPortalApi({
       } else return { error: 'Choose what happened.' };
     } else if (kind === 'medical' && f.medical && f.medical !== 'none') {
       const place = text(f.place).slice(0, 200);
-      // The report check ISR gives on the day of the test (the owner's team, 18 Nov 2026: "I finish it and it comes back"): "Booked"
+      // The report check Student Recruit 360 gives on the day of the test (the owner's team, 18 Nov 2026: "I finish it and it comes back"): "Booked"
       // for the same day it is already booked for is the same as "not received yet", so no second identical task is ever made.
       const sameBooking = (d) => Boolean(d) && Fields.isReportCheck(task) && (text(task.text).startsWith(`Medical test of ${niceDay(d)}`) || (card.medical && card.medical.date === d));
       if (f.medical === 'waiting') {
@@ -1126,7 +1126,7 @@ function createPortalApi({
     const rowId = found.row._id;
     const card = cards.get(rowId);
     const wrote = { at: new Date().toISOString(), columns: {}, options: [], remind: '', note: '', ...(plan.medical !== undefined ? { medical: card.medical || null } : {}) };
-    // The sheet's Remarks shows the latest progress (the owner, 15 Nov 2026), only when it is empty or still holds ISR's own last
+    // The sheet's Remarks shows the latest progress (the owner, 15 Nov 2026), only when it is empty or still holds Student Recruit 360's own last
     // line: a remark a person typed is never overwritten.
     if (plan.note) {
       // The day once: a note that already starts with it ("On 21 Nov 2026: ...") is not given it a second time.
@@ -1220,7 +1220,7 @@ function createPortalApi({
     return { undone, left };
   }
   // ---- details that do not add up (the owner, 16 Nov 2026) ----
-  // Every student is checked for dates out of order and for what ISR used to fill in by itself, so the wrong ones can be found and
+  // Every student is checked for dates out of order and for what Student Recruit 360 used to fill in by itself, so the wrong ones can be found and
   // corrected: an offer with no application, an offer before its application, a payment with no offer, the visa steps out of order,
   // a Medical Report marked Received by itself, and offers recorded from a task before answers were checked. A detail someone has
   // checked and said is correct leaves the list until it changes. Each item: { key, text }.
@@ -1246,9 +1246,9 @@ function createPortalApi({
       if (earlier && i > 1) add(`order:${steps[i][0]}:${b}:${earlier[0]}`, `${steps[i][1]} ${niceDay(b)} is before ${earlier[1].toLowerCase()} (${niceDay(earlier[0])}).`);
     }
     if (d('VISA RECEIVED DATE') && !d('VISA LODGE DATE')) add(`visa-no-lodge:${d('VISA RECEIVED DATE')}`, 'Visa received, but no visa lodge date is recorded.');
-    // What ISR used to fill in by itself or from unchecked answers, before 16 Nov 2026.
+    // What Student Recruit 360 used to fill in by itself or from unchecked answers, before 16 Nov 2026.
     const notes = card.notes || [];
-    if (text(row['MEDICAL REPORT']) === 'Received' && notes.some((n) => n.by === 'ISR (automatic)' && /^Medical report received: the test was on/.test(n.text))) add('auto-medical', 'Medical Report was marked Received by itself on the test day. Confirm the report really came.');
+    if (text(row['MEDICAL REPORT']) === 'Received' && notes.some((n) => n.by === 'Student Recruit 360 (automatic)' && /^Medical report received: the test was on/.test(n.text))) add('auto-medical', 'Medical Report was marked Received by itself on the test day. Confirm the report really came.');
     const fromTask = offer && notes.some((n) => n.at < '2026-11-17' && n.text.startsWith(`Offer received on ${niceDay(offer)}`));
     if (fromTask) add(`task-offer:${offer}`, `Offer received ${niceDay(offer)} was recorded from a task before answers were checked. Confirm the offer really came.`);
     return out;
@@ -2051,7 +2051,7 @@ function createPortalApi({
       // A note may carry the next follow-up date (Events and marketing asks for it, the same rule as the follow-up list).
       const next = text(body.next);
       if (next && (!realDay(next) || next <= cards.today())) { sendJSON(res, 400, { error: 'The next follow-up date is after today.' }); return true; } // a real day ("2099-99-99" is not)
-      // The stage lines and "no answer" lines are written by ISR itself (server.js, followAction): a person's note is always a note.
+      // The stage lines and "no answer" lines are written by Student Recruit 360 itself (server.js, followAction): a person's note is always a note.
       out = cards.addNote(rowId, { text: body.text, kind: ['stage', 'try'].includes(text(body.kind)) ? 'note' : body.kind }, by(req));
       if (!out.error && next) cards.setFollow(rowId, { next: { date: next, by: by(req), at: out.note.at } }, by(req));
       if (!out.error) note(req, [`${who}: added a note${next ? `, next follow-up ${niceDay(next)}` : ''}`]);
@@ -2082,8 +2082,8 @@ function createPortalApi({
           const opts = card.options || [];
           if (!opts.some((o) => o.applied || o.offer)) { // a legacy student: the days are the old university's
             const own = opts.find((o) => squash(o.university) === squash(oldUni) && (!oldCourse || !o.course || squash(o.course) === squash(oldCourse))) || opts.find((o) => squash(o.university) === squash(oldUni));
-            if (!own) cards.addOption(rowId, { university: oldUni, course: oldCourse, applied: a0, offer: o0, note: 'From All Students', ...(text(found.row['UNIVERSITY PARTNER']) ? { partner: text(found.row['UNIVERSITY PARTNER']) } : {}) }, 'ISR');
-            else cards.updateOption(rowId, own.id, { ...(a0 && !own.applied ? { applied: a0 } : {}), ...(o0 && !own.offer && !own.refused && !own.withdrawn ? { offer: o0 } : {}) }, 'ISR');
+            if (!own) cards.addOption(rowId, { university: oldUni, course: oldCourse, applied: a0, offer: o0, note: 'From All Students', ...(text(found.row['UNIVERSITY PARTNER']) ? { partner: text(found.row['UNIVERSITY PARTNER']) } : {}) }, 'Student Recruit 360');
+            else cards.updateOption(rowId, own.id, { ...(a0 && !own.applied ? { applied: a0 } : {}), ...(o0 && !own.offer && !own.refused && !own.withdrawn ? { offer: o0 } : {}) }, 'Student Recruit 360');
           }
         }
       }
@@ -2243,12 +2243,12 @@ function createPortalApi({
       const sameEmail = Boolean(dup && fields.EMAIL && text(dup.EMAIL).toLowerCase() === fields.EMAIL);
       const maybeOther = Boolean(dup && (sameName || (!sameEmail && otherPerson([fields['FIRST NAME'], fields['LAST NAME']].join(' '), nameOf(dup)))));
       if (dup && !(body.allowDuplicate && maybeOther)) {
-        // The student is already in ISR: nobody is added twice. Someone who may see that student is told who it is, and can fill in
+        // The student is already in Student Recruit 360: nobody is added twice. Someone who may see that student is told who it is, and can fill in
         // what is missing on them instead (see /api/students/merge).
         const found = rowIndex().get(dup._id);
         const seen = found && canSee(req.user, found);
         return { status: 409, json: {
-          error: sameName ? `${(seen && nameOf(dup)) || 'A student'} with this exact name is already in ISR. If this is a different person, add them anyway.` : maybeOther ? `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this phone number, under another name. If this is a different person, add them anyway.` : `${(seen && nameOf(dup)) || 'A student'} is already in ISR with this email or phone number, so nobody was added.`,
+          error: sameName ? `${(seen && nameOf(dup)) || 'A student'} with this exact name is already in Student Recruit 360. If this is a different person, add them anyway.` : maybeOther ? `${(seen && nameOf(dup)) || 'A student'} is already in Student Recruit 360 with this phone number, under another name. If this is a different person, add them anyway.` : `${(seen && nameOf(dup)) || 'A student'} is already in Student Recruit 360 with this email or phone number, so nobody was added.`,
           duplicate: seen ? { id: dup._id, name: nameOf(dup), intake: found.sheet.name, stage: text(dup[STATUS]), source: text(dup['STUDENT SOURCE']), canFill: canChange(req.user, found), maybeOther, sameName } : (maybeOther ? { maybeOther, sameName } : null),
         } };
       }
@@ -2293,7 +2293,7 @@ function createPortalApi({
     return { status: 200, json: { ok: true, id: rowId, sheetId: sheet.id, revision: getWorkbook().revision } };
   }
 
-  // A student already in ISR, with what was typed for them again (Add student found them by email or phone): only what is blank on
+  // A student already in Student Recruit 360, with what was typed for them again (Add student found them by email or phone): only what is blank on
   // them is filled in, never what is already there (the email an application went out with stays). The source is tagged if none was
   // recorded. Anything that differs (another email or phone) is kept in a note on the card, so nothing is lost and nothing is replaced.
   async function handleMerge(req, res) {
@@ -2389,13 +2389,13 @@ function createPortalApi({
   //   new: added to the chosen intake at Inquiry, Student Source "Events", tagged with the event;
   //   link: already on the sheet (same phone or email, any intake) and in no event yet: tagged with this event, the earlier source is
   //         kept in the remarks and a note says so on the card (the team may have added the student before the campaign was entered);
-  //   update: already in ISR, and the list knows more (an inquiry day or time, an email, comments ...): what is new is added (newsFor);
+  //   update: already in Student Recruit 360, and the list knows more (an inquiry day or time, an email, comments ...): what is new is added (newsFor);
   //   already: already tagged with this event and nothing new (uploading the same list twice changes nothing);
   //   other: already tagged with another event, nothing new: left as it is and listed, so Admin decides on the card (never moved);
   //   problem: no name, or neither a phone nor an email (a student who cannot be matched later is not added).
   // { preview: true } only sorts the lines; without it the new and link lines are carried out.
   const digitsOf = (v) => text(v).replace(/\D/g, '');
-  // What a line of a list adds to a student already in ISR (the owner, 14 Nov 2026: the more we know, the better, and an updated list
+  // What a line of a list adds to a student already in Student Recruit 360 (the owner, 14 Nov 2026: the more we know, the better, and an updated list
   // must never be stopped because the student is already there). Only what is new is taken, and nothing on the sheet is replaced:
   //   a blank email or phone is filled in; a different one is kept in a note (an application may have gone out with the old one);
   //   the first inquiry day is the earliest one known, so an earlier day from the list replaces a later one (a student added before
@@ -2437,7 +2437,7 @@ function createPortalApi({
     const plan = planning.all();
     const label = eventLabel(ev.name, ev.date);
     const all = cards.all();
-    // Every student in ISR by phone (its last 10 digits) and by email, all of them (two students can share one by mistake).
+    // Every student in Student Recruit 360 by phone (its last 10 digits) and by email, all of them (two students can share one by mistake).
     const byPhone = new Map(); const byEmail = new Map();
     const put = (map, k, v) => { if (!map.has(k)) map.set(k, []); map.get(k).push(v); };
     for (const { sheet, row } of rowIndex().values()) {
@@ -2516,10 +2516,10 @@ function createPortalApi({
       ((email && byEmail.get(email)) || []).forEach((m) => ids.set(m.row._id, { ...m, how: 'email' }));
       ((d.length >= 7 && byPhone.get(d)) || []).forEach((m) => { if (!ids.has(m.row._id)) ids.set(m.row._id, { ...m, how: 'phone' }); });
       const matches = [...ids.values()];
-      // More than one student in ISR fits (the phone is one student's, the email another's, or two students share a number): a person
+      // More than one student in Student Recruit 360 fits (the phone is one student's, the email another's, or two students share a number): a person
       // must decide, so nothing is changed on any of them.
       if (matches.length > 1) {
-        out.push({ ...line, id: matches[0].row._id, action: 'check', note: `Fits ${matches.length} students in ISR: ${matches.map((m) => `${nameOf(m.row) || 'no name'} (${m.how}, ${m.sheet.name})`).join(', ')}. Nothing changed: check them on their cards.` });
+        out.push({ ...line, id: matches[0].row._id, action: 'check', note: `Fits ${matches.length} students in Student Recruit 360: ${matches.map((m) => `${nameOf(m.row) || 'no name'} (${m.how}, ${m.sheet.name})`).join(', ')}. Nothing changed: check them on their cards.` });
         continue;
       }
       if (!matches.length) {
@@ -2605,7 +2605,7 @@ function createPortalApi({
   //            Inquiry, with no university, no application date, no task, no university option, no message sent and no note from a
   //            person (the list's own notes do not count). Its row and its card go, so the next list adds it again as new.
   //   kept (worked on): added by this list, but someone has worked on the student since: never removed here; listed with the reason.
-  //   kept (in ISR before): linked by the list but in ISR before it: stays as it is.
+  //   kept (in Student Recruit 360 before): linked by the list but in Student Recruit 360 before it: stays as it is.
   // { preview: true } only lists them. Before anything is removed, a copy of everything is saved (Admin, Restore, a "manual" copy).
   const LIST_NOTE = /^([EI]nquiry from .*, from its [ei]nquiry list|More from the list of |From the updated list of |Linked to .* from its [ei]nquiry list|(Changed|Undone) on the student card: )/; // "Enquiry" in notes written before 14 Nov 2026
   // A note a card change writes by itself ("Changed on the student card: ...", the owner, 22 Nov 2026) is a record, not a contact either.
@@ -2629,7 +2629,7 @@ function createPortalApi({
       if (!e || e.id !== ev.id) continue;
       const who = { id: row._id, name: nameOf(row) || 'Student with no name', intake: sheet.name, stage: text(row[STATUS]) };
       const byList = card.profile.fromList === ev.id || (card.notes || []).some((n) => [`Enquiry from ${ev.name}, from its enquiry list`, `Inquiry from ${ev.name}, from its inquiry list`].some((x) => String(n.text || '').startsWith(x)));
-      if (!byList) { before.push({ ...who, why: 'In ISR before the list: stays' }); continue; }
+      if (!byList) { before.push({ ...who, why: 'In Student Recruit 360 before the list: stays' }); continue; }
       const why = [];
       if (who.stage && who.stage !== 'Inquiry') why.push(`now at ${who.stage}`);
       if (text(row['UNIVERSITY NAME']) || isoDate(row['APPLICATION SUBMISSION DATE'])) why.push('has a university or an application');
@@ -2658,7 +2658,7 @@ function createPortalApi({
     try { writeWorkbook(next, req.user && req.user.id); } catch (e) { console.error('[remove list]', e); return { status: 500, json: { error: 'save failed' } }; }
     recordChanges(req, wb, next);
     cards.forget([...gone]);
-    note(req, [`${ev.name}: removed the ${gone.size} student${gone.size === 1 ? '' : 's'} its list had added (${worked.length} worked on and ${before.length} in ISR before were kept)${copy ? `; a copy was saved first (${copy})` : ''}`], 'Removed an event list');
+    note(req, [`${ev.name}: removed the ${gone.size} student${gone.size === 1 ? '' : 's'} its list had added (${worked.length} worked on and ${before.length} in Student Recruit 360 before were kept)${copy ? `; a copy was saved first (${copy})` : ''}`], 'Removed an event list');
     return { status: 200, json: { done: true, removed: gone.size, copy, ...lists } };
   }
 
@@ -2843,7 +2843,7 @@ function createPortalApi({
     }
     return { university, course, step: STEP_OF[stage] === undefined ? 0 : STEP_OF[stage], latest };
   }
-  // Who stopped a student, when and why: the line ISR wrote on the timeline when the stage moved, and the reason chosen or written.
+  // Who stopped a student, when and why: the line Student Recruit 360 wrote on the timeline when the stage moved, and the reason chosen or written.
   function stoppedOf(card, stage) {
     const notes = card.notes || [];
     const move = notes.filter((n) => n.kind === 'stage' && new RegExp(`(Moved to|to) ${stage}\\b`).test(n.text)).pop();
@@ -3459,7 +3459,7 @@ function createPortalApi({
       if (await pointsInside(made.box.host)) { sendJSON(res, 400, { error: 'That mail server name points to a private address. Use the mail server your email provider gives you.' }); return true; }
       if (tooManySends(req.user.id)) { sendJSON(res, 429, { error: 'Too many tries in a short time. Please wait a few minutes.' }); return true; }
       try {
-        await mailer.sendMail({ ...made.box, fromName: req.user.name }, { to: made.box.from, subject: 'ISR: your email is set up', text: `Hello ${req.user.name},\n\nYour mailbox works with ISR. Emails you send to students from ISR now go from ${made.box.from}.\n`, auto: true });
+        await mailer.sendMail({ ...made.box, fromName: req.user.name }, { to: made.box.from, subject: 'Student Recruit 360: your email is set up', text: `Hello ${req.user.name},\n\nYour mailbox works with Student Recruit 360. Emails you send to students from Student Recruit 360 now go from ${made.box.from}.\n`, auto: true });
       } catch (e) {
         activity.record(req, req.user, 'Test email failed', { app: 'My email', changes: [`Could not set up ${made.box.from}: ${mailer.friendlyError(e, made.box.host)}`] });
         sendJSON(res, 400, { error: `It did not work, so nothing was saved: ${mailer.friendlyError(e, made.box.host)}` });
@@ -3548,7 +3548,7 @@ function createPortalApi({
       const notReached = (out) => {
         const devs = push.devices(req.user.id);
         if (!devs.length) return [409, 'Your phone is no longer connected. Connect it again.'];
-        if (devs.every((x) => x.lost)) { const n = devs.length === 1 ? `Your ${devs[0].name}` : 'Your phone'; return [409, `${n} is not answering. Open ISR on it once (from the Home Screen or Chrome) and it reconnects by itself.`]; }
+        if (devs.every((x) => x.lost)) { const n = devs.length === 1 ? `Your ${devs[0].name}` : 'Your phone'; return [409, `${n} is not answering. Open Student Recruit 360 on it once (from the Home Screen or Chrome) and it reconnects by itself.`]; }
         return [502, out && out.forgotten ? 'Your phone is no longer connected. Connect it again.' : 'Your phone could not be reached. Check that it is online.'];
       };
       const reply = (out) => {
@@ -3558,7 +3558,7 @@ function createPortalApi({
       if (body.test === true) {
         // A test, from the Connect my phone window.
         if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
-        reply(await push.send(req.user.id, { title: 'ISR is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site, 'isr-test'));
+        reply(await push.send(req.user.id, { title: 'Student Recruit 360 is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site, 'isr-test'));
         return true;
       }
       // A student's chat, sent to the person's own phone: only a student this account may see, only that student's number.

@@ -1,5 +1,5 @@
 // The first drafts of the mock interview guides (the owner, 20 Nov 2026), written by Claude from the universities' own public pages,
-// the Universities pages in ISR and GOV.UK. They are DRAFTS: a student sees nothing until Admin has read a guide and published it.
+// the Universities pages in Student Recruit 360 and GOV.UK. They are DRAFTS: a student sees nothing until Admin has read a guide and published it.
 // Each university draft carries "To check" notes for the team (never shown to a student) on what could not be confirmed.
 //
 //   core          the guide every student gets, whatever the university: the UK, what a mock and a credibility interview are, the

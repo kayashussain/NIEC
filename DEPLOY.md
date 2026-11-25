@@ -1,4 +1,4 @@
-# Deploying ISR online (Render)
+# Deploying Student Recruit 360 online (Render)
 
 There are two supported ways to host this: **Render** (this file) or **cPanel / Nest Nepal** (see
 `CPANEL_DEPLOY.md`). Pick one; you don't need both.
@@ -11,12 +11,12 @@ that one app on the port the host expects.
 ## One-time setup: Render
 
 1. **Create a free Render account** at https://render.com (sign in with GitHub is easiest).
-2. In the Render dashboard, click **New → Blueprint**, and connect the `uk-student-niec`
+2. In the Render dashboard, click **New → Blueprint**, and connect the `NIEC`
    GitHub repo. Render will read `render.yaml` in this repo and pre-fill almost everything:
    a web service, a 1GB persistent disk mounted at `/data`, and the two data-directory
    environment variables.
 3. Click **Apply** / **Create**. The first deploy takes a minute or two.
-4. Once it's live, Render gives you a URL like `https://uk-student-niec.onrender.com`.
+4. Once it's live, Render gives you a URL like `https://NIEC.onrender.com`.
    Opening it shows the login page (see **The login** below).
 
 ## The login

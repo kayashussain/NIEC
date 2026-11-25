@@ -77,7 +77,7 @@
   // The kinds notes were once kept with. A new note is always a plain note (the owner, 14 Nov 2026); the others stay readable.
   const NOTE_KINDS = [
     { key: 'note', text: 'Note' }, { key: 'call', text: 'Phone call' }, { key: 'meeting', text: 'Office visit' }, { key: 'message', text: 'Message' },
-    // Written by ISR itself: a stage moved on ("Moved to Mock Stage"), and a call from the follow-up list that nobody answered. Neither
+    // Written by Student Recruit 360 itself: a stage moved on ("Moved to Mock Stage"), and a call from the follow-up list that nobody answered. Neither
     // counts as speaking to the student (the owner, 21 Nov 2026).
     { key: 'stage', text: 'Stage' }, { key: 'try', text: 'Called, no answer' },
   ];
@@ -186,9 +186,9 @@
   const TASK_TAG_IDS = TASK_TAGS.map(([k]) => k);
   // The tags a person chooses from when giving or editing a task (the owner, 20 Nov 2026): Application, Mock interview, Documents, NOC,
   // Medical and Other. Offer request, Payment and Visa and CAS are no longer offered; tasks that already carry one keep it and still show
-  // it (ISR's own "Offer request" task after a submission keeps its tag), so stored tasks keep their meaning.
+  // it (Student Recruit 360's own "Offer request" task after a submission keeps its tag), so stored tasks keep their meaning.
   // Documents is no longer a kind of its own (the owner, 21 Nov 2026): documents are part of the application, so the five kinds a person
-  // chooses from are Application, Mock interview, NOC, Medical and Other. Offer request is made by ISR only, after an application is
+  // chooses from are Application, Mock interview, NOC, Medical and Other. Offer request is made by Student Recruit 360 only, after an application is
   // submitted. The Documents tasks already saved were moved to Application once at start-up (see server.js).
   const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'mock', 'noc', 'medical', 'other'].includes(k));
   // A course leaves the Shortlist for good once it has gone to the Application Team (the owner, 18 Nov 2026): given to the team, applied
@@ -223,7 +223,7 @@
     return 'other';
   }
   const taskTag = (task, stage) => (TASK_TAG_IDS.includes(task && task.tag) ? task.tag : guessTaskTag(task && task.text, task && task.team, stage));
-  // The task ISR gives by itself on the day of a medical test ("Medical test of 19 Nov 2026 at Norvic: is the report received?").
+  // The task Student Recruit 360 gives by itself on the day of a medical test ("Medical test of 19 Nov 2026 at Norvic: is the report received?").
   // It is about the report, not about booking, so finishing it never asks for a booking again (see finishPlan in portal-api.js).
   const isReportCheck = (task) => /^Medical test of .+: is the report received\?$/i.test(String((task && task.text) || '').trim());
   // How important a task is, chosen by whoever gives it (the owner, 15 Nov 2026): every task is Priority unless it is marked Super

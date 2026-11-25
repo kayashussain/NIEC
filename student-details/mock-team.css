@@ -1,5 +1,5 @@
 /* The Mock Team's own pages (the owner, 22 Nov 2026): Bookings and Interview guidelines. Built on the shared page (portal.css) and the
-   one card of every page (theme.css, "One system on every page"); only what those pages need beyond them is here, in the ISR colours
+   one card of every page (theme.css, "One system on every page"); only what those pages need beyond them is here, in the Student Recruit 360 colours
    (CLAUDE.md): tiles #e2e2e2 with #b8b8b8 and 8px corners, boxes #f7f7f7 with a #6f6f6f line, text #000 and #333, the one blue #0071e3,
    links #0050aa, orange #b85300 for something missing, green #1e8e4a for done. */
 /* 🔴 CSS CHANGED (2026-11-22): the independent review's fixes | from: the slot time boxes cut "AM" and "PM", the date box cut, a booking rule's last word alone on a line, the chosen result switch looked pale, Upcoming's University and course in narrow columns that wrapped onto 3 lines | to: wider time and date boxes, each booking rule as a label over its box, the chosen switch solid blue, the University and course as a grey line under the student's name */

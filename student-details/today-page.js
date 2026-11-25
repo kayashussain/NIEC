@@ -428,8 +428,8 @@
 
     r.classList.add('is-open');
     const body = el('div', 'tdx-body');
-    // An Offer request is made by ISR when the application is submitted; any other task says who gave it.
-    const given = el('p', 'tdx-given', x.tag === 'offer' ? `Made by ISR when the application was submitted${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}` : `Given by ${x.by === me ? 'you' : x.by || 'someone'}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`);
+    // An Offer request is made by Student Recruit 360 when the application is submitted; any other task says who gave it.
+    const given = el('p', 'tdx-given', x.tag === 'offer' ? `Made by Student Recruit 360 when the application was submitted${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}` : `Given by ${x.by === me ? 'you' : x.by || 'someone'}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`);
     const n = (x.comments || []).filter((m) => m.text).length;
     const thread = window.Portal.taskThread(x, { rowId: x.studentId, me, canWrite: !x.done && (x.forMe || x.by === me || canAssignAll), unread: x.unread || 0, teams: allTeams, today: todayIso, always: true });
     if (info) {
@@ -482,7 +482,7 @@
     }
     if (x.mayHand) acts.append(h('button', { class: 'btn', type: 'button', onclick: async () => { if (await handOn(x, { rowId: x.studentId, teams: handTeams })) { window.NiecUI.toast('Reassigned.', { type: 'success' }); refresh(true); } } }, 'Reassign'));
     acts.append(h('a', { class: 'btn tdx-profile', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'View student profile'));
-    const mayEdit = canAssignAll || (x.by === me && x.tag !== 'offer'); // an Offer request is ISR's own: Admin may change it
+    const mayEdit = canAssignAll || (x.by === me && x.tag !== 'offer'); // an Offer request is Student Recruit 360's own: Admin may change it
     // The Application Team's task has no "..." (the owner, 24 Nov 2026: removed); a task is edited or removed on the student card.
     const menu = info || mk ? null : window.Portal.taskMenu([ // the Mock Team's neither (the approved design, 23 Nov 2026)
       mayEdit && ['Edit the task', async () => { if (await window.Portal.editTask(x, { rowId: x.studentId, stage: x.stage })) { window.NiecUI.toast('Task updated. The team is told.', { type: 'success' }); refresh(true); } }],
@@ -1173,7 +1173,7 @@
     me = d.name || '';
     let tasks = { tasks: [], canAssign: false };
     try { tasks = await api('/api/tasks'); } catch (e) { /* the rest of Today still shows */ }
-    document.title = 'Today · ISR';
+    document.title = 'Today · Student Recruit 360';
     const page = el('div', 'td-page');
     const appLook = Boolean(d.appTeam || d.mockTeam); // the Application Team's own Today (approved design F5), and the Mock Team's (23 Nov 2026)
     let head; let bellHost;

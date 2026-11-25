@@ -25,7 +25,7 @@
     const opts = body === undefined ? { credentials: 'same-origin' } : { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
     if (window.AbortSignal && AbortSignal.timeout) opts.signal = AbortSignal.timeout(15000);
     let r;
-    try { r = await fetch(url, opts); } catch (e) { const err = new Error(e && e.name === 'TimeoutError' ? 'ISR did not answer in time. Check the internet and try again.' : 'No connection to ISR. Check the internet and try again.'); err.status = 0; throw err; }
+    try { r = await fetch(url, opts); } catch (e) { const err = new Error(e && e.name === 'TimeoutError' ? 'Student Recruit 360 did not answer in time. Check the internet and try again.' : 'No connection to Student Recruit 360. Check the internet and try again.'); err.status = 0; throw err; }
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error(j.error || 'Something went wrong.'); e.status = r.status; throw e; }
     return j;
@@ -39,15 +39,15 @@
   let status = null; // { key, devices }
   const load = async (fresh) => { if (!status || fresh) status = await api('/api/push'); return status; };
 
-  // This phone's id and secret, kept on the phone for ISR's service worker (sw.js), so it renews its push address by itself.
+  // This phone's id and secret, kept on the phone for Student Recruit 360's service worker (sw.js), so it renews its push address by itself.
   const STORE = 'isr-device'; const ME = '/__isr-device';
   const mine = async () => { try { const r = await (await caches.open(STORE)).match(ME); return r ? await r.json() : null; } catch (e) { return null; } };
   const keepMine = async (me) => { try { await (await caches.open(STORE)).put(ME, new Response(JSON.stringify(me), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { /* still works */ } };
-  // Any page of ISR opened on a connected phone checks in quietly, so the phone stays connected (sw.js heal).
+  // Any page of Student Recruit 360 opened on a connected phone checks in quietly, so the phone stays connected (sw.js heal).
   try { if (isPhone() && navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage('heal'); } catch (e) { /* fine */ }
 
   async function connectHere() {
-    if (!canPush()) throw new Error(isIos() && !standalone() ? 'On an iPhone, first add ISR to the Home Screen (the Share button, then Add to Home Screen), open ISR from there, and press Connect again.' : 'This browser cannot get notifications. Use Chrome on Android, or Safari on iPhone with ISR on the Home Screen.');
+    if (!canPush()) throw new Error(isIos() && !standalone() ? 'On an iPhone, first add Student Recruit 360 to the Home Screen (the Share button, then Add to Home Screen), open Student Recruit 360 from there, and press Connect again.' : 'This browser cannot get notifications. Use Chrome on Android, or Safari on iPhone with Student Recruit 360 on the Home Screen.');
     const allowed = await Notification.requestPermission();
     if (allowed !== 'granted') throw new Error('Notifications were not allowed. Allow them for this site in the phone\'s settings, then press Connect again.');
     const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
@@ -75,7 +75,7 @@
   const OS_KEY = 'isr-phone-kind';
   const STEPS = {
     android: [['Open the camera', 'Point it at the code and tap the link that appears. (If the camera shows no link, open Chrome and tap the camera icon in the search bar.)'], ['Tap "Turn on", then "Allow"', 'That is all. No login on the phone.']],
-    iphone: [['Open the Camera', 'Point it at the code and tap the link that appears.'], ['Add ISR to the Home Screen', 'Tap the Share button, then "Add to Home Screen". Apple asks for this once.'], ['Open ISR from the Home Screen', 'Tap "Turn on", then "Allow". That is all.']],
+    iphone: [['Open the Camera', 'Point it at the code and tap the link that appears.'], ['Add Student Recruit 360 to the Home Screen', 'Tap the Share button, then "Add to Home Screen". Apple asks for this once.'], ['Open Student Recruit 360 from the Home Screen', 'Tap "Turn on", then "Allow". That is all.']],
   };
 
   // The window to connect a phone (the owner, 17 Nov 2026: simple enough to explain in one sentence, and as clear and professional
@@ -195,7 +195,7 @@
       s.devices.forEach((x) => {
         const li = el('li');
         const t = el('div', 'pc-dev-text');
-        t.append(el('b', '', x.name), el('span', '', x.lost ? 'Not answering. Open ISR on it once and it reconnects by itself.' : `Connected ${day(x.at)}${x.usedAt ? ` · Last used ${day(x.usedAt)}` : ''}`));
+        t.append(el('b', '', x.name), el('span', '', x.lost ? 'Not answering. Open Student Recruit 360 on it once and it reconnects by itself.' : `Connected ${day(x.at)}${x.usedAt ? ` · Last used ${day(x.usedAt)}` : ''}`));
         let sure = null;
         const off = btn('btn btn-sm pc-off', 'Disconnect', async () => {
           if (!sure) { off.textContent = 'Disconnect?'; off.classList.add('is-sure'); sure = setTimeout(() => { sure = null; off.textContent = 'Disconnect'; off.classList.remove('is-sure'); }, 3500); return; }
@@ -218,7 +218,7 @@
     draw();
   }
 
-  // After a send: ISR's service worker on the phone says when the notification has arrived and when it was tapped, so the person
+  // After a send: Student Recruit 360's service worker on the phone says when the notification has arrived and when it was tapped, so the person
   // knows their click worked (the owner, 17 Nov 2026). Asked every second for up to 25 seconds; a phone connected before this
   // (no receipt) simply keeps the "Sent" notice.
   let following = 0;
@@ -235,8 +235,8 @@
       if (r.state === 'arrived' && !arrived) { arrived = true; say(`On your ${(r.got && r.got[0]) || to} now. Tap the notification to open ${what}.`, false, { duration: 12000 }); }
       if (r.state === 'unknown') return;
     }
-    // A calm notice, not an error: the phone may have shown it without its answer reaching ISR.
-    if (!arrived && mine === following) say(`ISR has not heard back from your ${to} yet. If nothing shows on it, check that the phone is online (Wi-Fi or mobile data), then press again.`, false, { type: 'info', duration: 9000 });
+    // A calm notice, not an error: the phone may have shown it without its answer reaching Student Recruit 360.
+    if (!arrived && mine === following) say(`Student Recruit 360 has not heard back from your ${to} yet. If nothing shows on it, check that the phone is online (Wi-Fi or mobile data), then press again.`, false, { type: 'info', duration: 9000 });
   }
 
   // Pressed again for the same student while it is still being sent, or just after: nothing more is sent (the owner, 17 Nov 2026:

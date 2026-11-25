@@ -1,13 +1,13 @@
-# ISR design brief: how every screen must look, move and feel
+# Student Recruit 360 design brief: how every screen must look, move and feel
 
 The owner's standing instruction (20 Nov 2026). Every change to a page, a card, a window or a style follows this file. CLAUDE.md
-points here, so every session reads it before front-end work. The front end is the product. ISR is treated as an Apple product:
+points here, so every session reads it before front-end work. The front end is the product. Student Recruit 360 is treated as an Apple product:
 premium, calm, quiet and exact. The measure is apple.com itself, not "inspired by" it.
 
 ## 0. The prompt (paste this whenever you ask for front-end work)
 
 > You are Apple's own design and web engineering team (the designer, the front-end engineer and the person who signs it off).
-> Build this screen of ISR, a premium product, as Apple would ship it on apple.com: calm, quiet, exact, expensive-feeling.
+> Build this screen of Student Recruit 360, a premium product, as Apple would ship it on apple.com: calm, quiet, exact, expensive-feeling.
 > Read CLAUDE.md and DESIGN.md first and follow them to the letter, especially section 2 (the measured Apple values).
 > - Colour: black #000 and one dark grey #333 for text (the owner's "Strong contrast", 21 Nov 2026); blue (#0071e3 buttons, #0050aa links) only for the one main
 >   action, links and "where you are now". No gradients, no coloured icons, no coloured panels, no glow. A colour appears only
@@ -43,7 +43,7 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 
 ## 2. Fixed values (measured on apple.com, 20 Nov 2026)
 
-| What | Apple's value | In ISR |
+| What | Apple's value | In Student Recruit 360 |
 |---|---|---|
 | Body text | 17px, line height 25px (1.47), letter spacing -0.374px (-0.022em), weight 400 | the same |
 | Small text and labels | 14px, line height 20px, letter spacing -0.224px (-0.016em) | the same |
@@ -92,9 +92,9 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
   links #0050aa; the blue buttons stay #0071e3. This replaces the earlier near-black #111 / #1d1d1f and grey #6e6e73 values above. Screens of work are flat: surfaces meet edge to edge with hairlines, not
   cards floating with margins on every side.
 
-## 1b. The ISR colours
+## 1b. The Student Recruit 360 colours
 
-The full table of the accepted colours (page, panels, text, buttons, status and the ten chart colours) is in CLAUDE.md, "The ISR
+The full table of the accepted colours (page, panels, text, buttons, status and the ten chart colours) is in CLAUDE.md, "The Student Recruit 360
 colours". It is the one source; this file and the code follow it. The Dashboard is in colour (the owner, 21 Nov 2026: "the dashboard
 can be much more colourful than black and white"); every other page is black, grey and one blue.
 
@@ -119,16 +119,16 @@ from the cloud). Measured in a browser:
 - **Almost no colour in text:** black or white (Lusion, Cappen, KPR, Mammut); one accent at most (KPR's lime, Rouser's yellow).
 - **The glide:** things appear on an ease-out-expo curve, a fast start and a long soft stop, over 0.5 to 0.9s
   (Lusion `cubic-bezier(.4, 0, .1, 1)`, Mammut `cubic-bezier(.19, 1, .22, 1)`, 5S `cubic-bezier(.075, .82, .165, 1)`,
-  Cappen `cubic-bezier(.25, 1, .5, 1)`). This is what makes them feel smooth and expensive. ISR uses `cubic-bezier(.16, 1, .3, 1)`
+  Cappen `cubic-bezier(.25, 1, .5, 1)`). This is what makes them feel smooth and expensive. Student Recruit 360 uses `cubic-bezier(.16, 1, .3, 1)`
   over 0.5s for things that appear, and Apple's 0.1 to 0.32s for hovers and presses.
 - **Small, exact hover reactions:** an arrow nudges, a line grows, a colour changes; never a big jump.
 - **Lots of space and a strict grid;** text set large and quiet.
-- What ISR does **not** take: 3D scenes, loaders, illustration overload, scroll shows. They are for marketing pages; ISR is a tool
+- What Student Recruit 360 does **not** take: 3D scenes, loaders, illustration overload, scroll shows. They are for marketing pages; Student Recruit 360 is a tool
   people work in all day, and must stay fast and calm.
 
 ## 3. The motion kit (use it; do not reinvent it)
 
-`shared/motion.js` is loaded on every page by `header.js`. Its styles are the "ISR motion kit" section of `shared/theme.css`,
+`shared/motion.js` is loaded on every page by `header.js`. Its styles are the "Student Recruit 360 motion kit" section of `shared/theme.css`,
 set to Apple's timings above.
 
 | Piece | How to use it | What it does |

@@ -7,7 +7,7 @@
 #   DEPLOY_HOST      the server's name, for example niec.duckdns.org (or its SSH host)
 #   DEPLOY_USER      the cPanel user name
 #   DEPLOY_SSH_KEY   a private SSH key made only for this, whose public half is authorised in cPanel (SSH Access)
-#   DEPLOY_PATH      the folder of the cloned repo on the server, for example /home/USER/uk-student-niec
+#   DEPLOY_PATH      the folder of the cloned repo on the server, for example /home/USER/NIEC
 #   DEPLOY_PORT      optional, the SSH port (22 when empty)
 #   DEPLOY_SSH_PASSPHRASE   optional, the key's password if it has one (cPanel often insists on one)
 name: Deploy to the live server

@@ -350,7 +350,7 @@ dialog.p-dialog:has(.p-assign)[open] { max-height: calc(92vh - 24px); }
   .sc-tick path { stroke-dashoffset: 0; }
 }
 
-/* 🔴 CSS CHANGED (2026-11-21): the Profile column's new sections (the owner: "make ISR stronger than Route2Uni") | from: Contact and Passport only, no passport expiry, gender, studies or English test on the card | to: Passport with expiry and gender, and two new sections, Academic and Study plans, in the same quiet rows changed where they are; a passport running out within six months shows its date in orange with the days left (or "expired"); a dropdown opens with "Choose..." when nothing is chosen */
+/* 🔴 CSS CHANGED (2026-11-21): the Profile column's new sections (the owner: "make Student Recruit 360 stronger than Route2Uni") | from: Contact and Passport only, no passport expiry, gender, studies or English test on the card | to: Passport with expiry and gender, and two new sections, Academic and Study plans, in the same quiet rows changed where they are; a passport running out within six months shows its date in orange with the days left (or "expired"); a dropdown opens with "Choose..." when nothing is chosen */
 .sc-row.is-warn .sc-row-value { color: var(--sc-orange-ink); }
 .sc-row-note { color: var(--sc-orange-ink); font-size: 14px; font-weight: 600; }
 .sc-row select.sc-input { appearance: auto; padding-right: 8px; }
@@ -516,7 +516,7 @@ textarea.lg-input { flex: 1; height: auto; min-height: 44px; max-height: 300px; 
 .lg-kind.is-task, .lg-kind.is-update { background: #e6f0fd; color: #004a9e; }
 .lg-kind.is-done { background: #e7f6ec; color: #11602e; }
 .lg-kind.is-auto { color: #333; }
-/* 🔴 CSS CHANGED (2026-11-21): the student card's Timeline, two new kinds of line written by ISR (the follow-up list) | from: none | to: "Stage" (a stage moved on, "Moved to Mock Stage") in the same soft blue as the task lines, and "No answer" (a call nobody answered) in orange (#b85300 on a soft orange) */
+/* 🔴 CSS CHANGED (2026-11-21): the student card's Timeline, two new kinds of line written by Student Recruit 360 (the follow-up list) | from: none | to: "Stage" (a stage moved on, "Moved to Mock Stage") in the same soft blue as the task lines, and "No answer" (a call nobody answered) in orange (#b85300 on a soft orange) */
 .lg-kind.is-stage { background: #e6f0fd; color: #004a9e; }
 .lg-kind.is-try { background: #fbefe5; color: #b85300; }
 tr.is-unseen .lg-kind::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #0071e3; vertical-align: 1px; }

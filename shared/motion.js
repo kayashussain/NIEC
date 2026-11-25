@@ -1,4 +1,4 @@
-// ISR motion kit (the owner, 20 Nov 2026: "interactive, engaging, fun to work in, like a game, a surprise every time").
+// Student Recruit 360 motion kit (the owner, 20 Nov 2026: "interactive, engaging, fun to work in, like a game, a surprise every time").
 // One small file every page loads (header.js adds it), so every page moves the same way. See DESIGN.md for the rules.
 //
 //   Motion.reveal(root)          the cards and rows of `root` rise in one after another (each element once)

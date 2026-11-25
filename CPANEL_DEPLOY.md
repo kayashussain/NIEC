@@ -13,20 +13,20 @@ If your plan has **Terminal/SSH** (check cPanel for a "Terminal" icon):
 
 ```bash
 cd ~
-git clone https://github.com/kayashussain/uk-student-niec.git
+git clone https://github.com/kayashussain/NIEC.git
 ```
 
 That plain URL only works while the repo is **public**. No student data is ever in git, but if you'd
 rather keep the code private, make the repo private on GitHub and clone with a read-only token
 instead: create a fine-grained personal access token (GitHub → Settings → Developer settings) with
 read access to just this repo, then
-`git clone https://YOUR_GITHUB_USERNAME:YOUR_TOKEN@github.com/kayashussain/uk-student-niec.git`.
+`git clone https://YOUR_GITHUB_USERNAME:YOUR_TOKEN@github.com/kayashussain/NIEC.git`.
 Treat the token like a password.
 
 No terminal? Download the repo as a ZIP from GitHub (**Code → Download ZIP**) and upload
 + extract it into your home directory via cPanel's **File Manager** instead. Either way,
-you should end up with `~/uk-student-niec/student-details` and
-`~/uk-student-niec/counselor-incentive`.
+you should end up with `~/NIEC/student-details` and
+`~/NIEC/counselor-incentive`.
 
 Also create one more folder, outside both app folders, to hold the actual data so it
 survives re-deploys:
@@ -43,7 +43,7 @@ In cPanel → **Setup Node.js App** → **Create Application**:
 |---|---|
 | Node.js version | Latest available (18+) |
 | Application mode | Production |
-| Application root | `uk-student-niec/student-details` |
+| Application root | `NIEC/student-details` |
 | Application URL | `niec.duckdns.org` (leave the path blank, this is the root) |
 | Application startup file | `server.js` |
 
@@ -159,7 +159,7 @@ variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURITY`, `MAIL_USER`, `MAIL_PASSWORD
 needed. The Mock Team's booking emails, reminders and the new-person emails all go from this one mailbox.
 
 1. In that Google account: turn on 2-Step Verification, then make an **App password** (Google Account, Security, App passwords).
-   Google gives 16 letters; that is the password ISR uses (never the normal Gmail password).
+   Google gives 16 letters; that is the password Student Recruit 360 uses (never the normal Gmail password).
 2. On the server, in the project folder: `node scripts/email.js setup`. Mailbox: the Gmail address. Password: the 16-letter app
    password. Mail server: `smtp.gmail.com`, port `465`, SSL.
 3. `node scripts/email.js test` followed by your own address, and check the message arrives.
@@ -218,7 +218,7 @@ New files of the same kind since then: `agents.json` with `agent-files/` (the Ag
 
 ## The Thursday refresh of partner universities
 
-Every Thursday from 2 a.m. office time, ISR reads the January 2027 courses, requirements and dates of each partner university again
+Every Thursday from 2 a.m. office time, Student Recruit 360 reads the January 2027 courses, requirements and dates of each partner university again
 from the partner it came from, with the login saved on that partner's B2B card (Partners, B2B Partners): Real Dreams through the
 Route2Uni portal, Adventus through its course search. Apply Board is not read (its sign-in asks a person to prove they are not a
 robot). Every run is written in Activity. Nothing needs setting up. To switch it off, add `PARTNER_REFRESH` with the value `off` to
@@ -227,7 +227,7 @@ if they are still there.
 
 ## The Navitas product toolkit in Universities
 
-ISR reads the Navitas product toolkit (the public Google Sheet "Nepal UK/Europe Navitas product toolkit") twice a week, Monday and
+Student Recruit 360 reads the Navitas product toolkit (the public Google Sheet "Nepal UK/Europe Navitas product toolkit") twice a week, Monday and
 Thursday from 2 a.m. office time, and gives each UK Navitas college its own university page: fees,
 scholarships, entry requirements, English, study gap, courses, the January intake with its deadlines and courses, interview
 questions, Flywire payment and refund links, accommodation and the application steps. German and Dutch colleges are left out,
@@ -277,13 +277,13 @@ folder is set) is never touched, because it is not in git.
 cp -a ~/niec_data ~/niec_data.backup-$(date +%Y-%m-%d)
 ```
 
-   (If the app has no `STUDENT_DETAILS_DATA_DIR`, the data is in `~/uk-student-niec/student-details` instead: copy the whole
-   folder with `cp -a ~/uk-student-niec ~/uk-student-niec.backup-$(date +%Y-%m-%d)`.)
+   (If the app has no `STUDENT_DETAILS_DATA_DIR`, the data is in `~/NIEC/student-details` instead: copy the whole
+   folder with `cp -a ~/NIEC ~/NIEC.backup-$(date +%Y-%m-%d)`.)
 
 2. Get the code:
 
 ```bash
-cd ~/uk-student-niec && git fetch origin master && git reset --hard origin/master && git log -1 --oneline
+cd ~/NIEC && git fetch origin master && git reset --hard origin/master && git log -1 --oneline
 ```
 
 3. In cPanel's Node.js App screen, hit **Restart** on the app (and **Run NPM Install** again if `package.json` changed).

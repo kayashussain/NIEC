@@ -137,7 +137,7 @@
     if (h < 0) return '';
     return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
   };
-  // The study levels of ISR (the owner, 14 Nov 2026); an MBA is Postgraduate. The narrower words are read first.
+  // The study levels of Student Recruit 360 (the owner, 14 Nov 2026); an MBA is Postgraduate. The narrower words are read first.
   const levelOf = (v) => (/top.?up/i.test(v) ? 'Top-up (final year)' : /pre.?masters?/i.test(v) ? 'Pre-Masters' : /international year|\biy1\b/i.test(v) ? 'International Year 1'
     : /foundation|pathway/i.test(v) ? 'Foundation' : /ph\.?d|doctor|by research|\bmres\b/i.test(v) ? 'Masters by Research or PhD'
       : /master|post\s*grad|msc|\bma\b|mba|\bpg\b/i.test(v) ? 'Postgraduate' : /bachelor|under\s*grad|bsc|\bba\b|degree|\bug\b/i.test(v) ? 'Undergraduate' : '');
@@ -177,7 +177,7 @@
   }
   // ---- Reading an .xlsx file without any library (an .xlsx file is a zip of XML files) ----
   // The Excel library (ExcelJS) cannot read some files Excel and Google Sheets save, for example a sheet formatted as a table (it fails
-  // with "Cannot read properties of undefined (reading 'name')"; the owner's lead list from Meta, 14 Nov 2026). ISR reads the first sheet
+  // with "Cannot read properties of undefined (reading 'name')"; the owner's lead list from Meta, 14 Nov 2026). Student Recruit 360 reads the first sheet
   // itself: its cells as text, numbers kept as they are (a date column's Excel day numbers are turned into dates by fromGrid).
   const u16 = (b, i) => b[i] | (b[i + 1] << 8);
   const u32 = (b, i) => (b[i] | (b[i + 1] << 8) | (b[i + 2] << 16) | (b[i + 3] << 24)) >>> 0;
@@ -203,7 +203,7 @@
         let bytes;
         if (method === 0) bytes = raw;
         else if (method === 8) bytes = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
-        else throw new Error('The Excel file is packed in a way ISR cannot read.');
+        else throw new Error('The Excel file is packed in a way Student Recruit 360 cannot read.');
         files[name] = new TextDecoder().decode(bytes);
       }
       at += 46 + nameLen + extraLen + commentLen;
@@ -250,7 +250,7 @@
     return grid;
   }
 
-  // A file the person chose: .csv as text; .xlsx read by ISR itself (above), and only if that fails, by the Excel library.
+  // A file the person chose: .csv as text; .xlsx read by Student Recruit 360 itself (above), and only if that fails, by the Excel library.
   async function readFile(file, max = 100000) {
     if (/\.csv$/i.test(file.name)) return fromGrid(csvRows(await file.text()), max);
     const buffer = await file.arrayBuffer();

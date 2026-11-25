@@ -1,7 +1,7 @@
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
-/* 🔴 CSS CHANGED (2026-11-21): one font everywhere in the menu | from: the computer's own system font (Segoe UI on Windows) for a few words, such as "Admin only", while the rest of the page used the ISR font | to: the ISR font (--font) for them too, so every word on a page is in the same font (the owner, 21 Nov 2026) */
-/* 🔴 CSS CHANGED (2026-11-13): the logo in the menu and on the login page | from: the "Fly" letters with the paper plane on a dotted path | to: the paper plane icon with the name "ISR" beside it (the logo is a picture, in shared/header.js and shared/login.html) */
-/* The ISR side menu every page shares (shared/header.js fills in the navigation and the account menu): a light frosted column on the left that a 3-bar button opens and closes, a bar across the top on a phone. */
+/* 🔴 CSS CHANGED (2026-11-21): one font everywhere in the menu | from: the computer's own system font (Segoe UI on Windows) for a few words, such as "Admin only", while the rest of the page used the Student Recruit 360 font | to: the Student Recruit 360 font (--font) for them too, so every word on a page is in the same font (the owner, 21 Nov 2026) */
+/* 🔴 CSS CHANGED (2026-11-13): the logo in the menu and on the login page | from: the "Fly" letters with the paper plane on a dotted path | to: the paper plane icon with the name "Student Recruit 360" beside it (the logo is a picture, in shared/header.js and shared/login.html) */
+/* The Student Recruit 360 side menu every page shares (shared/header.js fills in the navigation and the account menu): a light frosted column on the left that a 3-bar button opens and closes, a bar across the top on a phone. */
 :root { --side-w: 252px; }
 /* Every page leaves room for the menu (the card window of a student, which shows a page inside another, does not). */
 body:has(> .niec-header) { padding-left: var(--side-w); transition: padding-left .2s ease; }
@@ -22,7 +22,7 @@ body.p-embed { padding-left: 0 !important; }
 .niec-header::after { content: none; }
 
 .niec-brand { display: flex; flex-direction: row; gap: 12px; align-items: center; text-decoration: none; color: inherit; padding: 0 4px 10px; border-bottom: 1px solid var(--h-border); }
-/* 🔴 CSS CHANGED (2026-11-13): the name at the top of the menu | from: a picture logo, then three lines of text | to: just "ISR" in large bold text (the full name International Student Recruitment is on the login page, in emails and on printed pages); when the menu is folded, a small blue tile with ISR */
+/* 🔴 CSS CHANGED (2026-11-13): the name at the top of the menu | from: a picture logo, then three lines of text | to: just "Student Recruit 360" in large bold text (the full name Student Recruit 360 is on the login page, in emails and on printed pages); when the menu is folded, a small blue tile with Student Recruit 360 */
 .niec-name { display: block; min-width: 0; }
 .niec-name b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; color: var(--h-text); }
 .niec-mark { display: none; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 12px; background: var(--h-gold); color: #fff; font-size: 15px; font-weight: 800; letter-spacing: .02em; place-items: center; }

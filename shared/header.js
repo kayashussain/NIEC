@@ -1,4 +1,4 @@
-// The side menu every page shares: the ISR mark and the name of the consultancy using it, navigation between the pages, and the account
+// The side menu every page shares: the Student Recruit 360 mark and the name of the consultancy using it, navigation between the pages, and the account
 // menu with Log out. A page puts <header class="niec-header" data-page="..."></header> at the top (page
 // is dashboard, sheet, b2b, bulk, incentive, users, activity or direct), loads header.css and this file (after
 // session.js), and the header fills itself in.
@@ -51,8 +51,8 @@
     <button type="button" class="niec-toggle" aria-label="Open or close the menu" aria-expanded="true" title="Open or close the menu"><span class="niec-burger-ico" aria-hidden="true"></span></button>
     <a class="niec-brand" href="/today" title="Home" id="niecHome">
       <img class="niec-logo" src="/brand-logo.png" alt="Home" width="198" height="96" />
-      <span class="niec-name" hidden><b>ISR</b></span>
-      <span class="niec-mark" aria-hidden="true">ISR</span>
+      <span class="niec-name" hidden><b>Student Recruit 360</b></span>
+      <span class="niec-mark" aria-hidden="true">SR</span>
     </a>
     <button type="button" class="niec-burger" aria-expanded="false" aria-controls="niecNav"><span class="niec-burger-ico" aria-hidden="true"></span><span class="niec-burger-lbl">Menu</span></button>
     <nav class="niec-nav" id="niecNav" aria-label="Pages"></nav>
@@ -65,7 +65,7 @@
   window.addEventListener('pageswap', quiet);
   window.addEventListener('pagereveal', quiet);
 
-  // Only the consultancy's logo at the top of the menu (the owner, 14 Nov 2026); "ISR" shows only if there is no logo.
+  // Only the consultancy's logo at the top of the menu (the owner, 14 Nov 2026); "Student Recruit 360" shows only if there is no logo.
   const logo = header.querySelector('.niec-logo');
   logo.addEventListener('error', () => { logo.hidden = true; header.querySelector('.niec-name').hidden = false; });
 
@@ -283,7 +283,7 @@
     if (account.querySelector('.niec-phone')) account.querySelector('.niec-phone').addEventListener('click', () => { setOpen(false); if (window.PhoneLink) window.PhoneLink.dialog(); });
   }
 
-  // Every page: what a phone needs to keep ISR on its Home Screen (an iPhone gets notifications only from there), and the WhatsApp
+  // Every page: what a phone needs to keep Student Recruit 360 on its Home Screen (an iPhone gets notifications only from there), and the WhatsApp
   // link to the person's phone (phone-link.js).
   (function phoneReady() {
     const add = (tag, attrs) => { const e = document.createElement(tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); document.head.append(e); };
@@ -291,7 +291,7 @@
       add('link', { rel: 'manifest', href: '/manifest.webmanifest' });
       add('link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' });
       add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
-      add('meta', { name: 'apple-mobile-web-app-title', content: 'ISR' });
+      add('meta', { name: 'apple-mobile-web-app-title', content: 'Student Recruit 360' });
     }
     if (!window.PhoneLink && !document.querySelector('script[src^="/phone-link.js"]')) add('script', { src: '/phone-link.js', defer: '' });
     // The motion kit (motion.js, DESIGN.md): every page moves the same way.

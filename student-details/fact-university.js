@@ -736,7 +736,7 @@
     }
     $('view').replaceChildren(doc);
     motion(doc);
-    document.title = `${uni.name} · Universities · ISR`;
+    document.title = `${uni.name} · Universities · Student Recruit 360`;
     const bar = $('toolbar');
     const copy = el('button', 'btn', 'Copy summary');
     copy.type = 'button';
@@ -871,7 +871,7 @@
       }
     }
     view$.append(doc);
-    document.title = `${view.name} · Universities · ISR`;
+    document.title = `${view.name} · Universities · Student Recruit 360`;
 
     const bar = $('toolbar');
     bar.replaceChildren();

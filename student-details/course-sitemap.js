@@ -16,7 +16,7 @@ const { writeFileAtomic } = require('../shared/server-utils');
 const { parseCourses } = require('./course-index');
 const { hostsOf } = require('./university-websites');
 
-const UA = 'Mozilla/5.0 (compatible; ISR-course-links/1.0; reads the public sitemap only)';
+const UA = 'Mozilla/5.0 (compatible; StudentRecruit360-course-links/1.0; reads the public sitemap only)';
 const COURSE_PATH = /\/(courses?|study|undergraduate|postgraduate|programmes?|subjects?|degrees?|ug|pg)\b/i;
 const NOT_COURSE = /\/(news|events?|blog|staff|people|research-?projects?|stories|profiles?|jobs?|vacanc|search|tag|category|alumni|policies|about)\b/i;
 const STOP = new Set(['the', 'of', 'and', 'in', 'for', 'with', 'a', 'an', 'to', 'at', 'on', 'hons', 'honours', 'year', 'years', 'full', 'time', 'part', 'campus', 'course', 'courses', 'degree',

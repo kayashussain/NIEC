@@ -1,7 +1,7 @@
 /* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
 /* 🔴 CSS CHANGED (2026-11-21): one grey for secondary words in this file | from: several near-greys (#515154, #5f5f64, #66666b, #5c5c63, #86868b, #5b6472, #64635d, #525150, #48484e), some too pale to read | to: Apple's one grey, #6e6e73, everywhere a word is grey (only the colour of words changed; backgrounds untouched) */
 /* 🔴 CSS CHANGED (2026-11-18): dead duplicate style lines removed, nothing on screen changes | from: lines that a later rule for the very same element set again, so they never had any effect | to: removed (checked by comparing screenshots of every page before and after) */
-/* ISR design system.
+/* Student Recruit 360 design system.
    One light look, made to be easy on the eyes through a long day: a soft grey canvas, panels that are a gentle off-white instead of glaring pure white, strong dark text (about 15 to 1 contrast), a calm blue for the main action and for focus, and larger, roomier type and controls.
    Every page loads this last, so a value here changes every page. Sections: tokens, base, buttons and fields, the sheet, cards and pages, Incentive, small screens. */
 
@@ -450,7 +450,7 @@ label span, .p-card label span { font-size: 14px; }
 .course-link:not([href]) { color: var(--text); font-weight: 500; }
 .find-link { margin-left: 10px; background: none; border: 1px solid var(--border-strong, #c9d1db); border-radius: 999px; padding: 2px 12px; font: inherit; font-size: 14px; color: var(--niec-blue-text); cursor: pointer; }
 .find-link:hover { background: var(--blue-bg, #e3ecfb); }
-/* 🔴 CSS CHANGED (2026-11-13): size of the logo in the side menu | from: 170px wide, so "ISR" was tiny | to: 212px wide so the name reads clearly */
+/* 🔴 CSS CHANGED (2026-11-13): size of the logo in the side menu | from: 170px wide, so "Student Recruit 360" was tiny | to: 212px wide so the name reads clearly */
 /* 🔴 CSS CHANGED (2026-11-13): team workspaces | from: every team saw the same Today and the same sheet headings | to: a small label above the greeting on Today saying which team the page is for, a team note beside the sheet title, and the sheet columns a team fills in have a soft blue heading */
 
 .team-note { background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); }
@@ -488,7 +488,7 @@ html:has(#sheet) { overflow-y: auto; }
   body:has(#sheet) .stat-card .stat-label { min-height: 0; width: auto; }
   body:has(#sheet) .status-summary { padding-bottom: 4px; }
 }
-/* 🔴 CSS CHANGED (2026-11-13): the menu on narrow screens and zoomed-in browsers | from: a wrapped cloud of links across the top | to: one tidy bar (ISR tile, a Menu button, your account) and the Menu button opens a clear list of every page under it */
+/* 🔴 CSS CHANGED (2026-11-13): the menu on narrow screens and zoomed-in browsers | from: a wrapped cloud of links across the top | to: one tidy bar (Student Recruit 360 tile, a Menu button, your account) and the Menu button opens a clear list of every page under it */
 .niec-burger { display: none; }
 @media (max-width: 900px) {
   .niec-header { flex-wrap: wrap; }
@@ -1306,7 +1306,7 @@ html.isr-swap-soft::view-transition-new(root) { animation: isr-fade .22s ease-ou
 @keyframes isr-rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ov-kpi, .md-kpi, .ev-band > div, .pu-card, .bp-card { animation: none !important; transition: none !important; } }
 
-/* 🔴 CSS CHANGED (2026-11-14): the top bar on a phone | from: a blue "ISR" badge where the logo should be, with a stray line under it | to: the consultancy's logo (32px high), as on a computer, and no line (the owner: only the logo at the top) */
+/* 🔴 CSS CHANGED (2026-11-14): the top bar on a phone | from: a blue "Student Recruit 360" badge where the logo should be, with a stray line under it | to: the consultancy's logo (32px high), as on a computer, and no line (the owner: only the logo at the top) */
 @media (max-width: 900px) {
   html body .niec-header .niec-logo:not([hidden]) { display: block; height: 32px; }
   html body .niec-header .niec-mark { display: none; }
@@ -1507,7 +1507,7 @@ select option { color: #000; }
 @media (max-width: 900px) { .tr-map-body { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .tr-col .tr-bar, .tr-dot, .tr-dot.top .tr-dot-halo, .tr-top li i { animation: none !important; } }
 .tr-head > div:first-child { flex: 1 1 420px; min-width: 0; }
-/* 🔴 CSS CHANGED (2026-11-14): a student who is already in ISR, found while adding them | from: a red line of text | to: a soft panel with an orange dot, the student's name in bold, and two pills under it: Open their card, and Fill in what is missing (blue) */
+/* 🔴 CSS CHANGED (2026-11-14): a student who is already in Student Recruit 360, found while adding them | from: a red line of text | to: a soft panel with an orange dot, the student's name in bold, and two pills under it: Open their card, and Fill in what is missing (blue) */
 .p-msg.ns-dup { display: block; margin-top: 10px; padding: 14px 16px; border-radius: 14px; background: var(--panel, #f3f3f3); color: #000; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(0, 0, 0, .05); }
 .p-msg.ns-dup::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #ff9500; vertical-align: 1px; }
 .p-msg.ns-dup .p-bar { margin-top: 12px; }
@@ -3763,7 +3763,7 @@ html body .up-sub, html body .up-sub .up-place { text-shadow: 0 1px 8px rgba(0, 
 }
 
 /* 🔴 CSS CHANGED (2026-11-20): the motion kit calmed to Apple's own timings (measured on apple.com: colours 0.32s on cubic-bezier(.4, 0, .6, 1), backgrounds 0.1s, items fading in over 0.24 to 0.32s, no bounce, no glow) | from: cards rising 18px over 0.62s with a slight zoom, a blue light following the mouse over cards, buttons that sprang to 95% when pressed, a blue glow under the main button on hover, a page change with a slide | to: cards fade in and rise 8px over 0.4s (40ms apart), no light following the mouse, buttons change colour quickly (background 0.1s, words 0.32s) and dim to 85% while pressed, no glow, a page change as a quiet 0.2s fade */
-/* 🔴 CSS CHANGED (2026-11-20): the ISR motion kit, on every page (shared/motion.js, DESIGN.md) | from: pages that sat still between clicks, buttons with no press feel, a hard cut between pages | to: cards and rows rise in one after another as a page opens; a soft blue light follows the mouse over cards; buttons, pills and tabs press in with a little spring; pages cross-fade into each other (in browsers that can); a burst of confetti for a finished task; a progress ring that fills; everything still for anyone who asked for less motion */
+/* 🔴 CSS CHANGED (2026-11-20): the Student Recruit 360 motion kit, on every page (shared/motion.js, DESIGN.md) | from: pages that sat still between clicks, buttons with no press feel, a hard cut between pages | to: cards and rows rise in one after another as a page opens; a soft blue light follows the mouse over cards; buttons, pills and tabs press in with a little spring; pages cross-fade into each other (in browsers that can); a burst of confetti for a finished task; a progress ring that fills; everything still for anyone who asked for less motion */
 :root { --mo-spring: cubic-bezier(.34, 1.56, .64, 1); --mo-out: cubic-bezier(.2, .8, .2, 1); }
 html.mo-on .mo-rise { opacity: 0; transform: translateY(8px); }
 /* 🔴 CSS CHANGED (2026-11-20): the glide of things appearing, from the owner's award-winning reference sites | from: 0.4s on Apple's even curve | to: 0.5s on an ease-out-expo curve (fast start, long soft stop), the curve Lusion, Mammut, 5S and Cappen use */
@@ -4006,7 +4006,7 @@ html body :is(.bp-funnel, .bp-band .bp-funnel) { border: 1px solid #b8b8b8 !impo
 html:root body :is(.fw-choice, .mg-card, .bp-card):hover { border-color: #6f6f6f !important; transform: none !important; }
 html:root body .fw-choice:is([aria-pressed="true"], [aria-checked="true"], .on, .is-on) { border-color: #0071e3 !important; box-shadow: 0 0 0 2px #0071e3 inset !important; }
 
-/* 🔴 CSS CHANGED (2026-11-21): a Dashboard in colour (the owner: "the dashboard can be much more colourful than black and white") | from: chart colours blue, grey and black (Applied black, Offers grey, Paid and CAS pale grey), a small 34px colour mark on each number tile | to: the ISR chart colours (CLAUDE.md): Students and Applied blue #0071e3, Offers purple #6e47d1, Paid orange #d9650b, Visas green #1e8e4a, Inquiries teal #0b8a95; each number tile has its colour as a 4px band across its top and in its little chart; the numbers stay black for reading */
+/* 🔴 CSS CHANGED (2026-11-21): a Dashboard in colour (the owner: "the dashboard can be much more colourful than black and white") | from: chart colours blue, grey and black (Applied black, Offers grey, Paid and CAS pale grey), a small 34px colour mark on each number tile | to: the Student Recruit 360 chart colours (CLAUDE.md): Students and Applied blue #0071e3, Offers purple #6e47d1, Paid orange #d9650b, Visas green #1e8e4a, Inquiries teal #0b8a95; each number tile has its colour as a 4px band across its top and in its little chart; the numbers stay black for reading */
 html:root { --s1: #0071e3; --s2: #d9650b; --s3: #1e8e4a; --s4: #6e47d1; --s5: #0b8a95; }
 html body:has(.ov-card) .ov-kpi { overflow: hidden; }
 html body:has(.ov-card) .ov-kpi::before { left: 0; right: 0; top: 0; width: auto; height: 4px; border-radius: 0; background: var(--accent, var(--s1)); }
@@ -4041,7 +4041,7 @@ html:root body #view .lg-apps .p-apps > .p-card { border: 0 !important; border-t
 html:root body #view .lg-apps .p-apps > .p-card:first-child { border-top: 0 !important; }
 
 /* ---- Today for a team, "Option A" (the owner, 21 Nov 2026): the student's name first and large, then the task and its course; a press
-   opens the course and how to reach the student, the updates and four buttons. Missing details is its own switch. Colours from the ISR
+   opens the course and how to reach the student, the updates and four buttons. Missing details is its own switch. Colours from the Student Recruit 360
    colour table only (CLAUDE.md): cards #f3f3f3 with a #9a9a9a line and 10px corners, tiles #e2e2e2 with #b8b8b8 and 8px, boxes #f7f7f7,
    text #000 and #333, blue #0071e3 for the main button and where you are now, links #0050aa, orange #b85300 for late and missing. ---- */
 /* 🔴 CSS CHANGED (2026-11-21): Today's day at a glance | from: a ring "0% done today" beside the words, and two number tiles ("3 waiting 3+ days", "19 students waiting") | to: one sentence ("You have 4 tasks today. Start with the 3 late ones.") and a thin green bar "1 of 5 done today" at the right */
@@ -4303,7 +4303,7 @@ html body .tda-search .td-search-input:not([type="checkbox"]):not([type="radio"]
 html body .tda-date, html body .tdy-sech, html body .tdy-cap { font-weight: 600; }
 html body .tda-gh { font-weight: 700; }
 
-/* 🔴 CSS CHANGED (2026-11-23): the page you are on, in the side menu, for every team and Admin (the owner chose "Blue, every team", as in the approved design F5 and the ISR colour table: "where you are now" is blue) | from: a light grey pill (6% black) with black words and a black icon | to: a blue #0071e3 pill with white words and a white icon; the other menu items and their grey hover are unchanged */
+/* 🔴 CSS CHANGED (2026-11-23): the page you are on, in the side menu, for every team and Admin (the owner chose "Blue, every team", as in the approved design F5 and the Student Recruit 360 colour table: "where you are now" is blue) | from: a light grey pill (6% black) with black words and a black icon | to: a blue #0071e3 pill with white words and a white icon; the other menu items and their grey hover are unchanged */
 html body .niec-nav a[aria-current="page"], html body .niec-nav a[aria-current="page"]:hover { background: #0071e3; color: #fff; font-weight: 600; box-shadow: none; }
 html body .niec-nav a[aria-current="page"] .niec-ico { color: #fff; }
 

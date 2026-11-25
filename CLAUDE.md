@@ -1,5 +1,9 @@
 # Standing rules for this project
 
+## The live server
+
+**Before any work on the live server, read [LIVE-SERVER.md](LIVE-SERVER.md)** (studentrecruit360.com/niec, set up 25 Nov 2026).
+
 ## Rule 0: QUESTIONS TO THE OWNER ARE ALWAYS MULTIPLE CHOICE (STRICT, MANDATORY, the owner, 23 Nov 2026) ***
 
 **\*\*\* NEVER ASK THE OWNER A QUESTION INSIDE A PARAGRAPH OR A SENTENCE. \*\*\***
@@ -121,7 +125,7 @@ The owner does not want old versions, copies or rewrites lying around, because a
 
 ## Rule 4: the Application Team's pages and system are frozen (the owner, 22 Nov 2026, strictly)
 
-The Application Team's side of ISR is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule).
+The Application Team's side of Student Recruit 360 is finished and approved as it is on 22 Nov 2026 (`master` at the commit that added this rule).
 It must stay exactly the same until the owner asks for a change and approves it.
 
 - **What is frozen:** everything a person whose own team is Application sees and uses (`Teams.ownTeamApplication`): the menu,
@@ -154,7 +158,7 @@ It must stay exactly the same until the owner asks for a change and approves it.
   card must match the sheet, the student, Admin's view, the Dashboard and every other team (Mock, Follow-up, branches, the Manager),
   with the data that already exists on the live server (Rule 3).
 
-## The ISR colours (the owner accepted these, 21 Nov 2026; every page uses them, nothing else)
+## The Student Recruit 360 colours (the owner accepted these, 21 Nov 2026; every page uses them, nothing else)
 
 | Use | Colour |
 |---|---|
@@ -188,7 +192,7 @@ It must stay exactly the same until the owner asks for a change and approves it.
 - **Always run the complete test suite (`npm test`) before pushing**, not just the browser tests, because rules like the one
   above live in other tests.
 
-- The product is called **International Student Recruitment**, short name **ISR** (titles, emails and tabs say ISR; the login page and the big logo say the full name). It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
+- The product is called **Student Recruit 360** (the owner, 25 Nov 2026): titles, emails and tabs use this name and no other product name, and there is no short form on screen (file names use StudentRecruit360). It is built so that any consultancy can use it: the consultancy's own name is a stored setting (`message-templates.json` in the data folder, saved through `/api/templates/signature`), never written into pages or code. There is no Company tab on a page any more (the owner, 15 Nov 2026): each email ends with the sender's own uploaded signature picture. The first installation is Nepal International Educational Consultancy ("Educational", never "Education"), and that is only its starting setting.
 - There is **one look only: a light theme, no dark mode and no alternative themes** (the owner asked). It must be easy on older eyes: no pure white panels (soft off-white on a soft grey canvas), strong dark text, larger type and larger buttons.
 - The login page must not mention incentives or commissions. Incentive is Admin-only and behind its own password.
 - **Never add something that is already on the page (the owner, 17 Nov 2026, strictly).** Improving, changing and making a page

@@ -94,9 +94,9 @@ test('an Offer request keeps the application it chases, whatever its university 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-offerfor-'));
   const cards = createCards(dir);
   const row = 'row-offerfor01';
-  const t = cards.addTask(row, { team: 'application', text: 'Offer request: has the student received the offer letter from University of Greenwich International College (UGIC) (Foundation)?', tag: 'offer', offerFor: { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' } }, 'ISR').task;
+  const t = cards.addTask(row, { team: 'application', text: 'Offer request: has the student received the offer letter from University of Greenwich International College (UGIC) (Foundation)?', tag: 'offer', offerFor: { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' } }, 'Student Recruit 360').task;
   assert.deepStrictEqual(cards.get(row).tasks[0].offerFor, { university: 'University of Greenwich International College (UGIC)', course: 'Foundation', intake: 'January 2027', applied: '2026-11-05' });
   assert.ok(t.id);
-  const bad = cards.addTask(row, { team: 'application', text: 'x', tag: 'offer', offerFor: { university: '', course: 'y' } }, 'ISR').task;
+  const bad = cards.addTask(row, { team: 'application', text: 'x', tag: 'offer', offerFor: { university: '', course: 'y' } }, 'Student Recruit 360').task;
   assert.strictEqual(bad.offerFor, undefined, 'no university, nothing kept');
 });

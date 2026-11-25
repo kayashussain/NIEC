@@ -31,7 +31,7 @@ function encrypt(plain, passphrase) {
   return Buffer.concat([MAGIC, salt, iv, c.getAuthTag(), body]);
 }
 function decrypt(blob, passphrase) {
-  if (!Buffer.isBuffer(blob) || blob.length < 48 || !blob.subarray(0, 4).equals(MAGIC)) throw new Error('This is not an ISR backup file.');
+  if (!Buffer.isBuffer(blob) || blob.length < 48 || !blob.subarray(0, 4).equals(MAGIC)) throw new Error('This is not a Student Recruit 360 backup file.');
   const salt = blob.subarray(4, 20); const iv = blob.subarray(20, 32); const tag = blob.subarray(32, 48);
   const d = crypto.createDecipheriv('aes-256-gcm', crypto.scryptSync(String(passphrase), salt, 32), iv);
   d.setAuthTag(tag);

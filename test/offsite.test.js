@@ -30,7 +30,7 @@ test('encrypt and decrypt: only the right passphrase opens it, and a changed byt
   assert.throws(() => decrypt(blob, 'another secret'), /Wrong passphrase/);
   const bad = Buffer.from(blob); bad[bad.length - 1] ^= 1;
   assert.throws(() => decrypt(bad, 'a long secret'), /Wrong passphrase, or the file is damaged/);
-  assert.throws(() => decrypt(Buffer.from('nope'), 'x'), /not an ISR backup/);
+  assert.throws(() => decrypt(Buffer.from('nope'), 'x'), /not a Student Recruit 360 backup/);
 });
 
 test('without all the settings (above all the passphrase) nothing is switched on', () => {

@@ -86,7 +86,7 @@
     if (list.length < 2) { card.append(el('p', 'p-muted', 'The growth shows once there are two intakes or more.')); }
     const pair = el('div', 'tr-pair');
     /* 🔴 CSS CHANGED (2026-11-21): the bars per intake | from: blue and bright green | to: blue for students, near-black for visas */
-    /* 🔴 CSS CHANGED (2026-11-21): the Visas bars | from: black | to: the ISR green (#1e8e4a), as Visas everywhere on the Dashboard */
+    /* 🔴 CSS CHANGED (2026-11-21): the Visas bars | from: black | to: the Student Recruit 360 green (#1e8e4a), as Visas everywhere on the Dashboard */
     pair.append(bars(list, 'students', 'Students in each intake', '#0071e3'), bars(list, 'visas', 'Visas in each intake', '#1e8e4a'));
     // One plain sentence on the latest closed intake against the one before.
     const done = list.length > 2 ? list.slice(0, -1) : list;
@@ -129,7 +129,7 @@
   // ---- 2. ups and downs over time ----
   // Each line, and the place of its day in a student's record from /api/trends: [source, inquiry, application, offer, payment, CAS, visa].
   /* 🔴 CSS CHANGED (2026-11-21): the colours of the lines over time | from: blue, indigo, purple, orange, teal and green | to: calm, as Apple: Inquiries in blue, Applied in near-black, Offers, Paid and CAS in three greys, Visas in green (done) */
-  /* 🔴 CSS CHANGED (2026-11-21): the colours of the lines in Ups and downs | from: blue, black and three greys (Paid and CAS almost invisible) | to: the ISR chart colours (CLAUDE.md): Inquiries teal, Applied blue, Offers purple, Paid orange, CAS amber, Visas green */
+  /* 🔴 CSS CHANGED (2026-11-21): the colours of the lines in Ups and downs | from: blue, black and three greys (Paid and CAS almost invisible) | to: the Student Recruit 360 chart colours (CLAUDE.md): Inquiries teal, Applied blue, Offers purple, Paid orange, CAS amber, Visas green */
   const LINES = [['inq', 'Inquiries', '#0b8a95', 1], ['app', 'Applied', '#0071e3', 2], ['off', 'Offers', '#6e47d1', 3], ['pay', 'Paid', '#d9650b', 4], ['cas', 'CAS', '#b7791f', 5], ['visa', 'Visas', '#1e8e4a', 6]];
   const SOURCES = [['', 'Every source'], ['events', 'Events and marketing (events, campaigns, paid adverts)'], ['social', 'Social media (not paid)'], ['organic', 'Came by itself (visitors, references, classes)'], ['branch', 'Branches'], ['agent', 'Agents and B2B partners'], ['unknown', 'Source not recorded']];
   // The days of one line, for the students of a source (and of one event, campaign, platform, branch or agent in it, when chosen).
