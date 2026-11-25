@@ -293,3 +293,11 @@ cd ~/uk-student-niec && git fetch origin master && git reset --hard origin/maste
 
 To go back to the code before an update: `git reset --hard <the commit shown by git log -1 before the update>`, then Restart.
 The older code still reads the data the newer code has written.
+
+## Running under a folder of your domain (for example https://studentrecruit360.com/niec)
+
+Set the Application URL in Setup Node.js App to the domain with the folder (`studentrecruit360.com` and path `niec`), and add the
+environment variable `NIEC_BASE_PATH` = `/niec`, then Restart. The server answers `/niec/x` as `/x` and moves every address in the
+pages, scripts, styles, redirects and the login cookie under `/niec` (`student-details/base-path.js`). With `NIEC_BASE_PATH` empty
+or missing nothing changes (this is how every other install runs). Not moved: the phone Home Screen app (manifest and service worker),
+so install it from the domain root instead.

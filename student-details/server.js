@@ -1274,7 +1274,7 @@ async function studentGate(req, res, urlPath) {
   return true;
 }
 
-const server = http.createServer(async (req, res) => {
+const server = http.createServer(require('./base-path').wrap(async (req, res) => {
   try {
     const urlPath = req.url.split('?')[0];
     dailyBackup(); // the day's 6 p.m. copy, if it is due and missing (the host may have put the server to sleep)
@@ -1577,7 +1577,7 @@ const server = http.createServer(async (req, res) => {
     console.error(e);
     if (!res.headersSent) send(res, 500, 'Server error');
   }
-});
+}, process.env.NIEC_BASE_PATH));
 
 // One bad request must never stop the app for everyone: a failure nobody caught is written to the log and the
 // server keeps running (a request that failed this way is answered with a server error by the handler above).
