@@ -62,7 +62,7 @@
     const v = String(stage || '').toLowerCase();
     if (!v) return 'gray';
     if (/reject/.test(v)) return 'red';
-    if (/issued/.test(v)) return 'green';
+    if (/visa issued/.test(v)) return 'green'; // only the finished journey is green: CAS Issued is still on the way
     if (/hold|defer|withdrawn/.test(v)) return 'amber';
     return 'blue';
   }

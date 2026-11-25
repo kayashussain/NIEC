@@ -289,7 +289,9 @@
       if (at !== -1 && i < at) dot.append(icon('check'));
       const tip = el('span', 'sc-step-tip');
       tip.append(el('b', '', label), el('span', '', STEP_HELP[i]), el('em', '', state === 'is-done' ? 'Done' : state === 'is-now' ? 'Here now' : at !== -1 && i === at + 1 ? 'Next' : 'Still to come'));
-      li.append(dot, el('span', 'sc-step-label', label), tip);
+      const words = el('span', 'sc-step-label', label);
+      if (state === 'is-done') words.prepend(icon('check', 'sc-step-tick')); // a finished step has a tick, not only a colour
+      li.append(dot, words, tip);
       li.setAttribute('aria-label', `${label}: ${state === 'is-done' ? 'done' : state === 'is-now' ? 'here now' : 'still to come'}`);
       if (i === at) li.setAttribute('aria-current', 'step');
       /* 🔴 CSS CHANGED (2026-11-21): --i set here | from: none | to: the step's number, so the dots light up one after another */

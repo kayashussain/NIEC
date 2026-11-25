@@ -474,6 +474,7 @@ function createPortalApi({
   // Every change saved on the student card is written in the student's notes (the owner, 22 Nov 2026), for everyone: what changed, from
   // what to what, by whom (the note keeps the author and the time), so a value typed over is never lost. `pairs`: [label, before, after].
   // `undo`: the change was taken back with Undo.
+  const checkAsks = new Map(); // account -> when it asked whether somebody is a student already
   function noteCardChanges(req, rowId, pairs, undo = false) {
     const shown = (v) => { const t = text(v); return t ? `"${t.length > 160 ? t.slice(0, 157) + '...' : t}"` : '(empty)'; };
     const lines = pairs.filter(([, a, b]) => text(a) !== text(b)).map(([label, a, b]) => `${label}: ${shown(a)} \u2192 ${shown(b)}`);
@@ -621,6 +622,12 @@ function createPortalApi({
     // university holds one, the university and course follow it (the sheet never shows one university's name with another's offer day).
     if (fo && uni && sheetHolder && (sheetHolder.refused || sheetHolder.withdrawn || !sheetHolder.offer) && squash(fo.university) !== squash(uni)) {
       changes['UNIVERSITY NAME'] = fo.university; if (fo.course) changes['COURSE NAME'] = fo.course;
+    }
+    // The same university, another course: when the course the sheet names was refused or withdrawn and another course of that university
+    // holds the offer, the course follows the offer.
+    if (fo && uni && fo.course && squash(fo.university) === squash(uni)) {
+      const named = opts.find((o) => squash(o.university) === squash(uni) && o.course && squash(o.course) === squash(row['COURSE NAME']));
+      if (named && (named.refused || named.withdrawn)) changes['COURSE NAME'] = fo.course;
     }
     // An empty university or course on All Students takes the first offer's (else the first application's); a typed one stays.
     const pick = fo || fa;
@@ -3686,6 +3693,11 @@ function createPortalApi({
     if (urlPath === '/api/students/merge' && req.method === 'POST') return handleMerge(req, res);
     if (urlPath === '/api/students/bulk' && req.method === 'POST') return handleBulkStudents(req, res);
     if (urlPath === '/api/students/check' && req.method === 'POST') {
+      // The answer says whether somebody is a student already, so one account may ask only so often (it cannot be used to list students).
+      const who = text(req.user.id || req.user.name); const since = Date.now() - 3600000;
+      const asked = (checkAsks.get(who) || []).filter((t) => t > since);
+      if (asked.length >= 120) { sendJSON(res, 429, { error: 'Too many checks in an hour. Wait a little and try again.' }); return true; }
+      asked.push(Date.now()); checkAsks.set(who, asked);
       const body = await bodyOf(req, res, 256 * 1024);
       if (!body) return true;
       const list = (Array.isArray(body.rows) ? body.rows : []).slice(0, 200).map((r) => { const d = r && typeof r === 'object' ? existingStudent(r.email, r.phone) : null; return d ? { exists: true, name: Teams.isAdmin(req.user) ? [d['FIRST NAME'], d['LAST NAME']].filter(Boolean).join(' ') : ' ' } : { exists: false }; });

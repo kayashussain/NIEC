@@ -159,9 +159,12 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   let numbers = new Map();
   function viewOf(b, withOwner) {
     const p = bookings.person(b.owner);
+    // The university and course are read from the student's row as it is now (the copy taken at booking time only when there is no row), so
+    // this list never names another university than the card does.
+    const live = b.rowId ? portal.rowIndex().get(b.rowId) : null;
     const out = {
       id: b.id, day: b.day, time: b.time, minutes: b.minutes, dayLabel: bookings.niceDay(b.day), timeLabel: bookings.niceTime(b.time),
-      name: b.name, email: b.email, phone: b.phone, rowId: b.rowId || '', mock: numbers.get(b.id) || b.mock || 0, university: b.university || '', course: b.course || '',
+      name: b.name, email: b.email, phone: b.phone, rowId: b.rowId || '', mock: numbers.get(b.id) || b.mock || 0, university: (live && text(live.row['UNIVERSITY NAME'])) || b.university || '', course: (live && text(live.row['COURSE NAME'])) || b.course || '',
       teams: p.teams || '', status: b.status, answer: b.answer || null,
     };
     if (withOwner) out.owner = p.shown || '';
@@ -243,10 +246,18 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const found = portal.rowIndex().get(rowId);
     if (!found) return { status: 404, error: 'That student is no longer on the sheet.' };
     if (!sees(rowId)) return { status: 403, error: 'That student is not one of your students.' };
-    const n = slotFor(found.row, b.day); // the slot of this mock's day, a planned mock without feedback, or the first empty one
+    // An interview already written for this day (from the Mock task) and not tied to another booking is this same interview: the booking is
+    // tied to that mock, never written a second time as the next one. What was typed here is kept as a note on the card.
+    const taken = new Set(bookings.all().bookings.filter((x) => x.id !== b.id && x.rowId === rowId && x.answer && Number(x.mock)).map((x) => Number(x.mock)));
+    const written = b.day ? [1, 2, 3, 4].find((k) => !taken.has(k) && isoDate(found.row[`MOCK SCHEDULE ${k}`]) === b.day && text(found.row[`FEEDBACK ${k}`])) : 0;
+    const n = written || slotFor(found.row, b.day); // else the slot of this mock's day, a planned mock without feedback, or the first empty one
     if (!n) return { status: 400, error: 'All four mocks are already recorded for this student. Correct them on the student card.' };
-    const out = portal.writeCardColumns(req, rowId, { [`MOCK SCHEDULE ${n}`]: b.day, [`FEEDBACK ${n}`]: feedback });
-    if (out.error) return { status: out.status || 400, error: out.error };
+    if (written) {
+      if (text(found.row[`FEEDBACK ${n}`]) !== feedback) cards.addNote(rowId, { kind: 'note', text: `Mock ${n}, more feedback from the booking: ${feedback}`.slice(0, 3900) }, req.user.name);
+    } else {
+      const out = portal.writeCardColumns(req, rowId, { [`MOCK SCHEDULE ${n}`]: b.day, [`FEEDBACK ${n}`]: feedback });
+      if (out.error) return { status: out.status || 400, error: out.error };
+    }
     bookings.answer(b.id, { joined: true, feedback, result: body.result, by: req.user.name, rowId, mock: n });
     if (body.result === 'again' && n < 4) {
       cards.addTask(rowId, { team: 'mock', text: `Mock ${n + 1} is next: Mock ${n} said the student needs another mock`, tag: 'mock', priority: 'high' }, 'ISR (automatic)');

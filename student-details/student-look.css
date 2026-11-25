@@ -332,5 +332,7 @@ html:root body.p-student .sc-mini-in .p-pill { flex: 0 0 auto !important; white-
 html:root body.p-student .sc-mini-in .p-pill, html:root body.p-student .sc-mini-name { font-size: 16px !important; }
 html:root body.p-student .lg-diff-none { color: #6e6e73 !important; }
 html:root body.p-student { scroll-padding-top: 76px !important; }
+/* 🔴 CSS CHANGED (2026-11-25): a tick on each finished progress step | from: finished steps told apart by colour only | to: a small blue tick before the word */
+html:root body.p-student .sc-step-tick { width: 15px !important; height: 15px !important; margin-right: 6px !important; fill: none !important; stroke: #0071e3 !important; stroke-width: 3 !important; stroke-linecap: round !important; stroke-linejoin: round !important; vertical-align: -2px !important; }
 html:root body.p-student.p-embed { scroll-padding-top: 140px !important; }
 @media (prefers-reduced-motion: reduce) { html:root body.p-student .sc-mini-in, html:root body.p-student .sc-mini.is-on .sc-mini-in { transition: none !important; } }
