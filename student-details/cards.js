@@ -461,6 +461,7 @@ function createCards(dir, { now = () => new Date(), store = createFileStore(dir,
         task.route = [...(Array.isArray(task.route) ? task.route : []).filter((x) => x !== team), from].slice(-10);
         task.team = team;
         Object.assign(task, { done: false, doneBy: '', doneAt: '' });
+        delete task.doOn; // a day the old team had moved it to must not keep it hidden under Later from the new team
         task.comments = [...(Array.isArray(task.comments) ? task.comments : []), { id: newId(), by: by || '', at: stamp, text: reason, handoff: { from, to: team } }].slice(-LIMITS.comments);
         return null;
       });

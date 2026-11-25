@@ -354,7 +354,9 @@ function createFacts(dir, { now = () => new Date() } = {}) {
         cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
         return data;
       }
-    } catch (e) { /* unreadable: set aside below */ }
+    } catch (e) {
+      if (e && e.code) { if (cache) return cache.data; throw e; } // a lock or a busy disk is not a damaged file: it is never moved or copied aside
+    }
     // A damaged file is kept next to the data (not overwritten), then the list starts again.
     try { fs.renameSync(file, path.join(dir, `fact-file.damaged-${now().toISOString().replace(/[:.]/g, '-')}.json`)); } catch (e) { /* ignore */ }
     return null;

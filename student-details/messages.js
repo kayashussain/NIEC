@@ -329,7 +329,9 @@ function createMessages(dir, { now = () => new Date() } = {}) {
     try {
       const data = JSON.parse(fs.readFileSync(file, 'utf8'));
       if (data && typeof data === 'object' && !Array.isArray(data)) { cache = { mtimeMs: stat.mtimeMs, size: stat.size, data }; return data; }
-    } catch (e) { /* unreadable: set aside below */ }
+    } catch (e) {
+      if (e && e.code) { if (cache) return cache.data; throw e; } // a lock or a busy disk is not a damaged file: it is never moved or copied aside
+    }
     try { fs.renameSync(file, path.join(dir, `message-templates.damaged-${now().toISOString().replace(/[:.]/g, '-')}.json`)); } catch (e) { /* ignore */ }
     return null;
   }

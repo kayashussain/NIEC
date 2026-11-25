@@ -145,7 +145,9 @@ function createPlanning(dir, { now = () => new Date() } = {}) {
         cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
         return data;
       }
-    } catch (e) { /* unreadable: set aside below */ }
+    } catch (e) {
+      if (e && e.code) { if (cache) return cache.data; throw e; } // a lock or a busy disk is not a damaged file: it is never moved or copied aside
+    }
     try { fs.renameSync(file, path.join(dir, `planning.damaged-${now().toISOString().replace(/[:.]/g, '-')}.json`)); } catch (e) { /* ignore */ }
     return blank();
   }

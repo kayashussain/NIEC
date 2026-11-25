@@ -117,6 +117,7 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
       return data;
     } catch (e) {
+      if (e && e.code) { if (cache) return cache.data; throw e; } // a lock or a busy disk is not a damaged file: it is never moved or copied aside
       // A damaged file is set aside (never written over), so nothing is lost; the page starts again empty.
       try { fs.copyFileSync(file, path.join(dir, `mock-bookings.damaged-${Date.now()}.json`)); } catch (x) { /* could not copy */ }
       return { people: {}, bookings: [] };
