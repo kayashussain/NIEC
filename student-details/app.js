@@ -3082,7 +3082,6 @@
     'Double-click a student\'s name or row number: the student card',
   ].map((l) => '• ' + l).join('\n');
   const showShortcuts = () => NiecUI.alert(SHORTCUTS, { title: 'Keyboard shortcuts', confirmText: 'Got it' });
-  $('#helpBtn').addEventListener('click', showShortcuts);
   document.addEventListener('keydown', (e) => {
     if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey || editing || NiecUI.isOpen()) return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
