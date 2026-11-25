@@ -668,3 +668,65 @@ html.app-mock:root body #page .mt-cancel { color: #3a3a3c; font-size: 14px; font
 html.app-mock:root body #page .mt-setup .p-input, html.app-mock:root body #page .mt-prefix { box-shadow: inset 0 0 0 1px #c7c7cc; }
 html.app-mock:root body #page .mt-setup .p-input::placeholder { color: #8e8e93; }
 html.app-mock:root body #page .mt-seg button { font-size: 13px; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Application Team's improved look, approved by the owner (Today tiles with colour dots and orange Late and Missing numbers, Waiting as a soft orange pill, larger task names, details in two soft panels with blue Add buttons, All Students quieter titles and row hover, Universities cards that lift) | from: the first Apple look of 24 Nov 2026 | to: the same look with these touches, for the Application Team only (class app-only) */
+
+/* Today: tiles */
+html.app-only:root body .tda-tiles{gap:16px}
+html.app-only:root body .tda-tile{border-radius:20px;padding:20px 24px 18px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 1px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s;text-align:left}
+html.app-only:root body .tda-tile:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04)}
+html.app-only:root body .tda-tile-k::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#0071e3;margin-right:8px;vertical-align:1px}
+html.app-only:root body .tda-tile.is-late .tda-tile-k::before{background:#d9650b}
+html.app-only:root body .tda-tile.is-miss .tda-tile-k::before{background:#b7791f}
+html.app-only:root body .tda-tile:nth-child(3) .tda-tile-k::before{background:#8e8e93}
+html.app-only:root body .tda-tile-k{font-size:14px;font-weight:600;color:#3a3a3d;letter-spacing:0}
+html.app-only:root body .tda-tile-n{font-size:50px;line-height:1.05;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin:4px 0}
+html.app-only:root body .tda-tile.is-late .tda-tile-n,html.app-only:root body .tda-tile.is-miss .tda-tile-n{color:#b25000}
+html.app-only:root body .tda-tile-s{font-size:14px;color:#6e6e73}
+/* Today: tabs and kind pills */
+html.app-only:root body .tda-seg{background:#e3e3e8;padding:4px;border-radius:13px}
+html.app-only:root body .tda-view{padding:9px 18px;font-size:15px;border-radius:10px}
+html.app-only:root body .tda-view[aria-selected="true"]{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)}
+html.app-only:root body .tda-pill{padding:8px 16px;font-size:14.5px}
+/* Today: group heading and rows */
+html.app-only:root body .tda-gh{font-size:22px;margin:30px 0 12px}
+html.app-only:root body .tda-gh.is-late{color:#b25000}
+html.app-only:root body .tda-panel{border-radius:20px}
+html.app-only:root body .tda-row .tdx-head{padding:18px 24px;gap:18px;transition:background .12s}
+html.app-only:root body .tdx-av{width:50px;height:50px;font-size:16px;font-weight:700}
+html.app-only:root body .tda-row .tdx-name{font-size:20px;font-weight:700;letter-spacing:-.02em}
+html.app-only:root body .tda-row .tdx-task{font-size:16.5px;font-weight:600;margin:3px 0}
+html.app-only:root body .tda-row .tdx-meta{font-size:14.5px}
+html.app-only:root body .tda-row .tdx-kind{background:#e8f1fc;color:#0058b0;min-height:24px;padding:0 10px;font-size:13px}
+html.app-only:root body .tdy-side{text-align:right;display:grid;gap:6px;justify-items:end}
+html.app-only:root body .tda-row .tdx-age.is-late{background:#fdeedd;color:#b25000;border-radius:99px;padding:4px 14px;font-size:14px;font-weight:600}
+html.app-only:root body .tdy-hint{font-size:13.5px;color:#6e6e73;font-weight:500}
+html.app-only:root body .tda-row.is-open{background:#fff;box-shadow:inset 0 0 0 2px rgba(0,113,227,.28)}
+html.app-only:root body .tdy-body{padding:0 24px 24px}
+html.app-only:root body .tdy-sec{background:#f5f5f7;border-radius:16px;padding:16px 20px}
+html.app-only:root body .tdy-sech{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:#515154;margin-bottom:6px}
+html.app-only:root body .tdy-dl{padding:11px 0}
+html.app-only:root body .tdy-dl.is-missing-row .tdy-miss{color:#b25000;font-weight:600}
+html.app-only:root body .tdy-add{background:#0071e3;color:#fff!important;border-radius:99px;padding:4px 16px;font-weight:600;font-size:13.5px;text-decoration:none}
+html.app-only:root body .tdy-body .btn{border-radius:99px;padding:11px 22px;font-size:15px;font-weight:600}
+/* All Students */
+html.app-only:root body .sheet-title{font-size:38px;letter-spacing:-.03em}
+html.app-only:root body .toolbar-group .btn{border-radius:99px;padding:10px 18px;font-weight:600}
+html.app-only:root body .table-wrap{border-radius:20px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 1px rgba(0,0,0,.04);border:0}
+html.app-only:root body .table-wrap thead th{background:#f0f1f5;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:#515154}
+html.app-only:root body .table-wrap tbody tr{transition:background .1s}
+html.app-only:root body .table-wrap tbody tr:hover td{background:#eef4fd}
+html.app-only:root body .table-wrap td{padding-block:14px}
+html.app-only:root body .status-select{border-radius:99px;font-weight:600;box-shadow:inset 0 0 0 1.5px rgba(0,113,227,.35)}
+html.app-only:root body .stat-card{border-radius:18px}
+html.app-only:root body .sheet-tab.active{background:#1d1d1f;color:#fff}
+/* Universities */
+html.app-only:root body .page-head h1{font-size:40px;letter-spacing:-.03em}
+html.app-only:root body .fd-card,html.app-only:root body .uc-card{border-radius:22px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 1px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s}
+html.app-only:root body .uc-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.1)}
+html.app-only:root body .uc-cover.is-blank{height:70px;background:linear-gradient(135deg,#e8f1fc,#f0f1f5)}
+html.app-only:root body .uc-days.is-urgent{background:#fbe9e7;color:#b42318;font-weight:600}
+html.app-only:root body .ff-soon{border-radius:14px}
+
+html.app-only:root body .tdy-add{width:auto;min-width:56px;text-align:center;white-space:nowrap}
+html.app-only:root body .tda-row .tdx-av{width:50px;height:50px;font-size:16px}

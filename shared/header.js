@@ -30,12 +30,13 @@
         else { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
       }
       document.documentElement.classList.add('app-apple');
+      document.documentElement.classList.toggle('app-only', !kind); // only the Application Team's own touches in apple.css hang on this class (the owner, 25 Nov 2026)
       document.documentElement.classList.toggle('app-mock', mock); // the Mock Team's own touches in apple.css hang on this class, so the Application Team is never changed by them
       try { localStorage.setItem('niecApple', mock ? 'mock' : kind === 'follow' ? 'follow' : '1'); } catch (e) { /* only the first draw may flash */ }
     },
     off() {
       const l = link(); if (l) l.remove();
-      document.documentElement.classList.remove('app-apple', 'app-mock');
+      document.documentElement.classList.remove('app-apple', 'app-mock', 'app-only');
       try { localStorage.removeItem('niecApple'); } catch (e) { /* nothing kept */ }
     },
   };

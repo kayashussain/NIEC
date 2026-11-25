@@ -113,7 +113,18 @@
   // The Mock Team's columns (the owner, 22 Nov 2026): who the student is, where they go, and the four mocks with the Pre-CAS interview.
   const MOCK_SHEET_COLUMNS = ['APPLICATION STATUS', 'FIRST NAME', 'LAST NAME', 'CONTACT NUMBER', 'EMAIL', 'UNIVERSITY NAME', 'COURSE NAME', 'UNIVERSITY PARTNER',
     'MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW'];
+  // The Application Team's sheet (the owner, 25 Nov 2026): from the first column to NOC Number, then Medical Report and the Medical booking
+  // day. The mock interview columns and everything after them are not shown to this team. The booking day lives on the student's card
+  // (medical.date), so it is read from /api/card-lists and shown read-only; it is never part of the sheet's data.
+  const MEDICAL_DAY_COL = 'MEDICAL BOOKING DATE';
+  const medicalDays = new Map();
+  const medicalDayOf = (row) => { const d = medicalDays.get(row && row._id); return d ? displayDate(d) : ''; };
   const visibleColumns = (sheet) => {
+    if (appOwn()) {
+      const last = sheet.columns.indexOf('NOC NUMBER');
+      const upToNoc = sheet.columns.filter((c, i) => (last === -1 || i <= last) && !CARD_COLUMNS.has(c));
+      return [...upToNoc, ...(sheet.columns.includes('MEDICAL REPORT') ? ['MEDICAL REPORT'] : []), MEDICAL_DAY_COL];
+    }
     if (mockOwn()) return MOCK_SHEET_COLUMNS.filter((c) => sheet.columns.includes(c));
     const hidden = new Set(HIDDEN_COLUMNS_BY_SHEET.filter((h) => h.matches(sheet.name || '')).flatMap((h) => h.columns));
     return sheet.columns.filter((c) => !CARD_COLUMNS.has(c) && (!hidden.has(c) || (isTeam() && Teams.canEdit(me, c))));
@@ -766,6 +777,7 @@
         ['#addRow', '#colorRow', '#delRow', '#undoBtn', '#redoBtn'].forEach((sel) => { const b = $(sel); if (b) b.hidden = mockOwn(); });
       }
       if (!res.ok || !me) throw new Error('HTTP ' + res.status);
+      if (appOwn() && !medicalDays.size) setTimeout(loadMedicalDays, 600);
       json = await res.json();
       if (!Array.isArray(json.sheets) || !json.sheets.length) throw new Error('no sheets');
     } catch (e) {
@@ -1603,7 +1615,7 @@
       const td = document.createElement('td');
       td.dataset.colIndex = colIndex;
       td.tabIndex = -1;
-      const val = rows[rowIdx][col] || '';
+      const val = col === MEDICAL_DAY_COL ? medicalDayOf(rows[rowIdx]) : (rows[rowIdx][col] || '');
       if (CALC_COLS[col]) {
         // Blank until a Gross Fee is entered, rather than a column of meaningless 0.00s.
         const hasFee = String(rows[rowIdx]['GROSS FEE'] || '').trim() !== '';
@@ -3205,4 +3217,16 @@
   loadData();
   loadEventTags();
   loadPartnerChoices();
+  // The medical booking days for the Application Team's sheet: one read once the account is known, then the rows are drawn again.
+  async function loadMedicalDays() {
+    try {
+      if (!appOwn()) return;
+      const r = await fetch('/api/card-lists', { cache: 'no-store' });
+      if (!r.ok) return;
+      const l = await r.json();
+      medicalDays.clear();
+      Object.entries(l.medicalDays || {}).forEach(([id, d]) => medicalDays.set(id, d));
+      renderBody();
+    } catch (e) { /* the column stays empty until the next visit */ }
+  }
 })();

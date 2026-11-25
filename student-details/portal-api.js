@@ -265,6 +265,8 @@ function createPortalApi({
       partners: [...new Set([...agents.list().filter((p) => p.status !== 'Ended').map((p) => p.name), ...sheetAgents().map((p) => p.name)])],
       intakes: (() => { const wb = getWorkbook(); return wb ? Teams.viewFor(user, wb).sheets.map((s) => ({ id: s.id, name: s.name })) : []; })(),
       stages: Teams.ALL_STATUSES,
+      // The medical booking days of the students this account sees (the Application Team's sheet shows them next to Medical Report).
+      medicalDays: (() => { const wb = getWorkbook(); const out = {}; if (!wb || !Teams.ownTeamApplication(user)) return out; Teams.viewFor(user, wb).sheets.forEach((sh) => sh.rows.forEach((r) => { const c = cards.has(r._id) ? cards.get(r._id) : null; if (c && c.medical && c.medical.date) out[r._id] = c.medical.date; })); return out; })(),
       departments: Teams.addableDepartments(user).map((d) => ({ id: d, label: Teams.DEPARTMENTS[d].label, start: Teams.DEPARTMENTS[d].start, source: Teams.DEPARTMENTS[d].source || '' })),
     };
   }
