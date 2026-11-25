@@ -187,7 +187,14 @@ function createPortalApi({
   // The Follow-up Team keeps seeing, view only, the students of the current intake it sent on or withdrew (the owner, 21 Nov 2026:
   // "they can open the student card and see the student details"); card.follow.via marks them (server.js, stageTimeline).
   const followReach = (user, found) => Boolean(found) && teamsOf(user).includes('followup') && !Teams.isReadOnly(user)
-    && Boolean(cards.has(found.row._id) && (cards.get(found.row._id).follow || {}).via) && (() => { const intake = currentIntake(); return Boolean(intake) && found.sheet.id === intake.id; })();
+    && (['Hold', 'Withdrawn'].includes(text(found.row[STATUS])) || Boolean(cards.has(found.row._id) && (cards.get(found.row._id).follow || {}).via)) && (() => { const intake = currentIntake(); return Boolean(intake) && found.sheet.id === intake.id; })();
+  // Seen only because the student is Stopped (never sent on or withdrawn by this team, no task for it, not otherwise theirs): view only.
+  const stoppedViewOnly = (user, found) => {
+    if (!found || Teams.isAdmin(user) || Teams.isManager(user) || !['Hold', 'Withdrawn'].includes(text(found.row[STATUS])) || !followReach(user, found)) return false;
+    if ((cards.has(found.row._id) && (cards.get(found.row._id).follow || {}).via) || appReach(user, found) || hasTaskFor(user, found.row._id)) return false;
+    const intake = currentIntake();
+    return !(intake && found.sheet.id === intake.id && Teams.seesRow(user, found.row));
+  };
   function canSee(user, found) {
     if (!found) return false;
     if (Teams.isAdmin(user) || Teams.isManager(user)) return true;
@@ -1737,9 +1744,11 @@ function createPortalApi({
     const next = nx && (!last || String(nx.at) >= String(last.at)) ? nx : null;
     const nextDay = next ? Math.floor(Date.parse(next.date + 'T00:00:00Z') / 86400000) : null;
     let state;
-    if (stage === 'Visa Issued' || text(row['VISA RECEIVED DATE'])) state = 'visa';
+    // At Inquiry the contacts decide: an old application or visa day left on the sheet (a student brought back) does not.
+    const again = stage === 'Inquiry';
+    if (stage === 'Visa Issued' || (!again && text(row['VISA RECEIVED DATE']))) state = 'visa';
     else if (INACTIVE_STAGES.includes(stage)) state = 'inactive';
-    else if ((stage && stage !== 'Inquiry') || text(row['APPLICATION SUBMISSION DATE'])) state = 'applied';
+    else if (!again && (stage || text(row['APPLICATION SUBMISSION DATE']))) state = 'applied';
     else if (!last) state = 'new';
     else if (tries.length || nextDay === null || nextDay <= todayNo) state = 'due';
     else state = 'ok';
@@ -1824,7 +1833,7 @@ function createPortalApi({
           checks: checksOf(found.row, card),
           // The mock bookings of this student (day, time, who takes it, the answer), for the Mock interviews box: read only.
           mockInfo: (() => { try { const mt = mockTeam(); return mt && mt.forRow ? mt.forRow(found.row._id) : []; } catch (e) { return []; } })(),
-          can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), cols: editable ? Object.keys(CARD_EDITABLE).filter((c) => Teams.canEdit(req.user, c, found.row)) : [], assign: assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
+          can: { edit: editable, removeAnyNote: Teams.isAdmin(req.user), source: editable && Teams.canEdit(req.user, 'STUDENT SOURCE', found.row), cols: editable ? Object.keys(CARD_EDITABLE).filter((c) => Teams.canEdit(req.user, c, found.row)) : [], assign: !stoppedViewOnly(req.user, found) && assignTeamsFor(req.user).length > 0, removeAnyTask: canAssign(req.user), myTeams: taskTeamsOf(req.user), readOnly: Teams.isReadOnly(req.user) },
           taskTeams: TASK_TEAMS(),
           handTeams: handTeamsFor(req.user),
           assignTeams: assignTeamsFor(req.user),
@@ -1855,6 +1864,7 @@ function createPortalApi({
       const who2 = nameOf(found.row) || 'a student';
       let out;
       if (!sub) {
+        if (stoppedViewOnly(req.user, found)) { sendJSON(res, 403, { error: 'This student is stopped and view only for your team. Bring the student back first.' }); return true; }
         const allowedTeams = assignTeamsFor(req.user).map((t) => t.id);
         if (!allowedTeams.length) { sendJSON(res, 403, { error: 'Your account cannot give tasks.' }); return true; }
         if (!allowedTeams.includes(text(body.team))) { sendJSON(res, 400, { error: 'Choose the team.' }); return true; }
@@ -2777,7 +2787,71 @@ function createPortalApi({
   // The students of the current intake the team works on (Inquiry and Defer), and the ones it sent on to the Application Team or
   // withdrew (view only), each with where it stands (followOf), the last thing said, the next follow-up date and the tag.
   const followTeam = (user) => Teams.isAdmin(user) || (teamsOf(user).includes('followup') && !Teams.isReadOnly(user));
-  const LATER = ['Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected', 'Hold'];
+  const LATER = ['Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected'];
+  // Stopped (design F1, the owner, 25 Nov 2026): a student any team put on Hold or Withdrawn. The Follow-up Team sees them all, with why
+  // and by whom, and may bring one back to Inquiry or Defer.
+  const STOPPED = ['Hold', 'Withdrawn'];
+  // Where each stage stands on the five steps shown for a student who moved on: Apply, Mock, Payment, CAS, Visa (5: all done).
+  const STEP_OF = { 'Application Stage': 0, 'Mock Stage': 1, 'Payment Stage': 2, 'CAS Stage': 3, 'CAS Issued': 3, 'Visa Lodge': 4, 'Visa Rejected': 4, 'Visa Issued': 5 };
+  function progressOf(row, card, stage) {
+    const opts = (card.options || []).filter((o) => !o.skipped);
+    const live = opts.filter((o) => !o.refused && !o.withdrawn);
+    const pick = live.find((o) => o.offer) || live.find((o) => o.applied) || live.find((o) => o.sent);
+    const sheetUni = text(row['UNIVERSITY NAME']);
+    const atSheetUni = opts.filter((o) => sheetUni && squash(o.university) === squash(sheetUni));
+    // The sheet's university is shown unless the card says every application there was refused or withdrawn.
+    const named = atSheetUni.length && atSheetUni.every((o) => o.refused || o.withdrawn) ? '' : sheetUni;
+    const university = named || (pick ? text(pick.university) : sheetUni);
+    const course = named ? text(row['COURSE NAME']) : (pick ? text(pick.course) : text(row['COURSE NAME']));
+    const on = (v) => { const d = isoDate(v); return d ? niceDay(d) : ''; };
+    const dated = (v, extra) => [on(v), extra].filter(Boolean).join(' · ');
+    let latest;
+    if (stage === 'Visa Issued') latest = { text: 'Visa issued', sub: dated(row['VISA RECEIVED DATE']), tone: 'good' };
+    else if (stage === 'Visa Rejected') latest = { text: 'Visa refused', sub: '', tone: 'bad' };
+    else if (stage === 'Visa Lodge') latest = { text: 'Visa lodged', sub: dated(row['VISA LODGE DATE']), tone: '' };
+    else if (stage === 'CAS Issued') latest = { text: 'CAS received', sub: dated(row['CAS RECEIVED DATE']), tone: 'good' };
+    else if (stage === 'CAS Stage') latest = { text: 'CAS requested', sub: dated(row['CAS REQUESTED DATE']), tone: '' };
+    else if (stage === 'Payment Stage') latest = { text: isoDate(row['PAYMENT DATE']) ? 'Payment made' : 'Waiting for payment', sub: dated(row['PAYMENT DATE']), tone: '' };
+    else if (stage === 'Mock Stage') {
+      const done = [1, 2, 3, 4].filter((n) => text(row[`FEEDBACK ${n}`])).length;
+      const mt = (() => { try { return mockTeam(); } catch (e) { return null; } })();
+      const books = mt && mt.forRow ? mt.forRow(row._id) : [];
+      const last = books.filter((x) => x.answer).pop();
+      const next = books.find((x) => !x.answer && x.day >= cards.today());
+      const written = `${done} of 4 mocks written up`;
+      const pre = text(row['PRE CAS INTERVIEW']);
+      if (pre) latest = { text: `Pre-CAS: ${pre}`, sub: written, tone: /^pass/i.test(pre) ? 'good' : 'warn' };
+      else if (next) latest = { text: `Mock booked ${niceDay(next.day)}`, sub: written, tone: '' };
+      else if (last && last.answer.joined === false) latest = { text: 'Did not join the last mock', sub: written, tone: 'warn' };
+      else latest = { text: 'At the Mock Team', sub: written, tone: '' };
+    } else {
+      // When the card records applications, they are the truth; the sheet's two days count only for a student recorded before that.
+      const recorded = opts.some((o) => o.applied || o.offer || o.refused || o.withdrawn);
+      const offer = live.find((o) => o.offer);
+      const offerDay = recorded ? (offer && offer.offer) || '' : isoDate(row['OFFER RECEIVED DATE']) || '';
+      const sent = opts.filter((o) => o.sent && !o.applied && !o.refused && !o.withdrawn).length;
+      const applied = recorded ? ((live.find((o) => o.applied) || {}).applied) || '' : isoDate(row['APPLICATION SUBMISSION DATE']) || '';
+      if (offerDay) latest = { text: 'Offer received', sub: dated(offerDay, offer && offer.offerType ? offer.offerType : ''), tone: 'good' };
+      else if (applied) latest = { text: 'Application submitted', sub: dated(applied, 'waiting for the offer'), tone: '' };
+      else if (opts.some((o) => o.refused || o.withdrawn) && !sent) latest = { text: opts.some((o) => o.refused) ? 'Refused by the university' : 'Application withdrawn', sub: 'No other application is waiting', tone: 'warn' };
+      else latest = { text: sent ? `${sent} ${sent === 1 ? 'course' : 'courses'} with the Application Team` : 'With the Application Team', sub: 'Not submitted yet', tone: '' };
+    }
+    return { university, course, step: STEP_OF[stage] === undefined ? 0 : STEP_OF[stage], latest };
+  }
+  // Who stopped a student, when and why: the line ISR wrote on the timeline when the stage moved, and the reason chosen or written.
+  function stoppedOf(card, stage) {
+    const notes = card.notes || [];
+    const move = notes.filter((n) => n.kind === 'stage' && new RegExp(`(Moved to|to) ${stage}\\b`).test(n.text)).pop();
+    const by = move ? text(move.by) : '';
+    const person = by && accounts && accounts.people ? accounts.people().find((p) => p.name === by) : null;
+    const team = person ? (person.role === 'admin' ? 'Admin' : ((TASK_TEAMS().find((t) => t.id === (person.taskTeam || (person.departments || [])[0])) || {}).label || '')) : '';
+    const reason = text(card.profile && card.profile.lostReason);
+    // Only what the same person wrote within ten minutes of the move: never an older chat, a later call or a Bring back line.
+    const at = move ? Date.parse(move.at) : NaN;
+    const said = move ? notes.filter((n) => ['note', 'call'].includes(n.kind) && !n.changes && n.by === move.by && Math.abs(Date.parse(n.at) - at) <= 600000 && !/^(Changed on the student card|Undone on the student card|Brought back from|Checked and correct)/.test(n.text)).pop() : null;
+    const why = reason ? `Why: ${reason}${said ? `. ${text(said.text)}` : ''}` : said ? text(said.text) : 'No reason written';
+    return { by, team: team.replace(/\s*\(.*\)$/, ''), at: move ? move.at : '', why: why.slice(0, 300) };
+  }
   function followList(user) {
     const intake = currentIntake();
     if (!intake) return { intake: '', students: [] };
@@ -2791,19 +2865,21 @@ function createPortalApi({
       const card = all[row._id] || { notes: [], messages: [], options: [], profile: {}, follow: {} };
       const fo = card.follow || {};
       const ours = ['Inquiry', 'Defer'].includes(stage) && (Teams.isAdmin(user) || Teams.seesRow(user, row));
-      if (!ours && !fo.via) return;
+      const stopped = STOPPED.includes(stage);
+      if (!ours && !fo.via && !stopped) return;
       const f = followOf(row, card, todayNo);
       let state;
-      if (stage === 'Withdrawn') state = 'out';
+      if (stopped) state = 'out';
       else if (stage === 'Defer') state = 'defer';
       else if (!ours) state = text(row['APPLICATION SUBMISSION DATE']) || LATER.includes(stage) || (card.options || []).some((o) => o.applied) ? 'applying' : 'sent';
       else if ((f.state === 'new' || f.state === 'due') && f.triedToday) state = 'tried';
       else state = f.state;
       if (!['new', 'due', 'tried', 'ok', 'defer', 'sent', 'applying', 'out'].includes(state)) return;
       let words = f.last ? `${f.last.what === 'note' ? '' : `${f.last.what}: `}${text(f.last.text) || 'sent'}` : '';
-      if (state === 'out') words = text(card.profile && card.profile.lostReason) ? `Why: ${text(card.profile.lostReason)}` : words;
       if (state === 'sent') { const n = (card.options || []).filter((o) => o.sent && !o.applied && !o.refused && !o.withdrawn && !o.skipped).length; words = `${n || 'The'} course${n === 1 ? '' : 's'} with the Application Team, not submitted yet`; }
       if (state === 'applying') { const a = (card.options || []).filter((o) => o.applied).sort((x, y) => String(y.applied).localeCompare(String(x.applied)))[0]; words = stage !== 'Application Stage' ? `Now at ${stage}` : a ? `Submitted on ${niceDay(a.applied)} to ${a.university}` : 'Application submitted'; }
+      const stop = state === 'out' ? stoppedOf(card, stage) : null;
+      if (stop) words = stop.why;
       const live = ['new', 'due', 'tried', 'ok', 'defer'].includes(state);
       out.push({
         no: i + 1, id: row._id, name: nameOf(row), phone: text(row['CONTACT NUMBER']), stage, remarks: text(row.REMARKS).slice(0, 300),
@@ -2811,6 +2887,8 @@ function createPortalApi({
         last: f.last ? { at: f.last.at, by: text(f.last.by), what: f.last.what } : null, words: String(words).slice(0, 300),
         next: f.next ? { date: f.next.date, by: f.next.by } : null,
         canNote: live ? canChange(user, found) : state === 'out' && followTeam(user), canTag: live && canChange(user, found),
+        ...(stop ? { stopped: stop, canReturn: followTeam(user) } : {}),
+        ...(['sent', 'applying'].includes(state) ? { progress: progressOf(row, card, stage) } : {}),
       });
     });
     return { intake: intake.name, today: cards.today(), students: out, tags: Fields.FOLLOW_TAGS, reasons: Fields.LOST_REASONS };
@@ -2844,12 +2922,34 @@ function createPortalApi({
       return { status: 200, json: { ok: true } };
     }
     if (!words) return { status: 400, json: { error: 'Write what the student said.', field: 'text' } };
+    // Bring back (design F1): a student on Hold or Withdrawn, by any team, returns to Inquiry or Defer. What changed is required, and
+    // the next follow-up date for Inquiry; it is written on the card, where the team that stopped the student reads it.
+    if (action === 'return') {
+      if (body.from && text(body.from) !== item.stage) return { status: 409, json: { error: `${name} is now at ${item.stage}. The list is up to date again.` } };
+      if (!item.canReturn) return { status: 403, json: { error: 'Only a student on Hold or Withdrawn can be brought back.' } };
+      const to = text(body.to);
+      if (!['Inquiry', 'Defer'].includes(to)) return { status: 400, json: { error: 'Choose Inquiry or Defer.', field: 'to' } };
+      const date = text(body.next);
+      if (to === 'Inquiry') {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00Z'))) return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
+        if (date <= cards.today()) return { status: 400, json: { error: 'The next follow-up date is after today.', field: 'next' } };
+      }
+      const from = item.stage;
+      const n = cards.addNote(rowId, { kind: 'call', text: `Brought back from ${from} to ${to}: ${words}`.slice(0, 3900) }, who);
+      if (n.error) return { status: 400, json: { error: n.error } };
+      try { writeColumnsFor(req, rowId, { [STATUS]: to }); } catch (e) { console.error('[follow-up return]', e); return { status: 500, json: { error: 'save failed' } }; }
+      cards.setProfile(rowId, { lostReason: '' }, who); // the student is no longer lost; the old reason stays on the timeline
+      cards.setFollow(rowId, { via: null, next: to === 'Inquiry' ? { date, by: who, at: n.note.at } : null }, who);
+      note(req, [`${name}: brought back from ${from} to ${to}`], 'Edited student card', 'Follow-up');
+      return { status: 200, json: { ok: true } };
+    }
     if (action === 'note-only') { // a withdrawn student: only a word on the card
       if (item.state !== 'out') return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
       const n = cards.addNote(rowId, { kind: 'call', text: words }, who);
       return n.error ? { status: 400, json: { error: n.error } } : { status: 200, json: { ok: true } };
     }
     if (action === 'note') {
+      if (item.state === 'out') return { status: 400, json: { error: 'A stopped student takes a note only. Bring the student back to follow up again.' } };
       const date = text(body.next);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00Z'))) return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
       if (date <= cards.today()) return { status: 400, json: { error: 'The next follow-up date is after today.', field: 'next' } };

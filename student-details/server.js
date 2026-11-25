@@ -338,6 +338,8 @@ function stageTimeline(req, before, after) {
   if (list.length) cards.batch(() => { for (const x of list) {
     try {
       cards.addNote(x.rowId, { kind: 'stage', text: x.text }, who);
+      // Back from Hold or Withdrawn to an active stage: the old reason must not be shown again at a later stop (it stays on the timeline).
+      if (['Hold', 'Withdrawn'].includes(x.from) && !['Hold', 'Withdrawn', 'Defer', 'Visa Rejected'].includes(x.to) && ((cards.get(x.rowId) || {}).profile || {}).lostReason) cards.setProfile(x.rowId, { lostReason: '' }, who);
       if (x.back) cards.setFollow(x.rowId, { from: x.fromIntake, next: null, via: null }, who);
       else if (['Inquiry', 'Defer'].includes(x.from) && stageLog.LINE.indexOf(x.to) > 0) cards.setFollow(x.rowId, { via: 'converted', viaBy: who, viaAt: new Date().toISOString() }, who);
     } catch (e) { console.error('[stage log]', e); }

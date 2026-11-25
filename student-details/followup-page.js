@@ -1,5 +1,6 @@
-// All Students for the Follow-up Team (the owner, 21 Nov 2026, design A2): one list of the current intake's inquiries and deferred
-// students, and the students the team sent on or withdrew (view only). Each row says where the student stands (Never contacted,
+// All Students for the Follow-up Team (design A2, 21 Nov 2026; design F1, 25 Nov 2026): "Tasks for you" (tasks other teams gave or handed
+// to the Follow-up Team), then one list of the current intake's inquiries and deferred students, the students who moved on (view only,
+// with their progress and the latest news), and the Stopped ones (Hold and Withdrawn by any team), who can be brought back. Each row says where the student stands (Never contacted,
 // Follow-up due, Followed up ...), what was said last, the next follow-up date and the tag (INT, DM, COLD), with Note and No answer.
 // Note opens one line under the row: what the student said and the next follow-up date (both needed), then Save note, Defer,
 // Withdrawn (which asks why) or Cancel. The rules are the server's (portal-api.js, followList and followAction).
@@ -12,7 +13,11 @@
   let tag = '';
   let open = ''; // the student whose Note line is open
   let withdrawing = false;
-  let draft = { text: '', next: '', reason: '' };
+  let returning = false; // the Bring back line, not the Note line
+  let draft = { text: '', next: '', reason: '', to: 'Inquiry' };
+  let tasks = null; // { tasks, today, me, teams } from the same list every team's Today uses
+  const threads = new Set(); // tasks whose updates are open
+  const drafts = new Map(); // task id -> an update half written, kept while the list is drawn again
 
   const VIEWS = [
     ['wait', 'To follow up', (s) => ['new', 'due', 'tried'].includes(s.state)],
@@ -20,7 +25,7 @@
     ['defer', 'Deferred', (s) => s.state === 'defer'],
     ['sent', 'With Application Team', (s) => s.state === 'sent'],
     ['applying', 'Applying', (s) => s.state === 'applying'],
-    ['out', 'Withdrawn', (s) => s.state === 'out'],
+    ['out', 'Stopped', (s) => s.state === 'out'],
     ['all', 'All', () => true],
   ];
   // Never contacted first, then the longest waiting, and a student tried today at the bottom until tomorrow.
@@ -40,6 +45,71 @@
     try { data = await api('/api/followup'); } catch (e) { $('list').replaceChildren(el('div', 'fu-empty', e.message)); return; }
     $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}click a name to open the student card with every note.`;
     draw();
+    loadTasks();
+  }
+
+  // ---- Tasks for you: the open tasks for this person's team, from any student (the same task list as every team's Today) ----
+  async function loadTasks() {
+    try { tasks = await api('/api/tasks'); } catch (e) { const box = $('tasks'); box.hidden = false; box.replaceChildren(el('div', 'fu-tempty', `The tasks could not be loaded: ${e.message}`)); return; }
+    drawTasks();
+  }
+  // The team of the person who gave a task, in plain words.
+  const teamOfPerson = (name) => { const t = ((tasks && tasks.teams) || []).find((x) => (x.members || []).includes(name)); return t ? String(t.label).replace(/\s*\(.*\)$/, '') : ''; };
+  function drawTasks() {
+    const box = $('tasks');
+    box.querySelectorAll('[data-thread]').forEach((x) => { const i = x.querySelector('textarea, input[type="text"], input:not([type])'); if (i) drafts.set(x.dataset.thread, i.value); });
+    const today = tasks.today;
+    const mine = tasks.tasks.filter((t) => t.forMe && !t.done);
+    const now = mine.filter((t) => !t.doOn || t.doOn <= today)
+      .sort((x, y) => String(x.doOn || x.at).localeCompare(String(y.doOn || y.at)));
+    const later = mine.length - now.length;
+    box.hidden = false;
+    const head = el('div', 'fu-th');
+    head.append(el('h2', '', 'Tasks for you'));
+    if (now.length) head.append(el('span', 'fu-count', String(now.length)));
+    head.append(el('span', 'fu-thint', `Given or handed to your team by other teams${later ? ` · ${later} rescheduled for later` : ''}`));
+    if (!now.length) { box.replaceChildren(head, el('div', 'fu-tempty', 'No tasks to do now. New ones from other teams show here.')); return; }
+    box.replaceChildren(head, ...now.map(taskRow));
+  }
+  function taskRow(t) {
+    const wrap = el('div');
+    const r = el('div', 'fu-task');
+    const tick = h('button', { class: 'fu-ck', type: 'button', title: 'Mark as done', 'aria-label': `Mark as done: ${t.text}` });
+    tick.addEventListener('click', async () => {
+      if (tick.disabled) return;
+      tick.disabled = true;
+      const finish = await window.Portal.doneDialog(t, { rowId: t.studentId, stage: t.stage, student: { name: t.student }, today: tasks.today });
+      if (!finish) { tick.disabled = false; tick.focus(); return; }
+      try { await api(`/api/cards/${encodeURIComponent(t.studentId)}/tasks/${t.id}`, { done: true, finish }); say('Marked as done'); await load(); } catch (e) { tick.disabled = false; say(e.message, true); }
+    });
+    const who = el('div');
+    const name = h('button', { class: 'fu-name', type: 'button', title: 'Open the student card' }, t.student);
+    name.addEventListener('click', () => window.CardDrawer.open(t.studentId, { onClose: () => load() }));
+    who.append(name, el('span', 'fu-small', t.stage || 'No stage'));
+    const mid = el('div');
+    const last = (t.comments || []).filter((c) => c.text).pop();
+    const label = teamOfPerson(t.by);
+    const team = label === t.by ? '' : label; // a team labelled with the person's own name (the head) is not said twice
+    mid.append(el('div', 'fu-task-text', t.text), el('span', 'fu-small', `From ${t.by || 'someone'}${team ? ` · ${team}` : ''}${last ? ` · latest: ${last.by}: ${String(last.text).slice(0, 90)}` : ''}`));
+    const late = t.doOn && t.doOn < tasks.today;
+    const given = t.at ? ago(t.at) : '';
+    const due = el('span', 'fu-due' + (late ? ' late' : ''), late ? `Due since ${short(t.doOn)}` : t.doOn ? 'Due today' : given ? `Given ${given}` : '');
+    const open2 = threads.has(t.id);
+    const up = h('button', { class: 'btn' + (open2 ? ' on' : ''), type: 'button', 'aria-expanded': String(open2) }, t.unread ? 'Add update ●' : 'Add update');
+    up.addEventListener('click', () => { if (threads.has(t.id)) threads.delete(t.id); else threads.add(t.id); drawTasks(); });
+    if (t.unread) up.setAttribute('aria-label', 'Add update, something new');
+    r.append(tick, who, mid, due, up);
+    wrap.append(r);
+    if (open2) {
+      const holder = el('div', 'fu-thread'); holder.dataset.thread = t.id;
+      const thread = window.Portal.taskThread(t, { rowId: t.studentId, me: tasks.me, canWrite: true, unread: t.unread || 0, teams: tasks.teams, today: tasks.today, always: true });
+      holder.append(thread);
+      const input = holder.querySelector('textarea, input[type="text"], input:not([type])');
+      if (input && drafts.get(t.id)) { input.value = drafts.get(t.id); input.dispatchEvent(new Event('input', { bubbles: true })); }
+      wrap.append(holder);
+      if (t.unread && thread.markRead) { thread.markRead(); t.unread = 0; up.textContent = 'Add update'; up.removeAttribute('aria-label'); }
+    }
+    return wrap;
   }
 
   function draw() {
@@ -59,21 +129,30 @@
     }));
     const q = $('find').value.trim().toLowerCase();
     const pick = VIEWS.find((v) => v[0] === view)[2];
-    const shown = list.filter((s) => pick(s) && (!tag || s.tag === tag) && (!q || `${s.name} ${s.phone} ${s.words} ${s.remarks}`.toLowerCase().includes(q)))
-      .sort((a, b) => ORDER[a.state] - ORDER[b.state] || String((a.next && a.next.date) || (a.last && a.last.at) || '').localeCompare(String((b.next && b.next.date) || (b.last && b.last.at) || '')) || a.no - b.no);
+    const kind = view === 'all' ? 'all' : view === 'sent' || view === 'applying' ? 'moved' : view === 'out' ? 'stop' : 'live';
+    tagsBox.hidden = !(kind === 'live' || kind === 'all');
+    const useTag = tagsBox.hidden ? '' : tag; // a tag chosen on another tab never hides students where its chips are not shown
+    const shown = list.filter((s) => pick(s) && (!useTag || s.tag === useTag) && (!q || `${s.name} ${s.phone} ${s.words} ${s.remarks} ${s.progress ? `${s.progress.university} ${s.progress.course}` : ''}`.toLowerCase().includes(q)))
+      .sort((a, b) => (kind === 'stop' ? String((b.stopped || {}).at || '').localeCompare(String((a.stopped || {}).at || '')) : 0) || ORDER[a.state] - ORDER[b.state] || String((a.next && a.next.date) || (a.last && a.last.at) || '').localeCompare(String((b.next && b.next.date) || (b.last && b.last.at) || '')) || a.no - b.no);
     const box = $('list');
-    const head = el('div', 'fu-row head');
-    ['No.', 'Student', 'Stage', 'Last contacted and what was said', 'Next follow-up', 'Tag', ''].forEach((t) => head.append(el('div', '', t)));
+    const COLS = {
+      live: ['No.', 'Student', 'Stage', 'Last contact and what was said', 'Next follow-up', 'Tag', ''],
+      moved: ['No.', 'Student', 'University and course', 'Progress', 'Latest from the other teams', ''],
+      stop: ['No.', 'Student', 'Stage', 'Why they stopped', 'Stopped by', ''],
+      all: ['No.', 'Student', 'Stage', 'Where they are', 'List'],
+    };
+    const head = el('div', `fu-row head ${kind}`);
+    COLS[kind].forEach((t) => head.append(el('div', '', t)));
     if (!shown.length) {
-      box.replaceChildren(head, el('div', 'fu-empty', q || tag ? 'No student matches.' : view === 'wait' ? 'Nobody to follow up right now.' : 'Nobody here right now.'));
+      box.replaceChildren(head, el('div', 'fu-empty', q || useTag ? 'No student matches.' : view === 'wait' ? 'Nobody to follow up right now.' : view === 'out' ? 'Nobody is stopped.' : 'Nobody here right now.'));
       return;
     }
-    box.replaceChildren(head, ...shown.map(rowOf));
+    const make = { live: liveRow, moved: movedRow, stop: stopRow, all: allRow }[kind];
+    box.replaceChildren(head, ...shown.map(make));
   }
 
-  function rowOf(s) {
-    const item = el('div', 'fu-item');
-    const r = el('div', 'fu-row');
+  // The student: the name opens the card, the phone calls; the remarks and the intake a deferred student came from under it.
+  function whoOf(s) {
     const who = el('div', 'fu-who');
     const name = h('button', { class: 'fu-name', type: 'button', title: 'Open the student card' }, s.name || 'Student with no name');
     name.addEventListener('click', () => window.CardDrawer.open(s.id, { onClose: () => load() }));
@@ -81,7 +160,17 @@
     if (s.phone) who.append(h('a', { class: 'fu-phone', href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone));
     if (s.remarks) { const sub = el('span', 'fu-sub', s.remarks); sub.title = s.remarks; who.append(sub); }
     if (s.from) who.append(el('span', 'fu-from', `Deferred from ${s.from}`));
-    const stage = el('div'); stage.append(el('span', 'fu-stage' + (['sent', 'applying'].includes(s.state) ? ' app' : ''), s.stage || 'No stage'));
+    return who;
+  }
+  function stageCell(s) {
+    const cls = s.stage === 'Withdrawn' ? ' gone' : s.stage === 'Hold' ? ' hold' : ['sent', 'applying'].includes(s.state) ? ' app' : '';
+    const stage = el('div'); stage.append(el('span', 'fu-stage' + cls, s.stage || 'No stage'));
+    return stage;
+  }
+
+  function liveRow(s) {
+    const item = el('div', 'fu-item');
+    const r = el('div', 'fu-row live');
     const last = el('div', 'fu-last');
     const tries = s.tries ? `${s.tries} ${s.tries === 1 ? 'try' : 'tries'}` : '';
     let pill;
@@ -89,13 +178,12 @@
     else if (s.state === 'new') pill = ['wait', s.from ? 'Back from last intake, not called yet' : tries ? `Never reached · ${tries}` : 'Never contacted'];
     else if (s.state === 'tried') pill = ['wait', `No answer today · ${tries}`];
     else if (s.state === 'due') pill = ['wait', tries ? `No answer · ${tries}` : s.next ? `Due ${s.next.date >= data.today ? 'today' : `since ${short(s.next.date)}`}` : 'No date set'];
-    else pill = ['view', { defer: 'Deferred, waits for the next intake', sent: 'With Application Team', applying: 'Applying', out: 'Withdrawn' }[s.state]];
+    else pill = ['view', 'Waits for the next intake'];
     const p = el('span', `fu-pill ${pill[0]}`, pill[1]); p.title = pill[1];
     last.append(p);
     if (s.words) { const w = el('div', 'fu-words', s.words); w.title = s.words; last.append(w); }
     const next = el('div', 'fu-next');
     if (s.state === 'defer') next.append(el('span', '', 'Next intake'));
-    else if (['sent', 'applying', 'out'].includes(s.state)) next.append(el('span', '', 'None'));
     else if (s.next) next.append(el('b', s.next.date <= data.today || s.state === 'due' ? 'due' : '', short(s.next.date)));
     else next.append(el('span', '', 'Not set'));
     const tg = el('div');
@@ -115,9 +203,7 @@
     } else if (s.tag) { const c = el('span', 'fu-code', tagShort(s.tag)); c.title = s.tag; tg.append(c); }
     const act = el('div', 'fu-act');
     if (s.canNote) {
-      const nb = h('button', { class: 'btn' + (open === s.id ? ' on' : ''), type: 'button', 'aria-expanded': String(open === s.id) }, 'Note');
-      nb.addEventListener('click', () => { if (open === s.id) close(); else { open = s.id; withdrawing = false; draft = { text: '', next: '', reason: '' }; } draw(); if (open) setTimeout(() => { const t = document.querySelector('.fu-strip textarea'); if (t) t.focus(); }, 0); });
-      act.append(nb);
+      act.append(noteButton(s));
       if (['new', 'due', 'ok'].includes(s.state)) {
         const na = h('button', { class: 'btn', type: 'button', title: 'Writes "Called, no answer" on the card. The student stays orange and comes back tomorrow.' }, 'No answer');
         na.addEventListener('click', async () => {
@@ -127,13 +213,119 @@
         act.append(na);
       }
     } else act.append(el('span', 'fu-view', 'View only'));
-    r.append(el('div', 'fu-num', String(s.no)), who, stage, last, next, tg, act);
+    r.append(el('div', 'fu-num', String(s.no)), whoOf(s), stageCell(s), last, next, tg, act);
     item.append(r);
     if (open === s.id && s.canNote) item.append(strip(s));
     return item;
   }
 
-  function close() { open = ''; withdrawing = false; draft = { text: '', next: '', reason: '' }; }
+  // A student who moved on: the university and course, how far (Apply, Mock, Payment, CAS, Visa) and the latest news. View only.
+  const STEPS = ['Apply', 'Mock', 'Payment', 'CAS', 'Visa'];
+  function movedRow(s) {
+    const p = s.progress || { university: '', course: '', step: 0, latest: { text: s.words || '', sub: '', tone: '' } };
+    const r = el('div', 'fu-row moved');
+    const uni = el('div', 'fu-uni');
+    uni.append(el('b', '', p.university || 'No university yet'), el('span', 'fu-small', p.course || s.stage || ''));
+    const track = el('ol', 'fu-track');
+    track.setAttribute('aria-label', p.step >= STEPS.length ? 'All steps done' : `At ${STEPS[p.step]}, step ${p.step + 1} of ${STEPS.length}`);
+    STEPS.forEach((label, i) => { const li = el('li', i < p.step ? 'd' : i === p.step ? 'n' : '', label); if (i === p.step) li.setAttribute('aria-current', 'step'); track.append(li); });
+    const upd = el('div', 'fu-upd');
+    upd.append(el('b', p.latest.tone || '', p.latest.text));
+    if (p.latest.sub) upd.append(el('span', 'fu-small', p.latest.sub));
+    r.append(el('div', 'fu-num', String(s.no)), whoOf(s), uni, track, upd, el('span', 'fu-view', 'View only'));
+    return r;
+  }
+
+  // A stopped student (Hold or Withdrawn, by any team): why, by whom, a note, and Bring back.
+  function stopRow(s) {
+    const st = s.stopped || { by: '', team: '', at: '', why: s.words };
+    const item = el('div', 'fu-item');
+    const r = el('div', 'fu-row stop');
+    const why = el('div', 'fu-last'); const w = el('div', 'fu-words', st.why); w.title = st.why; why.append(w);
+    const by = el('div', 'fu-small', [st.team || st.by || 'Not recorded', st.team && st.by ? st.by : '', st.at ? short(st.at) : ''].filter(Boolean).join(' · '));
+    const act = el('div', 'fu-act');
+    if (s.canReturn) {
+      const back = h('button', { class: 'btn' + (open === s.id && returning ? ' on' : ''), type: 'button', 'aria-expanded': String(open === s.id && returning) }, 'Bring back');
+      back.addEventListener('click', () => { if (open === s.id && returning) close(); else { close(); open = s.id; returning = true; } draw(); focusStrip(); });
+      act.append(noteButton(s), back);
+    } else act.append(el('span', 'fu-view', 'View only'));
+    r.append(el('div', 'fu-num', String(s.no)), whoOf(s), stageCell(s), why, by, act);
+    item.append(r);
+    if (open === s.id && s.canNote) item.append(returning ? returnStrip(s) : strip(s));
+    return item;
+  }
+
+  function allRow(s) {
+    const r = el('div', 'fu-row all');
+    const p = s.progress;
+    const where = el('div', 'fu-last');
+    const w = el('div', 'fu-words', p ? [p.university, p.latest.text].filter(Boolean).join(' · ') : s.state === 'out' && s.stopped ? s.stopped.why : s.words || 'Nothing written yet');
+    w.title = w.textContent; where.append(w);
+    r.append(el('div', 'fu-num', String(s.no)), whoOf(s), stageCell(s), where, el('div', 'fu-small', VIEWS.find((v) => v[0] !== 'all' && v[2](s))?.[1] || ''));
+    return r;
+  }
+
+  const focusStrip = () => { if (open) setTimeout(() => { const t = document.querySelector('.fu-strip textarea'); if (t) t.focus(); }, 0); };
+  function noteButton(s) {
+    const on = open === s.id && !returning;
+    const nb = h('button', { class: 'btn' + (on ? ' on' : ''), type: 'button', 'aria-expanded': String(on) }, 'Note');
+    nb.addEventListener('click', () => { if (on) close(); else { close(); open = s.id; } draw(); focusStrip(); });
+    return nb;
+  }
+
+  // The Bring back line: what changed, where to (Inquiry or Defer), and for Inquiry the next follow-up date.
+  function returnStrip(s) {
+    const box = el('div', 'fu-strip');
+    const grid = el('div', 'fu-strip-grid');
+    const reqMark = () => { const m = el('b', 'fu-req', ' *'); m.setAttribute('aria-hidden', 'true'); return m; };
+    const l1 = el('label'); const t1 = el('span', '', `What changed? What did ${s.name} say?`); t1.append(reqMark());
+    const area = h('textarea', { rows: '1', maxlength: '2000', placeholder: 'For example: the new passport has arrived', 'aria-required': 'true' });
+    area.value = draft.text;
+    const grow = () => { area.style.height = 'auto'; area.style.height = `${Math.min(area.scrollHeight + 2, 220)}px`; };
+    area.addEventListener('input', () => { draft.text = area.value; area.classList.remove('bad'); grow(); });
+    setTimeout(grow, 0);
+    l1.append(t1, area);
+    const l2 = el('label'); const t2 = el('span', '', 'Move to'); t2.append(reqMark());
+    const to = h('select', { 'aria-required': 'true' });
+    to.append(h('option', { value: 'Inquiry' }, 'Inquiry'), h('option', { value: 'Defer' }, 'Defer'));
+    to.value = draft.to;
+    l2.append(t2, to);
+    const l3 = el('label'); const t3 = el('span', '', 'Next follow-up'); t3.append(reqMark());
+    const dateIn = h('input', { type: 'date', min: new Date(dayMs(data.today) + 86400000).toISOString().slice(0, 10), 'aria-required': 'true' });
+    dateIn.value = draft.next;
+    dateIn.addEventListener('input', () => { draft.next = dateIn.value; dateIn.classList.remove('bad'); });
+    l3.append(t3, dateIn);
+    const showDate = () => { l3.hidden = to.value !== 'Inquiry'; };
+    to.addEventListener('change', () => { draft.to = to.value; showDate(); }); showDate();
+    const err = el('div', 'fu-err'); err.hidden = true; err.setAttribute('role', 'alert');
+    const fail = (msg, ...fields) => { err.textContent = msg; err.hidden = false; fields.forEach((f) => { f.classList.remove('bad'); void f.offsetWidth; f.classList.add('bad'); }); };
+    const btns = el('div', 'fu-btns');
+    const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Bring back');
+    ok.addEventListener('click', async () => {
+      const needDate = to.value === 'Inquiry';
+      const miss = [!area.value.trim() && area, needDate && !dateIn.value && dateIn].filter(Boolean);
+      if (miss.length) { fail(miss.length === 2 ? 'Write what changed and choose the next follow-up date.' : miss[0] === area ? 'Write what changed.' : 'Choose the next follow-up date.', ...miss); return; }
+      btns.querySelectorAll('button').forEach((b) => { b.disabled = true; }); ok.textContent = 'Saving...';
+      try {
+        await api(`/api/followup/${encodeURIComponent(s.id)}`, { action: 'return', from: s.stage, text: area.value, to: to.value, next: needDate ? dateIn.value : '' });
+        say(`${s.name} is back at ${to.value}`); close(); await load();
+      } catch (e) {
+        btns.querySelectorAll('button').forEach((b) => { b.disabled = false; }); ok.textContent = 'Bring back';
+        const field = e.body && e.body.field;
+        if ([403, 404, 409].includes(e.status)) { say(e.message, true); close(); await load(); return; } // someone else moved the student
+        fail(e.message, ...(field === 'text' ? [area] : field === 'next' ? [dateIn] : field === 'to' ? [to] : []));
+      }
+    });
+    const cancel = h('button', { class: 'btn', type: 'button' }, 'Cancel');
+    cancel.addEventListener('click', () => { close(); draw(); });
+    btns.append(ok, cancel);
+    grid.append(l1, l2, l3, btns);
+    area.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(); draw(); } });
+    box.append(grid, err, el('span', 'fu-hint', 'What you write is saved on the student card and its timeline.'));
+    return box;
+  }
+
+  function close() { open = ''; withdrawing = false; returning = false; draft = { text: '', next: '', reason: '', to: 'Inquiry' }; }
 
   // The Note line under a row.
   function strip(s) {

@@ -15,7 +15,9 @@
   document.documentElement.setAttribute('data-size', framed ? 'framed' : size);
 })();
 
-// The Application Team's Apple look (the owner, 24 Nov 2026): one stylesheet, apple.css, that only that team loads, over the pages as they are.
+// The Apple look (the owner, 24 Nov 2026; Mock Team the same day; Follow-up Team 25 Nov 2026, design F1): one stylesheet, apple.css, that
+// only those teams load, over the pages as they are.
+// 🔴 CSS CHANGED (2026-11-25): apple.css is also loaded for the Follow-up Team | from: Application and Mock only | to: Follow-up too (design F1)
 // Nobody else gets it. It is added at once from what this browser remembers (no flash), and kept or removed when the account is known.
 (function () {
   const link = () => document.querySelector('link[data-apple]');
@@ -29,7 +31,7 @@
       }
       document.documentElement.classList.add('app-apple');
       document.documentElement.classList.toggle('app-mock', mock); // the Mock Team's own touches in apple.css hang on this class, so the Application Team is never changed by them
-      try { localStorage.setItem('niecApple', mock ? 'mock' : '1'); } catch (e) { /* only the first draw may flash */ }
+      try { localStorage.setItem('niecApple', mock ? 'mock' : kind === 'follow' ? 'follow' : '1'); } catch (e) { /* only the first draw may flash */ }
     },
     off() {
       const l = link(); if (l) l.remove();
@@ -37,7 +39,7 @@
       try { localStorage.removeItem('niecApple'); } catch (e) { /* nothing kept */ }
     },
   };
-  try { const kept = localStorage.getItem('niecApple'); if (kept === '1') window.NiecApple.on(); else if (kept === 'mock') window.NiecApple.on('mock'); } catch (e) { /* not remembered */ }
+  try { const kept = localStorage.getItem('niecApple'); if (kept === '1') window.NiecApple.on(); else if (kept === 'mock' || kept === 'follow') window.NiecApple.on(kept); } catch (e) { /* not remembered */ }
 })();
 
 (function () {
@@ -219,7 +221,7 @@
     const fuOwn = ownTeamFollowup(me);
     const mockOwn = ownTeamMock(me);
     // The Apple look for the Application Team (the owner, 24 Nov 2026) and, the same look, the Mock Team (the owner, 24 Nov 2026).
-    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else window.NiecApple.off(); }
+    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else if (fuOwn) window.NiecApple.on('follow'); else window.NiecApple.off(); }
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
       : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
         : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
