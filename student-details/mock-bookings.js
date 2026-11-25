@@ -290,6 +290,16 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       return { booking: bookings[i] };
     },
     // The answer after a mock. { joined, feedback, result, by, mock, rowId }.
+    // A booking that matched nobody when it was made is tied to the student once the match works (they reached Mock Stage).
+    link(id, m) {
+      const data = load();
+      const i = data.bookings.findIndex((b) => b.id === id);
+      if (i === -1 || data.bookings[i].rowId || !m || !m.rowId) return false;
+      const bookings = [...data.bookings];
+      bookings[i] = { ...bookings[i], rowId: m.rowId, mock: m.mock || 0, university: m.university || '', course: m.course || '' };
+      write({ ...data, bookings });
+      return true;
+    },
     answer(id, a) {
       const data = load();
       const i = data.bookings.findIndex((b) => b.id === id);

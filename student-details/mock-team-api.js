@@ -148,6 +148,14 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     }
   }
 
+  // Bookings still to be answered that matched nobody are tried again (the same careful rule: email and a name that fits).
+  function relink() {
+    bookings.all().bookings.filter((b) => !b.rowId && b.status === 'booked' && !b.answer).forEach((b) => {
+      const m = matchStudent(b.email, b.phone, b.name);
+      if (m) bookings.link(b.id, m);
+    });
+  }
+
   // ---- the lists of the Bookings page ----
   // A student's mocks that are booked and not answered are numbered by their date, not by the order they were booked in.
   function renumber(list) {
@@ -175,6 +183,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     return out;
   }
   function pageFor(user) {
+    relink();
     const access = bookingsAccess(user);
     const data = bookings.all();
     numbers = renumber(data.bookings);
@@ -187,7 +196,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     // The window after a mock: only the person's own mocks (Admin answers from a booking of their own too).
     const waiting = data.bookings.filter((b) => b.owner === user.id && b.status === 'booked' && !b.answer && bookings.startOf(b) <= t)
       .sort((a, b) => bookings.startOf(a) - bookings.startOf(b)).map((b) => viewOf(b, false))
-      .map((v) => (v.rowId && (access === 'all' || visible.has(v.rowId)) ? v : { ...v, rowId: '' })); // not one of theirs: the window asks who it was
+      .map((v) => (v.rowId && (access === 'all' || visible.has(v.rowId) || portal.rowIndex().get(v.rowId)) ? v : { ...v, rowId: '' })); // the person's own booking keeps its student; a student gone from the sheet is asked for
     // The latest answer of each student, and who has a mock booked to come.
     const last = new Map();
     const comingFor = new Set();
@@ -248,11 +257,15 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     if (!RESULTS.includes(body.result)) return { status: 400, error: 'Choose the result.' };
     const sees = (id) => Teams.isAdmin(req.user) || portal.visibleStudents(req.user).some(({ row }) => row._id === id);
     // A booking matched to a student this person cannot see (moved on, another intake) is given to the student chosen in the window.
-    const rowId = b.rowId && sees(b.rowId) ? b.rowId : text(body.rowId);
+    // The person's own booking keeps its student even when that student has since left their list (moved back, or on to Payment): the
+    // interview happened, so it can be written. Only that booking's own student, never another one chosen from outside the list.
+    const own = Boolean(b.rowId) && b.owner === req.user.id && Boolean(portal.rowIndex().get(b.rowId));
+    const rowId = b.rowId && (sees(b.rowId) || own) ? b.rowId : text(body.rowId);
+    const movedOn = own && rowId === b.rowId && !sees(rowId);
     if (!rowId) return { status: 400, error: 'Choose the student this mock was with.' };
     const found = portal.rowIndex().get(rowId);
     if (!found) return { status: 404, error: 'That student is no longer on the sheet.' };
-    if (!sees(rowId)) return { status: 403, error: 'That student is not one of your students.' };
+    if (!sees(rowId) && !movedOn) return { status: 403, error: 'That student is not one of your students.' };
     // An interview already written for this day (from the Mock task) and not tied to another booking is this same interview: the booking is
     // tied to that mock, never written a second time as the next one. What was typed here is kept as a note on the card.
     const taken = new Set(bookings.all().bookings.filter((x) => x.id !== b.id && x.rowId === rowId && x.answer && x.answer.joined && Number(x.mock)).map((x) => Number(x.mock)));
@@ -262,7 +275,8 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     if (written) {
       if (text(found.row[`FEEDBACK ${n}`]) !== feedback) cards.addNote(rowId, { kind: 'note', text: `Mock ${n}, more feedback from the booking: ${feedback}`.slice(0, 3900) }, req.user.name);
     } else {
-      const out = portal.writeCardColumns(req, rowId, { [`MOCK SCHEDULE ${n}`]: b.day, [`FEEDBACK ${n}`]: feedback });
+      const cols = { [`MOCK SCHEDULE ${n}`]: b.day, [`FEEDBACK ${n}`]: feedback };
+      const out = movedOn ? portal.writeHeldMock(req, rowId, cols) : portal.writeCardColumns(req, rowId, cols);
       if (out.error) return { status: out.status || 400, error: out.error };
     }
     bookings.answer(b.id, { joined: true, feedback, result: body.result, by: req.user.name, rowId, mock: n });

@@ -602,6 +602,11 @@ function createPortalApi({
     const before = Object.fromEntries(Object.keys(changes).map((c) => [c, text(row[c])]));
     const partnerWas = text(row['UNIVERSITY PARTNER']);
     if (Object.keys(changes).length) writeColumnsFor(req, rowId, changes);
+    // An offer that no longer stands while the student is at Mock Stage reaches the Application Team as one task (once, never twice).
+    if (changes['OFFER RECEIVED DATE'] === '' && before['OFFER RECEIVED DATE'] && text(row[STATUS]) === 'Mock Stage' && !nobodyIn('application')
+      && !((cards.get(rowId) || {}).tasks || []).some((t) => !t.done && /^The offer no longer stands/.test(t.text))) {
+      cards.addTask(rowId, { team: 'application', tag: 'other', priority: 'high', text: 'The offer no longer stands for a student at Mock Stage. Please check the application, and the stage.' }, 'ISR (automatic)');
+    }
     // When the sheet moves to another university by itself, the student's notes say what it was before, so it can be put back by hand.
     if ('UNIVERSITY NAME' in changes && uni) {
       const is = (rowIndex().get(rowId) || { row: {} }).row;
@@ -3997,7 +4002,16 @@ function createPortalApi({
     return false;
   }
 
-  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns, advisorChange, advisorRemoveTask, advisorDeleteStudent };
+  // The two columns of a mock that was held, for a student who has since left the writer's list (see mock-team-api answer): only a
+  // Mock Schedule and its Feedback, written as the system writes a finished task.
+  function writeHeldMock(req, rowId, changes) {
+    if (!rowIndex().get(text(rowId))) return { error: 'That student is no longer on the sheet.', status: 404 };
+    if (!Object.keys(changes).every((c) => /^(MOCK SCHEDULE|FEEDBACK) [1-4]$/.test(c))) return { error: 'That detail cannot be changed here.', status: 400 };
+    writeColumnsFor(req, rowId, changes);
+    return { ok: true };
+  }
+
+  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns, writeHeldMock, advisorChange, advisorRemoveTask, advisorDeleteStudent };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };

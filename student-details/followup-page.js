@@ -228,7 +228,7 @@
     uni.append(el('b', '', p.university || 'No university yet'), el('span', 'fu-small', p.course || s.stage || ''));
     const track = el('ol', 'fu-track');
     track.setAttribute('aria-label', p.step >= STEPS.length ? 'All steps done' : `At ${STEPS[p.step]}, step ${p.step + 1} of ${STEPS.length}`);
-    STEPS.forEach((label, i) => { const li = el('li', i < p.step ? 'd' : i === p.step ? 'n' : '', label); if (i === p.step) li.setAttribute('aria-current', 'step'); track.append(li); });
+    STEPS.forEach((label, i) => { const li = el('li', i < p.step ? 'd' : i === p.step ? 'n' : '', i < p.step ? `\u2713 ${label}` : label); if (i === p.step) li.setAttribute('aria-current', 'step'); track.append(li); });
     const upd = el('div', 'fu-upd');
     upd.append(el('b', p.latest.tone || '', p.latest.text));
     if (p.latest.sub) upd.append(el('span', 'fu-small', p.latest.sub));

@@ -22,12 +22,28 @@ function localDate(date = new Date(), timeZone = TIME_ZONE) {
 // Sent with every response: the pages can't be shown inside another site's frame (so no one can trick
 // a logged-in user into clicking things there), browsers don't guess file types, and no addresses
 // leak to other sites through the Referer header.
-// The Content-Security-Policy only lists things no page here does: no plug-ins, no pages rebased to another
-// site, no forms sent to another site (the pages' own scripts are not restricted, as they load a spreadsheet
-// library and a QR-code library from a CDN). Camera, microphone and location are never needed.
+// The Content-Security-Policy: no plug-ins, no pages rebased to another site, no forms sent to another site, and scripts only from this
+// site, the one spreadsheet library (cdnjs, loaded with its integrity check) and the few inline scripts of our own pages, each allowed by
+// its exact hash, read from the pages when the server starts. So a script slipped into a page would not run. Camera, microphone and
+// location are never needed.
+const INLINE_PAGES = ['login.html', '../counselor-incentive/index.html', '../counselor-incentive/unlock.html'];
+function inlineScriptHashes() {
+  const out = [];
+  INLINE_PAGES.forEach((p) => {
+    let html = '';
+    try { html = require('fs').readFileSync(require('path').join(__dirname, p), 'utf8'); } catch (e) { return; }
+    // A browser reads line ends as \n before it hashes a script.
+    const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
+    let m;
+    const unix = html.replace(/\r\n/g, '\n');
+    while ((m = re.exec(unix))) out.push(`'sha256-${require('crypto').createHash('sha256').update(m[1], 'utf8').digest('base64')}'`);
+  });
+  return out;
+}
+const SCRIPT_SRC = ["'self'", 'https://cdnjs.cloudflare.com', ...inlineScriptHashes()].join(' ');
 const SECURITY_HEADERS = {
   'X-Frame-Options': 'SAMEORIGIN',
-  'Content-Security-Policy': "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+  'Content-Security-Policy': `frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src ${SCRIPT_SRC}`,
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'same-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
