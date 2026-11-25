@@ -296,7 +296,11 @@ function createMockBookings(dir, { now = () => new Date(), timeZone = TIME_ZONE 
       const i = data.bookings.findIndex((b) => b.id === id);
       if (i === -1 || data.bookings[i].rowId || !m || !m.rowId) return false;
       const bookings = [...data.bookings];
-      bookings[i] = { ...bookings[i], rowId: m.rowId, mock: m.mock || 0, university: m.university || '', course: m.course || '' };
+      // Two early bookings of one student must not both read Mock 1: the next number not taken by another open booking of theirs.
+      const taken = new Set(bookings.filter((x) => x.rowId === m.rowId && x.status === 'booked' && !x.answer).map((x) => Number(x.mock) || 0));
+      let mock = Number(m.mock) || 0;
+      while (mock && mock < 4 && taken.has(mock)) mock += 1;
+      bookings[i] = { ...bookings[i], rowId: m.rowId, mock, university: m.university || '', course: m.course || '' };
       write({ ...data, bookings });
       return true;
     },

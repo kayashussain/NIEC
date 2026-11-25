@@ -1189,7 +1189,7 @@ async function handleRestore(req, res, urlPath) {
   if (urlPath === '/api/restore/fresh-start' && req.method === 'GET') {
     if (!current) return sendJSON(res, 500, { error: 'Could not read the data file' });
     const p = freshStart.plan(current);
-    return sendJSON(res, 200, { keep: freshStart.KEEP, kept: p.kept, removed: p.removed.length, removedList: p.removed.slice(0, 50), cards: Object.keys(cards.all() || {}).length });
+    return sendJSON(res, 200, { keep: freshStart.KEEP, kept: p.kept, removed: p.removed.length, removedList: p.removed, cards: Object.keys(cards.all() || {}).length });
   }
   if (req.method !== 'POST') return send(res, 405, 'Method not allowed');
   let body;

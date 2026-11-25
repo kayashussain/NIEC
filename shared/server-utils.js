@@ -40,7 +40,7 @@ function inlineScriptHashes() {
   });
   return out;
 }
-const SCRIPT_SRC = ["'self'", 'https://cdnjs.cloudflare.com', ...inlineScriptHashes()].join(' ');
+const SCRIPT_SRC = ["'self'", 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', ...inlineScriptHashes()].join(' ');
 const SECURITY_HEADERS = {
   'X-Frame-Options': 'SAMEORIGIN',
   'Content-Security-Policy': `frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src ${SCRIPT_SRC}`,
@@ -129,7 +129,7 @@ const SECURITY_ACTIONS = new Set(['Failed login', 'Change refused', 'Wrong hidde
 // Tasks, partner universities, students added in bulk and event lists too (the owner, 15 Nov 2026: they were filed under accounts, and
 // "Changes today" on Activity counted only the edits of the sheet).
 const CHANGE_ACTIONS = new Set(['Edited student card', 'Sent message', 'Edited templates', 'Edited partners', 'Edited planning', 'Edited partner universities',
-  'Task', 'Task comment', 'Gave a task', 'Removed a task', 'Handed a task on', 'Filled in a student', 'Added students', 'Uploaded event students', 'Removed an event list', 'Restored data', 'Tidied the data',
+  'Task', 'Task comment', 'Gave a task', 'Removed a task', 'Handed a task on', 'Filled in a student', 'Added students', 'Uploaded event students', 'Removed an event list', 'Restored data', 'Started fresh', 'Tidied the data',
   'Booked mock', 'Uploaded guideline']); // the Mock Team's Bookings and Interview guidelines (the owner, 22 Nov 2026)
 function activityCategory(action) {
   if (action === 'Logged in' || action === 'Logged out') return 'logins';
