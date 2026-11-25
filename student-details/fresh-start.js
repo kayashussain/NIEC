@@ -3,7 +3,7 @@
 // and a student built only for testing, are deleted. Universities, Partner Universities, B2B partners, agents, accounts and
 // Incentive figures are not touched. The pure part lives here so it can be tested; server.js applies it (Admin only, two steps).
 
-const KEEP = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'NOC NUMBER', 'APPLICATION STATUS'];
+const KEEP = ['STUDENT SOURCE', 'FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER', 'NOC NUMBER', 'APPLICATION STATUS'];
 const TEST_NAME = /^(test|testing|tester|demo|dummy|sample|asdf)$/i;
 const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
 
