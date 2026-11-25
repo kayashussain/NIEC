@@ -137,6 +137,11 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir
     const body = typeof a.body === 'string' ? a.body : '';
     if (!subject.trim() || !body.trim()) return errorResult('Write a subject and a message.');
     const preview = a.confirm !== true;
+    // At most 300 students emailed through this door in a day, however many calls it takes.
+    const dayAgo = Date.now() - 86400000;
+    while (sentLog.length && sentLog[0].at < dayAgo) sentLog.shift();
+    if (!preview && sentLog.reduce((n, x) => n + x.n, 0) + ids.length > 300) return errorResult('The limit of 300 students a day through this connector is reached. Nothing was sent.');
+    if (!preview) sentLog.push({ at: Date.now(), n: ids.length });
     const out = await sendFollowUp({ ids, subject, emailBody: body, preview });
     if (out.error) return errorResult(out.error);
     if (preview) {
@@ -153,6 +158,7 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir
     return textResult({ sentAt: new Date().toISOString(), sender: out.sender, sent: count('sent'), failed: count('failed'), notConfigured: count('not-configured'), skipped: count('skipped'), problems: out.sendOut.filter((r) => r.status !== 'sent') });
   }
 
+  const sentLog = []; // how many students each real send asked for, and when (the daily limit)
   function callTool(name, a) {
     if (name === SEND_TOOL.name && sendFollowUp) return sendEmails(a || {});
     if (incentiveTools && incentiveTools.isIncentiveTool(name)) return incentiveTools.callTool(name, a);

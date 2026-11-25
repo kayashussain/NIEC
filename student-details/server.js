@@ -328,19 +328,18 @@ function recordChanges(req, before, after) {
 }
 
 // Every stage change, however it was made (the sheet, the student card, a task, the follow-up list), is written on the student's
-// timeline by the person who made it (stage-log.js says which moves are written). A student the Follow-up Team moves on from Inquiry or
-// Defer stays in the team's list, view only ("converted"); a deferred student back in a new intake shows where they came from.
+// timeline by the person who made it (stage-log.js says which moves are written). A student moved on from Inquiry or Defer, by whoever
+// moved them, stays in the Follow-up Team's list, view only ("converted"); a deferred student back in a new intake shows where they came from.
 function stageTimeline(req, before, after) {
   let list;
   try { list = stageLog.changes(before, after, (rowId) => { const c = cards.has(rowId) ? cards.get(rowId) : null; return (c && c.profile && c.profile.lostReason) || ''; }); } catch (e) { console.error('[stage log]', e); return; }
   const who = (req && req.user && req.user.name) || '';
-  const followup = Boolean(req && req.user && Array.isArray(req.user.departments) && req.user.departments.includes('followup') && req.user.role !== 'admin');
   // One write of the cards for the whole save, however many students moved (one write each held the server up for seconds).
   if (list.length) cards.batch(() => { for (const x of list) {
     try {
       cards.addNote(x.rowId, { kind: 'stage', text: x.text }, who);
       if (x.back) cards.setFollow(x.rowId, { from: x.fromIntake, next: null, via: null }, who);
-      else if (followup && ['Inquiry', 'Defer'].includes(x.from) && stageLog.LINE.indexOf(x.to) > 0) cards.setFollow(x.rowId, { via: 'converted', viaBy: who, viaAt: new Date().toISOString() }, who);
+      else if (['Inquiry', 'Defer'].includes(x.from) && stageLog.LINE.indexOf(x.to) > 0) cards.setFollow(x.rowId, { via: 'converted', viaBy: who, viaAt: new Date().toISOString() }, who);
     } catch (e) { console.error('[stage log]', e); }
   } });
 }

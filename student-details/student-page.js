@@ -931,12 +931,13 @@
       if (diff) {
         tdT.append(el('p', 'lg-text', `${diff.rows.length} ${diff.rows.length === 1 ? 'detail' : 'details'} ${diff.undone ? 'put back' : 'saved'}.`));
         const names = el('div', 'lg-diff-names'); diff.rows.forEach((r) => names.append(el('span', 'lg-kind', r.label)));
-        const list = el('div', 'lg-diff'); list.hidden = true;
+        const key = (e.note && e.note.id) || String(e.at);
+        const list = el('div', 'lg-diff'); list.id = 'diff-' + key; list.hidden = !openDiffs.has(key);
         // An empty value is shown as "(empty)" in italics, never as a struck-through word that could be a real value.
         const val = (v, struck) => (v ? el(struck ? 's' : 'span', '', v) : el('i', 'lg-diff-none', '(empty)'));
         diff.rows.forEach((r) => { const line = el('div', 'lg-diff-row'); const vals = el('span', 'lg-diff-vals'); vals.append(val(r.from, true), ' → ', val(r.to, false)); line.append(el('span', '', r.label), vals); list.append(line); });
-        const tog = h('button', { class: 'lg-diff-tog', type: 'button' }, 'Show changes');
-        tog.addEventListener('click', () => { list.hidden = !list.hidden; tog.textContent = list.hidden ? 'Show changes' : 'Hide changes'; });
+        const tog = h('button', { class: 'lg-diff-tog', type: 'button', 'aria-controls': list.id }, list.hidden ? 'Show changes' : 'Hide changes');
+        tog.addEventListener('click', () => { list.hidden = !list.hidden; if (list.hidden) openDiffs.delete(key); else openDiffs.add(key); tog.textContent = list.hidden ? 'Show changes' : 'Hide changes'; });
         tdT.append(names, tog, list);
       } else if (e.text) { const p2 = el('p', 'lg-text'); if (e.tag) p2.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' '); p2.append(...linked(e.text)); tdT.append(p2); }
       const tdB = el('td', 'is-by', e.kind === 'auto' ? 'ISR' : e.by || 'Someone');
@@ -1470,6 +1471,7 @@
   // The card keeps its proportions at any browser zoom (the owner, 24 Nov 2026): the width it was designed for (about 1480 CSS px, the
   // usual laptop) is scaled to the space there is, so zooming out does not stretch it and zooming in does not make the text huge and the
   // card long. It never goes below 85% (text stays readable); narrower than that the two columns stack (see student-look.css).
+  const openDiffs = new Set(); // the change lists a person has opened, kept across a re-render
   let miniWatch = null; // watches the header, to show the slim bar when it has scrolled away
   let miniOn = false; // whether the slim bar is showing now (kept across a re-render)
   const CARD_REF_WIDTH = 1480;

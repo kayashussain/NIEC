@@ -623,6 +623,16 @@ function createPortalApi({
     if (fo && uni && sheetHolder && (sheetHolder.refused || sheetHolder.withdrawn || !sheetHolder.offer) && squash(fo.university) !== squash(uni)) {
       changes['UNIVERSITY NAME'] = fo.university; if (fo.course) changes['COURSE NAME'] = fo.course;
     }
+    // The university the sheet names refused the student (or the application was withdrawn), nobody holds an offer, and no other course of
+    // that university is still live: the sheet follows the first live application elsewhere, so no team reads a refused university as
+    // the student's. With no live application anywhere, what is written stays (nothing is erased).
+    if (!fo && uni && sheetHolder) {
+      const here = opts.filter((o) => squash(o.university) === squash(uni));
+      if (here.every((o) => o.refused || o.withdrawn)) {
+        const live = opts.filter((o) => o.applied && !o.refused && !o.withdrawn && !o.skipped && squash(o.university) !== squash(uni)).sort((x, y) => x.applied.localeCompare(y.applied))[0];
+        if (live) { changes['UNIVERSITY NAME'] = live.university; if (live.course) changes['COURSE NAME'] = live.course; }
+      }
+    }
     // The same university, another course: when the course the sheet names was refused or withdrawn and another course of that university
     // holds the offer, the course follows the offer.
     if (fo && uni && fo.course && squash(fo.university) === squash(uni)) {
@@ -1486,6 +1496,9 @@ function createPortalApi({
       }
     }
     const dateOf = (v) => isoDate(v);
+    // A student with a mock already booked is not one still to schedule (the same rule as Missing details and the Bookings page).
+    let booked = null;
+    const bookedRows = () => { if (!booked) { const mt = mockTeam(); booked = mt ? mt.comingRows() : new Set(); } return booked; };
     for (const { sheet, row } of visibleStudents(user)) {
       const stage = text(row[STATUS]);
       const card = all[row._id] || { notes: [], messages: [] };
@@ -1523,7 +1536,7 @@ function createPortalApi({
       }
       if (stage === 'Application Stage' && (!text(row['UNIVERSITY NAME']) || !text(row['COURSE NAME']))) add('noUni', !text(row['UNIVERSITY NAME']) ? 'No university chosen' : 'No course chosen', 0);
       if (created && !dateOf(row['OFFER RECEIVED DATE']) && now - dayNo(created) > 10 && ['Application Stage', 'Mock Stage'].includes(stage)) add('noOffer', `Submitted ${now - dayNo(created)} days ago`, now - dayNo(created));
-      if (stage === 'Mock Stage' && ![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`]))) add('mock', text(row['UNIVERSITY NAME']) || 'No university', 0);
+      if (stage === 'Mock Stage' && ![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`])) && !bookedRows().has(row._id)) add('mock', text(row['UNIVERSITY NAME']) || 'No university', 0);
       for (const n of [1, 2, 3, 4]) {
         const d = dateOf(row[`MOCK SCHEDULE ${n}`]);
         if (d && dayNo(d) <= now && !text(row[`FEEDBACK ${n}`])) { add('mockFeedback', `Mock ${n} was ${now - dayNo(d)} days ago`, now - dayNo(d)); break; }

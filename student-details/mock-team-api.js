@@ -320,6 +320,9 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const mail = text(body.email).toLowerCase();
       const t0 = now().getTime();
       if (mail && bookings.all().bookings.filter((x) => x.status === 'booked' && x.email === mail && bookings.endOf(x) > t0).length >= 2) { release(); sendJSON(res, 400, { error: 'You already have two mock interviews booked. Change or cancel one from its email first.' }); return true; }
+      // And at most five new bookings a day for one email address, cancelled ones counted too, so booking and cancelling again and again
+      // cannot be used to send somebody email after email.
+      if (mail && bookings.all().bookings.filter((x) => x.email === mail && Date.parse(x.at) > t0 - 86400000).length >= 5) { release(); sendJSON(res, 400, { error: 'This email address has booked too many times today. Please try again tomorrow or contact the consultancy.' }); return true; }
       const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteOf(owner));
       if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;
