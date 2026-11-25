@@ -486,7 +486,7 @@ function createCards(dir, { now = () => new Date(), store = createFileStore(dir,
         // A note that records changes to details also keeps them as data (label, before, after), so a page never has to read them back
         // out of the sentence (a value with quotes, semicolons or arrows, or a very long save, would be misread or cut).
         if (input && Array.isArray(input.changes) && input.changes.length) {
-          const clip = (v) => String(v == null ? '' : v).slice(0, 400);
+          const clip = (v) => { const t = String(v == null ? '' : v); return t.length > 2000 ? t.slice(0, 1997) + '...' : t; };
           note.changes = input.changes.slice(0, 80).map((c) => ({ label: clip(c && c.label).slice(0, 120), from: clip(c && c.from), to: clip(c && c.to) }));
           if (input.undo === true) note.undo = true;
         }

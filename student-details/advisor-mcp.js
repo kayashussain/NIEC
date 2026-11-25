@@ -141,9 +141,12 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir
     const dayAgo = Date.now() - 86400000;
     while (sentLog.length && sentLog[0].at < dayAgo) sentLog.shift();
     if (!preview && sentLog.reduce((n, x) => n + x.n, 0) + ids.length > 300) return errorResult('The limit of 300 students a day through this connector is reached. Nothing was sent.');
-    if (!preview) sentLog.push({ at: Date.now(), n: ids.length });
-    const out = await sendFollowUp({ ids, subject, emailBody: body, preview });
-    if (out.error) return errorResult(out.error);
+    const entry = { at: Date.now(), n: preview ? 0 : ids.length }; // reserved before the send, so two calls at once cannot both pass
+    if (!preview) sentLog.push(entry);
+    let out;
+    try { out = await sendFollowUp({ ids, subject, emailBody: body, preview }); } catch (e) { entry.n = 0; throw e; }
+    if (out.error) { entry.n = 0; return errorResult(out.error); }
+    if (!preview) entry.n = (out.sendOut || []).filter((r) => r.status === 'sent' || r.status === 'failed').length; // only emails really attempted count
     if (preview) {
       const ready = out.items.filter((i) => !i.error && !i.problem);
       const sample = ready[0];

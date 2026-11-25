@@ -248,7 +248,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     if (!sees(rowId)) return { status: 403, error: 'That student is not one of your students.' };
     // An interview already written for this day (from the Mock task) and not tied to another booking is this same interview: the booking is
     // tied to that mock, never written a second time as the next one. What was typed here is kept as a note on the card.
-    const taken = new Set(bookings.all().bookings.filter((x) => x.id !== b.id && x.rowId === rowId && x.answer && Number(x.mock)).map((x) => Number(x.mock)));
+    const taken = new Set(bookings.all().bookings.filter((x) => x.id !== b.id && x.rowId === rowId && x.answer && x.answer.joined && Number(x.mock)).map((x) => Number(x.mock)));
     const written = b.day ? [1, 2, 3, 4].find((k) => !taken.has(k) && isoDate(found.row[`MOCK SCHEDULE ${k}`]) === b.day && text(found.row[`FEEDBACK ${k}`])) : 0;
     const n = written || slotFor(found.row, b.day); // else the slot of this mock's day, a planned mock without feedback, or the first empty one
     if (!n) return { status: 400, error: 'All four mocks are already recorded for this student. Correct them on the student card.' };
@@ -295,6 +295,9 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     };
   };
 
+  // Every new booking and every move makes one booking row and sends one email, cancelled rows counted too: eight a day for one address.
+  const tooManyToday = (mail, at) => Boolean(mail) && bookings.all().bookings.filter((x) => text(x.email).toLowerCase() === mail && Date.parse(x.at) > at - 86400000).length >= 8;
+
   // Answers before the login: the booking page and its data. Returns true when it answered.
   async function handlePublic(req, res, urlPath, serveStatic) {
     if (req.method === 'GET' && (/^\/book\/[A-Za-z0-9-]{3,40}\/?$/.test(urlPath) || /^\/booking\/[A-Za-z0-9_-]{20,40}$/.test(urlPath))) {
@@ -320,9 +323,8 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const mail = text(body.email).toLowerCase();
       const t0 = now().getTime();
       if (mail && bookings.all().bookings.filter((x) => x.status === 'booked' && x.email === mail && bookings.endOf(x) > t0).length >= 2) { release(); sendJSON(res, 400, { error: 'You already have two mock interviews booked. Change or cancel one from its email first.' }); return true; }
-      // And at most five new bookings a day for one email address, cancelled ones counted too, so booking and cancelling again and again
-      // cannot be used to send somebody email after email.
-      if (mail && bookings.all().bookings.filter((x) => x.email === mail && Date.parse(x.at) > t0 - 86400000).length >= 5) { release(); sendJSON(res, 400, { error: 'This email address has booked too many times today. Please try again tomorrow or contact the consultancy.' }); return true; }
+      // And a daily limit for one email address (see tooManyToday), so the page cannot be used to send somebody email after email.
+      if (tooManyToday(mail, t0)) { release(); sendJSON(res, 400, { error: 'This email address has booked too many times today. Please try again tomorrow or contact the consultancy.' }); return true; }
       const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteOf(owner));
       if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;
@@ -357,6 +359,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       // The booking is read again after the wait for the body: two moves sent together (a double click, two tabs) must not both go through.
       const now1 = bookings.byToken(m[1]);
       if (!now1 || !bookings.changeable(now1)) { release(); sendJSON(res, 400, { error: 'This booking was just changed. Please open your booking link again.' }); return true; }
+      if (tooManyToday(text(b.email).toLowerCase(), now().getTime())) { release(); sendJSON(res, 400, { error: 'This email address has booked too many times today. Please try again tomorrow or contact the consultancy.' }); return true; }
       // Another time: the new time is booked first (with this booking's own slot free for it), then this one is cancelled.
       const made = bookings.book(b.owner, { day: body.day, time: body.time, name: b.name, email: b.email, phone: b.phone, except: b.id }, () => (b.rowId ? { rowId: b.rowId, mock: b.mock, university: b.university, course: b.course } : null), siteOf(b.owner));
       if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }

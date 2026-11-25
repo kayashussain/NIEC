@@ -936,8 +936,8 @@
         // An empty value is shown as "(empty)" in italics, never as a struck-through word that could be a real value.
         const val = (v, struck) => (v ? el(struck ? 's' : 'span', '', v) : el('i', 'lg-diff-none', '(empty)'));
         diff.rows.forEach((r) => { const line = el('div', 'lg-diff-row'); const vals = el('span', 'lg-diff-vals'); vals.append(val(r.from, true), ' → ', val(r.to, false)); line.append(el('span', '', r.label), vals); list.append(line); });
-        const tog = h('button', { class: 'lg-diff-tog', type: 'button', 'aria-controls': list.id }, list.hidden ? 'Show changes' : 'Hide changes');
-        tog.addEventListener('click', () => { list.hidden = !list.hidden; if (list.hidden) openDiffs.delete(key); else openDiffs.add(key); tog.textContent = list.hidden ? 'Show changes' : 'Hide changes'; });
+        const tog = h('button', { class: 'lg-diff-tog', type: 'button', 'aria-controls': list.id, 'aria-expanded': String(!list.hidden) }, list.hidden ? 'Show changes' : 'Hide changes');
+        tog.addEventListener('click', () => { list.hidden = !list.hidden; if (list.hidden) openDiffs.delete(key); else openDiffs.add(key); tog.textContent = list.hidden ? 'Show changes' : 'Hide changes'; tog.setAttribute('aria-expanded', String(!list.hidden)); });
         tdT.append(names, tog, list);
       } else if (e.text) { const p2 = el('p', 'lg-text'); if (e.tag) p2.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' '); p2.append(...linked(e.text)); tdT.append(p2); }
       const tdB = el('td', 'is-by', e.kind === 'auto' ? 'ISR' : e.by || 'Someone');

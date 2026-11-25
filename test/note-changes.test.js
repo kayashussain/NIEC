@@ -33,5 +33,5 @@ test('a plain note has no changes, and a huge list is cut to a safe size', () =>
   const big = cards.addNote('row-1', { text: 'Changed on the student card: many.', changes: many }, 'Asha');
   const kept = cards.get('row-1').notes.find((n) => n.id === big.note.id).changes;
   assert.strictEqual(kept.length, 80);
-  assert.ok(kept.every((c) => c.from.length <= 400));
+  assert.ok(kept.every((c) => c.from.length <= 2000));
 });
