@@ -640,7 +640,7 @@ function createPortalApi({
   // not always not eligible ... we want the best data"); Other needs the reason written in Notes.
   const WHY_NOT = {
     noteligible: 'Not eligible', nocourse: 'The course is not available', closed: 'Applications are closed',
-    agent: 'Already applied through another agent', otheruni: 'The student chose another university', notgoing: 'The student is not going ahead',
+    agent: 'Already applied through another agent', otheruni: 'The student chose another university', notgoing: 'The student is not going yet',
     noreply: 'The student is not responding', other: 'Other reason',
   };
   const OFFERS = ['conditional', 'unconditional', 'offer'];
@@ -709,7 +709,9 @@ function createPortalApi({
   function courseShown(card, task, tag) {
     const pick = (o) => (o && o.university ? { university: o.university, course: o.course || '', level: o.level || '', intake: o.intake || '', ...(o.applied ? { applied: o.applied } : {}) } : null);
     if (tag === 'offer') {
-      const o = offerOf(task); if (!o) return null;
+      // An Offer request typed by hand ("Chase the university for the offer letter") names no university: it is the one the student applied to and has not heard from (the owner, 25 Nov 2026).
+      const waiting = (card.options || []).find((x) => x.university && x.applied && !x.offer && !x.refused && !x.withdrawn && !x.skipped);
+      const o = offerOf(task) || (waiting ? { university: waiting.university, course: waiting.course || '' } : null); if (!o) return null;
       const opt = pickCourse(card.options, o.university, o.course) || {};
       const kept = task.offerFor || {};
       return pick({ ...o, level: opt.level || '', intake: kept.intake || opt.intake || '', applied: opt.applied || kept.applied || '' });
@@ -742,6 +744,7 @@ function createPortalApi({
     const p = (card && card.profile) || {};
     return {
       passport: text(p.passportNo).slice(0, 20), dob: text(p.dob).slice(0, 10), nationality: text(p.nationality), address: text(p.address).slice(0, 200),
+      university: text(row['UNIVERSITY NAME']).slice(0, 160), course: text(row['COURSE NAME']).slice(0, 240),
       language: text(row['LANGUAGE TEST DATE']).slice(0, 40), medicalReport: text(row['MEDICAL REPORT']).slice(0, 20), medicalDate: text(card && card.medical && card.medical.date).slice(0, 10),
     };
   }
@@ -950,13 +953,22 @@ function createPortalApi({
           plan.note = `${list.map(one).join('; ')}. ${sentence(note)}`.replace(/^./, (c) => c.toUpperCase()).trim();
         }
       }
+    } else if (kind === 'noc' && f.noc === 'AppSubmitted') {
+      // The NOC application submitted (the owner, 25 Nov 2026): its day is asked and written in the note; the NOC column says Pending (applied for, waiting), and a NOC already received never goes back.
+      const d = f.date ? day(f.date) : '';
+      if (f.date && !d) return { error: 'Choose the day the NOC application was submitted.' };
+      if (d && d > today) return { error: 'A NOC application cannot be submitted on a day still to come.' };
+      const was = text(row.NOC);
+      if (was === 'Submitted' || was === 'Received') plan.kept.push(`NOC already says ${was}: it never goes back to Pending.`);
+      else plan.columns.NOC = 'Pending';
+      plan.note = `NOC application submitted${d ? ` on ${niceDay(d)}` : ''}. ${sentence(note)}`.trim();
     } else if (kind === 'noc' && f.noc) {
       // The NOC is Pending or Received (the owner, 18 Nov 2026); no day. An older "Submitted" counts as Received.
       const status = ['Received', 'Submitted'].includes(f.noc) ? 'Received' : f.noc === 'Pending' ? 'Pending' : '';
       if (!status) return { error: 'Choose Pending or Received for the NOC.' };
       const number = text(f.nocNumber).slice(0, 60);
       // Received asks for the NOC number, the NOC account's login number (the owner, 21 Nov 2026), unless All Students already has it.
-      if (status === 'Received' && !number && !text(row['NOC NUMBER'])) return { error: 'Write the NOC number.' };
+      // (No NOC number is asked when the NOC is received: the owner, 25 Nov 2026.)
       // A NOC already Received never goes back to Pending.
       const was = text(row.NOC);
       const gotIt = status === 'Received' || was === 'Submitted' || was === 'Received';
@@ -1018,9 +1030,12 @@ function createPortalApi({
         plan.remind = { day: d, text: `Medical test of ${niceDay(d)}${place ? ` at ${place}` : ''}: is the report received?`, tag: 'medical' };
         plan.note = `Medical test booked for ${niceDay(d)}${place ? ` at ${place}` : ''}. ${sentence(note)}`.trim();
       } else if (f.medical === 'received') {
+        const rd = f.date ? day(f.date) : '';
+        if (f.date && !rd) return { error: 'Choose the day the medical report was received.' };
+        if (rd && rd > today) return { error: 'A report cannot be received on a day still to come.' };
         plan.columns['MEDICAL REPORT'] = 'Received';
         plan.medical = null;
-        plan.note = `Medical report received${place ? ` (${place})` : ''}. ${sentence(note)}`.trim();
+        plan.note = `Medical report received${rd ? ` on ${niceDay(rd)}` : ''}${place ? ` (${place})` : ''}. ${sentence(note)}`.trim();
       } else if (f.medical === 'pending') {
         // Pending: not booked yet (the Medical Report column as All Students shows it); a report already Received stays.
         if (text(row['MEDICAL REPORT']) === 'Received') plan.kept.push('Medical Report already says Received: it never goes back to Pending.');
@@ -3646,9 +3661,13 @@ function createPortalApi({
     }
     if (urlPath === '/api/partner-choices' && req.method === 'GET') {
       const names = (store) => (store && store.list ? store.list().filter((x) => x.status !== 'Ended').map((x) => x.name).sort((x, y) => x.localeCompare(y)) : []);
-      const partners = [...new Set([...names(b2b), ...sheetPartners().map((p) => p.name)])].sort((x, y) => x.localeCompare(y));
+      const partners = [...new Set([...b2bCards().filter((x) => x.status !== 'Ended').map((x) => x.name), ...sheetPartners().map((p) => p.name)])].sort((x, y) => x.localeCompare(y)); // the B2B partners of the Partners page, in full
       const agentNames = [...new Set([...names(agents), ...sheetAgents().map((p) => p.name)])].sort((x, y) => x.localeCompare(y));
-      sendJSON(res, 200, { universities: names(direct), partners, offices: OFFICES, agents: agentNames });
+      // The University partner of an application (the owner, 25 Nov 2026): every B2B partner the Partners page lists, an ended one too (it is marked), so none is missing when an application is added.
+      const cards = b2bCards();
+      const everyPartner = [...new Set([...cards.map((x) => x.name), ...sheetPartners().map((p) => p.name)])].sort((x, y) => x.localeCompare(y));
+      const endedPartners = cards.filter((x) => x.status === 'Ended').map((x) => x.name);
+      sendJSON(res, 200, { universities: names(direct), partners, allPartners: everyPartner, endedPartners, offices: OFFICES, agents: agentNames });
       return true;
     }
     // Tasks: a team member gets the tasks of their teams (and a branch the tasks it gave); Admin and the Manager get every task.

@@ -83,7 +83,7 @@
     };
     prev.addEventListener('click', () => leave(() => show(at - 1)));
     next.addEventListener('click', () => leave(() => show(at + 1)));
-    if (at !== -1 && ids.length > 1) drawer.append(nav); else ids.length = 0;
+    ids.length = 0; // no "1 of 19" bar under the card (the owner, 25 Nov 2026): the card is closed with Close and another student is opened from the list
     show(at);
     const onKey = (e) => { if (e.key === 'Escape' && jump.hidden && !(root.NiecUI && root.NiecUI.isOpen())) close(); };
     const onMessage = (e) => {

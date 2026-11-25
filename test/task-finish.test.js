@@ -67,7 +67,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finish(n1, { noc: 'Pending', note: 'Account created' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Pending');
   const n2 = await give('Submit the NOC', 'noc');
-  if (!(await row())['NOC NUMBER']) assert.strictEqual((await finish(n2, { noc: 'Received' })).status, 400, 'Received needs the NOC number');
+  // (No NOC number is asked when the NOC is received: the owner, 25 Nov 2026.)
   assert.strictEqual((await finish(n2, { noc: 'Received', nocNumber: 'NOC-123456' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Received');
   assert.strictEqual((await row())['NOC NUMBER'], 'NOC-123456');

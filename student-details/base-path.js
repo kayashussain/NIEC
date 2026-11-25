@@ -17,7 +17,7 @@ function normalize(raw) {
 // address. Everything else that starts with a slash is left alone: a pattern such as /"/g, a name inside the phone, and the end of an
 // address that is joined on ('.../' + id + '/delete'). A new page is added here (test/base-path.test.js fails until it is).
 const ROUTES = new Set(['activity', 'agents', 'api', 'apply-through', 'b2b-partners', 'book', 'booking', 'bookings', 'bulk', 'bulk-add', 'dashboard',
-  'events', 'fact-file', 'fonts', 'followup', 'healthz', 'incentive', 'interview-guidelines', 'login', 'mock-guides', 'mock-interviews',
+  'events', 'fact-file', 'fonts', 'followup', 'healthz', 'incentive', 'interview-guidelines', 'login', 'login-slides', 'mock-guides', 'mock-interviews',
   'my', 'my-dashboard', 'my-portal', 'pair', 'partner-universities', 'partners', 'student', 'students', 'today', 'users', 'wa']);
 const FILE = /\.(?:js|css|png|jpg|svg|html|json|woff2|webmanifest|ico)$/;
 

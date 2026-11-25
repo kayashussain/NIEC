@@ -273,13 +273,21 @@ const SHARED_FILES = {
   '/motion.js': 'text/javascript; charset=utf-8', // the motion kit every page loads (header.js)
   '/ui.css': 'text/css; charset=utf-8',
   '/theme.css': 'text/css; charset=utf-8',
+  '/dark.css': 'text/css; charset=utf-8', // the dark mode, built by scripts/build-dark.js
   '/apple.css': 'text/css; charset=utf-8', // the Application Team's Apple look, loaded only for that team (header.js)
   '/login.html': 'text/html; charset=utf-8',
+  // The photos that change by themselves on the sign-in page (Unsplash licence, see shared/login-slides/CREDITS.txt).
+  '/login-slides/slide-1.jpg': 'image/jpeg',
+  '/login-slides/slide-2.jpg': 'image/jpeg',
+  '/login-slides/slide-3.jpg': 'image/jpeg',
+  '/login-slides/slide-4.jpg': 'image/jpeg',
+  '/login-slides/slide-5.jpg': 'image/jpeg',
+  '/login-slides/slide-6.jpg': 'image/jpeg',
   // The portal's typeface where the computer has no SF Pro (Inter, SIL Open Font License, see fonts/Inter-LICENSE.txt).
   '/fonts/inter-latin.woff2': 'font/woff2',
   '/fonts/inter-latin-ext.woff2': 'font/woff2',
 };
-const PUBLIC_SHARED = new Set(['/login.html', '/fonts/inter-latin.woff2', '/fonts/inter-latin-ext.woff2']);
+const PUBLIC_SHARED = new Set(['/login.html', ...Object.keys(SHARED_FILES).filter((p) => p.startsWith('/login-slides/')), '/fonts/inter-latin.woff2', '/fonts/inter-latin-ext.woff2']);
 
 // Each file is read and compressed once, then kept in memory (the files only change with a deploy,
 // which restarts the server). Pages are always re-checked, so a deploy shows on a normal reload, but every

@@ -905,6 +905,30 @@
     if (team() && window.ShortlistFor) { await window.ShortlistFor.ready(); window.ShortlistFor.onChange(render); window.ShortlistFor.tray(); }
     render();
   }
+  // A bar of quick jumps under the title (the owner, 25 Nov 2026): the page is long, so each of its sections is one press away. It is made from the page's own headings and stays at the top while scrolling.
+  (function jumpBar() {
+    const main = document.querySelector('main'); if (!main) return;
+    let timer;
+    const short = (t) => String(t || '').replace(/^Courses for .*/, 'Courses').replace(/^Deadlines for .*/, 'Deadlines');
+    const build = () => {
+      const heads = [...main.querySelectorAll('h2')].filter((h) => h.offsetParent !== null && !h.closest('.up-jump'));
+      const old = main.querySelector('.up-jump');
+      if (heads.length < 3) { if (old) old.remove(); return; }
+      const key = heads.map((h) => short(h.textContent)).join('|');
+      if (old && old.dataset.key === key) return;
+      if (old) old.remove();
+      const nav = document.createElement('nav'); nav.className = 'up-jump no-print'; nav.dataset.key = key; nav.setAttribute('aria-label', 'Jump to a section');
+      heads.forEach((h, i) => {
+        h.id = h.id || 'up-sec-' + i; h.style.scrollMarginTop = '72px';
+        const a = document.createElement('a'); a.href = '#' + h.id; a.textContent = short(h.textContent);
+        a.addEventListener('click', (e) => { e.preventDefault(); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+        nav.append(a);
+      });
+      const msg = main.querySelector('.msg') || main.querySelector('.page-head');
+      if (msg) msg.after(nav); else main.prepend(nav);
+    };
+    new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(build, 250); }).observe(main, { childList: true, subtree: true });
+  })();
   if (BACKUP) { const back = document.querySelector('a[href="/fact-file"]'); if (back) back.href = '/fact-file?backup=' + encodeURIComponent(BACKUP); }
   start();
 })();

@@ -1302,6 +1302,13 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       for (const f of [path.join(DATA_DIR, 'brand-logo.png'), path.join(ROOT, '..', 'shared', 'brand-logo.png')]) { try { logo = fs.readFileSync(f); break; } catch (e) { /* the next one */ } }
       return logo ? send(res, 200, logo, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' }) : send(res, 404, 'Not found');
     }
+    // The same logo drawn as a vector picture (always sharp): used while the consultancy has not uploaded its own logo; once it has, this answers
+    // "not found" and the pages fall back to that logo (brand-logo.png above).
+    if (urlPath === '/brand-logo.svg' && req.method === 'GET') {
+      let svg = null;
+      if (!fs.existsSync(path.join(DATA_DIR, 'brand-logo.png'))) { try { svg = fs.readFileSync(path.join(ROOT, '..', 'shared', 'brand-logo.svg')); } catch (e) { /* none */ } }
+      return svg ? send(res, 200, svg, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' }) : send(res, 404, 'Not found');
+    }
     if (urlPath === '/favicon.png' || urlPath === '/apple-touch-icon.png') return serveStatic(req, res);
     // What a phone needs to keep Student Recruit 360 on its Home Screen (the name, the icon, the first page): nothing private, so before the login
     // (a browser asks for it without the login cookie).

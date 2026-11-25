@@ -29,7 +29,7 @@
     'Social Media': ['Facebook', 'Instagram', 'TikTok', 'WhatsApp'],
     Visitor: ['Walked in', 'Phone call', 'Website form', 'Google search or Maps', 'Signboard or hoarding', 'Newspaper, radio or TV'],
     Reference: [], // typed: who referred the student (the owner, 14 Nov 2026)
-    'Language Classes': ['IELTS class', 'PTE class'],
+    'Language Classes': ['IELTS class', 'PTE class', 'Duolingo class'],
     Events: [],
     Agent: [],
     Branch: BRANCHES,
@@ -41,7 +41,7 @@
     'Social Media': 'Which platform or page', Visitor: 'How they reached us', Reference: 'Who referred them', 'Language Classes': 'Which class',
     Events: 'Which event or marketing', Agent: 'Which agent', Branch: 'Which branch',
   };
-  const SOURCE_CAN_ADD = ['Social Media', 'Visitor', 'Language Classes', 'Events'];
+  const SOURCE_CAN_ADD = ['Social Media', 'Visitor', 'Language Classes']; // Events are added by Admin under Events and marketing, not here (the owner, 25 Nov 2026)
 
   // Nepal's 77 districts, for where a student lives (the owner, 14 Nov 2026: the Dashboard's map of where students come from).
   const DISTRICTS = ["Achham", "Arghakhanchi", "Baglung", "Baitadi", "Bajhang", "Bajura", "Banke", "Bara", "Bardiya", "Bhaktapur", "Bhojpur", "Chitwan", "Dadeldhura", "Dailekh", "Dang", "Darchula", "Dhading", "Dhankuta", "Dhanusha", "Dolakha", "Dolpa", "Doti", "Gorkha", "Gulmi", "Humla", "Ilam", "Jajarkot", "Jhapa", "Jumla", "Kailali", "Kalikot", "Kanchanpur", "Kapilvastu", "Kaski", "Kathmandu", "Kavrepalanchok", "Khotang", "Lalitpur", "Lamjung", "Mahottari", "Makwanpur", "Manang", "Morang", "Mugu", "Mustang", "Myagdi", "Nawalpur (Nawalparasi East)", "Nuwakot", "Okhaldhunga", "Palpa", "Panchthar", "Parasi (Nawalparasi West)", "Parbat", "Parsa", "Pyuthan", "Ramechhap", "Rasuwa", "Rautahat", "Rolpa", "Rukum East", "Rukum West", "Rupandehi", "Salyan", "Sankhuwasabha", "Saptari", "Sarlahi", "Sindhuli", "Sindhupalchok", "Siraha", "Solukhumbu", "Sunsari", "Surkhet", "Syangja", "Tanahun", "Taplejung", "Terhathum", "Udayapur"];
@@ -190,7 +190,7 @@
   // Documents is no longer a kind of its own (the owner, 21 Nov 2026): documents are part of the application, so the five kinds a person
   // chooses from are Application, Mock interview, NOC, Medical and Other. Offer request is made by Student Recruit 360 only, after an application is
   // submitted. The Documents tasks already saved were moved to Application once at start-up (see server.js).
-  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'mock', 'noc', 'medical', 'other'].includes(k));
+  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'documents', 'mock', 'noc', 'medical', 'other'].includes(k)); // Documents is a kind a person can choose again (the owner, 25 Nov 2026): for example the Application Team asking a branch for an additional document
   // A course leaves the Shortlist for good once it has gone to the Application Team (the owner, 18 Nov 2026): given to the team, applied
   // to, answered (offer, refused, withdrawn) or decided not to be submitted. The Shortlist holds only courses still to be assigned.
   const WITH_TEAM = (o) => Boolean(o && (o.sent || o.applied || o.offer || o.refused || o.withdrawn || o.skipped));
@@ -199,6 +199,7 @@
   function guessTaskTag(text, team, stage) {
     const t = String(text || '').toLowerCase();
     if (/^offer request\b/.test(t)) return 'offer'; // the task made when an application is submitted
+    if (/\boffer (letter|request)\b|\b(chase|follow up|check)\b.*\boffer\b/.test(t)) return 'offer'; // asking a university for the offer letter is an Offer request (the owner, 25 Nov 2026)
     // The Follow-up Team calls and talks: a task for it is never read as payment, visa or application work from its words (a word like
     // "deposit" once made the "Mark as done?" window ask the team about a payment). A kind chosen by the giver still counts.
     if (team === 'followup') return 'other';
@@ -210,6 +211,8 @@
     if (/\bpre-?cas\b/.test(t)) return 'mock'; // the Pre-CAS interview is the last mock, not the visa
     if (/\b(visa|cas|vfs|biometric|e-?visa|brp|lodge)\b/.test(t)) return 'visa';
     if (/\b(mock|interview|pre-?cas)\b/.test(t)) return 'mock';
+    // Asking the student for a document (a missing transcript, a passport copy) is a Documents task: finishing it asks nothing about a university (the owner, 25 Nov 2026).
+    if (/\b(ask|request|collect|remind|chase|get)\b.*\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|ielts|pte|toefl|moi)\b/.test(t)) return 'documents';
     // Documents are part of the application (the owner, 21 Nov 2026).
     if (/\b(document|documents|passport|transcript|certificate|bank statement|sop|cv|ielts|pte|toefl|moi)\b/.test(t)) return 'application';
     if (/\b(apply|application|submit|offer|portal|university|course)\b/.test(t)) return 'application';

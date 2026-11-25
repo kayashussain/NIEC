@@ -156,7 +156,9 @@
       const sp = profile();
       const srcStart = { source: data.student.source || '', detail: sp.sourceDetail || '', remarks: sp.sourceRemarks || '', platform: sp.sourcePlatform || '', way: sp.sourceWay || '' };
       const picker = window.SourcePicker.create({ lists, initial: srcStart, disabled: !data.can.source });
-      picker.nodes.forEach((n) => { n.classList.add('lg-form-field'); form.append(n); }); // laid out like the other fields; a hidden one takes no room
+      picker.nodes.forEach((n) => { n.classList.add('lg-form-field'); form.append(n); });
+      // The heading above already says Student source (the owner, 25 Nov 2026): the box under it does not say it again.
+      { const lab = picker.nodes[0].querySelector('.p-label'); const sel = picker.nodes[0].querySelector('select'); if (lab) lab.hidden = true; if (sel) sel.setAttribute('aria-label', 'Student source'); } // laid out like the other fields; a hidden one takes no room
       if (!data.can.source && data.student.source) form.append(el('p', 'p-muted p-small', 'Only Admin changes the source.'));
       const srcValue = () => { const v = picker.value(); return { source: v.source || '', detail: v.detail || '', remarks: v.remarks || '', platform: v.platform || '', way: v.way || '' }; };
       // Compared with the picker's own first reading (taken once it has drawn), not the stored words: an older Social Media or branch
@@ -189,6 +191,14 @@
         const srcC = srcChanged();
         if (!c.length && !srcC) { close(); return; }
         if (srcC) { const missing = picker.check(); if (missing) return bad(missing); }
+        if (srcC && !isAdminUser()) {
+          const sv0 = srcValue(); const rp0 = String(rowOf()['RECEIVING PARTNER'] || '').trim(); const exp0 = expectedPartner(sv0.source, sv0.detail);
+          if (rp0 && exp0 && rp0 !== exp0) {
+            ok.disabled = true;
+            tenSecondWarning(form, 'The receiving partner is ' + rp0 + ', so this student came from a different place than ' + sourceInWords(sv0.source, sv0.detail) + '. Are you sure the student source is this? Please ask your Head of Recruitment to update it by themselves.', { onEnd: () => { ok.disabled = false; } });
+            return;
+          }
+        }
         if (!v['FIRST NAME'] && !v['LAST NAME']) return bad('A student needs a name.', 'FIRST NAME');
         if (v.EMAIL && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.EMAIL)) return bad('That email does not look right.', 'EMAIL');
         if (v.dob && v.dob > today()) return bad('A date of birth cannot be in the future.', 'dob');
@@ -372,8 +382,7 @@
           if (f.wa && wa) a.addEventListener('click', (e) => { e.preventDefault(); window.Portal.whatsapp(wa, data.student.name, '', id); });
           dd.append(a);
         } else dd.textContent = shown;
-      } else if (f.optional) { empties.push(f.label); return; }
-      else dd.append(el('span', 'lg-missing', 'Missing'));
+      } else dd.append(el('span', 'lg-missing', 'Missing'));
       dl.append(el('dt', '', f.label), dd);
     });
     // The Student source, as rows of the Profile (the owner, 22 Nov 2026: not a card of its own); changed in Edit profile.
@@ -381,15 +390,13 @@
     const s = data.student;
     const g = F.sourceGroup(s.source);
     const plain = (v) => String(v || '').replace(/^(Marketing|Event)\s*:\s*/i, '').replace(/,\s*\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}$/, '').trim();
-    const row = (label, value, empty) => { if (!value && empty !== 'missing') { empties.push(label); return; } const dd = el('dd', ''); if (value) dd.textContent = value; else dd.append(el('span', empty === 'missing' ? 'lg-missing' : 'lg-none', empty === 'missing' ? 'Missing' : 'Not added')); dl.append(el('dt', '', label), dd); };
+    const row = (label, value, empty) => { empty = empty || 'missing'; const dd = el('dd', ''); if (value) dd.textContent = value; else dd.append(el('span', empty === 'missing' ? 'lg-missing' : 'lg-none', empty === 'missing' ? 'Missing' : 'Not added')); dl.append(el('dt', '', label), dd); };
     row('Student source', g === 'Branch' ? s.source : g, 'missing');
     if (g === 'Social Media' && (p.sourcePlatform || p.sourceWay)) {
       row('Platform', p.sourcePlatform);
-      row('How they came', p.sourceWay === 'Advert' ? `Advert: ${plain(p.sourceDetail) || 'campaign not named'}` : 'Organic (by itself)');
     } else if (g && g !== 'Branch') row(F.SOURCE_DETAIL_LABEL[g] || 'Where exactly', (g === 'Events' && data.event ? plain(data.event.name) : plain(p.sourceDetail)));
     if (p.inquiryDate) row('First inquiry', `${day(p.inquiryDate)}${p.inquiryTime ? ` at ${p.inquiryTime}` : ''}`);
     sec.append(dl);
-    { const ec = emptyChips(empties, can() ? editProfile : null); if (ec) sec.append(ec); }
     if (p.savedAt) sec.append(el('div', 'lg-foot', `Last saved ${when(p.savedAt)} by ${p.savedBy || 'someone'}`));
     side.append(sec, applicationDetails(), mockInterviews());
     return side;
@@ -404,20 +411,48 @@
   const APP_EDIT = ['RECEIVING PARTNER', 'LANGUAGE TEST DATE', 'STUDENT ID', 'NOC', 'NOC NUMBER', 'MEDICAL REPORT'];
   const isoDay = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '').trim()) ? String(v).trim() : '');
   const languageShown = (v) => { const t = String(v || '').trim(); if (!t) return ''; const d = isoDay(t); return d ? `Test date, ${day(d)}` : t; };
+  // The receiving partner follows the student source (the owner, 25 Nov 2026): Social Media, Visitor, Reference, Language Classes and Events are Head Office;
+  // an Agent student is received by that agent; a branch student by that branch.
+  const expectedPartner = (source, agent) => {
+    const g = F.sourceGroup(source);
+    if (!g) return '';
+    if (g === 'Branch') return String(source || '').trim();
+    if (g === 'Agent') return String(agent || '').trim();
+    return 'Head Office';
+  };
+  const sourceInWords = (source, agent) => {
+    const g = F.sourceGroup(source);
+    return g === 'Agent' ? 'an agent' + (agent ? ' (' + agent + ')' : '') : g === 'Branch' ? 'the ' + String(source).trim() : g ? g + ', a Head Office student' : 'no source';
+  };
+  const isAdminUser = () => ((data && data.me) || {}).role === 'admin';
+  // A warning card that stays for ten seconds with a thin timer, then closes by itself (the owner, 25 Nov 2026). While it shows, saving is held.
+  function tenSecondWarning(host, text, { seconds = 10, onEnd } = {}) {
+    host.querySelectorAll('.lg-warn').forEach((n) => { if (n.stop) n.stop(); });
+    const card = el('div', 'lg-warn');
+    card.setAttribute('role', 'alert');
+    const bar = el('div', 'lg-warn-bar'); bar.style.animationDuration = seconds + 's';
+    card.append(el('p', 'lg-warn-text', text), el('div', 'lg-warn-time', ''), bar);
+    const timeText = card.querySelector('.lg-warn-time');
+    let left = seconds; timeText.textContent = left + ' s';
+    const tick = setInterval(() => { left -= 1; timeText.textContent = Math.max(left, 0) + ' s'; if (left <= 0) end(); }, 1000);
+    function end() { clearInterval(tick); if (card.isConnected) card.remove(); if (onEnd) onEnd(); }
+    card.stop = () => { clearInterval(tick); card.remove(); };
+    host.prepend(card);
+    return card;
+  }
   function detailsList(rows, onEdit) {
     // These come by themselves (University, Course and partner from the Priority application, the medical day from Bookings): a chip, but not an Edit.
     const byThemselves = ['University', 'Course', 'University partner', 'Medical booking date'];
     const dl = el('dl', 'lg-dl');
-    const empties = [];
+    // Every detail is listed (the owner, 25 Nov 2026): the ones not filled in say Missing in orange, instead of "Not added yet" with a button for each.
     rows.forEach(([label, value]) => {
-      if (!(value instanceof Node) && !value) { empties.push(label); return; }
       const dd = el('dd', '');
-      if (value instanceof Node) dd.append(value); else dd.textContent = value;
+      if (value instanceof Node) dd.append(value);
+      else if (!value) { dd.className = 'lg-missing'; dd.textContent = 'Missing'; }
+      else dd.textContent = value;
       dl.append(el('dt', '', label), dd);
     });
-    const ec = emptyChips(empties, onEdit, byThemselves);
-    if (!ec) return dl;
-    const wrap = el('div', 'lg-dl-wrap'); wrap.append(dl, ec); return wrap;
+    return dl;
   }
   function applicationDetails() {
     const r = rowOf();
@@ -455,6 +490,20 @@
       const pick = (v, list) => { const sel = document.createElement('select'); const all = [...new Set([...(v && !list.includes(v) ? [v] : []), ...list])]; [['', 'Choose'], ...all.map((c) => [c, c])].forEach(([c, t]) => { const o = document.createElement('option'); o.value = c; o.textContent = t; sel.append(o); }); sel.value = v || ''; return sel; };
       const recv = pick(before['RECEIVING PARTNER'], [...(choices.offices || []), ...(choices.agents || []).filter((n) => !(choices.offices || []).includes(n))]);
       field('RECEIVING PARTNER', 'Receiving partner', recv);
+      // The partner the student source points to is chosen by itself when nothing is chosen yet; a different choice by someone who is not Admin is held back with a ten-second warning.
+      const rowNow = rowOf(); const srcNow = String(rowNow['STUDENT SOURCE'] || (data.student && data.student.source) || '').trim();
+      const agentNow = String((profile && profile().sourceDetail) || '').trim();
+      const expected = expectedPartner(srcNow, agentNow);
+      if (!before['RECEIVING PARTNER'] && expected) { if (![...recv.options].some((o) => o.value === expected)) recv.append(new Option(expected, expected)); recv.value = expected; }
+      let lastGood = recv.value;
+      const wrongPartner = () => Boolean(expected && recv.value && recv.value !== expected && recv.value !== before['RECEIVING PARTNER']);
+      const warnWords = () => 'The student source says this student came from ' + sourceInWords(srcNow, agentNow) + ', so the receiving partner should be ' + expected + ', but ' + recv.value + ' is chosen. Are you sure? Please ask your Head of Recruitment or your team head to confirm the receiving partner.';
+      recv.addEventListener('change', () => {
+        if (!wrongPartner()) { lastGood = recv.value; return; }
+        if (isAdminUser()) { say(warnWords(), false); return; }
+        const wrong = recv.value; ok.disabled = true;
+        tenSecondWarning(form, warnWords(), { onEnd: () => { if (recv.value === wrong) recv.value = lastGood || expected; ok.disabled = false; showChanges(); } });
+      });
       const kindNow = isoDay(lang) || lang === 'Test Date' ? 'Test Date' : lang;
       const kind = pick(kindNow, ['Test Date', 'Waiver', 'University Internal Test']);
       field('LANGUAGE TEST DATE', 'Language test', kind);
@@ -489,6 +538,7 @@
         e.preventDefault();
         const v = now(); const c = changed();
         if (!c.length) { close(); return; }
+        if (wrongPartner() && !isAdminUser()) { const wrong = recv.value; ok.disabled = true; tenSecondWarning(form, warnWords(), { onEnd: () => { if (recv.value === wrong) recv.value = lastGood || expected; ok.disabled = false; showChanges(); } }); return; }
         ok.disabled = true; ok.textContent = 'Saving...';
         try {
           const was = { sheet: {} }; const now2 = { sheet: {} };
@@ -625,7 +675,8 @@
       // Which team and what to do: no date to do it by (the owner, 14 Nov 2026). The team asks for anything it needs in the
       // task's comments, and ticks it when it is done.
       // A team, or Admin (named with their title): the teams and branches can give Admin a task too.
-      const targets = (data.assignTeams || data.taskTeams || []).map((t) => [t.id, t.label]);
+      // The owner is not offered (the owner, 25 Nov 2026: a task cannot be given to the owner from here).
+      const targets = (data.assignTeams || data.taskTeams || []).filter((t) => t.id !== 'head').map((t) => [t.id, t.label]);
       const team = field('Who should do it?', { kind: 'select', choices: targets, value: targets.length === 1 ? targets[0][0] : '', required: true });
       // Exactly who gets it (the owner, 15 Nov 2026): the people whose own team it is.
       const goes = el('div', 'p-goes');
@@ -644,7 +695,18 @@
       // university (every university in Universities), the intake, the course level, the location (when it teaches in more than one
       // place) and the course, from the university's own list; then optional comments. Mock interview, Documents, NOC and Medical ask
       // for comments only (the owner, 20 Nov 2026); Other asks for them too, and needs them, since it says nothing by itself.
-      const tag = window.Portal.tagPicker('');
+      // The kinds follow the team the task goes to: the Application Team gets Application, Documents, NOC, Medical and Other; the Mock Team Mock interview, Feedback, Final interview booking and Pre-CAS interview result; a branch Documents, Student update and Payment update.
+      const KIND_LABEL = { application: 'Application', documents: 'Documents', noc: 'NOC', medical: 'Medical', other: 'Other', mock: 'Mock interview', 'mock-feedback': 'Feedback', 'mock-final': 'Final interview booking', 'mock-precas': 'Pre-CAS interview result', 'branch-update': 'Student update', 'branch-payment': 'Payment update' };
+      const KIND_SAVES = { 'mock-feedback': ['mock', 'Feedback'], 'mock-final': ['mock', 'Final interview booking'], 'mock-precas': ['mock', 'Pre-CAS interview result'], 'branch-update': ['other', 'Student update'], 'branch-payment': ['payment', 'Payment update'] };
+      const kindsFor = (teamId) => {
+        const t = (data.assignTeams || data.taskTeams || []).find((x) => x.id === teamId) || {};
+        const ids = teamId === 'application' ? ['application', 'documents', 'noc', 'medical', 'other']
+          : teamId === 'mock' ? ['mock', 'mock-feedback', 'mock-final', 'mock-precas']
+          : /branch$/i.test(String(t.label || '')) ? ['documents', 'branch-update', 'branch-payment']
+          : ['application', 'documents', 'mock', 'noc', 'medical', 'other'];
+        return ids.map((k) => [k, KIND_LABEL[k]]);
+      };
+      let tag = window.Portal.tagPicker('', kindsFor(team.input.value));
       const tagWrap = el('div', 'p-field p-wide');
       const tagLabel = el('span', 'p-label', 'What is it about?');
       tagLabel.append(window.Portal.requiredMark());
@@ -680,14 +742,23 @@
       place.input.addEventListener('change', refreshCourses);
       api('/api/facts').then((list) => { unis = list.sort((a, b) => a.name.localeCompare(b.name)); uni.input.replaceChildren(h('option', { value: '' }, 'Choose\u2026'), ...unis.map((u) => h('option', { value: u.id }, u.name))); }).catch(() => {});
       const isApp = () => tag.value() === 'application';
+      // NOC and Medical are always for one university (the owner, 25 Nov 2026): the student may hold offers from several, so the university the task is for is chosen here (the ones with an offer first).
+      const forUni = field('Which university is it for?', { kind: 'select', choices: [], required: true, wide: true });
+      const uniChoices = (() => { const all = (data.card.options || []).filter((o) => o.university && o.course); const withOffer = all.filter((o) => o.offer && !o.refused && !o.withdrawn); return withOffer.length ? withOffer : all.filter((o) => o.applied || o.sent); })();
+      forUni.input.replaceChildren(h('option', { value: '' }, 'Choose\u2026'), ...uniChoices.map((o, i) => h('option', { value: String(i) }, o.university + (o.course ? ' (' + o.course + ')' : '') + (o.offer ? ' - offer received' : ''))));
+      if (uniChoices.length === 1) forUni.input.value = '0';
+      forUni.wrap.hidden = true;
+      const needsUni = () => ['noc', 'medical'].includes(tag.value()) && uniChoices.length > 0;
       const showKind = () => {
         const a = isApp(); const k = tag.value();
-        appBox.hidden = !a; text.wrap.hidden = a || !k;
+        appBox.hidden = !a; text.wrap.hidden = a || !k; forUni.wrap.hidden = !needsUni();
         if (k === 'other') { if (textLabel && !otherMark.isConnected) textLabel.append(otherMark); } else otherMark.remove();
         const hints = { mock: 'e.g. Book the mock interview for Tuesday.', documents: 'e.g. Ask for the bank statement.', noc: 'e.g. Apply for the NOC this week.', medical: 'e.g. Book the TB test at the clinic.', other: 'What should they do?' };
         text.input.placeholder = hints[k] || '';
       };
-      tag.node.addEventListener('click', () => setTimeout(showKind, 0));
+      const bindTag = () => tag.node.addEventListener('click', () => setTimeout(showKind, 0));
+      bindTag();
+      team.input.addEventListener('change', () => { const was = tag.node; tag = window.Portal.tagPicker('', kindsFor(team.input.value)); was.replaceWith(tag.node); bindTag(); showKind(); });
       const msg = el('div', 'p-msg');
       const foot = el('div', 'p-dialog-foot');
       const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Assign');
@@ -707,13 +778,21 @@
         } else {
           const words = text.input.value.trim();
           if (!words && tag.value() === 'other') return stop('Write what should be done.', text.wrap);
+          const saves = KIND_SAVES[tag.value()];
           // No comments: the task is named by what it is about ("Mock interview"), so the team still sees what to do.
-          payload = { team: team.input.value, text: words || window.Portal.tagLabel(tag.value()), tag: tag.value() };
+          let forApp = null;
+          if (needsUni()) {
+            const o = uniChoices[Number(forUni.input.value)];
+            if (!o || forUni.input.value === '') return stop('Choose which university it is for.', forUni.wrap);
+            forApp = { university: o.university, course: o.course, intake: o.intake || '', level: o.level || '' };
+          }
+          const base = words || (forApp ? (tag.value() === 'noc' ? 'Submit the NOC application' : 'Book the medical report') + ': ' + forApp.university : saves ? saves[1] : window.Portal.tagLabel(tag.value()));
+          payload = { team: team.input.value, text: base, tag: saves ? saves[0] : tag.value(), ...(forApp ? { app: forApp } : {}) };
         }
         try { await morph(ok, () => save('tasks', payload), { busy: 'Assigning…', done: 'Assigned' }); window.Portal.celebrate(ok); say('Task assigned. The team is told.'); close(true); } catch (e) { /* shown */ }
       });
       foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), ok);
-      const g = el('div', 'p-form p-assign'); g.append(team.wrap, tagWrap, appBox, text.wrap);
+      const g = el('div', 'p-form p-assign'); g.append(team.wrap, tagWrap, appBox, forUni.wrap, text.wrap);
       body.append(g, msg, foot);
       showKind();
     }).then((done) => { if (done) render(); });
@@ -929,16 +1008,17 @@
       if (e.ref) tdT.append(el('b', 'lg-ref', e.ref));
       if (e.lead) tdT.append(el('span', 'lg-lead', e.lead));
       if (diff) {
-        tdT.append(el('p', 'lg-text', `${diff.rows.length} ${diff.rows.length === 1 ? 'detail' : 'details'} ${diff.undone ? 'put back' : 'saved'}.`));
-        const names = el('div', 'lg-diff-names'); diff.rows.forEach((r) => names.append(el('span', 'lg-kind', r.label)));
-        const key = (e.note && e.note.id) || String(e.at);
-        const list = el('div', 'lg-diff'); list.id = 'diff-' + key; list.hidden = !openDiffs.has(key);
-        // An empty value is shown as "(empty)" in italics, never as a struck-through word that could be a real value.
-        const val = (v, struck) => (v ? el(struck ? 's' : 'span', '', v) : el('i', 'lg-diff-none', '(empty)'));
-        diff.rows.forEach((r) => { const line = el('div', 'lg-diff-row'); const vals = el('span', 'lg-diff-vals'); vals.append(val(r.from, true), ' → ', val(r.to, false)); line.append(el('span', '', r.label), vals); list.append(line); });
-        const tog = h('button', { class: 'lg-diff-tog', type: 'button', 'aria-controls': list.id, 'aria-expanded': String(!list.hidden) }, list.hidden ? 'Show changes' : 'Hide changes');
-        tog.addEventListener('click', () => { list.hidden = !list.hidden; if (list.hidden) openDiffs.delete(key); else openDiffs.add(key); tog.textContent = list.hidden ? 'Show changes' : 'Hide changes'; tog.setAttribute('aria-expanded', String(!list.hidden)); });
-        tdT.append(names, tog, list);
+        // Each change is one plain line, always shown (the owner, 25 Nov 2026): "NOC number: 12345" when it was empty, "NOC number: 111 → 222" when it changed.
+        const list = el('div', 'lg-diff');
+        diff.rows.forEach((r) => {
+          const line = el('div', 'lg-diff-row'); const vals = el('span', 'lg-diff-vals');
+          if (r.from && r.to) vals.append(el('span', 'lg-diff-from', r.from), ' → ', el('span', '', r.to));
+          else if (r.to) vals.append(el('span', '', r.to));
+          else vals.append(el('span', 'lg-diff-from', r.from), ' removed');
+          line.append(el('span', 'lg-diff-l', r.label + ':'), vals); list.append(line);
+        });
+        if (diff.undone) tdT.append(el('p', 'lg-text', 'Put back:'));
+        tdT.append(list);
       } else if (e.text) { const p2 = el('p', 'lg-text'); if (e.tag) p2.append(el('span', `td-tag tag-${e.tag}`, window.Portal.tagLabel(e.tag)), ' '); p2.append(...linked(e.text)); tdT.append(p2); }
       const tdB = el('td', 'is-by', e.kind === 'auto' ? 'Student Recruit 360' : e.by || 'Someone');
       const tdM = el('td', 'is-more');
@@ -1107,8 +1187,13 @@
   // with its day, or refused or withdrawn with the reason). The same days an Application task records when it is marked done.
   // A course given to the team but not submitted (not eligible ...) is marked Not submitted, with the reason. Each change is also a
   // line in the Timeline, and the first submission and first offer are kept in All Students' own (hidden) columns by the server.
-  const RESULTS = [['', 'Waiting for the answer'], ['offer', 'Offer (type not known)'], ['Conditional', 'Conditional offer'], ['Unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['skipped', 'Not submitted (for example not eligible)']];
+  const RESULTS = [['', 'Waiting for the answer'], ['offer', 'Offer (type not known)'], ['Conditional', 'Conditional offer'], ['Unconditional', 'Unconditional offer'], ['refused', 'Refused'], ['withdrawn', 'Withdrawn'], ['skipped', 'Not submitted']];
+  // The answers a person can choose (the owner, 25 Nov 2026): an old application that already says "Offer (type not known)" still shows it, but it is not offered for a new answer.
+  const answerChoices = (now) => RESULTS.filter(([v]) => v !== 'offer' || now === 'offer');
   const WITH_REASON = ['refused', 'withdrawn', 'skipped'];
+  // What the day is called follows what was chosen: the day the offer was received, the day it was refused, withdrawn or decided.
+  const DAY_LABEL = { offer: 'Offer received on', Conditional: 'Offer received on', Unconditional: 'Offer received on', refused: 'Refused on', withdrawn: 'Withdrawn on', skipped: 'Decided on' };
+  const setDayLabel = (f, r) => { const l = f.wrap.querySelector('.p-label'); if (l) l.textContent = DAY_LABEL[r] || 'Date'; };
   async function updateApplication(o, { offer: forOffer } = {}) {
     const wasSheet = Boolean(o.fromSheet);
     if (o.fromSheet) {
@@ -1125,13 +1210,13 @@
       const courseF = field('Course', { value: o.course || '', max: 240, wide: true });
       const applied = field('Application submitted on', { kind: 'date', value: o.applied || '' });
       const now = o.skipped ? 'skipped' : o.refused ? 'refused' : o.withdrawn ? 'withdrawn' : o.offer ? (o.offerType || 'offer') : '';
-      const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: now, wide: true });
-      const when2 = field('Day of the answer', { kind: 'date', value: o.skipped || o.refused || o.withdrawn || o.offer || '' });
+      const result = field('Update on the application', { kind: 'select', choices: answerChoices(now), value: now, wide: true });
+      const when2 = field('Date', { kind: 'date', value: o.skipped || o.refused || o.withdrawn || o.offer || '' });
       const reason = field('Reason', { wide: true, max: 300, value: o.reason || '', placeholder: 'e.g. Grades below the entry requirement, course full' });
       [applied, when2].forEach((f) => { f.input.max = todayIso; });
-      const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; when2.wrap.querySelector('.p-label').textContent = r === 'skipped' ? 'Decided on' : 'Day of the answer'; };
+      const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; setDayLabel(when2, r); };
       // Opened from Next step "Record offer": the answer is set to an offer, and the day is next.
-      if (forOffer && !now) { result.input.value = 'offer'; setTimeout(() => when2.input.focus(), 50); }
+      if (forOffer && !now) { setTimeout(() => result.input.focus(), 50); }
       result.input.addEventListener('change', show);
       show();
       form.append(uniF.wrap, courseF.wrap, result.wrap, applied.wrap, when2.wrap, reason.wrap);
@@ -1142,7 +1227,7 @@
         const r = result.input.value; const d = when2.input.value; const a = applied.input.value;
         const fail = (t) => { msg.textContent = t; msg.className = 'p-msg error'; };
         if (r && !a && !['withdrawn', 'skipped'].includes(r)) return fail('Fill in the day the application was submitted.');
-        if (r && !d) return fail('Fill in the day of the answer.');
+        if (r && !d) return fail(r === 'Conditional' || r === 'Unconditional' || r === 'offer' ? 'Fill in the day the offer was received.' : 'Fill in the date.');
         if (a && d && d < a) return fail('The answer cannot come before the application was submitted.');
         if (!uniF.input.value.trim()) return fail('Write the university.');
         if (WITH_REASON.includes(r) && reason.input.value.trim().length < 8) return fail('Write the reason in a few words (at least 8 letters), for example: grades below the entry requirement.');
@@ -1169,18 +1254,40 @@
   // University options like any other application, so Update, the Priority University and the timeline work on it the same way.
   async function addApplication() {
     const todayIso = data.today || new Date().toISOString().slice(0, 10);
+    const pc = await api('/api/partner-choices').catch(() => null);
+    const endedSet = new Set((pc && pc.endedPartners) || []);
+    const partnerNames = [...new Set([...((pc && pc.universities) || []), ...((pc && (pc.allPartners || pc.partners)) || [])])];
     const saved = await dialog('Add an application', (body, close) => {
       const form = el('div', 'p-form');
       const uniF = field('University', { value: '', max: 160, required: true, wide: true, placeholder: 'The university the student applied to' });
-      const courseF = field('Course', { value: '', max: 240, wide: true, placeholder: 'The course applied for' });
-      const partners = (lists && lists.partners) || [];
-      const partnerF = field('University partner', { kind: 'select', choices: [['', 'None'], ['Direct', 'Direct'], ...partners.map((n) => [n, n])], value: '', wide: true });
+      const courseF = field('Course', { value: '', max: 240, wide: true, required: true, placeholder: 'The course applied for' });
+      // The university partner is whom the application was submitted to (not the sub agent): our direct universities (Partner Universities) and the B2B partners. Receiving partner, on the student's details, is a different thing: who sent us the student.
+      const partnerF = field('University partner', { value: '', max: 120, wide: true, required: true, placeholder: 'Search or choose the university partner' });
+      // A list inside the window that scrolls by itself, shown only while the box is used (a click in it or typing): Partner universities and B2B partners, each named for what it is.
+      const universityNames = new Set((pc && pc.universities) || []);
+      const pick = el('div', 'p-pick'); pick.setAttribute('role', 'listbox'); pick.setAttribute('aria-label', 'University partner'); pick.hidden = true;
+      const drawPick = () => {
+        const q = partnerF.input.value.trim().toLowerCase();
+        pick.replaceChildren();
+        partnerNames.filter((n) => !q || n.toLowerCase().includes(q)).forEach((n) => {
+          const kind = universityNames.has(n) ? 'Partner university' : endedSet.has(n) ? 'B2B partner, ended' : 'B2B partner';
+          const b = h('button', { type: 'button', class: 'p-pick-i' + (n === partnerF.input.value.trim() ? ' is-on' : ''), role: 'option', 'aria-selected': String(n === partnerF.input.value.trim()) }, n, el('span', 'p-pick-s', ' (' + kind + ')'));
+          b.addEventListener('mousedown', (e) => e.preventDefault()); // the box keeps the cursor, so the list does not close before the click lands
+          b.addEventListener('click', () => { partnerF.input.value = n; pick.hidden = true; });
+          pick.append(b);
+        });
+        if (!pick.children.length) pick.append(el('div', 'p-pick-h', 'No partner matches. Add it under Partners first.'));
+      };
+      partnerF.input.addEventListener('focus', () => { drawPick(); pick.hidden = false; });
+      partnerF.input.addEventListener('input', () => { drawPick(); pick.hidden = false; });
+      partnerF.input.addEventListener('blur', () => { pick.hidden = true; });
+      partnerF.wrap.append(pick);
       const applied = field('Application submitted on', { kind: 'date', value: '' });
-      const result = field('Answer from the university', { kind: 'select', choices: RESULTS, value: '', wide: true });
-      const when2 = field('Day of the answer', { kind: 'date', value: '' });
+      const result = field('Update on the application', { kind: 'select', choices: answerChoices(''), value: '', wide: true });
+      const when2 = field('Date', { kind: 'date', value: '' });
       const reason = field('Reason', { wide: true, max: 300, value: '', placeholder: 'e.g. Grades below the entry requirement, course full' });
       [applied, when2].forEach((f) => { f.input.max = todayIso; });
-      const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; };
+      const show = () => { const r = result.input.value; when2.wrap.hidden = !r; reason.wrap.hidden = !WITH_REASON.includes(r); applied.wrap.hidden = r === 'skipped'; setDayLabel(when2, r); };
       result.input.addEventListener('change', show);
       show();
       form.append(uniF.wrap, courseF.wrap, partnerF.wrap, applied.wrap, result.wrap, when2.wrap, reason.wrap);
@@ -1191,14 +1298,16 @@
         const r = result.input.value; const d = when2.input.value; const a = applied.input.value;
         const fail = (t) => { msg.textContent = t; msg.className = 'p-msg error'; };
         if (!uniF.input.value.trim()) return fail('Write the university.');
+        if (!courseF.input.value.trim()) return fail('Write the course.');
+        if (!partnerNames.includes(partnerF.input.value.trim())) return fail('Choose the university partner from the list.');
         if (r !== 'skipped' && !a) return fail('Fill in the day the application was submitted.');
-        if (r && !d) return fail('Fill in the day of the answer.');
+        if (r && !d) return fail(r === 'Conditional' || r === 'Unconditional' || r === 'offer' ? 'Fill in the day the offer was received.' : 'Fill in the date.');
         if (a && d && d < a) return fail('The answer cannot come before the application was submitted.');
         if (WITH_REASON.includes(r) && reason.input.value.trim().length < 8) return fail('Write the reason in a few words (at least 8 letters), for example: grades below the entry requirement.');
         ok.disabled = true;
         const offer = ['offer', 'Conditional', 'Unconditional'].includes(r);
         try {
-          await save('options', { university: uniF.input.value.trim(), course: courseF.input.value.trim(), partner: partnerF.input.value, applied: r === 'skipped' ? '' : a, offer: offer ? d : '', offerType: offer && r !== 'offer' ? r : '', refused: r === 'refused' ? d : '', withdrawn: r === 'withdrawn' ? d : '', skipped: r === 'skipped' ? d : '', reason: WITH_REASON.includes(r) ? reason.input.value.trim() : '', note: 'Added by hand: applied outside the portal' }, 'Application added');
+          await save('options', { university: uniF.input.value.trim(), course: courseF.input.value.trim(), partner: partnerF.input.value.trim(), applied: r === 'skipped' ? '' : a, offer: offer ? d : '', offerType: offer && r !== 'offer' ? r : '', refused: r === 'refused' ? d : '', withdrawn: r === 'withdrawn' ? d : '', skipped: r === 'skipped' ? d : '', reason: WITH_REASON.includes(r) ? reason.input.value.trim() : '', note: 'Added by hand: applied outside the portal' }, 'Application added');
           close({ a });
         } catch (e) { fail(e.message); ok.disabled = false; }
       });
@@ -1305,7 +1414,9 @@
   // or applied to, with the course, the day it was submitted and the answer (offer, refused or withdrawn with the reason).
   function optionsTab() {
     const wrap = el('div', 'p-apps');
-    wrap.append(applicationsList(), chosenOptions());
+    // The student card is the same for everyone; who may shortlist differs. The Application Team does not shortlist, so it sees only the applications.
+    const appTeamOnly = (data.can.myTeams || []).length > 0 && (data.can.myTeams || []).every((t) => t === 'application');
+    if (appTeamOnly) wrap.append(applicationsList()); else wrap.append(chosenOptions(), applicationsList());
     return wrap;
   }
 

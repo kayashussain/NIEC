@@ -13,7 +13,8 @@ test('the system guesses what a task is about from its words, the team and the s
   assert.strictEqual(Fields.guessTaskTag('Collect the tuition fee deposit receipt', 'application', 'Application Stage'), 'payment');
   assert.strictEqual(Fields.guessTaskTag('Book the VFS appointment', 'application', ''), 'visa');
   assert.strictEqual(Fields.guessTaskTag('Prepare the student for the interview', 'application', ''), 'mock');
-  assert.strictEqual(Fields.guessTaskTag('Ask for the missing transcript', 'mock', ''), 'application', 'documents are part of the application (the owner, 21 Nov 2026)');
+  assert.strictEqual(Fields.guessTaskTag('Ask for the missing transcript', 'mock', ''), 'documents', 'asking for a document is a Documents task (the owner, 25 Nov 2026)');
+  assert.strictEqual(Fields.guessTaskTag('Chase the university for the offer letter', 'application', ''), 'offer', 'an offer letter chase is an Offer request (the owner, 25 Nov 2026)');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'mock', ''), 'mock');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'head', 'Payment Stage'), 'payment');
   assert.strictEqual(Fields.guessTaskTag('Call the student', 'head', 'Inquiry'), 'other');
@@ -58,7 +59,7 @@ test('a name typed in capitals reads normally in a message; the sheet keeps it a
 
 test('a task is given with Application, Mock interview, NOC, Medical or Other; older tags still read (the owner, 21 Nov 2026)', () => {
   const F = require('../student-details/card-fields');
-  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'noc', 'medical', 'other']);
+  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'documents', 'noc', 'medical', 'other']);
   ['offer', 'payment', 'visa'].forEach((k) => assert.ok(F.TASK_TAG_IDS.includes(k), `${k} is still a known tag, so stored tasks keep it`));
 });
 

@@ -123,7 +123,7 @@
     if (appOwn()) {
       const last = sheet.columns.indexOf('NOC NUMBER');
       const upToNoc = sheet.columns.filter((c, i) => (last === -1 || i <= last) && !CARD_COLUMNS.has(c));
-      return [...upToNoc, ...(sheet.columns.includes('MEDICAL REPORT') ? ['MEDICAL REPORT'] : []), MEDICAL_DAY_COL];
+      return upToNoc; // the owner, 25 Nov 2026: the sheet ends at NOC Number (Medical Report and the booking day are no longer shown here)
     }
     if (mockOwn()) return MOCK_SHEET_COLUMNS.filter((c) => sheet.columns.includes(c));
     const hidden = new Set(HIDDEN_COLUMNS_BY_SHEET.filter((h) => h.matches(sheet.name || '')).flatMap((h) => h.columns));

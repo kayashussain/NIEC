@@ -125,7 +125,7 @@ html:root body .p-applied.is-priority { background: #1d1d1f; color: #fff; }
 html:root body .p-applied.is-sent { background: #fff1e5; color: #b25000; }
 html:root body .p-applied.is-offer { background: #e3f5e8; color: #1a7f37; }
 html:root body .td-tag, html:root body .td-tag.tag-application { border-radius: 6px; background: var(--apple-chip); color: var(--apple-grey); font-weight: 600; }
-html:root body .tk-compose { border: 0; border-radius: 12px; background: #f5f5f7; }
+html:root body .tk-thread .tk-compose { border: 0; border-radius: 12px; background: #f5f5f7; }
 html:root body .lg-seg { padding: 3px; border: 0; border-radius: 10px; background: var(--apple-btn); gap: 2px; }
 html:root body .lg-seg-btn { border-radius: 7px; background: transparent; color: #1d1d1f; font-weight: 500; }
 html:root body .lg-seg-btn[aria-pressed="true"], html:root body .lg-seg-btn.is-on, html:root body .lg-seg-btn[aria-selected="true"] { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
@@ -244,10 +244,11 @@ html:root body #view#view .lg-tasks .tk-compose, html:root body #view#view .lg-t
 html:root body .lg-mock-who { color: var(--apple-grey); }
 
 /* ---------- finishing pass: size, motion, the card's header and the older controls ---------- */
+/* 🔴 CSS CHANGED (2026-11-25): every page in the Apple look (Today, All Students, student card, Universities) pushed back | from: drawn at 92% | to: drawn at 82%, so everything is about 11% smaller and sits further back from the face */
 /* Text size for the Application Team (the owner: "the text looks small"): drawn at 92% instead of the 80% every page uses, so the small
    words (labels, chips, secondary lines) read comfortably on a laptop. Other teams are not changed. */
 @media (min-width: 900px) {
-  html.app-apple[data-size="medium"] { zoom: .92; --sr360-z: .92; }
+  html.app-apple[data-size="medium"] { zoom: .82; --sr360-z: .82; }
 }
 html:root body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-feature-settings: "cv11", "ss01"; }
 html:root body .btn, html:root body .tda-pill, html:root body .tda-view, html:root body .lg-seg-btn, html:root body .sc-reach-btn, html:root body .sl-pick { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease; }
@@ -730,3 +731,177 @@ html.app-only:root body .ff-soon{border-radius:14px}
 
 html.app-only:root body .tdy-add{width:auto;min-width:56px;text-align:center;white-space:nowrap}
 html.app-only:root body .tda-row .tdx-av{width:50px;height:50px;font-size:16px}
+/* 🔴 CSS CHANGED (2026-11-25): Today on a phone (screen under 600px wide), Application Team | from: the four number tiles ran off the right edge (Missing details cut off) and each task squeezed its words into a column about 70px wide beside the Waiting pill | to: the four tiles sit in two rows of two, and each task shows the name and task across the full width with the Waiting pill and the details-missing line under them; nothing changes at 600px and wider */
+@media (max-width: 599px) {
+  html.app-only:root body .tda-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  html.app-only:root body .tda-row .tdx-head { display: grid; grid-template-columns: 50px minmax(0, 1fr) 14px; grid-template-areas: "av main chev" "av side chev"; column-gap: 14px; row-gap: 8px; padding: 16px 16px; align-items: start; }
+  html.app-only:root body .tda-row .tdx-av { grid-area: av; }
+  html.app-only:root body .tda-row .tdx-main { grid-area: main; min-width: 0; }
+  html.app-only:root body .tda-row .tdy-side { grid-area: side; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; justify-items: start; gap: 6px 12px; text-align: left; }
+  html.app-only:root body .tda-row .tdy-side > * { margin: 0 !important; text-align: left !important; align-self: flex-start; }
+  html.app-only:root body .tda-row .tdx-chev { grid-area: chev; align-self: center; }
+}
+/* 🔴 CSS CHANGED (2026-11-25): Today and Universities keep a comfortable width when pushed back | from: the content filled up to 1480px, so at the smaller 82% size the cards stretched wide and looked zoomed | to: the content column stops at 1120px (and sits in the middle of the page), so the cards keep the same look as at 100% and the empty space goes to the sides */
+html.app-apple body .td-page, html.app-apple body .p-page.pu-page, html.app-apple body .p-page.bp-page { max-width: 1120px; margin-left: auto; margin-right: auto; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Application Team's type made slimmer, smaller and balanced with the menu, like apple.com | from: titles 38 to 40px bold (700), tile numbers 50px bold, group headings 22px bold, student names 20px bold, task lines 16.5px semi-bold, small text 13.5 to 14.5px medium or semi-bold, table headings and buttons semi-bold (600 to 700), menu 15px | to: titles 34px semi-bold (600), tile numbers 40px semi-bold, group headings 19px semi-bold, student names 16.5px semi-bold, task lines 15px regular (400), details 13px regular, labels and pills 12 to 14px medium (500), table headings 12px semi-bold, buttons medium (500), menu 15.5px; the avatar circles 50px to 44px; one type scale from the page title down to the smallest label so the content no longer towers over the menu; same font family, colours and layout */
+html:root body .tda-top h1, html.app-only:root body .tda-top h1, html.app-only:root body .sheet-title, html.app-only:root body .page-head h1 { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -.03em; }
+html:root body .tda-date, html.app-only:root body .tda-date { font-size: 14px; font-weight: 400; }
+html.app-only:root body .tda-tile-k { font-size: 14px; font-weight: 500; }
+html.app-only:root body .tda-tile-n { font-size: 40px; font-weight: 600; letter-spacing: -.035em; margin: 2px 0; }
+html.app-only:root body .tda-tile-s { font-size: 13px; font-weight: 400; }
+html.app-only:root body .tda-view, html.app-only:root body .tda-view[aria-selected="true"] { font-size: 14px; font-weight: 500; }
+html.app-only:root body .tda-pill { font-size: 14px; font-weight: 500; }
+html.app-only:root body .tda-gh { font-size: 19px; font-weight: 600; margin: 26px 0 10px; }
+html.app-only:root body .tdx-av, html.app-only:root body .tda-row .tdx-av { width: 44px; height: 44px; font-size: 14px; font-weight: 600; }
+html.app-only:root body .tda-row .tdx-name { font-size: 16.5px; font-weight: 600; letter-spacing: -.015em; }
+html.app-only:root body .tda-row .tdx-task { font-size: 15px; font-weight: 400; margin: 2px 0; }
+html.app-only:root body .tda-row .tdx-meta { font-size: 13px; font-weight: 400; }
+html.app-only:root body .tda-row .tdx-kind { font-size: 12px; font-weight: 500; min-height: 22px; }
+html.app-only:root body .tda-row .tdx-age.is-late { font-size: 13px; font-weight: 500; padding: 3px 12px; }
+html.app-only:root body .tdy-hint { font-size: 12.5px; font-weight: 400; }
+html.app-only:root body .tdy-sech { font-size: 12px; font-weight: 600; }
+html.app-only:root body .tdy-dl.is-missing-row .tdy-miss { font-weight: 500; }
+html.app-only:root body .tdy-add { font-size: 13px; font-weight: 500; }
+html.app-only:root body .tdy-body .btn { font-size: 14px; font-weight: 500; }
+html.app-only:root body .toolbar-group .btn { font-weight: 500; }
+html.app-only:root body .table-wrap thead th { font-size: 12px; font-weight: 600; }
+html.app-only:root body .status-select { font-weight: 500; }
+html:root body .niec-nav a { font-size: 15.5px; font-weight: 500; }
+html:root body .niec-nav a[aria-current="page"], html:root body .niec-nav a[aria-current="page"]:hover { font-weight: 500; }
+@media (max-width: 599px) {
+  html.app-only:root body .tda-row .tdx-head { grid-template-columns: 44px minmax(0, 1fr) 14px; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-25): task details calmer and lighter, in every opened Today card (University, Course, Level, Intake, Language test, Email, WhatsApp, ...) | from: labels 14px semi-bold (600), values 16px semi-bold (600), the task line semi-bold (600), "No updates yet" semi-bold | to: labels 13px regular grey (400), values 14.5px medium (500), "Missing" 14px medium orange, the task line medium (500), the update line medium; bold is kept only for the student's name and the section headings */
+html:root body .tdy-dl .tdy-l { font-size: 13px; font-weight: 400; color: var(--apple-grey); }
+html:root body .tdy-dl .tdy-v { font-size: 14.5px; font-weight: 500; }
+html:root body .tdy-dl .tdy-v.tdy-miss { font-size: 14px; font-weight: 500; }
+html:root body .tdy-prev-by { font-size: 13px; font-weight: 500; }
+html:root body .tda-row .tdx-task, html:root body .tda-row .tdx-task > span:not(.tdx-kind) { font-weight: 500; }
+html:root body .tdy-cap { font-size: 12px; font-weight: 600; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the logo at the top of the menu gets room | from: 46px high, 156px wide at most, tight space around it | to: 60px high, 208px wide at most, with its own row below the open and close button, and a hairline and space below, the same blue (#0070e0) and black as the sign-in page */
+html:root body .niec-logo { height: 60px; max-width: 208px; }
+html:root body .niec-brand { padding: 34px 2px 18px; margin-bottom: 4px; }
+
+/* Dark mode: shared/dark.css, built by scripts/build-dark.js, loaded by shared/header.js while Dark mode is chosen (the owner, 25 Nov 2026). */
+html:root body .niec-menu .niec-theme { color: #1d1d1f; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the menu's three-line button is replaced by a "Fold menu" option, and the folded menu shows the logo mark and icons | from: a 40px button with three lines at the top right of the menu; folded, the menu showed only that button | to: a "Fold menu" row (arrow icon and words) above your account at the bottom of the menu; folded, a 72px strip with the round logo mark at the top, one icon per page (names shown on hover), your initials, and an "Unfold" arrow; the logo in the open menu is the sharp vector picture (SVG) */
+@media (min-width: 901px) {
+  html:root body .niec-header .niec-toggle { position: static; order: 6; display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; height: 40px; margin: auto 0 0; padding: 0 12px; border: 0; border-radius: 12px; background: transparent; color: var(--apple-grey); font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; }
+  html:root body .niec-header .niec-toggle:hover { background: rgba(0, 0, 0, .05); color: #1d1d1f; }
+  html:root body .niec-header .niec-fold-ico { display: grid; place-items: center; flex: 0 0 22px; width: 22px; height: 22px; transition: transform .2s ease; }
+  html:root body .niec-header .niec-fold-ico svg { width: 20px; height: 20px; }
+  html:root body .niec-header .niec-account { order: 7; margin-top: 6px; }
+  html:root body .niec-header .niec-brand { padding-top: 14px; }
+  html[data-nav="closed"] { --side-w: 72px; }
+  html[data-nav="closed"] body .niec-header { padding: 16px 12px; align-items: center; }
+  html[data-nav="closed"] body .niec-header .niec-brand { justify-content: center; padding: 0 0 14px; margin-bottom: 4px; border-bottom: 1px solid var(--apple-hair); width: 100%; }
+  html[data-nav="closed"] body .niec-header .niec-mark { display: grid; width: 44px; height: 44px; border-radius: 0; background: none; place-items: center; }
+  html[data-nav="closed"] body .niec-header .niec-mark svg { width: 40px; height: 40px; }
+  html[data-nav="closed"] body .niec-header .niec-nav { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  html[data-nav="closed"] body .niec-header .niec-nav a { width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+  html[data-nav="closed"] body .niec-header .niec-nav .niec-lbl, html[data-nav="closed"] body .niec-header .niec-sep { display: none; }
+  html[data-nav="closed"] body .niec-header .niec-account { display: block; width: 44px; }
+  html[data-nav="closed"] body .niec-header .niec-account-btn { padding: 4px; justify-content: center; }
+  html[data-nav="closed"] body .niec-header .niec-account-text, html[data-nav="closed"] body .niec-header .niec-caret { display: none; }
+  html[data-nav="closed"] body .niec-header .niec-menu { left: 0; right: auto; min-width: 220px; }
+  html[data-nav="closed"] body .niec-header .niec-toggle { width: 44px; padding: 0; justify-content: center; }
+  html[data-nav="closed"] body .niec-header .niec-fold-lbl { display: none; }
+  html[data-nav="closed"] body .niec-header .niec-fold-ico { transform: rotate(180deg); }
+}
+
+/* 🔴 CSS CHANGED (2026-11-25): "View student profile" on an opened Today task | from: blue words with an underline when the mouse is over (a link) | to: a grey pill like Reschedule and Reassign, no underline */
+html:root body .tda-row .tdx-actions .tdx-profile, html:root body .tdx-actions .tdx-profile { background: var(--apple-btn); color: #1d1d1f; text-decoration: none; border-radius: 99px; padding: 0 18px; min-height: 36px; font-weight: 500; }
+html:root body .tda-row .tdx-actions .tdx-profile:hover, html:root body .tdx-actions .tdx-profile:hover { background: #dcdce1; text-decoration: none; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Updates on an opened Today task | from: a small "Updates" button with the last update beside it, pressed to open the box | to: the heading "Updates" with the updates and the box to type and Post always shown */
+html:root body .tdy-updates .tdy-upd-head { padding: 10px 0 6px; color: #636366; font-size: 12px; font-weight: 600; }
+html:root body .tdy-updates .tdy-upd-body { display: block; }
+html:root body .tdy-updates .tdy-upd-body[hidden] { display: block; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Universities page type made light and slim, like apple.com | from: title 30px bold (700), "Find universities for a student" 26px bold, the line under the title 17px semi-bold, labels, buttons, chips, counts, deadlines and card details semi-bold or bold (600 to 700), university names 18px bold | to: title 34px semi-bold (600), the find heading 22px semi-bold, the line under the title 15px regular (400), labels, buttons, chips, counts, deadlines and card details regular or medium (400 to 500), university names 17px semi-bold; sizes of the small words one step smaller; colours and layout unchanged */
+html:root body main.page h1 { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -.03em; }
+html:root body main.page > p, html:root body main.page h1 + p { font-size: 15px; font-weight: 400; }
+html:root body main.page h2 { font-weight: 600; letter-spacing: -.02em; }
+html:root body main.page h2:not(.uc-card h2) { font-size: 22px; }
+html:root body main.page .p-label, html:root body main.page label { font-size: 13px; font-weight: 500; }
+html:root body main.page .btn, html:root body main.page .fd-go { font-size: 15px; font-weight: 500; }
+html:root body main.page .chip, html:root body main.page p.count, html:root body main.page .count { font-size: 13px; font-weight: 500; }
+html:root body main.page .ff-n { font-size: 12px; font-weight: 500; }
+html:root body main.page .uc-card h2, html:root body main.page .fd-card h2 { font-size: 17px; font-weight: 600; }
+html:root body main.page .uc-next-text { font-size: 14px; font-weight: 500; }
+html:root body main.page .uc-next-text b { font-weight: 600; }
+html:root body main.page .uc-next-intake { font-size: 13px; font-weight: 500; }
+html:root body main.page .uc-count { font-size: 13px; font-weight: 500; }
+html:root body main.page .uc-nodate { font-size: 13px; font-weight: 500; }
+html:root body main.page .uc-deadline { font-size: 13px; font-weight: 500; }
+html:root body main.page .uc-days.is-urgent { font-weight: 500; }
+html:root body main.page .tabs span, html:root body main.page [role="tab"] { font-weight: 500; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Fold menu option sits right under the last page of the menu, with just an arrow | from: below the pages at the bottom of the menu, above your account, with an arrow and a straight line | to: directly under the last page (Universities for the Application Team), an arrow only (a chevron that turns when folded) and the words Fold menu in the menu's grey; your account stays at the bottom */
+@media (min-width: 901px) {
+  html:root body .niec-header .niec-toggle { margin: 10px 0 0; border-top: 0; }
+  html:root body .niec-header .niec-account { margin-top: auto; }
+  html[data-nav="closed"] body .niec-header .niec-toggle { margin-top: 10px; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-25): the university page (one university, its courses and requirements) type made light and slim, so headings, labels and contents can be told apart | from: almost every word bold or semi-bold (600 to 700), the paragraph about the university and the lists of facts and requirements in semi-bold | to: three steps only: headings and course names semi-bold (600), labels, chips, numbers and links medium (500), paragraphs, lists and details regular (400); the title 34px, section headings 20px, group headings 17px, course names 16px, money 24px; colours and layout unchanged */
+html:root body:has(.up-fact-label) h1 { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -.03em; }
+html:root body:has(.up-fact-label) h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+html:root body:has(.up-fact-label) h3 { font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
+html:root body:has(.up-fact-label) main p, html:root body:has(.up-fact-label) main li, html:root body:has(.up-fact-label) main small, html:root body:has(.up-fact-label) main span, html:root body:has(.up-fact-label) main a:not(.btn) { font-weight: 400; }
+html:root body:has(.up-fact-label) main b, html:root body:has(.up-fact-label) main strong { font-weight: 500; }
+html:root body:has(.up-fact-label) .up-place, html:root body:has(.up-fact-label) .up-chip, html:root body:has(.up-fact-label) .up-count, html:root body:has(.up-fact-label) .up-watch-label, html:root body:has(.up-fact-label) .up-web, html:root body:has(.up-fact-label) .up-group-count, html:root body:has(.up-fact-label) .up-level-more, html:root body:has(.up-fact-label) .up-req-tag { font-weight: 500; }
+html:root body:has(.up-fact-label) .up-fact-label, html:root body:has(.up-fact-label) .up-money-k, html:root body:has(.up-fact-label) .up-req-k { font-size: 12.5px; font-weight: 500; letter-spacing: 0; }
+html:root body:has(.up-fact-label) .up-money-v { font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+html:root body:has(.up-fact-label) .up-course-name { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+html:root body:has(.up-fact-label) .up-about-text { font-size: 15px; font-weight: 400; line-height: 1.55; }
+html:root body:has(.up-fact-label) .up-c-intake, html:root body:has(.up-fact-label) .up-c-campus, html:root body:has(.up-fact-label) .up-c-time { font-weight: 400; }
+
+/* 🔴 CSS CHANGED (2026-11-25): fewer lines on the task list and in the Mark as done window | from: a line above the "Given by" row, under each section title, under every detail row of an opened task, under the title of the Mark as done window and above its buttons | to: none of those lines; the rows keep their space, and the soft panels separate the groups */
+html:root body .tdy-top { border-top: 0; }
+html:root body .tdy-sech { border-bottom: 0; }
+html:root body .tdy-dl, html:root body .tdy-dl.is-missing-row { border-bottom: 0; padding-top: 6px; padding-bottom: 6px; }
+html:root body .p-dialog-head { border-bottom: 0; }
+html:root body .p-dialog-foot { border-top: 0; }
+
+/* 🔴 CSS CHANGED (2026-11-25): a fast sideways scroll no longer changes the page | from: a quick two-finger swipe to the side went Back or Forward in the browser (Today to All Students) | to: the browser's swipe to go Back or Forward is switched off on every page; scrolling inside a wide table still works */
+html, body { overscroll-behavior-x: none; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the task kind is not written beside a task | from: a small word (Application, Documents, NOC ...) beside every task on Today, on the student card and in the Timeline | to: just the task; the filter buttons above the list still sort by kind */
+html:root body .tdx-kind, html:root body .tdy-kind, html:root body .td-tag { display: none; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Updates on a task in the style of a comment section (round photo, soft bubble, small time, a pill box to write in) | from: updates as lines in a list with a name and the time above each, a plain box and a blue Post button | to: each update is a round initials badge and a soft grey bubble holding the name and the words, the time small beside the name, your own in a light blue bubble and a blue badge, new ones in blue; "Show all N updates" as a quiet link; the writing box a rounded soft grey field with a small round Post button; the same on Today and the student card */
+html:root body .tk-thread .tk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+html:root body .tk-thread .tk-msg { display: flex; align-items: flex-start; gap: 10px; border: 0; padding: 0; background: none; }
+html:root body .tk-thread .tk-av { flex: 0 0 32px; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #e3e3e8; color: #1d1d1f; font-size: 12px; font-weight: 600; }
+html:root body .tk-thread .tk-av.mine { background: #0071e3; color: #fff; }
+html:root body .tk-thread .tk-main { min-width: 0; padding: 8px 14px 10px; border-radius: 18px; background: #f0f0f3; }
+html:root body .tk-thread .tk-msg.is-new .tk-main { background: #e8f1fc; }
+html:root body .tk-thread .tk-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 1px; }
+html:root body .tk-thread .tk-head b { font-size: 13px; font-weight: 600; color: #1d1d1f; }
+html:root body .tk-thread .tk-head time { font-size: 12px; font-weight: 400; color: #636366; }
+html:root body .tk-thread .tk-text { margin: 0; font-size: 14px; line-height: 20px; font-weight: 400; color: #1d1d1f; white-space: pre-wrap; overflow-wrap: anywhere; }
+html:root body .tk-thread .tk-hand { margin: 0; font-size: 13px; font-weight: 500; color: #636366; }
+html:root body .tk-thread .tk-empty { padding: 2px 0 4px 42px; font-size: 13px; color: #636366; list-style: none; }
+html:root body .tk-thread .tk-earlier-row { list-style: none; padding-left: 42px; }
+html:root body .tk-thread .tk-earlier { border: 0; background: none; padding: 0 0 2px; color: #0066cc; font-size: 13px; font-weight: 500; cursor: pointer; }
+html:root body .tk-thread .tk-compose { display: flex; align-items: flex-end; gap: 8px; margin-top: 10px; }
+html:root body .tk-thread .tk-input { flex: 1; min-height: 40px; max-height: 140px; padding: 9px 16px; border: 0; border-radius: 20px; background: #f0f0f3; color: #1d1d1f; font: inherit; font-size: 14px; line-height: 20px; resize: none; box-shadow: none; }
+html:root body .tk-thread .tk-input:focus { outline: 0; background: #fff; box-shadow: 0 0 0 2px rgba(0, 113, 227, .35); }
+html:root body .tk-thread .tk-send { flex: none; min-height: 40px; padding: 0 18px; border-radius: 20px; font-size: 14px; font-weight: 500; }
+
+/* 🔴 CSS CHANGED (2026-11-25): a bar of quick jumps on the university page (new) | from: a very long page to scroll through | to: a row of small grey pills under the title (Pictures, About, Entry requirements, Courses, Deadlines ...), each one press to its section, staying at the top while scrolling */
+html:root body .up-jump { position: sticky; top: 0; z-index: 6; display: flex; gap: 8px; margin: 0 0 12px; padding: 10px 0; overflow-x: auto; background: rgba(245, 245, 247, .92); -webkit-backdrop-filter: saturate(180%) blur(16px); backdrop-filter: saturate(180%) blur(16px); scrollbar-width: none; }
+html:root body .up-jump::-webkit-scrollbar { display: none; }
+html:root body .up-jump a { flex: none; padding: 6px 14px; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font-size: 13px; font-weight: 500; text-decoration: none; }
+html:root body .up-jump a:hover { background: #dcdce1; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the account menu of the folded menu is shown whole | from: opened from the narrow strip it was cut off at the strip's edge, so "Account details" and the other words were clipped | to: the strip no longer clips what opens from it, and the account menu is 236px wide, opening to the right of the strip above the account */
+@media (min-width: 901px) {
+  html[data-nav="closed"] body .niec-header { overflow: visible; }
+  html[data-nav="closed"] body .niec-header .niec-menu { left: 0; right: auto; width: 236px; min-width: 236px; z-index: 60; }
+}

@@ -206,21 +206,27 @@
     const sections = []; const missing = [];
     const add = (title, list) => { const rows = list.filter(([, v]) => v); if (rows.length) sections.push({ title, rows }); };
     const student = [['WhatsApp', phone], ['Email', email]];
+    // The same two lists on a Medical, NOC or Documents task (the owner, 25 Nov 2026): University (the one the task is for, else the student's own) and Student.
+    const uniRows = () => [['University', (c && c.university) || d.university], ['Course', (c && c.course) || d.course], ['Level', c && c.level], ['Intake', (c && c.intake) || x.intake]];
+    const studentRows = () => [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]];
     if (x.tag === 'application') {
       const lang = String(d.language || '').trim();
       const langOk = Boolean(lang) && lang !== 'Test Date';
-      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], ['Language test', langOk ? languageShown(lang) : '']]);
+      add('University', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], ['Language test', langOk ? languageShown(lang) : '']]);
       add('Student', [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]]);
       // F5: every detail of the two sections that is empty is listed first as missing (University, Course, Level, Intake, Language test, Email, WhatsApp, Passport number, Date of birth, Nationality, Address).
       [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang === 'Test Date' ? 'Language test date' : 'Language test', langOk], ['Email', email], ['WhatsApp number', phone], ['Passport number', d.passport], ['Date of birth', d.dob], ['Nationality', d.nationality], ['Address', d.address]].forEach(([l, v]) => { if (!v) missing.push(l); });
     } else if (x.tag === 'offer') {
-      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Intake', c && c.intake], ['Applied on', longDay(c && c.applied)]]);
+      add('University', [['University', c && c.university], ['Course', c && c.course], ['Intake', c && c.intake], ['Applied on', longDay(c && c.applied)]]);
       add('Student', student);
     } else if (x.tag === 'medical') {
-      add('Medical', [['Medical report', d.medicalReport], ['Medical booking date', longDay(d.medicalDate)]]);
-      add('Student', student);
+      add('University', uniRows());
+      add('Student', studentRows());
+    } else if (x.tag === 'noc' || x.tag === 'documents') {
+      if (x.tag === 'noc') add('University', uniRows());
+      add('Student', studentRows());
     } else {
-      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake]]);
+      add('University', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake]]);
       add('Student', student);
     }
     // The owner, 24 Nov 2026: a missing detail is not a banner on top; it sits in its own list (Application or Student) as a Missing row.
@@ -228,10 +234,14 @@
     if (x.tag === 'application') {
       const lang2 = String(d.language || '').trim();
       full = [
-        { title: 'Application', rows: [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang2 === 'Test Date' ? 'Language test date' : 'Language test', lang2 && lang2 !== 'Test Date' ? languageShown(lang2) : '']] },
+        { title: 'University', rows: [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang2 === 'Test Date' ? 'Language test date' : 'Language test', lang2 && lang2 !== 'Test Date' ? languageShown(lang2) : '']] },
         { title: 'Student', rows: [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]] },
       ];
     }
+    // A Medical, NOC or Documents task lists each detail, an empty one saying Missing (the owner, 25 Nov 2026): University and Student, or Student alone for Documents.
+    if (x.tag === 'offer') full = [{ title: 'University', rows: [...uniRows(), ['Applied on', longDay(c && c.applied)]] }, { title: 'Student', rows: studentRows() }];
+    else if (x.tag === 'medical' || x.tag === 'noc') full = [{ title: 'University', rows: uniRows() }, { title: 'Student', rows: studentRows() }];
+    else if (x.tag === 'documents') full = [{ title: 'Student', rows: studentRows() }];
     return { sections, missing, full, ready: x.tag === 'application' && !missing.length };
   }
   function copyText(v) {
@@ -352,26 +362,13 @@
   }
   // The updates, folded away with the latest one as a preview; open at once when something is new on them.
   function appUpdates(x, thread, n) {
-    const wrap = el('div', 'tdy-updates');
-    if (x.unread) updOpen.add(x.id); // opened because something is new: it stays open when the list is read again, while the person reads
-    const open = updOpen.has(x.id);
-    const last = (x.comments || []).filter((m) => m.text).pop();
-    const fold = h('button', { class: 'tdy-upd', type: 'button', 'aria-expanded': String(open) });
-    const prev = el('span', 'tdy-prev');
-    if (last) prev.append(el('span', 'tdy-prev-by', `${last.by || 'Someone'} · ${dayShort(isoDay(last.at))}:`), ` ${String(last.text).replace(/\s+/g, ' ')}`); else prev.append(el('span', 'tdy-prev-by', 'No updates yet'));
-    prev.hidden = open;
-    fold.append(el('span', 'tdy-cap', `Updates${n ? ` · ${n}` : ''}`), prev, el('span', 'tdy-mini'));
+    // Always open (the owner, 25 Nov 2026): the earlier updates and the box to type and post, with no small "Updates" button to press first.
+    const wrap = el('div', 'tdy-updates is-open');
+    wrap.append(el('div', 'tdy-upd-head', `Updates${n ? ` · ${n}` : ''}`));
     const panel = el('div', 'tdy-upd-body');
-    panel.hidden = !open;
     panel.append(thread);
-    fold.addEventListener('click', () => {
-      const now = panel.hidden;
-      panel.hidden = !now; prev.hidden = now;
-      fold.setAttribute('aria-expanded', String(now));
-      if (now) updOpen.add(x.id); else updOpen.delete(x.id);
-      if (now && thread.markRead) thread.markRead();
-    });
-    wrap.append(fold, panel);
+    wrap.append(panel);
+    if (x.unread && thread.markRead) thread.markRead();
     return wrap;
   }
   // One task. `refresh(true)` reads the tasks again.
