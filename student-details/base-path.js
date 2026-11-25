@@ -13,10 +13,35 @@ function normalize(raw) {
   return b.replace(/\/+$/, '').replace(/[^A-Za-z0-9_\-./]/g, '');
 }
 
+// The portal's own first words after the domain. Only text that starts with one of these (or with a file the browser loads) is an
+// address. Everything else that starts with a slash is left alone: a pattern such as /"/g, a name inside the phone, and the end of an
+// address that is joined on ('.../' + id + '/delete'). A new page is added here (test/base-path.test.js fails until it is).
+const ROUTES = new Set(['activity', 'agents', 'api', 'apply-through', 'b2b-partners', 'book', 'booking', 'bookings', 'bulk', 'bulk-add', 'dashboard',
+  'events', 'fact-file', 'fonts', 'followup', 'healthz', 'incentive', 'interview-guidelines', 'login', 'mock-guides', 'mock-interviews',
+  'my', 'my-dashboard', 'my-portal', 'pair', 'partner-universities', 'partners', 'student', 'students', 'today', 'users', 'wa']);
+const FILE = /\.(?:js|css|png|jpg|svg|html|json|woff2|webmanifest|ico)$/;
+
+// Is the text after a slash the start of one of the portal's addresses?
+function isAddress(rest) {
+  const first = (/^[A-Za-z0-9_.-]*/.exec(rest) || [''])[0];
+  return ROUTES.has(first) || FILE.test(first);
+}
+
 // "/x" inside quotes, brackets or url() becomes "/niec/x"; a lone "/" and "//" (comments, protocol-less links) are left alone.
 function rewriteText(text, base, kind) {
   const already = base.slice(1);
-  let out = text.replace(/(["'`])\/(?=[A-Za-z_.?#-])/g, (m, q, off, s) => (s.startsWith(already + '/', off + 2) ? m : q + base + '/'));
+  // The Incentive page starts every request with its own address (BASE, which already has the folder): its "/api/..." stay as written.
+  const ownBase = /const BASE = location\.pathname/.test(text);
+  let out = text.replace(/(["'`])\/(?=[A-Za-z_.-])/g, (m, q, off, s) => {
+    const rest = s.slice(off + 2, off + 82);
+    if (!isAddress(rest) || rest.startsWith(already + '/') || (ownBase && rest.startsWith('api/'))) return m;
+    // Joined onto what is before it, it is the end of an address, unless what is before is the site itself.
+    const before = s.slice(Math.max(0, off - 40), off);
+    if (/\+\s*$/.test(before) && !/\.origin\s*\+\s*$/.test(before)) return m;
+    return q + base + '/';
+  });
+  // A link built from location.origin inside a template has no quote before its slash.
+  out = out.replace(/(\.origin\})\/(?=[A-Za-z_.-])/g, (m, o, off, s) => (isAddress(s.slice(off + m.length, off + m.length + 80)) ? o + base + '/' : m));
   out = out.replace(/\burl\(\s*(["']?)\/(?=[A-Za-z_.-])/g, (m, q, off, s) => (s.startsWith(already + '/', off + m.length) ? m : 'url(' + q + base + '/'));
   // The page's own start ("|| '/'", "return '/'", <base href="/">) is the folder itself.
   out = out.replace(/(\|\||\breturn|\?|:)(\s*)(["'])\/\3/g, (m, a, sp, q) => a + sp + q + base + '/' + q);
@@ -128,4 +153,4 @@ function wrap(handler, rawBase) {
   };
 }
 
-module.exports = { wrap, normalize, rewriteText, moveLocation };
+module.exports = { wrap, normalize, rewriteText, moveLocation, isAddress };
