@@ -1066,20 +1066,8 @@ try {
 } catch (e) {
   console.error('[startup] could not read', DATA_FILE, '-', e.message);
 }
-// The owner's one-time fresh start of the live data (25 Nov 2026: "run itself on the next deploy"). It runs once: only on data that holds the
-// owner's own test student (so never on demo data or another installation), and never again once the marker file is written.
-try {
-  const marker = path.join(DATA_DIR, 'fresh-start-2026-11-25.done');
-  const isTheLiveData = current && current.sheets.some((sh) => sh.rows.some((r) => r._id === 'row-mwl82frpe094856a'));
-  if (isTheLiveData && !fs.existsSync(marker)) {
-    const p = startFresh('system');
-    fs.writeFileSync(marker, new Date().toISOString());
-    activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'ISR (automatic)' }, 'Started fresh', { app: 'Student Details', changes: [`Kept ${p.kept} students with ${freshStart.KEEP.join(', ').toLowerCase()}; deleted ${p.removed.length} students, every other detail, all student cards and the Mock Team's bookings`] });
-    console.log(`[startup] fresh start done: kept ${p.kept}, deleted ${p.removed.length}`);
-  }
-} catch (e) {
-  console.error('[startup] fresh start failed:', e.message);
-}
+// The one-time fresh start of the live data ran on 25 Nov 2026 and its start-up code was removed the same day: nothing deletes data by
+// itself. Start fresh is only the Admin's button (Restore), and it saves a backup first.
 // The owner's one-time tidy-up of the partners (15 Nov 2026, see partner-tidy.js); it runs once and is written in Activity.
 try {
   const out = tidyPartners({
@@ -1147,12 +1135,14 @@ const { ownTeamApplication, ownTeamFollowup, ownTeamMock } = require('../shared/
 
 // Start fresh (the owner, 25 Nov 2026): see fresh-start.js. One function for the Admin button and for the one-time run at start-up.
 function startFresh(by) {
+  // The data as it is now is saved first, as before a restore, so Start fresh can be undone. A backup that fails stops everything here.
+  const safety = backups.create('before-restore');
   const p = freshStart.plan(current);
   writeWorkbook(ensureRowIds({ revision: current.revision + 1, sheets: p.sheets, activeSheetId: current.activeSheetId }), by);
   cards.restoreAll({});
   mockBookings.restoreAll({ people: (mockBookings.all() || {}).people || {}, bookings: [] });
   try { fs.writeFileSync(path.join(DATA_DIR, 'message-log.jsonl'), '', { mode: 0o600 }); } catch (e) { /* no log yet */ }
-  return p;
+  return { ...p, safety };
 }
 
 // Admin's restore: the backups on the server, a copy made right now, and putting one back (students, Universities and
@@ -1219,8 +1209,8 @@ async function handleRestore(req, res, urlPath) {
     if (body.confirm !== 'START FRESH') return sendJSON(res, 400, { error: 'Type START FRESH to confirm. Nothing was changed.' });
     if (!current) return sendJSON(res, 500, { error: 'Could not read the data file' });
     const p = startFresh(req.user && req.user.id);
-    activity.record(req, req.user, 'Started fresh', { app: 'Student Details', changes: [`Kept ${p.kept} students with ${freshStart.KEEP.join(', ').toLowerCase()}; deleted ${p.removed.length} students, every other detail, all student cards and the Mock Team's bookings`] });
-    return sendJSON(res, 200, { ok: true, kept: p.kept, removed: p.removed.length });
+    activity.record(req, req.user, 'Started fresh', { app: 'Student Details', changes: [`Kept ${p.kept} students with ${freshStart.KEEP.join(', ').toLowerCase()}; deleted ${p.removed.length} students, every other detail, all student cards and the Mock Team's bookings. The data as it was before is saved as ${p.safety}`] });
+    return sendJSON(res, 200, { ok: true, kept: p.kept, removed: p.removed.length, safety: p.safety });
   }
   if (urlPath !== '/api/restore') return send(res, 404, 'Not found');
   const id = String(body.id || '');
