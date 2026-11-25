@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-command update + (re)start for a VPS / server terminal.
-# Usage:  ./deploy.sh [branch]   (people log in with their own accounts; see DEPLOY.md for the first-time setup code)
+# Usage:  ./deploy.sh [branch]   (people log in with their own accounts)
 # Needs Node 18+. Uses pm2 (installed automatically via npm if missing) to keep the app running.
 set -euo pipefail
 cd "$(dirname "$0")"

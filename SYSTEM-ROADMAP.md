@@ -7,7 +7,7 @@ needs the owner's approval first.
 - Saves written whole or not at all; rolling backup, daily copies, 6 p.m. copies, recovery from a damaged file.
 - Backups hold every kind of data people edit (students, cards, Universities, partners, records, Mock bookings, guidelines, guides, Apply through).
 - One server per data folder (a second copy refuses to start).
-- Off-site encrypted backup to any S3-compatible store (needs the owner's bucket and passphrase, see DEPLOY.md).
+- Off-site encrypted backup to any S3-compatible store (needs the owner's bucket and passphrase, see `shared/` and the server settings).
 - Backup problems written in Activity; Admin can check the off-site state; `/healthz` for an uptime monitor.
 - A request is worked out from the data as it is when it arrives (a double press writes once).
 - 380+ automated tests, including real-server tests of every team's rules.
@@ -21,7 +21,7 @@ needs the owner's approval first.
   Node version of the live host must be checked first (or a SQLite package added).
 
 ## Next, in this order
-1. **Owner: set the off-site settings** on the live server and an uptime monitor (about 15 minutes, DEPLOY.md). Until then there is no copy outside the server.
+1. **Owner: set the off-site settings** on the live server and an uptime monitor (about 15 minutes). Until then there is no copy outside the server.
 2. **Database (SQLite first, PostgreSQL later).** Today the data is JSON files held in memory and rewritten whole on each save. That is safe
    and fast for thousands of students; a database gives per-record saves, history of every change, and room for many branches and
    years of data. Plan: (a) put the storage behind one small interface, with the current files as the first implementation and every

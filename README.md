@@ -72,8 +72,7 @@ team and Manager rules, Universities, Incentive, accessibility) run where Playwr
 
 ## Deploying and running it
 
-- `CPANEL_DEPLOY.md`: Nest Nepal cPanel (the live setup).
-- `DEPLOY.md`: Render or any server with `deploy.sh`.
+- The live server is updated through cPanel. Its notes (`LIVE-SERVER.md`) are kept on the owner's computer, not on GitHub.
 
 Both explain accounts, backups, email and what is stored where. Data lives outside the code folder, so an update
 never touches it. `/healthz` answers `{"ok":true}` for an uptime monitor.
@@ -117,7 +116,7 @@ Partner, university or intake). They cannot change anything. Claude may need the
 
 The Student Details server reads the Incentive page's saved figures (`commissions.json`, `advances.json`, `exchange-rate-cache.json`)
 straight from the Incentive data folder. It finds that folder next to its own data folder (`.../niec_data/counselor-incentive`, the
-layout in `CPANEL_DEPLOY.md` and `deploy.sh`), or set `COUNSELOR_DATA_DIR` on the Student Details app to the same value the
+layout in `deploy.sh`), or set `COUNSELOR_DATA_DIR` on the Student Details app to the same value the
 Incentive page uses. If the folder cannot be found, the incentive tools say so instead of showing zeros. Because it is one connector,
 **the one secret opens both the students and the commissions**: keep the address private. Both connectors' shared code is in
 `shared/mcp-core.js`.

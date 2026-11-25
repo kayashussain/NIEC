@@ -403,7 +403,7 @@ function createAccounts({
     const e = emailSettings();
     return e.host && e.port && e.from && e.pass ? e : null;
   }
-  // The address this request came to, e.g. https://niec.duckdns.org
+  // The address this request came to, e.g. https://studentrecruit360.com/niec
   function detectedSiteUrl(req) {
     const host = /^[A-Za-z0-9.-]+(:\d+)?$/.test(String(req.headers.host || '')) ? req.headers.host : 'localhost';
     return `${isHttps(req) ? 'https' : 'http'}://${host}`;

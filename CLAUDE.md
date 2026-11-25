@@ -27,24 +27,20 @@
 ## Rule 0b: APPROVED ONCE MEANS DONE AND LIVE (STRICT, the owner, 23 Nov 2026)
 
 - **When the owner has looked at a design or a plan and says go, approve, build or deploy, that is the approval for the whole job,
-  including putting it on the live server.** Do all of it: build, test, review, push to `master` (the deploy follows when the tests pass),
-  check the deploy went through, and only then report.
+  including putting it on the live server.** Do all of it: build, test, review, push to `master`, update the live server (LIVE-SERVER.md),
+  check the live server, and only then report.
 - **Never split an approved job into parts and ask for approval again for each part** (for example: the opened task, then the window, then the tab).
   Do every part that was shown and approved in one go. Ask only when something truly new or different is needed, and then as a
   multiple-choice question (Rule 0).
 - Before it is called finished, review it deeply as a user, as a developer and as a tester: no CSS or front-end crash, nothing broken on
   any size or state, the code read through, the tests run. Give it your best first; then ask for the owner's feedback (multiple choice).
 
-## Rule 0c: HOW TO WORK WITH GITHUB RUNS (STRICT, the owner, 23 Nov 2026)
+## Rule 0c: HOW TO WORK WITH GITHUB RUNS AND THE LIVE SERVER (the owner, 23 Nov 2026; new server 25 Nov 2026)
 
-- **Keep watching a run until it is finished. Never wait a fixed time and never say "about 3 minutes".** A run may finish in
-  5 seconds or in 5 minutes. After a push, check the Tests run, then the Deploy run, again and again, back to back, with no
-  waiting between checks, until each one says `completed`.
-- **Report the moment a run finishes**: success, or failure with the reason. Do not make the owner ask.
-- Use the light call `actions_get` with `get_workflow_run` and the run id. Avoid `list_workflow_runs` (it returns every run).
-- If a job fails, read its log (`get_job_logs`). If it is the known slow-runner timeout in a browser test, run the failed jobs
-  again; if it is a real failure, fix it and push again. Never skip or weaken a test to get green.
-- A push is finished only when the Deploy run is `success` and the live check (`/healthz`) passed. Say so in the reply.
+- **Keep watching the Tests run until it is finished. Never wait a fixed time and never say "about 3 minutes".** Report success, or failure
+  with the reason, the moment it finishes. Never skip or weaken a test to get green.
+- **GitHub does not update the live server.** The live server is updated through cPanel, as LIVE-SERVER.md says.
+- A change is live only after that upload and restart, and after the live check (`/healthz` and the login page) passed. Say so in the reply.
 
 ## Rule 1: every CSS change is marked, logged and announced (the owner asked for this, and it must never be skipped)
 
