@@ -28,10 +28,10 @@ html body.p-body .p-page:has(#view) { max-width: none; margin: 0; padding: 0; }
 html body:not(.p-embed) .p-page:has(#view) > .p-back { display: inline-block; margin: 14px 32px 0; }
 html body.p-embed .p-page:has(#view) { padding: 0; }
 #view { color: var(--sc-ink); font-size: 16px; line-height: 1.45; letter-spacing: -.016em; }
-#view .isr-reveal { opacity: 1; transform: none; }
+#view .sr360-reveal { opacity: 1; transform: none; }
 .sc-eyebrow { color: var(--sc-grey); font-size: 13px; font-weight: 600; letter-spacing: -.01em; }
 .sc-panel { border-radius: 18px; background: var(--sc-panel); box-shadow: 0 0 0 1px rgba(0, 0, 0, .05); }
-#view { min-height: calc(100vh / var(--isr-z, 1)); background: var(--sc-panel); }
+#view { min-height: calc(100vh / var(--sr360-z, 1)); background: var(--sc-panel); }
 
 /* ---- the first drawing: one soft glide ---- */
 #view.sc-entering > * { animation: sc-rise .55s var(--sc-glide) both; }

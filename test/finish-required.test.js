@@ -14,7 +14,7 @@ const freePort = () => new Promise((resolve) => { const s = net.createServer().l
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('a done task says what was done and what comes next; the setup and the words of a message are checked', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-required-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-required-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env, stdio: 'ignore' });

@@ -313,7 +313,7 @@ async function handleIncentive(req, res, urlPath) {
   }
   // A save, opening the page, or a refresh the page marks as following something the person did, counts as using it; the page's
   // timed refreshes (the figures every 20 seconds, the exchange rate every 5 minutes) do not, so they never keep it open by themselves.
-  const active = req.method !== 'GET' || !api || req.headers['x-isr-active'] === '1';
+  const active = req.method !== 'GET' || !api || req.headers['x-sr360-active'] === '1';
   if (!incentiveLock.isUnlocked(req, { active })) {
     if (api) return sendJSON(res, 403, { error: 'Enter the Incentive password first.', locked: true });
     if (inner === '/' || inner === '/index.html') return incentive.serveLocked(req, res);
@@ -1015,8 +1015,8 @@ let portalBookings = null;
 const courseWatch = createCourseWatch({ dir: DATA_DIR, getIndex: () => (portalRef ? portalRef.courseIndex() : []), facts, finder: courseFinder, courseLinks });
 // Each person's own mailbox for emailing students (Follow-up, Your setup for sending); the office mailbox stays Admin's (see user-mail.js).
 const userMail = createUserMail(DATA_DIR);
-// A person's connected phones, for "WhatsApp opens on my phone" (see push.js). ISR_PUSH_LOCAL is for the tests' own push service only.
-const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
+// A person's connected phones, for "WhatsApp opens on my phone" (see push.js). SR360_PUSH_LOCAL is for the tests' own push service only.
+const push = createPush(DATA_DIR, { allowLocal: process.env.SR360_PUSH_LOCAL === '1' });
 // The page of every course on the university's own website (course-sitemap.js), twice a week, at least 100 courses each time.
 const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks });
 // The Navitas product toolkit (a public Google Sheet), read twice a week into Universities: one page per UK Navitas college (see
@@ -1326,7 +1326,7 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       if (out.error) return sendJSON(res, 400, { error: out.error });
       activity.record(req, out.user, 'Changed settings', { app: 'My phone', changes: [`Connected their phone (${out.device.name}) for WhatsApp, with the code from the computer`] });
       const site = `https://${String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '')}`;
-      push.send(out.user.id, { title: 'WhatsApp is on', body: 'From now on, WhatsApp on the computer opens the chat here.', url: '/today', tag: 'isr-test' }, site, 'isr-test').catch(() => {});
+      push.send(out.user.id, { title: 'WhatsApp is on', body: 'From now on, WhatsApp on the computer opens the chat here.', url: '/today', tag: 'sr360-test' }, site, 'sr360-test').catch(() => {});
       // The id and secret go to this phone only, so it can hand over a new push address by itself later (push.js renew).
       return sendJSON(res, 200, { ok: true, name: String(out.user.name || '').split(/\s+/)[0], device: { id: out.device.id, secret: out.secret } });
     }
@@ -1414,7 +1414,7 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
         return serveStatic(req, res);
       }
     }
-    if (urlPath === '/api/demo' && req.method === 'GET') return sendJSON(res, 200, { demo: process.env.ISR_DEMO === '1' });
+    if (urlPath === '/api/demo' && req.method === 'GET') return sendJSON(res, 200, { demo: process.env.SR360_DEMO === '1' });
     // What this account sees of the partner pages (the pages hide what is not theirs to change).
     if (urlPath === '/api/partner-access' && req.method === 'GET') return sendJSON(res, 200, partnerAccess(req.user));
     // Apply through (apply-through.js): the list for Admin and the Application Team; only Admin changes a partner.

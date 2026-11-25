@@ -8,7 +8,7 @@
 //   NIEC_OFFSITE_ACCESS_KEY  and NIEC_OFFSITE_SECRET_KEY   a key that may only write to that bucket
 //   NIEC_OFFSITE_PASSPHRASE  the secret that encrypts every file (AES-256-GCM) before it leaves the server. Keep a copy of it somewhere
 //                            safe and apart from the server: without it a backup cannot be opened, by anyone.
-//   NIEC_OFFSITE_PREFIX      optional folder name inside the bucket (default "isr-backups")
+//   NIEC_OFFSITE_PREFIX      optional folder name inside the bucket (default "sr360-backups")
 // Without a passphrase nothing is ever sent: student data does not go off the server unencrypted.
 //
 // Which files were sent is remembered in offsite-state.json, so a failed send is tried again at the next check and a sent file is not
@@ -21,7 +21,7 @@ const http = require('http');
 const https = require('https');
 const { writeFileAtomic } = require('../shared/server-utils');
 
-const MAGIC = Buffer.from('ISR1');
+const MAGIC = Buffer.from('SR36');
 
 function encrypt(plain, passphrase) {
   const salt = crypto.randomBytes(16); const iv = crypto.randomBytes(12);
@@ -68,7 +68,7 @@ function put({ endpoint, bucket, region, accessKey, secretKey }, key, body, { no
 }
 
 function settingsFrom(env = process.env) {
-  const s = { endpoint: env.NIEC_OFFSITE_ENDPOINT, bucket: env.NIEC_OFFSITE_BUCKET, region: env.NIEC_OFFSITE_REGION || 'auto', accessKey: env.NIEC_OFFSITE_ACCESS_KEY, secretKey: env.NIEC_OFFSITE_SECRET_KEY, passphrase: env.NIEC_OFFSITE_PASSPHRASE, prefix: (env.NIEC_OFFSITE_PREFIX || 'isr-backups').replace(/^\/+|\/+$/g, '') };
+  const s = { endpoint: env.NIEC_OFFSITE_ENDPOINT, bucket: env.NIEC_OFFSITE_BUCKET, region: env.NIEC_OFFSITE_REGION || 'auto', accessKey: env.NIEC_OFFSITE_ACCESS_KEY, secretKey: env.NIEC_OFFSITE_SECRET_KEY, passphrase: env.NIEC_OFFSITE_PASSPHRASE, prefix: (env.NIEC_OFFSITE_PREFIX || 'sr360-backups').replace(/^\/+|\/+$/g, '') };
   return s.endpoint && s.bucket && s.accessKey && s.secretKey && s.passphrase ? s : null;
 }
 

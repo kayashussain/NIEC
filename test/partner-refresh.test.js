@@ -8,7 +8,7 @@ const path = require('node:path');
 const { createFacts } = require('../student-details/facts');
 const { createPartnerRefresh, fromRoute2Uni, thursdayDue } = require('../student-details/partner-refresh');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-refresh-'));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-refresh-'));
 const UNI = {
   entryRequirements: [{ courseLevelName: 'Postgraduate', criteria: ['Bachelor 55%'], gapAccepted: true, gapYearsAllowed: 'Up to 5 years' }],
   languageTests: [{ courseLevelName: 'Postgraduate', languageTestName: 'IELTS', requiredScore: '6.0 overall' }],

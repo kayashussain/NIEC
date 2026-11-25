@@ -16,7 +16,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
 test('design F1: stopped students, Bring back, progress and tasks reach the Follow-up Team', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-f1-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-f1-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   delete env.ANTHROPIC_API_KEY;

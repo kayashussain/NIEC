@@ -13,7 +13,7 @@ const freePort = () => new Promise((resolve) => { const s = net.createServer().l
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('a student login opens their own portal only', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-student-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-student-'));
   const port = await freePort();
   const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir }, stdio: 'ignore' });
   t.after(() => server.kill());

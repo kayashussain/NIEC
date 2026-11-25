@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="portal.css" />
 <link rel="stylesheet" href="theme.css" />
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
-<link rel="expect" href="#isr-ready" blocking="render" />
+<link rel="expect" href="#sr360-ready" blocking="render" />
 </head>
 <body class="p-body" data-kind="b2b">
   <header class="niec-header" data-page="b2b"></header>
@@ -26,7 +26,7 @@
       </div>
       <div class="bp-band" id="kpis"></div>
       <div class="bp-tools"><span class="p-muted" id="count"></span></div>
-      <div class="bp-grid" id="list"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>
+      <div class="bp-grid" id="list"><div class="sr360-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>
     </div>
     <section id="editor" hidden></section>
   </main>
@@ -36,6 +36,6 @@
 <script src="partners-switch.js"></script>
 <script src="portal-ui.js"></script>
 <script src="b2b-page.js"></script>
-<span id="isr-ready" hidden></span>
+<span id="sr360-ready" hidden></span>
 </body>
 </html>

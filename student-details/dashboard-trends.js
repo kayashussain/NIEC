@@ -26,7 +26,7 @@
     t.replaceChildren(el('div', 'tip-title', title));
     rows.forEach(([k, v, c]) => { const r = el('div', 'tip-row'); if (c) { const key = el('span', 'tip-key'); key.style.setProperty('--c', c); r.append(key); } r.append(el('span', 'tip-name', k), el('span', 'tip-val', String(v))); t.append(r); });
     t.hidden = false;
-    const P = window.isrPos; // page pixels, whatever the Text size
+    const P = window.sr360Pos; // page pixels, whatever the Text size
     t.style.left = Math.max(8, Math.min(P.point(e.clientX) + 16, P.width() - t.offsetWidth - 8)) + 'px';
     t.style.top = Math.max(8, Math.min(P.point(e.clientY) + 16, P.height() - t.offsetHeight - 8)) + 'px';
   }

@@ -15,7 +15,7 @@ const freePort = () => new Promise((resolve) => { const s = net.createServer().l
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('finishing a task writes confirmed answers to the sheet and the notes', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-finish-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-finish-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   delete env.ANTHROPIC_API_KEY;

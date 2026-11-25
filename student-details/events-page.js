@@ -14,7 +14,7 @@
   let find = ''; // the words typed in the search box of the list
   // The intake shown (the owner, 17 Nov 2026: Events and marketing intake by intake, All as a choice): the id of an intake tab, or
   // 'all'. It opens on the intake chosen last on this computer, else the current intake.
-  const INTAKE_KEY = 'isrEventsIntake';
+  const INTAKE_KEY = 'sr360EventsIntake';
   let intake = '';
   try { intake = localStorage.getItem(INTAKE_KEY) || ''; } catch (e) { /* the current intake, as usual */ }
   const intakeName = (id) => ((data && data.intakes) || []).find((x) => x.id === id)?.name || '';
@@ -133,7 +133,7 @@
     const ph = el('div', 'ev-section-head'); const pw = el('div');
     pw.append(el('h3', '', 'Students'), el('p', '', 'Everyone from this event, in every intake. Click a name to open the card.'));
     ph.append(pw); people.append(ph);
-    const listBox = el('div'); listBox.innerHTML = '<div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
+    const listBox = el('div'); listBox.innerHTML = '<div class="sr360-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     people.append(listBox);
     v.replaceChildren(back, head, figs, people, ...(upload ? [upload] : []));
     loadPeople(a, listBox);

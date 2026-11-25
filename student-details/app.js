@@ -1087,8 +1087,8 @@
     });
 
     document.body.appendChild(menu);
-    const rect = window.isrPos.rect(btn); // in page pixels, whatever the Text size
-    menu.style.left = Math.min(rect.left, window.isrPos.width() - menu.offsetWidth - 8) + 'px';
+    const rect = window.sr360Pos.rect(btn); // in page pixels, whatever the Text size
+    menu.style.left = Math.min(rect.left, window.sr360Pos.width() - menu.offsetWidth - 8) + 'px';
     menu.style.top = (rect.top - menu.offsetHeight - 4) + 'px';
     openSheetMenu = menu;
     setTimeout(() => document.addEventListener('mousedown', onSheetMenuDocClick, true), 0);
@@ -1335,12 +1335,12 @@
     menu.appendChild(footer);
 
     document.body.appendChild(menu);
-    const rect = window.isrPos.rect(th); // in page pixels, whatever the Text size
-    menu.style.left = Math.max(8, Math.min(rect.left, window.isrPos.width() - menu.offsetWidth - 8)) + 'px';
+    const rect = window.sr360Pos.rect(th); // in page pixels, whatever the Text size
+    menu.style.left = Math.max(8, Math.min(rect.left, window.sr360Pos.width() - menu.offsetWidth - 8)) + 'px';
     // It opens right under its column header (the list inside scrolls), never over the page title above (the owner, 20 Nov 2026:
     // the menu covered the title and the search). Only when there is too little room below does it open above the header.
     /* 🔴 CSS CHANGED (2026-11-20): the column filter menu's height and place set here | from: as tall as the window, pushed up to the top over the title, search and toolbar | to: under its column header, as tall as the room below allows (at most 440px), above the header only when there is less than 260px below */
-    const below = window.isrPos.height() - rect.bottom - 12;
+    const below = window.sr360Pos.height() - rect.bottom - 12;
     const up = below < 260 && rect.top > below;
     const room = Math.max(200, Math.min(440, up ? rect.top - 12 : below));
     menu.style.maxHeight = room + 'px';
@@ -1980,12 +1980,12 @@
     box.append(label, body);
     if (n) { const f = document.createElement('p'); f.className = 'cell-peek-more'; f.textContent = feedback ? `Feedback ${n}: ${feedback}` : `Feedback ${n}: not written yet`; box.append(f); }
     document.body.append(box);
-    const r = window.isrPos.rect(td);
-    const w = Math.min(360, window.isrPos.width() - 16);
+    const r = window.sr360Pos.rect(td);
+    const w = Math.min(360, window.sr360Pos.width() - 16);
     box.style.width = `${w}px`;
-    box.style.left = `${Math.max(8, Math.min(r.left, window.isrPos.width() - w - 8))}px`;
+    box.style.left = `${Math.max(8, Math.min(r.left, window.sr360Pos.width() - w - 8))}px`;
     const h = 120; // about the box's height: shown above the cell when there is no room under it
-    box.style.top = `${r.bottom + 6 + h > window.isrPos.height() ? Math.max(8, r.top - 6 - h) : r.bottom + 6}px`;
+    box.style.top = `${r.bottom + 6 + h > window.sr360Pos.height() ? Math.max(8, r.top - 6 - h) : r.bottom + 6}px`;
     peekBox = box;
     peekAt = Date.now();
   }
@@ -2654,8 +2654,8 @@
       menu.appendChild(item);
     });
     document.body.appendChild(menu);
-    const rect = window.isrPos.rect($('#colorRow')); // in page pixels, whatever the Text size
-    menu.style.left = Math.max(8, Math.min(rect.left, window.isrPos.width() - menu.offsetWidth - 8)) + 'px';
+    const rect = window.sr360Pos.rect($('#colorRow')); // in page pixels, whatever the Text size
+    menu.style.left = Math.max(8, Math.min(rect.left, window.sr360Pos.width() - menu.offsetWidth - 8)) + 'px';
     menu.style.top = rect.bottom + 4 + 'px';
     openSheetMenu = menu;
     setTimeout(() => document.addEventListener('mousedown', onSheetMenuDocClick, true), 0);

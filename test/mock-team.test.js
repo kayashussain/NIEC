@@ -39,7 +39,7 @@ test('a Teams link must be a real Microsoft Teams address; slots must make sense
 });
 
 test('bookings: free slots, booking, the mock number, cancelling, reminders and the answer', () => {
-  const dir = tmp('isr-bookings-');
+  const dir = tmp('sr360-bookings-');
   let now = new Date('2026-11-22T04:15:00Z'); // Sunday 22 Nov 2026, 10:00 in Nepal
   const B = createMockBookings(dir, { now: () => now, timeZone: 'Asia/Kathmandu' });
   assert.strictEqual(B.momentOf('2026-11-22', '10:00').toISOString(), '2026-11-22T04:15:00.000Z', 'Nepal is 5 hours 45 minutes ahead');
@@ -60,7 +60,7 @@ test('bookings: free slots, booking, the mock number, cancelling, reminders and 
   const match = (email) => (email === 'sita@example.com' ? student : null);
   assert.match(B.book('u1', { day: '2026-11-22', time: '10:00', name: 'Sita', email: 'sita@example.com' }, match).error, /no longer free/);
   assert.match(B.book('u1', { day: '2026-11-22', time: '11:30', name: '', email: 'sita@example.com' }, match).error, /name/);
-  const one = B.book('u1', { day: '2026-11-22', time: '11:30', name: 'Sita Example', email: 'Sita@Example.com', phone: '9800000000' }, match, 'https://isr.example');
+  const one = B.book('u1', { day: '2026-11-22', time: '11:30', name: 'Sita Example', email: 'Sita@Example.com', phone: '9800000000' }, match, 'https://sr360.example');
   assert.ok(one.booking, JSON.stringify(one));
   assert.strictEqual(one.booking.mock, 2, 'the next mock not held yet');
   assert.strictEqual(one.booking.university, 'Test University');
@@ -96,7 +96,7 @@ test('bookings: free slots, booking, the mock number, cancelling, reminders and 
 });
 
 test('interview guidelines: only real files of the right kinds, kept under their own id', () => {
-  const dir = tmp('isr-guides-');
+  const dir = tmp('sr360-guides-');
   const G = createMockGuidelines(dir);
   const pdfBytes = () => Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(100, 32)]);
   const pdf = pdfBytes();
@@ -119,7 +119,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const S = 'APPLICATION STATUS';
 
 test('the Mock Team on the server: its pages, the booking page, the answer, the sheet to look at, Missing details, guidelines', { timeout: 120000 }, async (t) => {
-  const dir = tmp('isr-mockteam-');
+  const dir = tmp('sr360-mockteam-');
   const port = await freePort();
   const server = spawn(process.execPath, ['server.js'], {
     cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, COURSE_WATCH: 'off', PARTNER_REFRESH: 'off' }, stdio: 'ignore',
@@ -307,7 +307,7 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
 });
 
 test('bookings: the file limit never drops a booking that is still waiting for its answer', () => {
-  const dir = tmp('isr-bookings-cap-');
+  const dir = tmp('sr360-bookings-cap-');
   const now = new Date('2026-11-22T04:15:00Z');
   const B = createMockBookings(dir, { now: () => now, timeZone: 'Asia/Kathmandu' });
   assert.ok(B.saveSetup('u1', { teams: 'https://teams.live.com/meet/1', slug: 'bikram', shown: 'Bikram', email: 'b@example.com' }).person);
@@ -330,7 +330,7 @@ test('bookings: the file limit never drops a booking that is still waiting for i
 });
 
 test('bookings: a wrong "did not join" can be taken back, a joined answer cannot', () => {
-  const dir = tmp('isr-bookings-undo-');
+  const dir = tmp('sr360-bookings-undo-');
   let now = new Date('2026-11-22T04:15:00Z');
   const B = createMockBookings(dir, { now: () => now, timeZone: 'Asia/Kathmandu' });
   assert.ok(B.saveSetup('u1', { teams: 'https://teams.live.com/meet/1', slug: 'bikram', shown: 'Bikram', email: 'b@example.com' }).person);
@@ -349,7 +349,7 @@ test('bookings: a wrong "did not join" can be taken back, a joined answer cannot
 });
 
 test('bookings: a failed reminder is counted so it can stop after three tries', () => {
-  const dir = tmp('isr-bookings-tries-');
+  const dir = tmp('sr360-bookings-tries-');
   const now = new Date('2026-11-22T04:15:00Z');
   const B = createMockBookings(dir, { now: () => now, timeZone: 'Asia/Kathmandu' });
   assert.ok(B.saveSetup('u1', { teams: 'https://teams.live.com/meet/1', slug: 'bikram', shown: 'Bikram', email: 'b@example.com' }).person);

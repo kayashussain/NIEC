@@ -11,7 +11,7 @@
   let searchTimer = null;
   let searchSeq = 0; // answers arriving out of order: only the latest search is shown
   // The filters above the cards (the owner, 17 Nov 2026: find the right university in seconds), kept in this browser.
-  const FKEY = 'isrFactFilters';
+  const FKEY = 'sr360FactFilters';
   // Two lists only, Universities and Pathway colleges, never both mixed (the owner, 17 Nov 2026: "remove All"). A choice of "all"
   // kept in a browser from before becomes Universities.
   const KINDS = ['university', 'pathway'];

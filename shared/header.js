@@ -301,7 +301,7 @@
   // The menu is drawn at once from what this browser tab remembers from the last page (who is logged in), so moving from page
   // to page never shows an empty menu; the server's answer then confirms it and redraws only if something changed. The memory is
   // per tab (sessionStorage), holds only the name, username and access, and is wiped at the login page and at Log out.
-  const MEMORY = 'isrMe';
+  const MEMORY = 'sr360Me';
   let shown = '';
   try {
     const kept = sessionStorage.getItem(MEMORY);
@@ -321,16 +321,16 @@
     bar.textContent = 'DEMO: these students, intakes and numbers are made up. They are not your real data.';
     document.body.prepend(bar);
   };
-  try { if (sessionStorage.getItem('isrDemo') === '1') demoBar(); } catch (e) { /* checked below */ }
+  try { if (sessionStorage.getItem('sr360Demo') === '1') demoBar(); } catch (e) { /* checked below */ }
   fetch('/api/demo', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
-    try { sessionStorage.setItem('isrDemo', d && d.demo ? '1' : '0'); } catch (e) { /* not kept */ }
+    try { sessionStorage.setItem('sr360Demo', d && d.demo ? '1' : '0'); } catch (e) { /* not kept */ }
     if (d && d.demo) demoBar();
   }).catch(() => { /* no banner */ });
   // A red badge on Today in the menu when something is new on the person's tasks (a comment, a task just given to them), so nobody
   // misses that the team, or whoever gave a task, wrote back (the owner, 14 Nov 2026). Checked on every page, every minute, and at
-  // once when the person reads a task (the comments send "isr-tasks-read").
+  // once when the person reads a task (the comments send "sr360-tasks-read").
   let unread = 0;
-  try { unread = Number(sessionStorage.getItem('isrUnread')) || 0; } catch (e) { /* asked below */ }
+  try { unread = Number(sessionStorage.getItem('sr360Unread')) || 0; } catch (e) { /* asked below */ }
   const showUnread = () => {
     const link = header.querySelector('.niec-nav a[href="/today"]');
     if (!link) return;
@@ -345,12 +345,12 @@
     if (!d) return;
     const was = unread;
     unread = Number(d.count) || 0;
-    try { sessionStorage.setItem('isrUnread', String(unread)); } catch (e) { /* asked again next page */ }
+    try { sessionStorage.setItem('sr360Unread', String(unread)); } catch (e) { /* asked again next page */ }
     showUnread();
     if (unread > was) { const b = header.querySelector('.niec-badge'); if (b) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); } }
   }).catch(() => { /* asked again in a minute */ }));
   showUnread();
-  window.addEventListener('isr-tasks-read', () => setTimeout(askUnread, 300));
+  window.addEventListener('sr360-tasks-read', () => setTimeout(askUnread, 300));
   setInterval(() => { if (!document.hidden) askUnread(); }, 60000);
   fetch('/api/me', { cache: 'no-store' })
     .then((res) => (res.ok ? res.json() : null))

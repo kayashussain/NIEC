@@ -40,7 +40,7 @@
   const load = async (fresh) => { if (!status || fresh) status = await api('/api/push'); return status; };
 
   // This phone's id and secret, kept on the phone for Student Recruit 360's service worker (sw.js), so it renews its push address by itself.
-  const STORE = 'isr-device'; const ME = '/__isr-device';
+  const STORE = 'sr360-device'; const ME = '/__sr360-device';
   const mine = async () => { try { const r = await (await caches.open(STORE)).match(ME); return r ? await r.json() : null; } catch (e) { return null; } };
   const keepMine = async (me) => { try { await (await caches.open(STORE)).put(ME, new Response(JSON.stringify(me), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { /* still works */ } };
   // Any page of Student Recruit 360 opened on a connected phone checks in quietly, so the phone stays connected (sw.js heal).
@@ -63,8 +63,8 @@
   }
 
   function loadQr() {
-    if (window.IsrQr) return Promise.resolve(window.IsrQr);
-    return new Promise((resolve, reject) => { const sc = document.createElement('script'); sc.src = '/qr.js'; sc.onload = () => resolve(window.IsrQr); sc.onerror = reject; document.head.append(sc); });
+    if (window.Sr360Qr) return Promise.resolve(window.Sr360Qr);
+    return new Promise((resolve, reject) => { const sc = document.createElement('script'); sc.src = '/qr.js'; sc.onload = () => resolve(window.Sr360Qr); sc.onerror = reject; document.head.append(sc); });
   }
 
   // Small line icons, drawn here (nothing to download): a phone, and a phone with a chat bubble.
@@ -72,7 +72,7 @@
   const ICON_CHAT = '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="13" y="5" width="22" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M21 38.5h6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M24.5 13.5h9.5a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4h-4.2l-4.3 3.6v-3.6h-1a4 4 0 0 1-4-4v-5a4 4 0 0 1 4-4z" fill="#25d366"/><circle cx="26" cy="20" r="1.2" fill="#fff"/><circle cx="29.8" cy="20" r="1.2" fill="#fff"/><circle cx="33.6" cy="20" r="1.2" fill="#fff"/></svg>';
   const icon = (cls, svg) => { const s = el('span', cls); s.innerHTML = svg; return s; };
   const day = (iso) => { const t = new Date(iso); if (Number.isNaN(t.getTime())) return ''; const n = new Date(); const d0 = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); const diff = Math.round((d0(n) - d0(t)) / 864e5); return diff === 0 ? 'today' : diff === 1 ? 'yesterday' : t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
-  const OS_KEY = 'isr-phone-kind';
+  const OS_KEY = 'sr360-phone-kind';
   const STEPS = {
     android: [['Open the camera', 'Point it at the code and tap the link that appears. (If the camera shows no link, open Chrome and tap the camera icon in the search bar.)'], ['Tap "Turn on", then "Allow"', 'That is all. No login on the phone.']],
     iphone: [['Open the Camera', 'Point it at the code and tap the link that appears.'], ['Add Student Recruit 360 to the Home Screen', 'Tap the Share button, then "Add to Home Screen". Apple asks for this once.'], ['Open Student Recruit 360 from the Home Screen', 'Tap "Turn on", then "Allow". That is all.']],

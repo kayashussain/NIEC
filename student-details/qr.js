@@ -3,10 +3,10 @@
 // the notifications on with one tap (see phone-link.js and pair-page.js). Opening a chat never shows a code.
 //
 // QR Code Model 2, byte mode, error correction level M, versions 1 to 40 chosen by length; the eight masks are tried and the one
-// with the lowest penalty kept (ISO/IEC 18004). Works in the browser (window.IsrQr) and in Node (for the tests).
+// with the lowest penalty kept (ISO/IEC 18004). Works in the browser (window.Sr360Qr) and in Node (for the tests).
 //
-//   IsrQr.matrix(text)          the dark (true) and light (false) modules, row by row
-//   IsrQr.svg(text, { size })   an <svg> string with a quiet zone, black on white
+//   Sr360Qr.matrix(text)          the dark (true) and light (false) modules, row by row
+//   Sr360Qr.svg(text, { size })   an <svg> string with a quiet zone, black on white
 (function (root) {
   const ECC_PER_BLOCK = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
   const BLOCKS = [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49];
@@ -187,5 +187,5 @@
 
   const api = { matrix, svg };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  else root.IsrQr = api;
+  else root.Sr360Qr = api;
 })(typeof window !== 'undefined' ? window : globalThis);

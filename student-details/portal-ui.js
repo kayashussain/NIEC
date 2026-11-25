@@ -226,12 +226,12 @@
       list.replaceChildren(...items);
       if (!all.length) list.append(el('li', 'tk-empty', 'No updates yet.'));
     };
-    // Read: the dot goes, here and in the menu (shared/header.js listens for "isr-tasks-read").
+    // Read: the dot goes, here and in the menu (shared/header.js listens for "sr360-tasks-read").
     const markRead = () => {
       if (pending <= 0) return;
       pending = 0; fresh = 0; label();
       api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { seen: true })
-        .then(() => window.dispatchEvent(new Event('isr-tasks-read'))).catch(() => { /* marked next time */ });
+        .then(() => window.dispatchEvent(new Event('sr360-tasks-read'))).catch(() => { /* marked next time */ });
       const row = box.closest('.td-task');
       if (row) { row.classList.remove('has-unread'); const dot = row.querySelector('.td-dot'); if (dot) dot.remove(); }
     };
@@ -273,7 +273,7 @@
           list.hidden = false;
           list.append(entry(comments()[comments().length - 1], false, true));
           label();
-          window.dispatchEvent(new Event('isr-tasks-read'));
+          window.dispatchEvent(new Event('sr360-tasks-read'));
         } catch (e) { if (root.NiecUI) root.NiecUI.toast(e.message, { type: 'error' }); }
         input.disabled = false; send.disabled = !input.value.trim(); input.focus();
       };
@@ -1012,8 +1012,8 @@
   // A small, happy burst of soft coloured dots from where a task was ticked (nothing moves for people who ask for less motion).
   function celebrate(from) {
     if (!from || (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    const r = window.isrPos ? window.isrPos.rect(from) : from.getBoundingClientRect(); // page pixels, whatever the Text size
-    const box = el('div', 'isr-burst');
+    const r = window.sr360Pos ? window.sr360Pos.rect(from) : from.getBoundingClientRect(); // page pixels, whatever the Text size
+    const box = el('div', 'sr360-burst');
     box.style.left = `${r.left + r.width / 2}px`;
     box.style.top = `${r.top + r.height / 2}px`;
     const colours = ['#0071e3', '#34c759', '#ff9f0a', '#af52de', '#ff375f', '#5ac8fa'];

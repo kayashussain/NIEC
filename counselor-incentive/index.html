@@ -219,7 +219,7 @@
 </style>
 <link rel="stylesheet" href="theme.css" />
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
-<link rel="expect" href="#isr-ready" blocking="render" />
+<link rel="expect" href="#sr360-ready" blocking="render" />
 </head>
 <body>
 <header class="niec-header" data-page="incentive"></header>
@@ -529,7 +529,7 @@ function cellText(key, v) {
 // only when they pressed, typed or scrolled in the last 2 minutes; the timed refreshes alone never keep the page open.
 let lastActive = Date.now();
 ['pointerdown', 'keydown', 'wheel', 'input'].forEach((type) => document.addEventListener(type, () => { lastActive = Date.now(); }, { passive: true, capture: true }));
-const activeHeader = () => (Date.now() - lastActive < 2 * 60 * 1000 ? { 'x-isr-active': '1' } : {});
+const activeHeader = () => (Date.now() - lastActive < 2 * 60 * 1000 ? { 'x-sr360-active': '1' } : {});
 
 function parseMoney(text, key) {
   const col = COLUMNS[colIndex(key)] || {};
@@ -647,7 +647,7 @@ const scheduleSaveAdvance = createSaver(pendingAdvances, async (intake, leaving)
 });
 // When the page locks (20 minutes unused, or the password changed), anything typed and not saved yet is kept in this tab and
 // sent again once the password is typed, so a lock never throws an edit away (the review of 21 Nov 2026 lost one this way).
-const KEEP_KEY = 'isrIncentiveUnsaved';
+const KEEP_KEY = 'sr360IncentiveUnsaved';
 function keepUnsaved() {
   const c = {}; Object.keys(unsavedFields).forEach((id) => { c[id] = {}; Object.keys(unsavedFields[id]).forEach((f) => { c[id][f] = (state.commissions[id] || {})[f]; }); });
   const a = {}; Object.keys(unsavedAdvanceFields).forEach((intake) => { a[intake] = { fields: Object.keys(unsavedAdvanceFields[intake]), entry: state.advances[intake] || {} }; });
@@ -1952,6 +1952,6 @@ updateUndoRedoButtons();
 // Edits kept when the page locked are put back once the figures have loaded (only then: a load that failed keeps them for the next).
 loadAll().then(() => { if (lastSnapshot) restoreUnsaved(); });
 </script>
-<span id="isr-ready" hidden></span>
+<span id="sr360-ready" hidden></span>
 </body>
 </html>

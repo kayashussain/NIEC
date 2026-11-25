@@ -247,7 +247,7 @@ html:root body .lg-mock-who { color: var(--apple-grey); }
 /* Text size for the Application Team (the owner: "the text looks small"): drawn at 92% instead of the 80% every page uses, so the small
    words (labels, chips, secondary lines) read comfortably on a laptop. Other teams are not changed. */
 @media (min-width: 900px) {
-  html.app-apple[data-size="medium"] { zoom: .92; --isr-z: .92; }
+  html.app-apple[data-size="medium"] { zoom: .92; --sr360-z: .92; }
 }
 html:root body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-feature-settings: "cv11", "ss01"; }
 html:root body .btn, html:root body .tda-pill, html:root body .tda-view, html:root body .lg-seg-btn, html:root body .sc-reach-btn, html:root body .sl-pick { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease; }

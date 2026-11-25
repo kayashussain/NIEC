@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { acquire, STALE_MS } = require('../student-details/instance-lock');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-lock-'));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-lock-'));
 
 test('a second copy on the same data folder refuses; a stopped or stale one is taken over', () => {
   const dir = tmp();

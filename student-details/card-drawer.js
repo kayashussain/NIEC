@@ -76,7 +76,7 @@
     };
     // A form open on the card (Edit profile, a detail being typed): leaving it by a click beside the window or the next student
     // asks first, as Escape already does, so typed words are never lost without a word (the review of 21 Nov 2026).
-    const busy = () => { try { const w = frame.contentWindow; return Boolean(w && w.isrCardBusy && w.isrCardBusy()); } catch (e) { return false; } };
+    const busy = () => { try { const w = frame.contentWindow; return Boolean(w && w.sr360CardBusy && w.sr360CardBusy()); } catch (e) { return false; } };
     const leave = async (go) => {
       if (busy() && !(await root.NiecUI.confirm('You have changes on this card that are not saved. Leave without saving them?', { confirmText: 'Leave without saving', cancelText: 'Stay' }))) return;
       go();

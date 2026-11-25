@@ -1001,7 +1001,7 @@
         const ids = [...new Set(fresh.map((n) => n.task))];
         try { await api('/api/tasks/seen', { ids: ids.map((x) => x.id) }); } catch (e) { clear.disabled = false; window.NiecUI.toast(e.message || 'Could not mark them as read. Try again.', { type: 'error' }); return; }
         ids.forEach((x) => { x.news = []; x.unread = 0; (x.history || []).forEach((n) => { n.isNew = false; }); });
-        window.dispatchEvent(new Event('isr-tasks-read'));
+        window.dispatchEvent(new Event('sr360-tasks-read'));
         refresh();
       });
       head.append(clear);
@@ -1234,7 +1234,7 @@
     };
     // A task read on this page (its updates opened, an update written, Mark all as read): the bell follows at once, without redrawing
     // the tasks (an update being typed is never lost). The owner, 21 Nov 2026: the bell stayed at 10 after reading.
-    window.addEventListener('isr-tasks-read', async () => { try { tasks = await api('/api/tasks'); } catch (e) { return; } paintBell(); });
+    window.addEventListener('sr360-tasks-read', async () => { try { tasks = await api('/api/tasks'); } catch (e) { return; } paintBell(); });
     todayData = d;
     const refresh = async (reload) => {
       if (reload) {

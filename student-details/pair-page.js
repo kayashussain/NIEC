@@ -38,7 +38,7 @@
 
   // This phone's id and secret, kept on the phone for Student Recruit 360's service worker (sw.js), so the phone hands over a new push address by
   // itself and never has to be connected again.
-  const STORE = 'isr-device'; const ME = '/__isr-device';
+  const STORE = 'sr360-device'; const ME = '/__sr360-device';
   const mine = async () => { try { const r = await (await caches.open(STORE)).match(ME); return r ? await r.json() : null; } catch (e) { return null; } };
   const keepMine = async (me) => { try { await (await caches.open(STORE)).put(ME, new Response(JSON.stringify(me), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { /* the phone still works; it only cannot renew by itself */ } };
 

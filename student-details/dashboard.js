@@ -36,7 +36,7 @@
       tip.append(row);
     });
     tip.hidden = false;
-    const P = window.isrPos; // page pixels, whatever the Text size
+    const P = window.sr360Pos; // page pixels, whatever the Text size
     tip.style.left = Math.max(8, Math.min(P.point(x), P.width() - tip.offsetWidth - 8)) + 'px';
     tip.style.top = Math.max(8, Math.min(P.point(y), P.height() - tip.offsetHeight - 8)) + 'px';
   }

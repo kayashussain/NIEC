@@ -1,9 +1,9 @@
 'use strict';
 // Starts Student Recruit 360 on this computer, on http://localhost:8080, with the data in ONE fixed folder (default C:\StudentRecruit360-data), so nothing has to be
-// set in the command window and the same login works every time. Used by start-isr.bat.
-//   - The login owner / isr-local-2026 is made (or set right again) every time it starts: a private copy on this computer only; the live server is never touched.
+// set in the command window and the same login works every time. Used by start-portal.bat.
+//   - The login owner / sr360-local-2026 is made (or set right again) every time it starts: a private copy on this computer only; the live server is never touched.
 //   - Any other login in the folder stays as it is.
-// To use another folder: set ISR_DATA=<folder>. To use another port: set PORT=<number>.
+// To use another folder: set SR360_DATA=<folder>. To use another port: set PORT=<number>.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -13,9 +13,9 @@ const { hashPassword } = require('../shared/accounts');
 const { writeFileAtomic } = require('../shared/server-utils');
 
 const root = path.resolve(__dirname, '..');
-const dataDir = path.resolve(process.env.ISR_DATA || (process.platform === 'win32' ? path.join(path.parse(root).root, 'StudentRecruit360-data') : path.join(os.homedir(), 'StudentRecruit360-data')));
+const dataDir = path.resolve(process.env.SR360_DATA || (process.platform === 'win32' ? path.join(path.parse(root).root, 'StudentRecruit360-data') : path.join(os.homedir(), 'StudentRecruit360-data')));
 const port = String(process.env.PORT || 8080);
-const PASSWORD = 'isr-local-2026';
+const PASSWORD = 'sr360-local-2026';
 
 fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 });
 const usersFile = path.join(dataDir, 'users.json');

@@ -81,7 +81,7 @@
   if (embedded) {
     document.body.classList.add('p-embed');
     // Asked by the window around the card (card-drawer.js) before it closes or moves to another student.
-    window.isrCardBusy = () => Boolean(editingHero || editingOrigin || editingField || document.querySelector('dialog[open], .p-dialog'));
+    window.sr360CardBusy = () => Boolean(editingHero || editingOrigin || editingField || document.querySelector('dialog[open], .p-dialog'));
     document.getElementById('closeEmbed').addEventListener('click', () => parent.postMessage({ niecCard: 'close' }, location.origin));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !editingHero && !editingOrigin && !editingField && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && !document.querySelector('dialog[open], .p-dialog')) parent.postMessage({ niecCard: 'close' }, location.origin); });
     // ← and → go to the previous and next student of the list the card was opened from (card-drawer.js), when nothing is being typed.
@@ -775,7 +775,7 @@
   let noteDraft = '';
   let tlLastSeen = null; // when this person last opened this student ('' the first time), read once when the card opens
   // A note being written is kept in this browser until it is added, so closing the card or the window never loses it.
-  const draftKey = () => `isrDraft:${(data && data.me && data.me.name) || ''}:${id}`;
+  const draftKey = () => `sr360Draft:${(data && data.me && data.me.name) || ''}:${id}`;
   // N starts a note (when nothing is being typed and no window is open), as a quick key in Apple's apps.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -832,7 +832,7 @@
     // What is new since this person last opened the student: a small blue dot. Kept in this browser only.
     const meName = (data.me || {}).name || '';
     if (tlLastSeen === null) {
-      const key = `isrSeen:${meName}:${id}`;
+      const key = `sr360Seen:${meName}:${id}`;
       try { tlLastSeen = localStorage.getItem(key) || ''; localStorage.setItem(key, new Date().toISOString()); } catch (e) { tlLastSeen = ''; }
     }
     if (can()) {
@@ -1360,7 +1360,7 @@
   // student opens without going back to the list.
   function queue() {
     try {
-      const q = JSON.parse(sessionStorage.getItem('isrQueue') || 'null');
+      const q = JSON.parse(sessionStorage.getItem('sr360Queue') || 'null');
       if (!q || !Array.isArray(q.ids)) return null;
       const at = q.ids.indexOf(id);
       return at === -1 ? null : { ...q, at };

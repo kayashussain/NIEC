@@ -18,7 +18,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout: 180000, skip: !playwright && 'Playwright is not installed' }, async (t) => {
   let browser;
   try { browser = await playwright.chromium.launch(); } catch (e) { t.skip('no Chromium browser available'); return; }
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-today-app-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-today-app-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, COUNSELOR_DATA_DIR: path.join(dir, 'incentive') };
   delete env.ANTHROPIC_API_KEY;

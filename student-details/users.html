@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="admin.css" />
 <link rel="stylesheet" href="theme.css" />
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
-<link rel="expect" href="#isr-ready" blocking="render" />
+<link rel="expect" href="#sr360-ready" blocking="render" />
 </head>
 <body>
   <header class="niec-header" data-page="users"></header>
@@ -55,7 +55,7 @@
         <p><b>Remove</b> deletes a login. <b>Disable</b> pauses it.</p>
         <table>
           <thead><tr><th>Person</th><th>Access</th><th>Status</th><th>Last login</th><th>Devices</th><th><span class="sr-only">Actions</span></th></tr></thead>
-          <tbody id="users"><tr><td colspan="6"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
+          <tbody id="users"><tr><td colspan="6"><div class="sr360-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
         </table>
         <div class="msg" id="usersMsg" role="status"></div>
       </div>
@@ -80,7 +80,7 @@
         <p>Devices logged in now. Logins end after 12 hours.</p>
         <table>
           <thead><tr><th>Person</th><th>Device</th><th>IP address</th><th>Logged in</th><th>Last active</th><th><span class="sr-only">Actions</span></th></tr></thead>
-          <tbody id="sessions"><tr><td colspan="6"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
+          <tbody id="sessions"><tr><td colspan="6"><div class="sr360-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
         </table>
         <div class="msg" id="sessionsMsg" role="status"></div>
       </div>
@@ -109,6 +109,6 @@
 <script src="header.js"></script>
 <script src="card-fields.js"></script>
 <script src="users.js"></script>
-<span id="isr-ready" hidden></span>
+<span id="sr360-ready" hidden></span>
 </body>
 </html>

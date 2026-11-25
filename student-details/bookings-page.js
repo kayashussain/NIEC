@@ -357,8 +357,8 @@
     go.addEventListener('click', () => { const t = boxes.filter((b) => b.checked).map((b) => Number(b.value)); menu.remove(); if (t.length) done(t); });
     menu.append(go);
     document.body.append(menu);
-    const r = window.isrPos.rect(anchor);
-    menu.style.left = `${Math.max(8, Math.min(r.right - 240, window.isrPos.width() - 248))}px`;
+    const r = window.sr360Pos.rect(anchor);
+    menu.style.left = `${Math.max(8, Math.min(r.right - 240, window.sr360Pos.width() - 248))}px`;
     menu.style.top = `${r.bottom + 6}px`;
     const away = (e) => { if (!menu.contains(e.target) && e.target !== anchor) { menu.remove(); document.removeEventListener('mousedown', away); } };
     setTimeout(() => document.addEventListener('mousedown', away), 0);

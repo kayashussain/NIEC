@@ -95,7 +95,7 @@
 <script>
   // Only the consultancy's logo above the box; "Student Recruit 360" if there is no logo. The menu remembered by this tab is forgotten here.
   (function () {
-    try { sessionStorage.removeItem('isrMe'); sessionStorage.removeItem('isrUnread'); } catch (e) { /* nothing kept */ }
+    try { sessionStorage.removeItem('sr360Me'); sessionStorage.removeItem('sr360Unread'); } catch (e) { /* nothing kept */ }
     const logo = document.getElementById('brandLogo');
     logo.addEventListener('error', () => { logo.hidden = true; document.getElementById('brandName').hidden = false; });
   })();
@@ -142,7 +142,7 @@
     if (state.stage === 'done') {
       // Remember who logged in for this tab, so the first page draws its menu at once (header.js reads it).
       fetch('/api/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => {
-        if (me) sessionStorage.setItem('isrMe', JSON.stringify({ name: me.name, username: me.username, role: me.role, roleLabel: me.roleLabel, departments: me.departments || [] }));
+        if (me) sessionStorage.setItem('sr360Me', JSON.stringify({ name: me.name, username: me.username, role: me.role, roleLabel: me.roleLabel, departments: me.departments || [] }));
       }).catch(() => { /* drawn when the page asks */ }).finally(() => location.replace(target));
       return;
     }

@@ -3558,7 +3558,7 @@ function createPortalApi({
       if (body.test === true) {
         // A test, from the Connect my phone window.
         if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
-        reply(await push.send(req.user.id, { title: 'Student Recruit 360 is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site, 'isr-test'));
+        reply(await push.send(req.user.id, { title: 'Student Recruit 360 is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'sr360-test' }, site, 'sr360-test'));
         return true;
       }
       // A student's chat, sent to the person's own phone: only a student this account may see, only that student's number.

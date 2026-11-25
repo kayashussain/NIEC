@@ -8,7 +8,7 @@ const http = require('node:http');
 const zlib = require('node:zlib');
 const { createOffsite, settingsFrom, encrypt, decrypt } = require('../student-details/offsite');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-offsite-'));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-offsite-'));
 
 function fakeBucket() {
   const store = new Map(); let fail = false; const seen = [];
@@ -48,7 +48,7 @@ test('every backup is sent encrypted once; a failure is said once and the next c
   fs.writeFileSync(path.join(dir, 'daily-backups', 'niec-manual-2026-11-22-101500.json.gz'), plain);
   fs.writeFileSync(path.join(dir, 'daily-backups', 'notes.txt'), 'not a backup');
   const said = [];
-  const o = createOffsite(dir, { endpoint: bucket.endpoint, bucket: 'isr', region: 'eu-west-2', accessKey: 'AK', secretKey: 'SK', passphrase: 'pass', prefix: 'isr-backups' }, { record: (x) => said.push(x) });
+  const o = createOffsite(dir, { endpoint: bucket.endpoint, bucket: 'sr360', region: 'eu-west-2', accessKey: 'AK', secretKey: 'SK', passphrase: 'pass', prefix: 'sr360-backups' }, { record: (x) => said.push(x) });
   assert.strictEqual(o.status().waiting, 2);
 
   bucket.setFail(true);
@@ -63,7 +63,7 @@ test('every backup is sent encrypted once; a failure is said once and the next c
   assert.strictEqual(o.status().waiting, 0);
   assert.strictEqual(o.status().lastError, '');
   const keys = [...bucket.store.keys()].sort();
-  assert.deepStrictEqual(keys, ['/isr/isr-backups/niec-daily-2026-11-22.json.gz.enc', '/isr/isr-backups/niec-manual-2026-11-22-101500.json.gz.enc']);
+  assert.deepStrictEqual(keys, ['/sr360/sr360-backups/niec-daily-2026-11-22.json.gz.enc', '/sr360/sr360-backups/niec-manual-2026-11-22-101500.json.gz.enc']);
   const sent = bucket.store.get(keys[0]);
   assert.ok(!sent.includes(Buffer.from('REAL STUDENT NAMES')) && !sent.includes(plain), 'encrypted, not the plain copy');
   assert.ok(decrypt(sent, 'pass').equals(plain), 'and it opens to exactly the backup');
@@ -79,6 +79,6 @@ test('every backup is sent encrypted once; a failure is said once and the next c
 });
 
 test('the status never holds a key or the passphrase', () => {
-  const o = createOffsite(tmp(), { endpoint: 'http://x', bucket: 'isr', region: 'r', accessKey: 'AKSECRET', secretKey: 'SKSECRET', passphrase: 'PPSECRET', prefix: 'p' });
+  const o = createOffsite(tmp(), { endpoint: 'http://x', bucket: 'sr360', region: 'r', accessKey: 'AKSECRET', secretKey: 'SKSECRET', passphrase: 'PPSECRET', prefix: 'p' });
   assert.ok(!/SECRET/.test(JSON.stringify(o.status())));
 });

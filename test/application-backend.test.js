@@ -11,7 +11,7 @@ const freePort = () => new Promise((resolve) => { const s = net.createServer().l
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function start(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-appback-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-appback-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   delete env.ANTHROPIC_API_KEY;

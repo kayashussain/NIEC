@@ -22,8 +22,8 @@
 (function (root) {
   const { el, h, api, field, dialog } = root.Portal;
   const say = (t, e) => root.NiecUI.toast(t, { type: e ? 'error' : 'success' });
-  const KEY = 'isrShortlistFor';
-  const ORDER_KEY = 'isrShortlistOrder';
+  const KEY = 'sr360ShortlistFor';
+  const ORDER_KEY = 'sr360ShortlistOrder';
   const state = { student: null, options: [], listeners: [], order: null, open: false, shareOnly: false };
   // The Application Team does not shortlist (it does not give itself applications): beside each course it has Share, and no tray
   // (the owner, 21 Nov 2026). The page tells this module who is looking (useMe) before it draws anything.

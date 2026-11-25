@@ -10,8 +10,8 @@ let hasSqlite = true;
 try { require('node:sqlite'); } catch (e) { hasSqlite = false; }
 
 const backends = [
-  ['files', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-store-')); return { make: (o) => createFileStore(dir, o), damage: (name) => fs.writeFileSync(path.join(dir, `${name}.json`), '{"cards": {"a":'), done() {} }; }],
-  ['sqlite', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-store-')); const file = path.join(dir, 'isr.sqlite'); let s = null; return { make: (o) => { s = createSqliteStore(file, o); return s; }, damage: (name) => { const { DatabaseSync } = require('node:sqlite'); const d = new DatabaseSync(file); d.prepare('UPDATE docs SET json = ? WHERE name = ?').run('{"cards": {"a":', name); d.close(); }, done() { if (s) s.close(); } }; }],
+  ['files', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-store-')); return { make: (o) => createFileStore(dir, o), damage: (name) => fs.writeFileSync(path.join(dir, `${name}.json`), '{"cards": {"a":'), done() {} }; }],
+  ['sqlite', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-store-')); const file = path.join(dir, 'sr360.sqlite'); let s = null; return { make: (o) => { s = createSqliteStore(file, o); return s; }, damage: (name) => { const { DatabaseSync } = require('node:sqlite'); const d = new DatabaseSync(file); d.prepare('UPDATE docs SET json = ? WHERE name = ?').run('{"cards": {"a":', name); d.close(); }, done() { if (s) s.close(); } }; }],
 ];
 
 for (const [kind, setup] of backends) {
@@ -82,7 +82,7 @@ test('the real student cards run on either backend, with the same answers, and c
   const answers = [];
   for (const [kind, setup] of backends) {
     const t = setup(); const store = t.make();
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-cards-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-cards-'));
     const cards = createCards(dir, { store });
     assert.strictEqual(cards.has('r1'), false);
     const n1 = cards.addNote('r1', { kind: 'note', text: 'First call' }, 'asha');
