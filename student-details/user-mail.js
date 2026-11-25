@@ -41,7 +41,8 @@ function createUserMail(dir) {
       return Buffer.concat([d.update(data), d.final()]).toString('utf8');
     } catch (e) { return ''; }
   };
-  const read = () => { try { const d = JSON.parse(fs.readFileSync(file, 'utf8')); return d && typeof d.boxes === 'object' && d.boxes ? d : { boxes: {} }; } catch (e) { return { boxes: {} }; } };
+  // Only a missing (or really damaged) file counts as empty; a lock or a busy disk is an error, so nothing empty is ever saved over it.
+  const read = () => { try { const d = JSON.parse(fs.readFileSync(file, 'utf8')); return d && typeof d.boxes === 'object' && d.boxes ? d : { boxes: {} }; } catch (e) { if (e && e.code && e.code !== 'ENOENT') throw e; return { boxes: {} }; } };
   const write = (d) => { fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); writeFileAtomic(file, JSON.stringify(d, null, 1)); try { fs.chmodSync(file, 0o600); } catch (e) { /* not on every system */ } };
 
   return {

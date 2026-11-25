@@ -161,7 +161,7 @@ function createAdvisorMcp({ getWorkbook, getDashboard, facts, incentive, dataDir
     return textResult({ sentAt: new Date().toISOString(), sender: out.sender, sent: count('sent'), failed: count('failed'), notConfigured: count('not-configured'), skipped: count('skipped'), problems: out.sendOut.filter((r) => r.status !== 'sent') });
   }
 
-  const sentLog = []; // how many students each real send asked for, and when (the daily limit)
+  const sentLog = []; // how many emails each real send attempted, and when (the daily limit)
   function callTool(name, a) {
     if (name === SEND_TOOL.name && sendFollowUp) return sendEmails(a || {});
     if (incentiveTools && incentiveTools.isIncentiveTool(name)) return incentiveTools.callTool(name, a);

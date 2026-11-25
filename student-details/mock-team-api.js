@@ -106,7 +106,10 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       text: rows.map(([k, v]) => `${k}: ${v}`).join('\n'),
     };
   }
-  async function emailStudent(b, kind, site) {
+  // A mock still to come is described with the student's university and course as they are now; the saved copy is kept when there is no row.
+  const asNow = (b) => { const live = b.rowId && !b.answer ? portal.rowIndex().get(b.rowId) : null; return live ? { ...b, university: text(live.row['UNIVERSITY NAME']) || b.university, course: text(live.row['COURSE NAME']) || b.course } : b; };
+  async function emailStudent(given, kind, site) {
+    const b = asNow(given);
     const p = bookings.person(b.owner);
     const d = detailsBlock(b, p);
     const first = text(b.name).split(/\s+/)[0] || 'there';
@@ -120,7 +123,8 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     const plain = `Dear ${first},\n\n${heading}\n\n${d.text}\n${kind === 'cancelled' ? '' : `\nJoin in Teams: ${p.teams}\n`}\n${kind === 'cancelled' ? '' : `Change or cancel: ${linkOf(b, site)}\n\n`}${p.shown || 'The Mock Team'}`;
     return mail(b.email, subject, html, plain);
   }
-  async function emailOwner(b, cancelled = false) {
+  async function emailOwner(given, cancelled = false) {
+    const b = asNow(given);
     const p = bookings.person(b.owner);
     if (!p.email) return 'not-sent';
     const start = bookings.momentOf(b.day, b.time);
@@ -225,6 +229,9 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     return out;
   };
   const comingRows = () => { const t = now().getTime(); return new Set(bookings.all().bookings.filter((b) => b.rowId && b.status === 'booked' && !b.answer && bookings.endOf(b) > t).map((b) => b.rowId)); };
+
+  // Students with a mock booked and not answered yet, whether it is to come or has just ended: they are not 'to schedule'.
+  const openRows = () => new Set(bookings.all().bookings.filter((b) => b.rowId && b.status === 'booked' && !b.answer).map((b) => b.rowId));
 
   // ---- the answer after a mock ----
   async function answer(req, b, body) {
@@ -485,7 +492,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   const forRow = (rowId) => { const all = bookings.all().bookings; const nums = renumber(all); return all.filter((b) => b.rowId === rowId && b.status !== 'cancelled')
     .sort((a, b) => `${a.day} ${a.time}`.localeCompare(`${b.day} ${b.time}`))
     .map((b) => ({ mock: nums.get(b.id) || Number(b.mock) || 0, day: text(b.day), time: text(b.time), minutes: Number(b.minutes) || 0, by: text(bookings.person(b.owner).shown), answer: b.answer ? { joined: Boolean(b.answer.joined), result: text(b.answer.result), by: text(b.answer.by) } : null })); };
-  return { handle, handlePublic, tick, matchStudent, pageFor, unanswered, comingRows, nextBooked, forRow };
+  return { handle, handlePublic, tick, matchStudent, pageFor, unanswered, comingRows, openRows, nextBooked, forRow };
 }
 
 module.exports = { createMockTeamApi, bookingsAccess, guidelinesAccess };

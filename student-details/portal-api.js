@@ -593,7 +593,13 @@ function createPortalApi({
     }
     const changes = syncChanges(row, opts);
     const before = Object.fromEntries(Object.keys(changes).map((c) => [c, text(row[c])]));
+    const partnerWas = text(row['UNIVERSITY PARTNER']);
     if (Object.keys(changes).length) writeColumnsFor(req, rowId, changes);
+    // When the sheet moves to another university by itself, the student's notes say what it was before, so it can be put back by hand.
+    if ('UNIVERSITY NAME' in changes && uni) {
+      const is = (rowIndex().get(rowId) || { row: {} }).row;
+      noteCardChanges(req, rowId, ['UNIVERSITY NAME', 'COURSE NAME', 'UNIVERSITY PARTNER', 'OFFER RECEIVED DATE'].map((c) => [Fields.columnLabel(c), c === 'UNIVERSITY NAME' ? uni : c === 'UNIVERSITY PARTNER' ? partnerWas : c in before ? before[c] : is[c], is[c]]));
+    }
     return Object.fromEntries(Object.entries(changes).map(([c, v]) => [c, [before[c], v]]));
   }
   // One plain line for the timeline when an application's days change on the card ('' when nothing to say).
@@ -1449,7 +1455,7 @@ function createPortalApi({
     const dateOf = (v) => isoDate(v);
     // A student with a mock already booked is not one still to schedule (the same rule as Missing details and the Bookings page).
     let booked = null;
-    const bookedRows = () => { if (!booked) { const mt = mockTeam(); booked = mt ? mt.comingRows() : new Set(); } return booked; };
+    const bookedRows = () => { if (!booked) { const mt = mockTeam(); booked = mt ? mt.openRows() : new Set(); } return booked; };
     for (const { sheet, row } of visibleStudents(user)) {
       const stage = text(row[STATUS]);
       const card = all[row._id] || { notes: [], messages: [] };
@@ -3659,9 +3665,10 @@ function createPortalApi({
     if (urlPath === '/api/students/check' && req.method === 'POST') {
       // The answer says whether somebody is a student already, so one account may ask only so often (it cannot be used to list students).
       const who = text(req.user.id || req.user.name); const since = Date.now() - 3600000;
-      const asked = (checkAsks.get(who) || []).filter((t) => t > since);
-      if (asked.length >= 120) { sendJSON(res, 429, { error: 'Too many checks in an hour. Wait a little and try again.' }); return true; }
-      asked.push(Date.now()); checkAsks.set(who, asked);
+      const asked = (checkAsks.get(who) || []).filter((x) => x.at > since);
+      const adding = Math.min(200, Array.isArray(body.rows) ? body.rows.length : 0);
+      if (asked.reduce((n, x) => n + x.n, 0) + adding > 5000) { sendJSON(res, 429, { error: 'Too many checks in an hour. Wait a little and try again.' }); return true; }
+      asked.push({ at: Date.now(), n: adding }); checkAsks.set(who, asked);
       const body = await bodyOf(req, res, 256 * 1024);
       if (!body) return true;
       const list = (Array.isArray(body.rows) ? body.rows : []).slice(0, 200).map((r) => { const d = r && typeof r === 'object' ? existingStudent(r.email, r.phone) : null; return d ? { exists: true, name: Teams.isAdmin(req.user) ? [d['FIRST NAME'], d['LAST NAME']].filter(Boolean).join(' ') : ' ' } : { exists: false }; });

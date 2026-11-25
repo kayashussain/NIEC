@@ -35,7 +35,7 @@ function createMockGuidelines(dir, { now = () => new Date() } = {}) {
       return data;
     } catch (e) {
       if (e && e.code) { if (cache) return cache.data; throw e; } // a lock or a busy disk is not a damaged file: it is never moved or copied aside
-      try { fs.copyFileSync(file, path.join(dir, `mock-guidelines.damaged-${Date.now()}.json`)); } catch (x) { /* could not copy */ }
+      try { fs.renameSync(file, path.join(dir, `mock-guidelines.damaged-${Date.now()}.json`)); } catch (x) { /* could not move: left where it is */ }
       return { files: [] };
     }
   }

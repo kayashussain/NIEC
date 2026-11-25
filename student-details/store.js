@@ -23,7 +23,7 @@ function createFileStore(dir, { now = () => new Date() } = {}) {
   const versionOf = (stat) => `${stat.mtimeMs}:${stat.size}`;
   return {
     kind: 'files',
-    version(name) { try { return versionOf(fs.statSync(fileOf(name))); } catch (e) { return ''; } },
+    version(name) { try { return versionOf(fs.statSync(fileOf(name))); } catch (e) { if (e && e.code && e.code !== 'ENOENT') throw e; return ''; } }, // only a missing file is 'nothing saved'
     read(name) {
       let text; let stat;
       try { stat = fs.statSync(fileOf(name)); text = fs.readFileSync(fileOf(name), 'utf8'); } catch (e) { if (e.code === 'ENOENT') return null; throw e; }

@@ -116,7 +116,7 @@ function createPush(dir, { allowLocal = false, fetchImpl = (...a) => fetch(...a)
     if (unb64u(k.p256dh).length !== 65 || unb64u(k.auth).length !== 16) return { error: 'The phone sent keys that do not look right.' };
     return { endpoint, p256dh: String(k.p256dh), auth: String(k.auth) };
   };
-  const readDevices = () => { try { const d = JSON.parse(fs.readFileSync(devFile, 'utf8')); return d && typeof d.people === 'object' && d.people ? d : { people: {} }; } catch (e) { return { people: {} }; } };
+  const readDevices = () => { try { const d = JSON.parse(fs.readFileSync(devFile, 'utf8')); return d && typeof d.people === 'object' && d.people ? d : { people: {} }; } catch (e) { if (e && e.code && e.code !== 'ENOENT') throw e; return { people: {} }; } };
   const devicesOf = (userId) => readDevices().people[userId] || [];
   const saveDevices = (userId, list) => { const d = readDevices(); if (list.length) d.people[userId] = list; else delete d.people[userId]; write(devFile, d); };
 

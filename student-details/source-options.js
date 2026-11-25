@@ -33,7 +33,7 @@ function createSourceOptions(dir) {
         cache = { mtimeMs: stat.mtimeMs, size: stat.size, data: { added } };
         return cache.data;
       }
-    } catch (e) { /* unreadable: started again below */ }
+    } catch (e) { if (e && e.code) { if (cache) return cache.data; throw e; } /* not valid: started again below */ }
     return { added: {} };
   }
   return {

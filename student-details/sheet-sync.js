@@ -7,6 +7,9 @@ const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').rep
 
 // What All Students' first application and first offer columns become for these University options (no writing): used when the days
 // are kept in step, and by the check before saving, so what the team checks is what is written (the owner, 24 Nov 2026).
+// The partner of one application, as the sheet writes it (a direct application is named for its university; none known is blank).
+const partnerOf = (o) => { const p = String(o.partner || '').trim(); return /^direct\b/i.test(p) ? `Direct (${o.university})` : p; };
+
 function syncChanges(row, opts) {
   if (!opts.some((o) => o.applied || o.offer)) return {};
   const uni = text(row['UNIVERSITY NAME']);
@@ -30,7 +33,7 @@ function syncChanges(row, opts) {
   // All Students names the university that holds the offer: when the one it names was refused, withdrew or has no offer while another
   // university holds one, the university and course follow it (the sheet never shows one university's name with another's offer day).
   if (fo && uni && sheetHolder && (sheetHolder.refused || sheetHolder.withdrawn || !sheetHolder.offer) && squash(fo.university) !== squash(uni)) {
-    changes['UNIVERSITY NAME'] = fo.university; if (fo.course) changes['COURSE NAME'] = fo.course;
+    changes['UNIVERSITY NAME'] = fo.university; changes['COURSE NAME'] = fo.course || ''; changes['UNIVERSITY PARTNER'] = partnerOf(fo);
   }
   // The university the sheet names refused the student (or the application was withdrawn), nobody holds an offer, and no other course of
   // that university is still live: the sheet follows the first live application elsewhere, so no team reads a refused university as
@@ -38,14 +41,14 @@ function syncChanges(row, opts) {
   if (!fo && uni && sheetHolder) {
     const here = opts.filter((o) => squash(o.university) === squash(uni));
     // A course marked Not submitted is not live either, but at least one course there must have been refused or withdrawn.
-  if (here.every((o) => o.refused || o.withdrawn || o.skipped) && here.some((o) => o.refused || o.withdrawn)) {
+    // A course only shortlisted (never applied for, offered or sent to the Application Team) does not keep a refused university either.
+    if (here.every((o) => o.refused || o.withdrawn || o.skipped || !(o.applied || o.offer || o.sent)) && here.some((o) => o.refused || o.withdrawn)) {
       const live = opts.filter((o) => o.applied && !o.refused && !o.withdrawn && !o.skipped && squash(o.university) !== squash(uni)).sort((x, y) => x.applied.localeCompare(y.applied))[0];
       if (live) {
       // Everything that belonged to the old university goes with it: its course, its partner and its offer day.
-      const partner = String(live.partner || '').trim();
       changes['UNIVERSITY NAME'] = live.university;
       changes['COURSE NAME'] = live.course || '';
-      changes['UNIVERSITY PARTNER'] = /^direct\b/i.test(partner) ? `Direct (${live.university})` : partner;
+      changes['UNIVERSITY PARTNER'] = partnerOf(live);
       if (o0) changes['OFFER RECEIVED DATE'] = '';
     }
     }

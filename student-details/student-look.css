@@ -336,3 +336,12 @@ html:root body.p-student { scroll-padding-top: 76px !important; }
 html:root body.p-student .sc-step-tick { width: 15px !important; height: 15px !important; margin-right: 6px !important; fill: none !important; stroke: #0071e3 !important; stroke-width: 3 !important; stroke-linecap: round !important; stroke-linejoin: round !important; vertical-align: -2px !important; }
 html:root body.p-student.p-embed { scroll-padding-top: 140px !important; }
 @media (prefers-reduced-motion: reduce) { html:root body.p-student .sc-mini-in, html:root body.p-student .sc-mini.is-on .sc-mini-in { transition: none !important; } }
+/* 🔴 CSS CHANGED (2026-11-25): the lines under the mock tiles and the last small words, from the re-review | from: "Mock 1" broke onto two lines, feedback and names about 10 to 11px on screen in heavy letters, Show changes small to press, the Next step label very small | to: the label on one line, feedback 17.5px in normal weight, names 16.25px, Show changes with a 38px press area, the Next step label and the leading words larger */
+html:root body.p-student .lg-mock-row { justify-content: flex-start !important; align-items: flex-start !important; }
+html:root body.p-student .lg-mock-n { flex: 0 0 auto !important; min-width: 74px !important; white-space: nowrap !important; font-size: 17.5px !important; }
+html:root body.p-student .lg-mock-body { flex: 1 1 auto !important; min-width: 0 !important; }
+html:root body.p-student .lg-mock-fb { margin-top: 0 !important; font-size: 17.5px !important; line-height: 1.5 !important; font-weight: 400 !important; }
+html:root body.p-student .lg-mock-who { font-size: 16.25px !important; }
+html:root body.p-student .lg-lead { font-size: 17.5px !important; }
+html:root body.p-student .lg-diff-tog { min-height: 38px !important; font-size: 16.25px !important; }
+html:root body.p-student .sc-next-words .sc-eyebrow { font-size: 16.25px !important; }
