@@ -3697,7 +3697,8 @@ function createPortalApi({
       const cur = currentIntake();
       (wb ? wb.sheets : []).forEach((sh) => sh.rows.forEach((row) => {
         if (!isStudent(row)) return;
-        const keys = new Set([squash(row['UNIVERSITY NAME']), squash(partnerNamed(row['UNIVERSITY PARTNER']))].filter(Boolean));
+        // Another spelling of a partner on the sheet ("OIEG") counts for the university under its full name.
+        const keys = new Set([squash(row['UNIVERSITY NAME']), squash(partnerNamed(row['UNIVERSITY PARTNER'])), squash(require('./partner-names').partnerName(partnerNamed(row['UNIVERSITY PARTNER'])))].filter(Boolean));
         const hit = unis.find((u) => keys.has(u.key));
         if (!hit) return;
         const e = out[hit.id];

@@ -366,7 +366,7 @@
       // An application task names its university and course below, so only the student is named here.
       // An application task and an Offer request show only the student's name here (their university and course follow): no long sentence.
       const isOfferReq = /^Offer request: /.test(String(t.text || ''));
-      const taskLine = el('p', 'td-done-task', t.app || isOfferReq ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`);
+      const taskLine = el('p', 'td-done-task', (t.app && tag === 'application') || isOfferReq ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`);
       body.append(taskLine);
       // The Application Team's own look (the owner, 23 Nov 2026): the window carries a class, and a two-step window says which step it is on.
       const dlg = body.closest('dialog');
@@ -500,7 +500,7 @@
           // Application closed is kept as withdrawn on that university (the application no longer goes on), with the reason in its note.
           read = () => { const c = target(); return c.university && q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: q.value() === 'closed' ? 'withdrawn' : q.value(), date: dayF.input.value }] } : {}; };
           check = () => (!target().university ? 'Write the university.' : !q.value() ? 'Choose what happened.' : !dayF.input.value ? 'Choose the day it happened.' : '');
-        } else if (t.app || (state && state.courseTask)) {
+        } else if ((t.app && tag === 'application') || (state && state.courseTask)) {
           // Other teams (Admin, the Manager, the student card): one application, one university and course (the owner, 20 Nov 2026), the
           // answer one of five with its day (21 Nov 2026), no notes, then Save.
           const c = t.app || state.courseTask;
@@ -855,6 +855,8 @@
   // What to do, said plainly (the owner, 20 Nov 2026: the Offer request and Application tasks were confusing): an Offer request reads
   // "Ask for the offer letter" with the university and course under it; an Application task "Submit the application" with the
   // university, intake, level, location and course as small chips, then the comments of whoever gave it.
+  // `app` on a task means "the university it is about": only an Application task (or an old one with no tag) is an application.
+  const isApplication = (t) => !t.tag || t.tag === 'application';
   function taskText(t) {
     const box = el('div', 'td-task-text');
     // An Offer request carries the application it chases (offerFor, from 21 Nov 2026); an older one is read from its words.
@@ -863,6 +865,16 @@
       box.classList.add('is-structured');
       box.append(el('b', 'td-task-title', 'Ask for the offer letter'));
       const what = el('div', 'td-task-chips'); what.append(el('span', 'is-uni', offer[1])); if (offer[2]) what.append(el('span', '', offer[2]));
+      box.append(what);
+      return box;
+    }
+    // A NOC or Medical task also names a university (`app`), but it is not an application: it keeps its own words, with the university under them.
+    if (t.app && !isApplication(t)) {
+      box.classList.add('is-structured');
+      box.append(el('b', 'td-task-title', String(t.text || '')));
+      const what = el('div', 'td-task-chips');
+      what.append(el('span', 'is-uni', t.app.university));
+      if (t.app.course) what.append(el('span', '', t.app.course));
       box.append(what);
       return box;
     }

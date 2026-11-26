@@ -15,7 +15,8 @@
   ];
   const get = (url) => fetch(url, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   // The same total as the list's own "N in the list": those set up, and on B2B Partners the names on the sheet not set up yet.
-  const count = (x) => (Array.isArray(x) ? x.length : x && Array.isArray(x.partners) ? x.partners.length + (x.onSheet || []).length : x && typeof x.choosable === 'number' ? x.choosable : null);
+  // Apply through answers with the number of places (`choosable`) as well as the partners' names: the places are counted (26 Nov 2026: the tab read 1).
+  const count = (x) => (Array.isArray(x) ? x.length : x && typeof x.choosable === 'number' ? x.choosable : x && Array.isArray(x.partners) ? x.partners.length + (x.onSheet || []).length : null);
 
   const bar = document.createElement('div');
   bar.className = 'pt-bar';

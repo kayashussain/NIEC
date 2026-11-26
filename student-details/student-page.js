@@ -1608,7 +1608,7 @@
     // The slim bar is not zoomed itself (its top offset under the Close bar must stay 60px); its inside is.
     [...view.children].forEach((c) => { const t = c.classList.contains('sc-mini') ? c.firstElementChild : c; if (t) t.style.zoom = String(Math.round(z * 1000) / 1000); });
   }
-  if (typeof ResizeObserver === 'function') new ResizeObserver(() => fitCard()).observe(view);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => requestAnimationFrame(fitCard)).observe(view); /* the next frame: resizing inside the notice made Safari report an error */
   function render() {
     sheetDaysOnOptions();
     document.title = `${data.student.name} · Student · Student Recruit 360`;

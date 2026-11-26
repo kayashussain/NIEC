@@ -76,12 +76,36 @@
     const hiddenBtn = $('hiddenBtn') || (() => { const b = btn('bp-hidden-btn', '', showHidden); b.id = 'hiddenBtn'; $('count').after(b); return b; })();
     hiddenBtn.textContent = `${hidden.length} hidden`;
     hiddenBtn.hidden = !hidden.length || viewer();
+    // Admin adds a partner or an agent with the button above the list (the owner, 26 Nov 2026: there was no way to add one).
+    addButton(data.access === 'full');
     if (!total) { $('list').replaceChildren(el('div', 'bp-empty', `No ${WORD.one}s yet.`)); return; }
-    // Nothing is added by hand any more, not one name and not all at once (the owner, 20 Nov 2026).
     const lead = [];
     const items = [...shown.map((p) => ({ p })), ...shownSheet.map((x) => ({ x }))];
     const ordered = items.sort(busiest);
     $('list').replaceChildren(...lead, ...ordered.map((it) => (it.p ? card(it.p) : sheetCard(it.x))));
+  }
+  // "Add partner" / "Add agent" (Admin only): the name first, then the new card opens so the rest can be filled in.
+  function addButton(show) {
+    let b = $('addBtn');
+    if (!b) { b = btn('btn btn-primary bp-add', KIND === 'agents' ? '+ Add agent' : '+ Add partner', addOne); b.id = 'addBtn'; $('count').parentNode.append(b); }
+    b.hidden = !show;
+  }
+  function addOne() {
+    window.Portal.dialog(KIND === 'agents' ? 'Add an agent' : 'Add a partner', (body, close) => {
+      const name = field(KIND === 'agents' ? 'Agent name' : 'Partner name', { max: 120, required: true, wide: true, placeholder: KIND === 'agents' ? 'The business that sends you students' : 'The business you apply through' });
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const ok = btn('btn btn-primary', 'Add', async () => {
+        const value = name.input.value.trim().replace(/\s+/g, ' ');
+        if (!value) { msg.textContent = 'Write the name.'; msg.className = 'p-msg error'; name.input.focus(); return; }
+        ok.disabled = true;
+        try { const made = await api(API, { name: value }); close(); say(`${value} added`); justSaved = made && made.id; await load(); if (made && made.id) open(made.id); } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.disabled = false; }
+      });
+      name.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } });
+      foot.append(btn('btn', 'Cancel', () => close()), ok);
+      const form = el('div', 'p-form'); form.append(name.wrap);
+      body.append(form, msg, foot);
+    });
   }
   // The names marked "Not a partner", each with Show again.
   function showHidden() {

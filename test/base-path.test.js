@@ -79,6 +79,20 @@ test('every browser script still loads after its addresses are moved', () => {
   }
 });
 
+// The booking page's files did not load on the live site (26 Nov 2026): its <base> tag was written in a form the move did not
+// know, so book.css and book-page.js were asked for outside the folder.
+test('every page with a base address has it moved under the folder', () => {
+  const based = browserFiles().filter(([f, text]) => f.endsWith('.html') && /<base\b/i.test(text));
+  assert.ok(based.some(([f]) => f === 'student-details/book.html'), 'the booking page is checked');
+  for (const [f, text] of based) assert.ok(rewriteText(text, '/niec', 'html').includes('<base href="/niec/">'), f);
+});
+
+test('the booking link shown in Setup includes the folder', () => {
+  const [, text] = browserFiles().find(([f]) => f === 'student-details/bookings-page.js');
+  assert.ok(rewriteText(text, '/niec', 'js').includes('`${location.origin}/niec/book/`'));
+  assert.ok(!text.includes('${location.host}/'), 'an address made from location.host is not moved');
+});
+
 test('text that is not an address is never changed', () => {
   const kept = ['s.replace(/"/g, \'&quot;\')', '(/<sheet\\b[^>]*\\br:id="([^"]+)"/.exec(x))', "save('notes/' + n.id + '/delete')",
     "y + '/data'", "x + '/partners'", "const ME = '/__device';"];

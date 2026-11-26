@@ -202,8 +202,8 @@
   function sharedLinks(me) {
     if (me.role === 'student') return { before: [], after: [] };
     const deps = me.departments || [];
-    // Mock interviews (the guides students read): Admin, the Manager and the Mock Team (the owner, 20 Nov 2026).
-    const after = me.role === 'admin' || me.role === 'manager' || deps.includes('mock') ? [['mock', '/mock-guides', 'Mock interviews']] : [];
+    // Interview guidelines, the same page as the Mock Team's, in place of Mock interviews (the owner, 26 Nov 2026): Admin, the Manager and the Mock Team.
+    const after = me.role === 'admin' || me.role === 'manager' || deps.includes('mock') ? [['guidelines', '/interview-guidelines', 'Interview guidelines']] : [];
     if (me.role === 'admin') return { before: [], after };
     const manager = me.role === 'manager';
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
@@ -250,7 +250,7 @@
       : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
         : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
-    const extra = mockOwn ? { before: [], after: [] } : appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'mock') } : shared0;
+    const extra = mockOwn ? { before: [], after: [] } : appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'guidelines') } : shared0;
     const at = own.findIndex(([id]) => id === 'factfile');
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];

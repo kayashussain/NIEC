@@ -5612,6 +5612,169 @@ html[data-theme="dark"]:root body #page .ig-upload-bar {
 html[data-theme="dark"]:root body #page .ig-hint {
   color: #9aa0a6;
 }
+html[data-theme="dark"]:root body .niec-header .niec-account .niec-menu {
+  background: #292a2d !important;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.card, .p-card, .bp-card, .ov-card, .ov-kpi, .ev-band, .ev-ledger, .td-pulse.td-summary, .td-tasks, .td-attn, .p-table-wrap) {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .tile {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .bp-page .bp-band > div {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .bp-band > div {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .tb-col {
+  background: #202124;
+}
+html[data-theme="dark"]:root:not(.app-only) body .tb-tile {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .td-task {
+  background: #202124;
+}
+html[data-theme="dark"]:root:not(.app-only) body .tb-col-n {
+  background: #3c4043;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.tr-story, .tr-simple, .bp-funnel.is-three, .bp-funnel) {
+  background: #202124;
+}
+html[data-theme="dark"]:root:not(.app-only) body .bp-none {
+  border: 1px dashed #505256;
+}
+html[data-theme="dark"]:root:not(.app-only) body .ov-foot {
+  border-top-color: #282828;
+  border-bottom-color: #282828;
+}
+html[data-theme="dark"]:root:not(.app-only) body .ov-funnel-track {
+  background: #2a2a2a;
+}
+html[data-theme="dark"]:root:not(.app-only) body .td-filter-pill:not([aria-selected="true"]):not(.on):not(.is-on) {
+  background: #3c4043;
+}
+html[data-theme="dark"]:root:not(.app-only) body button.td-bell {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body button.td-bell[aria-expanded="true"] {
+  background: #565656;
+  color: #ffffff;
+}
+html[data-theme="dark"]:root:not(.app-only) body .tr-key.line {
+  border: 1px solid #3c4043;
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .dd-switch {
+  background: #3c4043;
+}
+html[data-theme="dark"]:root:not(.app-only) body .dd-switch > .seg-thumb {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .dd-switch button {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root:not(.app-only) body .dd-switch button:is([aria-pressed="true"], [aria-selected="true"], .on, .is-on) {
+  background: #292a2d;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.ov-card, .p-card, .card) select {
+  border: 1px solid #505256;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.tb-tag, .chip:not(.chip-warn, .chip-extra), .bp-tag, .activity-action, .p-count:not(.warn), .student-pick, .task-team:not(.is-missing), button.bp-missing, .p-pill:not(.p-pill-green, .p-pill-amber, .p-pill-red, .p-pill-blue)) {
+  background: #303134;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.bp-status.green, .pill-ok, .p-pill-green) {
+  background: #1c432a;
+  color: #81c995;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.bp-status.amber, .p-pill.p-pill-amber:not(.p-link)) {
+  background: #442e1a;
+  color: #fcad70;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.bp-status.red, .p-pill.p-pill-red, .p-count.warn) {
+  background: #431921;
+  color: #f28b82;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.ov-card, .p-card, .card, .bp-page, .ev-ledger) table th {
+  background: #212137;
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.ov-card, .p-card, .card, .ev-ledger) table :is(th, td) {
+  border-color: #282828;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .mg-card, .p-card, .p-table-wrap, .card, .tile, .box, .ov-card, .ov-kpi, .td-tasks, .td-pulse, .td-attn), html[data-theme="dark"]:root:not(.app-only) body #summary .tile {
+  background: #292a2d !important;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.bp-funnel, .bp-band .bp-funnel) {
+  background: #202124 !important;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(select#intake, .tr-source select), html[data-theme="dark"]:root:not(.app-only) body .topbar select.came-from {
+  border: 1px solid #505256 !important;
+  background-color: #292a2d !important;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.ov-board-row.head, .up-deadlines li, .md-todo-row, .mt-person, .p-priority) {
+  border-color: #282828;
+}
+html[data-theme="dark"]:root:not(.app-only) body #view .lg-apps .p-apps > .p-card {
+  border-top-color: #282828 !important;
+}
+html[data-theme="dark"]:root:not(.app-only) body #view .p-apps .p-priority {
+  border-top-color: #282828;
+}
+html[data-theme="dark"]:root:not(.app-only) body .p-tabs > a:is([aria-current], [aria-selected="true"], .on, .active) {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root:not(.app-only) body .td-inbox {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body dialog.ui-dialog {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body dialog.ui-dialog button:not(.ui-ok):not(.ui-danger) {
+  background: #3c4043;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body dialog.ui-dialog .ui-ok:not(.danger) {
+  border-color: #0d85ff;
+  background: #007bf7;
+  color: #ffffff;
+}
+html[data-theme="dark"]:root:root body dialog.p-dialog:not(.td-done-app) .p-dialog-foot {
+  background: #292a2d !important;
+}
+html[data-theme="dark"]:root:not(.app-only) body .eg-overlay .eg-box {
+  background: #292a2d;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root:not(.app-only) body .eg-overlay .eg-box h2 {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root:not(.app-only) body .eg-overlay .eg-box :is(p, label) {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root:not(.app-only) body .eg-overlay .eg-actions button {
+  background: #3c4043;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root:not(.app-only) body .eg-overlay .eg-actions button.eg-ok {
+  background: #007bf7;
+  color: #ffffff;
+}
+html[data-theme="dark"]:root:not(.app-only) body .mt-note {
+  background: #202124;
+}
+html[data-theme="dark"]:root:not(.app-only) body .mt-count {
+  background: #303134;
+}
+html[data-theme="dark"]:root:not(.app-only) body .fw-step:not(.is-now):not(.is-done) .fw-dot {
+  border-color: #505256;
+}
+html[data-theme="dark"]:root:not(.app-only) body :is(.p-tabs, .tabs) > .seg-thumb, html[data-theme="dark"]:root:not(.app-only) body .td-view[aria-selected="true"] {
+  background: #292a2d;
+}
 /* ---- student-details/style.css ---- */
 :root[data-theme="dark"] {
   --niec-blue: #669df6;

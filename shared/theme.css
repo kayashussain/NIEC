@@ -1116,7 +1116,8 @@ dialog.p-dialog.is-closing::backdrop { animation: sr360-fade-out .16s ease-in bo
 .niec-nav a { transition: background-color .2s var(--ease-out), color .2s var(--ease-out); }
 details.td-attn-row[open] .td-attn-list { animation: sr360-slide-down .35s var(--ease-out) both; }
 /* 🔴 CSS CHANGED (2026-11-14): moving between pages and opening pop-ups, made to feel like macOS | from: the whole window (menu included) faded out and back in, and the menu showed empty for a moment while it was drawn; the page area also replayed its own rise animation on top; pop-ups rose from below | to: the menu stays perfectly still (it is drawn before the first picture of the new page, from what the tab remembers); only the page area changes: the old page fades away in 0.15s and the new one glides in (a short fade with a 12px rise) on an iOS-style spring; the page's own rise is used only in browsers without page transitions; pop-ups zoom in from 94% like a macOS window, the background softening behind them */
-@view-transition { navigation: auto; }
+/* 🔴 CSS CHANGED (2026-11-26): no page-to-page fade in Safari | from: Safari's engine crashed on ordinary page changes (menu clicks, opening a University) | to: Safari changes page at once; Chrome and Edge keep the fade. -webkit-hyphens is known to Safari only, which is how it is told apart */
+@supports not (-webkit-hyphens: none) { @view-transition { navigation: auto; } }
 .niec-header { view-transition-name: sr360-menu; }
 .niec-demo { view-transition-name: sr360-demo; }
 ::view-transition-group(sr360-menu), ::view-transition-group(sr360-demo) { animation: none; }
@@ -3773,7 +3774,7 @@ html.mo-on .mo-rise.mo-in { animation: mo-rise .5s cubic-bezier(.16, 1, .3, 1) b
 @keyframes mo-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button) { transition: background-color .1s linear, color .32s cubic-bezier(.4, 0, .6, 1), opacity .1s linear; }
 html.mo-on :is(.btn, .p-seg button, .td-view, .td-filter-pill, .fd-levels button, .fd-tile, .sl-pick, .up-level-link, .ff-kind button):active:not(:disabled) { opacity: .85; }
-@view-transition { navigation: auto; }
+@supports not (-webkit-hyphens: none) { @view-transition { navigation: auto; } } /* not in Safari: see the note of 26 Nov above */
 ::view-transition-old(root) { animation: mo-page-out .12s linear both; }
 ::view-transition-new(root) { animation: mo-page-in .2s cubic-bezier(.4, 0, .6, 1) both; }
 @keyframes mo-page-out { to { opacity: 0; } }

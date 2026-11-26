@@ -104,6 +104,7 @@
       const toggle = () => {
         form.hidden = !form.hidden;
         open.lastChild.textContent = form.hidden ? 'Upload a guideline' : 'Cancel';
+        open.firstChild.style.display = form.hidden ? '' : 'none'; /* no upload arrow beside "Cancel" */
         open.classList.toggle('btn-primary', form.hidden); // one main blue button on the screen: the one inside the panel
         const none = card.querySelector('.ig-empty'); if (none) none.hidden = !form.hidden; // the empty panel waits while the upload is open
         if (!form.hidden) form.querySelector('select').focus();

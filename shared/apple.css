@@ -1115,3 +1115,86 @@ html:root body #page .ig-hint { margin: 10px 2px 0; color: #636366; font-size: 1
   html:root body #page .ig-head h2 { font-size: 22px; line-height: 28px; }
   html:root body #page .ig-fields { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* 🔴 CSS CHANGED (2026-11-26): the account menu covers what is behind it | from: "Fold menu" showed through the open account menu (the fold button was drawn above it) and the menu was see-through | to: the menu is solid and always on top; colours and words unchanged */
+html:root body .niec-header .niec-toggle { z-index: auto; }
+html:root body .niec-header .niec-account { z-index: 90; }
+html:root body .niec-header .niec-account .niec-menu { z-index: 95; background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root body .bp-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+html:root body .bp-tools #count { margin: 0 auto 0 0; }
+html:root body .bp-add { min-height: 40px; padding: 0 20px; }
+
+/* 🔴 CSS CHANGED (2026-11-26): Admin (and every page that was still in the old grey look) follows the same look as the Application and Mock Teams (the owner: "apply the global rules") | from: grey boxes with dark grey outlines on Today, Dashboard, Partners, Events, Users, Activity and Universities; grey chips; dark grey outlines on filters and lists | to: white cards with a soft shadow and a 20px corner, no outlines; soft grey inner panels; pill filters; soft coloured status pills; quiet table headings. Words, numbers and layout unchanged. The approved Application and Mock Team views are not touched (html.app-only is left out). */
+html:root:not(.app-only) body :is(.card, .p-card, .bp-card, .ov-card, .ov-kpi, .ev-band, .ev-ledger, .td-pulse.td-summary, .td-tasks, .td-attn, .p-table-wrap) { border: 0 !important; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); }
+html:root:not(.app-only) body .tile { border: 0; border-radius: 18px; background: #fff; box-shadow: var(--apple-card); }
+html:root:not(.app-only) body .bp-page .bp-band > div { border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); }
+html:root:not(.app-only) body .bp-band > div { background: #fff; }
+html:root:not(.app-only) body :is(.card, .p-card, .ov-card) :is(.card, .tile, .p-table-wrap) { box-shadow: none; }
+html:root:not(.app-only) body button.ov-kpi { transition: transform .15s, box-shadow .15s; }
+html:root:not(.app-only) body button.ov-kpi:hover { transform: translateY(-1px); box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 14px 34px rgba(0, 0, 0, .09); }
+html:root:not(.app-only) body .tb-col { border: 0; border-radius: 16px; background: #f5f5f7; }
+html:root:not(.app-only) body .tb-tile { border: 0; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 4px 14px rgba(0, 0, 0, .05); }
+html:root:not(.app-only) body .td-task { border: 0; border-radius: 14px; background: #f5f5f7; box-shadow: none; }
+html:root:not(.app-only) body .tb-col-n { background: #e8e8ed; }
+html:root:not(.app-only) body .td-attn-count { border-radius: 980px; }
+html:root:not(.app-only) body :is(.tr-story, .tr-simple, .bp-funnel.is-three, .bp-funnel) { border: 0; border-radius: 14px; background: #f5f5f7; }
+html:root:not(.app-only) body .bp-none { border: 1px dashed #d2d2d7; border-radius: 14px; }
+html:root:not(.app-only) body .ov-foot { border-top-color: #efeff2; border-bottom-color: #efeff2; }
+html:root:not(.app-only) body .ov-funnel-track { background: #efeff2; }
+html:root:not(.app-only) body .td-filter-pill:not([aria-selected="true"]):not(.on):not(.is-on) { border: 0; background: #e8e8ed; }
+html:root:not(.app-only) body .td-filter-pill { border-radius: 980px; }
+html:root:not(.app-only) body button.td-bell { border: 0; border-radius: 999px; background: #fff; box-shadow: var(--apple-card); }
+html:root:not(.app-only) body button.td-bell[aria-expanded="true"] { background: #1d1d1f; color: #fff; }
+html:root:not(.app-only) body .tr-key.line { border: 1px solid #e5e5ea; border-radius: 980px; background: #fff; }
+html:root:not(.app-only) body .dd-switch { overflow: visible; border: 0; padding: 3px; border-radius: 11px; background: #e8e8ed; }
+/* the sliding highlight behind the chosen switch is white too (it stayed black, so the chosen word could not be read) */
+html:root:not(.app-only) body .dd-switch > .seg-thumb { border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+html:root:not(.app-only) body .dd-switch button { border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; }
+html:root:not(.app-only) body .dd-switch button:is([aria-pressed="true"], [aria-selected="true"], .on, .is-on) { background: #fff; color: #1d1d1f; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+html:root:not(.app-only) body :is(.ov-card, .p-card, .card) select { border: 1px solid #d2d2d7; border-radius: 10px; }
+/* a tag that carries a meaning (green, amber, red, blue, missing) keeps its meaning's colour */
+html:root:not(.app-only) body :is(.tb-tag, .chip:not(.chip-warn, .chip-extra), .bp-tag, .activity-action, .p-count:not(.warn), .student-pick, .task-team:not(.is-missing), button.bp-missing, .p-pill:not(.p-pill-green, .p-pill-amber, .p-pill-red, .p-pill-blue)) { background: #f0f0f2; color: #1d1d1f; }
+html:root:not(.app-only) body :is(.bp-status.green, .pill-ok, .p-pill-green) { background: #e7f5ec; color: #146c2e; }
+html:root:not(.app-only) body :is(.bp-status.amber, .p-pill.p-pill-amber:not(.p-link)) { background: #fdf0e4; color: #9a4a00; }
+html:root:not(.app-only) body :is(.bp-status.red, .p-pill.p-pill-red, .p-count.warn) { background: #fdecef; color: #a8213f; }
+html:root:not(.app-only) body :is(.ov-card, .p-card, .card, .bp-page, .ev-ledger) table th { background: #fafafc; color: #636366; }
+html:root:not(.app-only) body :is(.ov-card, .p-card, .card, .ev-ledger) table :is(th, td) { border-color: #efeff2; }
+html:root:not(.app-only) body :is(.ov-card, .p-card, .card, .td-tasks) > :is(h2, h3), html:root:not(.app-only) body .td-tasks h2 { font-weight: 600; letter-spacing: -.02em; }
+html:root:not(.app-only) body .td-hello h1, html:root:not(.app-only) body .p-head h1 { font-weight: 600; letter-spacing: -.03em; }
+/* 🔴 CSS CHANGED (2026-11-26): this takes the place of the grey "option H" cards of 21 Nov on every page outside the Application and Mock views, which are already in this look */
+html:root:not(.app-only) body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .mg-card, .p-card, .p-table-wrap, .card, .tile, .box, .ov-card, .ov-kpi, .td-tasks, .td-pulse, .td-attn), html:root:not(.app-only) body #summary .tile { border: 0 !important; border-radius: 20px !important; background: #fff !important; box-shadow: var(--apple-card) !important; }
+html:root:not(.app-only) body .bp-band { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+html:root:not(.app-only) body :is(.bp-funnel, .bp-band .bp-funnel) { border: 0 !important; border-radius: 14px !important; background: #f5f5f7 !important; }
+html:root:not(.app-only) body :is(.card, .p-card, .ov-card, .bp-card) :is(.card, .tile, .p-table-wrap) { box-shadow: none !important; }
+html:root:not(.app-only) body :is(.fw-choice, .mg-card, .bp-card):hover { box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 14px 34px rgba(0, 0, 0, .09) !important; }
+html:root:not(.app-only) body .fw-choice:is([aria-pressed="true"], [aria-checked="true"], .on, .is-on) { box-shadow: 0 0 0 2px #0071e3 inset !important; }
+html:root:not(.app-only) body:has(#sheet) .table-wrap { border: 0; border-radius: 16px; box-shadow: var(--apple-card); }
+html:root:not(.app-only) body #toolbar .btn:not(.btn-primary):not(.btn-danger) { border: 0; border-radius: 980px; background: var(--apple-btn); }
+/* the smaller parts that still wore the old grey outline or panel: drop lists, dividing lines, the bell panel and the white sliding highlight of tabs */
+html:root:not(.app-only) body :is(select#intake, .tr-source select), html:root:not(.app-only) body .topbar select.came-from { border: 1px solid #d2d2d7 !important; border-radius: 10px !important; background-color: #fff !important; }
+html:root:not(.app-only) body :is(.ov-board-row.head, .up-deadlines li, .md-todo-row, .mt-person, .p-priority) { border-color: #efeff2; }
+html:root:not(.app-only) body #view .lg-apps .p-apps > .p-card { border-top-color: #efeff2 !important; }
+html:root:not(.app-only) body #view .p-apps .p-priority { border-top-color: #efeff2; }
+html:root:not(.app-only) body .p-tabs > a:is([aria-current], [aria-selected="true"], .on, .active) { background: #fff; }
+html:root:not(.app-only) body .td-inbox { background: #fff; }
+/* the "Are you sure?" and "Move this student on?" windows, for every team: white, with the same pill buttons as the other windows */
+html:root body dialog.ui-dialog { background: #fff; }
+html:root body dialog.ui-dialog button { border-radius: 980px; }
+html:root body dialog.ui-dialog button:not(.ui-ok):not(.ui-danger) { border: 0; background: #e8e8ed; color: #1d1d1f; }
+html:root body dialog.ui-dialog .ui-ok:not(.danger) { border-color: #0071e3; background: #0071e3; color: #fff; } /* the main button is blue in dark too (it was orange there) */
+/* a tall window scrolls under its buttons: their bar is solid, so the words below never show through them (every team) */
+html:root:root body dialog.p-dialog:not(.td-done-app) .p-dialog-foot { background: #fff !important; }
+/* the "Make this change?" box on All Students: the same window and pill buttons as the others */
+html:root:not(.app-only) body .eg-overlay .eg-box { border-radius: 22px; padding: 24px; background: #fff; color: #1d1d1f; font-family: inherit; box-shadow: 0 30px 80px rgba(0, 0, 0, .28), 0 0 0 .5px rgba(0, 0, 0, .08); }
+html:root:not(.app-only) body .eg-overlay .eg-box h2 { color: #1d1d1f; font-size: 19px; font-weight: 600; letter-spacing: -.02em; }
+html:root:not(.app-only) body .eg-overlay .eg-box :is(p, label) { color: #515154; }
+html:root:not(.app-only) body .eg-overlay .eg-actions button { min-height: 38px; padding: 8px 20px; border: 0; border-radius: 980px; background: #e8e8ed; color: #1d1d1f; font-weight: 500; }
+html:root:not(.app-only) body .eg-overlay .eg-actions button.eg-ok { background: #0071e3; color: #fff; }
+html:root:not(.app-only) body .mt-note { border: 0; background: #f5f5f7; }
+html:root:not(.app-only) body .mt-count { border: 0; background: #f0f0f2; }
+html:root:not(.app-only) body .fw-step:not(.is-now):not(.is-done) .fw-dot { border-color: #d2d2d7; }
+html:root:not(.app-only) body :is(.p-tabs, .tabs) > .seg-thumb, html:root:not(.app-only) body .td-view[aria-selected="true"] { background: #fff; }
+/* The same slim reading weight as the Application and Mock views; every part that sets its own weight keeps it (:where gives these rules the lowest strength). */
+:where(html:not(.app-only)) body, :where(html:not(.app-only)) body :is(p, li, td, dd, dt, label, input, select, textarea, a, small, span, div, option, summary, figcaption) { font-weight: 400; }
+:where(html:not(.app-only)) body :is(button, .btn) { font-weight: 500; }
+:where(html:not(.app-only)) body :is(h1, h2, h3, h4, b, strong, th) { font-weight: 600; }

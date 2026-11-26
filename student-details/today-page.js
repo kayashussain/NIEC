@@ -152,7 +152,8 @@
   function titleOf(x) {
     const c = x.course;
     if (x.tag === 'offer' && c) return `Has an offer come from ${c.university}?`;
-    if (c && (x.app || /^apply\b/i.test(String(x.text || '')))) return `Apply to ${c.university}`;
+    // A NOC or Medical task names a university too, and may start "Apply for the NOC": it keeps its own words.
+    if (c && (!x.tag || x.tag === 'application') && (x.app || /^apply\b/i.test(String(x.text || '')))) return `Apply to ${c.university}`;
     return String(x.text || '').split('\n')[0];
   }
   // The grey line under a closed task: the course, its intake and how many updates.

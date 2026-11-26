@@ -422,7 +422,7 @@
     const z = String(Math.round(Math.min(1.5, Math.max(0.88, w / REF_WIDTH)) * 1000) / 1000);
     [...page.children].forEach((c) => { c.style.zoom = z; });
   }
-  if (typeof ResizeObserver === 'function') new ResizeObserver(() => fitPage()).observe(document.querySelector('.fu-page'));
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => requestAnimationFrame(fitPage)).observe(document.querySelector('.fu-page')); /* the next frame: resizing inside the notice made Safari report an error */
   fitPage();
 
   $('find').addEventListener('input', () => { close(); draw(); });

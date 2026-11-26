@@ -385,7 +385,7 @@
         el('p', 'mt-hint mt-teams-note', 'To join as the interviewer, sign in to the Teams app with the Microsoft account that made this meeting. Any other account waits in the lobby.')),
       step(2, Boolean(me.slug && me.email), 'Your link, your name and your email',
         h('div', { class: 'mt-three' },
-          h('div', {}, lab('mtSlug', 'Booking link'), h('div', { class: 'mt-prefix' }, el('span', '', `${location.host}/book/`), slug)),
+          h('div', {}, lab('mtSlug', 'Booking link'), h('div', { class: 'mt-prefix' }, el('span', '', `${location.origin}/book/`.replace(/^https?:\/\//, '')), slug)),
           h('div', {}, lab('mtShown', 'Name students see'), shown),
           h('div', {}, lab('mtEmail', 'Email for your calendar invites'), email))),
       step(3, Boolean(me.weekly && Object.keys(me.weekly).length), 'How long, and your slots',
