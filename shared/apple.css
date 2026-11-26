@@ -998,7 +998,9 @@ html:root body #sheet thead th .filter-btn:hover, html:root body #sheet thead th
 html:root body #sheet.card-only tbody td:not(.col-idx):not([data-col="APPLICATION STATUS"]) { cursor: pointer; }
 html:root body #sheet.card-only tbody td:not(.col-idx):not([data-col="APPLICATION STATUS"]) :is(select, input, button, textarea) { pointer-events: none; }
 html:root body #sheet tbody tr { transition: background .12s; }
-html:root body #sheet tbody tr:hover td:not(.col-idx) { background-color: rgba(0, 113, 227, .045); }
+/* 🔴 CSS CHANGED (2026-11-26): a coloured row keeps its colour under the pointer | from: pointing at a coloured row (also just after colouring it) showed the grey or blue pointer highlight instead of the colour | to: the row's own colour stays; rows with no colour still highlight (the rule above for them is unchanged) */
+html:root body #sheet tbody tr[class*="rc-"]:hover td:not(.editing) { background-color: var(--rc-row) !important; }
+html:root body #sheet tbody tr[class*="rc-"].row-picked:hover td.col-idx { background-color: var(--focus) !important; }
 html:root body .mt-who a, html:root body .mt-person a, html:root body .mt-who-words a { color: #1d1d1f; font-weight: 500; text-decoration: none; }
 html:root body .mt-who a:hover, html:root body .mt-person a:hover, html:root body .mt-who-words a:hover { color: #0066cc; text-decoration: none; }
 html:root body .mt-mockpick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

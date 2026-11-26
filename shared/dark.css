@@ -5428,9 +5428,6 @@ html[data-theme="dark"]:root body #sheet thead th .filter-btn:hover, html[data-t
   background: #1a2d44;
   color: #8ab4f8;
 }
-html[data-theme="dark"]:root body #sheet tbody tr:hover td:not(.col-idx) {
-  background-color: rgba(0, 123, 247, 0.045);
-}
 html[data-theme="dark"]:root body .mt-who a, html[data-theme="dark"]:root body .mt-person a, html[data-theme="dark"]:root body .mt-who-words a {
   color: #e8eaed;
 }

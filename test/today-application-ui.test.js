@@ -110,20 +110,16 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await wait(150);
   assert.strictEqual(await page.evaluate(() => navigator.clipboard.readText()), 'gita.demo@example.com');
   assert.match(await email.innerText(), /Copied/);
-  // The updates: open at once while something is new on them (they were just given), folded with the latest as a preview once read.
-  const fold = body.locator('.tdy-upd');
-  assert.strictEqual(await fold.getAttribute('aria-expanded'), 'true', 'new updates are open');
+  // The updates are always open, new or read (the owner, 25 Nov 2026): no small "Updates" button to press first.
+  assert.strictEqual(await body.locator('.tdy-upd').count(), 0, 'no fold button');
+  assert.ok(await body.locator('.tdy-upd-body').isVisible(), 'the updates are open');
   await page.reload();
   await page.waitForSelector('.tdx');
   const again = page.locator('.tdx', { hasText: 'Apply to Test University' });
   await again.locator('.tdx-head').click();
-  const fold2 = again.locator('.tdy-upd');
-  await fold2.waitFor();
-  assert.strictEqual(await fold2.getAttribute('aria-expanded'), 'false', 'read updates are folded');
-  assert.match(await fold2.innerText(), /Asked the student to resend the passport/);
-  await fold2.click();
-  assert.strictEqual(await fold2.getAttribute('aria-expanded'), 'true');
-  assert.ok(await again.locator('.tdy-upd-body').isVisible());
+  await again.locator('.tdy-upd-body').waitFor();
+  assert.ok(await again.locator('.tdy-upd-body').isVisible(), 'read updates stay open');
+  assert.match(await again.locator('.tdy-upd-body').innerText(), /Asked the student to resend the passport/);
   // Mark as done, Reschedule, Reassign and View student profile are still there.
   for (const b of ['Mark as done', 'Reschedule', 'Reassign', 'View student profile']) assert.ok(await again.locator('.tdx-actions', { hasText: b }).count(), b);
   // ... and no "..." on the Application Team's tasks (the owner, 24 Nov 2026: removed).
@@ -150,7 +146,8 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
   await whyBox.waitFor({ state: 'visible' }); // Why shows for Not submitted
   // Every common reason has its own answer (the owner, 24 Nov 2026: "not submitted is not always not eligible").
-  for (const r of ['Not eligible', 'The course is not available', 'Applications are closed', 'Already applied through another agent', 'The student chose another university', 'The student is not going ahead', 'The student is not responding', 'Other']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
+  for (const r of ['Not eligible', 'The course is not available', 'Applications are closed', 'Already applied through another agent', 'The student is not going yet', 'The student is not responding', 'Other']) assert.ok(await win.getByRole('radio', { name: r, exact: true }).isVisible(), r);
+  assert.strictEqual(await win.getByRole('radio', { name: 'The student chose another university', exact: true }).count(), 0, 'removed by the owner (25 Nov 2026)');
   await win.getByRole('radio', { name: 'Applied', exact: true }).click();
   await whyBox.waitFor({ state: 'hidden' }); // and hides again for Applied
   await win.getByRole('radio', { name: 'Not submitted', exact: true }).click();
@@ -232,7 +229,7 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.strictEqual(await mockPage.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(245, 245, 247)', 'the Mock Team has the Apple canvas');
   assert.strictEqual(await mockPage.locator('.td-hello').count(), 0, 'no greeting card');
   assert.ok(await mockPage.locator('.tda-row').count(), 'the rows in the same look');
-  assert.match(await mockPage.locator('.tdy-hint').first().innerText(), /^No mock booked yet$/, 'what holds the student up, under the waiting time');
+  assert.strictEqual(await mockPage.locator('.tdy-hint', { hasText: /No mock booked yet|not booked/i }).count(), 0, 'a mock that is not booked is not shown as holding the student up (the owner, 26 Nov 2026)');
   await mockPage.locator('.tdx-head').first().click();
   await mockPage.waitForSelector('.tdx-body');
   const mockOpen = mockPage.locator('.tdx.is-open');
@@ -249,11 +246,12 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await wait(400);
   assert.ok(await mw.evaluate((d) => d.classList.contains('td-done-app') && d.classList.contains('td-done-mock')), 'the Mock Team\'s window in the same look');
   assert.strictEqual(await mw.locator('.td-done-stepno').count(), 0, 'one step, no step number');
-  await mw.getByRole('radio', { name: 'Feedback of a mock' }).click();
-  await wait(200);
-  assert.ok(await mw.getByRole('radio', { name: 'Mock 2' }).isVisible(), 'Which mock as round choices');
+  // A Mock interview task asks only the day the mock is booked for (the owner, 25 Nov 2026): no Feedback or Pre-CAS choices and no "nothing to record".
+  assert.ok(await mw.locator('.p-label', { hasText: /^Mock 1 booked on/ }).count(), 'which mock, and the day');
+  assert.strictEqual(await mw.locator('input[type="date"]').count(), 1);
+  assert.strictEqual(await mw.getByRole('radio').count(), 0, 'no other questions');
   assert.ok(await mw.getByRole('button', { name: 'Save' }).count(), 'Save, with no Check before saving');
-  await mw.getByRole('button', { name: 'Not yet' }).click();
+  await mw.getByRole('button', { name: 'Cancel' }).click();
   await mw.waitFor({ state: 'detached' });
   // ... and its Missing details tab in the same look.
   await mockPage.locator('.tda-view', { hasText: 'Missing details' }).click();
@@ -262,6 +260,8 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.deepStrictEqual(mockErrors, []);
 
   // The + beside "Universities applied to" adds an application made outside the portal (the owner, 24 Nov 2026).
+  // The University partner is chosen from the partners (the owner, 25 Nov 2026), so one is added first.
+  assert.ok((await admin.request.post('/api/b2b', { data: { name: 'Outside Partner' } })).ok());
   const addPage = await asha.newPage();
   const addErrors = []; addPage.on('pageerror', (e) => addErrors.push(e.message));
   await addPage.goto('/student?id=' + id);
@@ -272,6 +272,12 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   await addPage.locator('dialog[open] input').nth(1).fill('BSc Outside Course');
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   await addPage.locator('dialog[open] input[type="date"]').first().fill(yesterday);
+  // Without a University partner it is not saved; the partner is picked from the list.
+  await addPage.locator('dialog[open]').getByRole('button', { name: 'Save', exact: true }).click();
+  await addPage.getByText('Choose the university partner from the list.').waitFor();
+  await addPage.locator('dialog[open] label', { hasText: 'University partner' }).locator('input').click();
+  await addPage.locator('dialog[open] .p-pick-i', { hasText: 'Outside Partner' }).dispatchEvent('mousedown');
+  await addPage.locator('dialog[open] .p-pick-i', { hasText: 'Outside Partner' }).dispatchEvent('click');
   await addPage.locator('dialog[open]').getByRole('button', { name: 'Save', exact: true }).click();
   await addPage.locator('dialog[open]').waitFor({ state: 'detached' });
   const afterAdd = await (await asha.request.get('/api/cards/' + id)).json();
