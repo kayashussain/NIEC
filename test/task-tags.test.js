@@ -59,7 +59,7 @@ test('a name typed in capitals reads normally in a message; the sheet keeps it a
 
 test('a task is given with Application, Mock interview, NOC, Medical or Other; older tags still read (the owner, 21 Nov 2026)', () => {
   const F = require('../student-details/card-fields');
-  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'documents', 'noc', 'medical', 'other']);
+  assert.deepStrictEqual(F.TASK_TAGS_CHOOSABLE.map(([k]) => k), ['application', 'mock', 'mock-feedback', 'mock-booking', 'mock-precas', 'documents', 'noc', 'medical', 'other']);
   ['offer', 'payment', 'visa'].forEach((k) => assert.ok(F.TASK_TAG_IDS.includes(k), `${k} is still a known tag, so stored tasks keep it`));
 });
 

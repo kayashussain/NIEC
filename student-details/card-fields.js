@@ -182,7 +182,7 @@
 
   // What a task is about (the owner, 15 Nov 2026): a tag, so Today can show the tasks in calm groups. NOC and Medical are tags of
   // their own (the owner, 15 Nov 2026), as each is its own piece of work for the team.
-  const TASK_TAGS = [['application', 'Application'], ['offer', 'Offer request'], ['mock', 'Mock interview'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
+  const TASK_TAGS = [['application', 'Application'], ['offer', 'Offer request'], ['mock', 'Mock interview'], ['mock-feedback', 'Feedback'], ['mock-booking', 'Date booking'], ['mock-precas', 'Pre-CAS result'], ['payment', 'Payment'], ['documents', 'Documents'], ['noc', 'NOC'], ['medical', 'Medical'], ['visa', 'Visa and CAS'], ['other', 'Other']];
   const TASK_TAG_IDS = TASK_TAGS.map(([k]) => k);
   // The tags a person chooses from when giving or editing a task (the owner, 20 Nov 2026): Application, Mock interview, Documents, NOC,
   // Medical and Other. Offer request, Payment and Visa and CAS are no longer offered; tasks that already carry one keep it and still show
@@ -190,12 +190,24 @@
   // Documents is no longer a kind of its own (the owner, 21 Nov 2026): documents are part of the application, so the five kinds a person
   // chooses from are Application, Mock interview, NOC, Medical and Other. Offer request is made by Student Recruit 360 only, after an application is
   // submitted. The Documents tasks already saved were moved to Application once at start-up (see server.js).
-  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'documents', 'mock', 'noc', 'medical', 'other'].includes(k)); // Documents is a kind a person can choose again (the owner, 25 Nov 2026): for example the Application Team asking a branch for an additional document
+  const TASK_TAGS_CHOOSABLE = TASK_TAGS.filter(([k]) => ['application', 'documents', 'mock', 'mock-feedback', 'mock-booking', 'mock-precas', 'noc', 'medical', 'other'].includes(k)); // Documents is a kind a person can choose again (the owner, 25 Nov 2026): for example the Application Team asking a branch for an additional document
   // A course leaves the Shortlist for good once it has gone to the Application Team (the owner, 18 Nov 2026): given to the team, applied
   // to, answered (offer, refused, withdrawn) or decided not to be submitted. The Shortlist holds only courses still to be assigned.
   const WITH_TEAM = (o) => Boolean(o && (o.sent || o.applied || o.offer || o.refused || o.withdrawn || o.skipped));
   const onShortlist = (o) => !WITH_TEAM(o);
   // The tag a task gets when none was chosen (older tasks, or a quick assign): from the words, then the team, then the student's stage.
+  // The Mock Team's four kinds of work (the owner, 25 Nov 2026): Mock interview (a mock to book), Feedback (of a mock held), Date booking (the Pre-CAS or final
+  // interview to book) and Pre-CAS result. A task typed by hand is read from its words; the Mock interview is the kind left over.
+  function mockSub(t, team) {
+    const mockish = team === 'mock' || /\b(mock|interview|pre-?cas|final)\b/.test(t);
+    if (!mockish) return '';
+    if (/\bfeedback\b/.test(t)) return 'mock-feedback';
+    if (/\bpre-?cas\b[^.]*\b(results?|passed|fail(ed)?)\b|\bresults?\b[^.]*\bpre-?cas\b/.test(t)) return 'mock-precas';
+    if (/\b(book|booking|booked|date)\b[^.]*\b(pre-?cas|final)\b|\b(pre-?cas|final)\b[^.]*\b(book|booking|booked|date)\b/.test(t)) return 'mock-booking';
+    return '';
+  }
+  // A "Mock interview" task saved before the four kinds existed carried its kind in its first words.
+  const legacyMock = (text) => { const t = String(text || '').trim().toLowerCase(); return /^feedback\b|^write the feedback of mock/.test(t) ? 'mock-feedback' : /^final interview booking/.test(t) ? 'mock-booking' : /^pre-?cas interview result/.test(t) ? 'mock-precas' : ''; };
   function guessTaskTag(text, team, stage) {
     const t = String(text || '').toLowerCase();
     if (/^offer request\b/.test(t)) return 'offer'; // the task made when an application is submitted
@@ -208,6 +220,7 @@
     // Other or Payment). The health surcharge (IHS) is a payment, not a medical.
     if (/\b(medicals?|health ?check|iom|tb|tuberculosis|x-?ray|clinic|hospital|doctor)\b/.test(t)) return 'medical';
     if (/\b(pay|payment|deposit|fee|fees|invoice|receipt|tuition|refund)\b/.test(t)) return 'payment';
+    { const sub = mockSub(t, team); if (sub) return sub; }
     if (/\bpre-?cas\b/.test(t)) return 'mock'; // the Pre-CAS interview is the last mock, not the visa
     if (/\b(visa|cas|vfs|biometric|e-?visa|brp|lodge)\b/.test(t)) return 'visa';
     if (/\b(mock|interview|pre-?cas)\b/.test(t)) return 'mock';
@@ -225,7 +238,8 @@
     if (/Application/.test(st)) return 'application';
     return 'other';
   }
-  const taskTag = (task, stage) => (TASK_TAG_IDS.includes(task && task.tag) ? task.tag : guessTaskTag(task && task.text, task && task.team, stage));
+  const taskTag = (task, stage) => (TASK_TAG_IDS.includes(task && task.tag) ? (task.tag === 'mock' ? legacyMock(task.text) || 'mock' : task.tag) : guessTaskTag(task && task.text, task && task.team, stage));
+  const isMockTag = (k) => k === 'mock' || k === 'mock-feedback' || k === 'mock-booking' || k === 'mock-precas';
   // The task Student Recruit 360 gives by itself on the day of a medical test ("Medical test of 19 Nov 2026 at Norvic: is the report received?").
   // It is about the report, not about booking, so finishing it never asks for a booking again (see finishPlan in portal-api.js).
   const isReportCheck = (task) => /^Medical test of .+: is the report received\?$/i.test(String((task && task.text) || '').trim());
@@ -236,7 +250,7 @@
   const taskPriorityOf = (task) => (TASK_PRIORITY_IDS.includes(task && task.priority) ? task.priority : 'high');
 
   return {
-    TASK_TAGS, TASK_TAG_IDS, TASK_TAGS_CHOOSABLE, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, plainPartner, sourceGroup, branchName, storedSource,
+    TASK_TAGS, TASK_TAG_IDS, TASK_TAGS_CHOOSABLE, isMockTag, guessTaskTag, WITH_TEAM, onShortlist, taskTag, isReportCheck, TASK_PRIORITIES, TASK_PRIORITY_IDS, taskPriorityOf, BRANCHES, STORED_SOURCES, branchValue, isBranchValue, plainPartner, sourceGroup, branchName, storedSource,
     SOURCE_DETAILS, SOURCE_DETAIL_LABEL, SOURCE_CAN_ADD, STUDY_LEVELS, QUALIFICATIONS, ENGLISH_TESTS, LOST_REASONS, LOST_STAGES,
     OLDER_STUDY_LEVELS, DISTRICTS, districtOf, NATIONALITIES, SOURCE_WAYS, NOTE_KINDS, FOLLOW_TAGS, DOCUMENTS, documentsFor, PROFILE_FIELDS, GENDERS, SHEET_SECTIONS, columnLabel, whatsappNumber,
   };

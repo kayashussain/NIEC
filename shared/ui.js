@@ -408,6 +408,9 @@
     return native ? native.call(this) : undefined;
   };
   document.addEventListener('click', (e) => {
+    // A click on the empty part of a date box's row (its label spans the whole width) is not a click on the box: the browser would pass it on to the box and open the calendar again (the owner, 26 Nov 2026: a click outside the box kept showing the calendar).
+    const row = e.target && e.target.closest && e.target.closest('label');
+    if (row && !e.target.closest('input, select, textarea, button, a') && row.querySelector('input[type="date"]')) { e.preventDefault(); return; }
     const input = e.target && e.target.closest && e.target.closest('input[type="date"]');
     if (!input) return;
     e.preventDefault(); // not the browser's own calendar

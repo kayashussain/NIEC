@@ -74,9 +74,9 @@
       if (g === 'Social Media' && detailBox.parentNode) {
         detailInput = null;
         drawSocial();
-        const r = field(WITH_REMARKS[g], { max: 160, placeholder: REMARK_HELP[g], value: firstDraw ? initial.remarks || '' : '' });
-        remarksInput = r.input;
-        remarkBox.replaceChildren(...r.wrap.childNodes);
+        // No box to write in for Social Media: the platform is chosen from the list only (the owner, 26 Nov 2026). Words an older student already has are kept as they are.
+        remarksInput = { value: firstDraw ? initial.remarks || '' : '' };
+        remarkBox.replaceChildren();
         firstDraw = false;
         onChange();
         return;

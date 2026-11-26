@@ -571,7 +571,8 @@
     const nextOpen = rows.find((m) => !m.d && !m.raw && !m.fb);
     const done = rows.filter((m) => m.fb).length;
     const title = head.querySelector('h2');
-    if (title) title.append(el('span', 'lg-head-sub', `${done} of 4 done`));
+    const extraDone = ((data.card && data.card.extraMocks) || []).length;
+    if (title) title.append(el('span', 'lg-head-sub', extraDone ? `${done + extraDone} done` : `${done} of 4 done`));
     // Student Card G2 (the owner, 24 Nov 2026): the four mocks are four small tiles (status and day) in two rows; what was written about a
     // mock (feedback, who took it, the answer) stays as a line under the tiles, so nothing that was shown before is lost.
     const tiles = el('div', 'lg-mock-tiles');
@@ -600,6 +601,20 @@
       const body = el('div', 'lg-mock-body');
       if (m.fb) body.append(el('div', 'lg-mock-fb', m.fb));
       if (bits.length) body.append(el('div', 'lg-mock-who', bits.join(' · ')));
+      row.append(body);
+      wrap.append(row);
+    });
+    // Mock 5, 6 and 7 (the owner, 26 Nov 2026): kept on the card, not on All Students; each shows its day and what was written.
+    ((data.card && data.card.extraMocks) || []).forEach((m) => {
+      const tile = el('div', 'lg-mock-tile is-done');
+      tile.append(el('b', '', `Mock ${m.n}`), el('span', 'lg-mock-state', 'Done'));
+      if (m.day) tile.append(el('span', 'lg-mock-when', day(m.day)));
+      tiles.append(tile);
+      const row = el('div', 'lg-mock-row');
+      row.append(el('b', 'lg-mock-n', `Mock ${m.n}`));
+      const body = el('div', 'lg-mock-body');
+      if (m.feedback) body.append(el('div', 'lg-mock-fb', m.feedback));
+      if (m.by) body.append(el('div', 'lg-mock-who', `Taken by ${m.by}`));
       row.append(body);
       wrap.append(row);
     });
@@ -696,12 +711,12 @@
       // place) and the course, from the university's own list; then optional comments. Mock interview, Documents, NOC and Medical ask
       // for comments only (the owner, 20 Nov 2026); Other asks for them too, and needs them, since it says nothing by itself.
       // The kinds follow the team the task goes to: the Application Team gets Application, Documents, NOC, Medical and Other; the Mock Team Mock interview, Feedback, Final interview booking and Pre-CAS interview result; a branch Documents, Student update and Payment update.
-      const KIND_LABEL = { application: 'Application', documents: 'Documents', noc: 'NOC', medical: 'Medical', other: 'Other', mock: 'Mock interview', 'mock-feedback': 'Feedback', 'mock-final': 'Final interview booking', 'mock-precas': 'Pre-CAS interview result', 'branch-update': 'Student update', 'branch-payment': 'Payment update' };
-      const KIND_SAVES = { 'mock-feedback': ['mock', 'Feedback'], 'mock-final': ['mock', 'Final interview booking'], 'mock-precas': ['mock', 'Pre-CAS interview result'], 'branch-update': ['other', 'Student update'], 'branch-payment': ['payment', 'Payment update'] };
+      const KIND_LABEL = { application: 'Application', documents: 'Documents', noc: 'NOC', medical: 'Medical', other: 'Other', mock: 'Mock interview', 'mock-feedback': 'Feedback', 'mock-booking': 'Date booking', 'mock-precas': 'Pre-CAS result', 'branch-update': 'Student update', 'branch-payment': 'Payment update' };
+      const KIND_SAVES = { 'branch-update': ['other', 'Student update'], 'branch-payment': ['payment', 'Payment update'] };
       const kindsFor = (teamId) => {
         const t = (data.assignTeams || data.taskTeams || []).find((x) => x.id === teamId) || {};
         const ids = teamId === 'application' ? ['application', 'documents', 'noc', 'medical', 'other']
-          : teamId === 'mock' ? ['mock', 'mock-feedback', 'mock-final', 'mock-precas']
+          : teamId === 'mock' ? ['mock', 'mock-feedback', 'mock-booking', 'mock-precas']
           : /branch$/i.test(String(t.label || '')) ? ['documents', 'branch-update', 'branch-payment']
           : ['application', 'documents', 'mock', 'noc', 'medical', 'other'];
         return ids.map((k) => [k, KIND_LABEL[k]]);

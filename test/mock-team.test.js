@@ -211,10 +211,10 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   data.bookings[0].day = '2026-01-05';
   fs.writeFileSync(file, JSON.stringify(data));
   page = (await mock('GET', '/api/bookings')).json;
-  assert.strictEqual(page.waiting.length, 1, 'the window after a mock asks');
+  assert.strictEqual(page.waiting.length, 0, 'the mock of a matched student is answered in its Feedback task, so Bookings does not ask (the owner, 26 Nov 2026)');
   const today = (await mock('GET', '/api/today')).json;
   assert.ok(today.missing.some((m) => m.lines.some((l) => /Did the student join/.test(l.text))), 'and Missing details says so');
-  assert.ok(today.missing.some((m) => m.name === 'Ram Example' && m.lines.some((l) => /Mock Schedule 1 is missing/.test(l.text))));
+  assert.ok(!today.missing.some((m) => m.lines.some((l) => /Mock Schedule 1 is missing/.test(l.text))), 'a student with no mock booked is not listed as missing (the owner, 26 Nov 2026)');
   assert.strictEqual((await mock('POST', `/api/bookings/${id}/answer`, { joined: true, feedback: '', result: 'ready' })).status, 400, 'the feedback is required');
   assert.strictEqual((await mock('POST', `/api/bookings/${id}/answer`, { joined: true, feedback: 'Good answers', result: 'maybe' })).status, 400, 'the result is required');
   const answered = await mock('POST', `/api/bookings/${id}/answer`, { joined: true, feedback: 'Good answers. Practise finance.', result: 'again' });

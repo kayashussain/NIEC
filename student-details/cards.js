@@ -136,6 +136,10 @@ function normalize(raw) {
     follow: cleanFollow(c.follow),
     // The last line Student Recruit 360 itself wrote in the sheet's Remarks (finishing a task), so a later one replaces it but never a person's remark.
     autoRemark: str(c.autoRemark, 300),
+    // Mocks after the fourth (the owner, 26 Nov 2026): All Students keeps four mocks, so Mock 5, 6 and 7 are kept here: [{ n, day, feedback, by, at }].
+    // The day of the final Pre-CAS interview, given by the university (the owner, 26 Nov 2026): { day, by, at }. The Pre-CAS result window reads it.
+    finalInterview: c.finalInterview && /^\d{4}-\d{2}-\d{2}$/.test(String(c.finalInterview.day)) ? { day: c.finalInterview.day, by: str(c.finalInterview.by, 80), at: str(c.finalInterview.at, 40) } : null,
+    extraMocks: (Array.isArray(c.extraMocks) ? c.extraMocks : []).filter((m) => m && m.n >= 5 && m.n <= 7).slice(0, 3).map((m) => ({ n: Number(m.n), day: /^\d{4}-\d{2}-\d{2}$/.test(String(m.day)) ? m.day : '', feedback: str(m.feedback, 1500), by: str(m.by, 80), at: str(m.at, 40) })),
     // The details someone checked and said are correct (the owner, 16 Nov 2026), so they leave "Details to check": { key: ISO time }.
     // A key holds the values it was about, so a later change is checked again.
     checked: Object.fromEntries(Object.entries(c.checked && typeof c.checked === 'object' && !Array.isArray(c.checked) ? c.checked : {}).filter(([k]) => typeof k === 'string' && k.length <= 200).slice(0, 100).map(([k, v]) => [k, str(v, 40)])),
@@ -312,6 +316,19 @@ function createCards(dir, { now = () => new Date(), store = createFileStore(dir,
     },
     setAutoRemark(rowId, remark, by) { return update(rowId, by, (card) => { card.autoRemark = str(remark, 300); }); },
     // The medical test booked (a date and where), or none (null): see `medical` on the card.
+    // A fifth, sixth or seventh mock (the day and the feedback). A mock written twice is replaced.
+    addExtraMock(rowId, input, by) {
+      const n = Number(input && input.n);
+      if (!(n >= 5 && n <= 7)) return { error: 'Only Mock 5, 6 and 7 are kept here.' };
+      return update(rowId, by, (card, stamp) => {
+        const list = (card.extraMocks || []).filter((m) => m.n !== n);
+        list.push({ n, day: /^\d{4}-\d{2}-\d{2}$/.test(String(input.day)) ? input.day : '', feedback: str(input.feedback, 1500), by: by || '', at: stamp });
+        card.extraMocks = list.sort((a, b) => a.n - b.n);
+      });
+    },
+    setFinalInterview(rowId, input, by) {
+      return update(rowId, by, (card, stamp) => { card.finalInterview = input && /^\d{4}-\d{2}-\d{2}$/.test(String(input.day)) ? { day: input.day, by: by || '', at: stamp } : null; });
+    },
     setMedical(rowId, input, by) {
       return update(rowId, by, (card, stamp) => {
         card.medical = input && /^\d{4}-\d{2}-\d{2}$/.test(String(input.date)) ? { date: input.date, place: str(input.place, 200), by: by || '', at: stamp, done: Boolean(input.done) } : null;

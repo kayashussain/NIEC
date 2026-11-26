@@ -53,7 +53,7 @@
         else { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
       }
       document.documentElement.classList.add('app-apple');
-      document.documentElement.classList.toggle('app-only', !kind); // only the Application Team's own touches in apple.css hang on this class (the owner, 25 Nov 2026)
+      document.documentElement.classList.toggle('app-only', !kind || mock); // the Application Team's touches in apple.css hang on this class; the Mock Team shares them (the owner, 25 Nov 2026: one look, one type scale), its own pages (Bookings, Interview guidelines) have their rules under app-mock
       document.documentElement.classList.toggle('app-mock', mock); // the Mock Team's own touches in apple.css hang on this class, so the Application Team is never changed by them
       try { localStorage.setItem('niecApple', mock ? 'mock' : kind === 'follow' ? 'follow' : kind === 'all' ? 'all' : '1'); } catch (e) { /* only the first draw may flash */ }
     },
@@ -74,7 +74,7 @@
   header.innerHTML = `
     <button type="button" class="niec-toggle" aria-label="Fold or unfold the menu" aria-expanded="true" title="Fold menu"><span class="niec-fold-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span><span class="niec-fold-lbl">Fold menu</span></button>
     <a class="niec-brand" href="/today" title="Home" id="niecHome">
-      <img class="niec-logo" src="/brand-logo.svg" alt="Student Recruit 360 home" width="332" height="100" />
+      <img class="niec-logo" draggable="false" src="/brand-logo.svg" alt="Student Recruit 360 home" width="332" height="100" />
       <span class="niec-name" hidden><b>Student Recruit 360</b></span>
       <span class="niec-mark" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#0070e0" stroke-width="8" stroke-linecap="round" stroke-dasharray="210 41.3" transform="rotate(-40 50 50)"/><path d="M50 29L80 44L50 59L20 44Z" fill="#0070e0"/><path d="M34 54V64C34 70 66 70 66 64V54L50 62Z" fill="#0070e0"/><path d="M80 44V60" stroke="#d9650b" stroke-width="4" stroke-linecap="round"/><circle cx="80" cy="63" r="4" fill="#d9650b"/><circle cx="50" cy="10" r="6" fill="#d9650b"/></svg></span>
     </a>

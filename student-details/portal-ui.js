@@ -361,7 +361,7 @@
     let answer = null;
     const url = `/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`;
     const tag = tagOf(t, o.stage);
-    const asks = ['application', 'offer', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
+    const asks = ['application', 'offer', 'noc', 'mock', 'mock-feedback', 'mock-booking', 'mock-precas', 'medical', 'payment', 'visa'].includes(tag);
     return dialog('Mark as done?', (body, close) => {
       // An application task names its university and course below, so only the student is named here.
       // An application task and an Offer request show only the student's name here (their university and course follow): no long sentence.
@@ -645,34 +645,62 @@
           read = () => (q.value() ? { noc: q.value(), ...(q.value() === 'Received' ? { nocNumber: num.input.value.trim() } : {}) } : {});
           check = () => (!q.value() ? 'Choose Pending or Received.' : q.value() === 'Received' && !num.input.value.trim() ? 'Write the NOC number.' : '');
         } else if (tag === 'mock') {
-          nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW']);
-          const q = question(F5 ? 'What happened' : 'What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
-            show([date.wrap, rem], v === 'set'); show([slot.wrap, fb.wrap], v === 'feedback'); show(res, v === 'precas');
-          });
-          const date = dateField('Mock interview on');
-          const rem = el('label', 'p-check p-wide');
-          const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
-          rem.append(remind, el('span', '', 'Remind the team to write the feedback on that day'));
-          form.append(rem);
-          const said = /mock interview (\d)/i.exec(String(t.text || ''));
-          const slotStart = said ? said[1] : String(state.nextFeedback || '');
-          // In the Mock Team's look, Which mock is four round choices instead of a list (the approved design, 23 Nov 2026).
-          const slot = oneStep ? (() => {
-            const w = el('div', 'p-field p-wide');
-            const p = picker([['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], slotStart, (k) => `td-prio td-answer ans-mock${k}`, 'Which mock');
-            w.append(el('span', 'p-label', 'Which mock'), p.node);
-            return { wrap: w, input: { get value() { return p.value() || ''; } } };
-          })() : field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: slotStart });
-          const fb = field('Feedback', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Confident; work on the finance answers.' });
-          fb.input.rows = 3;
-          form.append(slot.wrap, fb.wrap);
+          // A mock to book (the owner, 25 Nov 2026): the mock and the day it is booked for. The Feedback task for that day is made by itself.
+          nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4']);
+          const n = state.nextMock;
+          const date = field(n ? `Mock ${n} booked on` : 'Mock booked on', { kind: 'date', value: '', required: true });
+          form.append(date.wrap);
+          notesOptional = true;
+          read = () => (date.input.value ? { mock: 'set', date: date.input.value } : {});
+          check = () => (!date.input.value ? 'Choose the day the mock is booked for.' : '');
+        } else if (tag === 'mock-feedback') {
+          // The mock is already booked (the owner, 26 Nov 2026): it says "Mock 1 booked on 26 Nov 2026" and that day is not changed. The team says whether the student
+          // joined: joined asks for the feedback; did not join asks for the reason in the note. No Mock 1 to 7 choice.
+          const due = state.feedbackDue;
+          let when = null;
+          if (due) {
+            const who = el('div', 'p-wide td-course');
+            who.append(el('b', '', `Mock ${due.n}`), el('span', 'td-sofar-course', `booked on ${day(due.day)}`));
+            form.append(who);
+          } else {
+            when = field('Mock held on', { kind: 'date', value: '', required: true });
+            when.input.max = today;
+            form.append(when.wrap);
+          }
+          const q = question('Did the student join?', [['yes', 'Joined'], ['no', 'Did not join']], (v) => { show(fb.wrap, v === 'yes'); show(why, v === 'no'); words.wrap.hidden = v !== 'no'; const nl = words.wrap.querySelector('.p-label'); if (nl) nl.replaceChildren('Why did the student not join?'); });
+          const fb = field('Feedback', { kind: 'area', max: 1500, wide: true, required: true, placeholder: 'e.g. Confident; work on the finance answers.' });
+          fb.input.rows = 4;
+          form.append(fb.wrap);
+          const why = el('span'); why.hidden = true; // (the note below carries its own label: the owner, 26 Nov 2026, one header only)
+          show([fb.wrap], false);
+          notesOptional = false;
+          read = () => (q.value() === 'yes' && fb.input.value.trim() ? { mock: 'feedback', joined: true, slot: due ? due.n : 0, day: due ? due.day : (when ? when.input.value : ''), feedback: fb.input.value.trim() } : q.value() === 'no' ? { mock: 'feedback', joined: false, slot: due ? due.n : 0, day: due ? due.day : (when ? when.input.value : '') } : {});
+          check = () => (!q.value() ? 'Choose Joined or Did not join.' : !due && !when.input.value ? 'Choose the day the mock was held.' : q.value() === 'yes' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'no' && words.input.value.trim().length < 3 ? 'Write why the student did not join, in the note.' : '');
+          onWhat = () => {};
+        } else if (tag === 'mock-booking') {
+          // The final Pre-CAS interview is given by the university (the owner, 25 Nov 2026), not by our team: the day, and the Pre-CAS result task for that day is made by itself.
+          const date = field('Final Pre-CAS interview booked on', { kind: 'date', value: '', required: true });
+          form.append(date.wrap);
+          notesOptional = true;
+          read = () => (date.input.value ? { mock: 'preBooked', date: date.input.value } : {});
+          check = () => (!date.input.value ? 'Choose the day the final Pre-CAS interview is booked for.' : '');
+        } else if (tag === 'mock-precas') {
+          // The final interview is the university's (the owner, 26 Nov 2026): the day it was booked for comes from the Date booking; the team says whether the student
+          // attended. Joined asks Pass or Fail; did not join asks why, in the note.
+          nowLine(['PRE CAS INTERVIEW']);
+          const booked = state.finalInterview ? [0, day(state.finalInterview)] : /\((\d{1,2} [A-Za-z]+ \d{4})\)/.exec(String(t.text || ''));
+          if (booked) { const who = el('div', 'p-wide td-course'); who.append(el('b', '', 'Final interview'), el('span', 'td-sofar-course', `booked on ${booked[1]}`)); form.append(who); }
+          const q = question('Did the student attend the final interview?', [['yes', 'Joined'], ['no', 'Did not join']], (v) => { show(res, v === 'yes'); show(why, v === 'no'); const nl = words.wrap.querySelector('.p-label'); if (nl) nl.replaceChildren(v === 'no' ? 'Why did the student not join the final interview?' : 'Notes (optional)'); });
           const res = el('div', 'p-field p-wide');
-          const result = picker([['Passed', 'Passed'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS result');
-          res.append(el('span', 'p-label', 'Pre-CAS result'), result.node);
+          const result = picker([['Passed', 'Pass'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS interview result');
+          const rl = el('span', 'p-label', 'Pre-CAS interview result'); rl.append(requiredMark());
+          res.append(rl, result.node);
           form.append(res);
-          show([date.wrap, rem, slot.wrap, fb.wrap, res], false);
-          read = () => (q.value() === 'set' ? { mock: 'set', date: date.input.value, remind: remind.checked } : q.value() === 'feedback' ? { mock: 'feedback', slot: Number(slot.input.value), feedback: fb.input.value.trim() } : q.value() === 'precas' ? { mock: 'precas', result: result.value() } : {});
-          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'set' && !date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !slot.input.value ? 'Choose which mock.' : q.value() === 'feedback' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !result.value() ? 'Choose Passed or Fail.' : '');
+          const why = el('span'); why.hidden = true;
+          show([res], false);
+          notesOptional = true;
+          read = () => (q.value() === 'yes' && result.value() ? { mock: 'precas', joined: true, result: result.value() } : q.value() === 'no' ? { mock: 'precas', joined: false } : {});
+          check = () => (!q.value() ? 'Choose Joined or Did not join.' : q.value() === 'yes' && !result.value() ? 'Choose Pass or Fail.' : q.value() === 'no' && words.input.value.trim().length < 3 ? 'Write why the student did not join, in the note.' : '');
         } else if (tag === 'medical') {
           // The Medical Report as All Students has it: Pending, Booked (with the day) or Received (the owner, 18 Nov 2026). On the day of the
           // test Student Recruit 360's own "is the report received?" task keeps its meaning: Pending there is "not received yet".
@@ -713,6 +741,7 @@
         // Few questions, then Save. The Application Team's window has no Check before saving step (the owner, 24 Nov 2026: "no need");
         // its answers are still checked by the server before the window closes, so a problem shows here and nothing is saved.
         const simple = F5 || Boolean(t.app || (state && (state.courseTask || state.offerTask))) || tag === 'noc' || tag === 'medical';
+        if (/^mock-/.test(tag) || tag === 'mock') notesOptional = true; // the Mock Team's notes are optional: the answer above says what happened
         if (F5 && asks) notesOptional = true;
         if (F5 && !simple && dlgHead && !stepNo) { stepNo = el('span', 'td-done-stepno', 'Step 1 of 2'); dlgHead.insertBefore(stepNo, dlgHead.querySelector('.p-x')); }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
@@ -722,6 +751,7 @@
         form.append(words.wrap);
         if ((simple && (!oneStep || asks)) || notesOptional) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(!F5 && (tag === 'noc' || tag === 'medical') ? 'Comments (optional)' : 'Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
         if (noNotes) words.wrap.hidden = true;
+        if (tag === 'mock-feedback') words.wrap.hidden = true; // the note opens only when the student did not join: it holds the reason
         // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
         ask.append(msg);
         if (!noNotes && (asks || F5) && !simple) ask.append(el('p', 'p-muted p-small', 'Nothing is saved until you check it on the next step.'));

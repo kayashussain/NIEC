@@ -164,6 +164,8 @@ function smtpServer(handler) {
   const server = net.createServer((socket) => {
     let inData = false;
     let buf = '';
+    // The client closes the connection when it has finished; on Windows this pretend server then hears "connection reset", which is not a failure.
+    socket.on('error', () => {});
     socket.write('220 test ESMTP\r\n');
     socket.on('data', (chunk) => {
       buf += chunk.toString();
@@ -225,7 +227,7 @@ test('someone in two teams sees both teams students and may use both teams moves
   assert.deepStrictEqual(ids(Teams.viewFor(both, book())), ['1', '2']);
   assert.deepStrictEqual(ids(Teams.viewFor({ role: 'staff', departments: ['application', 'followup'] }, book())), ['1', '3']);
   assert.deepStrictEqual(Teams.statusChoices(both, 'Application Stage', []), ['Application Stage', 'Mock Stage', 'Defer', 'Withdrawn', 'Hold']);
-  assert.deepStrictEqual(Teams.statusChoices(both, 'Mock Stage', []), ['Mock Stage', 'Payment Stage', 'Application Stage', 'Defer', 'Withdrawn', 'Hold']);
+  assert.deepStrictEqual(Teams.statusChoices(both, 'Mock Stage', []), ['Mock Stage', 'Payment Stage', 'Defer', 'Withdrawn', 'Hold']);
   assert.ok(Teams.canEdit(both, 'STUDENT ID') && Teams.canEdit(both, 'MOCK SCHEDULE 1') && !Teams.canEdit(both, 'GROSS FEE'));
   assert.strictEqual(Teams.viewKey({ role: 'staff', departments: ['mock', 'application'] }), Teams.viewKey(both));
 });
@@ -582,8 +584,8 @@ test('application and mock staff delete one student at a time and can send Mock 
   assert.ok(!Teams.canDelete({ role: 'manager', departments: [] }));
   ['application', 'mock'].forEach((d) => {
     const w = { role: 'staff', departments: [d] };
-    assert.ok(Teams.statusChoices(w, 'Mock Stage', ['x']).includes('Application Stage'), d);
-    assert.ok(Teams.checkMove(w, { [S]: 'Mock Stage' }, 'Application Stage').ok, d);
+    assert.ok(!Teams.statusChoices(w, 'Mock Stage', ['x']).includes('Application Stage'), `${d}: no move back (the owner, 25 Nov 2026)`);
+    assert.ok(!Teams.checkMove(w, { [S]: 'Mock Stage' }, 'Application Stage').ok, d);
   });
   assert.ok(Teams.statusChoices(both, 'Mock Stage', ['x']).includes('Payment Stage'));
 });

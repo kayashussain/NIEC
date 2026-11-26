@@ -314,8 +314,6 @@
     // The first thing that holds the student up, in the same words as Missing details where it has one.
     let hint = '';
     if (noFeedback) hint = `Feedback ${noFeedback.n} not written`;
-    else if (!mocks.some((k) => k.on || k.said) && !booked) hint = 'No mock booked yet';
-    else if (!m.preCas && next && !booked && !mocks.some((k) => k.on && k.on > todayIso)) hint = `Mock ${next.n} not booked`;
     return { m, mocks, done, next, booked, hint };
   }
   function mockDetails(x, mk) {
@@ -344,7 +342,7 @@
     const k = x.contact || {};
     const cols = el('div', 'tdy-cols');
     const app = el('div', 'tdy-sec');
-    app.append(el('div', 'tdy-sech', 'Application'));
+    app.append(el('div', 'tdy-sech', 'University')); // the same names on every team's task: University and Student (the owner, 25 Nov 2026)
     [['University', mk.m.university], ['Course', mk.m.course], ['Intake', x.intake]].forEach(([l, v]) => { if (v) app.append(appLine(l, v)); });
     if (mk.m.university) {
       const g = el('div', 'tdy-dl');
@@ -594,7 +592,7 @@
     const pills = F6 ? el('div', 'tda-pills') : bar;
     if (F6) { pills.setAttribute('role', 'tablist'); pills.setAttribute('aria-label', 'Kind of task'); }
     if (F6) bar.append(pills);
-    if (pool.length) {
+    if (pool.length || (todayData && todayData.mockTeam)) {
       const pill = (k, label, n) => {
         const b = h('button', { class: 'tda-pill', type: 'button', role: 'tab', 'aria-selected': String(tagFilter === k) }, label);
         b.append(el('span', 'tda-pill-n', String(n)));
@@ -602,7 +600,7 @@
         pills.append(b);
       };
       pill('all', 'All', pool.length);
-      ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k]) pill(k, label, count[k]); });
+      ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k] || tagFilter === k || (todayData && todayData.mockTeam && /^mock/.test(k))) pill(k, label, count[k] || 0); }); // the Mock Team always sees its four kinds (the owner, 25 Nov 2026)
     }
     // Four numbers at the top (the Application Team's Apple look, the owner, 24 Nov 2026): what is late, what is for today, what waits
     // for a later day and who has details missing. Each opens its tab.
@@ -828,7 +826,7 @@
     const count = {};
     items.forEach((x) => { const k = tagOf(x, x.stage); count[k] = (count[k] || 0) + 1; });
     const kinds = Object.keys(count);
-    if (kinds.length < 2 && tagFilter === 'all') return null;
+    if (kinds.length < 2 && tagFilter === 'all' && !(todayData && todayData.mockTeam)) return null;
     const bar = el('div', 'td-filter');
     bar.setAttribute('role', 'tablist');
     bar.setAttribute('aria-label', 'Show the tasks about');
@@ -839,7 +837,7 @@
       bar.append(b);
     };
     pill('all', 'All', 0);
-    ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k] || tagFilter === k) pill(k, label, count[k] || 0); });
+    ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k] || tagFilter === k || (todayData && todayData.mockTeam && /^mock/.test(k))) pill(k, label, count[k] || 0); }); // the Mock Team always sees its four kinds, with how many are open in each (the owner, 25 Nov 2026)
     return bar;
   }
 

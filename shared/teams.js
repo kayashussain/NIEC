@@ -83,9 +83,7 @@
     // Moving on is refused until the mocks held are written up (see mockReady): one mock is enough when the Pre-CAS is done (the owner,
     // 15 Nov 2026: a student who passed after one mock waited for four dates and four feedbacks).
     { dept: 'mock', from: 'Mock Stage', to: 'Payment Stage', ready: (row) => mockReady(row) },
-    // Back to Application: a student who failed with one university and applies to another.
-    { dept: 'application', from: 'Mock Stage', to: 'Application Stage' },
-    { dept: 'mock', from: 'Mock Stage', to: 'Application Stage' },
+    // (No move back: the Application Team moves a student to Mock Stage, Defer, Withdrawn or Hold, the Mock Team to Payment Stage, Defer, Withdrawn or Hold: the owner, 25 Nov 2026.)
     // The Follow-up Team moves its own students on: an inquiry who decides goes to the Application Team; a student who waits goes to
     // Defer and comes back; one who stops goes to Withdrawn (the owner, 15 Nov 2026: every move waited for Admin).
     // A student who stops, waits or is put on hold can be moved by the team that has them (the owner, 18 Nov 2026: a student whose

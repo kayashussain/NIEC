@@ -167,6 +167,7 @@
   const sheetLocked = () => appOwn() || mockOwn();
   // Every detail of a student is changed on the student card by the Application Team (the owner, 22 Nov 2026: Application details).
   const sheetOpen = () => !sheetLocked();
+  const cardOnly = () => Boolean(isTeam() && (appOwn() || mockOwn())); // these teams fill a student in on the card
   const canEditCol = (col, row = null) => sheetOpen(col) && Teams.canEdit(me, col, row); // row: a student the person's team added can have its basics filled in
   let saving = false;
   let saveQueued = false;
@@ -768,13 +769,12 @@
         $('#viewOnly').hidden = !Teams.isReadOnly(me);
         { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = sheetLocked(); } quietSaved();
           // 🔴 CSS CHANGED (2026-11-22): the bar under the sheet (rows count, Shortcuts, colour key), for the Application Team only | from: shown | to: hidden (the owner, 22 Nov 2026)
-          const foot = document.querySelector('.footbar'); if (foot) foot.style.display = appOwn() ? 'none' : ''; } // no line at the top for the Application Team (the owner, 22 Nov 2026)
+          const foot = document.querySelector('.footbar'); if (foot) foot.style.display = (appOwn() || mockOwn()) ? 'none' : ''; } // no rows count, Shortcuts or colour key under the sheet for the Application and Mock Teams (the owner, 25 Nov 2026); Add student, Colour rows, Delete rows, Undo and Redo stay Teams, so the students get the whole height (the owner, 22 and 25 Nov 2026)
         syncFollowupButton();
         if (cameFromEl) { if (sheetLocked()) { cameFrom = ''; cameFromEl.value = ''; } cameFromEl.hidden = sheetLocked() || !sourceListReady; }
         document.body.toggleAttribute('data-viewonly', Teams.isReadOnly(me));
         document.body.toggleAttribute('data-candelete', Teams.canDelete(me));
         // 🔴 CSS CHANGED (2026-11-22): Add student, Colour rows, Delete rows, Undo and Redo for the Mock Team | from: shown | to: hidden (the sheet is to look at, the owner, 22 Nov 2026)
-        ['#addRow', '#colorRow', '#delRow', '#undoBtn', '#redoBtn'].forEach((sel) => { const b = $(sel); if (b) b.hidden = mockOwn(); });
       }
       if (!res.ok || !me) throw new Error('HTTP ' + res.status);
       if (appOwn() && !medicalDays.size) setTimeout(loadMedicalDays, 600);
@@ -1198,15 +1198,9 @@
       if (CALC_COLS[col]) th.title = 'Worked out automatically: ' + (col === 'REMAINING TUITION FEE'
         ? 'Fee After Scholarship − Early Bird − Additional Discount − 1st − 2nd − 3rd Installment'
         : 'Gross Fee − Scholarship');
-      label.addEventListener('click', () => {
-        if (sortCol === col) sortDir = -sortDir;
-        else { sortCol = col; sortDir = 1; }
-        renderHeader();
-        renderBody();
-      });
+      // (A heading is not clicked to sort: the order is the system's own, and the filter is on every column: the owner, 25 Nov 2026.)
       th.appendChild(label);
 
-      if (!FILTER_COLUMNS.has(col)) { headerRow.appendChild(th); return; }
       const filterBtn = document.createElement('button');
       filterBtn.type = 'button';
       filterBtn.className = 'filter-btn';
@@ -1224,6 +1218,7 @@
       headerRow.appendChild(th);
     });
     $('#sheet').style.width = tableWidth + 'px';
+    $('#sheet').classList.toggle('card-only', cardOnly());
     // A team's own columns can be far to the right: the first time the sheet is drawn, they are brought into view.
     if (isTeam() && !isBranchAccount() && !scrolledToYours) {
       scrolledToYours = true;
@@ -1614,6 +1609,7 @@
     columns.forEach((col, colIndex) => {
       const td = document.createElement('td');
       td.dataset.colIndex = colIndex;
+      td.dataset.col = col;
       td.tabIndex = -1;
       const val = col === MEDICAL_DAY_COL ? medicalDayOf(rows[rowIdx]) : (rows[rowIdx][col] || '');
       if (CALC_COLS[col]) {
@@ -1643,6 +1639,7 @@
             o.value = opt;
             o.textContent = opt || 'Select';
             if (opt === val) o.selected = true;
+            if (col === 'APPLICATION STATUS' && cardOnly() && (opt === '' || (opt === val && val))) o.hidden = true; // the list shows only where the student can go (the owner, 25 Nov 2026)
             if (col === SOURCE_COL && opt && window.CardFields.isBranchValue(opt)) {
               if (!branchGroup) { branchGroup = document.createElement('optgroup'); branchGroup.label = 'Branch'; select.appendChild(branchGroup); }
               branchGroup.appendChild(o);
@@ -2310,6 +2307,19 @@
       const total = card(indices.length, 'Total students');
       total.classList.add('stat-total');
       appCards.append(total, card(submitted, 'Submitted', '', 'Application submitted'), card(offered, 'Offer received'), card(waiting, 'Offer waiting', '', 'Submitted, no offer yet'));
+      return;
+    }
+    // The Mock Team's numbers (the owner, 26 Nov 2026): only four, from the server (a student who passed has left the Mock Team's sheet).
+    if (mockOwn()) {
+      const g = group('Mock interviews');
+      const boxes = [card('…', 'In the mock interviews'), card('…', 'Passed the Pre-CAS interview'), card('…', 'Failed the Pre-CAS interview'), card('…', 'Pass ratio', '', 'Passed out of those who passed or failed')];
+      boxes[0].classList.add('stat-total');
+      g.append(...boxes);
+      fetch('/api/mock-numbers', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (!d) return;
+        const set = (box, v) => { box.querySelector('.stat-value').textContent = v; };
+        set(boxes[0], d.inMock); set(boxes[1], d.passed); set(boxes[2], d.failed); set(boxes[3], d.ratio === null ? '-' : d.ratio + '%');
+      }).catch(() => {});
       return;
     }
     const countStatus = (status) => indices.reduce((acc, i) => acc + (rows[i]['APPLICATION STATUS'] === status ? 1 : 0), 0);
@@ -2999,6 +3009,18 @@
     e.preventDefault();
     if (document.activeElement && document.activeElement.matches('input.date-input')) document.activeElement.blur();
     pasteIntoSelection(text);
+  });
+
+  // The Application and Mock Teams fill a student in on the student card, not in the sheet (the owner, 25 Nov 2026): a click on a cell from First name
+  // to the last column opens the card (only Application Status keeps its own list).
+  body.addEventListener('click', (e) => {
+    if (!cardOnly() || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const td = e.target.closest('td');
+    if (!td || !body.contains(td) || td.classList.contains('col-idx') || td.parentElement.classList.contains('pad-row')) return;
+    const c = columns[Number(td.dataset.colIndex)];
+    if (c === undefined || c === 'APPLICATION STATUS' || e.target.closest('select, a')) return;
+    openCardOfRow(Number(td.parentElement.dataset.rowIdx));
+    if (window.NiecUI && NiecUI.toast) NiecUI.toast('You can edit this on the student card.');
   });
 
   body.addEventListener('dblclick', (e) => {

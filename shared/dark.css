@@ -5334,6 +5334,287 @@ html[data-theme="dark"]:root body .up-jump a {
 html[data-theme="dark"]:root body .up-jump a:hover {
   background: #4a4c50;
 }
+html[data-theme="dark"]:root body .fd-card {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body .fd-levels button {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body .fd-levels button:hover {
+  background: #4a4c50;
+}
+html[data-theme="dark"]:root body .fd-levels button.is-on {
+  background: #565656;
+  color: #ffffff;
+}
+html[data-theme="dark"]:root body .fd-form {
+  background: #202124;
+}
+html[data-theme="dark"]:root body .fd-form input, html[data-theme="dark"]:root body .fd-form select {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body .fd-clear {
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body .fd-clear:hover {
+  background: rgba(0, 112, 224, 0.08);
+}
+html[data-theme="dark"]:root body .fd-tile {
+  background: #202124;
+}
+html[data-theme="dark"]:root body .fd-tile span {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body .fd-tile.is-yes.is-on {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body .fd-tile.is-check.is-on {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body .fd-tile.is-no.is-on {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body .fd-uni {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body .fd-deadline {
+  background: #202124;
+}
+html[data-theme="dark"]:root body .fd-money {
+  background: #202124;
+}
+html[data-theme="dark"]:root body .fd-course-head {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body .fd-course-box .fd-courses {
+  background: #202124;
+}
+html[data-theme="dark"]:root body .fd-uni .fd-see-all, html[data-theme="dark"]:root body a.fd-see-all {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body .fd-uni .fd-see-all:hover {
+  background: #1b3047;
+}
+html[data-theme="dark"].app-mock:root body #page .mt-uni:hover {
+  background: #202124;
+}
+html[data-theme="dark"].app-mock:root body #page .mt-uni.is-on {
+  background: #1a2d44;
+}
+html[data-theme="dark"].app-mock:root body #page .mt-uni-name {
+  color: #e8eaed;
+}
+html[data-theme="dark"].app-mock:root body #page .mt-uni-letter {
+  color: #8ab4f8;
+}
+html[data-theme="dark"].app-mock:root body #page .mt-uni-card .mt-hint {
+  color: #9aa0a6;
+}
+html[data-theme="dark"].app-mock:root body #page .mt-file {
+  background: #202124;
+}
+html[data-theme="dark"].app-mock:root body #page tbody tr:hover td {
+  background: #202124;
+}
+html[data-theme="dark"] :is(.td-tag, .tb-tag):is(.tag-mock-feedback, .tag-mock-booking, .tag-mock-precas) {
+  background: #202124;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body #sheet thead th .filter-btn {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #sheet thead th .filter-btn:hover, html[data-theme="dark"]:root body #sheet thead th .filter-btn.active {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body #sheet tbody tr:hover td:not(.col-idx) {
+  background-color: rgba(0, 123, 247, 0.045);
+}
+html[data-theme="dark"]:root body .mt-who a, html[data-theme="dark"]:root body .mt-person a, html[data-theme="dark"]:root body .mt-who-words a {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body .mt-who a:hover, html[data-theme="dark"]:root body .mt-person a:hover, html[data-theme="dark"]:root body .mt-who-words a:hover {
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body .mt-plus {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body .mt-plus:hover {
+  background: #1b3047;
+}
+html[data-theme="dark"]:root body * {
+  scrollbar-color: rgba(154, 160, 166, 0.28) transparent;
+}
+html[data-theme="dark"]:root body ::-webkit-scrollbar-thumb {
+  background: rgba(96, 96, 96, 0.26);
+}
+html[data-theme="dark"]:root body ::-webkit-scrollbar-thumb:hover {
+  background: rgba(96, 96, 96, 0.44);
+}
+html[data-theme="dark"]:root body ::selection {
+  background: rgba(0, 123, 247, 0.22);
+}
+html[data-theme="dark"]:root body table#sheet td {
+  border-color: #282828 !important;
+}
+html[data-theme="dark"]:root body table#sheet th {
+  border-color: #3c4043 !important;
+}
+html[data-theme="dark"]:root body table#sheet td.col-idx {
+  color: #80868b;
+}
+html[data-theme="dark"]:root body .p-table tbody tr:hover td {
+  background: rgba(0, 123, 247, 0.04);
+}
+html[data-theme="dark"]:root body a:not(.btn):not([class*="niec"]):hover {
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body :is(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 3px solid rgba(13, 133, 255, 0.4);
+}
+html[data-theme="dark"]:root body #page .ig-panel {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body #page .ig-tabs {
+  background: #2a2a2a;
+}
+html[data-theme="dark"]:root body #page .ig-tabs button {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body #page .ig-tabs button:hover:not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.075);
+}
+html[data-theme="dark"]:root body #page .ig-tabs button[aria-pressed="true"] {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body #page .ig-tab-n {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #page .ig-search .ig-ico {
+  color: #80868b;
+}
+html[data-theme="dark"]:root body #page .ig-search input.ig-search-box {
+  background: #202124;
+}
+html[data-theme="dark"]:root body #page .ig-search input.ig-search-box:focus {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body #page .ig-letter {
+  background: #292a2d;
+  color: #80868b;
+}
+html[data-theme="dark"]:root body #page .ig-uni {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body #page .ig-uni:hover {
+  background: #202124;
+}
+html[data-theme="dark"]:root body #page .ig-uni.is-on {
+  background: #007bf7;
+  color: #ffffff;
+}
+html[data-theme="dark"]:root body #page .ig-count {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body #page .ig-uni.is-on .ig-count {
+  background: rgba(36, 36, 36, 0.22);
+  color: #ffffff;
+}
+html[data-theme="dark"]:root body #page .ig-tone-0 {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body #page .ig-tone-1 {
+  background: #1c432a;
+  color: #81c995;
+}
+html[data-theme="dark"]:root body #page .ig-tone-2 {
+  background: #2a1943;
+  color: #c58af9;
+}
+html[data-theme="dark"]:root body #page .ig-tone-3 {
+  background: #442e1a;
+  color: #fcad70;
+}
+html[data-theme="dark"]:root body #page .ig-tone-4 {
+  background: #431921;
+  color: #f28b82;
+}
+html[data-theme="dark"]:root body #page .ig-tone-5 {
+  background: #1a4245;
+  color: #78d9ec;
+}
+html[data-theme="dark"]:root body #page .ig-uni.is-on .ig-mark {
+  background: #292a2d;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body #page .ig-none {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #page .ig-head p {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #page .ig-empty {
+  background: #272734;
+}
+html[data-theme="dark"]:root body #page .ig-empty-ico {
+  background: #292a2d;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body #page .ig-empty p {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #page .ig-group-n {
+  background: #2a2a2a;
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #page .ig-file {
+  background: #272734;
+}
+html[data-theme="dark"]:root body #page .ig-file:hover {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body #page .ig-type {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body #page .ig-type-pdf {
+  background: #431921;
+  color: #f28b82;
+}
+html[data-theme="dark"]:root body #page .ig-type-png, html[data-theme="dark"]:root body #page .ig-type-jpg, html[data-theme="dark"]:root body #page .ig-type-jpeg, html[data-theme="dark"]:root body #page .ig-type-picture {
+  background: #1c432a;
+  color: #81c995;
+}
+html[data-theme="dark"]:root body #page .ig-file-meta {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #page .ig-remove {
+  color: #80868b;
+}
+html[data-theme="dark"]:root body #page .ig-remove:hover {
+  background: #431921;
+  color: #f28b82;
+}
+html[data-theme="dark"]:root body #page .ig-upload {
+  background: #272734;
+}
+html[data-theme="dark"]:root body #page .ig-label {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body #page .ig-fields .p-input {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body #page .ig-upload-bar {
+  border: 1.5px dashed #5f6368;
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body #page .ig-hint {
+  color: #9aa0a6;
+}
 /* ---- student-details/style.css ---- */
 :root[data-theme="dark"] {
   --niec-blue: #669df6;

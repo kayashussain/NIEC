@@ -397,21 +397,21 @@ html:root body dl.lg-dl > dd:last-of-type { border-bottom: 0 !important; }
 /* 🔴 CSS CHANGED (2026-11-24): the Mock Team in the Apple look, approved design (Bookings and Interview guidelines; Today, All Students and Universities already follow the Application look) | from: Bookings and Interview guidelines in the grey outlined look (black outlines, small capital labels, a table header, a blue Join on the first row, a boxed list); the window after a mock grey with an outlined close box | to: white 18px cards with the soft shadow, a "Mock Team" label above the 40px title, a slim booking link row, a table without a header (time, student and the mock chip, University and course on one line, grey Join in Teams, quiet grey Cancel), the notice as a quiet grey line at the bottom, the guidelines as a grey All / With guidelines / None yet switch, a list under letters with quiet grey names and grey count chips, a selected row in soft grey, kinds as headings with an Add link and a PDF tile in neutral grey, and the window after a mock as a white 22px window with grey pills. Every rule here hangs on html.app-mock, set only for the Mock Team (shared/header.js), so the Application Team, Admin and the Manager are not changed. */
 html.app-mock:root body #page.mt-page .p-head > div:first-child::before { content: "Mock Team"; display: block; color: var(--apple-grey); font-size: 15px; font-weight: 500; letter-spacing: 0; line-height: 20px; }
 html.app-mock:root body #page.mt-page .p-head { align-items: flex-end; }
-html.app-mock:root body #page.mt-page .p-head h1 { font-size: 40px; line-height: 46px; font-weight: 700; letter-spacing: -.03em; }
+html.app-mock:root body #page.mt-page .p-head h1 { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -.03em; }
 html.app-mock:root body #page.mt-page .p-head p { display: none; }
 html.app-mock:root body #page.mt-page .p-card, html.app-mock:root body #page.mt-page section.p-card { border: 0 !important; border-radius: 18px; background: #fff !important; box-shadow: var(--apple-card) !important; padding: 20px 24px; }
-html.app-mock:root body #page.mt-page .p-card h2 { font-size: 19px; line-height: 24px; font-weight: 700; letter-spacing: -.02em; }
+html.app-mock:root body #page.mt-page .p-card h2 { font-size: 19px; line-height: 24px; font-weight: 600; letter-spacing: -.02em; }
 html.app-mock:root body #page.mt-page .mt-hint, html.app-mock:root body #page.mt-page .mt-muted, html.app-mock:root body #page.mt-page .mt-sub { color: var(--apple-grey); font-weight: 400; }
 html.app-mock:root body #page.mt-page .mt-empty { color: #636366; font-size: 14px; font-weight: 400; }
 html.app-mock:root body #page .mt-tabs { padding: 3px; border: 0; border-radius: 11px; background: var(--apple-btn); gap: 2px; }
 html.app-mock:root body #page .mt-tabs button { border: 0; border-radius: 8px; background: transparent; color: #1d1d1f; font-size: 14px; font-weight: 500; }
-html.app-mock:root body #page .mt-tabs button[aria-selected="true"] { background: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
+html.app-mock:root body #page .mt-tabs button[aria-selected="true"] { background: #fff; font-weight: 500; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
 
 /* Bookings */
 html.app-mock:root body #page .mt-upcoming { display: flex; flex-direction: column; }
 html.app-mock:root body #page .mt-upcoming > .mt-note { order: 9; margin: 18px 0 40px; padding: 0; border: 0; background: transparent; color: var(--apple-grey); font-size: 13px; font-weight: 400; }
 html.app-mock:root body #page .mt-linkbar { padding: 12px 18px; margin: 18px 0 14px; }
-html.app-mock:root body #page .mt-linkbar-title { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+html.app-mock:root body #page .mt-linkbar-title { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
 html.app-mock:root body #page .mt-linkbar-note { color: var(--apple-grey); font-size: 13px; font-weight: 400; }
 html.app-mock:root body #page .mt-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 17px; align-items: start; }
 html.app-mock:root body #page .mt-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -419,8 +419,8 @@ html.app-mock:root body #page .mt-table tr.mt-day th { padding: 22px 0 10px; col
 html.app-mock:root body #page .mt-table tr.mt-day:first-child th, html.app-mock:root body #page .mt-table tbody tr.mt-day:first-child th { padding-top: 10px; }
 html.app-mock:root body #page .mt-table td { padding: 13px 10px 13px 0; border-bottom: 0; border-top: 1px solid var(--apple-hair); }
 html.app-mock:root body #page .mt-table tr.mt-day + tr td { border-top: 1px solid var(--apple-hair); }
-html.app-mock:root body #page .mt-table .mt-time { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
-html.app-mock:root body #page .mt-table a { color: #1d1d1f; font-weight: 600; }
+html.app-mock:root body #page .mt-table .mt-time { font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
+html.app-mock:root body #page .mt-table a { color: #1d1d1f; font-weight: 500; }
 html.app-mock:root body #page .mt-table a:hover { text-decoration: underline; }
 html.app-mock:root body #page .mt-table a.btn, html.app-mock:root body #page .mt-table a.btn:hover { color: #1d1d1f; font-weight: 500; text-decoration: none; }
 html.app-mock:root body #page .mt-table a.btn.btn-primary { background: var(--apple-btn); color: #1d1d1f; }
@@ -430,9 +430,9 @@ html.app-mock:root body #page .mt-join { min-height: 30px; padding: 0 14px; font
 html.app-mock:root body #page .mt-cancel { color: var(--apple-grey); font-size: 13px; font-weight: 500; }
 html.app-mock:root body #page .mt-cancel:hover { color: #c4291c; }
 html.app-mock:root body #page .mt-person { border-top-color: var(--apple-hair); }
-html.app-mock:root body #page .mt-person a { color: #1d1d1f; font-weight: 600; font-size: 15px; }
+html.app-mock:root body #page .mt-person a { color: #1d1d1f; font-weight: 500; font-size: 15px; }
 html.app-mock:root body #page .mt-person span { color: var(--apple-grey); font-size: 13px; }
-html.app-mock:root body #page .mt-count { background: var(--apple-chip); color: #1d1d1f; font-weight: 600; }
+html.app-mock:root body #page .mt-count { background: var(--apple-chip); color: #1d1d1f; font-weight: 500; }
 
 /* Interview guidelines */
 html.app-mock:root body #page .mt-guides { grid-template-columns: 318px minmax(0, 1fr); gap: 17px; }
@@ -904,4 +904,212 @@ html:root body .up-jump a:hover { background: #dcdce1; }
 @media (min-width: 901px) {
   html[data-nav="closed"] body .niec-header { overflow: visible; }
   html[data-nav="closed"] body .niec-header .niec-menu { left: 0; right: auto; width: 236px; min-width: 236px; z-index: 60; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-25): the Mock Team in the same look and type scale as the Application Team | from: Today title tiles, group headings, names, task lines, details, buttons and pills in the Mock Team's own heavier sizes (tile numbers 700, group heading 20px bold, names 17px, buttons 15px semi-bold, tile and hint words 600); Bookings and Interview guidelines with 700 weights (page title 40px) | to: every Today, All Students, student card and Universities touch of the Application Team applies to the Mock Team too (tile numbers 40px semi-bold, group heading 19px semi-bold, names 16.5px, tasks 15px regular, details 13px, buttons 14px medium, pills, comments and updates the same); Bookings and Interview guidelines in the same slim steps (title 34px semi-bold, headings semi-bold, links medium) | the Mock Team's own pages keep their layout */
+
+/* 🔴 CSS CHANGED (2026-11-25): windows of the Mock Team and the Mark as done window of both teams in the same slim type | from: window titles 20 to 26px bold (700) for the Mock Team and every window, the student's name in Mark as done 28px bold, the university line 19px bold | to: window titles 20px semi-bold, in Mark as done the small grey heading and the student's name 24px semi-bold, the university line semi-bold; the Mock Team's Mark as done looks exactly like the Application Team's */
+html:root body dialog.p-dialog .p-dialog-head h2 { font-weight: 600; }
+html.app-mock:root body dialog.p-dialog .p-dialog-head h2 { font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -.02em; }
+html.app-mock:root body dialog.td-done-app .p-dialog-head h2 { color: var(--apple-grey); font-size: 13px; line-height: 16px; font-weight: 600; letter-spacing: 0; }
+html:root body dialog.td-done-app .p-dialog-head .td-done-task { font-size: 24px; line-height: 30px; font-weight: 600; letter-spacing: -.02em; }
+html:root body dialog.td-done-app .td-course b { font-weight: 600; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the task kind choice in Assign a task shows again, and the kind word is gone from the student card's Tasks | from: my earlier rule that hides the task kind word also hid the kind buttons in the Assign a task window (the kind could not be chosen), and left the kind word beside each task on the student card | to: the kind buttons in Assign a task (Application, Documents, NOC ... by team) are shown as before; the kind word is hidden on Today, in the Tasks of the student card and in the Timeline */
+html:root body .td-tag-pick .td-tag { display: inline-flex; }
+html:root body.p-student .p-tasks .td-tag, html:root body.p-student .lg-text .td-tag { display: none; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Universities finder (Foundation, Year One, Top-up ... then the cards of universities that fit) made premium, and its attached "See all" button fixed | from: level buttons that could not be let go, no way to clear; square grey boxes; a blue "See all N courses" pill stuck to the grey list of courses (a rule gave it no space above); small results tiles; cards with uneven spacing | to: a Clear button and a level that lets go when pressed again; level pills, a soft grey form panel, three roomy result tiles (a coloured number and its word, the chosen one outlined), cards with a 22px corner, a name in semi-bold, deadline and fees in soft panels, the course list as quiet rows, and "See all N courses" with 16px of space above, as a quiet blue pill; colours, words and layout otherwise unchanged */
+html:root body .fd-card { padding: 28px 32px 32px; border: 0; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .fd-head h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+html:root body .fd-levels { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 18px; }
+html:root body .fd-levels button { min-height: 36px; padding: 0 18px; border: 0; border-radius: 980px; background: var(--apple-btn); color: #1d1d1f; font-size: 14px; font-weight: 500; box-shadow: none; }
+html:root body .fd-levels button:hover { background: #dcdce1; }
+html:root body .fd-levels button.is-on { background: #1d1d1f; color: #fff; font-weight: 500; }
+html:root body .fd-form { gap: 14px 16px; padding: 18px 20px; border: 0; border-radius: 16px; background: #f5f5f7; }
+html:root body .fd-form input, html:root body .fd-form select { border: 0; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1px #d2d2d7; }
+html:root body .fd-form input:focus, html:root body .fd-form select:focus { box-shadow: inset 0 0 0 2px #0071e3; outline: 0; }
+html:root body .fd-go { min-height: 40px; padding: 0 28px; border-radius: 980px; font-weight: 500; }
+html:root body .fd-clear { min-height: 40px; padding: 0 20px; border: 0; border-radius: 980px; background: transparent; color: #0066cc; font-size: 14px; font-weight: 500; box-shadow: none; }
+html:root body .fd-clear:hover { background: rgba(0, 102, 204, .08); }
+html:root body .fd-out { display: block; margin-top: 24px; }
+html:root body .fd-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 24px; }
+html:root body .fd-tile { flex-direction: row; align-items: baseline; gap: 10px; padding: 20px 24px; border: 0; border-radius: 18px; background: #f5f5f7; box-shadow: none; transform: none; }
+html:root body .fd-tile b { font-size: 32px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+html:root body .fd-tile span { color: #636366; font-size: 14px; font-weight: 500; }
+html:root body .fd-tile.is-yes.is-on { background: #fff; box-shadow: inset 0 0 0 2px #1e8e4a; }
+html:root body .fd-tile.is-check.is-on { background: #fff; box-shadow: inset 0 0 0 2px #d9650b; }
+html:root body .fd-tile.is-no.is-on { background: #fff; box-shadow: inset 0 0 0 2px #8e8e93; }
+html:root body .fd-grid { gap: 20px; align-items: stretch; }
+html:root body .fd-uni { border: 0; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); padding: 0 0 22px; }
+html:root body .fd-uni-name { font-size: 18px; font-weight: 600; letter-spacing: -.015em; }
+html:root body .fd-deadline { border: 0; border-radius: 12px; background: #f5f5f7; padding: 10px 14px; }
+html:root body .fd-deadline em { border-radius: 999px; font-weight: 500; }
+html:root body .fd-why { margin-top: 16px; gap: 6px; font-size: 14px; font-weight: 400; }
+html:root body .fd-money { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #f5f5f7; gap: 8px 28px; }
+html:root body .fd-money b { font-weight: 500; }
+html:root body .fd-course-box { margin-top: 18px; margin-bottom: 0; padding: 0; border-top: 0; }
+html:root body .fd-course-head { padding: 0 0 10px; font-size: 14px; font-weight: 600; color: #1d1d1f; }
+html:root body .fd-course-box .fd-courses { padding: 4px 16px; border-radius: 14px; background: #f5f5f7; }
+html:root body .fd-course-box .fd-courses li { padding: 12px 0; border-top: 0; }
+html:root body .fd-course-box .fd-courses li + li { border-top: 0; }
+html:root body .fd-course { font-size: 15px; font-weight: 500; }
+html:root body .fd-uni .fd-see-all, html:root body a.fd-see-all { margin-top: 16px; padding: 9px 18px; border-radius: 980px; background: #e8f1fc; color: #0066cc; font-size: 14px; font-weight: 500; box-shadow: none; }
+html:root body .fd-uni .fd-see-all:hover { background: #d7e8fb; transform: none; }
+@media (max-width: 700px) { html:root body .fd-tile { flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px 18px; } html:root body .fd-card { padding: 20px 16px 24px; } }
+
+/* 🔴 CSS CHANGED (2026-11-25): Interview guidelines (Mock Team) less compressed, University names made attractive | from: a 318px list of 13px grey names pressed together, a bare "Choose a University" card | to: a 380px list, each University on a roomy 46px row in 15px medium type with its number in a soft chip, A-Z letters as quiet labels, the open University shown with a soft blue wash, an empty state in a calm panel, files as spaced cards without lines; colours and words unchanged */
+html.app-mock:root body #page .mt-guides { grid-template-columns: 380px minmax(0, 1fr); gap: 24px; }
+html.app-mock:root body #page .mt-unis { padding: 20px 12px 0 !important; border-radius: 22px; }
+html.app-mock:root body #page .mt-unis .p-input { min-height: 42px; margin: 0 8px 12px; font-size: 15px; border-radius: 12px; }
+html.app-mock:root body #page .mt-seg { margin: 0 8px 10px; }
+html.app-mock:root body #page .mt-uni-list { max-height: 680px; }
+html.app-mock:root body #page .mt-uni { min-height: 46px; padding: 11px 14px; margin: 2px 0; border: 0; border-radius: 12px; gap: 12px; background: transparent; }
+html.app-mock:root body #page .mt-uni:hover { background: #f5f5f7; }
+html.app-mock:root body #page .mt-uni.is-on { background: #e8f1fc; }
+html.app-mock:root body #page .mt-uni-name { color: #1d1d1f; font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: -.01em; }
+html.app-mock:root body #page .mt-uni-letter { padding: 16px 14px 6px; color: #0066cc; font-size: 12px; font-weight: 600; letter-spacing: .08em; }
+html.app-mock:root body #page .mt-uni-card { padding: 32px 36px; border-radius: 22px; }
+html.app-mock:root body #page .mt-uni-card > h2:only-of-type, html.app-mock:root body #page .mt-uni-card > h2 { font-size: 26px; font-weight: 600; letter-spacing: -.025em; }
+html.app-mock:root body #page .mt-uni-card .mt-hint { margin-top: 6px; font-size: 15px; color: #6e6e73; }
+html.app-mock:root body #page .mt-list-head { margin-bottom: 20px; }
+html.app-mock:root body #page .mt-kind-head { margin-top: 28px; }
+html.app-mock:root body #page .mt-file { padding: 16px 18px; margin-top: 10px; border: 0; border-radius: 14px; background: #f5f5f7; }
+html.app-mock:root body #page .mt-file-title { font-size: 15px; font-weight: 500; }
+
+/* 🔴 CSS CHANGED (2026-11-25): Bookings and the other Mock pages: the many lines removed, a professional layout | from: a hairline under every booking row, under every table heading and under every card heading (the Application view has none) | to: no lines; each booking is a roomy row that turns soft grey when pointed at, headings spaced instead of ruled, day labels as quiet small capitals; all words and colours unchanged */
+html.app-mock:root body #page th, html.app-mock:root body #page td, html.app-mock:root body #page .mt-list-head, html.app-mock:root body #page .mt-kind-head, html.app-mock:root body #page .mt-card-head, html.app-mock:root body #page tr { border-top: 0 !important; border-bottom: 0 !important; border-left: 0; border-right: 0; }
+html.app-mock:root body #page table { border-collapse: separate; border-spacing: 0 4px; }
+html.app-mock:root body #page tbody tr td { padding-top: 14px; padding-bottom: 14px; background: transparent; transition: background .15s; }
+html.app-mock:root body #page tbody tr:hover td { background: #f5f5f7; }
+html.app-mock:root body #page tbody tr td:first-child { padding-left: 14px; border-radius: 12px 0 0 12px; }
+html.app-mock:root body #page tbody tr td:last-child { padding-right: 14px; border-radius: 0 12px 12px 0; }
+html.app-mock:root body #page .mt-list-head { padding-bottom: 4px; }
+html.app-mock:root body #page .mt-time { font-size: 15px; font-weight: 500; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Mock Team's three new task kinds (Feedback, Date booking, Pre-CAS result) look like the other kinds | from: no rule, so a plain chip | to: the same grey chip as every other kind */
+:is(.td-tag, .tb-tag):is(.tag-mock-feedback, .tag-mock-booking, .tag-mock-precas) { background: #e6e6e6; color: #000; }
+
+/* 🔴 CSS CHANGED (2026-11-25): All Students for the Application and Mock Teams, the Mock Team's windows, Bookings names, and a calmer polish | from: a heading that sorted when clicked (with an arrow), a filter on only some columns, cells whose drop-downs and date boxes opened in place, student names underlined on Bookings, a plain row of 7 mock buttons | to: headings that only label (the filter on every column), every cell from First name on opens the student card, names on Bookings with no underline (they turn blue when pointed at), Mock 1-4 with a round + that adds Mock 5, 6 and 7; softer header, row hover, round filter button; colours and words unchanged */
+html:root body #sheet thead th .th-label { cursor: default; text-decoration: none; }
+html:root body #sheet thead th.sorted .th-label::after, html:root body #sheet thead th.sorted-desc .th-label::after { content: none; }
+html:root body #sheet thead th .filter-btn { display: inline-grid; min-width: 26px; min-height: 26px; border-radius: 999px; color: #6e6e73; opacity: 1; transition: background .15s, color .15s; }
+html:root body #sheet thead th .filter-btn:hover, html:root body #sheet thead th .filter-btn.active { background: #e8f1fc; color: #0066cc; }
+html:root body #sheet.card-only tbody td:not(.col-idx):not([data-col="APPLICATION STATUS"]) { cursor: pointer; }
+html:root body #sheet.card-only tbody td:not(.col-idx):not([data-col="APPLICATION STATUS"]) :is(select, input, button, textarea) { pointer-events: none; }
+html:root body #sheet tbody tr { transition: background .12s; }
+html:root body #sheet tbody tr:hover td:not(.col-idx) { background-color: rgba(0, 113, 227, .045); }
+html:root body .mt-who a, html:root body .mt-person a, html:root body .mt-who-words a { color: #1d1d1f; font-weight: 500; text-decoration: none; }
+html:root body .mt-who a:hover, html:root body .mt-person a:hover, html:root body .mt-who-words a:hover { color: #0066cc; text-decoration: none; }
+html:root body .mt-mockpick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+html:root body .mt-mockpick .p-picker, html:root body .mt-mockpick > div { display: flex; flex-wrap: wrap; gap: 8px; }
+html:root body .mt-plus { width: 40px; height: 40px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: #e8f1fc; color: #0066cc; font-size: 22px; font-weight: 400; line-height: 1; cursor: pointer; transition: background .15s, transform .15s; }
+html:root body .mt-plus:hover { background: #d7e8fb; transform: scale(1.06); }
+html:root body .mt-plus[hidden] { display: none; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the logo can no longer be picked up | from: a double click then a drag pulled the transparent logo picture down the page | to: the logo (here and on the sign-in page) cannot be dragged or selected; a click still goes home | why: the owner asked for it */
+html:root body .niec-logo, html:root body #brandLogo { -webkit-user-drag: none; user-drag: none; user-select: none; -webkit-user-select: none; }
+
+/* 🔴 CSS CHANGED (2026-11-26): the "new since you last opened" mark on the timeline is one small dot | from: a blue bar on the left edge, a dot before "Task given" and a second dot after it (three rules from three files drew over each other, so a new task looked like it had a stray bullet) | to: one small blue dot before the word, nothing else; colours and words unchanged */
+html:root body .lg-timeline tr.is-unseen td.is-kind { box-shadow: none; }
+html:root body.p-student tr.lg-stage-body.is-unseen > td.is-kind::after { content: none !important; display: none !important; }
+
+/* 🔴 CSS CHANGED (2026-11-26): fewer lines in the Mark as done window and the Today rows | from: a line under the window title, under the mock and its day, above Cancel and Save, and above every task row | to: none; the spacing and the soft panels do the separating; colours and words unchanged */
+html:root body dialog.td-done-app .p-dialog-head, html:root body dialog.td-done-app .p-dialog-foot, html:root body dialog.td-done-app .td-course, html:root body dialog.td-done-app .p-wide { border-top: 0 !important; border-bottom: 0 !important; }
+html:root body dialog.td-done-app .td-course { padding-bottom: 4px; }
+html:root body article.tdx.tda-row, html:root body article.tdx { border-top: 0 !important; }
+
+/* 🔴 CSS CHANGED (2026-11-26): the last polish for every team (the owner: "finish the design pass for all teams") | from: square dialogs and the old grey scroll bars in some teams, hard grid lines in the sheet, the browser's own blue selection, links with no hover | to: every dialog with the same 22px corner and soft shadow, thin quiet scroll bars, softer sheet grid lines (the rows and columns stay clear), a blue selection that matches the buttons, links that darken when pointed at, and a clear focus ring on every control; sizes, words and colours of the approved look unchanged */
+html:root body dialog.p-dialog, html:root body dialog.ui-dialog { border: 0; border-radius: 22px; box-shadow: 0 30px 80px rgba(0, 0, 0, .28), 0 0 0 .5px rgba(0, 0, 0, .08); }
+html:root body * { scrollbar-width: thin; scrollbar-color: rgba(60, 60, 67, .28) transparent; }
+html:root body ::-webkit-scrollbar { width: 10px; height: 10px; }
+html:root body ::-webkit-scrollbar-thumb { background: rgba(60, 60, 67, .26); border: 3px solid transparent; background-clip: padding-box; border-radius: 999px; }
+html:root body ::-webkit-scrollbar-thumb:hover { background: rgba(60, 60, 67, .44); background-clip: padding-box; border: 3px solid transparent; }
+html:root body ::-webkit-scrollbar-track { background: transparent; }
+html:root body ::selection { background: rgba(0, 113, 227, .22); }
+html:root body table#sheet td { border-color: #efeff2 !important; }
+html:root body table#sheet th { border-color: #e5e5ea !important; }
+html:root body table#sheet td.col-idx { color: #8e8e93; }
+html:root body .p-table tbody tr { transition: background .12s; }
+html:root body .p-table tbody tr:hover td { background: rgba(0, 113, 227, .04); }
+html:root body a:not(.btn):not([class*="niec"]):hover { color: #0058b8; }
+html:root body :is(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible { outline: 3px solid rgba(0, 113, 227, .4); outline-offset: 2px; }
+
+/* 🔴 CSS CHANGED (2026-11-26): Interview guidelines redrawn (the owner: the next top global brand) | from: a plain list beside a bare card, three tabs | to: two tabs (All, With guidelines), a coloured monogram for each University, roomy rows with the chosen one in solid blue, a heading card for the open University, files grouped by kind as soft cards with a type badge, calm empty states, a tidy upload panel; the same words and actions */
+html:root body #page.ig-page { max-width: 1320px; }
+html:root body #page .ig-grid { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); gap: 24px; align-items: start; }
+html:root body #page .ig-panel { background: #fff; border: 0; border-radius: 24px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 12px 36px rgba(0, 0, 0, .06); }
+html:root body #page .ig-side { position: sticky; top: 16px; display: flex; flex-direction: column; height: calc(100vh - 150px); min-height: 520px; padding: 18px 12px 0; overflow: hidden; }
+html:root body #page .ig-tabs { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3px; margin: 0 6px 12px; padding: 3px; border-radius: 12px; background: #efeff2; }
+html:root body #page .ig-tabs button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; border: 0; border-radius: 9px; background: transparent; color: #1d1d1f; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .18s, box-shadow .18s; }
+html:root body #page .ig-tabs button:hover:not([aria-pressed="true"]) { background: rgba(0, 0, 0, .05); }
+html:root body #page .ig-tabs button[aria-pressed="true"] { background: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
+html:root body #page .ig-tab-n { color: #636366; font-weight: 500; font-variant-numeric: tabular-nums; }
+html:root body #page .ig-search { position: relative; display: block; margin: 0 6px 6px; }
+html:root body #page .ig-search .ig-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8e8e93; pointer-events: none; }
+html:root body #page .ig-search input.ig-search-box { width: 100%; min-height: 44px; padding: 0 14px 0 42px; border: 0; border-radius: 12px; background: #f5f5f7; box-shadow: none; font-size: 15px; }
+html:root body #page .ig-search input.ig-search-box:focus { background: #fff; box-shadow: inset 0 0 0 2px #0071e3; outline: 0; }
+html:root body #page .ig-ico { display: inline-grid; place-items: center; width: 18px; height: 18px; }
+html:root body #page .ig-ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html:root body #page .ig-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 6px 20px; }
+html:root body #page .ig-letter { position: sticky; top: 0; z-index: 1; padding: 14px 10px 6px; background: #fff; color: #8e8e93; font-size: 12px; font-weight: 600; letter-spacing: .08em; }
+html:root body #page .ig-uni { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; margin: 2px 0; padding: 8px 10px; border: 0; border-radius: 14px; background: transparent; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; transition: background .15s; }
+html:root body #page .ig-uni:hover { background: #f5f5f7; }
+html:root body #page .ig-uni.is-on { background: #0071e3; color: #fff; }
+html:root body #page .ig-uni-name { flex: 1; min-width: 0; font-size: 15px; line-height: 20px; font-weight: 500; letter-spacing: -.01em; }
+html:root body #page .ig-count { min-width: 26px; padding: 3px 8px; border-radius: 999px; background: #e8f1fc; color: #0058b8; font-size: 13px; font-weight: 600; text-align: center; }
+html:root body #page .ig-uni.is-on .ig-count { background: rgba(255, 255, 255, .22); color: #fff; }
+html:root body #page .ig-mark { flex: 0 0 auto; display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+html:root body #page .ig-mark.is-big { width: 64px; height: 64px; border-radius: 18px; font-size: 21px; }
+html:root body #page .ig-tone-0 { background: #e8f1fc; color: #0058b8; }
+html:root body #page .ig-tone-1 { background: #e7f5ec; color: #146c2e; }
+html:root body #page .ig-tone-2 { background: #f2ecfb; color: #6a35b5; }
+html:root body #page .ig-tone-3 { background: #fdf0e4; color: #9a4a00; }
+html:root body #page .ig-tone-4 { background: #fdecef; color: #a8213f; }
+html:root body #page .ig-tone-5 { background: #e6f5f6; color: #0b6670; }
+html:root body #page .ig-uni.is-on .ig-mark { background: #fff; color: #0058b8; }
+html:root body #page .ig-none { padding: 24px 12px; color: #636366; font-size: 14px; text-align: center; }
+html:root body #page .ig-main { min-height: 520px; padding: 28px 32px 32px; }
+html:root body #page .ig-head { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-bottom: 24px; }
+html:root body #page .ig-head-words { flex: 1; min-width: 220px; }
+html:root body #page .ig-head h2 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -.025em; }
+html:root body #page .ig-head p { margin: 4px 0 0; color: #636366; font-size: 15px; }
+html:root body #page .ig-upload-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 20px; }
+html:root body #page .ig-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 340px; padding: 40px 24px; border-radius: 20px; background: #f7f7f9; text-align: center; }
+html:root body #page .ig-main > .ig-empty:only-child { min-height: 460px; }
+html:root body #page .ig-empty[hidden], html:root body #page .ig-upload[hidden] { display: none; }
+html:root body #page .ig-empty-ico { display: grid; place-items: center; width: 68px; height: 68px; margin-bottom: 8px; border-radius: 22px; background: #fff; color: #0071e3; box-shadow: 0 6px 20px rgba(0, 0, 0, .07); }
+html:root body #page .ig-empty-ico .ig-ico, html:root body #page .ig-empty-ico .ig-ico svg { width: 30px; height: 30px; }
+html:root body #page .ig-empty h3 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.015em; }
+html:root body #page .ig-empty p { max-width: 380px; margin: 0; color: #636366; font-size: 15px; line-height: 22px; }
+html:root body #page .ig-first { min-height: 42px; margin-top: 14px; padding: 0 22px; }
+html:root body #page .ig-group { margin-top: 26px; }
+html:root body #page .ig-group-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+html:root body #page .ig-group-head h3 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+html:root body #page .ig-group-n { padding: 1px 9px; border-radius: 999px; background: #efeff2; color: #636366; font-size: 12px; font-weight: 600; }
+html:root body #page .ig-file { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 10px; padding: 14px 16px; border-radius: 16px; background: #f7f7f9; transition: background .15s, box-shadow .15s; }
+html:root body #page .ig-file:hover { background: #fff; box-shadow: 0 0 0 1px #e5e5ea, 0 8px 22px rgba(0, 0, 0, .06); }
+html:root body #page .ig-type { flex: 0 0 auto; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: #e8f1fc; color: #0058b8; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+html:root body #page .ig-type-pdf { background: #fdecef; color: #a8213f; }
+html:root body #page .ig-type-png, html:root body #page .ig-type-jpg, html:root body #page .ig-type-jpeg, html:root body #page .ig-type-picture { background: #e7f5ec; color: #146c2e; }
+html:root body #page .ig-file-words { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 180px; }
+html:root body #page .ig-file-title { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+html:root body #page .ig-file-meta { color: #636366; font-size: 13px; }
+html:root body #page .ig-download { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 16px; text-decoration: none; }
+html:root body #page .ig-remove { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: #8e8e93; font-size: 20px; line-height: 1; cursor: pointer; }
+html:root body #page .ig-remove:hover { background: #fdecef; color: #c1121f; }
+html:root body #page .ig-upload { margin-bottom: 8px; padding: 22px; border-radius: 20px; background: #f7f7f9; }
+html:root body #page .ig-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+html:root body #page .ig-fields .ig-wide { grid-column: 1 / -1; }
+html:root body #page .ig-label { display: block; margin-bottom: 6px; color: #3a3a3c; font-size: 13px; font-weight: 600; }
+html:root body #page .ig-fields .p-input { width: 100%; min-height: 44px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1px #d2d2d7; }
+html:root body #page .ig-upload-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; padding: 14px 16px; border: 1.5px dashed #c7c7cc; border-radius: 14px; background: #fff; }
+html:root body #page .ig-hint { margin: 10px 2px 0; color: #636366; font-size: 13px; }
+@media (max-width: 900px) {
+  html:root body #page .ig-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  html:root body #page .ig-side { position: static; height: 440px; min-height: 0; }
+  html:root body #page .ig-main { min-height: 0; padding: 20px 16px 24px; }
+  html:root body #page .ig-main > .ig-empty:only-child { min-height: 240px; }
+  html:root body #page .ig-head h2 { font-size: 22px; line-height: 28px; }
+  html:root body #page .ig-fields { grid-template-columns: minmax(0, 1fr); }
 }
