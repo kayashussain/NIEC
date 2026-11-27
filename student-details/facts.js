@@ -433,6 +433,14 @@ function createFacts(dir, { now = () => new Date() } = {}) {
     data.removedOnce = [...done, 'bnu-2026-11-20'];
     return true;
   }
+  // A reading made on this server (the weekly refresh) on or after the day these details were put in the code stays: its courses,
+  // requirements and dates are never replaced by older ones from an upload (the owner, 27 Nov 2026: no data may be lost).
+  function keepNewerReading(mine, given) {
+    const readOn = String((mine && mine.readAt) || '').slice(0, 10);
+    if (!readOn || readOn < String(PARTNERS.version).slice(0, 10) || given.readAt > mine.readAt) return given;
+    const { own, intake, levels, courses, deadlines, readAt } = mine;
+    return { ...given, own, intake, levels, courses, deadlines, readAt };
+  }
   // The partners' January 2027 pages, once per version: each on its own page (matched by name), or a new page when there is none.
   // Only on an installation whose Universities already holds several of these universities, so another consultancy gets nothing added.
   function applyProfiles(data) {
@@ -442,7 +450,7 @@ function createFacts(dir, { now = () => new Date() } = {}) {
       entries.forEach((p) => {
         const profile = cleanProfile(p);
         const hit = pageFor(data.universities, p.name);
-        if (hit) { hit.profile = profile; return; }
+        if (hit) { hit.profile = keepNewerReading(hit.profile, profile); return; }
         if (profile.own || (!profile.courses.length && !profile.levels.length)) return; // only pictures: no page of its own
         data.universities.push({ ...clean({ name: p.name, city: profile.city, website: profile.website, intakes: [{ name: 'January 2027' }], process: STARTER_STEPS.map((title) => ({ title })), profile }), id: newId(), updatedAt: now().toISOString(), updatedBy: '' });
       });

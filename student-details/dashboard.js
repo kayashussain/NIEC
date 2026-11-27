@@ -1,5 +1,5 @@
 // The Dashboard's Overview (dashboard.html), written from zero: the numbers a head of recruitment looks at first, as cards that say
-// what the number is, how it compares with the intake before, and where it is heading. Everything is worked out on the server
+// what the number is and how it compares with the earlier intake at the same point. Everything is worked out on the server
 // (/api/dashboard and /api/insights, from the sheet, the student cards and the records): this page only draws it.
 // Names and labels come from student records, so they are only ever put in with textContent.
 (function () {
@@ -18,6 +18,8 @@
   let isAdmin = false; // only Admin sets the visa target
   let seq = 0;
   let timer = null;
+  let allUnis = false; // "Show all" under Universities stays pressed when the figures are fetched again
+  let mapOpen = false; // the map stays open or folded as it was left
 
   // ---- small helpers ----
   const svg = (tag, attrs = {}) => { const e = document.createElementNS(SVG, tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
@@ -52,29 +54,36 @@
     return c;
   };
 
-  // ---- a small line with a soft area under it ----
-  function sparkline(values, color) {
-    const W = 120; const H = 34;
-    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'ov-spark', 'aria-hidden': 'true', preserveAspectRatio: 'none' });
-    const max = Math.max(1, ...values);
-    const pts = values.map((v, i) => [values.length > 1 ? (i / (values.length - 1)) * W : W / 2, H - 3 - (v / max) * (H - 8)]);
-    if (!pts.length) return s;
-    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
-    s.append(svg('path', { d: `${line} L${W} ${H} L0 ${H} Z`, fill: color, opacity: '.12' }), svg('path', { d: line, fill: 'none', stroke: color, 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' }));
-    return s;
+  // ---- the five figures, each against the compared intake as it stood at the same point ----
+  function versus(now, key) {
+    const p = ins.samePoint;
+    if (!p) return null;
+    const was = p.values[key];
+    const line = el('span', 'ov-vs');
+    if (was === null || was === undefined) { line.append(el('span', 'ov-vs-text', `No fair comparison: dates are missing in ${p.label}`)); return line; }
+    const by = now - was;
+    line.append(el('span', `ov-vs-chip${by > 0 ? ' up' : by < 0 ? ' down' : ''}`, by ? `${by > 0 ? '▲' : '▼'} ${num(Math.abs(by))}` : 'Same'),
+      el('span', 'ov-vs-text', `${p.label}: ${num(was)}${p.running ? ' by then' : ''}`));
+    return line;
+  }
+  // The day the earlier intake is read on, in plain words under the figures.
+  function versusNote() {
+    const p = ins.samePoint;
+    if (!p) return el('p', 'ov-vs-note', ins.comparable ? 'No comparison: this intake has no teaching start to count back from.' : 'No earlier intake to compare with.');
+    if (!p.running) return el('p', 'ov-vs-note', `Compared with the final figures of ${p.label}.`);
+    return el('p', 'ov-vs-note', `${p.daysLeft} day${p.daysLeft === 1 ? '' : 's'} before teaching starts. ${p.label} is shown as it stood the same number of days before its own start, on ${window.Portal.day(p.day)}.`);
   }
 
   function kpis() {
     const s = ins.summary;
-    const trend = ins.trend || [];
     const cards = [
-      { label: 'Students', value: num(s.students), color: 'var(--s1)', series: null, hint: `${num(s.active)} still active` },
+      { label: 'Students', key: 'students', value: s.students, color: 'var(--s1)', hint: `${num(s.active)} still active` },
       // Applied is counted one way only, as the funnel and the % below it count it (a submission day, or Mock Stage or later), so the
       // figure, its share and the list behind it always agree.
-      { label: 'Applied', value: num(s.applied), color: COLORS.applied, series: trend.map((t) => t.applied), hint: `${pct(s.toApplication)} of students` },
-      { label: 'Offers', value: num(s.offers), color: COLORS.offer, series: trend.map((t) => t.offer), hint: `${pct(s.toOffer)} of applicants` },
-      { label: 'Paid', value: num(s.paid), color: COLORS.paid, series: trend.map((t) => t.paid), hint: `${pct(s.toPayment)} of offers` },
-      { label: 'Visas', value: num(s.visas), color: COLORS.visa, series: trend.map((t) => t.visa), hint: ins.target && ins.target.visas ? `target ${ins.target.visas}` : `${pct(s.visaSuccess)} of decisions` },
+      { label: 'Applied', key: 'applied', value: s.applied, color: COLORS.applied, hint: `${pct(s.toApplication)} of students` },
+      { label: 'Offers', key: 'offers', value: s.offers, color: COLORS.offer, hint: `${pct(s.toOffer)} of applicants` },
+      { label: 'Paid', key: 'paid', value: s.paid, color: COLORS.paid, hint: `${pct(s.toPayment)} of offers` },
+      { label: 'Visas', key: 'visas', value: s.visas, color: COLORS.visa, hint: ins.target && ins.target.visas ? `target ${ins.target.visas}` : `${pct(s.visaSuccess)} of decisions` },
     ];
     // Who is behind each figure, by the same rules as the figure.
     const who = {
@@ -84,18 +93,22 @@
     cards.forEach((c) => {
       const list = (ins.people || []).filter(who[c.label]);
       const clickable = ins.people && list.length > 0;
-      const k = el(clickable ? 'button' : 'article', 'ov-kpi' + (c.main ? ' main' : '') + (clickable ? ' is-click' : ''));
+      const k = el(clickable ? 'button' : 'article', 'ov-kpi' + (clickable ? ' is-click' : ''));
       if (clickable) {
         k.type = 'button';
         k.title = `See the ${list.length} student${list.length === 1 ? '' : 's'}`;
         k.addEventListener('click', () => peopleDialog(`${c.label}: ${list.length} student${list.length === 1 ? '' : 's'}`, list));
       }
       k.style.setProperty('--accent', c.color);
-      k.append(el('span', 'ov-kpi-label', c.label), el('b', 'ov-kpi-value', c.value), el('span', 'ov-kpi-hint', c.hint));
-      if (c.series && c.series.some(Boolean)) k.append(sparkline(c.series, c.color));
+      k.append(el('span', 'ov-kpi-label', c.label), el('b', 'ov-kpi-value', num(c.value)), el('span', 'ov-kpi-hint', c.hint));
+      const v = versus(c.value, c.key);
+      if (v) k.append(v);
       row.append(k);
     });
-    return row;
+    const box = el('div', 'ov-figures');
+    box.append(row, versusNote());
+    if (s.low) box.append(el('p', 'ov-vs-note', 'Fewer than 10 students: rates are only a hint.'));
+    return box;
   }
 
   // The students behind a figure, in a window: a search box, then each student (name, stage, university); a press opens the card
@@ -195,32 +208,48 @@
 
 
 
-  // ---- universities and partners ----
-  function leaderboard(title, sub, list, concentration, what) {
-    const c = card('ov-board', title, sub);
-    if (!list.length) { c.append(el('p', 'ov-empty', `No ${what} recorded yet.`)); return c; }
+  // ---- universities: each with its logo (from its page in Universities), the first five, then all ----
+  const UNIS_FIRST = 5;
+  const media = (u) => (/^https:\/\//.test(u) ? `/api/media?u=${encodeURIComponent(u)}` : u);
+  function uniLogo(g) {
+    const m = el('span', 'ov-uni-logo');
+    const letters = () => { m.classList.remove('has-logo'); m.replaceChildren(); m.textContent = window.Portal.initials(g.label); };
+    if (!g.logo) { letters(); return m; }
+    m.classList.add('has-logo');
+    const i = el('img'); i.src = media(g.logo); i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer';
+    i.addEventListener('error', letters);
+    m.append(i);
+    return m;
+  }
+  function universitiesCard(list) {
+    const c = card('ov-board ov-unis', 'Universities', list.length ? `Where the students are placed: ${list.length} ${list.length === 1 ? 'university' : 'universities'}` : 'Where the students are placed');
+    if (!list.length) { c.append(el('p', 'ov-empty', 'No university recorded yet.')); return c; }
     const max = Math.max(1, ...list.map((g) => g.students));
     const t = el('div', 'ov-board-list');
-    const head = el('div', 'ov-board-row head');
-    ['', 'Students', 'Offers', 'Paid', 'Visas'].forEach((h) => head.append(el('span', h ? 'num' : '', h)));
-    t.append(head);
-    list.slice(0, 5).forEach((g) => {
-      const row = el('div', 'ov-board-row');
-      const name = el('span', 'ov-board-name'); name.append(el('b', '', g.label));
-      const track = el('i', 'ov-board-bar'); track.style.width = Math.max(3, (g.students / max) * 100) + '%'; name.append(track);
-      row.append(name, el('span', 'num', num(g.students)), el('span', 'num', num(g.offers)), el('span', 'num', num(g.paid)), el('span', 'num strong', num(g.visas)));
-      hover(row, () => ({ title: g.label, rows: [{ name: 'Applied', value: num(g.applied) }, { name: 'Offer rate', value: pct(g.toOffer) }, { name: 'Payment rate', value: pct(g.toPayment) }, { name: 'Visa success', value: pct(g.visaSuccess) }] }));
-      t.append(row);
-    });
+    const render = () => {
+      const head = el('div', 'ov-board-row head');
+      ['University', 'Students', 'Offers', 'Paid', 'Visas'].forEach((h, i) => head.append(el('span', i ? 'num' : '', h)));
+      t.replaceChildren(head, ...(allUnis ? list : list.slice(0, UNIS_FIRST)).map((g) => {
+        const row = el('div', 'ov-board-row');
+        const words = el('span', 'ov-board-name'); words.append(el('b', '', g.label));
+        const track = el('i', 'ov-board-bar'); track.style.width = Math.max(3, (g.students / max) * 100) + '%'; words.append(track);
+        const who = el('span', 'ov-uni'); who.append(uniLogo(g), words);
+        row.append(who, el('span', 'num', num(g.students)), el('span', 'num', num(g.offers)), el('span', 'num', num(g.paid)), el('span', 'num strong', num(g.visas)));
+        hover(row, () => ({ title: g.label, rows: [{ name: 'Applied', value: num(g.applied) }, { name: 'Offer rate', value: pct(g.toOffer) }, { name: 'Payment rate', value: pct(g.toPayment) }, { name: 'Visa success', value: pct(g.visaSuccess) }] }));
+        return row;
+      }));
+    };
+    render();
     c.append(t);
-    if (concentration && concentration.applications && concentration.applications.total) {
-      const a = concentration.applications;
-      c.append(el('p', 'ov-foot', `${a.top} takes ${a.topShare}% of applications${a.count > 1 ? `, the top three ${a.top3Share}%` : ''}.`));
+    if (list.length > UNIS_FIRST) {
+      const label = () => (allUnis ? 'Show fewer' : `Show all ${list.length}`);
+      const more = el('button', 'btn btn-sm ov-more', label()); more.type = 'button';
+      more.setAttribute('aria-expanded', String(allUnis));
+      more.addEventListener('click', () => { allUnis = !allUnis; hideTip(); render(); more.textContent = label(); more.setAttribute('aria-expanded', String(allUnis)); });
+      c.append(more);
     }
     return c;
   }
-
-
 
 
 
@@ -338,20 +367,17 @@
     if (!ins || !dash || !window.DashText) return;
     const page = el('div', 'ov');
     page.append(kpis());
-    // Told like a presentation, in a balanced order (the owner, 14 Nov 2026): a big chart, then a pair of plain cards, then a big
-    // chart again, so the lively and the plain alternate from top to bottom: the headline figures; ups and downs over time; how
-    // students found us and the visa target; growth by intake; where students live in Nepal; partners and the funnel; universities.
+    // The order the owner agreed (27 Nov 2026), what is acted on first: the five figures; the student journey and the visa
+    // target; ups and downs over time; how students found us and the partners; universities; growth by intake; the map, folded.
     const T = trends && window.DashboardTrends;
     const row = (cls, ...cards) => { const r = el('div', cls); r.append(...cards); page.append(r); };
+    row('ov-row ov-row-2', funnelCard(), targetCard());
     if (T) row('ov-row', T.overTime(trends));
-    row('ov-row ov-row-2', originCard(), targetCard());
-    if (T) row('ov-row', T.growth(trends));
-    if (T) row('ov-row', T.map(trends));
-    row('ov-row ov-row-2', partnersCard(), funnelCard());
+    row('ov-row ov-row-2', originCard(), partnersCard());
     // Universities: only those recorded on the students (a blank University Name is not a row).
-    const unis = (ins.universities.list || []).filter((g) => g.label && !/not recorded/i.test(g.label));
-    row('ov-row', leaderboard('Universities', 'Where the students are placed', unis, null, 'university'));
-    if (ins.summary.low) page.append(el('p', 'ov-foot', 'Fewer than 10 students: rates are only a hint.'));
+    row('ov-row', universitiesCard((ins.universities.list || []).filter((g) => g.label && !/not recorded/i.test(g.label))));
+    if (T) row('ov-row', T.growth(trends, new Set((ins.compare || []).filter((x) => !x.over).map((x) => x.id))));
+    if (T) row('ov-row', T.map(trends, mapOpen, (open) => { mapOpen = open; }));
     root.replaceChildren(page);
   }
 

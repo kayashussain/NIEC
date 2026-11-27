@@ -127,8 +127,11 @@
     }
     if (mockOwn()) return MOCK_SHEET_COLUMNS.filter((c) => sheet.columns.includes(c));
     const hidden = new Set(HIDDEN_COLUMNS_BY_SHEET.filter((h) => h.matches(sheet.name || '')).flatMap((h) => h.columns));
-    return sheet.columns.filter((c) => !CARD_COLUMNS.has(c) && (!hidden.has(c) || (isTeam() && Teams.canEdit(me, c))));
+    // 🔴 CSS CHANGED (2026-11-27): All Students for a branch | from: Application Status the first column | to: not shown, the sheet starts at First Name (the owner: the status is changed by our own team); the data stays and Show numbers still counts it
+    return sheet.columns.filter((c) => !CARD_COLUMNS.has(c) && !(branchOwn() && c === 'APPLICATION STATUS') && (!hidden.has(c) || (isTeam() && Teams.canEdit(me, c))));
   };
+  // A column a filter can be on: one that is shown, and for a branch also the status its number cards filter by.
+  const filterable = (col) => columns.includes(col) || (branchOwn() && col === 'APPLICATION STATUS');
   let columns = []; // the active sheet's shown columns (see visibleColumns)
   let rows = [];    // reference to the active sheet's rows array
   let sortCol = null;
@@ -165,6 +168,8 @@
   // written in the window after a mock on Bookings and corrected on the student card. A double-click shows a cut-short cell in full.
   const mockOwn = () => Boolean(me && Teams.ownTeamMock && Teams.ownTeamMock(me));
   const sheetLocked = () => appOwn() || mockOwn();
+  // A branch works on the sheet, in its own tidy look (the owner, 26 Nov 2026).
+  const branchOwn = () => Boolean(me && Teams.ownTeamBranch && Teams.ownTeamBranch(me));
   // Every detail of a student is changed on the student card by the Application Team (the owner, 22 Nov 2026: Application details).
   const sheetOpen = () => !sheetLocked();
   const cardOnly = () => Boolean(isTeam() && (appOwn() || mockOwn())); // these teams fill a student in on the card
@@ -254,8 +259,9 @@
       if (keep && ![...cameFromEl.options].some((o) => o.value === keep)) cameFromEl.append(new Option(sourceText(keep), keep));
       cameFromEl.value = keep;
       sourceListReady = true;
-      // No Source choice for the Application Team (the owner, 22 Nov 2026); shown once it is known who is looking.
-      cameFromEl.hidden = !me || sheetLocked();
+      // No Source choice for the Application Team (the owner, 22 Nov 2026), nor for a branch, whose students all have its own
+      // source (the owner, 27 Nov 2026); shown once it is known who is looking.
+      cameFromEl.hidden = !me || sheetLocked() || branchOwn();
     } catch (e) { /* offline for a moment: the filter keeps what it had */ }
   }
   const undoBtn = $('#undoBtn');
@@ -381,7 +387,7 @@
     activeSheetId = snap.activeSheetId;
     syncActiveSheet();
     if (view.sheetId === activeSheetId) {
-      columnFilters = Object.fromEntries(Object.entries(view.filters).filter(([col]) => columns.includes(col)));
+      columnFilters = Object.fromEntries(Object.entries(view.filters).filter(([col]) => filterable(col)));
       if (columns.includes(view.sortCol)) { sortCol = view.sortCol; sortDir = view.sortDir; }
       searchEl.value = view.search;
     }
@@ -704,7 +710,7 @@
   function autoGroupRows() {
     if (rows.length < 2) return;
     const hasPartner = columns.includes(PARTNER_COL);
-    const hasStatus = columns.includes('APPLICATION STATUS');
+    const hasStatus = filterable('APPLICATION STATUS'); // a branch's students keep their order though the column is not shown
     if (!hasPartner && !hasStatus) return;
 
     const partnerOf = (r) => (hasPartner ? (r[PARTNER_COL] || '').trim() : '');
@@ -755,6 +761,9 @@
     markDirty();
   }
 
+  // Admin and the Manager: the office's own look of this page.
+  function isOffice() { return Boolean(me && (me.role === 'admin' || me.role === 'manager')); }
+
   async function loadData() {
     let json;
     try {
@@ -767,11 +776,15 @@
         if (BACKUP) document.body.dataset.backup = '1';
         document.body.dataset.role = me.role;
         $('#viewOnly').hidden = !Teams.isReadOnly(me);
-        { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = sheetLocked(); } quietSaved();
+        { const note = $('#teamNote'); if (note && me.role !== 'admin' && (me.departments || []).length) { const labels = me.departments.map((d) => (Teams.DEPARTMENTS[d] || { label: d }).label); note.textContent = isBranchAccount() ? `${labels.join(' and ')}: your students, every column` : `${labels.join(' and ')}: the highlighted columns are yours to fill in`; note.hidden = sheetLocked() || branchOwn(); } quietSaved();
+          // 🔴 CSS CHANGED (2026-11-26): All Students for a branch | from: "your students, every column" note, "All changes saved", a row count under the sheet | to: all three hidden, so the students get the whole height (the owner, 26 Nov 2026)
+          document.body.toggleAttribute('data-branch', branchOwn());
+          if (branchOwn()) $('#addRow').title = "Add a new student: a short form asks for the student's details";
+          if (branchOwn()) $('#search').placeholder = 'Search students, universities, courses…';
           // 🔴 CSS CHANGED (2026-11-22): the bar under the sheet (rows count, Shortcuts, colour key), for the Application Team only | from: shown | to: hidden (the owner, 22 Nov 2026)
-          const foot = document.querySelector('.footbar'); if (foot) foot.style.display = (appOwn() || mockOwn()) ? 'none' : ''; } // no rows count, Shortcuts or colour key under the sheet for the Application and Mock Teams (the owner, 25 Nov 2026); Add student, Colour rows, Delete rows, Undo and Redo stay Teams, so the students get the whole height (the owner, 22 and 25 Nov 2026)
+          const foot = document.querySelector('.footbar'); if (foot) foot.style.display = (appOwn() || mockOwn() || isOffice() || branchOwn()) ? 'none' : ''; } // no rows count, Shortcuts or colour key under the sheet for the Application and Mock Teams (the owner, 25 Nov 2026) and for Admin and the Manager (the owner, 26 Nov 2026); Add student, Colour rows, Delete rows, Undo and Redo stay Teams, so the students get the whole height (the owner, 22 and 25 Nov 2026)
         syncFollowupButton();
-        if (cameFromEl) { if (sheetLocked()) { cameFrom = ''; cameFromEl.value = ''; } cameFromEl.hidden = sheetLocked() || !sourceListReady; }
+        if (cameFromEl) { if (sheetLocked() || branchOwn()) { cameFrom = ''; cameFromEl.value = ''; } cameFromEl.hidden = sheetLocked() || branchOwn() || !sourceListReady; }
         document.body.toggleAttribute('data-viewonly', Teams.isReadOnly(me));
         document.body.toggleAttribute('data-candelete', Teams.canDelete(me));
         // 🔴 CSS CHANGED (2026-11-22): Add student, Colour rows, Delete rows, Undo and Redo for the Mock Team | from: shown | to: hidden (the sheet is to look at, the owner, 22 Nov 2026)
@@ -827,7 +840,7 @@
     const saved = readSavedFilters()[activeSheetId] || {};
     const out = {};
     Object.entries(saved).forEach(([col, values]) => {
-      if (columns.includes(col) && Array.isArray(values)) out[col] = new Set(values.map(String));
+      if (filterable(col) && Array.isArray(values)) out[col] = new Set(values.map(String));
     });
     return out;
   }
@@ -1496,7 +1509,10 @@
     if (bar.hidden) return;
     const parts = [];
     if (cameFrom) parts.push(`Source “${sourceText(cameFrom)}” (in every intake; another intake's students show on its tab)`);
-    if (cols.length) parts.push(`Filtered by ${cols.map(columnLabel).join(', ')}`);
+    // A branch has no status column: after a press on a number card the bar says which students are shown.
+    const shownCols = cols.filter((c) => columns.includes(c));
+    if (shownCols.length) parts.push(`Filtered by ${shownCols.map(columnLabel).join(', ')}`);
+    if (cols.length > shownCols.length) parts.push(`Only ${[...columnFilters['APPLICATION STATUS']].join(', ')} students`);
     if (searching) parts.push(`searching for “${searchEl.value.trim()}”`);
     const total = rows.filter((r) => !isTeam() || Teams.seesRow(me, r)).length;
     $('#filterBarText').textContent = `${parts.join(' and ')}. Showing ${viewIndices.length} of ${total} students.`;
@@ -2243,9 +2259,10 @@
       .then(applyAll);
   }
 
+  // 🔴 CSS CHANGED (2026-11-26): "All changes saved" for Admin and the Manager | from: shown beside the title with a dot | to: hidden; "Saving..." and messages still show
   // 🔴 CSS CHANGED (2026-11-22): "All changes saved" beside the title, for the Application Team only | from: always shown | to: hidden; a short message such as "Saving..." or "Open the student card to change a detail" still shows for a moment
   // (the owner, 22 Nov 2026: the Application Team does not type on the sheet, so the line said nothing to it).
-  const quietSaved = () => { if (statusEl) statusEl.style.display = sheetLocked() && statusEl.textContent === 'All changes saved' ? 'none' : ''; };
+  const quietSaved = () => { if (statusEl) statusEl.style.display = (sheetLocked() || isOffice() || branchOwn()) && statusEl.textContent === 'All changes saved' ? 'none' : ''; };
   if (statusEl) new MutationObserver(quietSaved).observe(statusEl, { childList: true, characterData: true, subtree: true });
 
   function flashStatus(text) {
@@ -2256,7 +2273,7 @@
 
   function renderStatusSummary() {
     const statusOptions = SELECT_COLS['APPLICATION STATUS'];
-    if (!statusOptions || !columns.includes('APPLICATION STATUS')) {
+    if (!statusOptions || !filterable('APPLICATION STATUS')) {
       statusSummaryEl.innerHTML = '';
       statusSummaryEl.hidden = true;
       if (statsToggle) statsToggle.hidden = true;
@@ -2322,6 +2339,7 @@
       }).catch(() => {});
       return;
     }
+    if (branchOwn()) { renderBranchNumbers(statusOptions); return; }
     const countStatus = (status) => indices.reduce((acc, i) => acc + (rows[i]['APPLICATION STATUS'] === status ? 1 : 0), 0);
     const totalCard = card(indices.length, 'Total Students');
     totalCard.classList.add('stat-total');
@@ -2337,6 +2355,60 @@
       `${visaIssuedCount} Visa Issued out of ${indices.length} total students`);
     rateCard.classList.add('stat-rate');
     statusCards.appendChild(rateCard);
+  }
+
+  // A branch's numbers (the owner, 27 Nov 2026): calm white cards, as the Application and Mock views have: the stages in the
+  // order a student goes through them, then Defer, Hold, Withdrawn and the conversion rate, and no other card. They count every
+  // student of the branch on this intake, whatever is searched; a press on a number shows only those students on the sheet,
+  // a second press (or Clear all filters) shows everyone again.
+  // 🔴 CSS CHANGED (2026-11-27): a branch's number cards | from: Total students, Inquiry and Visa Rejected too, CAS Stage only when a student was at it | to: the owner's list only, CAS Stage always shown
+  const BRANCH_STAGES = ['Application Stage', 'Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued'];
+  const STOPPED_STAGES = ['Defer', 'Hold', 'Withdrawn'];
+  function pickStage(stage) {
+    const now = columnFilters['APPLICATION STATUS'];
+    if (now && now.size === 1 && now.has(stage)) delete columnFilters['APPLICATION STATUS'];
+    else columnFilters['APPLICATION STATUS'] = new Set([stage]);
+    selectedRows = new Set(); // a student picked before may now be hidden: never left picked for Delete rows
+    selRanges = [];
+    rowSelectMode = false;
+    activeCell = null;
+    saveFilters();
+    renderHeader();
+    renderBody();
+    const again = statusSummaryEl.querySelector(`[data-stage="${stage}"]`);
+    if (again) again.focus({ preventScroll: true });
+  }
+  function renderBranchNumbers(statusOptions) {
+    const students = rows.filter((r) => r && Teams.seesRow(me, r) && (String(r['FIRST NAME'] || '').trim() || String(r['LAST NAME'] || '').trim()));
+    const count = new Map();
+    students.forEach((r) => { const s = String(r['APPLICATION STATUS'] || '').trim(); count.set(s, (count.get(s) || 0) + 1); });
+    const of = (s) => count.get(s) || 0;
+    const picked = columnFilters['APPLICATION STATUS'];
+    const isPicked = (s) => Boolean(picked && picked.size === 1 && picked.has(s));
+    const part = (tag, cls, text) => { const x = document.createElement(tag); x.className = cls; if (text !== undefined) x.textContent = text; return x; };
+    // One card per number, all alike: the number, then what it counts. A card of a stage is a button that shows only those students.
+    const fill = (cardEl, n, label) => { cardEl.append(part('span', 'brn-n', String(n)), part('span', 'brn-k', label)); return cardEl; };
+    const stageCard = (s) => {
+      const b = part('button', `brn-card${of(s) ? '' : ' is-zero'}`);
+      b.type = 'button';
+      b.dataset.stage = s;
+      b.title = `Show only the students at ${s}`;
+      b.setAttribute('aria-pressed', String(isPicked(s)));
+      b.addEventListener('click', () => pickStage(s));
+      return fill(b, of(s), s);
+    };
+    const grid = (label) => { const g = part('div', 'brn-grid'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', label); return g; };
+    const box = part('div', 'brn');
+    const visas = of('Visa Issued');
+    const way = grid('Where your students are');
+    way.append(...BRANCH_STAGES.filter((s) => statusOptions.includes(s)).map(stageCard));
+    const off = grid('Stopped or waiting, and the conversion rate');
+    off.append(...STOPPED_STAGES.filter((s) => statusOptions.includes(s)).map(stageCard));
+    const rate = fill(part('div', 'brn-card brn-rate'), `${students.length ? ((visas / students.length) * 100).toFixed(1) : '0.0'}%`, 'Conversion rate');
+    rate.title = `${visas} Visa Issued out of ${students.length} students`;
+    off.append(rate);
+    box.append(way, part('p', 'brn-off-k', 'Stopped or waiting'), off);
+    statusSummaryEl.append(box);
   }
 
   function markDirty() {
@@ -2588,10 +2660,10 @@
 
   // The menu already has Follow-up for Admin, the Follow-up Team and the branches: the button is shown only to those without it
   // (never two controls for the same thing). The menu draws itself after the page, so this runs again whenever the menu changes.
-  // Never for the Application Team (the owner, 22 Nov 2026): following students up is not its work.
+  // Never for the Application Team (the owner, 22 Nov 2026): following students up is not its work. Nor for a branch (26 Nov 2026).
   function syncFollowupButton() {
     const bs = document.getElementById('bulkSend');
-    if (bs) bs.hidden = !me || Teams.isReadOnly(me) || Teams.ownTeamApplication(me) || mockOwn() || Boolean(document.querySelector('.niec-nav a[href="/bulk"]'));
+    if (bs) bs.hidden = !me || Teams.isReadOnly(me) || Teams.ownTeamApplication(me) || mockOwn() || branchOwn() || Boolean(document.querySelector('.niec-nav a[href="/bulk"]'));
   }
   { const menu = document.querySelector('.niec-header') || document.body; new MutationObserver(syncFollowupButton).observe(menu, { childList: true, subtree: menu !== document.body }); }
   const bulkBtn = document.getElementById('bulkSend');
@@ -2613,8 +2685,9 @@
     }
     const indicesToDelete = Array.from(selectedRows).sort((a, b) => b - a); // descending, so splice indices stay valid
     const picked = indicesToDelete.map((i) => rows[i]);
-    if (picked.some((r) => r && !Teams.canDelete(me, r))) {
-      NiecUI.toast("Your team can only delete students at your own stage.");
+    const refused = picked.find((r) => r && !Teams.canDelete(me, r));
+    if (refused) {
+      NiecUI.toast(Teams.deleteRefusal(me, refused));
       return;
     }
     const label = indicesToDelete.length === 1

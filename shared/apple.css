@@ -1107,7 +1107,45 @@ html:root body #page .ig-label { display: block; margin-bottom: 6px; color: #3a3
 html:root body #page .ig-fields .p-input { width: 100%; min-height: 44px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1px #d2d2d7; }
 html:root body #page .ig-upload-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; padding: 14px 16px; border: 1.5px dashed #c7c7cc; border-radius: 14px; background: #fff; }
 html:root body #page .ig-hint { margin: 10px 2px 0; color: #636366; font-size: 13px; }
+/* 🔴 CSS CHANGED (2026-11-27): a guideline is read on the page (the owner) | from: a list of files, Download only | to: View beside Download, the chosen file ringed, and under the list the file itself: a PDF or picture in a frame, a Word document as a white page of its words */
+html:root body #page .ig-file.is-on { background: #fff; box-shadow: inset 0 0 0 2px #0071e3; }
+html:root body #page .ig-view { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 16px; }
+html:root body #page .ig-view[aria-pressed="true"] { background: #0071e3; color: #fff; }
+html:root body #page .ig-reader { margin-top: 30px; scroll-margin-top: 14px; border-radius: 20px; background: #efeff2; overflow: hidden; }
+html:root body #page .ig-reader-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; }
+html:root body #page .ig-reader-bar h3 { flex: 1; min-width: 200px; margin: 0; color: #1d1d1f; font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere; }
+html:root body #page .ig-full { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 16px; background: #fff; text-decoration: none; }
+html:root body #page .ig-reader-body { padding: 0 14px 14px; }
+html:root body #page .ig-frame { display: block; width: 100%; height: 78vh; min-height: 520px; border: 0; border-radius: 12px; background: #fff; }
+html:root body #page .ig-picture { display: block; max-width: 100%; height: auto; margin: 0 auto; border-radius: 12px; background: #fff; }
+html:root body #page .ig-reader-body .ig-empty { min-height: 260px; background: #fff; border-radius: 12px; }
+html:root body #page .ig-reader-body a.ig-first { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+html:root body #page .ig-loading { margin: 0; padding: 90px 20px; border-radius: 12px; background: #fff; color: #636366; font-size: 15px; text-align: center; }
+html:root body #page .ig-page-sheet { max-height: 78vh; overflow: auto; padding: 44px 56px; border-radius: 12px; background: #fff; color: #1d1d1f; font-size: 15.5px; line-height: 25px; overflow-wrap: break-word; }
+html:root body #page .ig-page-sheet p { max-width: 74ch; min-height: 0; margin: 0 auto 12px; color: #1d1d1f; font-size: 15.5px; line-height: 25px; white-space: pre-wrap; tab-size: 4; }
+html:root body #page .ig-page-sheet .ig-h { max-width: 74ch; margin: 26px auto 10px; color: #1d1d1f; letter-spacing: -.015em; line-height: 1.28; white-space: pre-wrap; }
+html:root body #page .ig-page-sheet .ig-h1 { margin-top: 0; font-size: 28px; font-weight: 700; }
+html:root body #page .ig-page-sheet .ig-h2 { font-size: 20px; font-weight: 650; }
+html:root body #page .ig-page-sheet .ig-h3 { font-size: 17px; font-weight: 650; }
+html:root body #page .ig-page-sheet .ig-h4 { font-size: 15.5px; font-weight: 650; }
+html:root body #page .ig-page-sheet > .ig-h:first-child { margin-top: 0; }
+html:root body #page .ig-page-sheet p.ig-li { display: flex; gap: 8px; margin-bottom: 6px; padding-left: calc(var(--depth, 0) * 24px); white-space: normal; }
+html:root body #page .ig-li-mark { flex: 0 0 auto; min-width: 20px; color: #636366; font-variant-numeric: tabular-nums; text-align: right; }
+html:root body #page .ig-li-words { flex: 1; min-width: 0; white-space: pre-wrap; }
+html:root body #page .ig-page-sheet strong { font-weight: 700; }
+html:root body #page .ig-page-sheet a { color: #0066cc; text-decoration: underline; }
+html:root body #page .ig-page-sheet img { display: inline-block; max-width: 100%; height: auto; }
+html:root body #page .ig-table { max-width: 74ch; margin: 14px auto 18px; overflow-x: auto; }
+html:root body #page .ig-table table { width: 100%; border-collapse: collapse; }
+html:root body #page .ig-table td { min-width: 90px; padding: 9px 12px; border: 1px solid #d2d2d7; vertical-align: top; }
+html:root body #page .ig-table td p { margin: 0; }
+html:root body #page .ig-cut { color: #636366; font-style: italic; }
 @media (max-width: 900px) {
+  html:root body #page .ig-page-sheet { max-height: 70vh; padding: 22px 18px; }
+  html:root body #page .ig-page-sheet .ig-h1 { font-size: 21px; }
+  html:root body #page .ig-page-sheet .ig-h2 { font-size: 17.5px; }
+  html:root body #page .ig-reader-body { padding: 0 8px 8px; }
+  html:root body #page .ig-file .ig-view, html:root body #page .ig-file .ig-download { flex: 1; justify-content: center; }
   html:root body #page .ig-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   html:root body #page .ig-side { position: static; height: 440px; min-height: 0; }
   html:root body #page .ig-main { min-height: 0; padding: 20px 16px 24px; }
@@ -1198,3 +1236,627 @@ html:root:not(.app-only) body :is(.p-tabs, .tabs) > .seg-thumb, html:root:not(.a
 :where(html:not(.app-only)) body, :where(html:not(.app-only)) body :is(p, li, td, dd, dt, label, input, select, textarea, a, small, span, div, option, summary, figcaption) { font-weight: 400; }
 :where(html:not(.app-only)) body :is(button, .btn) { font-weight: 500; }
 :where(html:not(.app-only)) body :is(h1, h2, h3, h4, b, strong, th) { font-weight: 600; }
+
+/* 🔴 CSS CHANGED (2026-11-26): Admin's Today shows only what was done today (the owner: "I just need how many application has been submitted today, how many offer has been received, mock conducted, final interview passed, follow-up done") | from: the progress card, the task board with a column per team, the kind pills and Needs attention | to: five white number cards in one row, each with its colour dot, and under them the students of the chosen card; a press on a student opens the student card */
+html:root body .dw-page { max-width: 1180px; margin: 0 auto; }
+html:root body .dw-page .tda-top { margin-bottom: 20px; }
+html:root body .dw-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 4px 0 22px; }
+html:root body button.dw-tile { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; min-height: 142px; padding: 20px 20px 18px; border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); color: #1d1d1f; font-family: inherit; text-align: left; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+html:root body button.dw-tile:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 14px 34px rgba(0, 0, 0, .09); }
+html:root body button.dw-tile[aria-selected="true"] { box-shadow: 0 0 0 2px #0071e3, 0 14px 34px rgba(0, 113, 227, .14); }
+html:root body .dw-tile-n { font-size: 52px; line-height: 54px; font-weight: 600; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+html:root body .dw-tile.is-zero .dw-tile-n { color: #86868b; }
+html:root body .dw-tile-k { display: block; color: #3a3a3c; font-size: 14px; line-height: 19px; font-weight: 500; }
+html:root body .dw-tile-k::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 8px; border-radius: 50%; background: #0071e3; vertical-align: 1px; }
+html:root body .dw-offers .dw-tile-k::before { background: #1f8a44; }
+html:root body .dw-mocks .dw-tile-k::before { background: #7c4dd0; }
+html:root body .dw-passed .dw-tile-k::before { background: #0b8a96; }
+html:root body .dw-followups .dw-tile-k::before { background: #d9650b; }
+html:root body .dw-panel { padding: 10px 10px 12px; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .dw-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 16px 10px; }
+html:root body .dw-panel-head h2 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.022em; }
+html:root body .dw-panel-n { color: #636366; font-size: 14px; }
+html:root body a.dw-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 16px; padding: 14px 16px; border-radius: 16px; color: #1d1d1f; text-decoration: none; transition: background .1s linear; }
+html:root body a.dw-row:hover { background: #f5f5f7; }
+html:root body a.dw-row:focus-visible { outline: 2px solid #0071e3; outline-offset: -2px; }
+html:root body .dw-av { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #e8f1fc; color: #0058b0; font-size: 15px; font-weight: 600; }
+html:root body .dw-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+html:root body #view .dw-main > span, html:root body #view .dw-side > span, html:root body #view .dw-panel-n, html:root body #view .dw-none { font-weight: 400; }
+html:root body #view .dw-side > .dw-by { font-weight: 500; }
+html:root body .dw-name { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -.015em; }
+html:root body .dw-what { overflow: hidden; font-size: 15px; line-height: 20px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .dw-meta { color: #636366; font-size: 13px; line-height: 18px; }
+html:root body .dw-side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 13px; line-height: 18px; text-align: right; }
+html:root body .dw-by { color: #1d1d1f; font-weight: 500; }
+html:root body .dw-when { color: #636366; }
+html:root body .dw-chev { width: 8px; height: 8px; border-top: 2px solid #aeaeb2; border-right: 2px solid #aeaeb2; transform: rotate(45deg); }
+html:root body .dw-none { margin: 0; padding: 44px 16px 52px; color: #636366; font-size: 15px; text-align: center; }
+@media (max-width: 1180px) { html:root body .dw-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+  html:root body .dw-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html:root body a.dw-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  html:root body .dw-side { display: none; }
+  html:root body .dw-what { white-space: normal; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-26): All Students for Admin and the Manager (the owner: no row count, no "All changes saved", more height for the list, a better place for Source, Total students in the numbers, better looking) | from: Source beside the title, numbers in two rows of large boxes, a row count under the tabs | to: Source beside the search at the top right, the numbers in one slim strip with Total students first in blue, tighter space above the sheet and under the tabs, a blue wash on the row under the pointer */
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar { gap: 12px 10px; padding-top: 18px; padding-bottom: 12px; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar .sheet-title { order: 1; margin-right: 8px; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar :is(#status, .team-note, #viewOnly) { order: 2; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar select.came-from { order: 3; margin-left: auto; height: 42px; max-width: 280px; padding: 0 40px 0 18px; border: 0 !important; border-radius: 980px !important; background-color: #fff !important; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 1px 3px rgba(0, 0, 0, .05); font-size: 14px; font-weight: 500; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar select.came-from:focus-visible { box-shadow: 0 0 0 3px rgba(0, 113, 227, .4); }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar input#search { order: 4; margin-left: 0; height: 42px; width: clamp(260px, 26vw, 380px); padding: 0 18px; border-radius: 980px !important; background: #fff !important; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 1px 3px rgba(0, 0, 0, .05) !important; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar input#search:focus-visible { box-shadow: 0 0 0 3px rgba(0, 113, 227, .4) !important; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .topbar:has(select.came-from[hidden]) input#search { margin-left: auto; }
+html:root body:is([data-role="admin"], [data-role="manager"]) .status-summary { margin-bottom: 12px; }
+html:root body:is([data-role="admin"], [data-role="manager"]) .status-summary .stat-group { margin: 0; }
+html:root body:is([data-role="admin"], [data-role="manager"]) .status-summary .stat-group-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .stat-group-cards { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; overflow-x: auto; padding: 6px; border-radius: 18px; background: #fff; box-shadow: var(--apple-card); }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .stat-group-cards .stat-card { display: flex; flex: 1 1 0; flex-direction: column; justify-content: flex-start; gap: 1px; min-width: 78px; min-height: 64px; margin: 0; padding: 10px 10px 8px !important; border-radius: 13px !important; background: transparent !important; box-shadow: none !important; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .stat-group-cards .stat-card .stat-value { font-size: 22px; line-height: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .stat-group-cards .stat-card .stat-label { overflow: visible; font-size: 11.5px; line-height: 14px; font-weight: 500; white-space: normal; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .stat-group-cards .stat-card.stat-total { flex: 0 0 auto; min-width: 128px; margin-right: 6px; padding: 10px 18px 8px !important; background: #0071e3 !important; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .stat-group-cards .stat-card.stat-total :is(.stat-value, .stat-label) { color: #fff !important; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .table-wrap thead th { font-size: 12px; font-weight: 600; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .table-wrap tbody tr:not([class*="rc-"], .defer-warning-row, .selected):hover td { background-color: #eef4fd; }
+html:root body:is([data-role="admin"], [data-role="manager"]):has(#sheet) .sheet-tabs { padding-bottom: 14px; }
+
+/* 🔴 CSS CHANGED (2026-11-26): Partners (Universities, B2B partners, Agents) | from: summary tiles above the list, an "N in the list" pill in mid-row, a narrow page, two-letter marks, three cramped columns under each card where emails broke in the middle of a word | to: no tiles and no count, "Add" beside the title, a wider page, each university with its logo, and one line per fact (label at the left, value at the right) | why: the owner asked for a much better Partners page with only the partner cards and a way to add partners */
+html:root body .p-page.bp-page { max-width: 1200px; }
+html:root body .bp-page #listView > .p-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; margin-bottom: 22px; }
+html:root body .bp-page .p-head .bp-add { min-height: 42px; margin: 0 0 2px; padding: 0 22px; white-space: nowrap; }
+html:root body .bp-page .bp-tools { justify-content: flex-end; margin: -8px 0 12px; }
+html:root body .bp-page .bp-tools:not(:has(button:not([hidden]))) { display: none; }
+html:root body .bp-page .bp-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 20px; align-items: stretch; }
+html:root body .bp-page .bp-card { gap: 16px; padding: 22px 24px 18px; }
+html:root body .bp-page .bp-card .bp-card-head .bp-who { gap: 16px; }
+html:root body .bp-page .bp-card .bp-avatar { box-sizing: border-box; width: 60px; height: 60px; border-radius: 14px; background: #eaf2fd; color: #0050aa; font-size: 18px; font-weight: 600; }
+html:root body .bp-page .bp-card .bp-avatar.has-logo { width: 68px; height: 60px; overflow: hidden; padding: 3px; border: 1px solid #e5e5ea; background: #fff; }
+html:root body .bp-page .bp-card .bp-avatar img { width: 100%; height: 100%; object-fit: contain; }
+html:root body .bp-page .bp-card .bp-name { font-size: 18px; line-height: 1.3; }
+html:root body .bp-page .bp-card .bp-sub { font-size: 13.5px; }
+html:root body .bp-page .bp-card .bp-submit:has(> .bp-none) { padding: 0 14px; border-radius: 12px !important; background: #f5f5f7 !important; }
+html:root body .bp-page .bp-card .bp-submit .bp-none { margin: 0; border: 0; color: #6e6e73; font-size: 14px; text-align: left; }
+html:root body .bp-page .bp-card .bp-fact .bp-lines { justify-items: start; }
+html:root body .bp-page .bp-card .bp-facts { display: block; margin: 0; padding: 0; border-top: 1px solid rgba(0, 0, 0, .08); }
+html:root body .bp-page .bp-card .bp-fact { display: grid; grid-template-columns: 104px minmax(0, 1fr); align-items: baseline; gap: 14px; padding: 11px 0; border-bottom: 1px solid rgba(0, 0, 0, .06); }
+html:root body .bp-page .bp-card .bp-fact:last-child { padding-bottom: 0; border-bottom: 0; }
+html:root body .bp-page .bp-card .bp-fact dt { margin: 0; color: #636366; font-size: 13px; font-weight: 500; }
+html:root body .bp-page .bp-card .bp-fact dd { margin: 0; font-size: 14.5px; overflow-wrap: anywhere; }
+html:root body .bp-page .bp-card .bp-fact .bp-none { padding: 0; border: 0; color: #6e6e73; }
+html:root body .bp-page .bp-card .bp-foot { margin-top: auto; padding-top: 2px; }
+html:root body .bp-page .bp-card .bp-foot .btn { min-height: 38px; padding: 0 20px; }
+html:root body .bp-page .bp-card:not(.bp-card-new) .bp-foot > .btn:last-child:not(.btn-primary) { min-height: 38px; padding: 0 18px; border-radius: 980px; }
+@media (max-width: 560px) { html:root body .bp-page .bp-card .bp-fact { grid-template-columns: minmax(0, 1fr); gap: 3px; } }
+
+/* 🔴 CSS CHANGED (2026-11-26): Events and marketing | from: four figures in one white band and a thin table, one line per event | to: five separate figure cards (Applied added), each event or campaign as a card with its date, a bar each for inquiries, applications and visas, its cost, cost per inquiry and per visa, and who waits for a follow-up; on an event, the title in a card with its date | why: the owner asked for a much better Events and marketing page */
+html:root body .p-page.ev-page { max-width: 1200px; }
+html:root body .ev-page .p-head { margin-bottom: 20px; }
+html:root body .ev-page div.ev-band { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 14px; margin: 0 0 18px; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; overflow: visible; }
+html:root body .ev-page div.ev-band.ev-band.ev-band { background: transparent !important; box-shadow: none !important; }
+html:root body .ev-page .ev-band > div { position: relative; padding: 18px 20px 16px; border: 0 !important; border-radius: 18px; background: #fff !important; box-shadow: var(--apple-card, 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05)); }
+html:root body .ev-page .ev-band span { color: #636366; font-size: 13px; font-weight: 600; }
+html:root body .ev-page .ev-band b { margin-top: 8px; font-size: clamp(21px, 1.8vw, 27px); font-weight: 700; }
+html:root body .ev-page .ev-band small { margin-top: 4px; color: #636366; font-size: 12.5px; line-height: 1.4; }
+html:root body .ev-page .ev-band > div:first-child { background: #0071e3 !important; }
+html:root body .ev-page .ev-band > div:first-child :is(span, b, small) { color: #fff; }
+html:root body .ev-page .ev-note { margin: 0 0 14px; padding: 11px 16px; border-radius: 12px; background: #eaf2fd; color: #0b3d75; font-size: 13.5px; }
+html:root body .ev-page .ev-bar { margin: 4px 0 16px; }
+html:root body .ev-page .ev-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 20px; }
+html:root body .ev-page .ev-cards > :is(.ev-empty, .sr360-skel, .p-notice) { grid-column: 1 / -1; }
+html:root body .ev-page .ev-cards > .ev-empty { border-radius: 20px; background: #fff; box-shadow: var(--apple-card, 0 1px 2px rgba(0, 0, 0, .05)); }
+html:root body .ev-page .ev-card { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 22px 24px 16px; border-radius: 20px; background: #fff; box-shadow: var(--apple-card, 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05)); cursor: pointer; transition: box-shadow .2s, transform .2s; }
+html:root body .ev-page .ev-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .06), 0 16px 36px rgba(0, 0, 0, .1); }
+html:root body .ev-page .ev-card:focus-visible { outline: 3px solid #0071e3; outline-offset: 2px; }
+html:root body .ev-page .ev-card-top { display: flex; align-items: flex-start; gap: 16px; }
+html:root body .ev-page .ev-leaf { display: grid; flex: none; place-content: center; width: 64px; min-height: 64px; padding: 6px 4px; border-radius: 14px; background: #eaf2fd; text-align: center; }
+html:root body .ev-page .ev-leaf b { color: #0050aa; font-size: 24px; font-weight: 700; line-height: 1.05; }
+html:root body .ev-page .ev-leaf span { color: #0050aa; font-size: 11px; font-weight: 600; white-space: nowrap; }
+html:root body .ev-page .ev-card-words { flex: 1; min-width: 0; }
+html:root body .ev-page .ev-card .ev-lname { font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
+html:root body .ev-page .ev-card .ev-lmeta { margin-top: 4px; color: #636366; font-size: 13.5px; }
+html:root body .ev-page .ev-kind { flex: none; padding: 3px 11px; border-radius: 980px; background: #f0f0f2; color: #1d1d1f; font-size: 12.5px; font-weight: 600; }
+html:root body .ev-page .ev-kind.is-campaign { background: #f1ebfd; color: #5b2bb5; }
+html:root body .ev-page .ev-flow { display: grid; gap: 9px; padding: 14px 16px; border-radius: 14px; background: #f5f5f7; }
+html:root body .ev-page .ev-flow-line { display: grid; grid-template-columns: 76px minmax(0, 1fr) 44px; align-items: center; gap: 12px; }
+html:root body .ev-page .ev-flow-line span { color: #48484a; font-size: 13px; }
+html:root body .ev-page .ev-flow-line b { color: #000; font-size: 15px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+html:root body .ev-page .ev-flow-line i { position: relative; display: block; height: 8px; overflow: hidden; border-radius: 8px; background: #e3e3e8; }
+html:root body .ev-page .ev-flow-line i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w, 0%); border-radius: 8px; background: #0071e3; }
+html:root body .ev-page .ev-flow-line.is-1 i::after { background: #5856d6; }
+html:root body .ev-page .ev-flow-line.is-2 i::after { background: #248a3d; }
+html:root body .ev-page .ev-sums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+html:root body .ev-page .ev-sums dt { margin: 0; color: #636366; font-size: 12.5px; }
+html:root body .ev-page .ev-sums dd { margin: 3px 0 0; color: #000; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+html:root body .ev-page .ev-sums .is-none dd { color: #8e8e93; font-size: 14px; font-weight: 500; }
+html:root body .ev-page .ev-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 13px; border-top: 1px solid rgba(0, 0, 0, .07); }
+html:root body .ev-page .ev-wait { padding: 4px 12px; border-radius: 980px; background: #f0f0f2; color: #48484a; font-size: 13px; font-weight: 600; }
+html:root body .ev-page .ev-wait.is-waiting { background: #fdf0e4; color: #9a4a00; }
+html:root body .ev-page .ev-wait.is-done { background: #e7f5ec; color: #146c2e; }
+html:root body .ev-page .ev-open { color: #0066cc; font-size: 14px; font-weight: 600; }
+html:root body .ev-page #eventView .ev-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 18px; padding: 22px 24px; border-radius: 20px; background: #fff; box-shadow: var(--apple-card, 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05)); }
+html:root body .ev-page #eventView .ev-head > div:not(.ev-leaf) { flex: 1 1 320px; min-width: 0; }
+html:root body .ev-page #eventView .ev-head h2 { font-size: 26px; }
+html:root body .ev-page #eventView .ev-head > .btn { flex: none; }
+@media (max-width: 1100px) { html:root body .ev-page div.ev-band { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { html:root body .ev-page div.ev-band { grid-template-columns: repeat(2, minmax(0, 1fr)); } html:root body .ev-page .ev-band > div:first-child { grid-column: 1 / -1; } html:root body .ev-page .ev-kind { display: none; } }
+
+/* 🔴 CSS CHANGED (2026-11-26): Universities, the list | from: a small search box in the corner, a tall finder panel with empty space under it, the switch, the closing warning and a count on three separate lines, three large cards a row with the intake, the deadline and a course bar on separate lines | to: a wide search box under the title, a compact finder panel, the switch and the closing warning on one line, no count unless searching, four cards a row (picture, logo, name, city and courses, one deadline line) | why: the owner asked to improve the Universities page further */
+html:root body main.page.ff-page { max-width: 1320px; }
+html:root body main.ff-page > .page-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 18px; }
+html:root body main.ff-page > .page-head .toolbar { width: 100%; margin: 0; }
+html:root body main.ff-page > .page-head #search { box-sizing: border-box; width: 100%; max-width: none; height: 52px; padding: 0 18px 0 50px; border: 0; border-radius: 16px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") no-repeat 18px center; box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 20px rgba(0, 0, 0, .05); font-size: 16px; }
+html:root body main.ff-page > .page-head #search:focus { outline: 0; box-shadow: 0 0 0 2px #0071e3, 0 0 0 6px rgba(0, 113, 227, .16); }
+html:root body main.ff-page #finderBox section.p-card.fd-card.fd-card { margin: 0 0 20px; padding: 20px 24px 22px; border-radius: 20px !important; background: #fff !important; box-shadow: var(--apple-card, 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05)) !important; }
+html:root body main.ff-page .fd-card .fd-head h2 { margin: 0 0 12px; font-size: 18px; }
+html:root body main.ff-page .fd-card .fd-levels { margin: 0 0 14px; }
+html:root body main.ff-page .fd-card .fd-levels button { min-height: 36px; padding: 0 15px; font-size: 14px; }
+html:root body main.ff-page .fd-card .fd-levels button.is-on { background: #0071e3; color: #fff; }
+html:root body main.ff-page .fd-card .fd-form { padding: 14px 16px; }
+html:root body main.ff-page .fd-card .fd-out:empty { display: none; }
+html:root body main.ff-page .fd-card .fd-bar:empty { display: none; }
+html:root body main.ff-page .ff-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 0 0 4px; }
+html:root body main.ff-page .ff-row > * { margin: 0; }
+html:root body main.ff-page .ff-row #ffSoon { padding: 10px 16px; border-radius: 980px; font-size: 14px; }
+html:root body main.ff-page .count:empty { display: none; }
+html:root body main.ff-page #cards.cards { gap: 18px; margin-top: 14px; }
+html:root body main.ff-page #cards.cards:not(.is-board) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+html:root body main.ff-page #cards a.uni-card.uc-card.has-cover { gap: 0; padding: 0; border-radius: 18px; }
+html:root body main.ff-page #cards a.uc-card > :not(.uc-cover) { margin-right: 0; margin-left: 0; }
+html:root body main.ff-page #cards a.uc-card .uc-cover { height: 126px; margin: 0; background: linear-gradient(135deg, #dfeafb 0%, #eef1f7 100%); }
+html:root body main.ff-page #cards a.uc-card .uc-head { position: relative; flex-direction: column; align-items: flex-start; gap: 10px; margin: -30px 0 0; padding: 0 18px 14px; }
+html:root body main.ff-page #cards a.uc-card .uni-mono { width: 58px; height: 58px; border-radius: 14px; }
+html:root body main.ff-page #cards a.uc-card .uni-mono:not(.has-logo) { box-shadow: 0 2px 10px rgba(0, 0, 0, .14); }
+html:root body main.ff-page #cards a.uc-card .uc-title { width: 100%; }
+html:root body main.ff-page #cards a.uc-card .uc-head h2 { display: -webkit-box; margin: 0; overflow: hidden; font-size: 16px; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+html:root body main.ff-page #cards a.uc-card .city { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; margin-top: 6px; color: #636366; font-size: 13px; }
+html:root body main.ff-page #cards a.uc-card .uc-count { color: #1d1d1f; font-weight: 600; white-space: nowrap; }
+html:root body main.ff-page #cards a.uc-card .chips { margin: 0; padding: 0 18px 12px; }
+html:root body main.ff-page #cards a.uc-card .uc-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; margin: auto 0 0; padding: 10px 18px; border-top: 1px solid rgba(0, 0, 0, .07); }
+html:root body main.ff-page #cards a.uc-card .uc-next.is-none { color: #8e8e93; font-size: 13.5px; }
+html:root body main.ff-page #cards a.uc-card .uc-next-text { font-size: 13px; }
+html:root body main.ff-page #cards a.uc-card .uc-next-intake { display: none; }
+html:root body main.ff-page #cards a.uc-card .uc-days { flex: none; padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+html:root body main.ff-page #cards a.uc-card .updated { margin: 0; padding: 0 18px 12px; }
+@media (max-width: 1320px) { html:root body main.ff-page #cards.cards:not(.is-board) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 980px) { html:root body main.ff-page #cards.cards:not(.is-board) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { html:root body main.ff-page #cards.cards:not(.is-board) { grid-template-columns: minmax(0, 1fr); } }
+
+/* 🔴 CSS CHANGED (2026-11-26): Interview guidelines, the mark beside each University | from: a coloured square with two letters of its name | to: the University's logo in a white box with a thin border (the letters only where there is no logo) | why: the owner asked for the university logo in place of the letters */
+html:root body #page .ig-mark.has-logo { box-sizing: border-box; width: 52px; height: 44px; overflow: hidden; padding: 3px; border: 1px solid #e5e5ea; border-radius: 12px; background: #fff; }
+html:root body #page .ig-mark.is-big.has-logo { width: 96px; height: 76px; padding: 6px; border-radius: 18px; }
+html:root body #page .ig-mark img { width: 100%; height: 100%; object-fit: contain; }
+html:root body #page .ig-uni .ig-mark:not(.has-logo) { width: 52px; height: 44px; }
+
+/* 🔴 CSS CHANGED (2026-11-26): All Students for a branch (the owner) | from: Source and Search crowded beside the title, a "your students, every column" note, "All changes saved", a row count under the tabs, numbers in large boxes | to: title at the left, Source beside Search at the top right, the buttons in one row under them, the numbers in one slim strip, no note, no saved line and no row count, so the students get the whole height */
+html:root body[data-branch]:has(#sheet) .topbar { gap: 12px 10px; padding-top: 18px; padding-bottom: 12px; }
+html:root body[data-branch]:has(#sheet) .topbar .sheet-title { order: 1; margin-right: 8px; }
+html:root body[data-branch]:has(#sheet) .topbar :is(#status, .team-note, #viewOnly) { order: 2; }
+html:root body[data-branch]:has(#sheet) .topbar select.came-from { order: 3; margin-left: auto; height: 42px; max-width: 280px; padding: 0 40px 0 18px; border: 0 !important; border-radius: 980px !important; background-color: #fff !important; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 1px 3px rgba(0, 0, 0, .05); font-size: 14px; font-weight: 500; }
+html:root body[data-branch]:has(#sheet) .topbar select.came-from:focus-visible { box-shadow: 0 0 0 3px rgba(0, 113, 227, .4); }
+html:root body[data-branch]:has(#sheet) .topbar input#search { order: 4; margin-left: 0; height: 42px; width: clamp(260px, 26vw, 380px); padding: 0 18px; border-radius: 980px !important; background: #fff !important; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 1px 3px rgba(0, 0, 0, .05) !important; }
+html:root body[data-branch]:has(#sheet) .topbar input#search:focus-visible { box-shadow: 0 0 0 3px rgba(0, 113, 227, .4) !important; }
+html:root body[data-branch]:has(#sheet) .topbar:has(select.came-from[hidden]) input#search { margin-left: auto; }
+html:root body[data-branch] .status-summary { margin-bottom: 12px; }
+/* 🔴 CSS CHANGED (2026-11-27): a branch's numbers under Show numbers (the owner: calm and professional, as the Application and Mock views) | from: a blue Total students box, stage boxes in one white strip with bars, and small chips | to: separate white cards of one size, the number over its name; Total students in blue figures, Visa Issued in green, the chosen card ringed blue; stopped or waiting and the conversion rate on a second row */
+html:root body[data-branch] .status-summary .brn { display: block; width: 100%; padding: 2px 2px 4px; }
+html:root body[data-branch] .brn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
+html:root body[data-branch] .brn .brn-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; min-width: 0; min-height: 88px; margin: 0; padding: 14px 18px; border: 0; border-radius: 18px; background: #fff; color: #1d1d1f; box-shadow: var(--apple-card); font-family: inherit; text-align: left; }
+html:root body[data-branch] .brn button.brn-card { cursor: pointer; transition: box-shadow .2s, transform .2s; }
+html:root body[data-branch] .brn button.brn-card:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 10px 26px rgba(0, 0, 0, .09); }
+html:root body[data-branch] .brn button.brn-card:focus-visible { outline: 3px solid rgba(0, 113, 227, .55); outline-offset: 2px; }
+html:root body[data-branch] .brn button.brn-card[aria-pressed="true"] { background: #f2f8ff; box-shadow: inset 0 0 0 2px #0071e3; }
+html:root body[data-branch] .brn-card .brn-n { font-size: 30px; line-height: 34px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+html:root body[data-branch] .brn-card .brn-k { color: #515154; font-size: 13.5px; line-height: 17px; font-weight: 500; }
+/* 🔴 CSS CHANGED (2026-11-27): a branch's numbers | from: Total students in blue figures | to: no Total students card, so no rule for it */
+html:root body[data-branch] .brn-card[data-stage="Visa Issued"]:not(.is-zero) .brn-n { color: #1a7a3c; }
+html:root body[data-branch] .brn-card.is-zero .brn-n { color: #8e8e93; }
+html:root body[data-branch] .brn-off-k { margin: 18px 4px 10px; color: #636366; font-size: 13px; font-weight: 600; }
+@media (max-width: 900px) {
+  html:root body[data-branch] .brn-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  html:root body[data-branch] .brn .brn-card { min-height: 74px; padding: 10px 12px; border-radius: 14px; }
+  html:root body[data-branch] .brn-card .brn-n { font-size: 24px; line-height: 28px; }
+  html:root body[data-branch] .brn-card .brn-k { font-size: 12px; line-height: 15px; }
+}
+html:root body[data-branch]:has(#sheet) .table-wrap thead th { font-size: 12px; font-weight: 600; }
+html:root body[data-branch]:has(#sheet) .table-wrap tbody tr:not([class*="rc-"], .defer-warning-row, .selected):hover td { background-color: #eef4fd; }
+html:root body[data-branch]:has(#sheet) .sheet-tabs { padding-bottom: 14px; }
+@media (max-width: 700px) { html:root body[data-branch]:has(#sheet) .topbar :is(select.came-from, input#search) { width: 100%; max-width: none; margin-left: 0; } }
+
+/* 🔴 CSS CHANGED (2026-11-26): an opened task on a branch's Today | from: the course and contact details in a grey bordered box | to: the same soft panel as the rest of Today, and Needs attention spaced from the tasks above it */
+html:root body .br-page .tdx-facts { border: 0; border-radius: 12px; background: #f5f5f7; }
+/* 🔴 CSS CHANGED (2026-11-26): the opened branch task | from: a short line above WhatsApp and Email only | to: no lines inside the panel */
+html:root body .br-page .tdx-fact.is-contact { padding-top: 0; border-top: 0; }
+html:root body .br-page .td-attn { margin-top: 26px; }
+
+/* 🔴 CSS CHANGED (2026-11-26): Users | from: the "Add a person" form always open above a thin table | to: "+ Add a person" beside the title (the form opens when pressed), filter pills for each team with a search box, each person as a card with a round mark in their team's colour, their access, status, last login, devices and Edit; the access boxes turn blue when ticked; Logged-in devices as a clean table with a mark beside each name | why: the owner asked for a much better Users page */
+html:root body main.page.us-page, html:root body main.page.ac-page { max-width: 1200px; }
+html:root body main.us-page .page-head { margin-bottom: 18px; }
+html:root body main.us-page #addCard { padding: 24px 28px; }
+html:root body main.us-page #addCard h2 { font-size: 19px; }
+html:root body main.us-page #tempBox { margin: 0 0 16px; padding: 14px 18px; border-radius: 14px; background: #e8f1fc; }
+html:root body main.us-page .check { margin: 0 0 8px; padding: 12px 14px; border: 0; border-radius: 14px; background: #f5f5f7; box-shadow: inset 0 0 0 1px transparent; transition: background-color .15s, box-shadow .15s; }
+html:root body main.us-page .check:has(input:checked), html:root body #editDialog .check:has(input:checked) { background: #eaf2fd; box-shadow: inset 0 0 0 1.5px #0071e3; }
+html:root body main.us-page .check input, html:root body #editDialog .check input { accent-color: #0071e3; }
+html:root body main.us-page div.card.us-list { margin: 0 0 22px; padding: 0; overflow: visible; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html:root body main.us-page .us-list .card-head h2 { font-size: 21px; }
+html:root body main.us-page .us-list > p { margin: 0 0 12px; color: #636366; font-size: 13.5px; }
+html:root body main.us-page .us-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
+html:root body main.us-page .us-filter { display: flex; flex-wrap: wrap; gap: 8px; }
+html:root body main.us-page .us-filter button { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 15px; border: 0; border-radius: 980px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .07); color: #1d1d1f; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+html:root body main.us-page .us-filter button span { color: #8e8e93; font-weight: 600; font-variant-numeric: tabular-nums; }
+html:root body main.us-page .us-filter button[aria-pressed="true"] { background: #0071e3; box-shadow: none; color: #fff; }
+html:root body main.us-page .us-filter button[aria-pressed="true"] span { color: #fff; }
+html:root body main.us-page #peopleFind { width: 280px; max-width: 100%; height: 40px; padding: 0 16px; border: 0; border-radius: 980px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .09); }
+html:root body main.us-page #peopleFind:focus { outline: 0; box-shadow: 0 0 0 2px #0071e3; }
+html:root body main.us-page .us-list table, html:root body main.us-page .us-list tbody { display: block; width: 100%; background: transparent; }
+html:root body main.us-page .us-list thead { display: none; }
+html:root body main.us-page .us-list tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); gap: 16px; }
+html:root body main.us-page .us-list tbody tr[data-groups] { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(30px, auto) 1fr auto; grid-template-areas: "who status" "access access" "last devices" "act act"; align-content: start; gap: 12px 12px; width: 100%; padding: 20px 20px 14px; border: 0; border-radius: 20px; background: #fff; box-shadow: var(--apple-card, 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05)); }
+html:root body main.us-page .us-list tbody tr[hidden] { display: none; }
+html:root body main.us-page .us-list tbody tr:not([data-groups]) { display: block; grid-column: 1 / -1; padding: 24px; border-radius: 20px; background: #fff; }
+html:root body main.us-page .us-list tbody tr[data-groups] > td { display: block; min-width: 0; width: auto; padding: 0; border: 0; background: transparent; }
+html:root body main.us-page .us-list tbody tr[data-groups] > td:nth-child(1) { grid-area: who; }
+html:root body main.us-page .us-list tbody tr[data-groups] > td:nth-child(2) { grid-area: access; }
+html:root body main.us-page .us-list tbody tr[data-groups] > td:nth-child(3) { grid-area: status; }
+html:root body main.us-page .us-list tbody tr[data-groups] > td:nth-child(4) { grid-area: last; align-self: end; font-size: 13.5px; font-weight: 600; }
+html:root body main.us-page .us-list tbody tr[data-groups] > td:nth-child(5) { grid-area: devices; align-self: end; font-size: 13.5px; font-weight: 600; text-align: right; }
+html:root body main.us-page .us-list tbody tr[data-groups] > td:nth-child(6) { grid-area: act; padding-top: 12px; border-top: 1px solid rgba(0, 0, 0, .07); }
+html:root body main.us-page .us-list tbody tr[data-groups] > td[data-label]::before { content: none; }
+html:root body main.us-page .us-list tbody tr[data-groups] > :is(td[data-label="Last login"], td[data-label="Devices"])::before { content: attr(data-label); display: block; margin-bottom: 2px; color: #8e8e93; font-size: 12px; font-weight: 500; }
+html:root body main.us-page .us-list .who { gap: 14px; min-width: 0; }
+html:root body main.us-page .us-list .who > div { min-width: 0; }
+html:root body main.us-page .us-list .who b { overflow: hidden; font-size: 16px; text-overflow: ellipsis; }
+html:root body main.us-page .us-list .who span:not(.avatar) { display: block; color: #636366; font-size: 13px; overflow-wrap: anywhere; }
+html:root body main.us-page .avatar { width: 46px; height: 46px; background: #eef0f3 !important; color: #48484a !important; font-size: 15px; }
+html:root body main.us-page .avatar.tone-admin { background: #1d1d1f !important; color: #fff !important; }
+html:root body main.us-page .avatar.tone-manager { background: #fdf0e4 !important; color: #9a4a00 !important; }
+html:root body main.us-page .avatar.tone-application { background: #e8f1fc !important; color: #0058b8 !important; }
+html:root body main.us-page .avatar.tone-mock { background: #f2ecfb !important; color: #6a35b5 !important; }
+html:root body main.us-page .avatar.tone-followup { background: #e7f5ec !important; color: #146c2e !important; }
+html:root body main.us-page .avatar.tone-branch { background: #e6f5f6 !important; color: #0b6670 !important; }
+html:root body main.us-page .avatar.tone-student { background: #fdecef !important; color: #a8213f !important; }
+html:root body main.us-page .us-list tr.is-disabled .avatar { background: #eef0f3 !important; color: #8e8e93 !important; }
+html:root body main.us-page .us-list .actions { align-items: center; justify-content: flex-end; }
+html:root body main.us-page .us-list .actions .muted { margin-right: auto; order: -1; font-size: 13px; }
+html:root body main.us-page .us-none { margin: 14px 0 0; color: #636366; text-align: center; }
+html:root body main.us-page #panel-devices .card { padding: 22px 26px; }
+html:root body main.us-page #panel-devices .avatar { width: 36px; height: 36px; font-size: 13px; }
+html:root body main.us-page #panel-devices .who span:not(.avatar) { display: block; color: #146c2e; font-size: 12.5px; font-weight: 600; }
+html:root body main.us-page #panel-devices tbody tr:hover td { background: #f7f9fc; }
+
+/* 🔴 CSS CHANGED (2026-11-26): Activity | from: four plain figure boxes, a filter box, one long list with the full date and time on every line | to: four figure cards each with a coloured edge, the list grouped by day (Today, Yesterday, the date), each line with a round mark in the colour of its kind (blue logins, purple changes, red security, orange people and settings) and only the time at the right | why: the owner asked for a much better Activity page */
+html:root body main.ac-page .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+html:root body main.ac-page div.tile { position: relative; gap: 4px; padding: 18px 20px 16px 24px; overflow: hidden; }
+html:root body main.ac-page .tile::before { content: ""; position: absolute; inset: 14px auto 14px 0; width: 4px; border-radius: 0 4px 4px 0; background: #0071e3; }
+html:root body main.ac-page .tile:nth-child(2)::before { background: #248a3d; }
+html:root body main.ac-page .tile:nth-child(3)::before { background: #5856d6; }
+html:root body main.ac-page .tile:nth-child(4)::before { background: #c7c7cc; }
+html:root body main.ac-page .tile.alert::before { background: #d70015; }
+html:root body main.ac-page .tile-label { order: -1; color: #636366; font-size: 13px; }
+html:root body main.ac-page .tile-value { font-size: 32px; }
+html:root body main.ac-page .tile-sub { color: #8e8e93; font-size: 12.5px; }
+html:root body main.ac-page #list { margin-top: 2px; }
+html:root body main.ac-page .ac-day { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 4px; padding: 8px 14px; border-radius: 10px; background: #f5f5f7; font-size: 14px; }
+html:root body main.ac-page .ac-day:first-child { margin-top: 4px; }
+html:root body main.ac-page .ac-day span { color: #8e8e93; font-size: 13px; font-weight: 500; }
+html:root body main.ac-page .activity-entry { display: flex; align-items: flex-start; gap: 14px; padding: 13px 4px 13px 14px; border-bottom: 1px solid rgba(0, 0, 0, .06); }
+html:root body main.ac-page .ac-mark { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #eef0f3; color: #48484a; font-size: 12.5px; font-weight: 700; }
+html:root body main.ac-page .is-logins .ac-mark { background: #e8f1fc; color: #0058b8; }
+html:root body main.ac-page .is-changes .ac-mark { background: #f2ecfb; color: #6a35b5; }
+html:root body main.ac-page .is-security .ac-mark { background: #fdecef; color: #a8213f; }
+html:root body main.ac-page .is-accounts .ac-mark { background: #fdf0e4; color: #9a4a00; }
+html:root body main.ac-page .ac-body { flex: 1; min-width: 0; }
+html:root body main.ac-page .activity-head { align-items: center; }
+html:root body main.ac-page .activity-who { font-size: 14.5px; }
+html:root body main.ac-page .is-logins .activity-action { background: #eef5fe; color: #0050aa; }
+html:root body main.ac-page .is-changes .activity-action { background: #f5f0fd; color: #5b2bb5; }
+html:root body main.ac-page .is-security .activity-action { background: #fdecef; color: #a8213f; }
+html:root body main.ac-page .is-accounts .activity-action { background: #fdf0e4; color: #8a4200; }
+html:root body main.ac-page .activity-time { color: #636366; font-size: 13px; font-variant-numeric: tabular-nums; }
+html:root body main.ac-page .activity-device { color: #8e8e93; font-size: 12.5px; }
+html:root body main.ac-page .activity-changes { margin-top: 8px; padding: 10px 14px 10px 30px; border-radius: 10px; background: #fafafc; color: #3a3a3c; }
+html:root body main.ac-page .ac-none { padding: 24px 0; text-align: center; }
+@media (max-width: 900px) { html:root body main.ac-page .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { html:root body main.ac-page .ac-mark { display: none; } }
+/* 🔴 CSS CHANGED (2026-11-27): the Dashboard in the owner's agreed order | from: figures with small trend lines and no comparison; a map, two pairs of cards and two bar charts spread down the page; five universities with no logos; the map always open | to: each figure with its change against the earlier intake at the same point; universities with logos and "Show all"; growth as one table; the map folded until opened */
+html:root body #panel-overview .ov-figures { display: grid; gap: 10px; }
+html:root body #panel-overview .ov-kpi { min-height: 0; gap: 4px; padding: 20px 18px 16px; }
+html:root body #panel-overview .ov-vs { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid #efeff2; }
+html:root body #panel-overview .ov-kpi .ov-kpi-hint { margin-bottom: 8px; }
+html:root body #panel-overview .ov-vs-chip { padding: 2px 9px; border-radius: 999px; background: #efeff2; color: #48484a; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html:root body #panel-overview .ov-vs-chip.up { background: #e6f5ea; color: #1a6e32; }
+html:root body #panel-overview .ov-vs-chip.down { background: #fdecef; color: #b0122c; }
+html:root body #panel-overview .ov-vs-text { color: #636366; font-size: 12.5px; line-height: 1.35; }
+html:root body #panel-overview .ov-vs-note { margin: 0 4px; color: #636366; font-size: 13px; }
+/* The journey and the target side by side, the ring in the middle of its card. */
+html:root body #panel-overview .ov-row-2 > .ov-card { display: flex; flex-direction: column; }
+html:root body #panel-overview .ov-target-body { flex: 1; align-content: center; }
+html:root body #panel-overview .ov-target-side > .p-pill { justify-self: start; }
+/* How students found us: no box inside the card, and a smaller ring so each source keeps one line beside it. */
+html:root body #panel-overview .ov-card .ov-card.dd-card { background: transparent !important; border-radius: 0; box-shadow: none !important; }
+html:root body #panel-overview .ov-origin .dd-donut-wrap { grid-template-columns: 140px minmax(0, 1fr); gap: 16px; }
+html:root body #panel-overview .ov-origin .dd-donut { width: 140px; height: 140px; }
+html:root body #panel-overview .ov-origin .dd-legend-row { grid-template-columns: 10px minmax(0, 1fr) 28px 36px 8px; gap: 8px; padding: 8px 4px; }
+@media (max-width: 640px) { html:root body #panel-overview .ov-origin .dd-donut-wrap { grid-template-columns: minmax(0, 1fr); justify-items: center; } }
+/* Ups and downs: the sentences as plain lines, no box inside the card. */
+html:root body #panel-overview .tr-stock .tr-story { margin: 10px 0 4px; padding: 0; border: 0; background: none; }
+html:root body #panel-overview .tr-stock .tr-story p { color: #48484a; font-size: 14px; }
+html:root body #panel-overview .tr-stock .tr-story .tr-lead { color: #1d1d1f; }
+/* Universities: a logo, the name with its bar, then the numbers. */
+html:root body #panel-overview .ov-unis .ov-board-row { grid-template-columns: minmax(0, 1fr) repeat(4, 76px); padding: 9px 8px; border-bottom: 1px solid #efeff2; border-radius: 0; }
+html:root body #panel-overview .ov-unis .ov-board-row:last-child { border-bottom: 0; }
+html:root body #panel-overview .ov-uni { display: flex; align-items: center; gap: 12px; min-width: 0; }
+html:root body #panel-overview .ov-uni .ov-board-name { flex: 1; }
+html:root body #panel-overview .ov-uni-logo { display: grid; flex: none; place-items: center; width: 44px; height: 44px; overflow: hidden; border: 1px solid #e5e5ea; border-radius: 12px; background: #f5f5f7; color: #48484a; font-size: 13px; font-weight: 700; }
+html:root body #panel-overview .ov-uni-logo.has-logo { background: #fff; }
+html:root body #panel-overview .ov-uni-logo img { width: 100%; height: 100%; padding: 4px; object-fit: contain; }
+html:root body #panel-overview .ov-more { margin-top: 12px; }
+/* Growth: one calm table. */
+html:root body #panel-overview .tr-growth .tr-table tr.tr-running td { background: #f7faff; }
+/* The map, folded: its heading opens and closes it. */
+html:root body #panel-overview details.tr-fold { padding-bottom: 20px; }
+html:root body #panel-overview .tr-fold-head { display: block; cursor: pointer; list-style: none; }
+html:root body #panel-overview .tr-fold-head::-webkit-details-marker { display: none; }
+html:root body #panel-overview .tr-fold-head:focus-visible { outline: 2px solid #0071e3; outline-offset: 4px; border-radius: 8px; }
+html:root body #panel-overview .tr-fold-head .tr-head { align-items: center; }
+html:root body #panel-overview .tr-fold-btn { flex: none; padding: 8px 16px; border: 1px solid #d2d2d7; border-radius: 980px; color: #0058b8; font-size: 14px; font-weight: 600; }
+html:root body #panel-overview .tr-fold-btn::after { content: "Show the map"; }
+html:root body #panel-overview details[open] .tr-fold-btn::after { content: "Hide the map"; }
+@media (max-width: 700px) {
+  html:root body #panel-overview .ov-unis .ov-board-row { grid-template-columns: minmax(0, 1fr) repeat(2, 56px); }
+  html:root body #panel-overview .ov-uni-logo { width: 36px; height: 36px; border-radius: 10px; }
+  html:root body #panel-overview .ov-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): Today for Admin and the Manager | from: five counts of what was done today | to: two white panels, "Assigned to you" and "Assigned by you", each with its open tasks and how many are late | why: the owner asked for only the two task lists. */
+html:root body .dw-page .dt-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 20px; }
+html:root body .dw-page .dt-col { min-width: 0; padding: 4px 0 10px; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .dw-page .dt-head { display: flex; align-items: center; gap: 10px; padding: 18px 24px 14px; border-bottom: 1px solid rgba(0, 0, 0, .07); }
+html:root body .dw-page .dt-head h2 { margin: 0; color: #1d1d1f; font-size: 21px; line-height: 27px; font-weight: 600; letter-spacing: -.022em; }
+html:root body .dw-page .dt-n { min-width: 28px; padding: 2px 9px; border-radius: 999px; background: #e8f1fc; color: #0058b0; font-size: 14px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+html:root body .dw-page .dt-late { margin-left: auto; padding: 3px 11px; border-radius: 999px; background: #fdeedd; color: #a04800; font-size: 13px; font-weight: 600; }
+html:root body .dw-page .dt-col .tdx-group { margin: 0; padding: 18px 24px 8px; border: 0; color: #636366; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html:root body .dw-page .dt-col .tdx-group.is-late { color: #a04800; }
+html:root body .dw-page .dt-col .tdx-list { margin: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+html:root body .dw-page .dt-col .dt-who { margin: 2px 0 0; color: #636366; font-size: 13px; font-weight: 400; }
+html:root body .dw-page .dt-col .tdx-list > .tdx + .tdx { border-top: 1px solid rgba(0, 0, 0, .07) !important; }
+html:root body .dw-page .dt-col .tdx-age, html:root body .dw-page .dt-col .tdx-age.is-late, html:root body .dw-page .dt-col .tdx-age.is-later { background: transparent; }
+html:root body .dw-page .dt-col .tdx-chev { background: transparent; }
+html:root body .dw-page .dt-col .tdx-facts { border: 0; border-radius: 12px; background: #f5f5f7; }
+html:root body .dw-page .dt-col .tdx-fact { border: 0; }
+@media (max-width: 560px) {
+  html:root body .dw-page .dt-col .tdx-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 14px; row-gap: 6px; }
+  html:root body .dw-page .dt-col .tdx-av { grid-column: 1; grid-row: 1 / span 2; }
+  html:root body .dw-page .dt-col .tdx-main { grid-column: 2; grid-row: 1; min-width: 0; }
+  html:root body .dw-page .dt-col .tdx-age { grid-column: 2; grid-row: 2; justify-self: start; }
+  html:root body .dw-page .dt-col .tdx-chev { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+}
+html:root body .dw-page .dt-none { margin: 0; padding: 44px 24px 52px; color: #636366; font-size: 15px; text-align: center; }
+@media (max-width: 1100px) { html:root body .dw-page .dt-cols { grid-template-columns: minmax(0, 1fr); } }
+
+/* 🔴 CSS CHANGED (2026-11-27): a branch's Dashboard goes deeper (the owner) | from: four figures and short lists | to: eight totals, a bar graph of applications and offers by week or month, from student to visa, application to offer days, success rates, step times, Universities and who waits for an offer, all in calm white cards */
+html:root body .md-page.bd-page { max-width: 1240px; }
+html:root body .bd-page .md-card { margin: 0; padding: 24px 28px; border: 0 !important; border-radius: 22px; background: #fff; box-shadow: var(--apple-card) !important; transform: none; }
+html:root body .bd-page .md-card-head h2 { margin: 0; color: #1d1d1f; font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -.018em; }
+html:root body .bd-page .md-card-head p { margin: 3px 0 0; color: #636366; font-size: 14px; }
+html:root body .bd-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+html:root body .bd-total { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 18px 22px; border-radius: 20px; background: #fff; box-shadow: var(--apple-card); }
+html:root body .bd-total-k { color: #515154; font-size: 14px; font-weight: 500; }
+html:root body .bd-total-n { color: #1d1d1f; font-size: 40px; line-height: 46px; font-weight: 600; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+html:root body .bd-total small { color: #636366; font-size: 13px; }
+html:root body .bd-total-students .bd-total-n { color: #0066cc; }
+html:root body .bd-total-visas .bd-total-n { color: #1a7a3c; }
+html:root body .bd-page .bd-chart-card, html:root body .bd-page .bd-two, html:root body .bd-page .bd-wide { margin-bottom: 18px; }
+html:root body .bd-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+html:root body .bd-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+html:root body .bd-legend { display: flex; flex-wrap: wrap; gap: 18px; }
+html:root body .bd-key { display: inline-flex; align-items: center; gap: 8px; color: #3a3a3c; font-size: 13.5px; font-weight: 500; }
+html:root body .bd-swatch { width: 12px; height: 12px; border-radius: 4px; }
+html:root body .bd-page .bd-swatch.bd-apps, html:root body .bd-page .bd-barv.bd-apps { background: #0071e3; }
+html:root body .bd-page .bd-swatch.bd-offers, html:root body .bd-page .bd-barv.bd-offers { background: #1f9d6a; }
+html:root body .bd-seg { display: inline-flex; gap: 3px; padding: 3px; border-radius: 12px; background: #efeff2; }
+html:root body .bd-seg button { min-height: 32px; margin: 0; padding: 0 18px; border: 0; border-radius: 9px; background: transparent; color: #1d1d1f; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+html:root body .bd-seg button[aria-pressed="true"] { background: #fff; color: #0066cc; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+html:root body .bd-sum { margin: 14px 0 0; color: #1d1d1f; font-size: 14px; font-weight: 500; }
+html:root body .bd-scroll { overflow-x: auto; }
+html:root body .bd-graph { display: flex; margin-top: 14px; }
+html:root body .bd-graph .bd-scroll { flex: 1 1 auto; min-width: 0; }
+html:root body .bd-axis { flex: 0 0 34px; height: 264px; padding: 18px 8px 26px 0; box-sizing: border-box; }
+html:root body .bd-axis-in { position: relative; height: 100%; }
+html:root body .bd-axis-in span { position: absolute; right: 0; margin-bottom: -8px; color: #6e6e73; font-size: 11.5px; line-height: 16px; font-variant-numeric: tabular-nums; }
+html:root body .bd-plot { position: relative; min-width: 620px; height: 264px; padding: 18px 0 26px; box-sizing: border-box; }
+html:root body .bd-scale { position: absolute; inset: 18px 0 26px 0; }
+html:root body .bd-line { position: absolute; left: 0; right: 0; border-top: 1px solid #ececf0; }
+html:root body .bd-cols { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); height: 100%; }
+html:root body .bd-col { position: relative; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; border-radius: 8px; outline: 0; }
+html:root body .bd-col:hover, html:root body .bd-col:focus-visible { background: rgba(0, 113, 227, .06); }
+html:root body .bd-col:focus-visible { box-shadow: 0 0 0 2px #0071e3; }
+html:root body .bd-pair { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 100%; }
+html:root body .bd-barv { position: relative; width: min(36%, 20px); border-radius: 4px 4px 0 0; }
+html:root body .bd-barv span { position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); color: #3a3a3c; font-size: 11.5px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+html:root body .bd-x { position: absolute; left: 0; right: 0; top: calc(100% + 7px); color: #636366; font-size: 11.5px; line-height: 14px; text-align: center; white-space: nowrap; }
+html:root body .bd-tip { position: absolute; left: 50%; top: 0; z-index: 3; display: none; flex-direction: column; gap: 1px; padding: 8px 12px; border-radius: 10px; background: #1d1d1f; color: #fff; font-size: 12.5px; line-height: 17px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
+html:root body .bd-page .bd-tip b, html:root body .bd-page .bd-tip span { color: #fff; }
+html:root body .bd-col.is-start .bd-tip { left: 0; transform: none; }
+html:root body .bd-col.is-end .bd-tip { left: auto; right: 0; transform: none; }
+html:root body .bd-col:hover .bd-tip, html:root body .bd-col:focus .bd-tip { display: flex; }
+html:root body .bd-table-wrap { margin-top: 10px; }
+html:root body .bd-table-wrap summary { width: max-content; color: #0066cc; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+html:root body .bd-page table.bd-table { width: 100%; margin-top: 6px; border-collapse: collapse; }
+html:root body .bd-page .bd-table th { padding: 8px 10px; border: 0; border-bottom: 1px solid #e5e5ea; background: transparent; color: #636366; font-size: 12.5px; font-weight: 600; text-align: right; white-space: nowrap; }
+html:root body .bd-page .bd-table td { padding: 11px 10px; border: 0; border-bottom: 1px solid #f0f0f3; background: transparent; color: #1d1d1f; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+html:root body .bd-page .bd-table :is(th, td):first-child { padding-left: 0; text-align: left; }
+html:root body .bd-page .bd-table :is(th, td):last-child { padding-right: 0; }
+html:root body .bd-page .bd-table tbody tr:last-child td { border-bottom: 0; }
+html:root body .bd-page .bd-wide .bd-table { min-width: 520px; }
+html:root body .bd-page .bd-table.bd-waiting :is(th, td):nth-child(2) { text-align: left; }
+html:root body .bd-meters { display: flex; flex-direction: column; gap: 12px; }
+html:root body .bd-meter { display: grid; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) 64px; column-gap: 14px; row-gap: 2px; align-items: center; }
+html:root body .bd-meter-k { color: #1d1d1f; font-size: 14px; }
+html:root body .bd-track { display: block; height: 10px; overflow: hidden; border-radius: 4px; background: #f0f0f3; }
+html:root body .bd-page .bd-fill { display: block; height: 100%; border-radius: 0 4px 4px 0; background: #0071e3; }
+html:root body .bd-meter-n { color: #1d1d1f; font-size: 15px; font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+html:root body .bd-meter-s { grid-column: 2 / 4; color: #636366; font-size: 12px; }
+html:root body .bd-hero { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; margin-bottom: 14px; }
+html:root body .bd-hero b { color: #1d1d1f; font-size: 56px; line-height: 62px; font-weight: 600; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+html:root body .bd-hero span { color: #1d1d1f; font-size: 17px; font-weight: 500; }
+html:root body .bd-hero small { flex: 0 0 100%; color: #636366; font-size: 13px; }
+html:root body .bd-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+html:root body .bd-facts div { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 14px; background: #f5f5f7; }
+html:root body .bd-facts span { color: #636366; font-size: 12.5px; }
+html:root body .bd-facts b { color: #1d1d1f; font-size: 17px; font-weight: 600; }
+html:root body .bd-page a.bd-name { color: #0066cc; font-weight: 600; text-decoration: none; }
+html:root body .bd-page a.bd-name:hover { text-decoration: underline; }
+html:root body .bd-wait { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #f0f0f2; font-size: 13px; font-weight: 600; white-space: nowrap; }
+html:root body .bd-wait.is-long { background: #fdeedd; color: #a04800; }
+html:root body .bd-page .bd-more { display: block; margin: 12px auto 0; min-height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: #f0f0f2; color: #1d1d1f; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+html:root body .bd-page .md-todo, html:root body .bd-page .md-grid { margin-bottom: 18px; }
+@media (max-width: 960px) {
+  html:root body .bd-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  html:root body .bd-two { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  html:root body .bd-page .md-card { padding: 18px 16px; }
+  html:root body .bd-total { padding: 14px 16px; }
+  html:root body .bd-total-n { font-size: 30px; line-height: 36px; }
+  html:root body .bd-meter { grid-template-columns: minmax(0, 1fr) auto; }
+  html:root body .bd-meter-k { grid-column: 1 / 3; }
+  html:root body .bd-meter-s { grid-column: 1 / 3; }
+  html:root body .bd-page .bd-wide .bd-table, html:root body .bd-page .bd-wide .bd-table tbody { display: block; width: 100%; min-width: 0; }
+  html:root body .bd-page .bd-wide .bd-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  html:root body .bd-page .bd-wide .bd-table tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 10px; padding: 12px 0; border-bottom: 1px solid #f0f0f3; }
+  html:root body .bd-page .bd-wide .bd-table tbody tr:last-child { border-bottom: 0; }
+  html:root body .bd-page .bd-wide .bd-table td { display: block; min-width: 0; padding: 0; border: 0; text-align: left; }
+  html:root body .bd-page .bd-wide .bd-table td:first-child { grid-column: 1 / -1; font-weight: 600; }
+  html:root body .bd-page .bd-wide .bd-table:not(.bd-waiting) td:not(:first-child)::before { content: attr(data-k); display: block; color: #636366; font-size: 11.5px; line-height: 14px; }
+  html:root body .bd-page .bd-wide .bd-table.bd-waiting tr { grid-template-columns: minmax(0, 1fr) auto; }
+  html:root body .bd-page .bd-wide .bd-table.bd-waiting td:first-child { grid-area: 1 / 1; }
+  html:root body .bd-page .bd-wide .bd-table.bd-waiting td:nth-child(2) { grid-area: 2 / 1; color: #515154; font-size: 13px; }
+  html:root body .bd-page .bd-wide .bd-table.bd-waiting td:nth-child(3) { grid-area: 2 / 2; color: #636366; font-size: 13px; text-align: right; }
+  html:root body .bd-page .bd-wide .bd-table.bd-waiting td:nth-child(3)::before { content: "Sent "; }
+  html:root body .bd-page .bd-wide .bd-table.bd-waiting td:nth-child(4) { grid-area: 1 / 2; text-align: right; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-27): a branch's own students on the Universities pages (the owner: a deeper Universities section) | from: nothing about the branch | to: a soft blue line on each card, a "With your students" button, and the list of those students on a University's page */
+html:root body .uni-card .uc-mine { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; padding: 10px 16px; border-top: 1px solid #e5edf7; background: #f2f8ff; color: #1d1d1f; font-size: 13px; line-height: 18px; }
+html:root body .uni-card .uc-mine span { color: #515154; }
+html:root body .uni-card .uc-mine b { color: #0055aa; font-weight: 600; }
+html:root body .ff-page button.ff-mine { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin: 0; padding: 0 16px; border: 0; border-radius: 12px; background: #fff; color: #1d1d1f; box-shadow: var(--apple-card); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+html:root body .ff-page button.ff-mine[hidden] { display: none; }
+html:root body .ff-page button.ff-mine[aria-pressed="true"] { background: #0071e3; color: #fff; }
+html:root body .ff-page button.ff-mine .ff-n { padding: 0 8px; border-radius: 999px; background: #f0f0f2; color: #515154; font-size: 12px; line-height: 20px; }
+html:root body .ff-page button.ff-mine[aria-pressed="true"] .ff-n { background: #fff; color: #0066cc; }
+html:root body .up-doc section.up-mine h2 { margin: 0; padding: 0; border: 0; }
+html:root body .up-doc section.up-mine h2::before { display: none; }
+html:root body section.up-mine { padding-bottom: 18px; }
+html:root body .up-mine .up-mine-sum { margin: 4px 0 12px; color: #636366; font-size: 14px; }
+html:root body .up-mine ul.up-mine-list { margin: 0; padding: 0; list-style: none; }
+html:root body .up-mine .up-mine-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0; padding: 12px 0; border-top: 1px solid #f0f0f3; }
+html:root body .up-mine .up-mine-who, html:root body .up-mine .up-mine-state { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+html:root body .up-mine .up-mine-state { align-items: flex-end; flex: 0 0 auto; text-align: right; }
+html:root body .up-mine .up-mine-who a { color: #0066cc; font-size: 15px; font-weight: 600; text-decoration: none; }
+html:root body .up-mine .up-mine-who a:hover { text-decoration: underline; }
+html:root body .up-mine .up-mine-who span, html:root body .up-mine .up-mine-state span { color: #636366; font-size: 13px; }
+html:root body .up-mine .up-mine-state b { padding: 2px 10px; border-radius: 999px; background: #f0f0f2; color: #3a3a3c; font-size: 13px; font-weight: 600; white-space: nowrap; }
+html:root body .up-mine .up-mine-state b.is-offer { background: #e3f4e8; color: #1a7a3c; }
+html:root body .up-mine .up-mine-state b.is-waiting { background: #e8f1fd; color: #0055aa; }
+html:root body .up-mine .up-mine-state b.is-refused { background: #fdeaea; color: #b3261e; }
+@media (max-width: 640px) {
+  html:root body .up-mine .up-mine-list li { flex-direction: column; align-items: flex-start; gap: 6px; }
+  html:root body .up-mine .up-mine-state { align-items: flex-start; text-align: left; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-27): the Universities switch fits a phone | from: Pathway colleges cut off at the right edge, the closing-soon dot on a line of its own | to: two equal halves inside the screen, the dot beside its words */
+@media (max-width: 640px) {
+  html:root body .ff-page .ff-bar { width: 100%; min-width: 0; max-width: 100%; }
+  html:root body .ff-page .ff-bar .ff-kind { display: flex; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+  html:root body .ff-page .ff-bar .ff-kind button { flex: 1 1 0; justify-content: center; min-width: 0; padding-left: 8px; padding-right: 8px; font-size: 13.5px; white-space: nowrap; }
+  html:root body .ff-page .ff-soon { flex-wrap: nowrap; align-items: flex-start; border-radius: 14px; }
+  html:root body .ff-page .ff-soon .ff-soon-dot { flex: 0 0 8px; margin-top: 7px; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): Bookings on a phone and a small tablet | from: the two columns side by side at every width, so "Upcoming mocks" and "Weekly slots" were squeezed to a sliver on a phone and a student's name disappeared on a tablet | to: one column; each mock shows its time and number, then the student, then Join and Cancel; each day's slots under its name | why: the Mock Team could not read or set bookings from a phone */
+@media (max-width: 900px) {
+  html.app-mock:root body #page .mt-grid { grid-template-columns: minmax(0, 1fr); }
+  html.app-mock:root body #page .mt-table, html.app-mock:root body #page .mt-table tbody { display: block; width: 100%; }
+  html.app-mock:root body #page .mt-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 13px 0; border-top: 1px solid var(--apple-hair) !important; }
+  html.app-mock:root body #page .mt-table tr.mt-day { display: block; padding: 0; border-top: 0 !important; }
+  html.app-mock:root body #page .mt-table tr.mt-day th { display: block; }
+  html.app-mock:root body #page .mt-table td { display: block; padding: 0; border-top: 0 !important; }
+  html.app-mock:root body #page .mt-table td.mt-time { grid-column: 1; grid-row: 1; }
+  html.app-mock:root body #page .mt-table td.mt-nowrap { grid-column: 2; grid-row: 1; justify-self: end; }
+  html.app-mock:root body #page .mt-table td.mt-who { display: block; grid-column: 1 / -1; grid-row: 2; width: auto; max-width: none; min-width: 0; }
+  html.app-mock:root body #page .mt-table td.mt-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; grid-column: 1 / -1; grid-row: 3; text-align: left; white-space: normal; }
+  html.app-mock:root body #page .mt-table .mt-who-words { overflow: hidden; }
+  html.app-mock:root body #page .mt-table .mt-sub { max-width: none; white-space: normal; }
+  html.app-mock:root body #page .mt-table .mt-join { display: inline-flex; align-items: center; min-height: 40px; }
+  html.app-mock:root body #page .mt-table .mt-cancel { min-height: 40px; }
+  html.app-mock:root body #page .mt-week .mt-list-head { flex-wrap: wrap; }
+  html.app-mock:root body #page .mt-week .mt-list-head .mt-inline { margin: 0; }
+}
+@media (max-width: 640px) {
+  html.app-mock:root body #page .mt-day-row { grid-template-columns: minmax(0, 1fr) auto; }
+  html.app-mock:root body #page .mt-day-row > .mt-day-name { grid-column: 1; grid-row: 1; }
+  html.app-mock:root body #page .mt-day-row > .mt-day-tools { grid-column: 2; grid-row: 1; }
+  html.app-mock:root body #page .mt-day-row > .mt-day-slots { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
+  html.app-mock:root body #page .mt-slot { display: flex; flex: 1 1 100%; max-width: 100%; gap: 4px; }
+  html.app-mock:root body #page .mt-slots .mt-slot .p-input { flex: 1 1 0; width: 0; min-width: 0; padding: 2px 4px; font-size: 14px; }
+  html.app-mock:root body #page .mt-slot .mt-x { flex: none; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): an open task on Today on a phone | from: the details kept the computer's wide left space and the label beside the value, so each email, university and course ran down the screen one letter to a line | to: the details use the full width, each label above its value, the copy button beside the value | why: the Application and Mock Teams could not read a task on a phone */
+@media (max-width: 640px) {
+  html:root body .tdx-body.tdy-body, html:root body .tda-row .tdx-body.tdy-body { margin: 0 12px 20px; padding-left: 0; padding-right: 0; }
+  html:root body .tdy-body .tdy-cols { display: flex; flex-direction: column; gap: 16px; }
+  html:root body .tdy-body .tdy-cols > * { flex: none; width: 100%; min-width: 0; box-sizing: border-box; }
+  html:root body .tdy-body .tdy-dl { flex-wrap: wrap; column-gap: 8px; row-gap: 2px; }
+  html:root body .tdy-body .tdy-dl .tdy-l { flex: 0 0 100%; }
+  html:root body .tdy-body .tdy-dl .tdy-v { flex: 1 1 0; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): Today on a narrow phone, and the arrow of an open task in dark mode | from: the search box a fixed width, so the bell hung off the side of a small phone; "Missing details" on two lines; a grey square behind the arrow in dark mode | to: the search box takes the room there is; the switch words stay on one line; no square | why: part of the page was off the screen */
+html:root body .tda-row .tdx-chev { background: transparent; }
+@media (max-width: 640px) {
+  html:root body .tda-segslot { min-width: 0; flex: 1 1 0; }
+  html:root body .tda-segslot .tda-search { width: 100%; max-width: none; min-width: 0; }
+  html:root body .tda-segslot .tda-search .td-search-input:not([type="x"]) { width: 100% !important; min-width: 0; box-sizing: border-box; }
+}
+@media (max-width: 400px) { html:root body .tda-bar .tda-seg { width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: auto; } html:root body .tda-bar .tda-seg button { flex: 1 0 auto; min-width: 0; white-space: nowrap; padding-left: 4px; padding-right: 4px; gap: 4px; font-size: 13px; } }
+/* 🔴 CSS CHANGED (2026-11-27): "What is it about?" in the Assign a task window on a phone | from: three narrow columns, so the choices became tall circles, "Mock interview" on two far-apart lines and the ticked word spilling out | to: each choice a small pill as wide as its word, wrapping to the next line | why: the words could not be read in them */
+@media (max-width: 640px) {
+  html:root body .p-assign .td-tag-pick { display: flex; flex-wrap: wrap; }
+  html:root body .p-assign .td-tag-pick .td-tag { flex: 0 0 auto; width: auto; min-width: 0; line-height: 20px !important; white-space: nowrap; padding-left: 16px !important; padding-right: 16px !important; justify-content: center; gap: 5px; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): the choices not picked in the Assign a task window | from: in dark mode they had no visible pill (the same dark as the window); on every screen an empty space before the word, kept for the tick | to: a grey pill in light and dark; the space only on the picked one | why: they did not look like buttons */
+html:root body dialog.p-dialog .p-assign .td-tag-pick .td-tag:not([aria-checked="true"]), html:root body.p-student dialog.p-dialog .td-tag-pick .td-tag.td-tag:not([aria-checked="true"]) { background: var(--apple-btn) !important; }
+html:root body dialog.p-dialog .td-tag-pick .td-tag:not([aria-checked="true"])::before { display: none; }
+/* 🔴 CSS CHANGED (2026-11-27): the card windows (Edit profile, Mock interviews and the others like them) on a phone | from: two narrow columns, so emails and date boxes were cut to "Choo..." | to: one box under another, each the full width | why: what was typed could not be read */
+@media (max-width: 520px) {
+  html:root body dialog.p-dialog form.lg-form { grid-template-columns: minmax(0, 1fr) !important; }
+  html:root body dialog.p-dialog form.lg-form > * { grid-column: 1 / -1 !important; min-width: 0; }
+  html:root body dialog.p-dialog form.lg-form { padding: 12px 0 0 !important; }
+  html:root body dialog.p-dialog .p-dialog-body:has(> form.lg-form) { padding-bottom: 0 !important; }
+  html:root body dialog.p-dialog form.lg-form > .p-dialog-foot { flex-wrap: nowrap; margin-bottom: 0; padding-bottom: 14px; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): Apply through on a phone and an upright tablet | from: the table four columns wide, so "Offered by" was cut and the partner dropdown, the thing the page is for, sat off the side of the screen | to: each place a block: its name, who offers it, the dropdown the full width, then who changed it last | why: the partner could not be seen or changed */
+@media (max-width: 900px) {
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table-wrap > table.p-table, html:root body:has(.niec-header[data-page="apply-through"]) .p-table tbody { display: block; width: 100%; min-width: 0; }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table #rows tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table #rows tr:last-child { border-bottom: 0; }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table #rows tr > td { display: block; width: 100%; max-width: none; min-width: 0; padding: 3px 4px !important; border: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table #rows tr > td:first-child { font-weight: 600; }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table #rows tr > td:empty { display: none; }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table #rows tr > td:nth-child(2)::before { content: "Offered by: "; }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-head .p-actions, html:root body:has(.niec-header[data-page="apply-through"]) .p-head .p-actions input#q { width: 100%; max-width: none; }
+  html:root body:has(.niec-header[data-page="apply-through"]) .p-table #rows tr > td select { width: 100%; min-width: 0; min-height: 40px; margin: 4px 0; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): Mock Team Bookings, Setup and Upload a guideline, on a phone | from: two narrow columns, so "Name students see" and the email were cut off | to: one box under another, each the full width | why: what was typed could not be read */
+@media (max-width: 640px) {
+  html.app-mock:root body #page :is(.mt-setup, .mt-upload) .mt-three { grid-template-columns: minmax(0, 1fr); }
+  html.app-mock:root body #page :is(.mt-setup, .mt-upload) .mt-three > div:nth-child(n) { grid-column: 1 / -1; min-width: 0; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): the booking link box in Mock Team Setup | from: a second box drawn round the name inside the box, and on a phone a long address left the name only a few letters of room | to: one box; on a phone the name moves to its own line when the address is long | why: it looked broken and the name could not be read */
+html.app-mock:root body #page .mt-setup .mt-prefix .p-input.p-input { box-shadow: none; background: transparent !important; }
+@media (max-width: 640px) { html.app-mock:root body #page .mt-setup .mt-prefix { flex-wrap: wrap; padding-top: 8px; } html.app-mock:root body #page .mt-setup .mt-prefix .p-input.p-input { flex: 1 1 140px; } }
+/* 🔴 CSS CHANGED (2026-11-27): the WhatsApp number and email in an opened task on a phone (Admin, Manager, branch) | from: two narrow boxes side by side, so an email broke in the middle of the address | to: each on a full line | why: the address could not be read or copied by eye */
+@media (max-width: 640px) { html:root body .tdx-facts > .tdx-fact.is-contact { grid-column: 1 / -1; } html:root body .tdx-facts > .tdx-fact:not(.is-wide):not(.is-contact) { grid-column: span 2; } }
+/* 🔴 CSS CHANGED (2026-11-27): the "Waiting 6 days" label on Today on a phone | from: stretched across the row like a bar | to: only as wide as its words | why: it looked like a progress bar */
+@media (max-width: 640px) { html:root body .tda-row .tdx-age.tdx-age { justify-self: start; align-self: flex-start; width: fit-content; } }

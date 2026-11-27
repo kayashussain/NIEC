@@ -4,7 +4,7 @@
 // session.js), and the header fills itself in.
 //
 // Navigation depends on the account: Admin sees every page (Users and Activity in the account menu), the Manager the Dashboard, All Students and
-// Universities, and the teams All Students and Universities.
+// Universities, and the teams All Students and Universities. Every team has Interview guidelines (the owner, 27 Nov 2026).
 // Text size (the owner, 23 Nov 2026): every page is drawn at Medium for everyone; there is no Text size choice in the account menu any more.
 // Only on laptop and desktop screens (theme.css); a phone keeps its own size.
 (function () {
@@ -53,9 +53,10 @@
         else { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
       }
       document.documentElement.classList.add('app-apple');
-      document.documentElement.classList.toggle('app-only', !kind || mock); // the Application Team's touches in apple.css hang on this class; the Mock Team shares them (the owner, 25 Nov 2026: one look, one type scale), its own pages (Bookings, Interview guidelines) have their rules under app-mock
+      // 🔴 CSS CHANGED (2026-11-26): a branch's Today has the same touches as the Application Team's and the Mock Team's | from: the plain look | to: kind 'today', for the branch on Today only
+      document.documentElement.classList.toggle('app-only', !kind || mock || kind === 'today'); // the Application Team's touches in apple.css hang on this class; the Mock Team shares them (the owner, 25 Nov 2026: one look, one type scale), its own pages (Bookings, Interview guidelines) have their rules under app-mock
       document.documentElement.classList.toggle('app-mock', mock); // the Mock Team's own touches in apple.css hang on this class, so the Application Team is never changed by them
-      try { localStorage.setItem('niecApple', mock ? 'mock' : kind === 'follow' ? 'follow' : kind === 'all' ? 'all' : '1'); } catch (e) { /* only the first draw may flash */ }
+      try { localStorage.setItem('niecApple', mock ? 'mock' : kind === 'follow' ? 'follow' : kind === 'all' || kind === 'today' ? 'all' : '1'); } catch (e) { /* only the first draw may flash */ }
     },
     off() {
       const l = link(); if (l) l.remove();
@@ -202,8 +203,8 @@
   function sharedLinks(me) {
     if (me.role === 'student') return { before: [], after: [] };
     const deps = me.departments || [];
-    // Interview guidelines, the same page as the Mock Team's, in place of Mock interviews (the owner, 26 Nov 2026): Admin, the Manager and the Mock Team.
-    const after = me.role === 'admin' || me.role === 'manager' || deps.includes('mock') ? [['guidelines', '/interview-guidelines', 'Interview guidelines']] : [];
+    // Interview guidelines, in place of Mock interviews (the owner, 26 Nov 2026), for every team to read (the owner, 27 Nov 2026).
+    const after = [['guidelines', '/interview-guidelines', 'Interview guidelines']];
     if (me.role === 'admin') return { before: [], after };
     const manager = me.role === 'manager';
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
@@ -231,6 +232,14 @@
     const deps = me.departments || [];
     return me.taskTeam ? me.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
   };
+  // The same for a branch (the server's ownTeamBranch): Today, Dashboard, All Students, Universities (the owner, 26 Nov 2026) and
+  // Interview guidelines (27 Nov 2026) only.
+  const ownTeamBranch = (me) => {
+    if (!me || me.role === 'admin' || me.role === 'manager') return false;
+    const deps = me.departments || [];
+    const branch = (d) => !['application', 'mock', 'followup'].includes(d);
+    return me.taskTeam ? branch(me.taskTeam) && deps.includes(me.taskTeam) : deps.length > 0 && deps.every(branch);
+  };
   // The same for the Mock Team (the server's ownTeamMock): Today, Bookings, All Students, Universities and Interview guidelines, with no
   // Dashboard, Partners or Mock interviews (the owner, 22 Nov 2026).
   const ownTeamMock = (me) => {
@@ -245,12 +254,15 @@
     const fuOwn = ownTeamFollowup(me);
     const mockOwn = ownTeamMock(me);
     // The Apple look for the Application Team (the owner, 24 Nov 2026) and, the same look, the Mock Team (the owner, 24 Nov 2026).
-    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else if (fuOwn) window.NiecApple.on('follow'); else window.NiecApple.on('all'); }
+    const branchOwn = ownTeamBranch(me);
+    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else if (fuOwn) window.NiecApple.on('follow'); else window.NiecApple.on(branchOwn && location.pathname === '/today' ? 'today' : 'all'); }
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
+      // A branch (the owner, 26 Nov 2026): no Add many students and no Follow-up in its menu; Interview guidelines to read (27 Nov 2026).
+      : branchOwn ? [...LINKS.branch.filter(([id]) => !['bulkadd', 'bulk'].includes(id)), ['guidelines', '/interview-guidelines', 'Interview guidelines']]
       : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
         : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
-    const extra = mockOwn ? { before: [], after: [] } : appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'guidelines') } : shared0;
+    const extra = mockOwn || branchOwn ? { before: [], after: [] } :appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after } : shared0;
     const at = own.findIndex(([id]) => id === 'factfile');
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];

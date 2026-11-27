@@ -320,6 +320,35 @@ function timeline(startIso, todayIso) {
   });
 }
 
+// ---- the five figures against the compared intake, as it stood at the same point (the owner, 27 Nov 2026) ----
+// A running intake is set against the earlier one on the day that was as many days before its own teaching start, read
+// from the dates recorded on the students. A figure is left out (null) when fewer than four in five of the earlier
+// intake's students at that step have the date: a count read from half the dates would show a rise that never happened.
+// An intake whose teaching has started is set against the earlier one's final figures.
+const POINT = [
+  ['students', 'inquiry', () => true], ['applied', 'applied', (s) => s.p.reached.applied], ['offers', 'offer', (s) => s.p.reached.offer],
+  ['paid', 'paid', (s) => s.p.reached.paid], ['visas', 'visa', (s) => s.visa],
+];
+const DATED_ENOUGH = 0.8;
+function samePoint({ before, label, over, start, beforeStart, todayIso }) {
+  if (!before.length) return null;
+  let day = '';
+  let daysLeft = null;
+  if (!over) {
+    if (!start || !beforeStart) return null; // no teaching start to count back from
+    daysLeft = Math.max(0, Math.round(dayNumber(start) - dayNumber(todayIso)));
+    day = addDays(beforeStart, -daysLeft);
+  }
+  const values = {};
+  POINT.forEach(([key, date, reached]) => {
+    const got = before.filter(reached);
+    if (over) { values[key] = got.length; return; }
+    const dated = got.map((s) => s.dates[date]).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+    values[key] = got.length && dated.length < got.length * DATED_ENOUGH ? null : dated.filter((d) => d <= day).length;
+  });
+  return { label, running: !over, daysLeft, day, values };
+}
+
 function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b = [], sheetId = '', today: now = new Date(), admin = false }) {
   const todayIso = typeof now === 'string' ? now : localDate(now);
   const sheets = workbook.sheets || [];
@@ -344,7 +373,7 @@ function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b
   const intakes = sheets.map((sh) => {
     const mine = all.filter((s) => s.sheetId === sh.id);
     const target = plan.targets[sh.id] || null;
-    return { id: sh.id, ...rates(mine.reduce((g, s) => count(g, s), newGroup(sh.name))), season: intakeSeason(sh.name), target: target ? target.visas : 0 };
+    return { id: sh.id, ...rates(mine.reduce((g, s) => count(g, s), newGroup(sh.name))), season: intakeSeason(sh.name), target: target ? target.visas : 0, over: closedIds.has(sh.id) };
   });
   // The intake to compare with: the same month a year or more earlier, else the one before in the tab order.
   let comparable = null;
@@ -637,6 +666,10 @@ function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b
   return {
     asOf: new Date().toISOString(), today: todayIso,
     headline, funnel: funnel(summary), trend: trend(students, todayIso), money,
+    samePoint: selectedSheet && comparable ? samePoint({
+      before: all.filter((s) => s.sheetId === comparable.id), label: comparable.label, over: closedIds.has(selectedSheet.id),
+      start: startOf(selectedSheet), beforeStart: startOf(sheets.find((s) => s.id === comparable.id)), todayIso,
+    }) : null,
     intakes: sheets.map((s) => ({ id: s.id, name: s.name })), selected: everyIntake ? 'all' : (selectedSheet ? selectedSheet.id : ''), scope: scopeName,
     summary, comparable, compare: intakes,
     findings,
@@ -644,7 +677,7 @@ function buildInsights({ workbook, cards = {}, planning = {}, partners = [], b2b
     weekly: weekly(students, todayIso),
     channels: { sources: channels.sources, spendTotal: channels.spendTotal, reportedLeads: channels.reportedLeads },
     events: eventRows,
-    universities: { list: universities.slice(0, 25), concentration: uniConcentration, speed: uniSpeed.slice(0, 12) },
+    universities: { list: universities.slice(0, 200), concentration: uniConcentration, speed: uniSpeed.slice(0, 12) }, // the Dashboard's "Show all"
     partners: { list: partnerGroups.slice(0, 20), concentration: partnerConcentration, agreements },
     courses, levels,
     lost: { total: gone.length, reasons: lostReasons, wanted },

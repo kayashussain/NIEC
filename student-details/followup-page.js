@@ -273,6 +273,26 @@
     return nb;
   }
 
+  // One press instead of the date picker for the usual next follow-up days (review, 27 Nov 2026). The date box stays for any other day.
+  const QUICK = [[1, 'Tomorrow'], [3, 'In 3 days'], [7, 'In 1 week'], [14, 'In 2 weeks']];
+  function quickDates(dateIn) {
+    const row = el('div', 'fu-quick'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Next follow-up, quick choice');
+    const buttons = QUICK.map(([n, label]) => {
+      const day = new Date(dayMs(data.today) + n * 86400000).toISOString().slice(0, 10);
+      const b = h('button', { type: 'button', class: 'fu-chip', title: short(day) }, label);
+      b.dataset.day = day;
+      b.addEventListener('click', () => { dateIn.value = day; dateIn.dispatchEvent(new Event('input', { bubbles: true })); });
+      return b;
+    });
+    const mark = () => buttons.forEach((b) => { const on = b.dataset.day === dateIn.value; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    dateIn.addEventListener('input', mark);
+    mark();
+    row.append(el('span', '', 'Next follow-up'), ...buttons);
+    return row;
+  }
+  // Ctrl+Enter (Cmd+Enter on a Mac) in the note box saves it.
+  const saveKey = (area, button) => area.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !button.disabled) { e.preventDefault(); button.click(); } });
+
   // The Bring back line: what changed, where to (Inquiry or Defer), and for Inquiry the next follow-up date.
   function returnStrip(s) {
     const box = el('div', 'fu-strip');
@@ -295,7 +315,8 @@
     dateIn.value = draft.next;
     dateIn.addEventListener('input', () => { draft.next = dateIn.value; dateIn.classList.remove('bad'); });
     l3.append(t3, dateIn);
-    const showDate = () => { l3.hidden = to.value !== 'Inquiry'; };
+    const quick = quickDates(dateIn);
+    const showDate = () => { l3.hidden = to.value !== 'Inquiry'; quick.hidden = l3.hidden; };
     to.addEventListener('change', () => { draft.to = to.value; showDate(); }); showDate();
     const err = el('div', 'fu-err'); err.hidden = true; err.setAttribute('role', 'alert');
     const fail = (msg, ...fields) => { err.textContent = msg; err.hidden = false; fields.forEach((f) => { f.classList.remove('bad'); void f.offsetWidth; f.classList.add('bad'); }); };
@@ -321,7 +342,8 @@
     btns.append(ok, cancel);
     grid.append(l1, l2, l3, btns);
     area.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(); draw(); } });
-    box.append(grid, err, el('span', 'fu-hint', s.stopped && s.stopped.team && !/follow-up/i.test(s.stopped.team) ? 'Saved on the student card. The team that stopped the student gets a short task to tell them.' : 'What you write is saved on the student card and its timeline.'));
+    saveKey(area, ok);
+    box.append(grid, quick, err, el('span', 'fu-hint', s.stopped && s.stopped.team && !/follow-up/i.test(s.stopped.team) ? 'Saved on the student card. The team that stopped the student gets a short task to tell them.' : 'What you write is saved on the student card and its timeline.'));
     return box;
   }
 
@@ -387,6 +409,7 @@
         send(save, only ? { action: 'note-only', text: area.value } : { action: 'note', text: area.value, next: dateIn.value }, `Note saved on ${s.name}'s card`);
       });
       btns.append(save);
+      saveKey(area, save);
       if (!only && s.state !== 'defer') {
         const def = h('button', { class: 'btn', type: 'button', title: 'Saves the note and moves the student to Defer' }, 'Defer');
         def.addEventListener('click', () => {
@@ -406,7 +429,7 @@
       grid.append(l1, l2, btns);
     }
     area.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(); draw(); } });
-    box.append(grid, err, el('span', 'fu-hint', withdrawing ? 'The stage moves to Withdrawn and the card says why.' : only ? 'A note on the card.' : 'Must be filled: what the student said and the next follow-up date. Defer and Withdrawn change the stage by themselves.'));
+    box.append(grid, ...(dateIn ? [quickDates(dateIn)] : []), err, el('span', 'fu-hint', withdrawing ? 'The stage moves to Withdrawn and the card says why.' : only ? 'A note on the card.' : 'Must be filled: what the student said and the next follow-up date. Defer and Withdrawn change the stage by themselves.'));
     setTimeout(grow, 0);
     return box;
   }
@@ -442,6 +465,25 @@
       body.append(foot);
     }).then(() => { history.replaceState(null, '', '/students'); });
   }
+  // The page stays open all day: the list and the tasks are read again every minute while it is in view, and at once when it comes
+  // back into view, as Today does, but never while a note or a task's updates are open, someone is in a box, or a card or window is
+  // open. Nothing is redrawn when nothing changed. (review, 27 Nov 2026)
+  const busy = () => Boolean(open || threads.size || document.querySelector('.p-drawer, .p-dialog, dialog[open]') || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)));
+  let reading = false;
+  async function quiet() {
+    if (document.hidden || reading || !data || !tasks || busy()) return;
+    reading = true;
+    try {
+      const [list, mine] = await Promise.all([api('/api/followup'), api('/api/tasks')]);
+      if (!busy()) {
+        if (JSON.stringify(list) !== JSON.stringify(data)) { data = list; draw(); }
+        if (JSON.stringify(mine) !== JSON.stringify(tasks)) { tasks = mine; drawTasks(); }
+      }
+    } catch (e) { /* the next minute tries again; what is on the screen stays */ }
+    reading = false;
+  }
+  setInterval(quiet, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) quiet(); });
   load();
   setup();
 })();

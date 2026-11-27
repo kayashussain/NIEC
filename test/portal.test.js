@@ -311,6 +311,20 @@ test('the plan works back from the visas wanted to the applications and inquirie
   assert.strictEqual(apply.from, '2026-11-11', 'ten weeks before 20 January 2027');
 });
 
+test('the Dashboard compares a running intake with the earlier one at the same point, only where the days are recorded', () => {
+  const r = figures(); // 11 November 2026, 70 days before teaching starts on 20 January 2027
+  assert.deepStrictEqual([r.samePoint.label, r.samePoint.running, r.samePoint.daysLeft, r.samePoint.day], ['Jan Intake 2026', true, 70, '2025-11-11']);
+  assert.strictEqual(r.samePoint.values.students, null, 'too few of the earlier students have an inquiry day: no figure rather than a wrong one');
+  const before = r.compare.find((i) => i.label === 'Jan Intake 2026');
+  assert.ok(r.samePoint.values.applied > 0 && r.samePoint.values.applied <= before.applied);
+  assert.ok(r.samePoint.values.visas < before.visas, 'visas issued after that day are not counted yet');
+  // A started intake is set against the final figures; the first intake has nothing to compare with.
+  const done = figures({ sheetId: demo.workbook.sheets[1].id });
+  assert.deepStrictEqual([done.samePoint.running, done.samePoint.values.visas], [false, before.visas]);
+  assert.strictEqual(figures({ sheetId: demo.workbook.sheets[0].id }).samePoint, null);
+  assert.deepStrictEqual(r.compare.map((i) => i.over), [true, true, false]);
+});
+
 test('each finding carries its numbers, the reason and the decision, most urgent first', () => {
   const r = figures();
   assert.ok(r.findings.length >= 4);

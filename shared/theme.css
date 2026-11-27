@@ -1868,6 +1868,9 @@ html body .td-search-field .td-search-input:focus { border-color: #0071e3; box-s
   .td-task-top { position: relative; }
   .td-task-top .td-side { position: absolute; top: -4px; right: -4px; }
   .td-task.has-student .td-who { padding-right: 72px; }
+  /* 🔴 CSS CHANGED (2026-11-27): a task on the student card on a phone | from: the "1 new" label and the three dots lay on top of the task's words | to: the words stop before them | why: the words could not be read */
+  html body .td-task:not(.has-student) .td-task-text { padding-right: 44px; }
+  html body .td-task:not(.has-student):has(.td-side .tk-new:not([hidden])) .td-task-text { padding-right: 100px; }
   .td-meta > .td-tag + .td-route::before, .td-meta > .td-prio + .td-route::before { content: none; }
 }
 
@@ -2526,6 +2529,8 @@ html body .p-applied.is-sent { background: #e6f0fc; color: #004a9e; }
 @media (max-width: 640px) { .pt-switch { display: flex; justify-self: stretch; } .pt-switch a { flex: 1 1 0; justify-content: center; padding: 0 8px; font-size: 14px; } }
 /* 🔴 CSS CHANGED (2026-11-18): the Universities | B2B partners | Agents switch on a small phone (a bug fix) | from: the last tab touched the edge of the switch and its count was cut off at 390px wide | to: a little less padding and gap on phones under 430px wide, so all three tabs sit inside the switch */
 @media (max-width: 430px) { .pt-switch a { gap: 5px; padding: 0 5px; font-size: 13.5px; min-width: 0; } }
+/* 🔴 CSS CHANGED (2026-11-27): the Partners switch on a phone | from: four tabs squeezed into the width, so their names and numbers ran over each other | to: two tabs to a row (an odd last tab takes the whole row) | why: the names could not be read on a phone */
+@media (max-width: 640px) { html:root body .pt-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; width: 100%; height: auto; border-radius: 12px; } html:root body .pt-switch a { min-width: 0; min-height: 40px; white-space: nowrap; } html:root body .pt-switch a:last-of-type:nth-of-type(odd) { grid-column: 1 / -1; } }
 @media print { .pt-bar { display: none !important; } }
 
 /* 🔴 CSS CHANGED (2026-11-17): Follow-up turned into steps, one screen each (the owner: "step by step, each on its own page") | from: one long page with the setup, "1. Choose the students", "2. Write the message" and "3. Check and send" as numbered cards one under another, a "0 chosen" pill, Check and Send buttons at the bottom | to: the shared parts kept here: the search and the filters as soft grey fields, the students as a white grouped list with round iOS ticks, initials circles and stage pills (a ticked row soft blue), "Tick all shown" and "Clear" as blue links, the message as a Mail-style window (To, Subject, the text with no box) with "Insert" and the words as grey pills; the steps themselves are in the next block (.fw) */
@@ -4034,6 +4039,8 @@ html:root body .to-top, html:root body .sr360-top, html:root body [class*="back-
 /* 🔴 CSS CHANGED (2026-11-21): All Students and Today fit a 1280px laptop (the review of 21 Nov 2026) | from: on All Students the Source box alone on its own line under the title (the top area took 176px of an 800px screen, 7 students showed); on Today the four team columns 980px wide in a 924px space, so the Follow-up Team column was cut and the board scrolled sideways | to: the Source box on the title's line, before the search box (the search a little narrower on a small laptop, at most 360px as before), so the top area is two lines; Today's team columns share the width (each at least 200px), and wrap to a new line instead of scrolling sideways when they cannot fit */
 html body:has(#sheet) .topbar .came-from { order: 3; }
 html body:has(#sheet) .topbar #search { width: clamp(240px, 26vw, 360px); }
+/* 🔴 CSS CHANGED (2026-11-27): the search on All Students on a phone | from: a short box with "Search students, universiti" cut off | to: the full width of the screen | why: the words in the box were cut */
+@media (max-width: 640px) { html:root body:has(#sheet) .topbar input#search#search { width: 100%; max-width: 100%; } html:root body:has(#sheet):has(#sheet) .topbar select.came-from { width: 100%; max-width: 100%; margin-left: 0; } }
 html body .td-page.is-board .tb-board, html body .tb-board { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); overflow-x: visible; }
 /* 🔴 CSS CHANGED (2026-11-21): Today's board tiles | from: the stage beside the name, so in a narrower column a name broke inside a word ("Shrest / ha") | to: the name on its own line (broken only between words), the stage on the line under it */
 html body .tb-tile-top { flex-wrap: wrap; row-gap: 2px; }

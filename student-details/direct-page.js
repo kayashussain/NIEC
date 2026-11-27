@@ -1,8 +1,9 @@
 // The Partner Universities page (direct.html). Admin edits it; the Manager, the Application and Mock Teams and the branches look at it
 // (see partner-access.js: the server sends a team no commission and no portal login);
 // everything shown is put on the page as text, never as HTML.
-// The list is a set of calm cards; a click opens the university as its own view, in numbered steps, with a Save bar
-// that stays at the bottom of the screen.
+// The list is a set of calm cards with each university's logo; a click opens the university as its own view, in numbered steps,
+// with a Save bar that stays at the bottom of the screen. Admin adds one with "+ Add university" beside the title, and the page
+// holds the partners only: no summary tiles above the list (the owner, 26 Nov 2026).
 (function () {
   const $ = (id) => document.getElementById(id);
   let uni = null; // the university open in the editor
@@ -30,6 +31,18 @@
     return json;
   }
   const btn = (cls, label, onClick) => { const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; };
+
+  // The university's logo (from its page in Universities, sent by the server), else its initials.
+  const media = (u) => (/^https:\/\//.test(u) ? `/api/media?u=${encodeURIComponent(u)}` : u);
+  function logoMark(u) {
+    const m = el('span', 'bp-avatar', u.logo ? undefined : initialsOf(u.name));
+    if (!u.logo) return m;
+    m.classList.add('has-logo');
+    const i = el('img'); i.src = media(u.logo); i.alt = ''; i.loading = 'lazy'; i.referrerPolicy = 'no-referrer';
+    i.addEventListener('error', () => { m.classList.remove('has-logo'); m.replaceChildren(); m.textContent = initialsOf(u.name); });
+    m.append(i);
+    return m;
+  }
 
   // ---- the list, in the same look as B2B Partners (the owner, 15 Nov 2026) ----
   let stats = {};
@@ -72,24 +85,47 @@
 
   function drawList() {
     const shown = all; // no search box (the owner, 17 Nov 2026)
-    // The band across the top, as on B2B Partners: the universities, the students and visas through them, and how many are ready to apply to.
-    const active = all.filter((u) => u.status !== 'Ended');
-    const tot = all.reduce((t, u) => { const x = statOf(u); t.students += x.students; t.visas += x.visas; t.now += x.thisIntake; return t; }, { students: 0, visas: 0, now: 0 });
-    const ready = active.filter((u) => u.applyPortal || u.applyEmail).length;
-    const band = [
-      ['Partner universities', num(active.length), all.length > active.length ? `${num(all.length - active.length)} ended` : 'Active'],
-      ['Students', num(tot.students), currentIntake ? `${num(tot.now)} in ${currentIntake}` : 'Every intake on the sheet'],
-      ['Visas', num(tot.visas), 'Every intake on the sheet'],
-      ['Ready to apply', `${num(ready)} of ${num(active.length)}`, 'With a portal or an email'],
-    ];
-    $('kpis').replaceChildren(...band.map(([label, v, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', v), el('small', '', sub)); return d; }));
-    $('count').textContent = all.length ? `${all.length} in the list` : '';
-    if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', viewer() ? 'No partner universities yet.' : 'No partner universities yet.')); return; }
+    addButton(level === 'full' && !BACKUP);
+    if (!all.length) { $('list').replaceChildren(el('div', 'bp-empty', 'No partner universities yet.')); return; }
     // The busiest first (the most students, then by name). No Sort menu (the owner, 17 Nov 2026).
     const ordered = shown.slice().sort((x, y) => (x.status === 'Ended') - (y.status === 'Ended') || statOf(y).students - statOf(x).students || x.name.localeCompare(y.name));
     $('list').replaceChildren(...ordered.map(card));
     if (justSaved) { const hit = $('list').querySelector(`[data-id="${justSaved}"]`); if (hit) hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
     justSaved = '';
+  }
+
+  // "+ Add university" (Admin only): the name first (suggested from Universities, which brings the logo), then its card opens.
+  function addButton(show) {
+    let b = $('addBtn');
+    if (!b) { b = btn('btn btn-primary bp-add', '+ Add university', addOne); b.id = 'addBtn'; document.querySelector('#listView .p-head').append(b); }
+    b.hidden = !show;
+  }
+  function addOne() {
+    window.Portal.dialog('Add a partner university', (body, close) => {
+      const name = window.Portal.field('University name', { max: 120, required: true, wide: true, placeholder: 'Start typing the name', list: 'puNames' });
+      const names = el('datalist'); names.id = 'puNames';
+      api('/api/facts').then((rows) => {
+        const have = new Set(all.map((u) => u.name.toLowerCase()));
+        (Array.isArray(rows) ? rows : []).filter((r) => !have.has(r.name.toLowerCase())).forEach((r) => { const o = el('option'); o.value = r.name; names.append(o); });
+      }).catch(() => { /* typed by hand */ });
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const wrong = (t) => { msg.textContent = t; msg.className = 'p-msg error'; };
+      const ok = btn('btn btn-primary', 'Add', async () => {
+        const value = name.input.value.trim().replace(/\s+/g, ' ');
+        if (!value) { wrong('Write the name.'); name.input.focus(); return; }
+        ok.disabled = true;
+        try {
+          const made = await api(API, { name: value });
+          close(); toast(`${value} added`); justSaved = made.id;
+          await loadList(); openEditor(made.id);
+        } catch (e) { wrong(e.message); ok.disabled = false; }
+      });
+      name.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } });
+      foot.append(btn('btn', 'Cancel', () => close()), ok);
+      const form = el('div', 'p-form'); form.append(name.wrap, names);
+      body.append(form, msg, foot);
+    });
   }
 
   function card(u) {
@@ -101,7 +137,7 @@
     const words = el('div');
     const sub = [u.type === 'Through a B2B partner' && u.via ? `Through ${u.via}` : '', st.students ? `${plural(st.visas, 'visa')} · ${plural(st.students, 'student')}` : 'No students yet'].filter(Boolean).join(' · ');
     words.append(btn('bp-name', u.name, () => openOne(u.id)), el('div', 'bp-sub', sub));
-    who.append(el('span', 'bp-avatar', initialsOf(u.name)), words);
+    who.append(logoMark(u), words);
     head.append(who, el('span', `bp-status ${PILL[u.status] || 'amber'}`, u.status || 'Active'));
     c.append(head);
     // The campuses as soft tags under the name.
@@ -394,7 +430,7 @@
     window.scrollTo({ top: 0 });
   }
 
-  // Everyone but Admin looks only, and the heading says so. Universities are not added by hand (the owner, 20 Nov 2026).
+  // Everyone but Admin looks only, and the heading says so.
   async function setLevel() {
     if (BACKUP) return;
     try { level = (await api('/api/partner-access')).direct || 'team'; } catch (e) { level = 'team'; }

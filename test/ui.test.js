@@ -671,7 +671,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     assert.ok((await manager.request.post('/api/login/new-password', { data: { password: 'Manager-Strong-2026' } })).ok());
     const landing = await open(manager, '/');
     await landing.waitForURL('**/today');
-    await landing.waitForSelector('.td-tasks');
+    await landing.waitForSelector('.dt-col'); // the two task lists, the same Today as Admin (27 Nov 2026)
     await landing.close();
     const page = await open(manager, '/students');
     await page.waitForSelector('#body tr:not(.pad-row)');

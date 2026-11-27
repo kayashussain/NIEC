@@ -10,6 +10,7 @@ const { spawn } = require('node:child_process');
 const Teams = require('../shared/teams');
 const { createMockBookings, cleanTeamsLink, cleanWindows, calendarInvite } = require('../student-details/mock-bookings');
 const { createMockGuidelines } = require('../student-details/mock-guidelines');
+const { docxPreview } = require('../student-details/docx-preview');
 
 const tmp = (name) => fs.mkdtempSync(path.join(os.tmpdir(), name));
 
@@ -95,6 +96,37 @@ test('bookings: free slots, booking, the mock number, cancelling, reminders and 
   assert.ok(fs.readdirSync(dir).some((f) => /^mock-bookings\.damaged-/.test(f)));
 });
 
+// A small real .docx: a zip (stored, without packing) of the three parts the reader opens.
+function zipOf(files) {
+  const parts = []; const central = []; let at = 0;
+  Object.entries(files).forEach(([name, text]) => {
+    const n = Buffer.from(name); const data = Buffer.from(text);
+    const local = Buffer.alloc(30); local.writeUInt32LE(0x04034b50, 0); local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(n.length, 26);
+    const head = Buffer.alloc(46); head.writeUInt32LE(0x02014b50, 0); head.writeUInt32LE(data.length, 20); head.writeUInt32LE(data.length, 24); head.writeUInt16LE(n.length, 28); head.writeUInt32LE(at, 42);
+    parts.push(local, n, data); central.push(head, n); at += 30 + n.length + data.length;
+  });
+  const dirBytes = Buffer.concat(central);
+  const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(Object.keys(files).length, 8); end.writeUInt16LE(Object.keys(files).length, 10); end.writeUInt32LE(dirBytes.length, 12); end.writeUInt32LE(at, 16);
+  return Buffer.concat([...parts, dirBytes, end]);
+}
+const para = (text, pPr = '', rPr = '') => `<w:p><w:pPr>${pPr}</w:pPr><w:r><w:rPr>${rPr}</w:rPr><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`;
+const numbered = '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>';
+const wordFile = () => zipOf({
+  'word/document.xml': `<?xml version="1.0"?><w:document><w:body>${para('Credibility interview', '<w:pStyle w:val="Heading1"/>')}${para('Be honest &amp; &lt;clear&gt;.', '', '<w:b/>')}${para('Why this course?', numbered)}${para('Why the UK?', numbered)}<w:tbl><w:tr><w:tc>${para('Fee')}</w:tc><w:tc>${para('GBP 14,000')}</w:tc></w:tr></w:tbl></w:body></w:document>`,
+  'word/styles.xml': '<w:styles><w:style w:styleId="Heading1"><w:name w:val="heading 1"/></w:style></w:styles>',
+  'word/numbering.xml': '<w:numbering><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>',
+});
+
+test('a Word guideline is read as headings, words, numbered lists and tables; markup in it stays plain words', () => {
+  const doc = docxPreview(wordFile());
+  assert.strictEqual(doc.truncated, false);
+  assert.deepStrictEqual(doc.blocks[0], { t: 'h', runs: [{ s: 'Credibility interview' }], level: 2 });
+  assert.deepStrictEqual(doc.blocks[1].runs, [{ s: 'Be honest & <clear>.', b: true }]);
+  assert.deepStrictEqual(doc.blocks.slice(2, 4).map((b) => [b.label, b.runs[0].s]), [['1.', 'Why this course?'], ['2.', 'Why the UK?']]);
+  assert.deepStrictEqual(doc.blocks[4].rows[0].map((c) => c.blocks[0].runs[0].s), ['Fee', 'GBP 14,000']);
+  assert.throws(() => docxPreview(Buffer.from('PK not a zip at all, only the first two letters')));
+});
+
 test('interview guidelines: only real files of the right kinds, kept under their own id', () => {
   const dir = tmp('sr360-guides-');
   const G = createMockGuidelines(dir);
@@ -166,7 +198,8 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   assert.strictEqual((await mock('GET', '/bookings')).status, 200);
   assert.strictEqual((await mock('GET', '/interview-guidelines')).status, 200);
   assert.strictEqual((await app('GET', '/api/bookings')).status, 403, 'the Application Team has no Bookings');
-  assert.strictEqual((await app('GET', '/api/guidelines')).status, 403);
+  assert.strictEqual((await app('GET', '/interview-guidelines')).status, 200, 'every team reads the guidelines');
+  assert.strictEqual((await app('GET', '/api/guidelines')).json.canUpload, false);
 
   // Setup and slots, every day from 08:00 to 20:00, so there is always a free slot in the coming days.
   assert.strictEqual((await mock('POST', '/api/bookings/setup', { teams: 'https://evil.example.com', slug: 'bikram' })).status, 400);
@@ -272,7 +305,19 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   assert.strictEqual(got.status, 200);
   assert.ok(got.body.subarray(0, 5).equals(Buffer.from('%PDF-')));
   assert.match(got.headers.get('content-disposition'), /attachment/);
-  assert.strictEqual((await app('GET', `/api/guidelines/${up.json.file.id}`)).status, 403);
+  // Every team downloads, and reads on screen: a PDF is shown by the browser (framed by this site only), a Word document as its words.
+  assert.strictEqual((await app('GET', `/api/guidelines/${up.json.file.id}`, undefined, true)).status, 200);
+  const seen = await app('GET', `/api/guidelines/${up.json.file.id}?view=1`, undefined, true);
+  assert.strictEqual(seen.status, 200);
+  assert.match(seen.headers.get('content-disposition'), /^inline/);
+  assert.match(seen.headers.get('content-security-policy'), /frame-ancestors 'self'/);
+  const wq = new URLSearchParams({ university: uniName, kind: 'Interview questions', source: 'From a student', title: 'Word questions', name: 'q.docx' });
+  assert.strictEqual((await app('POST', `/api/guidelines?${wq}`, wordFile())).status, 403, 'the Application Team uploads nothing');
+  const word = await mock('POST', `/api/guidelines?${wq}`, wordFile());
+  assert.strictEqual(word.status, 200, JSON.stringify(word.json));
+  const readWord = await app('GET', `/api/guidelines/${word.json.file.id}?view=1`);
+  assert.deepStrictEqual([readWord.json.kind, readWord.json.blocks.map((b) => b.t)], ['word', ['h', 'p', 'li', 'li', 'table']]);
+  assert.strictEqual((await mock('POST', `/api/guidelines/${word.json.file.id}/delete`, {})).status, 200);
 
   // Backups carry the bookings and the guidelines list.
   assert.strictEqual((await admin('POST', '/api/restore/backup-now', {})).status, 200);

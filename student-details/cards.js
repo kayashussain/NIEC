@@ -139,6 +139,9 @@ function normalize(raw) {
     // Mocks after the fourth (the owner, 26 Nov 2026): All Students keeps four mocks, so Mock 5, 6 and 7 are kept here: [{ n, day, feedback, by, at }].
     // The day of the final Pre-CAS interview, given by the university (the owner, 26 Nov 2026): { day, by, at }. The Pre-CAS result window reads it.
     finalInterview: c.finalInterview && /^\d{4}-\d{2}-\d{2}$/.test(String(c.finalInterview.day)) ? { day: c.finalInterview.day, by: str(c.finalInterview.by, 80), at: str(c.finalInterview.at, 40) } : null,
+    // The day the final Pre-CAS interview was recorded as Passed (All Students has no column for it), so Today can say who passed today:
+    // { day, by, at }. Written by server.js whenever the sheet's result changes to Passed, however it was entered.
+    ...(c.preCasPassed && /^\d{4}-\d{2}-\d{2}$/.test(String(c.preCasPassed.day)) ? { preCasPassed: { day: c.preCasPassed.day, by: str(c.preCasPassed.by, 80), at: str(c.preCasPassed.at, 40) } } : {}),
     extraMocks: (Array.isArray(c.extraMocks) ? c.extraMocks : []).filter((m) => m && m.n >= 5 && m.n <= 7).slice(0, 3).map((m) => ({ n: Number(m.n), day: /^\d{4}-\d{2}-\d{2}$/.test(String(m.day)) ? m.day : '', feedback: str(m.feedback, 1500), by: str(m.by, 80), at: str(m.at, 40) })),
     // The details someone checked and said are correct (the owner, 16 Nov 2026), so they leave "Details to check": { key: ISO time }.
     // A key holds the values it was about, so a later change is checked again.
@@ -328,6 +331,10 @@ function createCards(dir, { now = () => new Date(), store = createFileStore(dir,
     },
     setFinalInterview(rowId, input, by) {
       return update(rowId, by, (card, stamp) => { card.finalInterview = input && /^\d{4}-\d{2}-\d{2}$/.test(String(input.day)) ? { day: input.day, by: by || '', at: stamp } : null; });
+    },
+    // `day`: the day the Pre-CAS result became Passed, or false when it was changed away from Passed.
+    setPreCasPassed(rowId, day, by) {
+      return update(rowId, by, (card, stamp) => { if (day) card.preCasPassed = { day, by: by || '', at: stamp }; else delete card.preCasPassed; });
     },
     setMedical(rowId, input, by) {
       return update(rowId, by, (card, stamp) => {

@@ -5,12 +5,15 @@
 //                     answers for anyone; the Manager looks. Nobody else.
 //   The booking page  open to anyone with the link: it shows only free times, never a student or another booking. A student's own
 //                     booking opens by the secret address in their email (/booking/<code>), with change and cancel.
-//   Guidelines        Admin and the Mock Team upload and remove; the Manager downloads; nobody else.
+//   Guidelines        Admin and the Mock Team upload and remove; every other team, the Manager and the branches read them on screen
+//                     and download them (the owner, 27 Nov 2026); a student account has no way in.
 
 const fs = require('fs');
 const path = require('path');
 const { sendJSON, send, readJSONBody, readRawBody, clientIp } = require('../shared/server-utils');
 const Teams = require('../shared/teams');
+const { logoFinder } = require('./uni-logos');
+const { docxPreview } = require('./docx-preview');
 const { calendarInvite, RESULTS } = require('./mock-bookings');
 const { MAX_FILE_BYTES } = require('./direct');
 const { isoDate } = require('./dashboard-stats');
@@ -28,8 +31,7 @@ const bookingsAccess = (user) => {
 };
 const guidelinesAccess = (user) => {
   if (!user || Teams.isStudent(user)) return null;
-  if (Teams.isAdmin(user) || (user.departments || []).includes('mock')) return 'edit';
-  return Teams.isManager(user) ? 'view' : null;
+  return Teams.isAdmin(user) || (user.departments || []).includes('mock') ? 'edit' : 'view';
 };
 
 function createMockTeamApi({ bookings, guidelines, portal, cards, facts, accounts, activity, mailer, company, siteUrlOf, configuredSite = () => '', now = () => new Date() }) {
@@ -491,15 +493,17 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     }
     if (urlPath === '/api/guidelines' || urlPath.startsWith('/api/guidelines/')) {
       const access = guidelinesAccess(req.user);
-      if (!access) { sendJSON(res, 403, { error: 'Interview guidelines is for the Mock Team.' }); return true; }
+      if (!access) { sendJSON(res, 403, { error: 'Interview guidelines is for the office teams.' }); return true; }
       if (urlPath === '/api/guidelines' && req.method === 'GET') {
         const files = guidelines.list();
         const count = new Map();
         files.forEach((f) => { const k = f.university.toLowerCase(); count.set(k, (count.get(k) || 0) + 1); });
-        const listed = facts.list('').map((u) => ({ id: u.id, name: u.name, city: u.city || '', count: count.get(String(u.name).toLowerCase()) || 0 }));
+        const universities = facts.list('');
+        const logoOf = logoFinder(universities);
+        const listed = universities.map((u) => ({ id: u.id, name: u.name, city: u.city || '', logo: logoOf(u.name), count: count.get(String(u.name).toLowerCase()) || 0 }));
         const names = new Set(listed.map((u) => u.name.toLowerCase()));
         // A file kept for a University no longer in Universities stays listed under its own name.
-        [...new Set(files.map((f) => f.university))].filter((n) => !names.has(n.toLowerCase())).forEach((n) => listed.push({ id: '', name: n, city: '', count: count.get(n.toLowerCase()) || 0 }));
+        [...new Set(files.map((f) => f.university))].filter((n) => !names.has(n.toLowerCase())).forEach((n) => listed.push({ id: '', name: n, city: '', logo: logoOf(n), count: count.get(n.toLowerCase()) || 0 }));
         listed.sort((a, b) => a.name.localeCompare(b.name));
         sendJSON(res, 200, { canUpload: access === 'edit', kinds: guidelines.KINDS, sources: guidelines.SOURCES, universities: listed,
           files: files.map((f) => ({ id: f.id, university: f.university, kind: f.kind, source: f.source, title: f.title, name: f.name, size: f.size, by: f.by, at: f.at, type: f.ext.slice(1).toUpperCase() })) });
@@ -523,6 +527,23 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       if (req.method === 'GET' && !m[2]) {
         const f = guidelines.file(m[1]);
         if (!f) { sendJSON(res, 404, { error: 'No such file.' }); return true; }
+        // ?view=1: read on screen (the owner, 27 Nov 2026). A PDF or a picture is shown by the browser itself; a Word document is read
+        // here and sent as plain words (docx-preview.js); an old .doc file cannot be shown, so the page says to download it.
+        if (new URL(req.url, 'http://x').searchParams.get('view') === '1') {
+          const ext = path.extname(f.path).toLowerCase();
+          if (ext === '.docx') {
+            try { sendJSON(res, 200, { kind: 'word', ...docxPreview(fs.readFileSync(f.path)) }); } catch (e) { console.error('[guideline preview]', f.name, e.message); sendJSON(res, 200, { kind: 'none', reason: 'This Word document cannot be shown here. Download it to read it.' }); }
+            return true;
+          }
+          if (ext === '.doc') { sendJSON(res, 200, { kind: 'none', reason: 'This is an old kind of Word file (.doc), which cannot be shown here. Download it to read it, or upload it again saved as .docx or PDF.' }); return true; }
+          send(res, 200, fs.readFileSync(f.path), {
+            'Content-Type': f.type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
+            // The browser's own PDF reader needs no limit on what it loads; it may be framed by this site only.
+            'Content-Security-Policy': ext === '.pdf' ? "frame-ancestors 'self'; base-uri 'none'; form-action 'none'" : "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'self'",
+            'Content-Disposition': `inline; filename="guideline${ext}"; filename*=UTF-8''${encodeURIComponent(f.name)}`,
+          });
+          return true;
+        }
         send(res, 200, fs.readFileSync(f.path), {
           'Content-Type': f.type, 'Cache-Control': 'no-store', 'Content-Security-Policy': "sandbox; default-src 'none'",
           'Content-Disposition': `attachment; filename="guideline${path.extname(f.path)}"; filename*=UTF-8''${encodeURIComponent(f.name)}`,

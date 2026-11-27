@@ -50,18 +50,61 @@
     items.forEach(([label, value, sub]) => { const d = el('div'); d.append(el('span', '', label), el('b', '', value)); if (sub) d.append(el('small', '', sub)); b.append(d); });
     return b;
   }
+  // The day it began, as a small calendar leaf.
+  function leaf(a) {
+    const [y, m, d] = String(a.date || '').split('-').map(Number);
+    const box = el('div', 'ev-leaf');
+    box.setAttribute('aria-hidden', 'true');
+    if (!y || !m || !d) { box.append(el('b', '', '?'), el('span', '', 'No date')); return box; }
+    box.append(el('b', '', String(d)), el('span', '', `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${y}`));
+    return box;
+  }
+  // One event or campaign in the list (the owner, 26 Nov 2026): when and where, how far its students got, what it cost, and who still
+  // waits for a follow-up. The whole card opens it.
+  function eventCard(a) {
+    const r = el('article', 'ev-card');
+    r.tabIndex = 0; r.setAttribute('role', 'button'); // its name is the words on the card, so what is seen is what is read out
+    const top = el('div', 'ev-card-top');
+    const words = el('div', 'ev-card-words');
+    words.append(el('div', 'ev-lname', a.name), el('div', 'ev-lmeta', where(a, [ran(a), intake === 'all' ? (a.intakeName || 'No intake yet') : ''])));
+    top.append(leaf(a), words, el('span', `ev-kind${a.kind === 'Marketing' ? ' is-campaign' : ''}`, a.kind === 'Marketing' ? 'Campaign' : 'Event'));
+    const flow = el('div', 'ev-flow');
+    [['Inquiries', a.leads], ['Applied', a.applied], ['Visas', a.visas]].forEach(([label, n], i) => {
+      const line = el('div', `ev-flow-line is-${i}`);
+      const bar = el('i');
+      bar.style.setProperty('--w', n && a.leads ? `${Math.max(4, Math.min(100, Math.round((n / a.leads) * 100)))}%` : '0%');
+      line.append(el('span', '', label), bar, el('b', '', number(n || 0)));
+      flow.append(line);
+    });
+    const money = el('dl', 'ev-sums');
+    [['Cost', a.cost ? rupees(a.cost) : 'Not entered'], ['Per inquiry', a.cost > 0 && a.leads > 0 ? per(a.cost, a.leads) : 'None yet'], ['Per visa', per(a.cost, a.visas)]].forEach(([label, v]) => {
+      const d = el('div', v === 'None yet' || v === 'Not entered' ? 'is-none' : '');
+      d.append(el('dt', '', label), el('dd', '', v));
+      money.append(d);
+    });
+    const wait = waitOf(a);
+    const foot = el('div', 'ev-card-foot');
+    foot.append(el('span', `ev-wait${wait ? ' is-waiting' : a.leads ? ' is-done' : ''}`, wait ? `${number(wait)} to follow up` : a.leads ? 'All followed up' : 'No students yet'), el('span', 'ev-open', 'Open \u203a'));
+    r.append(top, flow, money, foot);
+    const go = () => window.NiecUI.swap(() => { openEvent(a.id); window.scrollTo({ top: 0 }); });
+    r.addEventListener('click', go);
+    r.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    return r;
+  }
 
   // ---- the list ----
   function draw() {
     const every = data.activities;
     const acts = intake === 'all' ? every : every.filter((a) => a.intake === intake);
     const scopeName = intake === 'all' ? 'all intakes' : intakeName(intake);
-    const t = acts.reduce((s, a) => ({ cost: s.cost + (a.cost || 0), leads: s.leads + a.leads, visas: s.visas + a.visas }), { cost: 0, leads: 0, visas: 0 });
+    const t = acts.reduce((s, a) => ({ cost: s.cost + (a.cost || 0), leads: s.leads + a.leads, applied: s.applied + (a.applied || 0), visas: s.visas + a.visas }), { cost: 0, leads: 0, applied: 0, visas: 0 });
+    const share = (n) => (t.leads ? `${Math.round((n / t.leads) * 100)}% of inquiries` : '');
     const waitingAll = acts.reduce((n, a) => n + waitOf(a), 0);
     $('band').replaceWith(Object.assign(band([
       ['Total cost', rupees(t.cost) || 'Rs 0', `${acts.length === 1 ? '1 event or campaign' : `${acts.length} events and campaigns`}, ${scopeName}`],
       ['Inquiries', number(t.leads), waitingAll ? `${number(waitingAll)} to follow up` : (t.leads ? 'All followed up' : '')],
-      ['Visas', number(t.visas)],
+      ['Applied', number(t.applied), share(t.applied)],
+      ['Visas', number(t.visas), share(t.visas)],
       ['Cost per visa', per(t.cost, t.visas), t.leads ? `${per(t.cost, t.leads)} per inquiry` : ''],
     ]), { id: 'band' }));
     $('note').replaceChildren();
@@ -74,7 +117,7 @@
     const q = find.trim().toLowerCase();
     const shown = (show === 'all' ? acts : acts.filter((a) => (show === 'Marketing' ? a.kind === 'Marketing' : a.kind !== 'Marketing')))
       .filter((a) => !q || `${a.name} ${a.channel || ''} ${a.place || ''}`.toLowerCase().includes(q));
-    $('count').textContent = acts.length ? `${shown.length} of ${acts.length}` : '';
+    $('count').textContent = shown.length !== acts.length ? `${shown.length} of ${acts.length}` : ''; // only while a search or a kind narrows the list
     $('find').hidden = !every.length;
     const list = $('list');
     const empty = (title, line, withAdd) => {
@@ -86,21 +129,7 @@
     if (!every.length) { list.replaceChildren(empty('No events or campaigns yet', 'Add the first one to see its cost, inquiries and visas here.', true)); return; }
     if (!acts.length) { list.replaceChildren(empty(`No events or campaigns for ${scopeName} yet`, 'Choose another intake at the top, or All intakes.', true)); return; }
     if (!shown.length) { list.replaceChildren(empty(q ? `Nothing matches \u201c${find.trim()}\u201d` : 'Nothing here yet', q ? 'Try another word, or clear the search.' : 'Choose All to see every event and campaign.')); return; }
-    const head = el('div', 'ev-lrow head');
-    ['Event or campaign', 'Cost', 'Inquiries', 'To follow up', 'Visas', 'Per visa', ''].forEach((x, i) => head.append(el('div', i && i < 6 ? 'num' : '', x)));
-    list.replaceChildren(head, ...shown.map((a) => {
-      const r = el('div', 'ev-lrow item');
-      r.tabIndex = 0; r.setAttribute('role', 'button'); // its name is the words in the row (the name, the cost ...), so what is seen is what is read out
-      const who = el('div');
-      who.append(el('div', 'ev-lname', a.name), el('div', 'ev-lmeta', where(a, [ran(a), intake === 'all' ? (a.intakeName || 'No intake yet') : ''])));
-      const num = (label, v, k) => { const d = el('div', 'num' + (v === '-' ? ' none' : '') + (k ? ' ' + k : ''), v); d.dataset.label = label; return d; };
-      const wait = waitOf(a);
-      r.append(who, num('Cost', a.cost ? rupees(a.cost) : '-'), num('Inquiries', a.leads ? number(a.leads) : '-'), num('To follow up', a.leads ? number(wait) : '-', wait ? 'wait' : ''), num('Visas', a.leads ? number(a.visas) : '-'), num('Per visa', a.cost > 0 && a.visas > 0 ? per(a.cost, a.visas) : '-'), el('div', 'ev-go', '\u203a'));
-      const go = () => window.NiecUI.swap(() => { openEvent(a.id); window.scrollTo({ top: 0 }); });
-      r.addEventListener('click', go);
-      r.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-      return r;
-    }));
+    list.replaceChildren(...shown.map(eventCard));
   }
 
   // ---- one event: its figures, the upload of its students, and its students ----
@@ -117,7 +146,7 @@
     if (a.note) left.append(el('p', 'ev-about', a.note));
     // Its students in more than one intake: where they are, so the figures below (every intake) are read right.
     if ((a.perIntake || []).length > 1) left.append(el('p', 'ev-about', `Its students: ${a.perIntake.map((x) => `${number(x.students)} in ${x.name}`).join(', ')}. The figures below count all of them.`));
-    head.append(left);
+    head.append(leaf(a), left);
     if (data.canEdit) head.append(h('button', { class: 'btn', type: 'button', onclick: () => form(a) }, 'Edit'));
     const pc = (n) => (a.leads ? `${Math.round((n / a.leads) * 100)}% of inquiries` : '');
     const figs = band([

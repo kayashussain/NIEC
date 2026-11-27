@@ -89,3 +89,8 @@ student-details/brand-logo.png
 **/users.json
 **/sessions.json
 **/session-secret
+
+# Copies of the data made before a new version starts (version-guard.js), and the note of which data folder is in use.
+**/version-backups/
+**/version-stamp.json
+**/.data-folder

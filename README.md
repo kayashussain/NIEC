@@ -73,6 +73,7 @@ team and Manager rules, Universities, Incentive, accessibility) run where Playwr
 ## Deploying and running it
 
 - The live server is updated through cPanel. Its notes (`LIVE-SERVER.md`) are kept on the owner's computer, not on GitHub.
+- **Before every upload, follow [GO-LIVE-DATA-SAFETY.md](GO-LIVE-DATA-SAFETY.md): no live data may be lost.**
 
 Both explain accounts, backups, email and what is stored where. Data lives outside the code folder, so an update
 never touches it. `/healthz` answers `{"ok":true}` for an uptime monitor.

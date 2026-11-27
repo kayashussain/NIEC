@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { sendJSON, send, readJSONBody, readRawBody: readRaw, localDate } = require('../shared/server-utils');
 const { isoDate } = require('./dashboard-stats');
+const { branchInsights, universityStudents } = require('./branch-insights');
 const { syncChanges, squash } = require('./sheet-sync');
 const Teams = require('../shared/teams');
 const mailer = require('../shared/mailer');
@@ -1483,7 +1484,9 @@ function createPortalApi({
     // passport or medical details are missing or do not add up, one plain line each, all of them (never cut short). A line leaves by itself
     // once the detail is right.
     // The Mock Team has its own Missing details too (the owner, 22 Nov 2026): feedback not written, a booked mock not answered, no mock yet.
-    const missing = kind === 'application' || kind === 'mock' ? new Map() : null;
+    // And a branch (the owner, 26 Nov 2026): its own students still in progress, with the same lines as the Application Team's.
+    const branchLook = Teams.ownTeamBranch(user);
+    const missing = kind === 'application' || kind === 'mock' || branchLook ? new Map() : null;
     const missOne = (row, sheet, line, extra = {}) => {
       const m = missing.get(row._id) || { id: row._id, name: nameOf(row), stage: text(row[STATUS]), intake: sheet.name, lines: [] };
       if (!m.lines.some((x) => x.text === line)) m.lines.push({ text: line, ...extra });
@@ -1543,6 +1546,7 @@ function createPortalApi({
       const visa = stage === 'Visa Issued' || text(row['VISA RECEIVED DATE']);
       if (visa) { totals.visas += 1; continue; }
       totals.active += 1;
+      if (branchLook) missingOf(row, sheet, card, stage, wrong);
       if (text(row['APPLICATION SUBMISSION DATE'])) totals.applied += 1;
       const created = dateOf(row['APPLICATION SUBMISSION DATE']);
       if (stage === 'Inquiry') totals.inquiries += 1;
@@ -1624,6 +1628,7 @@ function createPortalApi({
       today, name: user.name, totals, kind, title: space.title, tagline: space.tagline,
       mockTeam: Teams.ownTeamMock(user), // the Mock Team's Today in the same look (the owner, 23 Nov 2026, approved design)
       appTeam: Teams.ownTeamApplication(user), // the Missing details tab is drawn in the Application Team's own look for that team only (the owner, 23 Nov 2026)
+      branchTeam: branchLook, // a branch's Today in the same look, with Needs attention under it (the owner, 26 Nov 2026)
       tiles: space.tiles.map((k) => ({ key: k, label: TILE_LABEL[k], value: value[k] })),
       missing: missing ? [...missing.values()].sort((a, b) => b.lines.length - a.lines.length || a.name.localeCompare(b.name)) : null,
       // How many different students wait in these lists: a student in two lists (no passport details and not applied yet) counts once.
@@ -1691,6 +1696,9 @@ function createPortalApi({
       stages: Teams.ALL_STATUSES.filter((st) => plans.some((p) => p.stages.includes(st))),
     };
   };
+  // A branch's own students, each with their applications, for its figures (branch-insights.js).
+  const withApplications = (students, all) => students.map(({ row }) => { const card = all[row._id] || {}; return { id: row._id, name: nameOf(row), row, card, apps: applicationsOf(row, card) }; });
+
   function myDashboard(user) {
     const kind = homeKind(user);
     const plan = kind === 'team' ? teamsPlan(user) : (MY_DASH[kind] || MY_DASH.team);
@@ -1758,7 +1766,10 @@ function createPortalApi({
       });
     }
     const intake = intakeSheet;
+    // A branch's Dashboard goes deeper (the owner, 27 Nov 2026): every figure of its own students (branch-insights.js).
+    const branch = kind === 'branch' ? branchInsights(withApplications(students, all), today) : null;
     return {
+      ...(branch ? { branch } : {}),
       kind, title: plan.title, lead: plan.lead, name: user.name, today, intake: intake ? intake.name : '',
       kpis: plan.kpis.map((k) => ({ key: k, label: MY_KPI[k][0], note: MY_KPI[k][1], value: v[k] || 0 })),
       week: plan.week.map(([key, label]) => ({ key, label, now: weekNow[key] || 0, before: weekBefore[key] || 0 })),
@@ -3659,6 +3670,12 @@ function createPortalApi({
       sendJSON(res, 200, { ok: true, ...userMail.info(req.user.id) });
       return true;
     }
+    // A branch's own students at each University (the owner, 27 Nov 2026): the Universities pages show them to that branch only.
+    if (urlPath === '/api/branch-universities' && req.method === 'GET') {
+      if (!Teams.ownTeamBranch(req.user)) { sendJSON(res, 403, { error: 'This is for a branch.' }); return true; }
+      sendJSON(res, 200, { universities: universityStudents(withApplications(visibleStudents(req.user), cards.all()), facts ? facts.all() : []) });
+      return true;
+    }
     if (urlPath === '/api/my-dashboard' && req.method === 'GET') {
       if (Teams.isAdmin(req.user) || (Teams.isManager(req.user) && Teams.isReadOnly(req.user))) { sendJSON(res, 403, { error: 'Admin and the Manager have the full Dashboard.' }); return true; }
       sendJSON(res, 200, myDashboard(req.user));
@@ -3675,7 +3692,7 @@ function createPortalApi({
       sendJSON(res, 200, { inMock, passed, failed, ratio: passed + failed ? Math.round((passed / (passed + failed)) * 1000) / 10 : null });
       return true;
     }
-    if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user) }); return true; }
+    if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user), ...(Teams.isAdmin(req.user) || Teams.isManager(req.user) || Teams.ownTeamBranch(req.user) ? { lead: true } : {}) }); return true; }
     if (urlPath === '/api/activities' && req.method === 'GET') {
       if (!managers(req, res, 'Events and marketing')) return true;
       const { list, unlinkedSocial, unlinkedByIntake } = activities(req.user);
@@ -3852,16 +3869,20 @@ function createPortalApi({
     if (urlPath === '/api/students/search' && req.method === 'GET') { sendJSON(res, 200, { students: searchStudents(req.user, (query().get('q') || '').slice(0, 100)) }); return true; }
     if (urlPath === '/api/students/new' && req.method === 'POST') return handleNewStudent(req, res);
     if (urlPath === '/api/students/merge' && req.method === 'POST') return handleMerge(req, res);
+    // A branch neither follows up many students at once nor adds many (the owner, 26 Nov 2026): it adds them one at a time.
+    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email', '/api/students/bulk'].includes(urlPath) && Teams.ownTeamBranch(req.user)) { sendJSON(res, 403, { error: 'This is not open to a branch.' }); return true; }
+    if (urlPath === '/api/students/bulk' && Teams.ownTeamMock(req.user)) { sendJSON(res, 403, { error: 'This is not open to the Mock Team.' }); return true; }
     if (urlPath === '/api/students/bulk' && req.method === 'POST') return handleBulkStudents(req, res);
     if (urlPath === '/api/students/check' && req.method === 'POST') {
       // The answer says whether somebody is a student already, so one account may ask only so often (it cannot be used to list students).
+      // The rows are read first: counting them before they were read made every check fail (review, 27 Nov 2026).
+      const body = await bodyOf(req, res, 256 * 1024);
+      if (!body) return true;
       const who = text(req.user.id || req.user.name); const since = Date.now() - 3600000;
       const asked = (checkAsks.get(who) || []).filter((x) => x.at > since);
       const adding = Math.min(200, Array.isArray(body.rows) ? body.rows.length : 0);
       if (asked.reduce((n, x) => n + x.n, 0) + adding > 5000) { sendJSON(res, 429, { error: 'Too many checks in an hour. Wait a little and try again.' }); return true; }
       asked.push({ at: Date.now(), n: adding }); checkAsks.set(who, asked);
-      const body = await bodyOf(req, res, 256 * 1024);
-      if (!body) return true;
       const list = (Array.isArray(body.rows) ? body.rows : []).slice(0, 200).map((r) => { const d = r && typeof r === 'object' ? existingStudent(r.email, r.phone) : null; return d ? { exists: true, name: Teams.isAdmin(req.user) ? [d['FIRST NAME'], d['LAST NAME']].filter(Boolean).join(' ') : ' ' } : { exists: false }; });
       sendJSON(res, 200, { results: list });
       return true;
@@ -3878,8 +3899,9 @@ function createPortalApi({
       return true;
     }
     if (urlPath.startsWith('/api/cards/')) return handleCard(req, res, urlPath);
-    // Follow-up messages to many students at once are for Admin and the branches, not the Follow-up Team (the owner, 21 Nov 2026).
-    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && (Teams.ownTeamFollowup(req.user) || Teams.ownTeamApplication(req.user))) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
+    // Follow-up messages to many students at once are for Admin, not the Follow-up Team (the owner, 21 Nov 2026).
+    // The Mock Team too: it has no Follow-up page (the owner, 22 Nov 2026), so its address is closed as well (review, 27 Nov 2026).
+    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && (Teams.ownTeamFollowup(req.user) || Teams.ownTeamApplication(req.user) || Teams.ownTeamMock(req.user))) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
     if (urlPath === '/api/bulk/students' || urlPath === '/api/bulk/preview' || urlPath === '/api/bulk/send-email') return handleBulk(req, res, urlPath);
     if (urlPath === '/api/courses' && req.method === 'GET') {
       const q = query();

@@ -107,6 +107,11 @@
   html body .fu-page .fu-strip textarea { width: 100%; height: 42px; min-height: 42px; max-height: 220px; padding: 10px 14px; font: inherit; font-size: 15px; box-sizing: border-box; resize: none; overflow: hidden; line-height: 1.4; }
   html body .fu-page .fu-strip input[type="date"], html body .fu-page .fu-strip select { min-width: 172px; height: 42px; padding: 0 12px; font: inherit; font-size: 15px; }
   .fu-strip .fu-req { color: #b42318; font-weight: 700; }
+  /* 🔴 CSS CHANGED (2026-11-27): quick days under a follow-up note | from: only the date box | to: a row of small buttons "Tomorrow, In 3 days, In 1 week, In 2 weeks" under it, the chosen one dark | why: one press for the usual days */
+  .fu-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #636366; }
+  .fu-quick[hidden] { display: none; }
+  /* On a phone the quick days sit right under the date box, above Save note. */
+  @media (max-width: 900px) { html body .fu-page .fu-strip .fu-strip-grid { display: contents; } html body .fu-page .fu-strip .fu-strip-grid > label { flex: none; } .fu-quick { order: 1; } html body .fu-page .fu-strip .fu-btns { order: 2; } .fu-strip .fu-err { order: 3; } .fu-strip .fu-hint { order: 4; } }
   html body .fu-page .fu-strip .bad { box-shadow: 0 0 0 2px #b42318 inset !important; animation: fu-shake .32s cubic-bezier(.4, 0, .6, 1); }
   .fu-btns { display: flex; gap: 8px; flex-wrap: wrap; }
   html body .fu-page .fu-btns .btn { min-height: 42px; padding: 0 18px; font-size: 15px; }
@@ -118,6 +123,29 @@
   @media (prefers-reduced-motion: reduce) { html body .fu-page .fu-strip .bad { animation: none; } }
   /* a narrower laptop: the wide rows keep their columns readable by wrapping the buttons under each other */
   @media (max-width: 1360px) { .fu-row { gap: 10px; padding-left: 16px; padding-right: 16px; } .fu-row.live { grid-template-columns: 32px minmax(120px, .9fr) 84px minmax(150px, 1.6fr) 100px 146px 156px; } .fu-row.moved { grid-template-columns: 32px minmax(130px, .9fr) minmax(150px, 1fr) minmax(200px, 1.3fr) minmax(150px, 1fr) 40px; } .fu-row.stop { grid-template-columns: 32px minmax(130px, .9fr) 92px minmax(180px, 1.6fr) minmax(110px, .7fr) 168px; } .fu-row.moved .fu-view { visibility: hidden; } }
+  /* 🔴 CSS CHANGED (2026-11-27): phone and small tablet | from: the laptop's columns squeezed into the narrow screen, so a task's words stood one letter under another and the right side of every student (last contact, next day, tag, Note, No answer, Bring back) was cut off and could not be reached | to: each task and each student stacked under the name, every word and button inside the screen | why: the Follow-up Team could not work from a phone */
+  @media (max-width: 900px) {
+    html:root body main.p-page.fu-page { padding-left: 16px !important; padding-right: 16px !important; }
+    html body .fu-page .fu-task { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 6px 12px; align-items: start; padding: 14px 16px; }
+    html body .fu-page .fu-task > :nth-child(3) { grid-column: 2 / -1; grid-row: 2; min-width: 0; }
+    html body .fu-page .fu-task > :nth-child(4) { grid-column: 3; grid-row: 1; }
+    html body .fu-page .fu-task > :nth-child(5) { grid-column: 2 / -1; grid-row: 3; justify-self: start; margin-top: 4px; }
+    html body .fu-page .fu-thread { padding-left: 16px; padding-right: 16px; }
+    html body .fu-page .fu-row.head { display: none; }
+    html body .fu-page .fu-row.live, html body .fu-page .fu-row.moved, html body .fu-page .fu-row.stop, html body .fu-page .fu-row.all { grid-template-columns: 32px minmax(0, 1fr); gap: 8px 10px; align-items: start; padding: 14px 16px; }
+    html body .fu-page .fu-row > * { grid-column: 2; min-width: 0; }
+    html body .fu-page .fu-row > .fu-num { grid-column: 1; grid-row: 1 / span 6; padding-top: 2px; }
+    html body .fu-page .fu-sub { white-space: normal; }
+    html body .fu-page .fu-pill { white-space: normal; }
+    html body .fu-page .fu-row.live .fu-next::before { content: "Next follow-up: "; color: #636366; font-size: 13.5px; }
+    html body .fu-page .fu-row.stop > .fu-small::before { content: "Stopped by: "; }
+    html body .fu-page .fu-row .fu-view { text-align: left; visibility: visible; }
+    html body .fu-page .fu-act { justify-content: flex-start; flex-wrap: wrap; }
+    html body .fu-page .fu-act .btn { min-height: 40px; }
+    html body .fu-page .fu-tg button { min-height: 36px; min-width: 52px; }
+    html body .fu-page .fu-strip { padding: 14px 16px 16px; }
+    html body .fu-page .fu-search { width: 100%; }
+  }
 </style>
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#sr360-ready" blocking="render" />

@@ -102,7 +102,8 @@ const FAMILY = (h, s) => {
 // kind: 'bg' | 'text' | 'border'; ctx.keepText: the same rule puts the text on a coloured fill that stays coloured
 function mapColor(c, kind, ctx = {}) {
   const hsl = toHsl(c);
-  const neutral = hsl.s < 0.14;
+  /* 🔴 CSS CHANGED (2026-11-27): near-white greys in dark mode | from: a grey such as #fafafc counted as a colour (its red, green and blue differ by a hair), so day headings, change lists and some rows turned navy or purple in dark mode | to: a grey whose parts differ by 8 or less counts as a grey and takes the dark greys | why: the stray tints looked like marked rows */
+  const neutral = hsl.s < 0.14 || Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b) <= 8;
   const hexKey = `#${hex2(c.r)}${hex2(c.g)}${hex2(c.b)}`;
   if (neutral) {
     if (kind === 'bg') {
@@ -221,6 +222,7 @@ function parseBlock(css) {
 const BG_PROPS = /^(background|background-color|background-image)$/;
 const BORDER_PROPS = /^(border(-(top|right|bottom|left|block|inline)(-(start|end))?)?(-color)?|outline(-color)?|column-rule(-color)?)$/;
 const TEXT_PROPS = /^(color|caret-color|accent-color|fill|stroke|text-decoration-color|-webkit-text-fill-color|scrollbar-color)$/;
+const LINE_SHORTHAND = /^(border(-(top|right|bottom|left|block|inline)(-(start|end))?)?|outline|column-rule)$/;
 function kindOfProp(prop) {
   if (BG_PROPS.test(prop)) return 'bg';
   if (BORDER_PROPS.test(prop)) return 'border';
@@ -255,7 +257,11 @@ function darkRule(rule) {
     const has = COLOR_RE.test(d.value); COLOR_RE.lastIndex = 0;
     if (!has) return;
     const v = mapValue(d.value, kind, { keepText, isVar: d.prop.startsWith('--') });
-    if (v !== d.value) lines.push(`  ${d.prop}: ${v}${d.important ? ' !important' : ''};`);
+    if (v === d.value) return;
+    /* 🔴 CSS CHANGED (2026-11-27): lines in dark mode | from: the dark rule repeated the whole "border: 1px solid colour", so a line the light look had taken away (on a phone) came back in dark mode | to: only the line's colour is written | why: a stray line showed above the account button on a dark phone screen */
+    const colours = v.match(COLOR_RE) || []; COLOR_RE.lastIndex = 0;
+    const line = LINE_SHORTHAND.test(d.prop) && colours.length === 1 && !v.includes('var(');
+    lines.push(`  ${line ? `${d.prop}-color` : d.prop}: ${line ? colours[0] : v}${d.important ? ' !important' : ''};`);
   });
   return lines.length ? `${darkSelector(rule.selector)} {\n${lines.join('\n')}\n}\n` : '';
 }
@@ -290,6 +296,8 @@ html[data-theme="dark"] input, html[data-theme="dark"] textarea, html[data-theme
 html[data-theme="dark"] input::placeholder, html[data-theme="dark"] textarea::placeholder { color: #9aa0a6; }
 html[data-theme="dark"] .niec-logo { filter: invert(1) hue-rotate(180deg); }
 html[data-theme="dark"] img.slide, html[data-theme="dark"] .uc-cover img, html[data-theme="dark"] video { filter: none; }
+/* 🔴 CSS CHANGED (2026-11-26): university logos in dark mode | from: a dark box | to: a white box | why: the logos are drawn for white paper */
+html[data-theme="dark"] body .ff-page .uc-card .uni-mono.has-logo, html[data-theme="dark"] body .bp-page .bp-card .bp-avatar.has-logo, html[data-theme="dark"] body #page .ig-mark.has-logo, html[data-theme="dark"] body #panel-overview .ov-uni-logo.has-logo { background: #fff !important; }
 `;
 fs.writeFileSync(path.join(root, 'shared', 'dark.css'), head + body);
 console.log('shared/dark.css written,', Math.round((head.length + body.length) / 1024), 'KB');

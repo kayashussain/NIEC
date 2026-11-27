@@ -44,6 +44,10 @@
 .mt-actions { white-space: nowrap; text-align: right; }
 .mt-nowrap { white-space: nowrap; }
 .mt-who a, .mt-who > span { display: block; font-size: 16px; }
+/* 🔴 CSS CHANGED (2026-11-27): the initials beside each name on Bookings for Admin and the Manager | from: two plain letters on a line of their own above the name | to: the small round monogram at the left of the name, as the Mock Team sees it | why: the letters read like a second, broken name */
+.mt-who > span.mt-av { float: left; display: grid; place-items: center; width: 36px; height: 36px; margin: 1px 12px 0 0; border-radius: 50%; background: #f0f0f2; color: #1d1d1f; font-size: 13px; font-weight: 600; line-height: 1; }
+.mt-who-words { overflow: hidden; min-width: 0; }
+.mt-who-words > a, .mt-who-words > span { display: block; }
 .mt-sub { display: block; color: #333; font-size: 14px; }
 .mt-rule { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 15px; }
 .mt-rule .p-input { width: 100%; }
@@ -126,3 +130,25 @@
 .mt-file-title { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
 .mt-upload { margin-top: 16px; padding: 16px 18px; border: 1px dashed #6f6f6f; border-radius: 8px; background: #e2e2e2; }
 .mt-upload-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+/* 🔴 CSS CHANGED (2026-11-27): Bookings on a phone and a small tablet for Admin and the Manager | from: the two columns side by side at every width, so "Upcoming mocks" was squeezed and the names cut off | to: one column; each mock shows its time and number, then the student, then its buttons | why: it could not be read on a phone */
+@media (max-width: 900px) {
+  html:root body .mt-page .mt-grid { grid-template-columns: minmax(0, 1fr); }
+  html:root body .mt-page .mt-table, html:root body .mt-page .mt-table tbody { display: block; width: 100%; }
+  html:root body .mt-page .mt-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  html:root body .mt-page .mt-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 13px 0; border-top: 1px solid #e5e5ea; }
+  html:root body .mt-page .mt-table tr.mt-day { display: block; padding: 0; border-top: 0; }
+  html:root body .mt-page .mt-table tr.mt-day th { display: block; }
+  html:root body .mt-page .mt-table td { display: block; padding: 0; border: 0; }
+  html:root body .mt-page .mt-table td.mt-time { grid-column: 1; grid-row: 1; }
+  html:root body .mt-page .mt-table td.mt-nowrap { grid-column: 2; grid-row: 1; justify-self: end; }
+  html:root body .mt-page .mt-table td.mt-who { display: block; grid-column: 1 / -1; grid-row: 2; width: auto; max-width: none; min-width: 0; }
+  html:root body .mt-page .mt-table td.mt-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; grid-column: 1 / -1; grid-row: 3; text-align: left; white-space: normal; }
+  html:root body .mt-page .mt-table .mt-sub { max-width: none; white-space: normal; }
+}
+/* 🔴 CSS CHANGED (2026-11-27): "My booking link" not yet set up, on a phone | from: the title, the sentence and "Set up" in three narrow columns, the sentence on five lines | to: the sentence on a full line of its own, "Set up" under it | why: it could not be read at a glance */
+@media (max-width: 640px) { html:root body .mt-page .mt-linkbar-missing { flex: 1 0 100%; } html:root body .mt-page .mt-linkbar-title { flex: 1 0 100%; } }
+/* 🔴 CSS CHANGED (2026-11-27): the same fields for Admin and the Manager on a phone | from: three narrow columns | to: one box under another | why: what was typed could not be read */
+@media (max-width: 640px) { html:root body .mt-page .mt-three { grid-template-columns: minmax(0, 1fr); } html:root body .mt-page .mt-three > div:nth-child(n) { grid-column: 1 / -1; min-width: 0; } }
+/* 🔴 CSS CHANGED (2026-11-27): the same booking link box for Admin and the Manager | from: a second white box inside the box | to: one box; on a phone the name moves to its own line when the address is long | why: it looked broken */
+html:root body .mt-page .mt-prefix .p-input.p-input.p-input { border: 0 !important; box-shadow: none !important; background: transparent !important; }
+@media (max-width: 640px) { html:root body .mt-page .mt-prefix { flex-wrap: wrap; padding-top: 8px; } html:root body .mt-page .mt-prefix .p-input.p-input.p-input { flex: 1 1 140px; } }

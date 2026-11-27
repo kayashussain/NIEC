@@ -285,10 +285,20 @@ test('Today: the Application Team\'s opened task, and nobody else\'s', { timeout
   assert.deepStrictEqual(addErrors, []);
   await addPage.close();
 
-  // Admin's Today is as it was.
+  // Admin's Today (27 Nov 2026) is two lists of open tasks: those assigned to Admin and those Admin assigned, nothing else.
+  assert.ok((await asha.request.post(`/api/cards/${id}/tasks`, { data: { team: 'head', text: 'Please approve the extension', tag: 'other' } })).ok());
+  assert.ok((await admin.request.post(`/api/cards/${id}/tasks`, { data: { team: 'application', text: 'Check the whole file', tag: 'other' } })).ok());
   const adminPage = await admin.newPage();
   await adminPage.goto('/today');
-  await adminPage.waitForSelector('.td-page');
+  await adminPage.waitForSelector('.dt-to .tdx');
   await wait(500);
-  assert.strictEqual(await adminPage.locator('.tda-top, .tda-row, .tdy-body').count(), 0, 'Admin keeps its own Today');
+  assert.deepStrictEqual((await adminPage.locator('.dt-head h2').allInnerTexts()).map((x) => x.trim()), ['Assigned to you', 'Assigned by you']);
+  assert.strictEqual(await adminPage.locator('.dw-tile, .td-tasks, .td-attn, .td-pulse').count(), 0, 'no day counts, no board and nothing else');
+  const toMe = await adminPage.locator('.dt-to').innerText();
+  const byMe = await adminPage.locator('.dt-by').innerText();
+  assert.ok(toMe.includes('Please approve the extension') && toMe.includes('From ') && !toMe.includes('Check the whole file'), 'a task given to Admin is under Assigned to you, with who gave it');
+  assert.ok(byMe.includes('Check the whole file') && byMe.includes('Application Team') && !byMe.includes('Please approve the extension'), 'a task Admin gave is under Assigned by you, under its team');
+  // A task opens here, with its buttons.
+  await adminPage.locator('.dt-to .tdx-head', { hasText: 'Please approve the extension' }).click();
+  await adminPage.locator('.dt-to .tdx.is-open .tdx-done').waitFor();
 });

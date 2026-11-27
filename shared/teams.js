@@ -71,6 +71,7 @@
   BRANCH_LIST.forEach((name) => {
     DEPARTMENTS[name.toLowerCase().replace(/[^a-z0-9]+/g, '')] = { label: `${name} Branch`, start: 'Inquiry', statuses: [], editable: new Set(), source: `${name} Branch` };
   });
+  DEPARTMENTS.chitwan.deletesOwnInquiry = true; // see canDelete
   const SOURCE = 'STUDENT SOURCE';
 
   // The stage moves a department may make. Follow-up can't move students on.
@@ -217,12 +218,33 @@
   // Application and Mock staff can delete a student at one of their own stages (a duplicate entry), one at a
   // time. Admin can delete freely; a view-only Manager cannot. `row` (optional): the student, as the server has
   // it. A Manager sees every student, so this is what keeps one who works in a team to that team's stages.
+  // The Chitwan Branch (the owner, 27 Nov 2026) also deletes, one at a time, its own student who is still an Inquiry with
+  // nothing applied for (a mistake or a duplicate). The other branches delete nobody.
   const DELETE_DEPARTMENTS = ['application', 'mock'];
+  // Any of these filled in means the student went further than an inquiry, whatever the status says now.
+  const PAST_INQUIRY_COLUMNS = ['APPLICATION SUBMISSION DATE', 'OFFER RECEIVED DATE', 'MOCK SCHEDULE 1', 'PRE CAS INTERVIEW', 'PAYMENT DATE',
+    'CAS REQUESTED DATE', 'CAS RECEIVED DATE', 'VISA LODGE DATE', 'VFS ATTENDED DATE', 'VISA RECEIVED DATE'];
+  const inquiryDeleters = (team) => team.departments.filter((d) => DEPARTMENTS[d].deletesOwnInquiry);
   function canDelete(x, row = null) {
     const team = teamOf(x);
     if (!team) return true;
-    if (team.readOnly || !team.departments.some((d) => DELETE_DEPARTMENTS.includes(d))) return false;
-    return !row || team.statuses.has(String(row[STATUS] || '').trim());
+    if (team.readOnly) return false;
+    const stage = String((row && row[STATUS]) || '').trim();
+    if (team.departments.some((d) => DELETE_DEPARTMENTS.includes(d)) && (!row || team.statuses.has(stage))) return true;
+    const branches = inquiryDeleters(team);
+    if (!branches.length) return false;
+    if (!row) return true;
+    return branches.some((d) => DEPARTMENTS[d].source === String(row[SOURCE] || '').trim())
+      && stage === 'Inquiry' && PAST_INQUIRY_COLUMNS.every((c) => isBlank(row[c]));
+  }
+  // Why this student can't be deleted, in the words the person reads.
+  function deleteRefusal(x, row) {
+    if (!canDelete(x)) return 'Only Admin can delete students.';
+    const team = teamOf(x);
+    if (inquiryDeleters(team).length && !team.departments.some((d) => DELETE_DEPARTMENTS.includes(d))) {
+      return 'You can delete only your own student who is still an Inquiry, with nothing applied for.';
+    }
+    return `Your team can't delete a student at ${String((row && row[STATUS]) || '').trim() || 'no status'}.`;
   }
 
   // The departments a person can add a new student for (Admin adds without a department).
@@ -392,7 +414,7 @@
       base.rows.forEach((r) => {
         if (mineRowIds.has(r._id)) return;
         if (canDelete(x, r)) deletes.push({ sheetId: sheet.id, rowId: r._id });
-        else errors.push(canDelete(x) ? `Your team can't delete a student at ${String(r[STATUS] || '').trim() || 'no status'}.` : 'Only Admin can delete students.');
+        else errors.push(deleteRefusal(x, r));
       });
     });
     if (deletes.length > 1) errors.push('You can delete one student at a time.');
@@ -419,6 +441,14 @@
   // Whether a person's own team is the Mock Team, by the same rule (the owner, 22 Nov 2026): they work from Today, Bookings, All
   // Students (to look at; mocks are written in the window after a mock and corrected on the student card), Universities and
   // Interview guidelines, without the Dashboard, Partners or Mock interviews (the guides students read stay with Admin and the Manager).
+  // A branch person (the owner, 26 Nov 2026): their own team is a branch, or branches are the only teams they are in. They work from
+  // Today, Dashboard, All Students and Universities, without Add many students, Follow-up or Partners.
+  function ownTeamBranch(u) {
+    if (!u || u.role === 'admin' || u.role === 'manager') return false;
+    const deps = Array.isArray(u.departments) ? u.departments : [];
+    const branch = (d) => Boolean(DEPARTMENTS[d] && DEPARTMENTS[d].source);
+    return u.taskTeam ? branch(u.taskTeam) && deps.includes(u.taskTeam) : deps.length > 0 && deps.every(branch);
+  }
   function ownTeamMock(u) {
     if (!u || u.role === 'admin' || u.role === 'manager') return false;
     const deps = Array.isArray(u.departments) ? u.departments : [];
@@ -431,8 +461,8 @@
   }
 
   return {
-    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup, ownTeamMock,
-    who, kindOf, canDelete, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
+    DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup, ownTeamMock, ownTeamBranch,
+    who, kindOf, canDelete, deleteRefusal, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
     statusChoices, checkMove, newestSheet, viewFor, teamChanges,
   };
 });
