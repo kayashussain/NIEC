@@ -3213,6 +3213,9 @@ function createPortalApi({
     return [...found.values()].sort((x, y) => y.students - x.students || x.name.localeCompare(y.name));
   }
   async function handleB2b(req, res, urlPath) {
+    // The Application Team's own people have no Partners pages (the owner, 21 Nov 2026), so nothing on B2B Partners is changed by a
+    // request of theirs either (the owner, 27 Nov 2026). Reading stays: Apply now on a university shows the partner and its portal.
+    if (req.method === 'POST' && Teams.ownTeamApplication(req.user)) { sendJSON(res, 403, { error: 'B2B Partners is not open to the Application Team.' }); return true; }
     if (urlPath === '/api/b2b/not-partner' && req.method === 'POST') {
       // Admin, and the Application Team, who sets B2B partners up too (the owner, 15 Nov 2026).
       if (partnerAccess(req.user).b2b !== 'setup' && !adminOnly(req, res, 'B2B Partners')) return true;
@@ -3871,7 +3874,8 @@ function createPortalApi({
     if (urlPath === '/api/students/merge' && req.method === 'POST') return handleMerge(req, res);
     // A branch neither follows up many students at once nor adds many (the owner, 26 Nov 2026): it adds them one at a time.
     if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email', '/api/students/bulk'].includes(urlPath) && Teams.ownTeamBranch(req.user)) { sendJSON(res, 403, { error: 'This is not open to a branch.' }); return true; }
-    if (urlPath === '/api/students/bulk' && Teams.ownTeamMock(req.user)) { sendJSON(res, 403, { error: 'This is not open to the Mock Team.' }); return true; }
+    // Nor do the Mock, Follow-up and Application Teams add many (the owner, 22 and 27 Nov 2026).
+    if (urlPath === '/api/students/bulk' && (Teams.ownTeamMock(req.user) || Teams.ownTeamFollowup(req.user) || Teams.ownTeamApplication(req.user))) { sendJSON(res, 403, { error: 'Adding many students at once is not open to your team.' }); return true; }
     if (urlPath === '/api/students/bulk' && req.method === 'POST') return handleBulkStudents(req, res);
     if (urlPath === '/api/students/check' && req.method === 'POST') {
       // The answer says whether somebody is a student already, so one account may ask only so often (it cannot be used to list students).

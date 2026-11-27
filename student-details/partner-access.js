@@ -9,6 +9,9 @@
 //                             more, the owner, 20 Nov 2026);
 //                             on a partner it changes only how to submit: the portal link (or email), its username and its password.
 //                             Everything else (name, status, agreement, contacts, commission lists, notes, removing) stays Admin's.
+//                             Since the page closed to that team's own people (21 Nov 2026), their requests change nothing on
+//                             B2B Partners (the owner, 27 Nov 2026; portal-api.js). This set-up is left to a person who is also
+//                             in another team, whose menu still has the page.
 //   Portal logins             the username and password of a portal are for Admin and the Application Team only (the owner,
 //                             14 Nov 2026): the Application Team submits the applications; everyone else sees the portal link only.
 //                             A person who is also in the Mock Team counts as Application Team here only when the Application Team

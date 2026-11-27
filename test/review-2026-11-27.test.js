@@ -57,4 +57,21 @@ test('the check for students already on the sheet answers, and pages closed to a
   assert.strictEqual((await mock('POST', '/api/bulk/preview', { ids: ['row-x'], subject: 'a', body: 'b' })).status, 403);
   assert.strictEqual((await mock('POST', '/api/bulk/send-email', { ids: ['row-x'], subject: 'a', body: 'b' })).status, 403);
   assert.strictEqual((await mock('POST', '/api/students/bulk', { rows: [{ first: 'No', last: 'One', phone: '9812345670' }], source: 'Visitor' })).status, 403);
+
+  // Nor do the Follow-up Team and the Application Team add many students (the owner, 27 Nov 2026).
+  const fu = await join('sunita', ['followup']);
+  const app = await join('asha', ['application']);
+  for (const [who, home] of [[fu, '/students'], [app, '/today']]) {
+    for (const page of ['/bulk-add', '/bulk-add.html']) assert.strictEqual((await who('GET', page)).location, home, page);
+    assert.strictEqual((await who('POST', '/api/students/bulk', { rows: [{ first: 'No', last: 'One', phone: '9812345671' }], source: 'Visitor' })).status, 403);
+  }
+  assert.strictEqual((await admin('GET', '/bulk-add')).status, 200, 'Admin still adds many');
+
+  // The Follow-up and Bookings page files open by their own address only for those who get their data.
+  const branch = await join('chitwan', ['chitwan']);
+  for (const [name, who] of [['follow-up', fu], ['admin', admin]]) assert.strictEqual((await who('GET', '/followup.html')).status, 200, name);
+  for (const [name, who] of [['application', app], ['mock', mock], ['branch', branch]]) assert.strictEqual((await who('GET', '/followup.html')).status, 302, name);
+  for (const [name, who] of [['mock', mock], ['admin', admin]]) assert.strictEqual((await who('GET', '/bookings.html')).status, 200, name);
+  for (const [name, who] of [['follow-up', fu], ['application', app], ['branch', branch]]) assert.strictEqual((await who('GET', '/bookings.html')).status, 302, name);
+  assert.strictEqual((await fu('GET', '/students')).status, 200, 'the Follow-up Team still has its list at All Students');
 });

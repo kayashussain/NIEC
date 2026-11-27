@@ -39,6 +39,7 @@ test('partners: the Manager sees the commission, the teams do not, branches and 
   const chitwan = await login('chitwan', ['chitwan']);
   const sunita = await login('sunita', ['followup']);
   const chief = await login('chief', [], true);
+  const mina = await login('mina', ['application', 'followup']); // in two teams, neither chosen as her own: her menu still has Partners
 
   // A partner university and a B2B partner with a commission, a login and notes (made up).
   const uni = (await admin('POST', '/api/direct', { name: 'Example University' })).json;
@@ -79,11 +80,11 @@ test('partners: the Manager sees the commission, the teams do not, branches and 
   // The Application Team sets B2B partners up (the owner, 15 Nov 2026): it sees the names on the sheet and adds one, but on a partner
   // it changes only the portal link (or email), its username and its password; the name, status, contacts, commission lists and notes
   // stay as Admin left them, the files stay closed, and only Admin removes a partner.
-  assert.ok(Array.isArray((await asha('GET', '/api/b2b')).json.onSheet), 'the Application Team sees the names not set up yet');
+  assert.ok(Array.isArray((await mina('GET', '/api/b2b')).json.onSheet), 'the Application Team sees the names not set up yet');
   // Nothing is added by hand any more (the owner, 20 Nov 2026): the team hides a name that is not a partner, it never adds one.
-  assert.strictEqual((await asha('POST', '/api/b2b', { name: 'Set Up By Team' })).status, 403, 'the Application Team does not add partners');
+  assert.strictEqual((await mina('POST', '/api/b2b', { name: 'Set Up By Team' })).status, 403, 'the Application Team does not add partners');
   const before = (await admin('GET', `/api/b2b/${partner.id}`)).json;
-  const changed = await asha('POST', `/api/b2b/${partner.id}`, { name: 'Renamed by the team', status: 'Ended', city: 'Elsewhere', contacts: [{ name: 'New contact' }], commissions: [], notes: 'changed by the team', apply: 'https://portal.example.org/new', applyUser: 'team-user', applyPassword: 'team-pass' });
+  const changed = await mina('POST', `/api/b2b/${partner.id}`, { name: 'Renamed by the team', status: 'Ended', city: 'Elsewhere', contacts: [{ name: 'New contact' }], commissions: [], notes: 'changed by the team', apply: 'https://portal.example.org/new', applyUser: 'team-user', applyPassword: 'team-pass' });
   assert.strictEqual(changed.status, 200);
   assert.ok(!NO_LOGIN_SECRET.test(JSON.stringify(changed.json)), 'the answer carries no commission either');
   const after = (await admin('GET', `/api/b2b/${partner.id}`)).json;
@@ -91,13 +92,20 @@ test('partners: the Manager sees the commission, the teams do not, branches and 
   assert.deepStrictEqual([after.name, after.status, after.city, after.contacts], [before.name, before.status, before.city, before.contacts], 'the details stay as Admin left them');
   assert.strictEqual(after.commissions[0].intake, 'Jan Intake 2027', 'the commission list is kept');
   assert.strictEqual(after.notes, before.notes, 'the notes are kept');
-  assert.strictEqual((await asha('POST', `/api/b2b/${partner.id}/delete`, {})).status, 403, 'only Admin removes a partner');
+  assert.strictEqual((await mina('POST', `/api/b2b/${partner.id}/delete`, {})).status, 403, 'only Admin removes a partner');
   assert.strictEqual((await bikram('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 403);
-  assert.strictEqual((await asha('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 200, 'the Application Team marks Not a partner');
+  assert.strictEqual((await mina('POST', '/api/b2b/not-partner', { name: 'Someone' })).status, 200, 'the Application Team marks Not a partner');
   // Set up all is gone (the owner, 20 Nov 2026: nothing is added by hand on the partner pages): the names on the sheet stay as they are.
-  const sheetBefore = (await asha('GET', '/api/b2b')).json.onSheet;
-  assert.notStrictEqual((await asha('POST', '/api/b2b/setup-all', {})).status, 200, 'there is no Set up all any more');
-  assert.deepStrictEqual((await asha('GET', '/api/b2b')).json.onSheet, sheetBefore, 'nothing on the sheet was set up');
+  const sheetBefore = (await mina('GET', '/api/b2b')).json.onSheet;
+  assert.notStrictEqual((await mina('POST', '/api/b2b/setup-all', {})).status, 200, 'there is no Set up all any more');
+  assert.deepStrictEqual((await mina('GET', '/api/b2b')).json.onSheet, sheetBefore, 'nothing on the sheet was set up');
+  // The Application Team's own people have no Partners pages (21 Nov 2026), so no request of theirs changes B2B Partners (the owner,
+  // 27 Nov 2026). They still read it: Apply now on a university shows the partner and its portal login.
+  const kept = JSON.stringify((await admin('GET', '/api/b2b')).json);
+  assert.strictEqual((await asha('POST', `/api/b2b/${partner.id}`, { name: 'Example Partner', apply: 'https://evil.example.org', applyUser: 'x', applyPassword: 'y' })).status, 403);
+  assert.strictEqual((await asha('POST', '/api/b2b/not-partner', { name: 'Someone Else' })).status, 403, 'no marking Not a partner');
+  assert.strictEqual(JSON.stringify((await admin('GET', '/api/b2b')).json), kept, 'nothing on B2B Partners changed');
+  assert.strictEqual((await asha('GET', `/api/b2b/${partner.id}`)).json.applyPassword, 'team-pass', 'the login is still readable');
   assert.notStrictEqual((await admin('POST', '/api/agents/setup-all', {})).status, 200, 'nor for Agents');
   assert.strictEqual((await chitwan('GET', '/api/b2b')).status, 403, 'a branch has no B2B Partners');
   assert.strictEqual((await chitwan('GET', '/api/agents')).status, 403, 'a branch has no Agents');

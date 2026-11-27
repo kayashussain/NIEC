@@ -1201,7 +1201,7 @@ function b2bPartnerNames() {
 }
 
 // Whether a person's own team is the Application Team: the one rule in shared/teams.js (the menu in shared/header.js keeps the same).
-const { ownTeamApplication, ownTeamFollowup, ownTeamMock, ownTeamBranch } = require('../shared/teams');
+const { ownTeamApplication, ownTeamFollowup, ownTeamMock, ownTeamBranch, who } = require('../shared/teams');
 
 // Start fresh (the owner, 25 Nov 2026): see fresh-start.js. One function for the Admin button and for the one-time run at start-up.
 function startFresh(by) {
@@ -1446,14 +1446,14 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       const fuOwn = ownTeamFollowup(req.user);
       if (urlPath === '/') return send(res, 302, '', { Location: fuOwn ? '/students' : '/today' });
       if (fuOwn && ['/my-email', '/message-templates'].includes(urlPath)) return send(res, 302, '', { Location: '/students#setup' });
-      if (fuOwn && ['/today', '/dashboard', '/my-dashboard', '/bulk', '/today.html', '/dashboard.html', '/my-dashboard.html', '/bulk.html'].includes(urlPath)) return send(res, 302, '', { Location: '/students' });
+      if (fuOwn && ['/today', '/dashboard', '/my-dashboard', '/bulk', '/bulk-add', '/today.html', '/dashboard.html', '/my-dashboard.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: '/students' });
       if (fuOwn && urlPath === '/students') { req.url = '/followup.html'; return serveStatic(req, res); }
       // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): no Dashboard, no Partners pages,
       // no Mock interviews for anyone whose own team is Application (Apply now on a university still shows the partner and its portal).
       // Nor Follow-up (the owner, 22 Nov 2026): following students up is not the Application Team's work.
       // Also by the file's own address ("/bulk.html"), so a page closed to the team cannot be opened by typing it (review, 22 Nov 2026).
-      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk',
-        '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/bulk.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
+      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk', '/bulk-add',
+        '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
       // The Mock Team works from Today, Bookings, All Students, Universities and Interview guidelines (the owner, 22 Nov 2026): no
       // Dashboard, no Partners pages, no Mock interviews (the guides students read stay with Admin and the Manager), no Follow-up.
       if (ownTeamMock(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk', '/bulk-add',
@@ -1651,6 +1651,9 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
     // The page files of the Admin-only pages are Admin-only too (their data was already refused; now their shells are as well).
     const pageAccess = partnerAccess(req.user);
     const sharedPage = { '/direct.html': pageAccess.direct, '/b2b.html': pageAccess.b2b, '/agents.html': pageAccess.agents }[urlPath];
+    // Follow-up and Bookings by their file's own address: the same people who get their data (the owner, 27 Nov 2026).
+    const followUp = isAdmin(req.user) || (who(req.user).departments.includes('followup') && !isReadOnly(req.user));
+    if ((urlPath === '/followup.html' && !followUp) || (urlPath === '/bookings.html' && !bookingsAccess(req.user))) return send(res, 302, '', { Location: home });
     if (['/users.html', '/activity.html', '/direct.html', '/dashboard.html', '/b2b.html', '/agents.html', '/events.html'].includes(urlPath) && !isAdmin(req.user) && !sharedPage
       && !(['/dashboard.html', '/events.html'].includes(urlPath) && isManager(req.user))) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
     serveStatic(req, res);
