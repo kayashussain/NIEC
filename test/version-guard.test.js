@@ -87,6 +87,20 @@ test('an empty data folder is refused while the folder used before still holds t
   assert.strictEqual(wrong(empty), '', 'a folder with its own students is allowed');
 });
 
+test('a temporary folder named another way is still a temporary one', () => {
+  const app = tmp(); const real = tmp(); const system = tmp();
+  const markerFile = path.join(app, 'student-details', '.data-folder');
+  const other = path.join(tmp(), 'other-name'); // a second name for one folder, as KAYAS_~1 is on Windows
+  fs.symlinkSync(system, other, 'junction');
+  write(real, 'data.json', sheet([ASHA])); write(system, 'demo/data.json', sheet([ASHA])); write(app, 'student-details/.data-folder', real);
+  for (const [dataDir, tmpDir] of [[path.join(system, 'demo'), other], [path.join(other, 'demo'), system]]) {
+    assert.strictEqual(guard.rememberDataFolder({ dataDir, markerFile, tmp: tmpDir }), false);
+  }
+  assert.strictEqual(guard.wrongDataFolder({ dataDir: path.join(other, 'not-made-yet'), markerFile, tmp: system }), '');
+  assert.strictEqual(guard.wrongDataFolder({ dataDir: path.join(system, 'not-made-yet'), markerFile, tmp: other }), '');
+  assert.strictEqual(fs.readFileSync(markerFile, 'utf8'), real);
+});
+
 test('the code fingerprint follows the code, not the data beside it', () => {
   const root = tmp();
   write(root, 'student-details/server.js', 'one'); write(root, 'student-details/data.json', '{}');

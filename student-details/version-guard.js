@@ -170,14 +170,24 @@ function compareWithCopy(folder, dataDir, incentiveDir) {
 
 const hasStudentsFile = (dir) => isFile(path.join(dir, 'data.json')) || isFile(path.join(dir, 'data.backup.json'));
 
-const inside = (dir, folder) => path.resolve(dir) === path.resolve(folder) || path.resolve(dir).startsWith(path.resolve(folder) + path.sep);
+// The full real name of a folder, also of one not made yet. One folder can go by several names (Windows gives the
+// temporary folder in a short form, KAYAS_~1), so folders are compared by their real names only.
+function realName(folder) {
+  const full = path.resolve(folder);
+  try { return fs.realpathSync.native(full); } catch (e) {
+    const parent = path.dirname(full);
+    return parent === full ? full : path.join(realName(parent), path.basename(full));
+  }
+}
+
+const inside = (dir, folder) => realName(dir) === realName(folder) || realName(dir).startsWith(realName(folder) + path.sep);
 
 // An error text when this start is on an empty data folder while the folder used before still holds the students.
 function wrongDataFolder({ dataDir, markerFile, tmp = os.tmpdir() }) {
   if (inside(dataDir, tmp)) return ''; // a throwaway folder (a test) is never the live setting gone wrong
   let before = '';
   try { before = fs.readFileSync(markerFile, 'utf8').trim(); } catch (e) { return ''; }
-  if (!before || path.resolve(before) === path.resolve(dataDir) || hasStudentsFile(dataDir) || !hasStudentsFile(before)) return '';
+  if (!before || realName(before) === realName(dataDir) || hasStudentsFile(dataDir) || !hasStudentsFile(before)) return '';
   return `The data folder in use before (${before}) holds the students, but this start points to ${path.resolve(dataDir)}, which has none. `
     + `Set STUDENT_DETAILS_DATA_DIR back to the folder in use before. Only if the data was moved on purpose, delete ${markerFile} and start again.`;
 }
