@@ -12,7 +12,7 @@ const {
   isAdmin, isManager, isStudent, isReadOnly, kindOf, teamOf, viewKey, viewFor, teamChanges, canEdit, canColor, canDelete, checkMove, newestSheet, STATUS,
 } = require('../shared/teams');
 const { buildDashboard } = require('./dashboard-stats');
-const { createFacts, viewFacts, clean: cleanFact } = require('./facts');
+const { createFacts, viewFacts, clean: cleanFact, partnerLogos } = require('./facts');
 const { createDirect, viewDirect, MAX_FILE_BYTES } = require('./direct');
 const { createOffsite, settingsFrom } = require('./offsite');
 const freshStart = require('./fresh-start');
@@ -211,7 +211,8 @@ const courseLinks = createCourseLinks(DATA_DIR);
 // The university pages' pictures, fetched once and kept in the data folder (media-cache.js).
 const { createMediaCache, pictureAddresses } = require('./media-cache');
 const { logoFinder } = require('./uni-logos');
-const media = createMediaCache({ dir: DATA_DIR, allowed: () => pictureAddresses(facts.all()) });
+// The partners' logos in the code are pictures of the University pages too (facts.js shows them where a page has none of its own).
+const media = createMediaCache({ dir: DATA_DIR, allowed: () => { const set = pictureAddresses(facts.all()); partnerLogos().forEach((x) => { if (/^https:\/\//.test(x)) set.add(x); }); return set; } });
 // Pictures no page uses any more are taken out of the folder a minute after start and then once a day.
 setTimeout(() => { try { media.prune(); } catch (e) { /* tried again tomorrow */ } }, 60000).unref();
 setInterval(() => { try { media.prune(); } catch (e) { /* tried again tomorrow */ } }, 24 * 3600 * 1000).unref();

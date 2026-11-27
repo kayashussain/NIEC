@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { sendJSON, send, readJSONBody, readRawBody: readRaw, localDate } = require('../shared/server-utils');
 const { isoDate } = require('./dashboard-stats');
-const { branchInsights, universityStudents } = require('./branch-insights');
+const { branchInsights, journeyOf, universityStudents } = require('./branch-insights');
 const { syncChanges, squash } = require('./sheet-sync');
 const Teams = require('../shared/teams');
 const mailer = require('../shared/mailer');
@@ -3759,6 +3759,8 @@ function createPortalApi({
       const mockLook = Teams.ownTeamMock(req.user); // the Mock Team's own Today (the owner, 23 Nov 2026)
       const mt = mockLook ? mockTeam() : null;
       const booked = mt && mt.nextBooked ? mt.nextBooked() : new Map();
+      // A branch's Today also says how far each of its own students has come (the owner, 27 Nov 2026).
+      const ownStudents = Teams.ownTeamBranch(req.user) ? new Set(visibleStudents(req.user).map((s) => s.row._id)) : null;
       const out = [];
       for (const { sheet, row } of rowIndex().values()) {
         const c = all[row._id];
@@ -3772,7 +3774,7 @@ function createPortalApi({
           // only if it is handed back. It stays on the student card.
           if (!everyone && !mine && !gaveIt(req.user, t)) return;
           const tag = Fields.taskTag(t, text(row[STATUS]));
-          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row), ...(Teams.ownTeamApplication(req.user) ? { details: detailsOf(row, c) } : {}), ...(mockLook ? { mock: mockOf(row, booked) } : {}) });
+          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row), ...(Teams.ownTeamApplication(req.user) ? { details: detailsOf(row, c) } : {}), ...(mockLook ? { mock: mockOf(row, booked) } : {}), ...(ownStudents && ownStudents.has(row._id) ? { journey: journeyOf({ row, card: c, apps: applicationsOf(row, c) }, cards.today()) } : {}) });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

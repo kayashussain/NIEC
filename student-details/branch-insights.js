@@ -2,6 +2,8 @@
 // interviews, payments, CAS and visas; applications and offers week by week and month by month; the days from an application to its
 // offer; each University's offer rate; how long each step takes and who is still waiting for an offer. It only reads: the students
 // given to it are the branch's own, and nothing is changed.
+// Behind every figure are the students themselves (`people`, the owner, 27 Nov 2026: a branch should know who each figure is):
+// each one's stage, applications and the day of every step, so the page can list who a week or a figure is made of.
 const { isoDate } = require('./dashboard-stats');
 const { squash } = require('./sheet-sync');
 
@@ -25,12 +27,12 @@ const earliest = (list) => list.filter(Boolean).sort()[0] || '';
 function recordOf({ row, card = {}, apps = [] }, today) {
   const date = (column) => isoDate(row[column]) || '';
   const stage = text(row[STATUS]);
-  const list = apps.filter((a) => a.applied || a.offer).map((a) => ({ university: text(a.university), applied: a.applied || '', offer: a.offer || '', refused: a.refused || '', withdrawn: a.withdrawn || '' }));
+  const list = apps.filter((a) => a.applied || a.offer).map((a) => ({ university: text(a.university), course: text(a.course), applied: a.applied || '', offer: a.offer || '', refused: a.refused || '', withdrawn: a.withdrawn || '' }));
   // A day typed on All Students with no University named still counts once.
   const sheetApplied = date('APPLICATION SUBMISSION DATE');
   const sheetOffer = date('OFFER RECEIVED DATE');
   if ((sheetApplied && !list.some((a) => a.applied)) || (sheetOffer && !list.some((a) => a.offer))) {
-    list.push({ university: text(row['UNIVERSITY NAME']), applied: list.some((a) => a.applied) ? '' : sheetApplied, offer: list.some((a) => a.offer) ? '' : sheetOffer, refused: '', withdrawn: '' });
+    list.push({ university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']), applied: list.some((a) => a.applied) ? '' : sheetApplied, offer: list.some((a) => a.offer) ? '' : sheetOffer, refused: '', withdrawn: '' });
   }
   // A mock interview is held when its feedback is written and its day has come; each mock number counts once.
   const mocks = new Map();
@@ -41,13 +43,24 @@ function recordOf({ row, card = {}, apps = [] }, today) {
   const cas = date('CAS RECEIVED DATE');
   const issued = stage === 'Visa Issued' || Boolean(visa);
   return {
-    stage, list, mocks: [...mocks.values()],
+    stage, list, mocks: [...mocks.values()].sort(),
+    university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']),
     passed: /^pass/i.test(preCas), failed: /^fail/i.test(preCas),
     inquiry: isoDate(card.profile && card.profile.inquiryDate) || '',
     applied: earliest(list.map((a) => a.applied)), offered: earliest(list.map((a) => a.offer)),
     hasApplied: list.some((a) => a.applied), hasOffer: list.some((a) => a.offer),
     paid: date('PAYMENT DATE'), cas, hasCas: Boolean(cas) || ['CAS Issued', 'Visa Lodge'].includes(stage) || issued,
     lodged: date('VISA LODGE DATE'), visa, issued, refusedVisa: stage === 'Visa Rejected',
+  };
+}
+
+// How far one student has come, for a task opened on a branch's Today: the day of each step and no more.
+function journeyOf(student, today) {
+  const r = recordOf(student, today);
+  return {
+    applications: r.list.filter((a) => a.applied).length, applied: r.applied, offered: r.offered, hasApplied: r.hasApplied, hasOffer: r.hasOffer,
+    mocks: r.mocks.length, lastMock: r.mocks[r.mocks.length - 1] || '', passed: r.passed, failed: r.failed,
+    paid: r.paid, cas: r.cas, hasCas: r.hasCas, lodged: r.lodged, visa: r.visa, issued: r.issued, refusedVisa: r.refusedVisa,
   };
 }
 
@@ -69,7 +82,7 @@ function periods(today, records, kind, count) {
   const inside = (b, d) => Boolean(d) && d >= b.from && d <= b.to;
   const apps = records.flatMap((r) => r.list);
   return buckets.map((b) => ({
-    label: b.label, title: b.title,
+    label: b.label, title: b.title, from: b.from, to: b.to,
     applications: apps.filter((a) => inside(b, a.applied)).length,
     offers: apps.filter((a) => inside(b, a.offer)).length,
   }));
@@ -129,9 +142,14 @@ function branchInsights(students, today) {
     months: periods(today, records, 'month', 12),
     // Students (not applications) who have reached each step, so every bar is a share of the same total.
     journey: [
-      ['All students', total], ['Applied', applied], ['Offer received', offered], ['Mock interview held', mocked],
-      ['Passed Pre-CAS', passed], ['Paid deposit', paid], ['CAS issued', withCas], ['Visa received', visas],
-    ].map(([label, students2]) => ({ label, students: students2, share: pct(students2, total) })),
+      ['students', 'All students', total], ['applied', 'Applied', applied], ['offered', 'Offer received', offered], ['mocked', 'Mock interview held', mocked],
+      ['passed', 'Passed Pre-CAS', passed], ['paid', 'Paid deposit', paid], ['cas', 'CAS issued', withCas], ['visa', 'Visa received', visas],
+    ].map(([key, label, students2]) => ({ key, label, students: students2, share: pct(students2, total) })),
+    people: records.map((r) => ({
+      id: r.id, name: r.name, stage: r.stage, university: r.university || (r.list[0] ? r.list[0].university : ''), course: r.course || (r.list[0] ? r.list[0].course : ''),
+      applications: r.list.map((a) => ({ university: a.university, course: a.course, applied: a.applied, offer: a.offer })),
+      applied: r.applied, offered: r.offered, mocks: r.mocks, passed: r.passed, failed: r.failed, paid: r.paid, cas: r.cas, hasCas: r.hasCas, lodged: r.lodged, visa: r.visa, issued: r.issued,
+    })),
     offerDays: {
       count: waits.length, average: average(waits), median: median(waits),
       fastest: waits.length ? Math.min(...waits) : null, slowest: waits.length ? Math.max(...waits) : null,
@@ -201,4 +219,4 @@ function universityStudents(students, universities) {
   }]));
 }
 
-module.exports = { branchInsights, universityStudents };
+module.exports = { branchInsights, journeyOf, universityStudents };

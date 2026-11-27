@@ -7,6 +7,9 @@
 // 26 Nov 2026 (the owner: "make it the next top global brand"): a new look for everyone who opens it, with two tabs only (All and
 // With guidelines), each University's logo (its letters where there is none), an open University shown as a heading card, files grouped by kind, and calm
 // empty states. What can be done is unchanged.
+// 27 Nov 2026 (the owner: the branch view, "like a top global brand"): a branch opens on its own students' Universities. Three figures
+// at the top say how much there is to read and which of its students' Universities still have nothing, an open University names the
+// branch's students there (a press opens the card), and the files can be narrowed to one kind. Every other team sees what it saw.
 (function () {
   const { el, h, api } = window.Portal;
   const $ = (id) => document.getElementById(id);
@@ -14,7 +17,10 @@
   let data = null;
   let chosen = '';
   let q = '';
-  let only = 'all'; // all | has (the two tabs above the list)
+  let only = 'all'; // all | has (the two tabs above the list) | mine (a branch: where its students are)
+  let branch = false;
+  let mine = {}; // University number -> the branch's own students there (/api/branch-universities)
+  let kindOnly = ''; // a branch: one kind of guideline, or all of them
   let openFile = ''; // the file shown in the reader
   const words = new Map(); // what a Word document says, once read
   // A phone or a tablet shows no more than the first page of a PDF inside a page, so there it opens on its own.
@@ -23,6 +29,11 @@
   const day = (iso) => { try { return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kathmandu' }); } catch (e) { return ''; } };
   const filesOf = (name) => data.files.filter((f) => f.university.toLowerCase() === String(name).toLowerCase());
   const plural = (n, one) => `${n} ${one}${n === 1 ? '' : 's'}`;
+  const studentsAt = (u) => (u && u.id && mine[u.id] ? mine[u.id].students : []);
+  const STATE = { offer: 'Offer', waiting: 'Waiting for offer', chosen: 'Chosen', refused: 'Not offered', withdrawn: 'Withdrawn' };
+  // Where a branch has students, leaving out those it was refused by or took the application back from: those are the ones to prepare.
+  const active = (u) => studentsAt(u).filter((s) => s.state !== 'refused' && s.state !== 'withdrawn');
+  const isNew = (f) => { const t = Date.parse(f.at || ''); return Boolean(t) && Date.now() - t < 7 * 86400000; };
   // A University is filed under the first letter of its name without "University of " or "The ", so the A to Z headings are in order.
   const sortKey = (name) => String(name).replace(/^the\s+/i, '').replace(/^university of\s+/i, '').toLowerCase();
   // Two letters for the round mark beside a name, from the words that tell it apart ("University of East London" reads EL).
@@ -63,10 +74,38 @@
     const top = oldList ? oldList.scrollTop : 0;
     const grid = el('div', 'ig-grid');
     grid.append(listCard(), uniCard());
-    view.replaceChildren(grid);
+    view.replaceChildren(...(branch ? [summary(), grid] : [grid]));
     const list = view.querySelector('.ig-list');
     if (list) list.scrollTop = top;
     if (keepFocus) { const on = view.querySelector('.ig-uni.is-on'); if (on) on.focus({ preventScroll: true }); }
+  }
+
+  // A branch's three figures: what there is to read, and which of its students' Universities still have nothing.
+  function summary() {
+    const covered = data.universities.filter((u) => filesOf(u.name).length);
+    const ours = data.universities.filter((u) => active(u).length);
+    const ready = ours.filter((u) => filesOf(u.name).length);
+    const missing = ours.filter((u) => !filesOf(u.name).length);
+    const row = el('div', 'ig-sum');
+    const tile = (cls, n, label, note, press) => {
+      const t = h(press ? 'button' : 'div', { class: `ig-sum-card ${cls}`, ...(press ? { type: 'button', onclick: press } : {}) });
+      t.append(el('span', 'ig-sum-k', label), el('b', 'ig-sum-v', n), el('span', 'ig-sum-note', note));
+      return t;
+    };
+    const pick = (tab, name) => () => { only = tab; q = ''; if (name !== undefined) { chosen = name; openFile = ''; kindOnly = ''; } draw(); };
+    row.append(tile('is-files', String(data.files.length), 'Guidelines to read', data.files.some(isNew) ? `${data.files.filter(isNew).length} added in the last 7 days` : 'Open one here, or download it'),
+      tile('is-covered', String(covered.length), 'Universities covered', 'Show them', pick('has', covered.length ? (covered.find((u) => u.name === chosen) || covered[0]).name : chosen)));
+    if (ours.length) {
+      const t = tile(`is-ours${missing.length ? ' has-gap' : ''}`, `${ready.length} of ${ours.length}`, "Your students' Universities with a guideline",
+        missing.length ? `${plural(missing.length, 'University').replace('Universitys', 'Universities')} still to cover` : 'All of them are covered', pick('mine', (missing[0] || ours[0]).name));
+      const bar = el('span', 'ig-sum-bar');
+      const fill = el('i');
+      fill.style.width = `${Math.round((ready.length / ours.length) * 100)}%`;
+      bar.append(fill);
+      t.append(bar);
+      row.append(t);
+    }
+    return row;
   }
 
   function listCard() {
@@ -76,24 +115,33 @@
     const fill = () => {
       list.replaceChildren();
       const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+      const byName = (a, b) => sortKey(a.name).localeCompare(sortKey(b.name), 'en', { sensitivity: 'base', numeric: true });
       const shown = data.universities
-        .filter((u) => words.every((w) => u.name.toLowerCase().includes(w)) && (only === 'all' || filesOf(u.name).length > 0))
-        .sort((a, b) => sortKey(a.name).localeCompare(sortKey(b.name), 'en', { sensitivity: 'base', numeric: true }));
+        .filter((u) => words.every((w) => u.name.toLowerCase().includes(w)) && (only === 'all' || (only === 'mine' ? active(u).length > 0 : filesOf(u.name).length > 0)))
+        .sort(only === 'mine' ? (a, b) => active(b).length - active(a).length || byName(a, b) : byName);
       let letter = '';
       shown.forEach((u) => {
         const n = filesOf(u.name).length;
         const l = (sortKey(u.name).charAt(0).toUpperCase().match(/[A-Z]/) || ['#'])[0];
-        if (l !== letter) { letter = l; list.append(el('div', 'ig-letter', l)); }
-        list.append(h('button', { type: 'button', class: `ig-uni${u.name === chosen ? ' is-on' : ''}`, 'aria-pressed': String(u.name === chosen), onclick: () => { chosen = u.name; draw(true); } },
-          mark(u.name), el('span', 'ig-uni-name', u.name), n ? h('span', { class: 'ig-count', title: plural(n, 'guideline') }, String(n)) : ''));
+        if (only !== 'mine' && l !== letter) { letter = l; list.append(el('div', 'ig-letter', l)); }
+        const words2 = el('span', 'ig-uni-words');
+        words2.append(el('span', 'ig-uni-name', u.name));
+        // A branch reads, under each name, how many of its students are there, or that there is nothing to read for them yet.
+        const here = branch ? active(u).length : 0;
+        if (here) words2.append(el('span', `ig-uni-sub${n ? '' : ' is-missing'}`, `${plural(here, 'student')}${n ? '' : ', no guideline yet'}`));
+        list.append(h('button', { type: 'button', class: `ig-uni${u.name === chosen ? ' is-on' : ''}`, 'aria-pressed': String(u.name === chosen), onclick: () => { chosen = u.name; openFile = ''; kindOnly = ''; draw(true); } },
+          mark(u.name), words2, n ? h('span', { class: 'ig-count', title: plural(n, 'guideline') }, String(n)) : ''));
       });
-      if (!shown.length) list.append(el('p', 'ig-none', !q.trim() && only === 'has' ? 'No University has a guideline yet.' : 'No University has that name.'));
+      if (!shown.length) list.append(el('p', 'ig-none', !q.trim() && only === 'has' ? 'No University has a guideline yet.' : only === 'mine' ? 'None of your students\' Universities has that name. Try All.' : 'No University has that name.'));
     };
     search.addEventListener('input', () => { q = search.value; fill(); });
     fill();
     const withN = data.universities.filter((u) => filesOf(u.name).length).length;
     const seg = el('div', 'ig-tabs');
-    [['all', 'All', data.universities.length], ['has', 'With guidelines', withN]].forEach(([k, label, n]) => {
+    const ours = data.universities.filter((u) => active(u).length).length;
+    const tabs = [['all', 'All', data.universities.length], ['has', 'With guidelines', withN]];
+    if (branch && ours) { tabs.unshift(['mine', 'Your students', ours]); seg.classList.add('is-three'); }
+    tabs.forEach(([k, label, n]) => {
       const b = h('button', { type: 'button', 'aria-pressed': String(only === k) }, label, el('span', 'ig-tab-n', String(n)));
       b.addEventListener('click', () => { only = k; draw(); });
       seg.append(b);
@@ -115,8 +163,11 @@
     if (!chosen) { card.append(empty('doc', 'Choose a University', 'Its interview guidelines open here.')); return card; }
     const files = filesOf(chosen);
     const head = el('div', 'ig-head');
-    head.append(mark(chosen, ' is-big'), h('div', { class: 'ig-head-words' }, el('h2', '', chosen), el('p', '', files.length ? plural(files.length, 'guideline') : 'No guideline yet')));
+    const uni = data.universities.find((u) => u.name === chosen) || {};
+    head.append(mark(chosen, ' is-big'), h('div', { class: 'ig-head-words' }, el('h2', '', chosen), el('p', '', [branch ? uni.city : '', files.length ? plural(files.length, 'guideline') : 'No guideline yet'].filter(Boolean).join(' · '))));
+    if (branch && uni.id) head.append(h('a', { class: 'btn ig-page-link', href: `/fact-file?u=${encodeURIComponent(uni.id)}` }, 'Courses and entry rules'));
     card.append(head);
+    if (branch && studentsAt(uni).length) card.append(people(studentsAt(uni)));
     let first = null;
     if (data.canUpload) {
       const open = h('button', { type: 'button', class: 'btn btn-primary ig-upload-btn' }, icon('upload'), el('span', '', 'Upload a guideline'));
@@ -135,11 +186,22 @@
       card.append(form);
       first = () => { const b = h('button', { type: 'button', class: 'btn btn-primary ig-first' }, 'Add the first guideline'); b.addEventListener('click', toggle); return b; };
     }
-    if (!files.length) { card.append(empty('doc', 'No guidelines yet', data.canUpload ? 'Add the interview guide or questions for this University, so every team can read them.' : 'Nothing has been added for this University.', first && first())); return card; }
-    const ordered = data.kinds.flatMap((kind) => files.filter((f) => f.kind === kind));
+    if (!files.length) { card.append(empty('doc', 'No guidelines yet', data.canUpload ? 'Add the interview guide or questions for this University, so every team can read them.' : branch ? 'The Mock Team adds them. They appear here as soon as they do.' : 'Nothing has been added for this University.', first && first())); return card; }
+    const kinds = data.kinds.filter((kind) => files.some((f) => f.kind === kind));
+    if (!kinds.includes(kindOnly)) kindOnly = '';
+    const showKinds = kindOnly ? [kindOnly] : data.kinds;
+    // A branch narrows the files to one kind with a press, and back with "Every kind".
+    if (branch && kinds.length > 1) {
+      const chips = h('div', { class: 'ig-kinds', role: 'group', 'aria-label': 'Kind of guideline' });
+      [['', 'Every kind', files.length], ...kinds.map((k) => [k, k, files.filter((f) => f.kind === k).length])].forEach(([k, label, n]) => {
+        chips.append(h('button', { type: 'button', class: 'ig-kind', 'aria-pressed': String(kindOnly === k), onclick: () => { kindOnly = k; openFile = ''; draw(); const on = document.querySelector('.ig-kind[aria-pressed="true"]'); if (on) on.focus({ preventScroll: true }); } }, el('span', '', label), el('i', '', String(n))));
+      });
+      card.append(chips);
+    }
+    const ordered = showKinds.flatMap((kind) => files.filter((f) => f.kind === kind));
     const shownFile = ordered.find((f) => f.id === openFile) || ordered[0] || files[0];
     openFile = shownFile.id;
-    data.kinds.forEach((kind) => {
+    showKinds.forEach((kind) => {
       const mine = files.filter((f) => f.kind === kind);
       if (!mine.length) return;
       const group = el('div', 'ig-group');
@@ -149,6 +211,27 @@
     });
     card.append(reader(shownFile));
     return card;
+  }
+
+  // The branch's own students at this University: who is preparing for it, each opening their card.
+  function people(list) {
+    const box = h('section', { class: 'ig-people', 'aria-label': 'Your students here' });
+    box.append(h('div', { class: 'ig-people-head' }, el('h3', '', 'Your students here'), el('span', 'ig-group-n', String(list.length))));
+    const wrap = el('div', 'ig-people-list');
+    const ids = list.map((s) => s.id);
+    const one = (s) => h('a', { class: 'ig-person', href: `/student?id=${encodeURIComponent(s.id)}`, title: 'Open the student card', onclick: (e) => {
+      if (!window.CardDrawer || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      e.preventDefault();
+      window.CardDrawer.open(s.id, { list: ids });
+    } }, el('span', 'ig-person-mark', initials(s.name)), h('span', { class: 'ig-person-words' }, el('b', '', s.name), el('small', '', s.course || s.stage || 'No course recorded')), el('span', `ig-person-state is-${s.state}`, STATE[s.state] || s.stage));
+    list.slice(0, 6).forEach((s) => wrap.append(one(s)));
+    box.append(wrap);
+    if (list.length > 6) {
+      const more = h('button', { type: 'button', class: 'ig-people-more' }, `Show all ${list.length}`);
+      more.addEventListener('click', () => { list.slice(6).forEach((s) => wrap.append(one(s))); more.remove(); });
+      box.append(more);
+    }
+    return box;
   }
 
   // Show another file in the reader, without drawing the whole page again; the screen glides to it when it is out of sight.
@@ -239,7 +322,7 @@
     const row = el('div', `ig-file${f.id === openFile ? ' is-on' : ''}`);
     row.dataset.file = f.id;
     row.append(el('span', `ig-type ig-type-${String(f.type).toLowerCase().replace(/[^a-z]/g, '')}`, f.type),
-      h('div', { class: 'ig-file-words' }, el('span', 'ig-file-title', f.title), el('span', 'ig-file-meta', `${f.source}${f.by ? ` | uploaded by ${f.by}` : ''}${f.at ? `, ${day(f.at)}` : ''}`)),
+      h('div', { class: 'ig-file-words' }, h('span', { class: 'ig-file-title' }, f.title, branch && isNew(f) ? el('em', 'ig-new', 'New') : ''), el('span', 'ig-file-meta', `${f.source}${f.by ? ` | uploaded by ${f.by}` : ''}${f.at ? `, ${day(f.at)}` : ''}`)),
       h('button', { type: 'button', class: 'btn ig-view', 'aria-pressed': String(f.id === openFile), 'aria-label': `View ${f.title}`, onclick: () => show(f) }, icon('view'), el('span', '', 'View')),
       h('a', { class: 'btn ig-download', href: `/api/guidelines/${f.id}`, download: f.name }, icon('download'), el('span', '', 'Download')));
     if (data.canUpload) {
@@ -284,12 +367,30 @@
     return box;
   }
 
+  // Whether this is a branch's account, and its students at each University. Read once; without it the page is the plain one.
+  let asked1 = null;
+  const own = () => asked1 || (asked1 = (async () => {
+    if (!window.TeamRules) return;
+    const me = await api('/api/me');
+    if (!window.TeamRules.ownTeamBranch(me)) return;
+    branch = true;
+    $('page').classList.add('is-branch');
+    const sub = document.querySelector('.p-head p');
+    if (sub) sub.textContent = 'What your students need to read before an interview, University by University.';
+    mine = (await api('/api/branch-universities')).universities || {};
+  })().catch(() => {}));
+
   async function load() {
     try {
-      data = await api('/api/guidelines');
+      [data] = await Promise.all([api('/api/guidelines'), own()]);
       // A link from a task on Today names the University (?university=...): it opens that University's files (the owner, 23 Nov 2026).
       const asked = (() => { try { return new URLSearchParams(location.search).get('university') || ''; } catch (e) { return ''; } })().trim().toLowerCase();
       if (!chosen && asked) chosen = (data.universities.find((u) => u.name.toLowerCase() === asked) || {}).name || '';
+      if (branch && !chosen) {
+        // A branch opens on its own students' Universities, the one with the most students that has something to read.
+        const ours = data.universities.filter((u) => active(u).length).sort((a, b) => Boolean(filesOf(b.name).length) - Boolean(filesOf(a.name).length) || active(b).length - active(a).length);
+        if (ours.length) { only = 'mine'; chosen = ours[0].name; }
+      }
       if (!chosen) chosen = (data.universities.find((u) => filesOf(u.name).length) || {}).name || '';
       draw();
     } catch (e) { $('view').replaceChildren(el('p', 'p-msg error', e.message)); }

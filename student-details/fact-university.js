@@ -25,6 +25,7 @@
   // are told; for everyone else the server answers 403 and nothing is shown.
   let applyVia = null;
   let mineHere = null; // a branch's own students at this University
+  let guidelinesHere = 0; // a branch: how many interview guidelines this University has
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -366,6 +367,13 @@
       body.append(foot);
     });
   }
+  // The way to what these students read before an interview (the owner, 27 Nov 2026).
+  function guideLink() {
+    const a = el('a', 'up-guides', '');
+    a.href = '/interview-guidelines?university=' + encodeURIComponent(uni.name);
+    a.append(el('span', '', 'Interview guidelines'), el('i', '', String(guidelinesHere)));
+    return a;
+  }
   // A branch's own students at this University (the owner, 27 Nov 2026), under the four tiles: who has an offer, who waits, who has chosen it.
   function mineSection() {
     const sec = el('section', 'up-section up-mine no-print');
@@ -373,6 +381,7 @@
     const sum = [`${mineHere.students.length} student${mineHere.students.length === 1 ? '' : 's'}`, `${mineHere.applications} application${mineHere.applications === 1 ? '' : 's'}`, `${mineHere.offers} offer${mineHere.offers === 1 ? '' : 's'}`];
     if (mineHere.days !== null) sum.push(`${mineHere.days} day${mineHere.days === 1 ? '' : 's'} to an offer on average`);
     sec.append(el('p', 'up-mine-sum', sum.join(' · ')));
+    if (guidelinesHere) sec.append(guideLink());
     const day = (iso) => `${Number(iso.slice(8, 10))} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(iso.slice(5, 7)) - 1]}`;
     const WORDS = { offer: 'Offer', waiting: 'Waiting for the offer', chosen: 'Chosen, not applied', refused: 'Refused', withdrawn: 'Withdrawn' };
     const ul = el('ul', 'up-mine-list');
@@ -467,7 +476,8 @@
     const id = el('div', 'up-id');
     const logo = el('div', 'up-logo');
     const initials = () => el('span', '', (uni.name.match(/\b[A-Z]/g) || ['U']).slice(0, 3).join(''));
-    if (P0.logo) { const l = img(P0.logo, '', `${uni.name} logo`); l.addEventListener('error', () => logo.append(initials())); logo.append(l); } else logo.append(initials());
+    const logoSrc = P0.logo || uni.logo; // a page with no logo of its own: the partners' one for this name (facts.js)
+    if (logoSrc) { const l = img(logoSrc, '', `${uni.name} logo`); l.addEventListener('error', () => logo.append(initials())); logo.append(l); } else logo.append(initials());
     const words = el('div', 'up-titles');
     words.append(el('h1', '', uni.name));
     const sub = el('div', 'up-sub');
@@ -489,6 +499,7 @@
     fact('Tuition from', fees.length ? `${pretty(Math.min(...fees))} a year` : '', data.courses.length ? `${data.courses.length} courses` : null);
     doc.append(facts);
     if (mineHere && mineHere.students.length) doc.append(mineSection());
+    else if (guidelinesHere) { const only = el('div', 'up-guides-line no-print'); only.append(guideLink()); doc.append(only); }
 
     // video and pictures (the owner, 20 Nov 2026): the pictures fill one large frame edge to edge (no blurred bands) and fade one into
     // the next on their own, with a bar under each that fills while it is shown; a click on a bar goes to it, the mouse over the frame
@@ -654,9 +665,39 @@
       sec.append(top);
       let onlyLevels = null; // set when opened from Find universities for one level
       const groups = LEVEL_ORDER.filter((g) => data.courses.some((c) => c.level === g));
-      const jump = el('div', 'up-jump no-print');
-      groups.forEach((g) => { const a = el('a', '', `${g} · ${data.courses.filter((c) => c.level === g).length}`); a.href = '#lvl-' + g.replace(/\W+/g, '-'); jump.append(a); });
-      if (groups.length > 1) sec.append(jump);
+      // A branch filters the courses by level, several at once (the owner, 27 Nov 2026): each press adds or takes away a level, and the
+      // levels in use are written under the buttons, each removable. Everyone else keeps the buttons that jump to a level.
+      const branchView = Boolean(!BACKUP && window.TeamRules && window.TeamRules.ownTeamBranch(me));
+      const TOPUP = 'Top-up';
+      const isTopUp = (name) => /top\s*-?\s*up/i.test(name);
+      const SHORT_LEVEL = { 'International Foundation Year': 'Foundation', 'International Year One': 'Year One' };
+      const choices = branchView ? [...groups.map((g) => [g, SHORT_LEVEL[g] || g, data.courses.filter((c) => c.level === g).length]),
+        ...(data.courses.some((c) => isTopUp(c.name)) ? [[TOPUP, TOPUP, data.courses.filter((c) => isTopUp(c.name)).length]] : [])] : [];
+      // Top-up courses sit beside the levels they belong to, so the buttons read Foundation, Year One, Top-up, Undergraduate ...
+      if (choices.length && choices[choices.length - 1][0] === TOPUP) { const t = choices.pop(); const at = choices.findIndex(([k]) => k === 'Undergraduate'); choices.splice(at < 0 ? choices.length : at, 0, t); }
+      const jump = el('div', branchView ? 'up-levels no-print' : 'up-jump no-print');
+      if (branchView) {
+        jump.setAttribute('role', 'group');
+        jump.setAttribute('aria-label', 'Filter the courses by level (choose one or more)');
+        choices.forEach(([key, label, n]) => {
+          const b = el('button');
+          b.type = 'button';
+          b.dataset.pick = key;
+          b.setAttribute('aria-pressed', 'false');
+          b.append(el('span', '', label), el('i', '', String(n)));
+          b.addEventListener('click', () => setLevels(picked().includes(key) ? picked().filter((x) => x !== key) : [...picked(), key]));
+          jump.append(b);
+        });
+        if (choices.length > 1) sec.append(jump);
+      } else {
+        groups.forEach((g) => { const a = el('a', '', `${g} · ${data.courses.filter((c) => c.level === g).length}`); a.href = '#lvl-' + g.replace(/\W+/g, '-'); jump.append(a); });
+        if (groups.length > 1) sec.append(jump);
+      }
+      const picked = () => onlyLevels || [];
+      const setLevels = (list) => {
+        onlyLevels = list.length ? choices.map(([k]) => k).filter((k) => list.includes(k)) : null;
+        box.dispatchEvent(new Event('input'));
+      };
       groups.forEach((g) => {
         const items = data.courses.filter((c) => c.level === g).sort((x, y) => x.name.localeCompare(y.name));
         const block = el('div', 'up-group');
@@ -721,9 +762,9 @@
       box.addEventListener('input', () => {
         const words = box.value.toLowerCase().split(/\s+/).filter(Boolean);
         let shown = 0;
-        sec.querySelectorAll('.up-group').forEach((b) => { let n = 0; const inLevel = !onlyLevels || onlyLevels.includes(b.dataset.level); const total = b.querySelectorAll('.up-course').length; b.querySelectorAll('.up-course').forEach((c) => { const hit = inLevel && words.every((w) => c.dataset.name.includes(w)); c.hidden = !hit; if (hit) n += 1; }); b.hidden = n === 0; shown += n; const ce = b.querySelector('.up-group-count'); if (ce) ce.textContent = n === total ? `${total} course${total === 1 ? '' : 's'}` : `${n} of ${total} courses`; });
+        sec.querySelectorAll('.up-group').forEach((b) => { let n = 0; const inLevel = !onlyLevels || onlyLevels.includes(b.dataset.level); const topUps = Boolean(onlyLevels && onlyLevels.includes(TOPUP)); const total = b.querySelectorAll('.up-course').length; b.querySelectorAll('.up-course').forEach((c) => { const hit = (inLevel || (topUps && isTopUp(c.dataset.name))) && words.every((w) => c.dataset.name.includes(w)); c.hidden = !hit; if (hit) n += 1; }); b.hidden = n === 0; shown += n; const ce = b.querySelector('.up-group-count'); if (ce) ce.textContent = n === total ? `${total} course${total === 1 ? '' : 's'}` : `${n} of ${total} courses`; });
         sec.querySelectorAll('.up-jump').forEach((x) => { x.hidden = words.length > 0 || Boolean(onlyLevels); });
-        levelNote.hidden = !onlyLevels;
+        if (branchView) drawFilters(shown, box.value.trim()); else levelNote.hidden = !onlyLevels;
         none.hidden = shown > 0;
       });
       // Opened from Find universities with a subject ("See all"): the search is set to it and the courses come into view.
@@ -733,7 +774,37 @@
       onlyLevels = LEVEL_MAP[new URLSearchParams(location.search).get('level')] || null;
       const levelNote = el('div', 'up-level-note no-print');
       levelNote.hidden = true;
-      if (onlyLevels) {
+      // A branch: the filters in use, each removable, how many courses they leave, and one button that clears them all.
+      const filterBar = el('div', 'up-filters no-print');
+      filterBar.hidden = true;
+      filterBar.setAttribute('aria-live', 'polite');
+      function drawFilters(shown, words) {
+        jump.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(picked().includes(b.dataset.pick))));
+        const items = picked().map((key) => [(choices.find(([k]) => k === key) || [key, key])[1], () => setLevels(picked().filter((x) => x !== key))]);
+        if (words) items.push([`"${words}"`, () => { box.value = ''; box.dispatchEvent(new Event('input')); }]);
+        filterBar.hidden = !items.length;
+        if (items.length) sec.querySelectorAll('.up-course.up-reveal').forEach((c) => c.classList.add('is-in')); // a filtered course is there at once, not faded in
+        const chips = items.map(([label, drop], i) => {
+          const b = el('button', 'fd-chip');
+          b.type = 'button';
+          b.setAttribute('aria-label', `Remove the filter ${label}`);
+          b.title = 'Remove this filter';
+          b.append(el('span', '', label), el('i', '', '\u00d7'));
+          b.addEventListener('click', () => { drop(); const next = filterBar.querySelectorAll('.fd-chip')[i] || filterBar.querySelector('.fd-chip') || jump.querySelector('button') || box; next.focus(); });
+          return b;
+        });
+        const all = el('button', 'fd-clear-all', 'Clear all filters');
+        all.type = 'button';
+        all.addEventListener('click', () => { box.value = ''; setLevels([]); (jump.querySelector('button') || box).focus(); });
+        filterBar.replaceChildren(el('span', 'fd-active-k', 'Filters'), ...chips, el('span', 'up-filters-n', `${shown} of ${data.courses.length} courses`), all);
+      }
+      if (branchView) {
+        (choices.length > 1 ? jump : top).after(filterBar);
+        // A top-up asked for by the finder shows the top-up courses themselves.
+        if (new URLSearchParams(location.search).get('level') === 'Top-up (final year)' && choices.some(([k]) => k === TOPUP)) onlyLevels = [TOPUP];
+        if (onlyLevels) onlyLevels = choices.map(([k]) => k).filter((k) => onlyLevels.includes(k));
+        if (onlyLevels && !onlyLevels.length) onlyLevels = null;
+      } else if (onlyLevels) {
         const all = el('button', 'p-link', 'Show every level');
         all.type = 'button';
         all.addEventListener('click', () => { onlyLevels = null; box.dispatchEvent(new Event('input')); });
@@ -928,6 +999,7 @@
     }
     if (window.Shortlist) await window.Shortlist.ready;
     if (!BACKUP && window.TeamRules && window.TeamRules.ownTeamBranch(me)) { try { const r = await fetch('/api/branch-universities', { cache: 'no-store' }); if (r.ok) mineHere = (await r.json()).universities[id] || null; } catch (e) { mineHere = null; } }
+    if (!BACKUP && window.TeamRules && window.TeamRules.ownTeamBranch(me)) { try { const r = await fetch('/api/guidelines', { cache: 'no-store' }); const name = String(uni.name || '').toLowerCase(); if (r.ok) guidelinesHere = (await r.json()).files.filter((f) => f.university.toLowerCase() === name).length; } catch (e) { guidelinesHere = 0; } }
     if (!BACKUP) { try { const r = await fetch('/api/fact-courses?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) courseData = await r.json(); } catch (e) { courseData = null; } }
     if (!BACKUP && !student()) { try { const r = await fetch('/api/course-watch?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) watch = await r.json(); } catch (e) { /* the page works without it */ } }
     if (!BACKUP && !student()) { try { const r = await fetch('/api/apply-through/find?name=' + encodeURIComponent(uni.name || ''), { cache: 'no-store' }); if (r.ok) applyVia = (await r.json()).entry; } catch (e) { applyVia = null; } }

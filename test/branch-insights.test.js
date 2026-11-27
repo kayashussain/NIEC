@@ -1,7 +1,7 @@
 // A branch's figures (student-details/branch-insights.js): its Dashboard and its own students on the Universities pages.
 const test = require('node:test');
 const assert = require('node:assert');
-const { branchInsights, universityStudents } = require('../student-details/branch-insights');
+const { branchInsights, journeyOf, universityStudents } = require('../student-details/branch-insights');
 
 const student = (id, row, apps = [], card = {}) => ({ id, name: `Student ${id}`, row: { _id: id, ...row }, card, apps });
 const app = (university, applied, offer = '', more = {}) => ({ id: '', university, course: 'MBA', applied, offer, refused: '', withdrawn: '', ...more });
@@ -24,6 +24,16 @@ test('the totals, the weeks, the days to an offer and who is waiting', () => {
   assert.deepStrictEqual(d.waiting.map((w) => [w.id, w.university, w.days]), [['b', 'Coventry University', 4]], 'a visa already issued and a refusal are not waiting');
   const coventry = d.universities.find((u) => u.name === 'Coventry University');
   assert.deepStrictEqual([coventry.applications, coventry.offers, coventry.rate, coventry.days], [2, 1, 50, 10]);
+});
+
+test('the students behind the figures, and one student progress', () => {
+  const gita = student('a', { 'APPLICATION STATUS': 'Mock Stage', 'MOCK SCHEDULE 1': '2026-11-20', 'FEEDBACK 1': 'Good' }, [app('Coventry University', '2026-11-23', '2026-11-25')]);
+  const d = branchInsights([gita], '2026-11-27');
+  assert.deepStrictEqual([d.weeks[11].from, d.weeks[11].to], ['2026-11-23', '2026-11-29'], 'a week says its first and last day');
+  assert.deepStrictEqual(d.journey.map((j) => j.key), ['students', 'applied', 'offered', 'mocked', 'passed', 'paid', 'cas', 'visa']);
+  assert.deepStrictEqual([d.people[0].id, d.people[0].applied, d.people[0].offered, d.people[0].mocks, d.people[0].applications[0].university], ['a', '2026-11-23', '2026-11-25', ['2026-11-20'], 'Coventry University']);
+  const j = journeyOf(gita, '2026-11-27');
+  assert.deepStrictEqual([j.applications, j.hasOffer, j.mocks, j.lastMock, j.passed, j.paid, j.issued], [1, true, 1, '2026-11-20', false, '', false]);
 });
 
 test('no students: every figure is empty, none is a made-up one', () => {

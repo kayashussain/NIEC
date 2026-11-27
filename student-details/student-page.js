@@ -1715,6 +1715,13 @@
       data = d; lists = l;
       try { noteDraft = localStorage.getItem(draftKey()) || ''; } catch (e) { /* none kept */ }
       render();
+      // "Assign a task" on a branch's Today lands here with the window already open.
+      if (params.get('assign') === '1') {
+        const rest = new URLSearchParams(location.search);
+        rest.delete('assign');
+        history.replaceState(null, '', `${location.pathname}?${rest}${location.hash}`);
+        if (data.can.assign) assignTask();
+      }
     } catch (e) {
       view.replaceChildren(h('div', { class: 'p-card' }, el('h1', 'p-error-title', 'This student cannot be opened'), el('p', '', e.message), h('a', { class: 'btn', href: '/students' }, 'Back to All Students')));
     }

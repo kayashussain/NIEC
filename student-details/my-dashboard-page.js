@@ -3,6 +3,8 @@
 // of the last 30 days and the team's tasks. Admin and the Manager have the full Dashboard instead. A branch's goes deeper (the
 // owner, 27 Nov 2026, branch-insights.js): eight totals, applications and offers week by week and month by month, from student to
 // visa, the days from application to offer, success rates, how long each step takes, each University and who waits for an offer.
+// Every figure opens (the owner, 27 Nov 2026): a press on a week or a month says who did what in it, a press on a total or a step
+// lists those students, and "Every student" shows each one's days from application to visa, with a search and a stage filter.
 (function () {
   const { el, h, api, initials } = window.Portal;
   const view = document.getElementById('view');
@@ -70,19 +72,181 @@
   }
 
   // ---- A branch's Dashboard ----------------------------------------------------------------------------------------------
-  const dayMonth = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; // "Sep", as everywhere else (not "Sept")
+  const dayMonth = (iso) => `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]}`;
   const days = (n) => `${num(n)} day${n === 1 ? '' : 's'}`;
   const profile = (id) => '/student?id=' + encodeURIComponent(id);
   let spanKind = 'week'; // which chart: weeks or months
 
-  function totalsRow(totals) {
+  // ---- Who a figure is made of --------------------------------------------------------------------------------------------
+  const longDay = (iso) => `${dayMonth(iso)} ${iso.slice(0, 4)}`;
+  const plain = (a, b) => a.name.localeCompare(b.name);
+  const newest = (a, b) => (b.day || '').localeCompare(a.day || '') || plain(a, b);
+  const at = (p, what, day) => ({ id: p.id, name: p.name, what: what || p.stage, day: day || '' });
+  const where = (university, course) => [university, course].filter(Boolean).join(' · ');
+  const own = (p) => where(p.university, p.course) || p.stage;
+  // The lines behind each total and each step: one for each application, offer or mock, one for each student otherwise.
+  const apps = (people, key) => people.flatMap((p) => p.applications.filter((a) => a[key]).map((a) => at(p, where(a.university || 'No University recorded', a.course), a[key]))).sort(newest);
+  const those = (people, test, day) => people.filter(test).map((p) => at(p, own(p), day ? day(p) : '')).sort(newest);
+  const BEHIND = {
+    students: (p) => p.map((x) => at(x, [x.stage, own(x)].filter((v, i, l) => v && l.indexOf(v) === i).join(' · '))).sort(plain),
+    applications: (p) => apps(p, 'applied'),
+    offers: (p) => apps(p, 'offer'),
+    mocks: (p) => p.flatMap((x) => x.mocks.map((d, i) => at(x, `Mock interview ${i + 1}`, d))).sort(newest),
+    applied: (p) => those(p, (x) => x.applications.some((a) => a.applied), (x) => x.applied),
+    offered: (p) => those(p, (x) => x.applications.some((a) => a.offer), (x) => x.offered),
+    mocked: (p) => those(p, (x) => x.mocks.length, (x) => x.mocks[x.mocks.length - 1]),
+    passed: (p) => those(p, (x) => x.passed),
+    payments: (p) => those(p, (x) => x.paid, (x) => x.paid),
+    paid: (p) => those(p, (x) => x.paid, (x) => x.paid),
+    cas: (p) => those(p, (x) => x.hasCas, (x) => x.cas),
+    visas: (p) => those(p, (x) => x.issued, (x) => x.visa),
+    visa: (p) => those(p, (x) => x.issued, (x) => x.visa),
+  };
+
+  // One line for a student: the mark, the name (it opens the card), what it is about and the day.
+  function personRow(line, ids) {
+    const a = studentLink(line.id, '', ids, 'bd-line-person');
+    const words = el('span', 'bd-line-words');
+    words.append(el('b', '', line.name), el('small', '', line.what || ''));
+    a.replaceChildren(el('span', 'bd-line-mark', initials(line.name)), words, el('span', 'bd-line-day', line.day ? longDay(line.day) : ''));
+    return a;
+  }
+  function peopleList(lines, first = 8) {
+    const box = el('div', 'bd-lines');
+    const ids = [...new Set(lines.map((x) => x.id))];
+    lines.slice(0, first).forEach((x) => box.append(personRow(x, ids)));
+    if (lines.length > first) {
+      const more = h('button', { type: 'button', class: 'bd-more' }, `Show all ${lines.length}`);
+      more.addEventListener('click', () => { more.remove(); lines.slice(first).forEach((x) => box.append(personRow(x, ids))); });
+      box.append(more);
+    }
+    return box;
+  }
+
+  // The list a total or a step opens, under the block it was pressed in; a second press (or Close) puts it away.
+  let open = null; // { key, panel, button }
+  function closeList() {
+    if (!open) return;
+    open.panel.remove();
+    open.button.setAttribute('aria-expanded', 'false');
+    open = null;
+  }
+  function showList(button, after, key, title, people) {
+    const again = open && open.button === button;
+    closeList();
+    if (again) return;
+    const lines = BEHIND[key](people);
+    const panel = card(title, lines.length ? `${num(lines.length)} ${lines.length === 1 ? 'line' : 'lines'}${['passed', 'students'].includes(key) ? '' : ', the newest first'}. A name opens the student card.` : '', 'bd-open');
+    const shut = h('button', { type: 'button', class: 'bd-close', 'aria-label': 'Close this list' }, 'Close');
+    shut.addEventListener('click', () => { closeList(); button.focus(); });
+    panel.querySelector('header').append(shut);
+    if (!lines.length) panel.append(el('p', 'md-quiet', 'Nobody yet.'));
+    else {
+      const search = h('input', { type: 'search', class: 'bd-search', placeholder: 'Search a name or a University', 'aria-label': 'Search this list' });
+      let shown = peopleList(lines);
+      search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        const next = q ? lines.filter((x) => `${x.name} ${x.what}`.toLowerCase().includes(q)) : lines;
+        const list = next.length ? peopleList(next) : el('p', 'md-quiet', 'No name or University like that.');
+        shown.replaceWith(list); shown = list;
+      });
+      if (lines.length > 8) panel.append(search);
+      panel.append(shown);
+    }
+    after.after(panel);
+    button.setAttribute('aria-expanded', 'true');
+    open = { key, panel, button };
+    panel.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  function totalsRow(totals, people) {
     const grid = el('div', 'bd-totals');
     totals.forEach((t) => {
-      const box = el('div', `bd-total bd-total-${t.key}`);
-      box.append(el('span', 'bd-total-k', t.label), el('b', 'bd-total-n', num(t.value)), el('small', '', t.note));
+      const box = h('button', { type: 'button', class: `bd-total bd-total-${t.key}`, 'aria-expanded': 'false' });
+      box.append(el('span', 'bd-total-k', t.label), el('b', 'bd-total-n', num(t.value)), el('small', '', t.note), el('span', 'bd-total-go', 'See who'));
+      box.addEventListener('click', () => showList(box, grid, t.key, t.label, people));
       grid.append(box);
     });
     return grid;
+  }
+
+  // Everything that happened between two days, kind by kind.
+  const EVENTS = [
+    ['applications', 'Applications submitted', (p) => apps(p, 'applied')],
+    ['offers', 'Offers received', (p) => apps(p, 'offer')],
+    ['mocks', 'Mock interviews held', (p) => BEHIND.mocks(p)],
+    ['paid', 'Deposits paid', (p) => BEHIND.paid(p)],
+    ['cas', 'CAS received', (p) => those(p, (x) => x.cas, (x) => x.cas)],
+    ['lodged', 'Visas lodged', (p) => those(p, (x) => x.lodged, (x) => x.lodged)],
+    ['visa', 'Visas received', (p) => those(p, (x) => x.visa, (x) => x.visa)],
+  ];
+  const happened = (people, period) => EVENTS.map(([key, label, lines]) => ({ key, label, lines: lines(people).filter((x) => x.day && x.day >= period.from && x.day <= period.to) })).filter((g) => g.lines.length);
+  function periodPanel(people, period) {
+    const groups = happened(people, period);
+    const box = el('section', 'bd-period');
+    box.setAttribute('aria-live', 'polite');
+    const head = el('header', 'bd-period-head');
+    head.append(el('h3', '', period.title), el('p', '', period.from === period.to ? longDay(period.from) : `${longDay(period.from)} to ${longDay(period.to)}`));
+    box.append(head);
+    if (!groups.length) { box.append(el('p', 'md-quiet', 'Nothing was recorded in this time. Press another column.')); return box; }
+    const grid = el('div', 'bd-events');
+    groups.forEach((g) => {
+      const part = el('div', `bd-event bd-event-${g.key}`);
+      const title = el('h4');
+      title.append(el('span', '', g.label), el('i', '', num(g.lines.length)));
+      part.append(title, peopleList(g.lines, 5));
+      grid.append(part);
+    });
+    box.append(grid);
+    return box;
+  }
+
+  // Each student's own days, one row each: the quickest way to see who needs a push.
+  const STEPS = [['Applied', (p) => p.applied], ['Offer', (p) => p.offered], ['Mock', (p) => p.mocks[p.mocks.length - 1]], ['Pre-CAS', null], ['Deposit', (p) => p.paid], ['CAS', (p) => p.cas], ['Visa', (p) => p.visa]];
+  function everyStudentCard(people) {
+    const c = card('Every student', 'The day each one reached each step. A name opens the student card.', 'bd-wide bd-every');
+    if (!people.length) { c.append(el('p', 'md-quiet', 'No students yet.')); return c; }
+    const stages = [...new Set(people.map((p) => p.stage).filter(Boolean))];
+    const search = h('input', { type: 'search', class: 'bd-search', placeholder: 'Search a name or a University', 'aria-label': 'Search your students' });
+    const pick = h('select', { class: 'bd-pick', 'aria-label': 'Show one stage' }, h('option', { value: '' }, 'Every stage'), ...stages.map((s) => h('option', { value: s }, s)));
+    const tools = el('div', 'bd-every-tools');
+    tools.append(search, pick);
+    const body = el('div', 'bd-every-body');
+    let all = false;
+    const last = (p) => [p.applied, p.offered, p.mocks[p.mocks.length - 1], p.paid, p.cas, p.lodged, p.visa].filter(Boolean).sort().pop() || '';
+    const sorted = [...people].sort((a, b) => last(b).localeCompare(last(a)) || plain(a, b));
+    const draw = () => {
+      const q = search.value.trim().toLowerCase();
+      const list = sorted.filter((p) => (!pick.value || p.stage === pick.value) && (!q || `${p.name} ${p.university} ${p.course}`.toLowerCase().includes(q)));
+      if (!list.length) { body.replaceChildren(el('p', 'md-quiet', 'No student like that.')); return; }
+      const ids = list.map((p) => p.id);
+      const rows = list.slice(0, all ? list.length : 10).map((p) => {
+        const who = el('div', 'bd-who');
+        who.append(studentLink(p.id, p.name, ids, 'bd-name'), el('small', '', own(p)));
+        const cells = STEPS.map(([label, day]) => {
+          if (!day) return p.passed ? el('span', 'bd-tick is-yes', 'Passed') : p.failed ? el('span', 'bd-tick is-no', 'Not passed') : el('span', 'bd-tick is-none', '-');
+          const d = day(p);
+          const done = d || (label === 'CAS' && p.hasCas) || (label === 'Visa' && p.issued);
+          return done ? el('span', 'bd-tick is-yes', d ? dayMonth(d) : 'Yes') : el('span', 'bd-tick is-none', '-');
+        });
+        return [who, el('span', 'bd-stage', p.stage || 'No stage'), ...cells];
+      });
+      const wrap = el('div', 'bd-scroll');
+      wrap.append(table(['Student', 'Stage', ...STEPS.map(([label]) => label)], rows, 'bd-steps'));
+      const parts = [el('p', 'bd-sum', `${num(list.length)} ${list.length === 1 ? 'student' : 'students'}, the latest news first`), wrap];
+      if (list.length > 10) {
+        const more = h('button', { type: 'button', class: 'bd-more' }, all ? 'Show fewer' : `Show all ${list.length}`);
+        more.addEventListener('click', () => { all = !all; draw(); });
+        parts.push(more);
+      }
+      body.replaceChildren(...parts);
+    };
+    search.addEventListener('input', draw);
+    pick.addEventListener('change', draw);
+    c.append(tools, body);
+    draw();
+    return c;
   }
 
   // The top of the scale: the next round number, so the lines of the scale are whole numbers.
@@ -91,7 +255,8 @@
   // Applications and offers side by side, week by week or month by month; a pointer or the keyboard on a pair says its figures, and
   // "Show as a table" gives the same figures in rows.
   function chartCard(b) {
-    const c = card('Applications and offers', 'When applications were submitted and offers came in.', 'bd-chart-card');
+    const c = card('Applications and offers', 'Press a week or a month to see who did what in it.', 'bd-chart-card');
+    const chosen = { week: -1, month: -1 }; // the column opened in each view; the latest with news until another is pressed
     const tools = el('div', 'bd-tools');
     const legend = el('div', 'bd-legend');
     [['apps', 'Applications submitted'], ['offers', 'Offers received']].forEach(([k, label]) => { const i = el('span', 'bd-key'); i.append(el('i', `bd-swatch bd-${k}`), el('span', '', label)); legend.append(i); });
@@ -118,12 +283,21 @@
       });
       axis.append(marks);
       const cols = el('div', 'bd-cols');
+      if (chosen[spanKind] < 0) {
+        const busy = list.map((p, i) => (happened(b.people, p).length ? i : -1)).filter((i) => i >= 0);
+        chosen[spanKind] = busy.length ? busy[busy.length - 1] : list.length - 1;
+      }
+      let panel = null;
+      const choose = (i) => {
+        chosen[spanKind] = i;
+        cols.querySelectorAll('.bd-col').forEach((x, n) => x.setAttribute('aria-pressed', String(n === i)));
+        const next = periodPanel(b.people, list[i]);
+        panel.replaceWith(next); panel = next;
+      };
       list.forEach((p, i) => {
-        const words = `${p.title}: ${p.applications} submitted, ${p.offers} offer${p.offers === 1 ? '' : 's'}`;
-        const col = el('div', `bd-col${i > list.length - 4 ? ' is-end' : i < 3 ? ' is-start' : ''}`);
-        col.tabIndex = 0;
-        col.setAttribute('role', 'img');
-        col.setAttribute('aria-label', words);
+        const words = `${p.title}: ${p.applications} submitted, ${p.offers} offer${p.offers === 1 ? '' : 's'}. Show who`;
+        const col = h('button', { type: 'button', class: `bd-col${i > list.length - 4 ? ' is-end' : i < 3 ? ' is-start' : ''}`, 'aria-pressed': String(i === chosen[spanKind]), 'aria-label': words });
+        col.addEventListener('click', () => choose(i));
         const pair = el('div', 'bd-pair');
         [['apps', p.applications], ['offers', p.offers]].forEach(([k, v]) => {
           const bar = el('div', `bd-barv bd-${k}`);
@@ -143,7 +317,8 @@
       scroller.append(plot);
       const graph = el('div', 'bd-graph');
       graph.append(axis, scroller);
-      body.replaceChildren(sum, graph, more);
+      panel = periodPanel(b.people, list[chosen[spanKind]]);
+      body.replaceChildren(sum, graph, panel, more);
       requestAnimationFrame(() => { scroller.scrollLeft = scroller.scrollWidth; }); // on a narrow screen the newest is in view
     };
     [['week', 'Weeks'], ['month', 'Months']].forEach(([k, label]) => { const x = h('button', { type: 'button', 'data-k': k }, label); x.addEventListener('click', () => { spanKind = k; draw(); }); seg.append(x); });
@@ -176,12 +351,18 @@
     return row;
   }
 
-  function journeyCard(b) {
-    const c = card('From student to visa', 'How many of your students have reached each step.');
+  function journeyCard(b, after) {
+    const c = card('From student to visa', 'How many of your students have reached each step. Press one to see who.');
     const total = b.journey[0].students;
     if (!total) { c.append(el('p', 'md-quiet', 'No students yet.')); return c; }
     const list = el('div', 'bd-meters');
-    b.journey.forEach((s) => list.append(meter(s.label, s.students, total, num(s.students), `${s.share || 0}%`)));
+    b.journey.forEach((s) => {
+      const row = meter(s.label, s.students, total, num(s.students), `${s.share || 0}%`);
+      const b2 = h('button', { type: 'button', class: 'bd-step', 'aria-expanded': 'false', 'aria-label': `${s.label}: ${s.students}. Show who` });
+      b2.append(row);
+      b2.addEventListener('click', () => showList(b2, after(), s.key, s.label, b.people));
+      list.append(b2);
+    });
     c.append(list);
     return c;
   }
@@ -262,7 +443,9 @@
   function branchPage(d, page) {
     const b = d.branch;
     const two = (x, y) => { const g = el('div', 'bd-two'); g.append(x, y); return g; };
-    page.append(totalsRow(b.totals), chartCard(b), two(journeyCard(b), offerDaysCard(b.offerDays)), two(ratesCard(b.rates), stepsCard(b.steps)),
+    let steps = null; // the block a step's list opens under
+    steps = two(journeyCard(b, () => steps), offerDaysCard(b.offerDays));
+    page.append(totalsRow(b.totals, b.people), chartCard(b), everyStudentCard(b.people), steps, two(ratesCard(b.rates), stepsCard(b.steps)),
       universitiesCard(b.universities), waitingCard(b.waiting));
   }
 

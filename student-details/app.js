@@ -119,7 +119,30 @@
   const MEDICAL_DAY_COL = 'MEDICAL BOOKING DATE';
   const medicalDays = new Map();
   const medicalDayOf = (row) => { const d = medicalDays.get(row && row._id); return d ? displayDate(d) : ''; };
+  // A branch types the payment, CAS and visa days and the mocks on the sheet itself, so it can narrow the sheet to the part it is
+  // filling in (the owner, 27 Nov 2026). Only what is shown changes: search, export and the order of the students stay those of the
+  // whole sheet.
+  const MOCK_VIEW = [1, 2, 3, 4].flatMap((n) => [`MOCK SCHEDULE ${n}`, `FEEDBACK ${n}`]);
+  const BRANCH_VIEWS = [
+    ['all', 'Every column', null],
+    ['visa', 'Payment, CAS and visa', ['FIRST NAME', 'LAST NAME', 'UNIVERSITY NAME', 'PAYMENT DATE', 'CAS REQUESTED DATE', 'CAS RECEIVED DATE', 'VISA LODGE DATE', 'VFS ATTENDED DATE', 'VISA RECEIVED DATE', 'E-VISA']],
+    ['mocks', 'Mock interviews', ['FIRST NAME', 'LAST NAME', 'UNIVERSITY NAME', ...MOCK_VIEW, 'PRE CAS INTERVIEW']],
+  ];
+  const SECTION_OF = new Map([
+    ...MOCK_VIEW.map((c) => [c, 'mock']), ['PRE CAS INTERVIEW', 'mock'],
+    ...['GROSS FEE', 'SCHOLARSHIP', 'FEE AFTER SCHOLARSHIP', 'EARLY BIRD DISCOUNT', 'ADDITIONAL DISCOUNT', 'TUITION FEE DEPOSIT(1st Installment)', 'TUITION FEE DEPOSIT(2nd Installment)', 'TUITION FEE DEPOSIT(3rd Installment)', 'REMAINING TUITION FEE', 'PAYMENT DATE'].map((c) => [c, 'pay']),
+    ['CAS REQUESTED DATE', 'cas'], ['CAS RECEIVED DATE', 'cas'],
+    ...['VISA LODGE DATE', 'VFS ATTENDED DATE', 'VISA RECEIVED DATE', 'E-VISA', 'UK CONTACT NUMBER'].map((c) => [c, 'visa']),
+  ]);
+  const VIEW_KEY = 'sr360BranchSheetView';
+  let branchView = (() => { try { return localStorage.getItem(VIEW_KEY) || 'all'; } catch (e) { return 'all'; } })();
   const visibleColumns = (sheet) => {
+    const all = allColumns(sheet);
+    const view = branchOwn() && BRANCH_VIEWS.find((v) => v[0] === branchView);
+    return view && view[2] ? view[2].filter((c) => all.includes(c)) : all;
+  };
+  // Every column this account has on the sheet, whichever view is chosen.
+  const allColumns = (sheet) => {
     if (appOwn()) {
       const last = sheet.columns.indexOf('NOC NUMBER');
       const upToNoc = sheet.columns.filter((c, i) => (last === -1 || i <= last) && !CARD_COLUMNS.has(c));
@@ -131,7 +154,9 @@
     return sheet.columns.filter((c) => !CARD_COLUMNS.has(c) && !(branchOwn() && c === 'APPLICATION STATUS') && (!hidden.has(c) || (isTeam() && Teams.canEdit(me, c))));
   };
   // A column a filter can be on: one that is shown, and for a branch also the status its number cards filter by.
-  const filterable = (col) => columns.includes(col) || (branchOwn() && col === 'APPLICATION STATUS');
+  const filterable = (col) => columns.includes(col) || (branchOwn() && (col === 'APPLICATION STATUS' || dataColumns().includes(col)));
+  // What search, the calculated fees and Export work on: for a branch the whole sheet, even when a view shows part of it.
+  const dataColumns = () => { const sheet = branchOwn() && getActiveSheet(); return sheet ? allColumns(sheet) : columns; };
   let columns = []; // the active sheet's shown columns (see visibleColumns)
   let rows = [];    // reference to the active sheet's rows array
   let sortCol = null;
@@ -709,7 +734,7 @@
   // Runs on every render, same as autoMoveDeferredRows, so it stays true as values are typed or pasted in.
   function autoGroupRows() {
     if (rows.length < 2) return;
-    const hasPartner = columns.includes(PARTNER_COL);
+    const hasPartner = filterable(PARTNER_COL); // the order is the same in every view of a branch
     const hasStatus = filterable('APPLICATION STATUS'); // a branch's students keep their order though the column is not shown
     if (!hasPartner && !hasStatus) return;
 
@@ -781,6 +806,7 @@
           document.body.toggleAttribute('data-branch', branchOwn());
           if (branchOwn()) $('#addRow').title = "Add a new student: a short form asks for the student's details";
           if (branchOwn()) $('#search').placeholder = 'Search students, universities, courses…';
+          if (branchOwn()) $('#toggleStats').title = 'Show or hide the number boxes (each stage and the Conversion rate)';
           // 🔴 CSS CHANGED (2026-11-22): the bar under the sheet (rows count, Shortcuts, colour key), for the Application Team only | from: shown | to: hidden (the owner, 22 Nov 2026)
           const foot = document.querySelector('.footbar'); if (foot) foot.style.display = (appOwn() || mockOwn() || isOffice() || branchOwn()) ? 'none' : ''; } // no rows count, Shortcuts or colour key under the sheet for the Application and Mock Teams (the owner, 25 Nov 2026) and for Admin and the Manager (the owner, 26 Nov 2026); Add student, Colour rows, Delete rows, Undo and Redo stay Teams, so the students get the whole height (the owner, 22 and 25 Nov 2026)
         syncFollowupButton();
@@ -936,7 +962,7 @@
 
   function sheetToTsv(sheet) {
     const esc = (v) => String(v ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
-    const cols = visibleColumns(sheet);
+    const cols = branchOwn() ? allColumns(sheet) : visibleColumns(sheet);
     const lines = [cols.map(esc).join('\t')];
     sheet.rows.forEach((r) => lines.push(cols.map((c) => esc(r[c])).join('\t')));
     return lines.join('\n');
@@ -1199,6 +1225,7 @@
     columns.forEach((col) => {
       const th = document.createElement('th');
       th.dataset.col = col;
+      if (branchOwn() && SECTION_OF.has(col)) th.dataset.section = SECTION_OF.get(col);
       const width = columnWidth(col);
       th.style.width = width + 'px';
       tableWidth += width;
@@ -1232,6 +1259,15 @@
     });
     $('#sheet').style.width = tableWidth + 'px';
     $('#sheet').classList.toggle('card-only', cardOnly());
+    // A branch's names stay at the left while the dates are scrolled to (apple.css reads these widths).
+    const frozen = branchOwn() && columns[0] === 'FIRST NAME' && columns[1] === 'LAST NAME';
+    $('#sheet').classList.toggle('has-frozen', frozen);
+    if (frozen) {
+      $('#sheet').style.setProperty('--idx-w', COL_IDX_WIDTH + 'px');
+      $('#sheet').style.setProperty('--first-w', columnWidth('FIRST NAME') + 'px');
+      $('#sheet').style.setProperty('--last-w', columnWidth('LAST NAME') + 'px');
+    }
+    renderBranchViews();
     // A team's own columns can be far to the right: the first time the sheet is drawn, they are brought into view.
     if (isTeam() && !isBranchAccount() && !scrolledToYours) {
       scrolledToYours = true;
@@ -1246,6 +1282,73 @@
         tableWrap.scrollLeft = Math.max(0, start);
       });
     }
+  }
+
+  // The buttons above a branch's sheet: which columns are shown and, on every column, a jump to a part of the sheet.
+  const JUMPS = [['Student', 'FIRST NAME'], ['Mocks', 'MOCK SCHEDULE 1'], ['Payment', 'PAYMENT DATE'], ['CAS', 'CAS REQUESTED DATE'], ['Visa', 'VISA LODGE DATE']];
+  function jumpTo(col) {
+    const at = columns.indexOf(col);
+    if (at === -1) return;
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Where the column begins, from the widths themselves (the table is laid out by them), less what stays put at the left.
+    const start = columns.slice(0, at).reduce((n, c) => n + columnWidth(c), COL_IDX_WIDTH);
+    const left = at === 0 ? 0 : Math.max(0, start - frozenWidth());
+    tableWrap.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  // How much of the left edge the S.N column and any names that stay put cover: in the sheet's own pixels, or as seen on the
+  // screen (`seen`), which differ when the page is drawn smaller or larger.
+  function frozenWidth(seen = false) {
+    const names = $('#sheet').classList.contains('has-frozen');
+    return [...headerRow.children].filter((th) => th.classList.contains('col-idx') || (names && getComputedStyle(th).left !== 'auto'))
+      .reduce((n, th) => n + (seen ? th.getBoundingClientRect().width : th.offsetWidth), 0);
+  }
+  function setBranchView(key) {
+    branchView = key;
+    try { localStorage.setItem(VIEW_KEY, key); } catch (e) { /* this visit only */ }
+    closeFilterMenu();
+    columns = visibleColumns(getActiveSheet());
+    if (sortCol && !columns.includes(sortCol)) sortCol = null;
+    selectedRows = new Set(); selRanges = []; rowSelectMode = false; activeCell = null;
+    renderHeader();
+    renderBody();
+    tableWrap.scrollLeft = 0;
+  }
+  function renderBranchViews() {
+    let bar = $('#branchViews');
+    if (!branchOwn()) { if (bar) bar.remove(); return; }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'branchViews';
+      bar.className = 'brv';
+      tableWrap.before(bar);
+    }
+    const button = (cls, label, press, on) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = cls; b.textContent = label;
+      if (on !== undefined) b.setAttribute('aria-pressed', String(on));
+      b.addEventListener('click', press);
+      return b;
+    };
+    const had = bar.contains(document.activeElement) ? document.activeElement.textContent : '';
+    const seg = document.createElement('div');
+    seg.className = 'brv-seg';
+    seg.setAttribute('role', 'group');
+    seg.setAttribute('aria-label', 'Columns shown');
+    const now = BRANCH_VIEWS.some((v) => v[0] === branchView) ? branchView : 'all';
+    seg.append(...BRANCH_VIEWS.map(([key, label]) => button('brv-view', label, () => setBranchView(key), key === now)));
+    const jumps = JUMPS.filter(([, col]) => columns.includes(col));
+    const parts = [seg];
+    if (now === 'all' && jumps.length > 1) {
+      const go = document.createElement('div');
+      go.className = 'brv-jumps';
+      go.setAttribute('role', 'group');
+      go.setAttribute('aria-label', 'Go to a part of the sheet');
+      const k = document.createElement('span'); k.textContent = 'Go to';
+      go.append(k, ...jumps.map(([label, col]) => button(`brv-jump is-${SECTION_OF.get(col) || 'student'}`, label, () => jumpTo(col))));
+      parts.push(go);
+    }
+    bar.replaceChildren(...parts);
+    if (had) { const again = [...bar.querySelectorAll('button')].find((b) => b.textContent === had); if (again) again.focus({ preventScroll: true }); }
   }
 
   function closeFilterMenu() {
@@ -1386,7 +1489,8 @@
         return (iso ? v + ' ' + displayDate(iso) + ' ' + iso : v).toLowerCase();
       };
       const words = q.split(/\s+/).filter(Boolean);
-      indices = indices.filter((i) => columns.some((c) => cellText(rows[i], c).includes(q)) || (words.length > 1 && (() => { const all = columns.map((c) => cellText(rows[i], c)).join(' \n '); return words.every((w) => all.includes(w)); })()));
+      const searched = dataColumns();
+      indices = indices.filter((i) => searched.some((c) => cellText(rows[i], c).includes(q)) || (words.length > 1 && (() => { const all = searched.map((c) => cellText(rows[i], c)).join(' \n '); return words.every((w) => all.includes(w)); })()));
     }
     Object.keys(columnFilters).forEach((col) => {
       const allowed = columnFilters[col];
@@ -1437,7 +1541,7 @@
   // The fee columns are worked out for every row up front (sorting, search and Excel use the values),
   // not only for the rows that happen to be drawn.
   function updateCalculated() {
-    const calcCols = columns.filter((c) => CALC_COLS[c]);
+    const calcCols = dataColumns().filter((c) => CALC_COLS[c]);
     if (!calcCols.length) return;
     rows.forEach((row) => {
       const hasFee = String(row['GROSS FEE'] || '').trim() !== '';
@@ -1510,9 +1614,10 @@
     const parts = [];
     if (cameFrom) parts.push(`Source “${sourceText(cameFrom)}” (in every intake; another intake's students show on its tab)`);
     // A branch has no status column: after a press on a number card the bar says which students are shown.
-    const shownCols = cols.filter((c) => columns.includes(c));
-    if (shownCols.length) parts.push(`Filtered by ${shownCols.map(columnLabel).join(', ')}`);
-    if (cols.length > shownCols.length) parts.push(`Only ${[...columnFilters['APPLICATION STATUS']].join(', ')} students`);
+    const hiddenStatus = cols.includes('APPLICATION STATUS') && !columns.includes('APPLICATION STATUS');
+    const named = cols.filter((c) => !(hiddenStatus && c === 'APPLICATION STATUS'));
+    if (named.length) parts.push(`Filtered by ${named.map(columnLabel).join(', ')}`);
+    if (hiddenStatus) parts.push(`Only ${[...columnFilters['APPLICATION STATUS']].join(', ')} students`);
     if (searching) parts.push(`searching for “${searchEl.value.trim()}”`);
     const total = rows.filter((r) => !isTeam() || Teams.seesRow(me, r)).length;
     $('#filterBarText').textContent = `${parts.join(' and ')}. Showing ${viewIndices.length} of ${total} students.`;
@@ -1626,6 +1731,7 @@
       const td = document.createElement('td');
       td.dataset.colIndex = colIndex;
       td.dataset.col = col;
+      if (branchOwn() && SECTION_OF.has(col)) td.dataset.section = SECTION_OF.get(col);
       td.tabIndex = -1;
       const val = col === MEDICAL_DAY_COL ? medicalDayOf(rows[rowIdx]) : (rows[rowIdx][col] || '');
       if (CALC_COLS[col]) {
@@ -1741,7 +1847,8 @@
         // openDateCell). A date box per cell made up most of the page's memory on long sheets.
         td.classList.add('date');
         const iso = toISODate(val);
-        if (iso) td.textContent = displayDate(iso);
+        if (iso && branchOwn()) { const day = document.createElement('span'); day.className = 'sh-day'; day.textContent = displayDate(iso); td.appendChild(day); } // a branch reads a filled day at a glance
+        else if (iso) td.textContent = displayDate(iso);
       } else {
         // Plain text cells keep a fixed size whatever they hold: long text is cut off with "…" and
         // shown in full on hover (or by double-clicking to edit), so rows never grow taller.
@@ -2395,8 +2502,12 @@
       b.title = `Show only the students at ${s}`;
       b.setAttribute('aria-pressed', String(isPicked(s)));
       b.addEventListener('click', () => pickStage(s));
-      return fill(b, of(s), s);
+      fill(b, of(s), s);
+      b.append(bar(students.length ? of(s) / students.length : 0));
+      return b;
     };
+    // A thin bar under a number: its share of the branch's students, so the stages compare at a glance.
+    const bar = (share) => { const x = part('span', 'brn-bar'); x.setAttribute('aria-hidden', 'true'); const i = document.createElement('i'); i.style.width = `${Math.round(share * 100)}%`; x.append(i); return x; };
     const grid = (label) => { const g = part('div', 'brn-grid'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', label); return g; };
     const box = part('div', 'brn');
     const visas = of('Visa Issued');
@@ -2406,6 +2517,7 @@
     off.append(...STOPPED_STAGES.filter((s) => statusOptions.includes(s)).map(stageCard));
     const rate = fill(part('div', 'brn-card brn-rate'), `${students.length ? ((visas / students.length) * 100).toFixed(1) : '0.0'}%`, 'Conversion rate');
     rate.title = `${visas} Visa Issued out of ${students.length} students`;
+    rate.append(part('span', 'brn-note', 'Visas issued, out of all your students'), bar(students.length ? visas / students.length : 0));
     off.append(rate);
     box.append(way, part('p', 'brn-off-k', 'Stopped or waiting'), off);
     statusSummaryEl.append(box);
@@ -2995,7 +3107,7 @@
     const top = r.top + tableWrap.clientTop;
     const idxCell = body.querySelector('td.col-idx');
     return {
-      left: left + (idxCell ? idxCell.offsetWidth : 0),
+      left: left + (idxCell ? frozenWidth(true) : 0),
       top: top + headerRow.offsetHeight,
       right: left + tableWrap.clientWidth,
       bottom: top + tableWrap.clientHeight,

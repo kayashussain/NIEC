@@ -449,7 +449,8 @@
       given.classList.add('tdy-given');
       const top = el('div', 'tdy-top');
       top.append(given);
-      body.append(top, factsOf(x), appUpdates(x, thread, n));
+      if (isBranchToday()) body.append(top, ...[progressBox(x), branchFacts(x)].filter(Boolean), appUpdates(x, thread, n));
+      else body.append(top, factsOf(x), appUpdates(x, thread, n));
     } else {
       body.append(given, factsOf(x));
       // The updates: the conversation on the task, and the box to write one.
@@ -760,6 +761,182 @@
   }
   let tasksNow = []; // the tasks as last read (Missing details points at a Medical task)
 
+  // ---- A branch's Today (the owner, 27 Nov 2026) ----
+  // The two lists stay; above them what to do, what is late, what waits with the teams and what was finished, each a button to its
+  // place. A task opens with how far the student has come, the course and one press to WhatsApp, email or call (no Student Source:
+  // the branch is the source). Under the lists, the tasks finished in the last 7 days, so the branch hears when its work is done.
+  const isBranchToday = () => Boolean(todayData && todayData.branchTeam);
+  const niceName = (v) => (window.Portal.niceName ? window.Portal.niceName(v) : v);
+  let lateOnly = false;
+  let doneOpen = false;
+  const dayWords = (iso) => (iso ? longDay(iso) || dayShort(iso) : '');
+  const progressOf = (x) => {
+    const j = x.journey;
+    if (!j) return [];
+    const day = (d, other) => (d ? dayShort(d) : other);
+    return [
+      ['Applied', j.hasApplied, day(j.applied, 'Done')],
+      ['Offer', j.hasOffer, day(j.offered, 'Received')],
+      ['Mock', j.mocks > 0, j.mocks > 1 ? `${j.mocks} held` : day(j.lastMock, 'Held')],
+      ['Pre-CAS', j.passed, 'Passed', j.failed && !j.passed ? 'Not passed' : ''],
+      ['Payment', Boolean(j.paid), day(j.paid, '')],
+      ['CAS', j.hasCas, day(j.cas, 'Issued')],
+      ['Visa lodged', Boolean(j.lodged) || j.issued, day(j.lodged, 'Done')],
+      ['Visa', j.issued, day(j.visa, 'Received'), j.refusedVisa ? 'Refused' : ''],
+    ];
+  };
+  function progressBox(x) {
+    const steps = progressOf(x);
+    if (!steps.length) return null;
+    const box = el('section', 'bt-progress');
+    const head = el('div', 'bt-progress-head');
+    head.append(el('h3', '', `${niceName(x.student).split(' ')[0]}’s progress`), el('span', `bt-stage`, [x.stage, x.intake].filter(Boolean).join(' · ')));
+    const list = el('ol', 'bt-steps');
+    // The next step is the first one still to do after the last one done (none for a student who has stopped).
+    const last = steps.reduce((n, s, i) => (s[1] ? i : n), -1);
+    const stopped = /^(defer|hold|withdrawn|visa rejected)$/i.test(String(x.stage || ''));
+    steps.forEach(([label, done, when, bad], i) => {
+      const state = done ? 'is-done' : bad ? 'is-bad' : !stopped && i === last + 1 ? 'is-next' : 'is-todo';
+      const li = el('li', state);
+      li.append(el('span', 'bt-dot'), el('b', '', label), el('small', '', done ? when : bad || (state === 'is-next' ? 'Next' : 'Not yet')));
+      list.append(li);
+    });
+    box.append(head, list);
+    return box;
+  }
+  const CONTACT_ICONS = {
+    wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5l1.2-3.8a8 8 0 1 1 3 2.9z"/><path d="M9 9.2c.3 3 2.8 5.4 5.8 5.8l1-1.4-2-1-1 .9c-1.2-.5-2.1-1.4-2.6-2.6l.9-1-1-2z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M4 7.5l8 6 8-6"/></svg>',
+    call: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4h3l1.5 4-2 1.5a10 10 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A15.5 15.5 0 0 1 4.5 6.2 2 2 0 0 1 6.5 4z"/></svg>',
+  };
+  // The course, and how to reach the student.
+  function branchFacts(x) {
+    const box = el('div', 'bt-cards');
+    const c = x.course;
+    const pairs = c ? [['University', c.university], ['Course', c.course], ['Level', c.level], ['Intake', c.intake || x.intake], ...(x.tag === 'offer' ? [['Applied on', c.applied ? dayWords(c.applied) : '']] : [])] : [];
+    if (pairs.length) {
+      const course = el('section', 'bt-card bt-course');
+      course.append(el('h3', '', 'Course for this task'));
+      const dl = el('dl');
+      pairs.forEach(([l, v]) => { if (v) dl.append(el('dt', '', l), el('dd', '', v)); });
+      course.append(dl);
+      box.append(course);
+    }
+    const k = x.contact || {};
+    const reach = el('section', 'bt-card bt-reach');
+    reach.append(el('h3', '', 'Reach the student'));
+    const line = (kind, label, value, link) => {
+      const row = el('div', 'bt-way');
+      const ico = el('span', `bt-way-ico is-${kind}`);
+      ico.innerHTML = CONTACT_ICONS[kind];
+      const words = el('div', 'bt-way-words');
+      words.append(el('span', '', label), el('b', '', value ? String(value).replace(/@/g, '@\u200b') : 'Not saved'));
+      row.append(ico, words);
+      if (link) row.append(link);
+      else if (!value) row.append(h('a', { class: 'bt-act', href: '/student?id=' + encodeURIComponent(x.studentId), 'aria-label': `Add the ${label.toLowerCase()} on the student card` }, 'Add'));
+      reach.append(row);
+    };
+    let chat = null;
+    if (k.wa) {
+      chat = h('a', { class: 'bt-act is-wa', href: `https://wa.me/${k.wa}`, target: '_blank', rel: 'noopener', 'aria-label': 'Open a WhatsApp chat with the student' }, 'Chat');
+      chat.addEventListener('click', (e) => { if (e.ctrlKey || e.metaKey) return; e.preventDefault(); window.Portal.whatsapp(k.wa, x.student, '', x.studentId); });
+    }
+    line('wa', 'WhatsApp', k.phone, chat);
+    line('mail', 'Email', k.emailText, k.email ? h('a', { class: 'bt-act', href: `mailto:${k.email}`, 'aria-label': 'Write a new email to the student' }, 'Write') : null);
+    if (k.wa) line('call', 'Phone call', k.phone, h('a', { class: 'bt-act', href: `tel:+${k.wa}`, 'aria-label': 'Call the student' }, 'Call'));
+    box.append(reach);
+    return box;
+  }
+  // The newest written update, under a closed task: who said what.
+  const latestOf = (x) => {
+    const m = (x.comments || []).filter((c) => c.text).pop();
+    return m ? `${m.by === me ? 'You' : m.by || 'Someone'}: ${String(m.text).split('\n')[0]}` : '';
+  };
+  // Tasks to or from this branch that were finished in the last 7 days, the newest first.
+  function finishedOf(tasks) {
+    const from = todayIso ? Date.parse(todayIso + 'T00:00:00Z') - 6 * DAY : 0;
+    return tasks.filter((x) => x.done && (x.forMe || x.given || x.by === me || x.had) && Date.parse(isoDay(x.doneAt) + 'T00:00:00Z') >= from)
+      .sort((a, b) => String(b.doneAt).localeCompare(String(a.doneAt)));
+  }
+  function finishedBox(list, refresh) {
+    const box = el('section', 'bt-done');
+    box.id = 'bt-done';
+    const head = h('button', { class: 'bt-done-head', type: 'button', 'aria-expanded': String(doneOpen) });
+    head.append(el('span', 'bt-done-chev'), el('b', '', 'Finished in the last 7 days'), el('span', 'dt-n', String(list.length)));
+    head.addEventListener('click', () => { doneOpen = !doneOpen; refresh(); const again = document.querySelector('.bt-done-head'); if (again) again.focus({ preventScroll: true }); });
+    box.append(head);
+    if (!doneOpen) return box;
+    if (!list.length) { box.append(el('p', 'dt-none', 'Nothing has been finished in the last 7 days.')); return box; }
+    const rows = el('div', 'bt-done-list');
+    list.forEach((x) => {
+      const a = h('a', { class: 'bt-done-row', href: '/student?id=' + encodeURIComponent(x.studentId) });
+      const tick = el('span', 'bt-done-tick');
+      tick.innerHTML = TICK_ICON;
+      const words = el('span', 'bt-done-words');
+      words.append(el('b', '', niceName(x.student)), el('span', '', titleOf(x)));
+      const who = el('span', 'bt-done-who');
+      who.append(el('span', '', `${x.doneBy === me ? 'You' : x.doneBy || x.teamLabel}${x.doneBy && x.doneBy !== me ? `, ${x.teamLabel}` : ''}`), el('small', '', dayShort(isoDay(x.doneAt))));
+      a.append(tick, words, who);
+      rows.append(a);
+    });
+    box.append(rows);
+    return box;
+  }
+  // Assign a task: find the student, then the card opens with the task window.
+  function assignFromToday() {
+    window.Portal.dialog('Assign a task', (body) => {
+      const label = el('label', 'p-field p-wide');
+      const input = el('input');
+      input.type = 'search'; input.placeholder = 'Name, phone, email or university'; input.autocomplete = 'off';
+      label.append(el('span', 'p-label', 'Which student is it about?'), input);
+      const out = el('div', 'bt-find');
+      out.setAttribute('aria-live', 'polite');
+      body.append(label, out);
+      let timer = null; let asked = 0;
+      const find = async () => {
+        const turn = ++asked;
+        let found = [];
+        try { found = (await api(`/api/students/search?q=${encodeURIComponent(input.value.trim())}`)).students || []; } catch (e) { out.replaceChildren(el('p', 'bt-find-none', e.message)); return; }
+        if (turn !== asked) return; // an older answer arriving late is dropped
+        if (!found.length) { out.replaceChildren(el('p', 'bt-find-none', 'No student of yours matches.')); return; }
+        out.replaceChildren(...found.slice(0, 8).map((s) => {
+          const a = h('a', { class: 'bt-find-row', href: `/student?id=${encodeURIComponent(s.id)}&assign=1` });
+          const av = el('span', 'tdx-av', initials(s.name));
+          av.setAttribute('aria-hidden', 'true');
+          const words = el('span', 'bt-find-words');
+          words.append(el('b', '', niceName(s.name)), el('small', '', [s.stage, s.intake, s.university].filter(Boolean).join(' · ')));
+          a.append(av, words);
+          return a;
+        }));
+      };
+      input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(find, 180); });
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const first = out.querySelector('a'); if (first) first.click(); } });
+      find();
+    });
+  }
+  function branchSummary(mine, given, finished, refresh) {
+    const later = (x) => Boolean(x.doOn && todayIso && x.doOn > todayIso);
+    const late = [...mine, ...given].filter((x) => !later(x) && isLate(x)).length;
+    if (!late) lateOnly = false;
+    const teams = [...given.reduce((m, x) => m.set(x.teamLabel, (m.get(x.teamLabel) || 0) + 1), new Map())].map(([t, n]) => `${String(t).replace(/ Team$/, '')} ${n}`).join(' · ');
+    const now = mine.filter((x) => !later(x)).length;
+    const box = el('div', 'bt-sum');
+    const glide = (sel) => { const n = document.querySelector(sel); if (n) n.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' }); };
+    [
+      ['mine', 'For you to do', now, now ? (mine.length > now ? `${mine.length - now} more later` : 'Assigned to you') : 'Nothing waiting on you', () => glide('.dt-to')],
+      ['late', 'Late', late, late ? (lateOnly ? 'Showing late ones. Press to show all' : 'Waiting 3 days or more') : 'Nothing is late', () => { if (!late) return; lateOnly = !lateOnly; refresh(); const again = document.querySelector('.bt-tile.is-late'); if (again) again.focus({ preventScroll: true }); }],
+      ['teams', 'With our teams', given.length, given.length ? teams : 'Nothing waiting', () => glide('.dt-by')],
+      ['done', 'Finished', finished.length, 'In the last 7 days', () => { doneOpen = true; refresh(); glide('#bt-done'); }],
+    ].forEach(([key, label, n, line, press]) => {
+      const b = h('button', { class: `bt-tile is-${key}${n ? '' : ' is-zero'}`, type: 'button' });
+      if (key === 'late') b.setAttribute('aria-pressed', String(lateOnly));
+      b.append(el('span', 'bt-tile-k', label), el('span', 'bt-tile-n', String(n)), el('span', 'bt-tile-s', line));
+      b.addEventListener('click', press);
+      box.append(b);
+    });
+    return box;
+  }
+
   // ---- Today for Admin, the Manager and a branch (the owner, 27 Nov 2026): two lists of open tasks, nothing else ----
   // "Assigned to you": what this person is to do, the late ones first. "Assigned by you": what they gave to others, under the team
   // that has it, with who that is. A task opens as everywhere on Today (updates, Mark as done, Reschedule, Reassign, Edit, Remove).
@@ -780,6 +957,8 @@
         const words = who(x);
         const main = r.querySelector('.tdx-main');
         if (main && words) main.append(el('p', 'dt-who', words));
+        const latest = isBranchToday() && !r.classList.contains('is-open') ? latestOf(x) : '';
+        if (main && latest) main.append(el('p', 'bt-latest', latest));
         l.append(r);
       });
       return l;
@@ -798,8 +977,14 @@
       return c;
     };
 
-    const mine = open.filter((x) => x.forMe);
-    const toMe = column('to', 'Assigned to you', mine, 'No open task is assigned to you.');
+    const branch = isBranchToday();
+    const mineAll = open.filter((x) => x.forMe);
+    const givenAll = open.filter((x) => !x.forMe && (x.given || x.by === me));
+    const finished = branch ? finishedOf(t.tasks) : [];
+    const summary = branch ? branchSummary(mineAll, givenAll, finished, refresh) : null; // settles "late only" first
+    const wanted = (x) => !lateOnly || !branch || (!later(x) && isLate(x));
+    const mine = mineAll.filter(wanted);
+    const toMe = column('to', 'Assigned to you', mine, lateOnly ? 'None of your tasks is late.' : 'No open task is assigned to you.');
     const from = (x) => `From ${x.by === me ? 'you' : x.by || 'someone'}`;
     const parts = [['Late, do these first', mine.filter((x) => !later(x) && isLate(x)), ' is-late'], ['Today', mine.filter((x) => !later(x) && !isLate(x)), ''], ['Later', mine.filter(later), '']]
       .filter(([, items]) => items.length);
@@ -809,8 +994,8 @@
       toMe.append(rows(items, from));
     });
 
-    const given = open.filter((x) => !x.forMe && (x.given || x.by === me));
-    const byMe = column('by', 'Assigned by you', given, 'No open task. A task you assign is listed here until it is done.');
+    const given = givenAll.filter(wanted);
+    const byMe = column('by', 'Assigned by you', given, lateOnly ? 'Nothing you assigned is late.' : 'No open task. A task you assign is listed here until it is done.');
     const teams = [...new Set([...allTeams.map((x) => x.id), ...given.map((x) => x.team)])];
     teams.forEach((id) => {
       const items = given.filter((x) => x.team === id);
@@ -822,7 +1007,10 @@
 
     const box = el('div', 'dt-cols');
     box.append(toMe, byMe);
-    return box;
+    if (!branch) return box;
+    const whole = el('div', 'bt-today');
+    whole.append(summary, box, finishedBox(finished, refresh));
+    return whole;
   }
 
   function tasksPanel(t, refresh) {
@@ -1055,6 +1243,7 @@
     taskView = x.forMe ? (!x.done && x.doOn && todayIso && x.doOn > todayIso ? 'upcoming' : 'mine') : (x.given || x.by === me) ? 'gave' : 'others';
     tagFilter = todayData && todayData.missing ? tagOf(x, x.stage) : 'all'; // the Application Team has no "All": the task's own kind
     searchQ = '';
+    lateOnly = false; // a branch's "late only" must not hide the task a notification points at
     focusTask = x.id;
     refresh();
     requestAnimationFrame(() => {
@@ -1211,6 +1400,10 @@
     // the tasks (an update being typed is never lost). The owner, 21 Nov 2026: the bell stayed at 10 after reading.
     window.addEventListener('sr360-tasks-read', async () => { try { tasks = await api('/api/tasks'); } catch (e) { return; } paintBell(); });
     todayData = d;
+    if (d.branchTeam && !d.readOnly) {
+      const give = h('button', { class: 'btn btn-primary bt-assign', type: 'button', onclick: assignFromToday }, 'Assign a task');
+      appSegSlot.replaceChildren(give);
+    }
     const refresh = async (reload) => {
       if (reload) {
         try { tasks = await api('/api/tasks'); } catch (e) { /* keep */ }

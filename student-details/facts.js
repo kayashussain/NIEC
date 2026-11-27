@@ -275,9 +275,15 @@ const q1Intakes = (u) => {
   const month = (n) => ['jan', 'feb', 'mar'].indexOf(String(n).trim().slice(0, 3).toLowerCase());
   return [...new Set(names.map((n) => String(n).trim()).filter((n) => Q1_2027.test(n)).map((n) => `${['January', 'February', 'March'][month(n)]} 2027`))].sort((a, b) => month(a) - month(b));
 };
+// A University whose own page has no logo shows the one the partners' pages in the code give for the same name (the owner, 27 Nov
+// 2026: every University has a logo; three pathway colleges had none). Names are compared without brackets and punctuation.
+const logoKey = (n) => String(n || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+const PARTNER_LOGOS = new Map(Object.values(PARTNERS.profiles || {}).map((p) => [logoKey(p.name), logoUrl(p.logo)]).filter(([k, logo]) => k && logo));
+const logoFor = (u) => (u.profile && u.profile.logo) || PARTNER_LOGOS.get(logoKey(u.name)) || '';
+const partnerLogos = () => [...PARTNER_LOGOS.values()];
 const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: q1Intakes(u), updatedAt: u.updatedAt, kind: (u.profile && u.profile.type === 'college') || PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u),
   // A page with the partner's January 2027 details counts only those courses, and shows the university's logo on its card.
-  ...(u.profile ? { ...(u.profile.own ? {} : { courseCount: u.profile.courses.length, closed: (u.profile.deadlines || []).length > 0 && !FactPresent.nextApplyBy(u.profile.deadlines) }), logo: u.profile.logo || '', cover: u.profile.banner || u.profile.photos[0] || '', profileCity: u.profile.city || '' } : {}) });
+  ...(u.profile ? { ...(u.profile.own ? {} : { courseCount: u.profile.courses.length, closed: (u.profile.deadlines || []).length > 0 && !FactPresent.nextApplyBy(u.profile.deadlines) }), cover: u.profile.banner || u.profile.photos[0] || '', profileCity: u.profile.city || '' } : {}), ...(logoFor(u) ? { logo: logoFor(u) } : {}) });
 
 // Course lines of a page: the course list and each intake's, without the "## " sub-headings.
 const courseLines = (u) => (u.profile && !u.profile.own ? u.profile.courses.map((c) => c.name) : [u.courses, ...u.intakes.map((i) => i.courses)])
@@ -334,7 +340,7 @@ function searchIn(universities, q) {
 const byDeadline = (a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name);
 const listIn = (universities, q = '') => (String(q).trim() ? searchIn(universities, q) : universities.map(summary).sort(byDeadline));
 // Pages saved before the overview and fees table existed come back with those empty.
-const getIn = (universities, id) => { const u = universities.find((x) => x.id === id); return u ? { overview: '', programs: [], ...u } : null; };
+const getIn = (universities, id) => { const u = universities.find((x) => x.id === id); return u ? { overview: '', programs: [], ...u, logo: logoFor(u) } : null; };
 // Read only list and pages of a given set of universities (a backup), with the same shape and search as the live Universities.
 const viewFacts = (universities) => ({ list: (q) => listIn(universities, q), get: (id) => getIn(universities, id) });
 
@@ -551,4 +557,4 @@ function createFacts(dir, { now = () => new Date() } = {}) {
   };
 }
 
-module.exports = { createFacts, viewFacts, clean, PATHWAY, mergeIntakeDates, STARTER_UNIVERSITIES, STARTER_STEPS, OIEG_REPORT };
+module.exports = { createFacts, viewFacts, partnerLogos, clean, PATHWAY, mergeIntakeDates, STARTER_UNIVERSITIES, STARTER_STEPS, OIEG_REPORT };

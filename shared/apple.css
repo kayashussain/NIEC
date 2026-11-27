@@ -1413,7 +1413,7 @@ html:root body main.ff-page #cards a.uc-card .city { display: flex; flex-wrap: w
 html:root body main.ff-page #cards a.uc-card .uc-count { color: #1d1d1f; font-weight: 600; white-space: nowrap; }
 html:root body main.ff-page #cards a.uc-card .chips { margin: 0; padding: 0 18px 12px; }
 html:root body main.ff-page #cards a.uc-card .uc-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; margin: auto 0 0; padding: 10px 18px; border-top: 1px solid rgba(0, 0, 0, .07); }
-html:root body main.ff-page #cards a.uc-card .uc-next.is-none { color: #8e8e93; font-size: 13.5px; }
+html:root body main.ff-page #cards a.uc-card .uc-next.is-none { color: #636366; font-size: 13.5px; }
 html:root body main.ff-page #cards a.uc-card .uc-next-text { font-size: 13px; }
 html:root body main.ff-page #cards a.uc-card .uc-next-intake { display: none; }
 html:root body main.ff-page #cards a.uc-card .uc-days { flex: none; padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
@@ -1535,11 +1535,11 @@ html:root body main.ac-page .tile:nth-child(4)::before { background: #c7c7cc; }
 html:root body main.ac-page .tile.alert::before { background: #d70015; }
 html:root body main.ac-page .tile-label { order: -1; color: #636366; font-size: 13px; }
 html:root body main.ac-page .tile-value { font-size: 32px; }
-html:root body main.ac-page .tile-sub { color: #8e8e93; font-size: 12.5px; }
+html:root body main.ac-page .tile-sub { color: #636366; font-size: 12.5px; }
 html:root body main.ac-page #list { margin-top: 2px; }
 html:root body main.ac-page .ac-day { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 4px; padding: 8px 14px; border-radius: 10px; background: #f5f5f7; font-size: 14px; }
 html:root body main.ac-page .ac-day:first-child { margin-top: 4px; }
-html:root body main.ac-page .ac-day span { color: #8e8e93; font-size: 13px; font-weight: 500; }
+html:root body main.ac-page .ac-day span { color: #636366; font-size: 13px; font-weight: 500; }
 html:root body main.ac-page .activity-entry { display: flex; align-items: flex-start; gap: 14px; padding: 13px 4px 13px 14px; border-bottom: 1px solid rgba(0, 0, 0, .06); }
 html:root body main.ac-page .ac-mark { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #eef0f3; color: #48484a; font-size: 12.5px; font-weight: 700; }
 html:root body main.ac-page .is-logins .ac-mark { background: #e8f1fc; color: #0058b8; }
@@ -1554,7 +1554,7 @@ html:root body main.ac-page .is-changes .activity-action { background: #f5f0fd; 
 html:root body main.ac-page .is-security .activity-action { background: #fdecef; color: #a8213f; }
 html:root body main.ac-page .is-accounts .activity-action { background: #fdf0e4; color: #8a4200; }
 html:root body main.ac-page .activity-time { color: #636366; font-size: 13px; font-variant-numeric: tabular-nums; }
-html:root body main.ac-page .activity-device { color: #8e8e93; font-size: 12.5px; }
+html:root body main.ac-page .activity-device { color: #636366; font-size: 12.5px; }
 html:root body main.ac-page .activity-changes { margin-top: 8px; padding: 10px 14px 10px 30px; border-radius: 10px; background: #fafafc; color: #3a3a3c; }
 html:root body main.ac-page .ac-none { padding: 24px 0; text-align: center; }
 @media (max-width: 900px) { html:root body main.ac-page .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -1860,3 +1860,330 @@ html.app-mock:root body #page .mt-setup .mt-prefix .p-input.p-input { box-shadow
 @media (max-width: 640px) { html:root body .tdx-facts > .tdx-fact.is-contact { grid-column: 1 / -1; } html:root body .tdx-facts > .tdx-fact:not(.is-wide):not(.is-contact) { grid-column: span 2; } }
 /* 🔴 CSS CHANGED (2026-11-27): the "Waiting 6 days" label on Today on a phone | from: stretched across the row like a bar | to: only as wide as its words | why: it looked like a progress bar */
 @media (max-width: 640px) { html:root body .tda-row .tdx-age.tdx-age { justify-self: start; align-self: flex-start; width: fit-content; } }
+
+/* 🔴 CSS CHANGED (2026-11-27): level filters for a branch | from: one level at a time, nothing saying what is filtered | to: several levels, a tick on each chosen one, every filter as a removable chip with Clear all filters, and a level switch on a University that answers for several */
+html:root body main.ff-page .fd-card.fd-multi .fd-levels button { display: inline-flex; align-items: center; gap: 7px; transition: background .2s, color .2s; }
+html:root body main.ff-page .fd-card.fd-multi .fd-levels button::before { content: "+"; color: #6e6e73; font-weight: 500; }
+html:root body main.ff-page .fd-card.fd-multi .fd-levels button.is-on::before { content: "\2713"; color: #fff; }
+html:root body .fd-active, html:root body .up-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; padding: 10px 12px; border-radius: 14px; background: #f2f8ff; box-shadow: inset 0 0 0 1px rgba(0, 113, 227, .16); }
+html:root body .fd-active[hidden], html:root body .up-filters[hidden] { display: none; }
+html:root body .fd-active-k { margin: 0 4px 0 2px; color: #515154; font-size: 13px; font-weight: 600; }
+html:root body main .fd-card .fd-active button.fd-chip, html:root body main .up-filters button.fd-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-height: 32px; margin: 0; padding: 0 8px 0 14px; border: 0; border-radius: 980px; background: #fff; color: #1d1d1f; box-shadow: 0 0 0 1px rgba(0, 113, 227, .35); font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+html:root body .fd-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .fd-chip i { display: grid; place-items: center; flex: 0 0 18px; width: 18px; height: 18px; border-radius: 50%; background: #e8e8ed; color: #1d1d1f; font-size: 14px; font-style: normal; line-height: 1; }
+html:root body .fd-active button.fd-chip:hover i, html:root body .up-filters button.fd-chip:hover i { background: #0071e3; color: #fff; }
+html:root body main .fd-card .fd-active button.fd-clear-all, html:root body main .up-filters button.fd-clear-all { min-height: 32px; margin: 0 0 0 auto; padding: 0 14px; border: 0; border-radius: 980px; background: transparent; color: #0066cc; box-shadow: none; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+html:root body main .fd-card .fd-active button.fd-clear-all:hover, html:root body main .up-filters button.fd-clear-all:hover { background: rgba(0, 113, 227, .1); }
+html:root body .up-filters-n { color: #515154; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+html:root body .up-levels { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
+html:root body .up-levels button { display: inline-flex; align-items: center; gap: 9px; min-height: 38px; margin: 0; padding: 0 8px 0 16px; border: 0; border-radius: 980px; background: #f2f2f4; color: #1d1d1f; box-shadow: none; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .2s, color .2s; }
+html:root body .up-levels button:hover { background: #e4e4e9; }
+html:root body .up-levels button i { min-width: 24px; padding: 2px 7px; border-radius: 980px; background: #fff; color: #515154; font-size: 12px; font-style: normal; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+html:root body .up-levels button[aria-pressed="true"] { background: #0071e3; color: #fff; }
+html:root body .up-levels button[aria-pressed="true"] i { background: rgba(255, 255, 255, .22); color: #fff; }
+html:root body .up-filters + * { margin-top: 18px; }
+html:root body .fd-card-levels { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px; }
+html:root body .fd-card-levels button { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; margin: 0; padding: 0 12px; border: 0; border-radius: 980px; background: #f2f2f4; color: #1d1d1f; box-shadow: none; font: inherit; font-size: 12.5px; cursor: pointer; }
+html:root body .fd-card-levels button b { font-weight: 600; }
+html:root body .fd-card-levels button span { font-weight: 500; }
+html:root body .fd-card-levels button.is-yes span { color: #1a6b33; }
+html:root body .fd-card-levels button.is-check span { color: #8a5300; }
+html:root body .fd-card-levels button.is-no span { color: #a1251b; }
+html:root body .fd-card-levels button.is-on { background: #fff; box-shadow: 0 0 0 2px #0071e3; }
+html:root body .fd-uni.is-swapped { animation: none; opacity: 1; transform: none; }
+@media (max-width: 640px) {
+  html:root body main .fd-card .fd-active button.fd-clear-all, html:root body main .up-filters button.fd-clear-all { margin-left: 0; }
+  html:root body .up-levels button { min-height: 36px; padding-left: 13px; font-size: 13.5px; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-27): Interview guidelines for a branch | from: every University in one list from A, nothing about the branch's students | to: three figures at the top (the last with a bar), a first tab "Your students" with the count under each name, larger logo tiles, the branch's students on the open University with their state, kind filters as pills, a New mark on a fresh file */
+html:root body #page.ig-page.is-branch { max-width: 1380px; }
+html:root body #page .ig-sum { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.7fr); gap: 16px; margin: 0 0 20px; }
+html:root body #page .ig-sum-card { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; margin: 0; padding: 18px 22px 20px; border: 0; border-radius: 20px; background: #fff; color: #1d1d1f; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 30px rgba(0, 0, 0, .05); font: inherit; text-align: left; }
+html:root body #page button.ig-sum-card { cursor: pointer; transition: transform .2s, box-shadow .2s; }
+html:root body #page button.ig-sum-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 16px 38px rgba(0, 0, 0, .09); }
+html:root body #page .ig-sum-k { color: #515154; font-size: 13px; font-weight: 600; }
+html:root body #page .ig-sum-v { font-size: 34px; line-height: 42px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+html:root body #page .ig-sum-note { color: #636366; font-size: 13px; }
+html:root body #page button.ig-sum-card .ig-sum-note { color: #0066cc; font-weight: 500; }
+html:root body #page .ig-sum-card.is-ours.has-gap .ig-sum-note { color: #8a5300; }
+html:root body #page .ig-sum-bar { display: block; width: 100%; height: 6px; margin-top: 10px; overflow: hidden; border-radius: 980px; background: #e8e8ed; }
+html:root body #page .ig-sum-bar i { display: block; height: 100%; border-radius: 980px; background: #0071e3; }
+html:root body #page.is-branch .ig-side { height: calc(100vh - 40px); }
+html:root body #page .ig-tabs.is-three { grid-template-columns: 1.25fr 1.4fr .8fr; }
+html:root body #page .ig-tabs.is-three button { gap: 6px; padding: 0 6px; font-size: 13px; white-space: nowrap; }
+html:root body #page .ig-uni-words { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
+html:root body #page .ig-uni-sub { color: #636366; font-size: 12.5px; }
+html:root body #page .ig-uni-sub.is-missing { color: #8a5300; }
+html:root body #page .ig-uni.is-on .ig-uni-sub { color: rgba(255, 255, 255, .88); }
+html:root body #page.is-branch .ig-uni { min-height: 62px; }
+html:root body #page.is-branch .ig-mark.has-logo { width: 62px; height: 48px; padding: 4px; }
+html:root body #page.is-branch .ig-uni .ig-mark:not(.has-logo) { width: 62px; height: 48px; }
+html:root body #page.is-branch .ig-mark.is-big.has-logo { width: 132px; height: 88px; padding: 8px; border-radius: 18px; }
+html:root body #page .ig-page-link { display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; text-decoration: none; }
+html:root body #page .ig-people { margin: 0 0 24px; padding: 18px 18px 16px; border-radius: 20px; background: #f7f7f9; }
+html:root body #page .ig-people-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+html:root body #page .ig-people-head h3 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+html:root body #page .ig-people-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+html:root body #page a.ig-person { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px 12px; border-radius: 14px; background: #fff; color: #1d1d1f; border: 1px solid #e5e5ea; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+html:root body #page a.ig-person:hover { color: #1d1d1f; border-color: #0071e3; box-shadow: 0 6px 18px rgba(0, 113, 227, .12); }
+html:root body #page .ig-person-mark { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; background: #e8f1fc; color: #0058b8; font-size: 12.5px; font-weight: 600; }
+html:root body #page .ig-person-words { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+html:root body #page .ig-person-words b { overflow: hidden; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+html:root body #page .ig-person-words small { overflow: hidden; color: #636366; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body #page .ig-person-state { flex: 0 0 auto; padding: 3px 9px; border-radius: 980px; background: #efeff2; color: #48484a; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+html:root body #page .ig-person-state.is-offer { background: #e5f4ea; color: #1a6b33; }
+html:root body #page .ig-person-state.is-waiting { background: #e8f1fd; color: #0055aa; }
+html:root body #page .ig-person-state.is-refused { background: #fdecef; color: #a8213f; }
+html:root body #page .ig-people-more { margin: 12px 0 0; padding: 0; border: 0; background: transparent; color: #0066cc; box-shadow: none; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+html:root body #page .ig-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 4px; }
+html:root body #page .ig-kinds button.ig-kind { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; margin: 0; padding: 0 8px 0 14px; border: 0; border-radius: 980px; background: #f2f2f4; color: #1d1d1f; box-shadow: none; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+html:root body #page .ig-kinds button.ig-kind i { min-width: 22px; padding: 1px 7px; border-radius: 980px; background: #fff; color: #515154; font-size: 12px; font-style: normal; font-weight: 600; text-align: center; }
+html:root body #page .ig-kinds button.ig-kind[aria-pressed="true"] { background: #1d1d1f; color: #fff; }
+html:root body #page .ig-kinds button.ig-kind[aria-pressed="true"] i { background: rgba(255, 255, 255, .2); color: #fff; }
+html:root body #page .ig-new { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 980px; background: #e5f4ea; color: #1a6b33; font-size: 11px; font-style: normal; font-weight: 700; vertical-align: 1px; }
+@media (max-width: 900px) {
+  html:root body #page .ig-sum { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  html:root body #page .ig-sum-card.is-ours { grid-column: 1 / -1; }
+  html:root body #page .ig-sum-card { padding: 14px 16px 16px; border-radius: 18px; }
+  html:root body #page .ig-sum-v { font-size: 28px; line-height: 34px; }
+  html:root body #page.is-branch .ig-side { height: 440px; }
+  html:root body #page .ig-people-list { grid-template-columns: minmax(0, 1fr); }
+  html:root body #page.is-branch .ig-mark.is-big.has-logo { width: 96px; height: 68px; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-27): Universities for a branch | from: a 58px square logo on each card, a plain list of own students, no way to the guidelines | to: a wider logo tile so the name in a logo reads, the branch's students in a two-column set of tiles, and an Interview guidelines button with its count */
+html:root body main.ff-page.is-branch #cards a.uc-card .uni-mono { width: 84px; height: 62px; }
+html:root body main.ff-page.is-branch #cards a.uc-card .uni-mono.has-logo img { padding: 2px; object-fit: contain; }
+html:root body a.up-guides { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; margin: 0 0 14px; padding: 0 10px 0 18px; border-radius: 980px; background: #0071e3; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
+html:root body a.up-guides:hover { background: #0062c4; color: #fff; }
+html:root body a.up-guides i { min-width: 24px; padding: 2px 8px; border-radius: 980px; background: rgba(255, 255, 255, .22); font-size: 12px; font-style: normal; text-align: center; }
+html:root body .up-guides-line { margin: 18px 0 0; }
+html:root body .up-mine ul.up-mine-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 10px; }
+html:root body .up-mine .up-mine-list li { margin: 0; padding: 13px 16px; border: 0; border-radius: 14px; background: #f7f7f9; }
+@media (max-width: 700px) {
+  html:root body .up-mine ul.up-mine-list { grid-template-columns: minmax(0, 1fr); }
+  html:root body main.ff-page.is-branch #cards a.uc-card .uni-mono { width: 72px; height: 54px; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-27): a branch's All Students | from: cards of uneven rows, every column in one long strip, names scrolling away, dates as grey text | to: seven stage cards in one row with a share bar, Defer, Hold, Withdrawn and a wide conversion rate under them; Show numbers as a button that turns blue while open; buttons for Every column, Payment, CAS and visa, and Mock interviews with jumps to a part; First and Last Name staying at the left; filled dates as soft pills in the colour of their part; a coloured line over each part's headings */
+html:root body[data-branch] .brn-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+html:root body[data-branch] .brn .brn-card { justify-content: flex-start; gap: 3px; min-height: 96px; }
+html:root body[data-branch] .brn .brn-rate { grid-column: span 4; }
+html:root body[data-branch] .brn-bar { display: block; width: 100%; height: 4px; margin: auto 0 0; overflow: hidden; border-radius: 980px; background: #ececf0; }
+html:root body[data-branch] .brn-bar i { display: block; height: 100%; min-width: 0; border-radius: 980px; background: #0071e3; }
+html:root body[data-branch] .brn-card[data-stage="Visa Issued"] .brn-bar i, html:root body[data-branch] .brn-rate .brn-bar i { background: #1f9d4c; }
+html:root body[data-branch] .brn-card:is([data-stage="Defer"], [data-stage="Hold"], [data-stage="Withdrawn"]) .brn-bar i { background: #a6a6ad; }
+html:root body[data-branch] .brn-note { color: #636366; font-size: 12.5px; }
+html:root body[data-branch]:has(#sheet) .topbar button#toggleStats { display: inline-flex; align-items: center; gap: 9px; }
+html:root body[data-branch]:has(#sheet) .topbar button#toggleStats::before { content: ""; width: 14px; height: 14px; background: linear-gradient(currentColor, currentColor) 0 100% / 3px 7px, linear-gradient(currentColor, currentColor) 50% 100% / 3px 14px, linear-gradient(currentColor, currentColor) 100% 100% / 3px 10px; background-repeat: no-repeat; }
+html:root body[data-branch]:has(#sheet) .topbar button#toggleStats[aria-expanded="true"] { background: #e8f1fc; color: #0058b8; box-shadow: inset 0 0 0 1.5px #0071e3; }
+html:root body[data-branch] .brv { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; margin: 0 0 10px; padding: 0 var(--brv-pad, 4px); }
+html:root body[data-branch] .brv-seg { display: inline-flex; max-width: 100%; gap: 3px; padding: 3px; overflow-x: auto; border-radius: 980px; background: #e8e8ed; }
+html:root body[data-branch] .brv button.brv-view { min-height: 34px; margin: 0; padding: 0 16px; border: 0; border-radius: 980px; background: transparent; color: #1d1d1f; box-shadow: none; font: inherit; font-size: 13.5px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+html:root body[data-branch] .brv button.brv-view[aria-pressed="true"] { background: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(0, 113, 227, .45); }
+html:root body[data-branch] .brv-jumps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+html:root body[data-branch] .brv-jumps > span { margin-right: 2px; color: #636366; font-size: 13px; }
+html:root body[data-branch] .brv button.brv-jump { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; margin: 0; padding: 0 12px; border: 0; border-radius: 980px; background: #fff; color: #1d1d1f; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+html:root body[data-branch] .brv button.brv-jump::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #8e8e93; }
+html:root body[data-branch] .brv button.brv-jump.is-mock::before { background: #0071e3; }
+html:root body[data-branch] .brv button.brv-jump.is-pay::before { background: #d08000; }
+html:root body[data-branch] .brv button.brv-jump.is-cas::before { background: #8a4fd0; }
+html:root body[data-branch] .brv button.brv-jump.is-visa::before { background: #1f9d4c; }
+html:root body[data-branch] .brv button.brv-jump:hover { box-shadow: 0 0 0 1.5px #0071e3; }
+html:root body[data-branch] table#sheet thead th[data-section="mock"] { box-shadow: inset 0 3px 0 #0071e3; }
+html:root body[data-branch] table#sheet thead th[data-section="pay"] { box-shadow: inset 0 3px 0 #d08000; }
+html:root body[data-branch] table#sheet thead th[data-section="cas"] { box-shadow: inset 0 3px 0 #8a4fd0; }
+html:root body[data-branch] table#sheet thead th[data-section="visa"] { box-shadow: inset 0 3px 0 #1f9d4c; }
+html:root body[data-branch] #sheet .sh-day { display: inline-block; padding: 2px 10px; border-radius: 980px; background: #eef0f3; color: #1d1d1f; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html:root body[data-branch] #sheet td[data-section="mock"] .sh-day { background: #e8f1fc; color: #0a4f9e; }
+html:root body[data-branch] #sheet td[data-section="pay"] .sh-day { background: #fdf0dc; color: #7a4a00; }
+html:root body[data-branch] #sheet td[data-section="cas"] .sh-day { background: #f1e9fb; color: #5b2b9c; }
+html:root body[data-branch] #sheet td[data-section="visa"] .sh-day { background: #e4f4ea; color: #176334; }
+html:root body[data-branch] #sheet td.date:empty:not(.locked):hover::after { content: "+ Add date"; color: #0066cc; font-size: 12.5px; font-weight: 500; }
+html:root body[data-branch] #sheet td[data-col="E-VISA"] .badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+html:root body[data-branch] #sheet td[data-col="E-VISA"] .badge-green::before { content: "\2713"; }
+html:root body[data-branch] table#sheet.has-frozen thead th:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { z-index: 6; }
+html:root body[data-branch] table#sheet thead th.col-idx { z-index: 7; }
+html:root body[data-branch] table#sheet.has-frozen tbody td { scroll-margin-left: calc(var(--idx-w) + var(--first-w) + var(--last-w)); }
+html:root body[data-branch] table#sheet.has-frozen tbody td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { position: sticky; z-index: 2; background-color: #fff; scroll-margin-left: 0; }
+html:root body[data-branch] table#sheet.has-frozen :is(th, td)[data-col="FIRST NAME"] { left: var(--idx-w); }
+html:root body[data-branch] table#sheet.has-frozen :is(th, td)[data-col="LAST NAME"] { left: calc(var(--idx-w) + var(--first-w)); box-shadow: 6px 0 8px -6px rgba(0, 0, 0, .22); }
+html:root body[data-branch] table#sheet.has-frozen tbody tr:not([class*="rc-"], .defer-warning-row, .selected):hover td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: #eef4fd; }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.selected td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: #e7f0fd; }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.rc-green td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: var(--rc-green); }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.rc-yellow td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: var(--rc-yellow); }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.rc-orange td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: var(--rc-orange); }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.rc-red td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: var(--rc-red); }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.rc-blue td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: var(--rc-blue); }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.rc-purple td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: var(--rc-purple); }
+html:root body[data-branch] table#sheet.has-frozen tbody tr.rc-grey td:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { background-color: var(--rc-grey); }
+html:root body[data-branch] table#sheet.has-frozen tbody td.active-cell:is([data-col="FIRST NAME"], [data-col="LAST NAME"]) { z-index: 3; }
+@media (max-width: 1100px) {
+  html:root body[data-branch] .brn-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  html:root body[data-branch] .brn .brn-rate { grid-column: span 1; }
+}
+@media (max-width: 700px) {
+  html:root body[data-branch] .brn-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  html:root body[data-branch] .brn .brn-card { min-height: 74px; }
+  html:root body[data-branch] .brn .brn-rate { grid-column: 1 / -1; }
+  html:root body[data-branch] .brv-jumps { display: none; }
+  html:root body[data-branch] .brv-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; overflow: visible; border-radius: 16px; }
+  html:root body[data-branch] .brv button.brv-view { min-height: 44px; padding: 4px 6px; border-radius: 13px; font-size: 12.5px; line-height: 15px; white-space: normal; }
+  html:root body[data-branch] table#sheet.has-frozen :is(th, td)[data-col="LAST NAME"] { left: auto; box-shadow: none; }
+  html:root body[data-branch] table#sheet.has-frozen tbody td[data-col="LAST NAME"] { position: static; }
+  html:root body[data-branch] table#sheet.has-frozen tbody td { scroll-margin-left: calc(var(--idx-w) + var(--first-w)); }
+  html:root body[data-branch] table#sheet.has-frozen :is(th, td)[data-col="FIRST NAME"] { box-shadow: 6px 0 8px -6px rgba(0, 0, 0, .22); }
+}
+
+/* 🔴 CSS CHANGED (2026-11-27): a branch's Dashboard opens its figures | from: figures only to read | to: each total a button saying "See who", the chosen week or month ringed with its students listed under the chart kind by kind, a list under a total or a step with a search, "Every student" with each one's days, and the same rows on a phone as small blocks */
+html:root body .bd-page button.bd-total { align-items: flex-start; margin: 0; border: 0; color: #1d1d1f; font: inherit; text-align: left; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+html:root body .bd-page button.bd-total:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 14px 34px rgba(0, 0, 0, .09); }
+html:root body .bd-page button.bd-total[aria-expanded="true"] { box-shadow: inset 0 0 0 2px #0071e3, 0 10px 28px rgba(0, 113, 227, .12); }
+html:root body .bd-page .bd-total-go { margin-top: 6px; color: #0066cc; font-size: 13px; font-weight: 600; }
+html:root body .bd-page button.bd-total[aria-expanded="true"] .bd-total-go { visibility: hidden; }
+html:root body .bd-page .bd-open { margin: 0 0 18px; scroll-margin-top: 16px; }
+html:root body .bd-page .bd-open > header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
+html:root body .bd-page .bd-open > header p { order: 3; width: 100%; }
+html:root body .bd-page button.bd-close { min-height: 32px; margin: 0; padding: 0 16px; border: 0; border-radius: 980px; background: #f0f0f2; color: #1d1d1f; box-shadow: none; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+html:root body .bd-page input.bd-search { width: min(100%, 340px); min-height: 40px; margin: 14px 0 0; padding: 0 16px; border: 0; border-radius: 980px; background: #f5f5f7; box-shadow: none; font-size: 14px; }
+html:root body .bd-page input.bd-search:focus { outline: 0; background: #fff; box-shadow: inset 0 0 0 2px #0071e3; }
+html:root body .bd-page .bd-lines { display: flex; flex-direction: column; margin-top: 8px; }
+html:root body .bd-page .bd-open .bd-lines { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); column-gap: 24px; }
+html:root body .bd-page .bd-open .bd-lines .bd-more { grid-column: 1 / -1; justify-self: center; }
+html:root body .bd-page a.bd-line-person { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 8px; border-bottom: 1px solid #f0f0f3; border-radius: 10px; color: #1d1d1f; text-decoration: none; }
+html:root body .bd-page a.bd-line-person:hover { background: #f2f8ff; color: #1d1d1f; }
+html:root body .bd-page .bd-line-mark { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; background: #e8f1fc; color: #0058b8; font-size: 12px; font-weight: 600; }
+html:root body .bd-page .bd-line-words { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+html:root body .bd-page .bd-line-words b { overflow: hidden; color: #1d1d1f; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .bd-page .bd-line-words small { overflow: hidden; color: #636366; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .bd-page .bd-line-day { flex: 0 0 auto; color: #515154; font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html:root body .bd-page .bd-cols button.bd-col { min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; box-shadow: none; font: inherit; cursor: pointer; }
+html:root body .bd-page .bd-cols button.bd-col:hover { background: rgba(0, 113, 227, .06); }
+html:root body .bd-page .bd-cols button.bd-col[aria-pressed="true"] { background: rgba(0, 113, 227, .1); box-shadow: inset 0 0 0 1.5px rgba(0, 113, 227, .55); }
+html:root body .bd-page .bd-cols button.bd-col:focus-visible { box-shadow: 0 0 0 2px #0071e3; }
+html:root body .bd-page .bd-cols button.bd-col[aria-pressed="true"] .bd-x { color: #0058b8; font-weight: 700; }
+html:root body .bd-page .bd-period { margin: 18px 0 6px; padding: 18px 20px; border-radius: 18px; background: #f7f7f9; }
+html:root body .bd-page .bd-period-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 4px; }
+html:root body .bd-page .bd-period-head h3 { margin: 0; color: #1d1d1f; font-size: 17px; font-weight: 600; letter-spacing: -.012em; }
+html:root body .bd-page .bd-period-head p { margin: 0; color: #636366; font-size: 13px; }
+html:root body .bd-page .bd-events { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 12px; margin-top: 10px; align-items: start; }
+html:root body .bd-page .bd-event { min-width: 0; padding: 12px 10px 6px; border-radius: 14px; background: #fff; border: 1px solid #e8e8ed; }
+html:root body .bd-page .bd-event h4 { display: flex; align-items: center; gap: 9px; margin: 0; padding: 0 8px; color: #1d1d1f; font-size: 14px; font-weight: 600; }
+html:root body .bd-page .bd-event h4::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: #8e8e93; }
+html:root body .bd-page .bd-event-applications h4::before { background: #0071e3; }
+html:root body .bd-page .bd-event-offers h4::before { background: #1f9d6a; }
+html:root body .bd-page .bd-event h4 i { margin-left: auto; padding: 1px 9px; border-radius: 980px; background: #f0f0f2; color: #515154; font-size: 12px; font-style: normal; }
+html:root body .bd-page .bd-event .bd-lines a.bd-line-person:last-child { border-bottom: 0; }
+html:root body .bd-page .bd-event .bd-more { margin: 6px auto; }
+html:root body .bd-page button.bd-step { display: block; width: 100%; margin: 0; padding: 2px 8px; border: 0; border-radius: 12px; background: transparent; color: inherit; box-shadow: none; font: inherit; text-align: left; cursor: pointer; }
+html:root body .bd-page button.bd-step:hover { background: #f2f8ff; }
+html:root body .bd-page button.bd-step[aria-expanded="true"] { background: #e8f1fc; box-shadow: inset 0 0 0 1.5px #0071e3; }
+html:root body .bd-page .bd-every { margin-bottom: 18px; }
+html:root body .bd-page .bd-every-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+html:root body .bd-page .bd-every-tools input.bd-search { margin: 0; }
+html:root body .bd-page select.bd-pick { width: auto; min-height: 40px; margin: 0; padding: 0 36px 0 16px; border: 0; border-radius: 980px; background-color: #f5f5f7; box-shadow: none; font-size: 14px; font-weight: 500; }
+html:root body .bd-page .bd-wide table.bd-table.bd-steps { min-width: 860px; }
+html:root body .bd-page .bd-table.bd-steps :is(th, td) { text-align: left; vertical-align: middle; white-space: nowrap; }
+html:root body .bd-page .bd-who { display: flex; flex-direction: column; min-width: 170px; }
+html:root body .bd-page .bd-who small { max-width: 260px; overflow: hidden; color: #636366; font-size: 12.5px; text-overflow: ellipsis; }
+html:root body .bd-page .bd-stage { color: #1d1d1f; font-size: 13px; }
+html:root body .bd-page .bd-tick { display: inline-block; font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html:root body .bd-page .bd-tick.is-yes { padding: 2px 9px; border-radius: 980px; background: #e4f4ea; color: #176334; font-weight: 500; }
+html:root body .bd-page .bd-tick.is-no { padding: 2px 9px; border-radius: 980px; background: #fdecef; color: #a8213f; font-weight: 500; }
+html:root body .bd-page .bd-tick.is-none { color: #8e8e93; }
+@media (max-width: 700px) {
+  html:root body .bd-page .bd-period { padding: 14px 10px; }
+  html:root body .bd-page .bd-line-day { font-size: 11.5px; }
+  html:root body .bd-page select.bd-pick, html:root body .bd-page .bd-every-tools input.bd-search { width: 100%; }
+  html:root body .bd-page .bd-wide table.bd-table.bd-steps { min-width: 0; }
+  html:root body .bd-page .bd-wide .bd-table.bd-steps td:nth-child(2) { grid-column: 1 / -1; }
+}
+
+/* 🔴 CSS CHANGED (2026-11-27): a branch's Today, summary and progress | from: two lists, a task opening with the course, Student Source, WhatsApp and email in one grey box | to: an Assign a task button, four summary tiles above the lists (For you to do, Late, With our teams, Finished), the newest update under a task, a task opening with the student's progress in eight steps, a course card and a Reach the student card with Chat, Write and Call, and the tasks finished in the last 7 days under the lists */
+html:root body .br-page button.bt-assign { min-height: 38px; margin: 0; padding: 0 20px; border-radius: 980px; font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+html:root body .br-page .bt-sum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; }
+html:root body .br-page button.bt-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; margin: 0; padding: 16px 20px 15px; border: 0; border-radius: 20px; background: #fff; color: #1d1d1f; box-shadow: var(--apple-card); font: inherit; text-align: left; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+html:root body .br-page button.bt-tile:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 14px 34px rgba(0, 0, 0, .09); }
+html:root body .br-page button.bt-tile:focus-visible { outline: 3px solid rgba(0, 113, 227, .55); outline-offset: 2px; }
+html:root body .br-page button.bt-tile[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #a04800, var(--apple-card); }
+html:root body .br-page .bt-tile-k { color: #515154; font-size: 13.5px; font-weight: 600; }
+html:root body .br-page .bt-tile-n { color: #1d1d1f; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+html:root body .br-page .bt-tile-s { max-width: 100%; overflow: hidden; color: #636366; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .br-page .bt-tile.is-late:not(.is-zero) .bt-tile-n { color: #a04800; }
+html:root body .br-page .bt-tile.is-done:not(.is-zero) .bt-tile-n { color: #176334; }
+html:root body .br-page .bt-tile.is-zero .bt-tile-n { color: #6e6e73; }
+html:root body .br-page .dt-col { scroll-margin-top: 16px; }
+html:root body .br-page .dt-col .bt-latest { max-width: 100%; margin: 6px 0 0; overflow: hidden; padding: 6px 12px; border-radius: 10px; background: #f5f5f7; color: #3a3a3c; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .br-page .tdx-main { min-width: 0; }
+html:root body .br-page .tda-row .tdx-body.tdy-body { margin: 0 18px; }
+html:root body .br-page .tdx-actions .td-menu-wrap { margin-left: auto; }
+html:root body .br-page .bt-progress { margin: 14px 0 0; padding: 16px 16px 14px; border-radius: 16px; background: #f5f5f7; }
+html:root body .br-page .bt-progress-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 12px; }
+html:root body .br-page .bt-progress h3, html:root body .br-page .bt-card h3 { margin: 0; color: #1d1d1f; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -.006em; text-transform: none; }
+html:root body .br-page .bt-stage { color: #636366; font-size: 12.5px; }
+html:root body .br-page ol.bt-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 6px; margin: 0; padding: 0; list-style: none; }
+html:root body .br-page ol.bt-steps li { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; margin: 0; padding: 0; }
+html:root body .br-page .bt-dot { position: relative; display: block; width: 100%; height: 5px; margin-bottom: 5px; border-radius: 980px; background: #dedee3; }
+html:root body .br-page li.is-done .bt-dot { background: #1f9d4c; }
+html:root body .br-page li.is-next .bt-dot { background: linear-gradient(90deg, #0071e3 40%, #cfe3fa 40%); }
+html:root body .br-page li.is-bad .bt-dot { background: #d3374f; }
+html:root body .br-page ol.bt-steps b { color: #1d1d1f; font-size: 13px; font-weight: 600; line-height: 17px; }
+html:root body .br-page ol.bt-steps small { color: #636366; font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; }
+html:root body .br-page li.is-todo b { color: #636366; font-weight: 500; }
+html:root body .br-page li.is-done small { color: #176334; }
+html:root body .br-page li.is-next small { color: #0058b8; font-weight: 600; }
+html:root body .br-page li.is-bad small { color: #a8213f; font-weight: 600; }
+html:root body .br-page .bt-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; margin: 12px 0 0; align-items: start; }
+html:root body .br-page .bt-card { min-width: 0; padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid #e8e8ed; }
+html:root body .br-page .bt-course dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px 14px; margin: 10px 0 0; }
+html:root body .br-page .bt-course dt { margin: 0; color: #636366; font-size: 12.5px; line-height: 19px; }
+html:root body .br-page .bt-course dd { margin: 0; color: #1d1d1f; font-size: 13.5px; line-height: 19px; font-weight: 500; overflow-wrap: anywhere; }
+html:root body .br-page .bt-way { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+html:root body .br-page .bt-way + .bt-way { border-top: 1px solid #f0f0f3; }
+html:root body .br-page .bt-way-ico { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; background: #e8f1fc; color: #0058b8; }
+html:root body .br-page .bt-way-ico.is-wa { background: #e4f4ea; color: #176334; }
+html:root body .br-page .bt-way-ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+html:root body .br-page .bt-way-words { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+html:root body .br-page .bt-way-words span { color: #636366; font-size: 12px; line-height: 16px; }
+html:root body .br-page .bt-way-words b { color: #1d1d1f; font-size: 14px; line-height: 19px; font-weight: 500; overflow-wrap: anywhere; }
+html:root body .br-page a.bt-act { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-width: 66px; min-height: 32px; padding: 0 14px; border-radius: 980px; background: #f0f0f2; color: #0058b8; font-size: 13px; font-weight: 600; text-decoration: none; }
+html:root body .br-page a.bt-act:hover { background: #e2e2e7; color: #004a99; text-decoration: none; }
+html:root body .br-page a.bt-act.is-wa { background: #147a3d; color: #fff; }
+html:root body .br-page a.bt-act.is-wa:hover { background: #0f6631; color: #fff; }
+html:root body .br-page .bt-done { margin-top: 20px; border-radius: 22px; background: #fff; box-shadow: var(--apple-card); scroll-margin-top: 16px; }
+html:root body .br-page button.bt-done-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; margin: 0; padding: 14px 24px; border: 0; border-radius: 22px; background: transparent; color: #1d1d1f; box-shadow: none; font: inherit; text-align: left; cursor: pointer; }
+html:root body .br-page button.bt-done-head b { font-size: 17px; font-weight: 600; letter-spacing: -.016em; }
+html:root body .br-page button.bt-done-head:focus-visible { outline: 3px solid rgba(0, 113, 227, .55); outline-offset: -3px; }
+html:root body .br-page .bt-done-chev { width: 8px; height: 8px; border-right: 2px solid #6e6e73; border-bottom: 2px solid #6e6e73; transform: rotate(-45deg); transition: transform .2s; }
+html:root body .br-page button.bt-done-head[aria-expanded="true"] .bt-done-chev { transform: rotate(45deg); }
+html:root body .br-page .bt-done-list { padding: 0 12px 10px; }
+html:root body .br-page a.bt-done-row { display: flex; align-items: center; gap: 14px; padding: 11px 12px; border-top: 1px solid #f0f0f3; color: #1d1d1f; text-decoration: none; }
+html:root body .br-page a.bt-done-row:hover { background: #f7f9fc; color: #1d1d1f; text-decoration: none; }
+html:root body .br-page .bt-done-tick { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: #e4f4ea; color: #176334; }
+html:root body .br-page .bt-done-tick svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+html:root body .br-page .bt-done-words { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+html:root body .br-page .bt-done-words b { font-size: 14.5px; font-weight: 600; }
+html:root body .br-page .bt-done-words > span { overflow: hidden; color: #636366; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .br-page .bt-done-who { display: flex; flex-direction: column; align-items: flex-end; flex: 0 0 auto; color: #1d1d1f; font-size: 13px; text-align: right; }
+html:root body .br-page .bt-done-who small { color: #636366; font-size: 12px; }
+html:root body .bt-find { display: flex; flex-direction: column; gap: 2px; min-height: 120px; max-height: min(46vh, 420px); margin-top: 10px; overflow: auto; }
+html:root body a.bt-find-row { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px; color: #1d1d1f; text-decoration: none; }
+html:root body a.bt-find-row:hover, html:root body a.bt-find-row:focus-visible { background: #eef4fd; color: #1d1d1f; text-decoration: none; }
+html:root body a.bt-find-row .tdx-av { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; font-size: 12.5px; font-weight: 600; }
+html:root body .bt-find-words { display: flex; flex-direction: column; min-width: 0; }
+html:root body .bt-find-words b { font-size: 14.5px; font-weight: 600; }
+html:root body .bt-find-words small { overflow: hidden; color: #636366; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body .bt-find-none { margin: 16px 0; color: #636366; font-size: 14px; text-align: center; }
+@media (max-width: 900px) {
+  html:root body .br-page .bt-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
+@media (max-width: 700px) {
+  html:root body .br-page button.bt-tile { padding: 12px 14px; border-radius: 16px; }
+  html:root body .br-page .bt-tile-n { font-size: 27px; line-height: 32px; }
+  html:root body .br-page .bt-tile-s { white-space: normal; }
+  html:root body .br-page button.bt-assign { min-height: 34px; padding: 0 14px; font-size: 13.5px; }
+  html:root body .br-page .bt-progress { padding: 13px 12px 12px; }
+  html:root body .br-page button.bt-done-head { padding: 12px 16px; }
+  html:root body .br-page .bt-done-list { padding: 0 6px 8px; }
+}
