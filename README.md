@@ -168,3 +168,12 @@ Admin account) in the hosting settings and restart; the door is then `https://<y
 (preview, then apply with the code): change a detail of one student, remove one task of one card, delete one student's row. Each is written on the
 card and in Activity as "<account> (Claude)" after the server's usual backup. Remove either setting to switch it off. Users, passwords, settings and
 the Incentive page are never reachable through it.
+
+## NIEC portal sync (the owner, 27 Nov 2026; `student-details/portal-sync.js`)
+
+Every 5 minutes the server reads the **Open** list of the official NIEC portal and adds each student who is not yet here, at **Inquiry**, in the current intake, with first name, last name, email and phone, as the account **NIEC CTC** (shown in Activity and on the card's first note). It only **reads** the portal; nothing is written back to it yet.
+
+- **Settings** (environment variables on the server, never in code or chat): `NIEC_PORTAL_USER`, `NIEC_PORTAL_PASS`, and `NIEC_PORTAL_SYNC` = `off` (default), `dry` (reads and logs, adds nobody) or `on`. Optional: `NIEC_PORTAL_URL`. Start with `dry`, check Activity, then `on`.
+- **No double entries:** each portal enquiry id is kept in `portal-sync.json` (data folder). A student already here with the same email or phone is matched, gets a note, and is not changed. Someone who may be a different person on a shared phone is left for a person. At most 50 are added per run.
+- **Source:** Visitor, "Walked in" for In Person and "Website form" for Online.
+- **Not done yet:** Pending (a note with a next follow-up date), Closed (not applying) and Success (application submitted and offer received) going back to the portal. The portal's follow-up form is `/agent/activities/add` (status Pending or Closed, note, next follow-up date, mode); Success has to be found on the portal's application side first.

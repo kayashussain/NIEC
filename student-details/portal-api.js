@@ -4107,7 +4107,9 @@ function createPortalApi({
     return { ok: true };
   }
 
-  return { handle, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns, writeHeldMock, advisorChange, advisorRemoveTask, advisorDeleteStudent };
+  // For the NIEC portal sync (portal-sync.js): the same rules as the Add student form, for a given account.
+  const importStudent = (user, body) => addStudent({ user, headers: {}, socket: {} }, body);
+  return { handle, importStudent, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns, writeHeldMock, advisorChange, advisorRemoveTask, advisorDeleteStudent };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };

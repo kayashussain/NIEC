@@ -1691,6 +1691,25 @@ if (partnerRefresh.enabled()) {
   setTimeout(() => partnerRefresh.tick(), 5 * 60 * 1000).unref();
   setInterval(() => partnerRefresh.tick(), 30 * 60 * 1000).unref();
 }
+// The NIEC portal sync (portal-sync.js, the owner, 27 Nov 2026): the Open list of the official NIEC portal is read every 5 minutes and
+// new students are added at Inquiry by the account "NIEC CTC". It only reads the portal. NIEC_PORTAL_SYNC=off (default) | dry | on, with
+// NIEC_PORTAL_USER and NIEC_PORTAL_PASS set on the server.
+{
+  const { createPortalSync, createPortalClient } = require('./portal-sync');
+  const syncMode = ['on', 'dry'].includes(process.env.NIEC_PORTAL_SYNC) && process.env.NIEC_PORTAL_USER && process.env.NIEC_PORTAL_PASS ? process.env.NIEC_PORTAL_SYNC : 'off';
+  const portalSync = createPortalSync({
+    dir: DATA_DIR, mode: syncMode,
+    client: createPortalClient({ base: process.env.NIEC_PORTAL_URL || undefined, user: process.env.NIEC_PORTAL_USER, pass: process.env.NIEC_PORTAL_PASS }),
+    importStudent: portal.importStudent,
+    addNote: (rowId, input, by) => cards.addNote(rowId, input, by),
+    record: (r) => activity.record({ headers: {}, socket: {} }, { id: 'niec-ctc', label: 'NIEC CTC' }, 'NIEC portal sync', { app: 'NIEC portal', changes: [r.error ? `The portal could not be read: ${r.error}` : `${r.mode === 'dry' ? 'Dry run: ' : ''}Open list ${r.seen}: ${r.added} ${r.mode === 'dry' ? 'would be added' : 'added'}, ${r.linked} matched an existing student${r.failed ? `, ${r.failed} left for a person` : ''}`] }),
+  });
+  if (portalSync.enabled()) {
+    const everyMs = Math.max(500, Number(process.env.NIEC_PORTAL_EVERY_MS) || 5 * 60 * 1000);
+    setTimeout(() => portalSync.tick(), Math.max(200, Number(process.env.NIEC_PORTAL_FIRST_MS) || 60 * 1000)).unref();
+    setInterval(() => portalSync.tick(), everyMs).unref();
+  }
+}
 if (navitas.enabled()) {
   setTimeout(() => navitas.tick(), 3 * 60 * 1000).unref();
   setInterval(() => navitas.tick(), 30 * 60 * 1000).unref();
