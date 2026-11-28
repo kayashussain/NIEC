@@ -118,6 +118,33 @@
   @media (prefers-reduced-motion: reduce) { html body .fu-page .fu-strip .bad { animation: none; } }
   /* a narrower laptop: the wide rows keep their columns readable by wrapping the buttons under each other */
   @media (max-width: 1360px) { .fu-row { gap: 10px; padding-left: 16px; padding-right: 16px; } .fu-row.live { grid-template-columns: 32px minmax(120px, .9fr) 84px minmax(150px, 1.6fr) 100px 146px 156px; } .fu-row.moved { grid-template-columns: 32px minmax(130px, .9fr) minmax(150px, 1fr) minmax(200px, 1.3fr) minmax(150px, 1fr) 40px; } .fu-row.stop { grid-template-columns: 32px minmax(130px, .9fr) 92px minmax(180px, 1.6fr) minmax(110px, .7fr) 168px; } .fu-row.moved .fu-view { visibility: hidden; } }
+  /* 🔴 CSS CHANGED (2026-11-28): the Follow-up Team's All Students takes the same panel, lines, search and switch as the Application and Mock Teams' Today (shared/theme.css tokens --lg-panel, --lg-line, --lg-bar), plus a round initials avatar, the tag as three stacked round choices (Interested, Decision Making, Cold) and a magnifier in the search | from: white panels (#fff, 18px corners, soft shadow), the grey #e8e8ed switch, search and chips, the tag as three small INT / DM / COLD buttons side by side, no avatar | to: panels #f3f3f3 with a 1px #9a9a9a line and 10px corners, no shadow, switch and search in the Today greys, a 38px avatar before each name, the tag column 150px wide with three round choices under each other (rows are taller), a magnifier at the left of the search (the owner, 28 Nov 2026, design approved on the canvas) */
+  html body .fu-page .fu-panel { background: var(--lg-panel, #f3f3f3); border: 1px solid var(--lg-line, #9a9a9a); border-radius: 10px; box-shadow: none; }
+  html body .fu-page .fu-seg { background: #dcdcdc; border-radius: 12px; }
+  html body .fu-page .fu-seg button.on { background: #f7f7f7; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 2px 8px -4px rgba(0, 0, 0, .12); }
+  html:root body .fu-page input.fu-search:not(:focus) { background-color: #f7f7f7 !important; border: 1px solid #9a9a9a !important; }
+  html body .fu-page .fu-search { padding-left: 42px; border-radius: 999px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 15px 50%; background-size: 16px; }
+  html body .fu-page .fu-chip { background: #dcdcdc; }
+  html body .fu-page .fu-chip.on { background: #000; color: #fff; }
+  html body .fu-page .fu-row { border-top-color: #d4d4d4; padding-top: 16px; padding-bottom: 16px; }
+  html body .fu-page .fu-row.live { grid-template-columns: 30px minmax(190px, 1fr) 108px minmax(220px, 1.7fr) 100px 152px 170px; }
+  html body .fu-page .fu-row.head { padding-top: 12px; padding-bottom: 10px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #333; }
+  html body .fu-page .fu-who { display: flex; align-items: center; gap: 12px; }
+  html body .fu-page .fu-who-text { min-width: 0; }
+  html body .fu-page .fu-av { flex: none; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: #d9f1fb; color: #000; font-size: 13px; font-weight: 700; }
+  html body .fu-page .fu-stage { background: transparent; padding: 0; color: #333; font-weight: 500; }
+  html body .fu-page .fu-stage.app { color: #0050aa; }
+  html body .fu-page .fu-stage.hold { color: #a24800; }
+  html body .fu-page .fu-stage.gone { color: #b42318; }
+  html body .fu-page .fu-tgv { display: flex; flex-direction: column; gap: 6px; }
+  html body .fu-page .fu-opt { display: flex; align-items: center; gap: 9px; min-height: 0; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 500; color: #000; text-align: left; cursor: pointer; }
+  html body .fu-page .fu-opt::before { content: ""; flex: none; width: 15px; height: 15px; box-sizing: border-box; border-radius: 50%; border: 1.6px solid #6f6f6f; background: #f7f7f7; }
+  html body .fu-page .fu-opt.on { font-weight: 700; }
+  html body .fu-page .fu-opt.on::before { border-color: #0071e3; background: radial-gradient(#0071e3 0 3.5px, #f7f7f7 4.5px); }
+  html body .fu-page .fu-opt:focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; border-radius: 4px; }
+  html body .fu-page .fu-opt:disabled { opacity: .5; cursor: default; }
+  html body .fu-page .fu-act .btn { border-radius: 999px; }
+  html body .fu-page .fu-strip { padding-left: 78px; background: #ececec; }
 </style>
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
 <link rel="expect" href="#isr-ready" blocking="render" />

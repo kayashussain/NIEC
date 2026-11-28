@@ -43,7 +43,8 @@
 
   async function load() {
     try { data = await api('/api/followup'); } catch (e) { $('list').replaceChildren(el('div', 'fu-empty', e.message)); return; }
-    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}click a name to open the student card with every note.`;
+    const waiting = data.students.filter((x) => ['new', 'due', 'tried'].includes(x.state)).length;
+    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}${waiting} ${waiting === 1 ? 'student' : 'students'} to follow up`;
     draw();
     loadTasks();
   }
@@ -123,7 +124,7 @@
     const tagsBox = $('tags');
     tagsBox.replaceChildren(el('span', '', 'Show only'), ...(data.tags || []).map((t) => {
       const b = h('button', { type: 'button', class: 'fu-chip' + (tag === t.key ? ' on' : ''), 'aria-pressed': String(tag === t.key) });
-      b.append(`${t.key} (${t.short})`, el('i', '', String(list.filter((s) => s.tag === t.key).length)));
+      b.append(t.key, el('i', '', String(list.filter((s) => s.tag === t.key).length)));
       b.addEventListener('click', () => { tag = tag === t.key ? '' : t.key; close(); draw(); });
       return b;
     }));
@@ -153,14 +154,18 @@
 
   // The student: the name opens the card, the phone calls; the remarks and the intake a deferred student came from under it.
   function whoOf(s) {
-    const who = el('div', 'fu-who');
+    const outer = el('div', 'fu-who');
+    const who = el('div', 'fu-who-text');
+    const initials = String(s.name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w.charAt(0)).join('').toUpperCase();
+    const av = el('span', 'fu-av', initials); av.setAttribute('aria-hidden', 'true');
     const name = h('button', { class: 'fu-name', type: 'button', title: 'Open the student card' }, s.name || 'Student with no name');
     name.addEventListener('click', () => window.CardDrawer.open(s.id, { onClose: () => load() }));
     who.append(name);
     if (s.phone) who.append(h('a', { class: 'fu-phone', href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone));
     if (s.remarks) { const sub = el('span', 'fu-sub', s.remarks); sub.title = s.remarks; who.append(sub); }
     if (s.from) who.append(el('span', 'fu-from', `Deferred from ${s.from}`));
-    return who;
+    outer.append(av, who);
+    return outer;
   }
   function stageCell(s) {
     const cls = s.stage === 'Withdrawn' ? ' gone' : s.stage === 'Hold' ? ' hold' : ['sent', 'applying'].includes(s.state) ? ' app' : '';
@@ -188,9 +193,9 @@
     else next.append(el('span', '', 'Not set'));
     const tg = el('div');
     if (s.canTag) {
-      const g = el('div', 'fu-tg'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', `Tag of ${s.name}`);
+      const g = el('div', 'fu-tgv'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', `Tag of ${s.name}`);
       (data.tags || []).forEach((t) => {
-        const b = h('button', { type: 'button', class: s.tag === t.key ? 'on' : '', 'aria-pressed': String(s.tag === t.key), title: t.key, 'aria-label': t.key }, t.short);
+        const b = h('button', { type: 'button', class: 'fu-opt' + (s.tag === t.key ? ' on' : ''), 'aria-pressed': String(s.tag === t.key), title: t.short }, t.key);
         b.addEventListener('click', async () => {
           const to = s.tag === t.key ? '' : t.key;
           g.querySelectorAll('button').forEach((x) => { x.disabled = true; });
@@ -200,7 +205,7 @@
         g.append(b);
       });
       tg.append(g);
-    } else if (s.tag) { const c = el('span', 'fu-code', tagShort(s.tag)); c.title = s.tag; tg.append(c); }
+    } else if (s.tag) { const c = el('span', 'fu-code', s.tag); c.title = tagShort(s.tag); tg.append(c); }
     const act = el('div', 'fu-act');
     if (s.canNote) {
       act.append(noteButton(s));
