@@ -275,6 +275,32 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.close();
   });
 
+  await t.test('when the server no longer knows the page\'s version, the change is put back on top and saved, not lost', async () => {
+    const page = await open(admin, '/students');
+    await page.waitForSelector('#body tr:not(.pad-row)');
+    // The first save is answered as after a restart that forgot the page's version (the owner, 28 Nov 2026: no typed work lost).
+    let refuseOnce = true;
+    await page.route('**/api/data', (route) => {
+      if (route.request().method() === 'POST' && refuseOnce) {
+        refuseOnce = false;
+        return route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'conflict', revision: 999 }) });
+      }
+      return route.continue();
+    });
+    const nameCol = await page.$$eval('#headerRow th', (ths) => ths.findIndex((th) => th.dataset.col === 'FIRST NAME'));
+    await page.locator('#body tr:not(.pad-row)').nth(4).locator('td').nth(nameCol).click();
+    await page.keyboard.type('Typed before a restart');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('.eg-box');
+    await page.click('.eg-ok');
+    await page.waitForFunction(() => document.querySelector('#status').textContent.includes('All changes saved'), null, { timeout: 15000 });
+    assert.ok(!refuseOnce, 'the first save was refused');
+    assert.ok(await page.isHidden('#conflictBanner'), 'no "Not saved" banner');
+    const saved = await (await admin.request.get('/api/data')).json();
+    assert.ok(saved.sheets[0].rows.some((r) => r['FIRST NAME'] === 'Typed before a restart'), 'the change was put back and saved');
+    await page.close();
+  });
+
   await t.test('a team member sees only their stage and is asked before moving a student on', async () => {
     const page = await open(team, '/students');
     await page.waitForSelector('#body tr:not(.pad-row)');

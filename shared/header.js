@@ -177,6 +177,7 @@
     student: [['portal', '/my-portal', 'My portal']],
     branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulkadd', '/bulk-add', 'Add many students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Universities']],
   };
+  const GUIDES_LINK = ['mock', '/mock-guides', 'Mock interview guides'];
   // The menu of an account: Admin and Manager have their own; a team gets the pages its work needs (a branch adds students, the Follow-up Team follows up).
   const kindOf = (me) => {
     if (me.role === 'student') return 'student';
@@ -205,7 +206,9 @@
     const deps = me.departments || [];
     // Interview guidelines, in place of Mock interviews (the owner, 26 Nov 2026), for every team to read (the owner, 27 Nov 2026).
     const after = [['guidelines', '/interview-guidelines', 'Interview guidelines']];
-    if (me.role === 'admin') return { before: [], after };
+    // Mock interview guides (the guides students read on their portal; only Admin publishes): in the menu of Admin, the Mock Team
+    // and the branches (the owner, 28 Nov 2026).
+    if (me.role === 'admin') return { before: [], after: [...after, GUIDES_LINK] };
     const manager = me.role === 'manager';
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
     const branch = deps.some((d) => !['application', 'mock', 'followup'].includes(d));
@@ -258,8 +261,8 @@
     if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else if (fuOwn) window.NiecApple.on('follow'); else window.NiecApple.on(branchOwn && location.pathname === '/today' ? 'today' : 'all'); }
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
       // A branch (the owner, 26 Nov 2026): no Add many students and no Follow-up in its menu; Interview guidelines to read (27 Nov 2026).
-      : branchOwn ? [...LINKS.branch.filter(([id]) => !['bulkadd', 'bulk'].includes(id)), ['guidelines', '/interview-guidelines', 'Interview guidelines']]
-      : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
+      : branchOwn ? [...LINKS.branch.filter(([id]) => !['bulkadd', 'bulk'].includes(id)), ['guidelines', '/interview-guidelines', 'Interview guidelines'], GUIDES_LINK]
+      : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines'], GUIDES_LINK]
         : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
     const extra = mockOwn || branchOwn ? { before: [], after: [] } :appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after } : shared0;

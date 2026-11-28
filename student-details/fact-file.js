@@ -16,7 +16,10 @@
   const LEVELS = ['Foundation', 'Year One', 'Top-up', 'Undergraduate', 'Pre-Masters', 'Postgraduate', 'Research or PhD'];
   const SUBJECTS = ['Nursing', 'Health', 'Business', 'Accounting and finance', 'Computing', 'Data science and AI', 'Engineering', 'Law', 'Psychology', 'Art, design and media', 'Education', 'Pharmacy', 'Science'];
   const MODES = ['Full-time', 'Part-time', 'Online or distance', 'With a placement year'];
-  const INTAKES = ['January 2027', 'February 2027', 'March 2027'];
+  // The intake worked on (intake-window.js): its months, and the ones listed even when no university has a course in them.
+  const WORKED = window.IntakeWindow.of();
+  const INTAKES = WORKED.names.map((n) => `${n} ${WORKED.year}`);
+  const ALWAYS = WORKED.season === 'January' ? INTAKES.slice(0, 2) : [WORKED.label];
 
   let list = []; // what the server answered (every university, or those matching the search)
   let query = '';
@@ -76,7 +79,7 @@
   const awayOf = (u) => { const c = campusesOf(u); return S.here && c.length ? Math.min(...c.map((t) => Places.miles(S.here, t))) : null; };
   const anyOf = (picked, f) => !picked.length || picked.some(f);
   const passes = (skip) => (u) => (skip === 'type' || anyOf(S.types, (x) => x === kindOf(u)))
-    && (skip === 'year' || anyOf(S.years, (x) => x === '2027'))
+    && (skip === 'year' || anyOf(S.years, (x) => x === String(WORKED.year)))
     && (skip === 'intake' || anyOf(S.intakes, (x) => (u.intakes || []).includes(x)))
     && (skip === 'mode' || anyOf(S.modes, (x) => (u.modes || []).includes(x)))
     && (skip === 'level' || anyOf(S.levels, (x) => (u.levels || []).includes(x)))
@@ -103,8 +106,8 @@
   }
   const OPTS = {
     type: () => options('types', ['Universities', 'Pathway colleges'], 'type', (u, x) => kindOf(u) === x),
-    year: () => options('years', ['2027', '2028'], 'year', (u, x) => x === '2027'),
-    intake: () => options('intakes', INTAKES, 'intake', (u, x) => (u.intakes || []).includes(x)).filter((o) => o.n || o.on || o.label !== 'March 2027'),
+    year: () => options('years', [String(WORKED.year), String(WORKED.year + 1)], 'year', (u, x) => x === String(WORKED.year)),
+    intake: () => options('intakes', INTAKES, 'intake', (u, x) => (u.intakes || []).includes(x)).filter((o) => o.n || o.on || ALWAYS.includes(o.label)),
     mode: () => options('modes', MODES, 'mode', (u, x) => (u.modes || []).includes(x)),
     level: () => options('levels', LEVELS, 'level', (u, x) => (u.levels || []).includes(x)),
     subject: () => options('subjects', SUBJECTS.filter((x) => !S.subjectFind || x.toLowerCase().includes(S.subjectFind.toLowerCase())), 'subject', (u, x) => (u.subjects || []).includes(x)),

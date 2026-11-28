@@ -91,7 +91,7 @@
       uni.input.addEventListener('change', async () => {
         choices = null; [intake, level, place, course].forEach((f) => fill(f, []));
         if (!uni.input.value) return;
-        try { choices = await api(`/api/facts/${encodeURIComponent(uni.input.value)}/choices`); } catch (e) { choices = { intakes: ['January 2027'], levels: [], campuses: [], courses: [] }; }
+        try { choices = await api(`/api/facts/${encodeURIComponent(uni.input.value)}/choices`); } catch (e) { choices = { intakes: window.IntakeWindow ? [window.IntakeWindow.of().label] : [], levels: [], campuses: [], courses: [] }; }
         fill(intake, choices.intakes); fill(level, choices.levels); fill(place, choices.campuses);
         place.wrap.hidden = choices.campuses.length < 2; // one place: nothing to choose
         refreshCourses();

@@ -123,5 +123,10 @@ test('a student\'s login opens their portal and nothing else; the team\'s guides
   assert.strictEqual(list.canPublish, false);
   assert.strictEqual((await bikram('POST', '/api/mock-guides/core/publish', {})).status, 403, 'only Admin publishes');
   assert.strictEqual((await bikram('POST', '/api/mock-guides/core', { draft: { summary: '' }, confirm: '' })).status, 200, 'the Mock Team saves a draft');
+  // A branch works on the guides too (the owner, 28 Nov 2026), and only Admin publishes them.
+  const branch = await made({ username: 'chitwan1', name: 'Chitwan Person', email: '', departments: ['chitwan'] });
+  assert.strictEqual((await branch('GET', '/mock-guides')).status, 200, 'a branch opens Mock interview guides');
+  assert.strictEqual((await branch('GET', '/api/mock-guides')).json.canPublish, false);
+  assert.strictEqual((await branch('POST', '/api/mock-guides/core/publish', {})).status, 403, 'a branch does not publish');
   assert.strictEqual((await admin('POST', '/api/mock-guides/core', { draft: (await admin('GET', '/api/mock-guides/core')).json.draft })).status, 200);
 });

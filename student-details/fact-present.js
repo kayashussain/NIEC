@@ -373,9 +373,9 @@
     };
   }
 
-  // ---- a university's January 2027 courses and requirements in one shape (the owner, 20 Nov 2026) ----
+  // ---- a university's courses and requirements of the intake worked on, in one shape (the owner, 20 Nov 2026) ----
   // The page, Assign task (university, intake, level, location, course) and the server all read a university the same way: the
-  // partner's January 2027 profile, or, for a direct route (`own`), the page's own figures, with each course's level and campus.
+  // partner's profile for that intake, or, for a direct route (`own`), the page's own figures, with each course's level and campus.
   // The levels in the owner's order (20 Nov 2026): foundation, year one, undergraduate, postgraduate, pre-masters (and pre-masters with
   // masters), extended masters (and enhanced extended masters, a category of its own), masters by research, PhD.
   const LEVEL_ORDER = ['International Foundation Year', 'International Year One', 'Undergraduate', 'Postgraduate', 'Pre-Masters', 'Extended Masters', 'Masters by Research', 'PhD', 'Other courses'];
@@ -400,39 +400,40 @@
     if (/undergraduate|bachelors_degree|\bbachelor|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bhnd\b|top[- ]?up|\bug\b|foundation degree|\bfda\b|\bfdsc\b|\bmeng\b|\bmsci\b|nursing|associate_degree/.test(head)) return 'Undergraduate';
     return '';
   }
-  const JAN = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i; // January, February and March 2027 (the owner, 20 Nov 2026)
-  const Q1 = ['January', 'February', 'March'];
-  const q1Of = (s) => Q1.findIndex((m) => new RegExp(`^${m.slice(0, 3)}`, 'i').test(String(s || '').trim()));
-  const sortIntakes = (list) => [...new Set(list.map((x) => String(x).trim()).filter(Boolean))].sort((a, b) => q1Of(a) - q1Of(b));
+  // The intake Universities works on (intake-window.js): January (Jan to Mar starts), May (Apr to Jun) or September (Jul to Dec),
+  // whichever comes next; it was fixed to January, February and March 2027 before (the owner, 20 Nov 2026, and 28 Nov 2026).
+  const Window = () => (typeof module === 'object' && module.exports ? require('./intake-window') : self.IntakeWindow);
+  const focus = () => Window().of();
+  const sortIntakes = (list, w = focus()) => [...new Set(list.map((x) => String(x).trim()).filter(Boolean))].sort((a, b) => w.indexOf(a) - w.indexOf(b));
   // "January and February 2027" from the courses' intakes.
   function intakeLabel(starts) {
-    const ms = Q1.filter((m, i) => starts.some((s) => q1Of(s) === i));
-    if (!ms.length) return '';
-    return `${ms.length > 1 ? `${ms.slice(0, -1).join(', ')} and ${ms[ms.length - 1]}` : ms[0]} 2027`;
+    return Window().label(starts);
   }
   function pageData(u) {
     const P = u.profile;
-    if (P && !P.own) return { intake: P.intake || 'January 2027', levels: P.levels || [], courses: P.courses || [] };
+    const w = focus();
+    if (P && !P.own) return { intake: P.intake || w.label, levels: P.levels || [], courses: P.courses || [] };
     const view = present(u);
     const levels = view.programs.map((p) => ({ level: p.name, academic: p.academic, english: p.english, tuition: p.tuition, scholarship: p.scholarship, extra: [p.duration && `Duration: ${p.duration}`, p.deposit && `Deposit: ${p.deposit}`].filter(Boolean).join('\n') }));
-    // A course with no intake written beside it belongs to the page's intakes: kept when the page has a January, February or March
-    // 2027 intake, and shown with those intakes. A course with no campus is taught in the page's city.
-    const pageIntakes = sortIntakes(view.intakeNames.filter((n) => JAN.test(n)));
+    // A course with no intake written beside it belongs to the page's intakes: kept when the page has an intake of the season worked
+    // on, and shown with those intakes. A course with no campus is taught in the page's city.
+    const pageIntakes = sortIntakes(view.intakeNames.filter((n) => w.test(n)), w);
     const town = String((P && P.city) || u.city || '').split(/,|\/| and /)[0].trim();
     const SPECIAL = ['International Foundation Year', 'International Year One', 'Pre-Masters', 'Extended Masters', 'Masters by Research', 'PhD'];
     const courses = view.courses.filter((c) => !/course list and fees are under|^the .* list/i.test(c.course) && !/:$/.test(c.course))
-      .filter((c) => (c.intakes.length ? c.intakes.some((x) => JAN.test(x)) : pageIntakes.length))
+      .filter((c) => (c.intakes.length ? c.intakes.some((x) => w.test(x)) : pageIntakes.length))
       .map((c) => {
         const m = /^(.*?):\s*(£[\d,]+.*)$/.exec(c.course);
         const name = m ? m[1].trim() : c.course;
         const byName = levelOf(name);
         const level = SPECIAL.includes(byName) ? byName : (levelOf(c.group) || byName || 'Other courses');
         // "BSc ... (February 2027 intake only)": that intake only.
-        const only = /\((january|february|march) 2027 intake only\)/i.exec(name);
-        const starts = only ? [`${only[1][0].toUpperCase()}${only[1].slice(1).toLowerCase()} 2027`] : c.intakes.length ? sortIntakes(c.intakes.filter((x) => JAN.test(x))) : pageIntakes;
+        const only = /\(([a-z]+ \d{4}) intake only\)/i.exec(name);
+        const onlyStart = only && w.startsWith(only[1]) ? only[1].toLowerCase().replace(/^\w/, (x) => x.toUpperCase()) : '';
+        const starts = onlyStart ? [onlyStart] : c.intakes.length ? sortIntakes(c.intakes.filter((x) => w.test(x)), w) : pageIntakes;
         return { name, level, start: starts.join(', '), fee: m ? m[2] : '', full: c.full || c.course, campus: town };
       });
-    return { intake: intakeLabel(courses.flatMap((c) => c.start.split(', '))) || 'January 2027', levels, courses };
+    return { intake: intakeLabel(courses.flatMap((c) => c.start.split(', '))) || w.label, levels, courses };
   }
   // The places a university teaches (a course's campus, else the page's city written as "London, Birmingham" or "York and London").
   function campusesOf(u, courses) {
@@ -442,5 +443,5 @@
     return [...new Set(String(city).split(/,|\/| and /).map((x) => x.trim()).filter((x) => x && x.length < 40))];
   }
 
-  return { present, pageData, campusesOf, levelOf, intakeLabel, LEVEL_ORDER, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, nextApplyBy, isApplyLine, parseCourseText, levelGroup, compact };
+  return { present, pageData, campusesOf, levelOf, intakeLabel, focus, LEVEL_ORDER, tidyTerms, calmCaps, parseDate, dateLine, splitDates, daysLeft, nextApplyBy, isApplyLine, parseCourseText, levelGroup, compact };
 }));

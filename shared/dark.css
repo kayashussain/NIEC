@@ -9171,6 +9171,66 @@ html[data-theme="dark"] .fu-empty {
   border-top-color: #3c4043;
   color: #9aa0a6;
 }
+html[data-theme="dark"] body .fu-page .fu-panel {
+  background: var(--lg-panel, #292a2d);
+  border: 1px solid var(--lg-line, #6b6e72);
+}
+html[data-theme="dark"] body .fu-page .fu-seg {
+  background: #4a4c50;
+}
+html[data-theme="dark"] body .fu-page .fu-seg button.on {
+  background: #2f3033;
+}
+html[data-theme="dark"]:root body .fu-page input.fu-search:not(:focus) {
+  background-color: #2f3033 !important;
+  border-color: #6b6e72 !important;
+}
+html[data-theme="dark"] body .fu-page .fu-chip {
+  background: #4a4c50;
+}
+html[data-theme="dark"] body .fu-page .fu-chip.on {
+  background: #4d4d4d;
+  color: #ffffff;
+}
+html[data-theme="dark"] body .fu-page .fu-row {
+  border-top-color: #393939;
+}
+html[data-theme="dark"] body .fu-page .fu-row.head {
+  color: #e8eaed;
+}
+html[data-theme="dark"] body .fu-page .fu-av {
+  background: #1b3a46;
+  color: #e8eaed;
+}
+html[data-theme="dark"] body .fu-page .fu-stage {
+  color: #e8eaed;
+}
+html[data-theme="dark"] body .fu-page .fu-stage.app {
+  color: #8ab4f8;
+}
+html[data-theme="dark"] body .fu-page .fu-stage.hold {
+  color: #fcad70;
+}
+html[data-theme="dark"] body .fu-page .fu-stage.gone {
+  color: #f28b82;
+}
+html[data-theme="dark"] body .fu-page .fu-opt {
+  color: #e8eaed;
+}
+html[data-theme="dark"] body .fu-page .fu-opt::before {
+  border-color: #80868b;
+  background: #2f3033;
+}
+html[data-theme="dark"] body .fu-page .fu-opt.on::before {
+  border-color: #0d85ff;
+  background: radial-gradient(#007bf7 0 3.5px, #2f3033 4.5px);
+}
+html[data-theme="dark"] body .fu-page .fu-opt:focus-visible {
+  outline-color: rgba(13, 133, 255, 0.45);
+}
+html[data-theme="dark"] body .fu-page .fu-strip {
+  background: #26272a;
+}
 @media (max-width: 900px) {
 html[data-theme="dark"] body .fu-page .fu-row.live .fu-next::before {
   color: #9aa0a6;

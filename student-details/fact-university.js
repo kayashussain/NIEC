@@ -278,8 +278,8 @@
   // The levels, their order and each course's level are read the same way here, in Assign task and on the server (fact-present.js).
   const { LEVEL_ORDER, levelOf } = P;
   const PATHWAY_RE = /international college|\bISC\b|study centre|oncampus|pathway|\bINTO\b|\bKaplan\b/i;
-  const Q1 = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i;
-  // "January 2027, February 2027" -> "Jan, Feb 2027".
+  // The intake worked on (intake-window.js: January, May or September, whichever comes next), never a year written into the page.
+  const Q1 = { test: (t) => window.IntakeWindow.of().test(t) };
   // A course's name without the partner's code at its end: "(NN41)", "(CID921)".
   const cleanName = (n) => String(n || '').replace(/\s*\((?:CID)?[A-Z]{1,4}\d{1,4}[A-Z]{0,2}\)/g, '').replace(/\s{2,}/g, ' ').trim();
   // "£2,000/- per year", "upto £5,000", "Gross Fee £16,020": written plainly.
@@ -316,7 +316,8 @@
     const y = Math.floor(+m[1] / 12); const r = +m[1] % 12;
     return `${y} year${y === 1 ? '' : 's'}${r ? ` ${r} month${r === 1 ? '' : 's'}` : ''}`;
   };
-  const shortIntake = (s) => { const ms = String(s || '').split(/,\s*/).map((x) => x.trim().slice(0, 3)).filter(Boolean); return ms.length ? `${ms.join(', ')} 2027` : ''; };
+  // "January 2027, February 2027" -> "Jan, Feb 2027".
+  const shortIntake = (s) => window.IntakeWindow.short(s);
   // A short key for a level's colour on the page.
   const lv0 = (name) => ({ 'International Foundation Year': 'ify', 'International Year One': 'iy1', Undergraduate: 'ug', Postgraduate: 'pg', 'Pre-Masters': 'pm', 'Extended Masters': 'em', 'Masters by Research': 'mr', PhD: 'phd' }[LEVEL_ORDER.includes(name) ? name : levelOf(name)] || 'other');
   const media = (u) => (/^https:\/\//.test(String(u || '')) ? `/api/media?u=${encodeURIComponent(u)}` : u); // the server's kept copy (media-cache.js)
@@ -759,7 +760,7 @@
       doc.append(sec);
     } else {
       const wrap = el('div', 'up-section');
-      // Only the January, February and March 2027 intakes (the owner, 20 Nov 2026).
+      // Only the intakes of the season worked on (the owner, 20 Nov 2026; intake-window.js).
       renderDeadlines(wrap, { ...view, deadlines: view.deadlines.filter((d) => Q1.test(d.name)) });
       doc.append(wrap);
     }
@@ -819,7 +820,7 @@
     // Every university in the one page layout (the owner, 20 Nov 2026): a page with no partner profile gets an empty one of its own,
     // so its own requirements, courses and dates show the same way.
     if (!BACKUP) {
-      if (!uni.profile) uni.profile = { own: true, type: PATHWAY_RE.test(uni.name) ? 'college' : 'university', intake: 'January 2027', logo: '', banner: '', photos: [], video: '', about: '', keyPoints: [], website: uni.website || '', city: uni.city || '', deadlines: [], levels: [], courses: [] };
+      if (!uni.profile) uni.profile = { own: true, type: PATHWAY_RE.test(uni.name) ? 'college' : 'university', intake: window.IntakeWindow.of().label, logo: '', banner: '', photos: [], video: '', about: '', keyPoints: [], website: uni.website || '', city: uni.city || '', deadlines: [], levels: [], courses: [] };
       renderProfile(); return;
     }
     const view = P.present(uni);

@@ -1,13 +1,14 @@
-// The Thursday refresh (the owner, 20 Nov 2026): every Thursday from 2 a.m. office time, the January 2027 courses, requirements and dates
-// of each university are read again from the partner it was read from, with the login saved on that partner's B2B card, so the team
+// The Thursday refresh (the owner, 20 Nov 2026): every Thursday from 2 a.m. office time, the courses, requirements and dates of the intake
+// worked on (intake-window.js)
+// for each university are read again from the partner it was read from, with the login saved on that partner's B2B card, so the team
 // never types them:
 //
 //   Real Dreams   the Route2Uni portal (its login gives a token; each university's page is read as the portal itself reads it)
-//   Adventus      the Adventus course search, as a student from Nepal, for the university's campuses and the 2027 January to March
-//                 intakes; only courses starting in January or February 2027 are kept
+//   Adventus      the Adventus course search, as a student from Nepal, for the university's campuses and the quarters of the intake
+//                 worked on; only courses starting in that intake are kept
 //   Apply Board   not read: its sign-in asks a person to prove they are not a robot. Those pages keep what was read on 20 Nov 2026.
 //
-// What is kept: a university that now lists no January 2027 course keeps its last courses (a portal that answers empty for a moment
+// What is kept: a university that now lists no course of the intake worked on keeps its last courses (a portal that answers empty for a moment
 // never empties a page). A course that is no longer listed simply leaves the page: a student's shortlist and a task keep the course's
 // name as they were given, so nothing breaks. The pictures, the about and anything else on the page stay as they are.
 // Every run is written in Activity (how many universities were read, and anything that failed). PARTNER_REFRESH=off switches it off.
@@ -29,8 +30,13 @@ const day = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); ret
 const FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const month = (iso) => { const m = /^(\d{4})-(\d{2})/.exec(iso || ''); return m ? `${FULL[m[2] - 1]} ${m[1]}` : ''; };
 const money = (n, cur = 'GBP') => (n ? `${cur === 'GBP' ? '£' : `${cur} `}${Number(n).toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '');
-// The intakes kept (the owner, 20 Nov 2026): January, February and March 2027.
-const isJan = (s) => /^(jan|feb|mar)(uary|ch)?\s*2027|^2027-0[123]/i.test(String(s || '').trim());
+// The intakes kept: those of the intake worked on (intake-window.js: January, May or September, whichever comes next; it was January,
+// February and March 2027, the owner, 20 Nov 2026). Worked out at each reading, so the refresh moves on to the next intake by itself.
+const IntakeWindow = require('./intake-window');
+const isJan = (s) => IntakeWindow.of().startsWith(s);
+// Adventus filters its intakes by calendar quarter ("2027 Q1: Jan, Feb, Mar"): the quarters of the intake worked on.
+const QUARTER_MONTHS = ['Jan, Feb, Mar', 'Apr, May, Jun', 'Jul, Aug, Sep', 'Oct, Nov, Dec'];
+const adventusIntakes = (w = IntakeWindow.of()) => w.quarters.map((q) => ({ name: `${w.year} Q${q}: ${QUARTER_MONTHS[q - 1]}`, id: `intakes-${w.year}-Q${q}` }));
 const mode = (list) => { const c = {}; list.filter(Boolean).forEach((x) => { c[x] = (c[x] || 0) + 1; }); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [''])[0]; };
 const range = (nums, cur) => { const v = nums.filter((x) => x > 0); if (!v.length) return ''; const lo = Math.min(...v); const hi = Math.max(...v); return lo === hi ? `${money(lo, cur)} a year` : `${money(lo, cur)} to ${money(hi, cur)} a year`; };
 // The level of a course: the same reading as the page (fact-present.js), in the owner's order (20 Nov 2026).
@@ -110,7 +116,7 @@ function fromRoute2Uni(u) {
   return finish(per, courses, deadlines);
 }
 
-// ---- Adventus: the January and February 2027 courses of the university's campuses ----
+// ---- Adventus: the courses of the intake worked on at the university's campuses ----
 const advEnglish = (reqs) => {
   const lang = (reqs || []).find((r) => r.type === 'language'); if (!lang) return '';
   return (lang.meta || []).map((m) => {
@@ -182,7 +188,7 @@ async function adventusSession(fetchImpl, user, pass) {
   take(r);
   if (!jar.laravel_session) throw new Error('Adventus did not accept the login saved on the Adventus card.');
   return async (institutions) => {
-    const settings = { selected_nationality: 'Nepal', countryOfResidence: null, languageRequirements: null, levels: null, grading_system: null, grading_country_id: null, grading_system_id: null, institutions, cities: [], region: null, campuses: [], disciplines: [], durations: [], delivery: [], prerequisites: null, grade_match: null, education_levels: [], nationality: [], value: null, countries: [{ name: 'United Kingdom (Inc Channel Islands and Isle of Man)', id: 'countries-247', cca3: 'GBR' }], intakes: [{ name: '2027 Q1: Jan, Feb, Mar', id: 'intakes-2027-Q1' }] };
+    const settings = { selected_nationality: 'Nepal', countryOfResidence: null, languageRequirements: null, levels: null, grading_system: null, grading_country_id: null, grading_system_id: null, institutions, cities: [], region: null, campuses: [], disciplines: [], durations: [], delivery: [], prerequisites: null, grade_match: null, education_levels: [], nationality: [], value: null, countries: [{ name: 'United Kingdom (Inc Channel Islands and Isle of Man)', id: 'countries-247', cca3: 'GBR' }], intakes: adventusIntakes() };
     const all = [];
     for (let page = 1; page <= 40; page += 1) {
       const res = await fetchImpl(`https://app.adventus.io/search/course/results?page=${page}`, { method: 'POST', headers: { 'User-Agent': UA, Cookie: cookie(), 'Content-Type': 'application/json', Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': decodeURIComponent(jar['XSRF-TOKEN'] || ''), Referer: 'https://app.adventus.io/course-search' }, body: JSON.stringify({ searchOptions: { pagination: 20, view: 'course', order: 'relevance', keywords: '', seedId: '', previousPage: '', region: null, nationality: 'Nepal', residence: null }, settings, gradeMatchValues: { grading_system_id: null, grading_score: null }, gradeMatchData: [] }) });
@@ -286,4 +292,4 @@ function createPartnerRefresh({ dir, facts, b2b, record = () => {}, fetchImpl = 
   return { run, due, tick, enabled: () => enabled, lastRun: () => (read().runs || [])[0] || null };
 }
 
-module.exports = { createPartnerRefresh, fromRoute2Uni, fromAdventus, thursdayDue, levelOf, fillIn, courseKey };
+module.exports = { adventusIntakes, createPartnerRefresh, fromRoute2Uni, fromAdventus, thursdayDue, levelOf, fillIn, courseKey };

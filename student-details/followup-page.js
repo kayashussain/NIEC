@@ -1,6 +1,6 @@
 // All Students for the Follow-up Team (design A2, 21 Nov 2026; design F1, 25 Nov 2026): "Tasks for you" (tasks other teams gave or handed
 // to the Follow-up Team), then one list of the current intake's inquiries and deferred students, the students who moved on (view only,
-// with their progress and the latest news), and the Stopped ones (Hold and Withdrawn by any team), who can be brought back. Each row says where the student stands (Never contacted,
+// with their progress and the latest news), and the Stopped ones (Hold and Withdrawn by any team), whom only Admin brings back (the owner, 28 Nov 2026). Each row says where the student stands (Never contacted,
 // Follow-up due, Followed up ...), what was said last, the next follow-up date and the tag (INT, DM, COLD), with Note and No answer.
 // Note opens one line under the row: what the student said and the next follow-up date (both needed), then Save note, Defer,
 // Withdrawn (which asks why) or Cancel. The rules are the server's (portal-api.js, followList and followAction).
@@ -20,10 +20,10 @@
   const drafts = new Map(); // task id -> an update half written, kept while the list is drawn again
 
   const VIEWS = [
-    ['wait', 'To follow up', (s) => ['new', 'due', 'tried'].includes(s.state)],
-    ['ok', 'Followed up', (s) => s.state === 'ok'],
+    ['wait', 'Follow Up Pending', (s) => ['new', 'due', 'tried'].includes(s.state)],
+    ['ok', 'Followed Up', (s) => s.state === 'ok'],
     ['defer', 'Deferred', (s) => s.state === 'defer'],
-    ['sent', 'With Application Team', (s) => s.state === 'sent'],
+    ['sent', 'In Application', (s) => s.state === 'sent'],
     ['applying', 'Applying', (s) => s.state === 'applying'],
     ['out', 'Stopped', (s) => s.state === 'out'],
     ['all', 'All', () => true],
@@ -43,7 +43,8 @@
 
   async function load() {
     try { data = await api('/api/followup'); } catch (e) { $('list').replaceChildren(el('div', 'fu-empty', e.message)); return; }
-    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}click a name to open the student card with every note.`;
+    const waiting = data.students.filter((x) => ['new', 'due', 'tried'].includes(x.state)).length;
+    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}${waiting} ${waiting === 1 ? 'student' : 'students'} pending follow up`;
     draw();
     loadTasks();
   }
@@ -121,9 +122,9 @@
       return b;
     }));
     const tagsBox = $('tags');
-    tagsBox.replaceChildren(el('span', '', 'Show only'), ...(data.tags || []).map((t) => {
+    tagsBox.replaceChildren(el('span', '', 'Interest'), ...(data.tags || []).map((t) => {
       const b = h('button', { type: 'button', class: 'fu-chip' + (tag === t.key ? ' on' : ''), 'aria-pressed': String(tag === t.key) });
-      b.append(`${t.key} (${t.short})`, el('i', '', String(list.filter((s) => s.tag === t.key).length)));
+      b.append(t.key, el('i', '', String(list.filter((s) => s.tag === t.key).length)));
       b.addEventListener('click', () => { tag = tag === t.key ? '' : t.key; close(); draw(); });
       return b;
     }));
@@ -136,7 +137,7 @@
       .sort((a, b) => (kind === 'stop' ? String((b.stopped || {}).at || '').localeCompare(String((a.stopped || {}).at || '')) : 0) || ORDER[a.state] - ORDER[b.state] || String((a.next && a.next.date) || (a.last && a.last.at) || '').localeCompare(String((b.next && b.next.date) || (b.last && b.last.at) || '')) || a.no - b.no);
     const box = $('list');
     const COLS = {
-      live: ['No.', 'Student', 'Stage', 'Last contact and what was said', 'Next follow-up', 'Tag', ''],
+      live: ['No.', 'Student', 'Stage', 'Last Contact', 'Next Follow Up', 'Interest Level', ''],
       moved: ['No.', 'Student', 'University and course', 'Progress', 'Latest from the other teams', ''],
       stop: ['No.', 'Student', 'Stage', 'Why they stopped', 'Stopped by', ''],
       all: ['No.', 'Student', 'Stage', 'Where they are', 'List'],
@@ -144,7 +145,7 @@
     const head = el('div', `fu-row head ${kind}`);
     COLS[kind].forEach((t) => head.append(el('div', '', t)));
     if (!shown.length) {
-      box.replaceChildren(head, el('div', 'fu-empty', q || useTag ? 'No student matches.' : view === 'wait' ? 'Nobody to follow up right now.' : view === 'out' ? 'Nobody is stopped.' : 'Nobody here right now.'));
+      box.replaceChildren(head, el('div', 'fu-empty', q || useTag ? 'No student matches.' : view === 'wait' ? 'No students pending follow up.' : view === 'out' ? 'No stopped students.' : 'No students in this view.'));
       return;
     }
     const make = { live: liveRow, moved: movedRow, stop: stopRow, all: allRow }[kind];
@@ -153,14 +154,18 @@
 
   // The student: the name opens the card, the phone calls; the remarks and the intake a deferred student came from under it.
   function whoOf(s) {
-    const who = el('div', 'fu-who');
+    const outer = el('div', 'fu-who');
+    const who = el('div', 'fu-who-text');
+    const initials = String(s.name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w.charAt(0)).join('').toUpperCase();
+    const av = el('span', 'fu-av', initials); av.setAttribute('aria-hidden', 'true');
     const name = h('button', { class: 'fu-name', type: 'button', title: 'Open the student card' }, s.name || 'Student with no name');
     name.addEventListener('click', () => window.CardDrawer.open(s.id, { onClose: () => load() }));
     who.append(name);
     if (s.phone) who.append(h('a', { class: 'fu-phone', href: `tel:${String(s.phone).replace(/[^\d+]/g, '')}`, title: `Call ${s.name}` }, s.phone));
     if (s.remarks) { const sub = el('span', 'fu-sub', s.remarks); sub.title = s.remarks; who.append(sub); }
     if (s.from) who.append(el('span', 'fu-from', `Deferred from ${s.from}`));
-    return who;
+    outer.append(av, who);
+    return outer;
   }
   function stageCell(s) {
     const cls = s.stage === 'Withdrawn' ? ' gone' : s.stage === 'Hold' ? ' hold' : ['sent', 'applying'].includes(s.state) ? ' app' : '';
@@ -174,23 +179,23 @@
     const last = el('div', 'fu-last');
     const tries = s.tries ? `${s.tries} ${s.tries === 1 ? 'try' : 'tries'}` : '';
     let pill;
-    if (s.state === 'ok') pill = ['ok', `Followed up · ${cap(ago(s.last.at))} · ${s.last.by}`];
-    else if (s.state === 'new') pill = ['wait', s.from ? 'Back from last intake, not called yet' : tries ? `Never reached · ${tries}` : 'Never contacted'];
-    else if (s.state === 'tried') pill = ['wait', `No answer today · ${tries}`];
-    else if (s.state === 'due') pill = ['wait', tries ? `No answer · ${tries}` : s.next ? `Due ${s.next.date >= data.today ? 'today' : `since ${short(s.next.date)}`}` : 'No date set'];
+    if (s.state === 'ok') pill = ['ok', `Followed Up · ${cap(ago(s.last.at))} · ${s.last.by}`];
+    else if (s.state === 'new') pill = ['wait', s.from ? 'Returned from last intake, not yet contacted' : tries ? `Not reached · ${tries}` : 'Not yet contacted'];
+    else if (s.state === 'tried') pill = ['wait', `No Answer Today · ${tries}`];
+    else if (s.state === 'due') pill = ['wait', tries ? `No Answer · ${tries}` : s.next ? `Due ${s.next.date >= data.today ? 'today' : `since ${short(s.next.date)}`}` : 'No date set'];
     else pill = ['view', 'Waits for the next intake'];
     const p = el('span', `fu-pill ${pill[0]}`, pill[1]); p.title = pill[1];
     last.append(p);
     if (s.words) { const w = el('div', 'fu-words', s.words); w.title = s.words; last.append(w); }
     const next = el('div', 'fu-next');
-    if (s.state === 'defer') next.append(el('span', '', 'Next intake'));
+    if (s.state === 'defer') next.append(el('span', '', 'Next Intake'));
     else if (s.next) next.append(el('b', s.next.date <= data.today || s.state === 'due' ? 'due' : '', short(s.next.date)));
-    else next.append(el('span', '', 'Not set'));
+    else next.append(el('span', '', 'Not Set'));
     const tg = el('div');
     if (s.canTag) {
-      const g = el('div', 'fu-tg'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', `Tag of ${s.name}`);
+      const g = el('div', 'fu-tgv'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', `Tag of ${s.name}`);
       (data.tags || []).forEach((t) => {
-        const b = h('button', { type: 'button', class: s.tag === t.key ? 'on' : '', 'aria-pressed': String(s.tag === t.key), title: t.key, 'aria-label': t.key }, t.short);
+        const b = h('button', { type: 'button', class: 'fu-opt' + (s.tag === t.key ? ' on' : ''), 'aria-pressed': String(s.tag === t.key), title: t.short }, t.key);
         b.addEventListener('click', async () => {
           const to = s.tag === t.key ? '' : t.key;
           g.querySelectorAll('button').forEach((x) => { x.disabled = true; });
@@ -200,15 +205,15 @@
         g.append(b);
       });
       tg.append(g);
-    } else if (s.tag) { const c = el('span', 'fu-code', tagShort(s.tag)); c.title = s.tag; tg.append(c); }
+    } else if (s.tag) { const c = el('span', 'fu-code', s.tag); c.title = tagShort(s.tag); tg.append(c); }
     const act = el('div', 'fu-act');
     if (s.canNote) {
       act.append(noteButton(s));
       if (['new', 'due', 'ok'].includes(s.state)) {
-        const na = h('button', { class: 'btn', type: 'button', title: 'Writes "Called, no answer" on the card. The student stays orange and comes back tomorrow.' }, 'No answer');
+        const na = h('button', { class: 'btn', type: 'button', title: 'Writes "Called, no answer" on the card. The student stays orange and comes back tomorrow.' }, 'No Answer');
         na.addEventListener('click', async () => {
           na.disabled = true; na.textContent = 'Saving...';
-          try { await api(`/api/followup/${encodeURIComponent(s.id)}`, { action: 'try' }); say(`${s.name}: no answer written on the card`); close(); await load(); } catch (e) { say(e.message, true); na.disabled = false; na.textContent = 'No answer'; }
+          try { await api(`/api/followup/${encodeURIComponent(s.id)}`, { action: 'try' }); say(`${s.name}: no answer written on the card`); close(); await load(); } catch (e) { say(e.message, true); na.disabled = false; na.textContent = 'No Answer'; }
         });
         act.append(na);
       }
@@ -236,7 +241,7 @@
     return r;
   }
 
-  // A stopped student (Hold or Withdrawn, by any team): why, by whom, a note, and Bring back.
+  // A stopped student (Hold or Withdrawn, by any team): why, by whom, a note, and Bring back for Admin only (canReturn).
   function stopRow(s) {
     const st = s.stopped || { by: '', team: '', at: '', why: s.words };
     const item = el('div', 'fu-item');
@@ -268,7 +273,7 @@
   const focusStrip = () => { if (open) setTimeout(() => { const t = document.querySelector('.fu-strip textarea'); if (t) t.focus(); }, 0); };
   function noteButton(s) {
     const on = open === s.id && !returning;
-    const nb = h('button', { class: 'btn' + (on ? ' on' : ''), type: 'button', 'aria-expanded': String(on) }, 'Note');
+    const nb = h('button', { class: 'btn' + (on ? ' on' : ''), type: 'button', 'aria-expanded': String(on) }, 'Add Note');
     nb.addEventListener('click', () => { if (on) close(); else { close(); open = s.id; } draw(); focusStrip(); });
     return nb;
   }

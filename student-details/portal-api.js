@@ -37,6 +37,7 @@ function createPortalApi({
   getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, applyThrough = null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
   insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
   mockTeam = () => null, // Bookings (mock-team-api.js), for the Mock Team's Missing details
+  offsiteOn = () => true, // whether the off-site backup is switched on (offsite.js): Admin's Today says so while it is not
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
   // Names compared ignoring case, spaces, punctuation and a part in brackets ("Ulster University (QA)" is "Ulster University").
@@ -193,8 +194,7 @@ function createPortalApi({
   const stoppedViewOnly = (user, found) => {
     if (!found || Teams.isAdmin(user) || Teams.isManager(user) || !['Hold', 'Withdrawn'].includes(text(found.row[STATUS])) || !followReach(user, found)) return false;
     if ((cards.has(found.row._id) && (cards.get(found.row._id).follow || {}).via) || appReach(user, found) || hasTaskFor(user, found.row._id)) return false;
-    const intake = currentIntake();
-    return !(intake && found.sheet.id === intake.id && Teams.seesRow(user, found.row));
+    return !Teams.inView(user, getWorkbook(), found.sheet.id, found.row);
   };
   function canSee(user, found) {
     if (!found) return false;
@@ -204,16 +204,15 @@ function createPortalApi({
     // A team given a task about a student sees that student while the task is open and for 7 days after it is done (to undo a
     // mistaken tick), wherever the student is.
     if (hasTaskFor(user, found.row._id)) return true;
-    const intake = currentIntake();
-    return Boolean(intake) && found.sheet.id === intake.id && Teams.seesRow(user, found.row);
+    // Every student of the account's All Students: the newest intake, an earlier one the team still has students on, a branch's every intake.
+    return Teams.inView(user, getWorkbook(), found.sheet.id, found.row);
   }
   function canChange(user, found) {
     if (!found) return false;
     if (Teams.isAdmin(user)) return true;
     if (Teams.isReadOnly(user)) return false;
     if (appReach(user, found)) return true;
-    const intake = currentIntake();
-    return Boolean(intake) && found.sheet.id === intake.id && Teams.seesRow(user, found.row) && Teams.canColor(user, found.row);
+    return Teams.inView(user, getWorkbook(), found.sheet.id, found.row) && Teams.canColor(user, found.row);
   }
   const nameOf = (row) => [text(row['FIRST NAME']), text(row['LAST NAME'])].filter(Boolean).join(' ');
   const isStudent = (row) => text(row['FIRST NAME']) !== '' || text(row['LAST NAME']) !== '';
@@ -829,7 +828,7 @@ function createPortalApi({
     };
     // Application (the owner, 16 Nov 2026): one line per university, each with what happened; as many as needed.
     const legacy = f.app && f.app !== 'record' && f.app !== 'none' ? f.app : (f.submitted ? 'submitted' : '');
-    if (strict && (kind === 'application' || kind === 'offer') && ['Withdrawn', 'Visa Rejected', 'Visa Issued'].includes(stageNow) && f.app !== 'none' && (f.app || f.unis || f.submitted)) return { error: `This student is ${stageNow}: applications and offers are not recorded now. Admin or the Follow-up Team moves the student back first.` };
+    if (strict && (kind === 'application' || kind === 'offer') && ['Withdrawn', 'Visa Rejected', 'Visa Issued'].includes(stageNow) && f.app !== 'none' && (f.app || f.unis || f.submitted)) return { error: `This student is ${stageNow}: applications and offers are not recorded now. Only Admin can move the student back.` };
     const hasApp = (kind === 'application' || kind === 'offer') && f.app !== 'none' && (legacy || f.app === 'record' || Array.isArray(f.unis));
     if (hasApp) {
       let list = (Array.isArray(f.unis) ? f.unis : (f.university ? [{ university: f.university, course: f.course }] : []))
@@ -1961,7 +1960,7 @@ function createPortalApi({
       const who2 = nameOf(found.row) || 'a student';
       let out;
       if (!sub) {
-        if (stoppedViewOnly(req.user, found)) { sendJSON(res, 403, { error: 'This student is stopped and view only for your team. Bring the student back first.' }); return true; }
+        if (stoppedViewOnly(req.user, found)) { sendJSON(res, 403, { error: 'This student is stopped and view only for your team. Only Admin can bring the student back.' }); return true; }
         const allowedTeams = assignTeamsFor(req.user).map((t) => t.id);
         if (!allowedTeams.length) { sendJSON(res, 403, { error: 'Your account cannot give tasks.' }); return true; }
         if (!allowedTeams.includes(text(body.team))) { sendJSON(res, 400, { error: 'Choose the team.' }); return true; }
@@ -2886,7 +2885,7 @@ function createPortalApi({
   const followTeam = (user) => Teams.isAdmin(user) || (teamsOf(user).includes('followup') && !Teams.isReadOnly(user));
   const LATER = ['Mock Stage', 'Payment Stage', 'CAS Stage', 'CAS Issued', 'Visa Lodge', 'Visa Issued', 'Visa Rejected'];
   // Stopped (design F1, the owner, 25 Nov 2026): a student any team put on Hold or Withdrawn. The Follow-up Team sees them all, with why
-  // and by whom, and may bring one back to Inquiry or Defer.
+  // and by whom, and may add a note. Only Admin brings a student back (the owner, 28 Nov 2026: no team moves a student back).
   const STOPPED = ['Hold', 'Withdrawn'];
   // Where each stage stands on the five steps shown for a student who moved on: Apply, Mock, Payment, CAS, Visa (5: all done).
   const STEP_OF = { 'Application Stage': 0, 'Mock Stage': 1, 'Payment Stage': 2, 'CAS Stage': 3, 'CAS Issued': 3, 'Visa Lodge': 4, 'Visa Rejected': 4, 'Visa Issued': 5 };
@@ -2984,7 +2983,7 @@ function createPortalApi({
         last: f.last ? { at: f.last.at, by: text(f.last.by), what: f.last.what } : null, words: String(words).slice(0, 300),
         next: f.next ? { date: f.next.date, by: f.next.by } : null,
         canNote: live ? canChange(user, found) : state === 'out' && followTeam(user), canTag: live && canChange(user, found),
-        ...(stop ? { stopped: stop, canReturn: followTeam(user) } : {}),
+        ...(stop ? { stopped: stop, canReturn: Teams.isAdmin(user) } : {}),
         ...(['sent', 'applying'].includes(state) ? { progress: progressOf(row, card, stage) } : {}),
       });
     });
@@ -3019,9 +3018,11 @@ function createPortalApi({
       return { status: 200, json: { ok: true } };
     }
     if (!words) return { status: 400, json: { error: 'Write what the student said.', field: 'text' } };
-    // Bring back (design F1): a student on Hold or Withdrawn, by any team, returns to Inquiry or Defer. What changed is required, and
-    // the next follow-up date for Inquiry; it is written on the card, where the team that stopped the student reads it.
+    // Bring back (design F1): a student on Hold or Withdrawn, by any team, returns to Inquiry or Defer. Admin only (the owner, 28 Nov
+    // 2026). What changed is required, and the next follow-up date for Inquiry; it is written on the card, where the team that stopped
+    // the student reads it.
     if (action === 'return') {
+      if (!Teams.isAdmin(user)) return { status: 403, json: { error: 'Only Admin brings a student back.' } };
       if (body.from && text(body.from) !== item.stage) return { status: 409, json: { error: `${name} is now at ${item.stage}. The list is up to date again.` } };
       if (!item.canReturn) return { status: 403, json: { error: 'Only a student on Hold or Withdrawn can be brought back.' } };
       const to = text(body.to);
@@ -3058,7 +3059,7 @@ function createPortalApi({
       return n.error ? { status: 400, json: { error: n.error } } : { status: 200, json: { ok: true } };
     }
     if (action === 'note') {
-      if (item.state === 'out') return { status: 400, json: { error: 'A stopped student takes a note only. Bring the student back to follow up again.' } };
+      if (item.state === 'out') return { status: 400, json: { error: 'A stopped student takes a note only. Only Admin can bring the student back.' } };
       const date = text(body.next);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T00:00:00Z'))) return { status: 400, json: { error: 'Choose the next follow-up date.', field: 'next' } };
       if (date <= cards.today()) return { status: 400, json: { error: 'The next follow-up date is after today.', field: 'next' } };
@@ -3719,7 +3720,7 @@ function createPortalApi({
       sendJSON(res, 200, { inMock, passed, failed, ratio: passed + failed ? Math.round((passed / (passed + failed)) * 1000) / 10 : null });
       return true;
     }
-    if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user), ...(Teams.isAdmin(req.user) || Teams.isManager(req.user) || Teams.ownTeamBranch(req.user) ? { lead: true } : {}) }); return true; }
+    if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user), ...(Teams.isAdmin(req.user) && !offsiteOn() ? { offsiteOff: true } : {}), ...(Teams.isAdmin(req.user) || Teams.isManager(req.user) || Teams.ownTeamBranch(req.user) ? { lead: true } : {}) }); return true; }
     if (urlPath === '/api/activities' && req.method === 'GET') {
       if (!managers(req, res, 'Events and marketing')) return true;
       const { list, unlinkedSocial, unlinkedByIntake } = activities(req.user);

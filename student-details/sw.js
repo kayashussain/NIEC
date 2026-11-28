@@ -91,10 +91,15 @@ self.addEventListener('push', (e) => {
   })());
 });
 
+// The folder the portal runs in (the NIEC_BASE_PATH setting; nothing at a domain's root), read from where this worker was
+// installed: a notification's page ("/today", "/wa?n=...", written by the server without the folder) opens inside it (review, 28 Nov 2026).
+const BASE = new URL(self.registration.scope).pathname.replace(/\/+$/, '');
+const inBase = (p) => (BASE && typeof p === 'string' && p.charAt(0) === '/' && p.charAt(1) !== '/' && p !== BASE && p.indexOf(BASE + '/') !== 0 && p.indexOf(BASE + '?') !== 0 ? BASE + p : p);
+
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const data = e.notification.data || {};
-  const url = new URL(data.url || '/today', self.location.origin);
+  const url = new URL(inBase(data.url || '/today'), self.location.origin);
   if (url.origin !== self.location.origin) return; // only Student Recruit 360's own pages are opened
   // The window is opened first, straight away (the phone allows it only right after the tap); the rest follows.
   const open = self.clients.openWindow(url.href).catch(() => null);

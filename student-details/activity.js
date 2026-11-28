@@ -234,6 +234,37 @@
     } catch (err) { $('backupRows').replaceChildren(Object.assign(el('tr'), {})); const td = el('td', 'muted', err.message); td.colSpan = 6; $('backupRows').firstChild.append(td); }
   }
 
+  // The off-site copy (OFFSITE-BACKUP.md): whether it is on, when a copy last left the server, and a test (the owner, 28 Nov 2026).
+  const offsiteSay = (text, error) => { $('offsiteMsg').textContent = text || ''; $('offsiteMsg').className = 'msg' + (error ? ' error' : ''); };
+  const offsiteWhen = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} at ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
+  function showOffsite(st) {
+    const p = $('offsiteState');
+    if (!st || !st.enabled) {
+      p.textContent = 'Not switched on. Every backup is on this server only: if the server or the hosting account is lost, the backups are lost with it. The steps to switch it on are in OFFSITE-BACKUP.md.';
+      p.className = 'msg error';
+      $('offsiteTest').disabled = true;
+      return;
+    }
+    $('offsiteTest').disabled = false;
+    const parts = [`On, to the bucket ${st.bucket}.`, st.lastOk ? `Last copy sent ${offsiteWhen(st.lastOk)}.` : 'No copy sent yet.', st.waiting ? `${st.waiting} cop${st.waiting === 1 ? 'y' : 'ies'} waiting to be sent.` : 'Every backup is sent.'];
+    if (st.lastError) parts.push(`Last problem (${offsiteWhen(st.lastErrorAt)}): ${st.lastError}`);
+    p.textContent = parts.join(' ');
+    p.className = st.lastError && st.waiting ? 'msg error' : 'msg';
+  }
+  async function loadOffsite() {
+    try { const res = await fetch('/api/restore/offsite', { cache: 'no-store' }); showOffsite(res.ok ? await res.json() : null); } catch (e) { $('offsiteState').textContent = 'Could not read the off-site state.'; }
+  }
+  $('offsiteTest').addEventListener('click', async () => {
+    $('offsiteTest').disabled = true; offsiteSay('Testing...');
+    try {
+      const r = await post('/api/restore/offsite-test');
+      showOffsite(r.status);
+      if (r.ok) offsiteSay(`It works. ${r.sent ? `${r.sent} cop${r.sent === 1 ? 'y was' : 'ies were'} sent now.` : 'Nothing was waiting to be sent.'}`);
+      else offsiteSay(r.error, true);
+    } catch (err) { offsiteSay(err.message, true); }
+    $('offsiteTest').disabled = false;
+  });
+
   $('backupNow').addEventListener('click', async () => {
     $('backupNow').disabled = true; restoreSay('Saving...');
     try { const r = await post('/api/restore/backup-now'); restoreSay(`Saved as ${r.id}.`); loadBackups(); } catch (err) { restoreSay(err.message, true); }
@@ -260,7 +291,7 @@
   const tabNames = ['activity', 'restore'];
   function showTab(name) {
     tabNames.forEach((t) => { $('tab-' + t).setAttribute('aria-selected', String(t === name)); $('panel-' + t).hidden = t !== name; });
-    if (name === 'restore') loadBackups();
+    if (name === 'restore') { loadBackups(); loadOffsite(); }
     try { history.replaceState(null, '', '#' + name); } catch (e) { /* not important */ }
   }
   tabNames.forEach((t) => $('tab-' + t).addEventListener('click', () => showTab(t)));

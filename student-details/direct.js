@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { writeFileAtomic } = require('../shared/server-utils');
+const { createSecretBox, isSealed } = require('./secret-box');
 
 const fileName = (v) => String(v || '').replace(/[\\/\u0000-\u001f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/^\.+/, '').trim().slice(0, 120);
 
@@ -58,7 +59,8 @@ function applyRoute(input) {
     applyPortal,
     applyEmail,
     applyUser: applyPortal ? str(input.applyUser, 200).trim() : '',
-    applyPassword: applyPortal ? str(input.applyPassword, 200).replace(/\n/g, '').trim() : '',
+    // A password kept sealed (secret-box.js) that could not be opened is kept exactly as it is, never cut short.
+    applyPassword: applyPortal ? (isSealed(input.applyPassword) ? input.applyPassword : str(input.applyPassword, 200).replace(/\n/g, '').trim()) : '',
   };
 }
 function cleanApplyEmail(v) {
@@ -157,6 +159,14 @@ function createDirect(dir, {
   const file = path.join(dir, storeFile);
   const full = (u) => ({ ...cleanOne(u, u), agreements: agreementsOf(u), id: u.id, updatedAt: u.updatedAt, updatedBy: u.updatedBy || '' });
   let cache = null; // { mtimeMs, size, data }
+  // The portal password is sealed in the file (the owner, 28 Nov 2026) and open in memory, so every page and the Thursday refresh read
+  // it as before. One that cannot be opened (the key file is missing) stays sealed: it is never emptied.
+  const box = createSecretBox(dir);
+  const opened = (u) => { if (!u || !isSealed(u.applyPassword)) return u; const plain = box.open(u.applyPassword); return plain === null ? u : { ...u, applyPassword: plain }; };
+  const sealed = (u) => {
+    if (!u || !u.applyPassword || isSealed(u.applyPassword)) return u;
+    try { return { ...u, applyPassword: box.seal(u.applyPassword) }; } catch (e) { console.error('[partner logins] not sealed:', e.message); return u; }
+  };
 
   function start() {
     const universities = starters.map((u) => ({ ...cleanOne(u), id: newId(), updatedAt: now().toISOString(), updatedBy: '' }));
@@ -171,7 +181,14 @@ function createDirect(dir, {
     if (cache && cache.mtimeMs === stat.mtimeMs && cache.size === stat.size) return cache.data;
     try {
       const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-      if (Array.isArray(data.universities)) { cache = { mtimeMs: stat.mtimeMs, size: stat.size, data }; return data; }
+      if (Array.isArray(data.universities)) {
+        // A file from before the passwords were sealed is written once more, sealed (nothing else in it changes).
+        const plain = data.universities.some((u) => u && u.applyPassword && !isSealed(u.applyPassword));
+        data.universities = data.universities.map(opened);
+        cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
+        if (plain) { try { write(data); } catch (e) { console.error('[partner logins] not sealed yet:', e.message); } }
+        return data;
+      }
     } catch (e) {
       if (e && e.code) { if (cache) return cache.data; throw e; } // a lock or a busy disk is not a damaged file: it is never moved or copied aside
     }
@@ -181,7 +198,7 @@ function createDirect(dir, {
   }
   function write(data) {
     fs.mkdirSync(dir, { recursive: true });
-    writeFileAtomic(file, JSON.stringify(data, null, 2));
+    writeFileAtomic(file, JSON.stringify({ ...data, universities: (data.universities || []).map(sealed) }, null, 2));
     const stat = fs.statSync(file);
     cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
   }
@@ -222,10 +239,14 @@ function createDirect(dir, {
       return { removed: uni };
     },
     // Puts back the whole list from a backup. An agreement whose file is no longer on disk is dropped from the page.
+    // Every record as it is kept in the file: the portal passwords sealed (for the daily backups, so they hold no password as typed).
+    sealedAll() { return load().universities.map(full).map(sealed); },
+    // Records from a backup, with their sealed passwords opened (to show a backup's page).
+    openAll(list) { return (Array.isArray(list) ? list : []).map(opened); },
     restoreAll(universities) {
       if (!Array.isArray(universities)) return { error: 'The backup has no Partner Universities in it.' };
       const restored = universities.filter((u) => u && /^[a-f0-9]{12}$/.test(u.id) && u.name).map((u) => {
-        const kept = full(u);
+        const kept = full(opened(u));
         return { ...kept, agreements: kept.agreements.filter((a) => a.ext && fs.existsSync(path.join(filesDir(kept.id), a.id + a.ext))) };
       });
       write({ ...load(), universities: restored });
