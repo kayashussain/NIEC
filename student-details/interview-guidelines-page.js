@@ -94,7 +94,7 @@
   function toggleUpload() {
     uploading = !uploading;
     redrawMain();
-    const to = uploading ? $('mtKind') : document.querySelector('.ig-upload-btn');
+    const to = uploading ? document.querySelector('.ig-kind[aria-pressed="true"]') : document.querySelector('.ig-upload-btn');
     if (to) to.focus();
   }
 
@@ -273,7 +273,7 @@
     return sheet;
   }
 
-  const meta = (f) => `${f.source}${f.by ? ` | uploaded by ${f.by}` : ''}${f.at ? `, ${day(f.at)}` : ''}`;
+  const meta = (f) => `${f.kind}${f.by ? ` | uploaded by ${f.by}` : ''}${f.at ? `, ${day(f.at)}` : ''}`;
 
   // One file in the row above the reader.
   function fileTab(f) {
@@ -286,8 +286,12 @@
 
   function uploadForm() {
     const box = el('div', 'ig-upload');
-    const kind = h('select', { class: 'p-input', id: 'mtKind' }, ...data.kinds.map((k) => h('option', { value: k }, k)));
-    const source = h('select', { class: 'p-input', id: 'mtSource' }, ...data.sources.map((s) => h('option', { value: s }, s)));
+    // The kind is one of four buttons (the owner, 28 Nov 2026); where it came from is no longer asked.
+    let kindNow = data.kinds[0];
+    const kind = h('div', { class: 'ig-kinds', role: 'group', 'aria-label': 'Kind of guideline', id: 'mtKind' });
+    const paintKinds = () => kind.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === kindNow)));
+    data.kinds.forEach((k) => { const b = h('button', { type: 'button', class: 'ig-kind', 'data-kind': k, onclick: () => { kindNow = k; paintKinds(); } }, k); kind.append(b); });
+    paintKinds();
     const title = h('input', { class: 'p-input', id: 'mtTitle', maxlength: '160', placeholder: 'For example: Credibility interview guide, Jan 2027' });
     const file = h('input', { type: 'file', id: 'mtFile', accept: '.pdf,.doc,.docx,.png,.jpg,.jpeg' });
     const go = h('button', { type: 'button', class: 'btn btn-primary' }, 'Upload');
@@ -295,7 +299,7 @@
     go.disabled = true; // Upload waits until a file is chosen
     file.addEventListener('change', () => { go.disabled = !(file.files && file.files.length); });
     const lab = (id, words) => h('label', { class: 'ig-label', for: id }, words);
-    box.append(h('div', { class: 'ig-fields' }, h('div', {}, lab('mtKind', 'Kind of guideline'), kind), h('div', {}, lab('mtSource', 'Where it came from'), source), h('div', { class: 'ig-wide' }, lab('mtTitle', 'Title'), title)),
+    box.append(h('div', { class: 'ig-fields' }, h('div', { class: 'ig-wide' }, el('div', 'ig-label', 'Kind of guideline'), kind), h('div', { class: 'ig-wide' }, lab('mtTitle', 'Title'), title)),
       h('div', { class: 'ig-upload-bar' }, file, go), el('p', 'ig-hint', 'A PDF, a Word document or a picture, up to 10 MB.'), err);
     go.addEventListener('click', async () => {
       err.textContent = '';
@@ -303,7 +307,7 @@
       if (!f) { err.textContent = 'Choose the file first.'; file.focus(); return; }
       if (f.size > 10 * 1024 * 1024) { err.textContent = 'That file is too large (the limit is 10 MB).'; return; }
       const u = data.universities.find((x) => x.name === chosen) || {};
-      const params = new URLSearchParams({ university: chosen, universityId: u.id || '', kind: kind.value, source: source.value, title: title.value, name: f.name });
+      const params = new URLSearchParams({ university: chosen, universityId: u.id || '', kind: kindNow, title: title.value, name: f.name });
       go.disabled = true; go.textContent = 'Uploading…';
       try {
         const res = await fetch(`/api/guidelines?${params}`, { method: 'POST', body: f });

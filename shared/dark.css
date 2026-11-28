@@ -5623,6 +5623,17 @@ html[data-theme="dark"]:root body #page .ig-empty p {
 html[data-theme="dark"]:root body #page .ig-upload {
   background: #202124;
 }
+html[data-theme="dark"]:root body #page .ig-kind {
+  background: #292a2d;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body #page .ig-kind:hover {
+  background: #2c2d30;
+}
+html[data-theme="dark"]:root body #page .ig-kind[aria-pressed="true"] {
+  background: #007bf7;
+  color: #ffffff;
+}
 html[data-theme="dark"]:root body #page .ig-label {
   color: #9aa0a6;
 }

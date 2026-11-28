@@ -55,7 +55,8 @@ function createMockGuidelines(dir, { now = () => new Date() } = {}) {
       const uni = text(university, 160);
       if (!uni) return { error: 'Choose the University first.' };
       if (!KINDS.includes(kind)) return { error: 'Choose the kind of guideline.' };
-      if (!SOURCES.includes(source)) return { error: 'Choose where it came from.' };
+      // Where it came from is no longer asked (the owner, 28 Nov 2026); an older file keeps what it has, a new one has none.
+      if (source && !SOURCES.includes(source)) return { error: 'Choose where it came from.' };
       const shown = shortName(name);
       const ext = path.extname(shown).toLowerCase();
       if (!shown || !Object.prototype.hasOwnProperty.call(FILE_TYPES, ext)) return { error: 'Please upload a PDF, Word document (.doc, .docx) or a picture (.png, .jpg).' };
@@ -66,7 +67,7 @@ function createMockGuidelines(dir, { now = () => new Date() } = {}) {
       if (data.files.length >= MAX_FILES) return { error: 'The most guideline files allowed are already kept. Remove an old one first.' };
       const entry = {
         id: newId(), university: uni, universityId: /^[a-f0-9]{12}$/.test(String(universityId || '')) ? universityId : '',
-        kind, source, title: text(title, 160) || shown.replace(/\.[^.]+$/, ''), name: shown, ext, size: bytes.length,
+        kind, source: source || '', title: text(title, 160) || shown.replace(/\.[^.]+$/, ''), name: shown, ext, size: bytes.length,
         by: text(by, 80), at: now().toISOString(),
       };
       fs.mkdirSync(folder, { recursive: true, mode: 0o700 });

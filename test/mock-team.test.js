@@ -294,7 +294,7 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   const uniName = (await mock('GET', '/api/guidelines')).json.universities[0].name; // a University that is in the list
   const phantom = new URLSearchParams({ university: 'A University that does not exist anywhere', kind: 'Interview questions', source: 'From a student', title: 'Questions', name: 'q.pdf' });
   assert.strictEqual((await mock('POST', `/api/guidelines?${phantom}`, pdf)).status, 400, 'only a University from the list');
-  const q = new URLSearchParams({ university: uniName, kind: 'Interview questions', source: 'From a student', title: 'Questions', name: 'q.pdf' });
+  const q = new URLSearchParams({ university: uniName, kind: 'Interview questions', title: 'Questions', name: 'q.pdf' });
   assert.strictEqual((await mock('POST', `/api/guidelines?${q}`, Buffer.from('MZ fake'))).status, 400);
   const up = await mock('POST', `/api/guidelines?${q}`, pdf);
   assert.strictEqual(up.status, 200, JSON.stringify(up.json));
@@ -311,7 +311,7 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   assert.strictEqual(seen.status, 200);
   assert.match(seen.headers.get('content-disposition'), /^inline/);
   assert.match(seen.headers.get('content-security-policy'), /frame-ancestors 'self'/);
-  const wq = new URLSearchParams({ university: uniName, kind: 'Interview questions', source: 'From a student', title: 'Word questions', name: 'q.docx' });
+  const wq = new URLSearchParams({ university: uniName, kind: 'Interview questions', title: 'Word questions', name: 'q.docx' });
   assert.strictEqual((await app('POST', `/api/guidelines?${wq}`, wordFile())).status, 403, 'the Application Team uploads nothing');
   const word = await mock('POST', `/api/guidelines?${wq}`, wordFile());
   assert.strictEqual(word.status, 200, JSON.stringify(word.json));
