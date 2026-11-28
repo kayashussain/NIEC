@@ -1042,10 +1042,10 @@ html:root body :is(button, a, input, select, textarea, [role="button"], [tabinde
 /* 🔴 CSS CHANGED (2026-11-28): Interview guidelines, two tall cards (the owner chose option A) | from: cards that stopped partway down the screen, a subtitle, a large heading card, a list of file rows and the file far below them | to: the two cards run to the bottom of the screen, a slim title row with Upload, the open University with Download, full screen and Remove, its files side by side, the file filling the rest */
 html:root body #page.ig-page { box-sizing: border-box; width: 100%; max-width: 1600px; padding-top: 16px; padding-bottom: 18px; }
 html:root body #page.ig-page .p-head { align-items: center; min-height: 44px; margin-bottom: 14px; }
-html:root body #page.ig-page .p-head h1 { margin: 0; font-size: 26px; line-height: 32px; letter-spacing: -.025em; }
+html:root body #page.ig-page .p-head h1 { margin: 0; font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -.025em; }
 html:root body #page.ig-page > .p-msg:empty { display: none; }
 html:root body #page .ig-grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 14px; height: 640px; }
-html:root body #page .ig-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: #fff; border: 0; border-radius: 22px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 30px rgba(0, 0, 0, .06); }
+html:root body #page .ig-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: #fff; border: 0; border-radius: 20px; box-shadow: var(--apple-card); }
 html:root body #page .ig-side { padding: 14px 10px 0; }
 html:root body #page .ig-tabs { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3px; margin: 0 4px 10px; padding: 3px; border-radius: 12px; background: #efeff2; }
 html:root body #page .ig-tabs button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; border: 0; border-radius: 9px; background: transparent; color: #1d1d1f; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: background .18s, box-shadow .18s; }

@@ -12,6 +12,18 @@
 (function () {
   const { el, h, api } = window.Portal;
   const $ = (id) => document.getElementById(id);
+  // The owner, 28 Nov 2026: on a laptop the page looked bold and wide next to the approved design, which is drawn 1756 px wide (a 1440 px
+  // screen at the portal's usual 82%). Here the page is drawn at the size that keeps that same picture on a narrower screen (never above
+  // 82%, never below 65%); a phone and a tablet (under 900 px) keep their own layout.
+  const fit = () => {
+    const root = document.documentElement;
+    if (window.innerWidth < 900) { root.style.removeProperty('zoom'); root.style.removeProperty('--sr360-z'); return; }
+    const z = Math.round(Math.max(0.65, Math.min(0.82, window.innerWidth / 1756)) * 100) / 100;
+    root.style.zoom = String(z);
+    root.style.setProperty('--sr360-z', String(z));
+  };
+  fit();
+  window.addEventListener('resize', fit);
   const toast = (t, type = 'success') => window.NiecUI.toast(t, { type });
   let data = null;
   let chosen = '';
