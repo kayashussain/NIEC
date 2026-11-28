@@ -49,7 +49,7 @@
       const n = list.filter((u) => kindOf(u) === b.dataset.k).length;
       b.replaceChildren(el('span', '', b.dataset.k === 'pathway' ? 'Pathway colleges' : 'Universities'), el('span', 'ff-n', String(n)));
     });
-    // No Intake menu: every page has only the January, February and March 2027 intakes (the owner, 20 Nov 2026).
+    // No Intake menu: every page has only the intakes of the season worked on (the owner, 20 Nov 2026; intake-window.js).
     // How many deadlines of this list close in the next two weeks, with one click to see them first.
     const soon = all.filter((u) => kindOf(u) === filters.kind && u.next && u.next.days <= 14);
     const word = filters.kind === 'pathway' ? ['pathway college closes', 'pathway colleges close'] : ['university closes', 'universities close'];

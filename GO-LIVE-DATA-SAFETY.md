@@ -43,6 +43,12 @@ start after it. It does not protect changes typed during a restart, so **still d
   (the folder is noted in `student-details/.data-folder` on the server). Delete that note only when the data was moved
   on purpose.
 - **University pages.** A newer weekly reading on the live server is no longer replaced by older details in the code.
+- **Saves around the restart.** Added 28 November 2026. When the server stops it keeps its last 12 versions of the students in
+  `recent-revisions.json.gz` in the data folder and reads them back at the start, so a page that was a few saves behind still saves
+  after the upload. A page whose version is older than that puts its own changes back on top of the sheet as it is now and saves
+  them; only a cell someone else changed meanwhile is left out, and named. Still ask everyone to wait for **All changes saved**.
+- **Starter university pages.** Added 28 November 2026. A starter page nobody has edited gets the usual application steps back
+  (Application submitted, Offer letter received, ...) if it lost them. Nothing else on it changes.
 
 Uploaded files (agreements, guidelines, signatures) are not in these copies, because an upload does not change them.
 The copies sit on the same server, so they do not replace the backups in step 2.

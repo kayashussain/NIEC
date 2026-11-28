@@ -141,6 +141,7 @@ function clean(input, old = {}) {
   };
 }
 const LEVEL_ORDER = require('./fact-present').LEVEL_ORDER;
+const IntakeWindow = require('./intake-window'); // the intake Universities works on (January, May or September, whichever comes next)
 const url = (v) => (/^https:\/\/[^\s"'<>]+$/.test(String(v || '')) ? String(v).slice(0, 600) : '');
 // A logo can also be a small picture kept in the page itself (data:image/..., at most about 200 KB).
 const logoUrl = (v) => (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(String(v || '')) && String(v).length < 280000 ? String(v) : url(v));
@@ -155,7 +156,7 @@ function cleanProfile(p) {
     type: p.type === 'college' ? 'college' : 'university',
     // own: the courses, requirements and dates are the page's own (a direct route, or nothing for January 2027 at the partner); the
     // profile then gives only the pictures, the video, the logo and the short about.
-    own: Boolean(p.own), intake: t(p.intake, 60) || 'January 2027',
+    own: Boolean(p.own), intake: t(p.intake, 60) || IntakeWindow.of().label,
     // Which partner record the courses come from, read again every Thursday (partner-refresh.js), and when they were last read.
     key: t(p.key, 160), source: cleanSource2(p.source), readAt: t(p.readAt, 40),
     // The other partners that offer the same university: what the first one does not give is filled in from them (the owner, 20 Nov 2026).
@@ -239,7 +240,10 @@ const isBlank = (u) => !(u.city || u.website || u.overview || u.entryRequirement
   || (u.programs && u.programs.length) || (u.intakes && u.intakes.length)
   || (u.process || []).some((s, i) => s.detail || s.title !== STARTER_STEPS[i]) || (u.process || []).length > STARTER_STEPS.length);
 const starterFields = (u) => JSON.stringify([u.city, u.location, u.overview, u.website, u.entryRequirements, u.languageTests, u.courses, u.interview, u.notes, u.programs || [], u.intakes || [], u.process || []]);
-const withStarterDetails = (u) => (hasStarter(u.name) ? { ...u, ...clean({ ...STARTER_DETAILS[startKey(u.name)], name: u.name, website: u.website || STARTER_DETAILS[startKey(u.name)].website || '' }, u) } : u);
+// The starter details give no application steps: the page keeps its own, or the usual steps when it has none (review, 28 Nov 2026: a
+// starter page refreshed from its details lost its steps).
+const stepsOf = (d, u) => (Array.isArray(d.process) && d.process.length ? d.process : (u.process || []).length ? u.process : STARTER_STEPS.map((title) => ({ title })));
+const withStarterDetails = (u) => (hasStarter(u.name) ? { ...u, ...clean({ ...STARTER_DETAILS[startKey(u.name)], name: u.name, website: u.website || STARTER_DETAILS[startKey(u.name)].website || '', process: stepsOf(STARTER_DETAILS[startKey(u.name)], u) }, u) } : u);
 
 // What each card of the list shows at a glance (the owner, 17 Nov 2026: less opening of pages): the next "Apply by" still open, how many
 // courses, and whether it is a pathway college. Worked out once per page and day (the stored page object is kept while the file is unchanged).
@@ -254,26 +258,26 @@ function glance(u) {
   let value = { next: null, courseCount: 0 };
   try {
     const view = FactPresent.present(u);
-    // Only the January, February and March 2027 intakes count (the owner, 20 Nov 2026).
-    const open = view.deadlines.filter((d) => Q1_2027.test(d.name) && d.applyBy && !d.applyBy.closed && typeof d.applyBy.days === 'number' && d.applyBy.days >= 0)
+    // Only the intakes of the season worked on count (intake-window.js; January, February and March 2027 until 31 Dec 2026).
+    const w = IntakeWindow.of();
+    const open = view.deadlines.filter((d) => w.test(d.name) && d.applyBy && !d.applyBy.closed && typeof d.applyBy.days === 'number' && d.applyBy.days >= 0)
       .sort((a, b) => a.applyBy.days - b.applyBy.days)[0];
     let next = open ? { intake: open.name, when: open.applyBy.when, days: open.applyBy.days } : null;
     // A partner's page: its first "Apply by" date.
     if (u.profile && !u.profile.own) {
       const n = FactPresent.nextApplyBy(u.profile.deadlines);
-      next = n ? { intake: u.profile.intake || 'January 2027', when: n.when, days: n.days } : null;
+      next = n ? { intake: u.profile.intake || w.label, when: n.when, days: n.days } : null;
     }
     value = { next, courseCount: view.courses.length };
   } catch (e) { /* the card shows without it */ }
   glanceMemo.set(u, { day, value });
   return value;
 }
-const Q1_2027 = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i;
-// The intakes a card offers: January, February and March 2027 only (the owner, 20 Nov 2026), from a partner's courses or the page's own.
+// The intakes a card offers: only those of the season worked on (intake-window.js), from a partner's courses or the page's own.
 const q1Intakes = (u) => {
+  const w = IntakeWindow.of();
   const names = u.profile && !u.profile.own ? u.profile.courses.flatMap((c) => String(c.start || '').split(/,\s*/)) : u.intakes.map((i) => i.name);
-  const month = (n) => ['jan', 'feb', 'mar'].indexOf(String(n).trim().slice(0, 3).toLowerCase());
-  return [...new Set(names.map((n) => String(n).trim()).filter((n) => Q1_2027.test(n)).map((n) => `${['January', 'February', 'March'][month(n)]} 2027`))].sort((a, b) => month(a) - month(b));
+  return [...new Set(names.map((n) => String(n).trim()).filter((n) => w.test(n) && w.indexOf(n) >= 0).map((n) => `${w.names[w.indexOf(n)]} ${w.year}`))].sort((a, b) => w.indexOf(a) - w.indexOf(b));
 };
 const summary = (u) => ({ id: u.id, name: u.name, city: u.city, intakes: q1Intakes(u), updatedAt: u.updatedAt, kind: (u.profile && u.profile.type === 'college') || PATHWAY.test(u.name) ? 'pathway' : 'university', ...glance(u),
   // A page with the partner's January 2027 details counts only those courses, and shows the university's logo on its card.
@@ -452,7 +456,7 @@ function createFacts(dir, { now = () => new Date() } = {}) {
         const hit = pageFor(data.universities, p.name);
         if (hit) { hit.profile = keepNewerReading(hit.profile, profile); return; }
         if (profile.own || (!profile.courses.length && !profile.levels.length)) return; // only pictures: no page of its own
-        data.universities.push({ ...clean({ name: p.name, city: profile.city, website: profile.website, intakes: [{ name: 'January 2027' }], process: STARTER_STEPS.map((title) => ({ title })), profile }), id: newId(), updatedAt: now().toISOString(), updatedBy: '' });
+        data.universities.push({ ...clean({ name: p.name, city: profile.city, website: profile.website, intakes: [{ name: profile.intake }], process: STARTER_STEPS.map((title) => ({ title })), profile }), id: newId(), updatedAt: now().toISOString(), updatedBy: '' });
       });
     }
     data.partnersApplied = PARTNERS.version;

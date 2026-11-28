@@ -146,7 +146,10 @@
           const shown = String(co.name).replace(/\s*\((?:CID)?[A-Z]{1,4}\d{1,4}[A-Z]{0,2}\)/g, '').replace(/\s{2,}/g, ' ').trim();
           words.append(co.link ? h('a', { class: 'fd-course', href: co.link, target: '_blank', rel: 'noopener' }, shown) : el('span', 'fd-course', shown));
           const chips = el('div', 'fd-chips');
-          chips.append(el('span', 'fd-cal', String(co.intakes || co.intake || '').split(/,\s*/).map((x) => x.slice(0, 3)).join(', ') + ' 2027'));
+          // "Jan, Feb 2027", the year read from the course's own intakes (never written into the page).
+          const cal = String(co.intakes || co.intake || '');
+          const calYears = [...new Set((cal.match(/\b20\d{2}\b/g) || []))];
+          chips.append(el('span', 'fd-cal', cal.split(/,\s*/).map((x) => x.trim().slice(0, 3)).filter(Boolean).join(', ') + (calYears.length === 1 ? ` ${calYears[0]}` : '')));
           if (co.campus) chips.append(el('span', 'fd-pin', co.campus));
           if (co.fee) chips.append(el('span', 'fd-fee', String(co.fee).replace(/^gross fee:?\s*/i, '').replace(/\/-/g, '')));
           words.append(chips);

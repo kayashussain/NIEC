@@ -146,6 +146,7 @@
   // What the server has (at `revision`), as a WorkbookPatch snapshot: saves send only what differs
   // from it, and updates from others arrive as just what changed (shared/patch.js).
   let synced = null;
+  let rebaseTries = 0; // how many times in a row this page's changes were put back on top of a newer sheet (putMyChangesOnTop)
   let sendFull = false; // the server asked for the whole workbook once (it no longer had our revision)
   let reloadWanted = false; // fetch the whole (team) view next time, e.g. after moving a student on
   const Patch = window.WorkbookPatch;
@@ -2465,6 +2466,9 @@
         const why = await res.json().catch(() => ({}));
         // The same student already on the sheet: say so (nothing was saved).
         if (why.duplicate) { showRefused(why.error); return; }
+        // The server no longer has the version this page started from (a restart, or many saves meanwhile): this page's own changes
+        // are put back on top of the sheet as it is now and saved again, instead of being lost at a reload (the owner, 28 Nov 2026).
+        if (!why.clash && rebaseTries < 2 && await putMyChangesOnTop()) { rebaseTries += 1; saveQueued = true; return; }
         showConflict();
         // Someone else changed the same detail meanwhile: name it, so the person knows what to look at after reloading.
         const c = Array.isArray(why.clash) && why.clash[0];
@@ -2475,8 +2479,11 @@
       if (res.status === 403) { showRefused((await res.json().catch(() => ({}))).error); return; }
       if (!res.ok) throw new Error('save failed');
       sendFull = false;
+      rebaseTries = 0;
       const result = await res.json();
       const caughtUp = changeCount === savedChange;
+      // Cells the server could not keep (someone else changed them meanwhile, or the student moved on): named, everything else is saved.
+      if (Array.isArray(result.notSaved) && result.notSaved.length) tellNotSaved(result.notSaved);
       if (!result.merged) {
         revision = result.revision;
         synced = sentSnap;
@@ -2512,6 +2519,70 @@
     showConflict();
     const text = conflictBanner.querySelector('span');
     if (text) text.textContent = (message || "That change isn't allowed for your account.") + ' Nothing was saved. Reload to continue.';
+  }
+
+  // "Not saved: Ram Sharma, Email (someone else changed it meanwhile)". The rest of the save went through.
+  function tellNotSaved(list) {
+    const lines = list.slice(0, 4).map((x) => `${x.name}, ${String(x.col || '').toLowerCase()} (${x.why})`);
+    const more = list.length > 4 ? ` and ${list.length - 4} more` : '';
+    NiecUI.toast(`Not saved: ${lines.join('; ')}${more}. Everything else is saved.`, { type: 'error', duration: 15000 });
+  }
+
+  // This page's own unsaved cells, put back on top of the sheet as the server has it now. A cell someone else changed meanwhile keeps
+  // their value and is named. Only plain cell changes are carried over: a page that also added, removed or moved rows or changed a
+  // sheet (name, columns) gets the "Not saved" banner as before. True when the changes were put back (the caller then saves them).
+  async function putMyChangesOnTop() {
+    if (!synced || BACKUP) return false;
+    const mine = [];
+    for (const sheet of sheets) {
+      const was = synced.sheets.get(sheet.id);
+      if (!was) return false;
+      const now = Patch.snapshot({ sheets: [sheet] });
+      if (!now) return false;
+      const meNow = now.sheets.get(sheet.id);
+      if (meNow.meta !== was.meta || meNow.order !== was.order) return false;
+      for (const row of sheet.rows) {
+        const before = was.rows.get(row._id);
+        if (!before) return false;
+        if (before === meNow.rows.get(row._id)) continue;
+        const b = JSON.parse(before);
+        new Set([...Object.keys(b), ...Object.keys(row)]).forEach((col) => {
+          if (col.startsWith('_') && col !== '_color') return;
+          if (String(b[col] ?? '') !== String(row[col] ?? '')) mine.push({ sheetId: sheet.id, rowId: row._id, col, base: b[col] ?? '', value: row[col] ?? '', name: [row['FIRST NAME'], row['LAST NAME']].filter(Boolean).join(' ') });
+        });
+      }
+    }
+    if (synced.sheets.size !== sheets.length) return false;
+    if (!mine.length) return false;
+    let json;
+    try {
+      const r = await fetch('/api/data', { cache: 'no-store' });
+      if (!r.ok) return false;
+      json = await r.json();
+    } catch (e) { return false; }
+    if (!json || !Array.isArray(json.sheets) || !json.sheets.length) return false;
+    const fresh = Patch.snapshot({ sheets: json.sheets });
+    if (!fresh) return false;
+    const skipped = [];
+    let put = 0;
+    const next = JSON.parse(JSON.stringify(json));
+    const rowOf = (sheetId, rowId) => { const sh = next.sheets.find((x) => x.id === sheetId); return sh ? sh.rows.find((r) => r._id === rowId) : null; };
+    mine.forEach((c) => {
+      const row = rowOf(c.sheetId, c.rowId);
+      if (!row) { skipped.push({ name: c.name || 'A student', col: c.col === '_color' ? 'row colour' : c.col, why: 'the student is no longer on your sheet' }); return; }
+      const theirs = String(row[c.col] ?? '');
+      if (theirs === String(c.value)) return; // already the same
+      if (theirs !== String(c.base)) { skipped.push({ name: c.name || 'A student', col: c.col === '_color' ? 'row colour' : c.col, why: `someone else changed it to "${theirs.slice(0, 60)}" meanwhile` }); return; }
+      row[c.col] = c.value;
+      put += 1;
+    });
+    applyRemoteWorkbook(next, fresh);
+    if (skipped.length) tellNotSaved(skipped);
+    if (!put) { dirty = false; statusEl.textContent = 'All changes saved'; statusEl.className = 'save-status'; return true; }
+    dirty = true;
+    changeCount += 1;
+    NiecUI.toast(`The sheet was changed somewhere else meanwhile. Your ${put === 1 ? 'change was' : `${put} changes were`} put back on top and saved again.`, { type: 'info' });
+    return true;
   }
 
   function showConflict() {

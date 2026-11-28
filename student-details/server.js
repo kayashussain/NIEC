@@ -169,6 +169,7 @@ const STATIC_FILES = {
   '/dashboard-insights.js': 'text/javascript; charset=utf-8',
   '/fact-finder.js': 'text/javascript; charset=utf-8',
   '/fact-present.js': 'text/javascript; charset=utf-8',
+  '/intake-window.js': 'text/javascript; charset=utf-8', // the intake Universities works on (January, May or September, whichever comes next)
   // The Mock Team's pages (the owner, 22 Nov 2026): Bookings, Interview guidelines and the student's booking page (no login).
   '/bookings.html': 'text/html; charset=utf-8',
   '/bookings-page.js': 'text/javascript; charset=utf-8',
@@ -240,7 +241,7 @@ const backups = createBackups(DATA_DIR, () => ({
 // No daily copy is taken while the students could not be read (a damaged file and no good copy): an empty copy would fill the day's place.
 // Off-site copy (offsite.js): every backup is also sent, encrypted, to a bucket outside this server when the server's settings name one.
 const offsite = createOffsite(DATA_DIR, settingsFrom(), { record: (text) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Student Recruit 360 (automatic)' }, 'Backup problem', { app: 'Off-site backup', changes: [text] }) });
-const dailyBackup = () => { if (current) backups.tick(); offsite.sync().catch(() => {}); };
+const dailyBackup = () => { if (current) backups.tick(); offsite.tick().catch(() => {}); };
 setInterval(dailyBackup, 5 * 60 * 1000).unref();
 if (offsite.enabled()) setTimeout(() => offsite.sync().catch(() => {}), 60 * 1000).unref();
 
@@ -390,6 +391,38 @@ function stageTimeline(req, before, after) {
 
 // Recent revisions, so a save based on one of them can be merged instead of refused.
 const history = createHistory();
+// The recent revisions are also kept on disk when the server stops (an upload, a restart), so a page that was a few saves behind is
+// still merged after the restart instead of being told "Not saved" (the owner, 28 Nov 2026: no typed work lost at an upload).
+const HISTORY_FILE = path.join(DATA_DIR, 'recent-revisions.json.gz');
+const HISTORY_KEPT = 12;
+function saveRecentRevisions() {
+  try {
+    if (!current) return;
+    const list = history.newest(HISTORY_KEPT).map(([revision, text]) => ({ revision, by: authorOf.get(revision) || null, text }));
+    writeFileAtomic(HISTORY_FILE, zlib.gzipSync(JSON.stringify({ current: current.revision, list }), { level: 1 }));
+  } catch (e) { console.error('[recent revisions] not kept:', e.message); }
+}
+// Read back at start, only when it ends with exactly the students the server has now (anything else is out of date and left alone).
+// The rolling backup (data.backup.json, the version before the last save) is remembered too, which also covers a crash.
+function loadRecentRevisions(now) {
+  const older = new Map();
+  try {
+    const saved = JSON.parse(zlib.gunzipSync(fs.readFileSync(HISTORY_FILE)).toString('utf8'));
+    const last = saved && Array.isArray(saved.list) ? saved.list.find((x) => x && x.revision === now.revision) : null;
+    if (saved && saved.current === now.revision && last && last.text === JSON.stringify(now)) {
+      saved.list.forEach((x) => { if (x && Number.isInteger(x.revision) && x.revision < now.revision && typeof x.text === 'string') older.set(x.revision, x); });
+    }
+  } catch (e) { /* none kept yet, or unreadable: nothing older is known */ }
+  try {
+    const text = fs.readFileSync(BACKUP_FILE, 'utf8');
+    const prev = JSON.parse(text);
+    if (prev && prev.revision === now.revision - 1 && isValidWorkbook(prev) && !older.has(prev.revision)) older.set(prev.revision, { revision: prev.revision, by: null, text });
+  } catch (e) { /* no rolling backup */ }
+  [...older.values()].sort((a, b) => a.revision - b.revision).forEach((x) => {
+    try { history.remember(JSON.parse(x.text), x.text); if (x.by) authorOf.set(x.revision, x.by); } catch (e) { /* skipped */ }
+  });
+  return older.size;
+}
 
 // The workbook lives in memory: read from data.json once at start, and every save writes it back
 // (the file is what survives a restart, and what the Incentive page reads). Nothing re-reads the file
@@ -656,48 +689,64 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
   const rowsNow = new Map();
   current.sheets.forEach((s) => s.rows.forEach((r) => rowsNow.set(`${s.id}\u0000${r._id}`, r)));
   const seesNow = (row) => viewFor(req.user, { sheets: [{ rows: [row] }] }).sheets[0].rows.length > 0;
+  // What could not be saved, one line per cell (the owner, 28 Nov 2026: no typed work lost). A cell the rules no longer allow, or one
+  // someone else changed meanwhile, is left out and named; every other change of the same save is kept. Before, one such cell
+  // refused the whole save, and the person lost every edit when the page was reloaded.
+  const notSaved = [];
+  const nameOfRow = (row) => (row ? [row['FIRST NAME'], row['LAST NAME']].filter(Boolean).join(' ') : '') || 'A student';
+  const skip = (row, col, why) => { notSaved.push({ rowId: row ? row._id : '', name: nameOfRow(row), col: col === '_color' ? 'Row colour' : col, why }); };
   // A cell someone else changed after this page's copy, to a value other than this save's, is not overwritten silently (see cellClashes).
+  let kept = changes;
   if (behind) {
     const baseRows = new Map();
     base.sheets.forEach((s) => s.rows.forEach((r) => baseRows.set(`${s.id}\u0000${r._id}`, r)));
-    const clash = changes.filter((c) => {
-      if (c.col.startsWith('_')) return false;
+    kept = changes.filter((c) => {
+      if (c.col.startsWith('_')) return true;
       const b = baseRows.get(`${c.sheetId}\u0000${c.rowId}`); const n = rowsNow.get(`${c.sheetId}\u0000${c.rowId}`);
-      if (!b || !n) return false;
+      if (!b || !n) return true;
       const bv = String(b[c.col] ?? ''); const nv = String(n[c.col] ?? ''); const mv = String(c.value ?? '');
-      return nv !== bv && nv.trim() !== mv.trim() && othersChanged(parsed.baseRevision, c.rowId, c.col, req.user && req.user.id);
+      const clash = nv !== bv && nv.trim() !== mv.trim() && othersChanged(parsed.baseRevision, c.rowId, c.col, req.user && req.user.id);
+      if (clash) skip(n, c.col, `someone else changed it to "${nv.slice(0, 60)}" meanwhile`);
+      return !clash;
     });
-    if (clash.length) return { status: 409, body: { error: 'conflict', revision: current.revision, clash: clash.slice(0, 5).map((c) => { const r = rowsNow.get(`${c.sheetId}\u0000${c.rowId}`); return { rowId: c.rowId, name: [r['FIRST NAME'], r['LAST NAME']].filter(Boolean).join(' '), col: c.col }; }) } };
   }
   const updates = new Map(); // "sheet\0row" -> { col: value }
-  for (const c of changes) {
+  const statusChanges = [];
+  for (const c of kept) {
     const key = `${c.sheetId}\u0000${c.rowId}`;
     const row = rowsNow.get(key);
-    if (!row || !inIntake(c.sheetId) || !seesNow(row)) return conflict();
+    if (!row) { skip(null, c.col, 'the student was removed from the sheet meanwhile'); continue; }
+    if (!inIntake(c.sheetId)) { skip(row, c.col, 'a newer intake was started meanwhile'); continue; }
+    if (!seesNow(row)) { skip(row, c.col, 'the student moved to another stage meanwhile'); continue; }
     // The row colour has its own rule (canColor); every other cell except the stage follows the normal edit rule.
-    if (c.col === '_color' ? !canColor(req.user, row) : c.col !== STATUS && !canEdit(req.user, c.col, row)) return conflict();
-    // A stage is stored without stray spaces ("Application Stage " would not match the rules and the dashboard).
-    updates.set(key, { ...(updates.get(key) || {}), [c.col]: c.col === STATUS ? String(c.value ?? '').trim() : c.value });
+    if (c.col === '_color' ? !canColor(req.user, row) : c.col !== STATUS && !canEdit(req.user, c.col, row)) { skip(row, c.col, 'your account can no longer change it'); continue; }
+    if (c.col === STATUS) { statusChanges.push(c); continue; } // checked below, with the student's other details as they will be saved
+    updates.set(key, { ...(updates.get(key) || {}), [c.col]: c.value });
   }
-  for (const c of changes) {
-    if (c.col !== STATUS) continue;
+  for (const c of statusChanges) {
     const key = `${c.sheetId}\u0000${c.rowId}`;
     const row = rowsNow.get(key);
     // The move from the stage the student is at now, with their details as they will be saved.
     const from = String(row[STATUS] ?? '').trim();
+    // A stage is stored without stray spaces ("Application Stage " would not match the rules and the dashboard).
     const to = String(c.value ?? '').trim();
     if (from === to) continue; // someone already moved them there
     const check = checkMove(req.user, { ...row, ...updates.get(key), 'STUDENT SOURCE': row['STUDENT SOURCE'] }, to, from);
-    if (!check.ok) return conflict();
+    if (!check.ok) { skip(row, STATUS, String(check.message || `the move from ${from || 'no status'} to ${to || 'no status'} is not allowed now`).split('\n')[0]); continue; }
+    updates.set(key, { ...(updates.get(key) || {}), [STATUS]: to });
   }
   // A student deleted by the team must still exist and still be one this team may delete.
   const removed = new Set();
   for (const d of deletes) {
     const key = `${d.sheetId}\u0000${d.rowId}`;
     const row = rowsNow.get(key);
-    if (!row || !inIntake(d.sheetId) || !seesNow(row) || !canDelete(req.user, row)) return conflict();
+    if (!row) continue; // already gone
+    if (!inIntake(d.sheetId) || !seesNow(row) || !canDelete(req.user, row)) { skip(row, 'Delete', 'the student can no longer be deleted from your account (it was kept)'); continue; }
     removed.add(key);
   }
+  // The student card's own saves (setColumns, adding a student) are one change each: all of it or none, as before.
+  if (notSaved.length && !fromSheet) return { status: 409, body: { error: 'conflict', revision: current.revision, notSaved: notSaved.slice(0, 20) } };
+  if (notSaved.length) activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: notSaved.slice(0, 20).map((x) => `${x.name}, ${x.col}: not saved, ${x.why}`) });
   if (adds.some((a) => !inIntake(a.sheetId))) return conflict();
   // New students go at the end of their (visible) sheet, with an id no other student has.
   const allIds = new Set(current.sheets.flatMap((s) => s.rows.map((r) => r._id)));
@@ -725,12 +774,14 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
       ],
     })),
   };
+  // Nothing left to write (every cell was one of those above): the page is told what was not saved and fetches its fresh view.
+  if (!updates.size && !removed.size && !added.size) return { status: 200, body: { ok: true, revision: current.revision, reload: true, notSaved: notSaved.slice(0, 20) } };
   writeWorkbook(next, req.user && req.user.id);
   recordChanges(req, before, next);
   // A student moved to another stage leaves this team's view, and a new one is stored as the server
   // checked it: either way the page fetches its fresh view.
-  const reload = behind || dropped || adds.length > 0 || deletes.length > 0 || changes.some((c) => c.col === 'APPLICATION STATUS');
-  return { status: 200, body: { ok: true, revision: next.revision, reload } };
+  const reload = behind || dropped || notSaved.length > 0 || adds.length > 0 || deletes.length > 0 || changes.some((c) => c.col === 'APPLICATION STATUS');
+  return { status: 200, body: { ok: true, revision: next.revision, reload, ...(notSaved.length ? { notSaved: notSaved.slice(0, 20) } : {}) } };
 }
 
 // Answers a team's save (see teamSave, which does the work and is also used when a team adds a student from the card form).
@@ -781,12 +832,32 @@ async function handleSave(req, res) {
     // A cell someone else changed meanwhile to another value is never overwritten without a word: the page says so and reloads.
     // The worked-out fee columns are never typed by anyone, so they are never a clash.
     const clashes = cellClashes(base, current, mine).filter((c) => !CALCULATED_COLUMNS.includes(c.col) && othersChanged(parsed.baseRevision, c.rowId, c.col, req.user && req.user.id));
-    if (clashes.length) return sendJSON(res, 409, { error: 'conflict', revision: current.revision, clash: clashes.slice(0, 5) });
+    // Those cells keep the other person's value and are named; every other change of this save is merged and kept (the owner,
+    // 28 Nov 2026: before, one such cell refused the whole save, and reloading lost every edit).
+    const notSaved = [];
+    if (clashes.length) {
+      const theirs = new Map();
+      current.sheets.forEach((sh) => sh.rows.forEach((r) => theirs.set(r._id, r)));
+      const wanted = new Map(clashes.map((c) => [`${c.rowId}\u0000${c.col}`, c]));
+      mine.sheets = mine.sheets.map((sh) => ({ ...sh, rows: sh.rows.map((r) => {
+        const t = theirs.get(r._id);
+        if (!t) return r;
+        let out = r;
+        Object.keys({ ...r, ...t }).forEach((col) => {
+          if (!wanted.has(`${r._id}\u0000${col}`)) return;
+          if (out === r) out = { ...r };
+          out[col] = t[col] ?? '';
+          notSaved.push({ rowId: r._id, name: [t['FIRST NAME'], t['LAST NAME']].filter(Boolean).join(' ') || 'A student', col, why: `someone else changed it to "${String(t[col] ?? '').slice(0, 60)}" meanwhile` });
+        });
+        return out;
+      }) }));
+      activity.record(req, req.user, 'Change refused', { app: 'Student Details', changes: notSaved.slice(0, 20).map((x) => `${x.name}, ${x.col}: not saved, ${x.why}`) });
+    }
     const before = current;
     const merged = { revision: current.revision + 1, ...mergeWorkbooks(base, current, mine) };
     writeWorkbook(merged, req.user && req.user.id);
     recordChanges(req, before, merged);
-    return sendJSON(res, 200, { ok: true, revision: merged.revision, merged: true, workbook: merged });
+    return sendJSON(res, 200, { ok: true, revision: merged.revision, merged: true, workbook: merged, ...(notSaved.length ? { notSaved: notSaved.slice(0, 20) } : {}) });
   } catch (e) {
     console.error('[save]', e);
     return sendJSON(res, 500, { error: 'save failed' });
@@ -934,7 +1005,9 @@ async function handleFacts(req, res, urlPath) {
       if (!u) return sendJSON(res, 404, { error: 'No such university.' });
       const d = FP.pageData(u);
       const levels = FP.LEVEL_ORDER.filter((l) => d.courses.some((c) => c.level === l));
-      const intakes = ['January', 'February', 'March'].map((m) => `${m} 2027`).filter((m) => d.courses.some((c) => String(c.start || '').includes(m)));
+      // The months of the intake worked on that this university has courses in (intake-window.js: January, May or September, whichever comes next).
+      const w = FP.focus();
+      const intakes = w.names.map((m) => `${m} ${w.year}`).filter((m) => d.courses.some((c) => String(c.start || '').includes(m)));
       return sendJSON(res, 200, { name: u.name, intakes: intakes.length ? intakes : [d.intake], levels, campuses: FP.campusesOf(u, d.courses), courses: d.courses.map((c) => ({ name: c.name, level: c.level, campus: c.campus || '', start: c.start || '' })) });
     }
     if (!id) return sendJSON(res, 200, facts.list((new URL(req.url, 'http://x').searchParams.get('q') || '').slice(0, 100)));
@@ -1107,6 +1180,8 @@ try {
 
 try {
   current = loadWorkbook();
+  const kept = loadRecentRevisions(current);
+  if (kept) console.log(`[startup] ${kept} recent revision${kept === 1 ? '' : 's'} read back, so pages a few saves behind still save`);
   history.remember(current);
 } catch (e) {
   console.error('[startup] could not read', DATA_FILE, '-', e.message);
@@ -1380,9 +1455,12 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       const sig = messages.signature();
       // Added to an iPhone's Home Screen from the pairing page, Student Recruit 360 opens on that page again to finish turning WhatsApp on.
       const pairing = new URL(req.url, 'http://x').searchParams.get('pair') || '';
-      const start = /^[\w-]{20,40}$/.test(pairing) ? `/pair?t=${pairing}` : '/today';
-      return send(res, 200, JSON.stringify({ name: `Student Recruit 360${sig.short ? ' · ' + sig.short : ''}`, short_name: 'Student Recruit 360', start_url: start, scope: '/', display: 'standalone', background_color: '#f5f5f7', theme_color: '#f5f5f7',
-        icons: [{ src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }, { src: '/favicon.png', sizes: '128x128', type: 'image/png' }] }), { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache' });
+      // Under a folder of the domain (NIEC_BASE_PATH, "/niec" on the live server) every address of the Home Screen app is inside it: this
+      // answer is JSON, which base-path.js does not rewrite (review, 28 Nov 2026: the phone app opened the domain's own /today).
+      const B = require('./base-path').normalize(process.env.NIEC_BASE_PATH);
+      const start = B + (/^[\w-]{20,40}$/.test(pairing) ? `/pair?t=${pairing}` : '/today');
+      return send(res, 200, JSON.stringify({ name: `Student Recruit 360${sig.short ? ' · ' + sig.short : ''}`, short_name: 'Student Recruit 360', start_url: start, scope: B + '/', display: 'standalone', background_color: '#f5f5f7', theme_color: '#f5f5f7',
+        icons: [{ src: B + '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }, { src: B + '/favicon.png', sizes: '128x128', type: 'image/png' }] }), { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache' });
     }
     // The service worker shows the notification on the phone and opens the chat when it is tapped (see push.js). It must be at the
     // top of the site to work for every page.
@@ -1454,10 +1532,10 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       // Also by the file's own address ("/bulk.html"), so a page closed to the team cannot be opened by typing it (review, 22 Nov 2026).
       if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk',
         '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/bulk.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
-      // The Mock Team works from Today, Bookings, All Students, Universities and Interview guidelines (the owner, 22 Nov 2026): no
-      // Dashboard, no Partners pages, no Mock interviews (the guides students read stay with Admin and the Manager), no Follow-up.
-      if (ownTeamMock(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk', '/bulk-add',
-        '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
+      // The Mock Team works from Today, Bookings, All Students, Universities, Interview guidelines and Mock interview guides (the owner,
+      // 22 and 28 Nov 2026): no Dashboard, no Partners pages, no Follow-up.
+      if (ownTeamMock(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/bulk', '/bulk-add',
+        '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
       // A branch works from Today, Dashboard, All Students and Universities (the owner, 26 Nov 2026): no Add many students, no Follow-up
       // and no Partners pages, by their own file's address either.
       if (ownTeamBranch(req.user) && ['/bulk', '/bulk-add', '/partners', '/partner-universities', '/b2b-partners', '/agents',
@@ -1579,7 +1657,7 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       if (!s.level) return sendJSON(res, 400, { error: 'Choose the study level first.' });
       const words = s.subject.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !['and', 'the', 'with', 'hons', 'bsc', 'msc'].includes(w));
       const results = []; const without = [];
-      // The finder works on what the university page shows (the owner, 20 Nov 2026): the partner's January to March 2027 courses
+      // The finder works on what the university page shows (the owner, 20 Nov 2026): the partner's courses of the intake worked on
       // and requirements, or the page's own; each course with its intake and campus, and the university's nearest open deadline.
       const glance = new Map(facts.list().map((x) => [x.id, x]));
       const links = courseLinks.all(facts.all());
@@ -1683,7 +1761,7 @@ server.listen(PORT, process.env.HOST || undefined, () => {
 portalRef = portal;
 // The Navitas toolkit: looked at every half hour whether a reading is due (Monday and Thursday from 2 a.m.), the first look three
 // minutes after the server starts (so a new installation fills in the Navitas colleges at once).
-// Every Thursday from 2 a.m. office time, the universities' January 2027 courses, requirements and dates are read again from Real Dreams
+// Every Thursday from 2 a.m. office time, the universities' courses, requirements and dates of the intake worked on are read again from Real Dreams
 // (Route2Uni) and Adventus with the logins on their B2B cards (partner-refresh.js). PARTNER_REFRESH=off switches it off.
 const partnerRefresh = createPartnerRefresh({ dir: DATA_DIR, facts, b2b, enabled: process.env.PARTNER_REFRESH !== 'off',
   record: (changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Student Recruit 360 (automatic)' }, 'Edited universities', { app: 'Thursday refresh', changes }) });
@@ -1706,6 +1784,7 @@ if (process.env.COURSE_WATCH !== 'off') {
 // A restart (pm2, cPanel) lets requests in progress finish, closes the live streams and then exits. Saves are written whole
 // before they are answered, so nothing is half written. A forced exit follows after 5 seconds if something hangs on.
 function shutDown() {
+  saveRecentRevisions();
   streams.forEach(({ res }) => { try { res.end(); } catch (e) { /* already closed */ } });
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 5000).unref();
