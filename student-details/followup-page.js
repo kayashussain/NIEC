@@ -20,7 +20,7 @@
   const drafts = new Map(); // task id -> an update half written, kept while the list is drawn again
 
   const VIEWS = [
-    ['wait', 'Follow-up Pending', (s) => ['new', 'due', 'tried'].includes(s.state)],
+    ['wait', 'Follow Up Pending', (s) => ['new', 'due', 'tried'].includes(s.state)],
     ['ok', 'Followed Up', (s) => s.state === 'ok'],
     ['defer', 'Deferred', (s) => s.state === 'defer'],
     ['sent', 'In Application', (s) => s.state === 'sent'],
@@ -44,7 +44,7 @@
   async function load() {
     try { data = await api('/api/followup'); } catch (e) { $('list').replaceChildren(el('div', 'fu-empty', e.message)); return; }
     const waiting = data.students.filter((x) => ['new', 'due', 'tried'].includes(x.state)).length;
-    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}${waiting} ${waiting === 1 ? 'student' : 'students'} pending follow-up`;
+    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}${waiting} ${waiting === 1 ? 'student' : 'students'} pending follow up`;
     draw();
     loadTasks();
   }
@@ -137,7 +137,7 @@
       .sort((a, b) => (kind === 'stop' ? String((b.stopped || {}).at || '').localeCompare(String((a.stopped || {}).at || '')) : 0) || ORDER[a.state] - ORDER[b.state] || String((a.next && a.next.date) || (a.last && a.last.at) || '').localeCompare(String((b.next && b.next.date) || (b.last && b.last.at) || '')) || a.no - b.no);
     const box = $('list');
     const COLS = {
-      live: ['No.', 'Student', 'Stage', 'Last Contact', 'Next Follow-up', 'Interest Level', ''],
+      live: ['No.', 'Student', 'Stage', 'Last Contact', 'Next Follow Up', 'Interest Level', ''],
       moved: ['No.', 'Student', 'University and course', 'Progress', 'Latest from the other teams', ''],
       stop: ['No.', 'Student', 'Stage', 'Why they stopped', 'Stopped by', ''],
       all: ['No.', 'Student', 'Stage', 'Where they are', 'List'],
@@ -145,7 +145,7 @@
     const head = el('div', `fu-row head ${kind}`);
     COLS[kind].forEach((t) => head.append(el('div', '', t)));
     if (!shown.length) {
-      box.replaceChildren(head, el('div', 'fu-empty', q || useTag ? 'No student matches.' : view === 'wait' ? 'No follow-ups pending.' : view === 'out' ? 'No stopped students.' : 'No students in this view.'));
+      box.replaceChildren(head, el('div', 'fu-empty', q || useTag ? 'No student matches.' : view === 'wait' ? 'No students pending follow up.' : view === 'out' ? 'No stopped students.' : 'No students in this view.'));
       return;
     }
     const make = { live: liveRow, moved: movedRow, stop: stopRow, all: allRow }[kind];
