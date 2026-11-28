@@ -152,12 +152,12 @@ test('partners: the Manager sees the commission, the teams do not, branches and 
   assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 403);
   assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200, 'the branch removes the task it gave');
 
-  // A branch, like every team, reads the Interview guidelines and changes none (the owner, 27 Nov 2026).
+  // A branch reads the Interview guidelines and uploads one for a University, but removes none (the owner, 28 Nov 2026).
   assert.strictEqual((await chitwan('GET', '/interview-guidelines')).status, 200);
   const guides = await chitwan('GET', '/api/guidelines');
-  assert.deepStrictEqual([guides.status, guides.json.canUpload], [200, false]);
-  assert.strictEqual((await chitwan('POST', '/api/guidelines?university=Example', {})).status, 403, 'a branch uploads nothing');
-  assert.strictEqual((await chitwan('POST', '/api/guidelines/000000000000/delete', {})).status, 403, 'and removes nothing');
+  assert.deepStrictEqual([guides.status, guides.json.canUpload, guides.json.canRemove], [200, true, false]);
+  assert.strictEqual((await chitwan('POST', '/api/guidelines?university=Example', {})).status, 400, 'a branch may upload, so a University from the list is asked for');
+  assert.strictEqual((await chitwan('POST', '/api/guidelines/000000000000/delete', {})).status, 403, 'but removes nothing');
   const read = await sunita('GET', '/api/guidelines');
   assert.deepStrictEqual([read.status, read.json.canUpload], [200, false], 'the Follow-up Team reads them too');
   // Its Today is two task lists only (assigned to it, assigned by it): no counts of the day, as Admin's.

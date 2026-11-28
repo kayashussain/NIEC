@@ -1,7 +1,7 @@
 // Interview guidelines (the owner, 22 Nov 2026; mock-guidelines.js and mock-team-api.js on the server): every University in
 // Universities is listed by itself, with a search. A University opens its files, by kind (credibility interview guidelines, UKVI
 // interview guidelines, interview questions, other), each with where it came from and Download. Admin and the Mock Team upload (a
-// file, its kind, where it came from and a title) and remove; every other team reads and downloads (the owner, 27 Nov 2026). A
+// file, its kind, where it came from and a title) and remove; a branch uploads but removes nothing (28 Nov 2026); every other team reads and downloads (27 Nov 2026). A
 // University opens with its first file already on screen: a PDF or a picture as it is, a Word document as its words; a press on
 // another file shows that one.
 // 26 Nov 2026 (the owner: "make it the next top global brand"): a new look for everyone who opens it, with two tabs only (All and
@@ -185,7 +185,7 @@
     box.append(h('a', { class: 'ig-download', href: `/api/guidelines/${f.id}`, download: f.name }, icon('download'), el('span', '', 'Download')));
     // A Word document is read on the page only: opened on its own the browser would just download it.
     if (type !== 'DOC' && type !== 'DOCX') box.append(h('a', { class: 'ig-round ig-full', href: `/api/guidelines/${f.id}?view=1`, target: '_blank', rel: 'noopener', 'aria-label': 'Open full screen', title: 'Open full screen' }, icon('expand')));
-    if (data.canUpload) {
+    if (data.canRemove) {
       box.append(h('button', { type: 'button', class: 'ig-round ig-remove', 'aria-label': `Remove ${f.title}`, title: 'Remove', onclick: async () => {
         if (!(await window.NiecUI.confirm(`Remove "${f.title}" from ${f.university}?`, { danger: true, confirmText: 'Remove' }))) return;
         try { await api(`/api/guidelines/${f.id}/delete`, {}); toast('Removed.'); await load(); } catch (e) { toast(e.message, 'error'); }

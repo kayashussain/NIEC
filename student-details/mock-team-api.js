@@ -5,7 +5,7 @@
 //                     answers for anyone; the Manager looks. Nobody else.
 //   The booking page  open to anyone with the link: it shows only free times, never a student or another booking. A student's own
 //                     booking opens by the secret address in their email (/booking/<code>), with change and cancel.
-//   Guidelines        Admin and the Mock Team upload and remove; every other team, the Manager and the branches read them on screen
+//   Guidelines        Admin and the Mock Team upload and remove; a branch uploads (28 Nov 2026) but removes nothing; every other team and the Manager read them on screen
 //                     and download them (the owner, 27 Nov 2026); a student account has no way in.
 
 const fs = require('fs');
@@ -31,7 +31,9 @@ const bookingsAccess = (user) => {
 };
 const guidelinesAccess = (user) => {
   if (!user || Teams.isStudent(user)) return null;
-  return Teams.isAdmin(user) || (user.departments || []).includes('mock') ? 'edit' : 'view';
+  if (Teams.isAdmin(user) || (user.departments || []).includes('mock')) return 'edit';
+  // A branch adds guidelines for a University (the owner, 28 Nov 2026) but removes none; every other team only reads.
+  return Teams.kindOf(user) === 'branch' ? 'add' : 'view';
 };
 
 function createMockTeamApi({ bookings, guidelines, portal, cards, facts, accounts, activity, mailer, company, siteUrlOf, configuredSite = () => '', now = () => new Date() }) {
@@ -505,12 +507,12 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
         // A file kept for a University no longer in Universities stays listed under its own name.
         [...new Set(files.map((f) => f.university))].filter((n) => !names.has(n.toLowerCase())).forEach((n) => listed.push({ id: '', name: n, city: '', logo: logoOf(n), count: count.get(n.toLowerCase()) || 0 }));
         listed.sort((a, b) => a.name.localeCompare(b.name));
-        sendJSON(res, 200, { canUpload: access === 'edit', kinds: guidelines.KINDS, sources: guidelines.SOURCES, universities: listed,
+        sendJSON(res, 200, { canUpload: access === 'edit' || access === 'add', canRemove: access === 'edit', kinds: guidelines.KINDS, sources: guidelines.SOURCES, universities: listed,
           files: files.map((f) => ({ id: f.id, university: f.university, kind: f.kind, source: f.source, title: f.title, name: f.name, size: f.size, by: f.by, at: f.at, type: f.ext.slice(1).toUpperCase() })) });
         return true;
       }
       if (urlPath === '/api/guidelines' && req.method === 'POST') {
-        if (access !== 'edit') { sendJSON(res, 403, { error: 'Your account can only download guidelines.' }); return true; }
+        if (access !== 'edit' && access !== 'add') { sendJSON(res, 403, { error: 'Your account can only download guidelines.' }); return true; }
         const q = new URL(req.url, 'http://x').searchParams;
         let bytes;
         try { bytes = await readRawBody(req, MAX_FILE_BYTES); } catch (e) { sendJSON(res, e.statusCode || 400, { error: e.statusCode === 413 ? 'That file is too large (the limit is 10 MB).' : e.message }); return true; }
@@ -551,7 +553,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
         return true;
       }
       if (req.method !== 'POST' || !m[2]) { send(res, 405, 'Method not allowed'); return true; }
-      if (access !== 'edit') { sendJSON(res, 403, { error: 'Your account can only download guidelines.' }); return true; }
+      if (access !== 'edit') { sendJSON(res, 403, { error: 'Your account cannot remove guidelines.' }); return true; }
       const out = guidelines.remove(m[1]);
       if (out.error) { sendJSON(res, 404, { error: out.error }); return true; }
       activity.record(req, req.user, 'Uploaded guideline', { app: 'Interview guidelines', changes: [`Removed ${out.removed.title} from ${out.removed.university}`] });
