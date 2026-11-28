@@ -34,7 +34,7 @@
 
   // The draft (how to send, the students ticked, the filters and the message) is kept while this tab is open, so a reload or a look
   // at another page loses nothing (the owner, 17 Nov 2026: less work for the team). It is cleared once the message has gone.
-  const DRAFT = 'isrFollowupDraft';
+  const DRAFT = 'sr360FollowupDraft';
   function saveDraft() {
     try { sessionStorage.setItem(DRAFT, JSON.stringify({ channel: state.channel, subject: state.subject, body: state.body, wa: state.wa, filters: state.filters, chosen: [...chosen] })); } catch (e) { /* this page only */ }
   }

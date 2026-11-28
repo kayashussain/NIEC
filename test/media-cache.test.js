@@ -16,7 +16,7 @@ function png(w, h) {
   const raw = Buffer.alloc((w + 1) * h, 128); for (let y = 0; y < h; y += 1) raw[y * (w + 1)] = 0;
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
 }
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-media-'));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-media-'));
 const PIC = 'https://pictures.example.org/campus.png';
 
 test('a picture of a university page is fetched once, kept, and served from the data folder', async () => {

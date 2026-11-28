@@ -75,8 +75,8 @@ premium, calm, quiet and exact. The measure is apple.com itself, not "inspired b
 - **Text size, Medium for everyone (the owner, 23 Nov 2026).** On a laptop or desktop every page is drawn at **Medium** (`html[data-size="medium"]`, CSS `zoom: .8`).
   There is no Text size choice in the account menu any more.
   Pages inside the card drawer are not zoomed twice (`data-size="framed"`). Because of the zoom: place any menu or popup with
-  `isrPos` (`shared/ui.js`), never with raw `getBoundingClientRect` or `innerWidth`; write a full-height size as
-  `calc(100vh / var(--isr-z, 1))` or with `inset`, never plain `100vh`.
+  `sr360Pos` (`shared/ui.js`), never with raw `getBoundingClientRect` or `innerWidth`; write a full-height size as
+  `calc(100vh / var(--sr360-z, 1))` or with `inset`, never plain `100vh`.
 - **Beyond Apple: Nike's type, Dior's restraint (the owner, 21 Nov 2026).** Text that people read in a medium weight (500; long
   reading text 450; since 21 Nov 2026 600, see Strong contrast below) in a deep near-black (now #000), which stays crisp on a modest laptop screen; big confident titles (the student's name
   42px, section titles 24px, weight 650, tight letter spacing); labels of sections and days in small spaced capitals (12px, weight 600,

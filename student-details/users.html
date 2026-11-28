@@ -12,17 +12,18 @@
 <link rel="stylesheet" href="admin.css" />
 <link rel="stylesheet" href="theme.css" />
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
-<link rel="expect" href="#isr-ready" blocking="render" />
+<link rel="expect" href="#sr360-ready" blocking="render" />
 </head>
 <body>
   <header class="niec-header" data-page="users"></header>
 
-  <main class="page">
+  <main class="page us-page">
     <div class="page-head">
       <div>
         <h1>Users</h1>
         <p>Who can log in and what they can do.</p>
       </div>
+      <button class="btn btn-primary" type="button" id="addOpen" aria-expanded="false" aria-controls="addCard">+ Add a person</button>
     </div>
 
     <div class="tabs" role="tablist" aria-label="Sections">
@@ -31,7 +32,8 @@
     </div>
 
     <section id="panel-people" role="tabpanel" aria-labelledby="tab-people">
-      <div class="card">
+      <div class="notice" id="tempBox" hidden></div>
+      <div class="card" id="addCard" hidden>
         <h2>Add a person</h2>
         <p>They get an email with a temporary password and choose their own at first login.</p>
         <form id="addForm" autocomplete="off">
@@ -43,25 +45,29 @@
           <div id="addAccess"></div>
           <div class="form-actions">
             <button class="btn btn-primary" type="submit">Add person</button>
+            <button class="btn" type="button" id="addClose">Close</button>
             <span class="hint">Admin is the owner account only.</span>
           </div>
         </form>
         <div class="msg" id="addMsg" role="status"></div>
-        <div class="notice" id="tempBox" hidden></div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><h2>People</h2></div>
-        <p><b>Remove</b> deletes a login. <b>Disable</b> pauses it.</p>
+      <div class="card us-list">
+        <div class="us-tools">
+          <div class="us-filter" id="peopleFilter" role="group" aria-label="Show"></div>
+          <input type="search" id="peopleFind" placeholder="Search a name or username" aria-label="Search people" autocomplete="off" />
+        </div>
+        <p class="us-hint"><b>Remove</b> deletes a login. <b>Disable</b> pauses it.</p>
         <table>
           <thead><tr><th>Person</th><th>Access</th><th>Status</th><th>Last login</th><th>Devices</th><th><span class="sr-only">Actions</span></th></tr></thead>
-          <tbody id="users"><tr><td colspan="6"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
+          <tbody id="users"><tr><td colspan="6"><div class="sr360-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
         </table>
+        <p class="us-none" id="peopleNone" hidden>Nobody matches.</p>
         <div class="msg" id="usersMsg" role="status"></div>
       </div>
 
       <!-- Students' own logins, kept apart from the team (the owner, 20 Nov 2026). -->
-      <div class="card" id="studentsCard" hidden>
+      <div class="card us-list" id="studentsCard" hidden>
         <div class="card-head"><h2>Students</h2></div>
         <p>Each student's own login: it opens their own portal only.</p>
         <table>
@@ -80,7 +86,7 @@
         <p>Devices logged in now. Logins end after 12 hours.</p>
         <table>
           <thead><tr><th>Person</th><th>Device</th><th>IP address</th><th>Logged in</th><th>Last active</th><th><span class="sr-only">Actions</span></th></tr></thead>
-          <tbody id="sessions"><tr><td colspan="6"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
+          <tbody id="sessions"><tr><td colspan="6"><div class="sr360-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></td></tr></tbody>
         </table>
         <div class="msg" id="sessionsMsg" role="status"></div>
       </div>
@@ -109,6 +115,6 @@
 <script src="header.js"></script>
 <script src="card-fields.js"></script>
 <script src="users.js"></script>
-<span id="isr-ready" hidden></span>
+<span id="sr360-ready" hidden></span>
 </body>
 </html>

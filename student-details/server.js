@@ -60,15 +60,40 @@ const ROOT = __dirname;
 // DATA_DIR lets a host's persistent disk (mounted anywhere) hold data.json instead of
 // the app folder itself. Unset locally, so local behavior is unchanged.
 const DATA_DIR = process.env.STUDENT_DETAILS_DATA_DIR || ROOT;
+// Never an empty portal because the data folder setting was lost or mistyped (version-guard.js).
+const versionGuard = require('./version-guard');
+const DATA_MARKER = path.join(ROOT, '.data-folder');
+const wrongFolder = versionGuard.wrongDataFolder({ dataDir: DATA_DIR, markerFile: DATA_MARKER });
+if (wrongFolder) { console.error('[startup] not started:', wrongFolder); process.exit(1); }
 // One copy of the server per data folder (instance-lock.js): a second copy would overwrite the first one's saves, so it refuses to start.
 const instanceLock = require('./instance-lock').acquire(DATA_DIR);
-if (instanceLock.error) { console.error('[startup]', instanceLock.error); process.exit(1); }
+if (instanceLock.error) {
+  // A second copy the host started beside a running one holds and writes nothing: it passes each request to that one (one-writer.js).
+  if (!instanceLock.running) { console.error('[startup]', instanceLock.error); process.exit(1); }
+  console.log('[startup] Another copy is running on this data folder, so this one only passes requests to it.');
+  require('./one-writer').passOn(DATA_DIR).listen(PORT, process.env.HOST || undefined);
+  return;
+}
 setInterval(instanceLock.beat, require('./instance-lock').BEAT_MS).unref();
 process.on('exit', instanceLock.release);
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const BACKUP_FILE = path.join(DATA_DIR, 'data.backup.json');
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
 fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 }); // the students' data is private to the account running the server
+
+// The Incentive page's data folder (see below, where it is used).
+const INCENTIVE_DIR = process.env.COUNSELOR_DATA_DIR || path.join(DATA_DIR, '..', 'counselor-incentive');
+// Before anything may change the data: new code copies it first, and does not start without that copy (version-guard.js).
+let versionCopy = null;
+if (process.env.SR360_SKIP_VERSION_BACKUP !== '1') {
+  try {
+    versionCopy = versionGuard.copyBeforeNewVersion({ dataDir: DATA_DIR, incentiveDir: INCENTIVE_DIR, fingerprint: versionGuard.codeFingerprint(path.join(ROOT, '..')) });
+  } catch (e) {
+    console.error('[startup] not started: the data could not be copied before this new version starts. Free disk space or fix the data folder, then start again.', e.message);
+    process.exit(1);
+  }
+}
+versionGuard.rememberDataFolder({ dataDir: DATA_DIR, markerFile: DATA_MARKER });
 
 // Only these files are served. data.json, its backups and this server's own code stay private.
 const STATIC_FILES = {
@@ -185,6 +210,7 @@ const messages = createMessages(DATA_DIR);
 const courseLinks = createCourseLinks(DATA_DIR);
 // The university pages' pictures, fetched once and kept in the data folder (media-cache.js).
 const { createMediaCache, pictureAddresses } = require('./media-cache');
+const { logoFinder } = require('./uni-logos');
 const media = createMediaCache({ dir: DATA_DIR, allowed: () => pictureAddresses(facts.all()) });
 // Pictures no page uses any more are taken out of the folder a minute after start and then once a day.
 setTimeout(() => { try { media.prune(); } catch (e) { /* tried again tomorrow */ } }, 60000).unref();
@@ -219,9 +245,8 @@ setInterval(dailyBackup, 5 * 60 * 1000).unref();
 if (offsite.enabled()) setTimeout(() => offsite.sync().catch(() => {}), 60 * 1000).unref();
 
 // The Incentive page's saved figures (commissions, advances, exchange rate), read-only, so the same Claude connector can also answer
-// questions about incentives. They live in the Incentive page's data folder: COUNSELOR_DATA_DIR, or (as on cPanel and with
-// deploy.sh) the folder next to this app's data. If it cannot be found, the incentive tools say so instead of showing zeros.
-const INCENTIVE_DIR = process.env.COUNSELOR_DATA_DIR || path.join(DATA_DIR, '..', 'counselor-incentive');
+// questions about incentives. They live in the Incentive page's data folder (INCENTIVE_DIR, above): COUNSELOR_DATA_DIR, or (as
+// on cPanel and with deploy.sh) the folder next to this app's data. If it cannot be found, the incentive tools say so instead of showing zeros.
 function readIncentiveFile(name, fallback) {
   if (!fs.existsSync(INCENTIVE_DIR)) return null;
   try {
@@ -313,7 +338,7 @@ async function handleIncentive(req, res, urlPath) {
   }
   // A save, opening the page, or a refresh the page marks as following something the person did, counts as using it; the page's
   // timed refreshes (the figures every 20 seconds, the exchange rate every 5 minutes) do not, so they never keep it open by themselves.
-  const active = req.method !== 'GET' || !api || req.headers['x-isr-active'] === '1';
+  const active = req.method !== 'GET' || !api || req.headers['x-sr360-active'] === '1';
   if (!incentiveLock.isUnlocked(req, { active })) {
     if (api) return sendJSON(res, 403, { error: 'Enter the Incentive password first.', locked: true });
     if (inner === '/' || inner === '/index.html') return incentive.serveLocked(req, res);
@@ -326,6 +351,22 @@ function recordChanges(req, before, after) {
   const changes = describeChanges(before, after);
   if (changes.length) activity.record(req, req.user, 'Changed', { app: 'Student Details', changes });
   stageTimeline(req, before, after);
+  preCasDays(req, before, after);
+}
+
+// The day a student's final Pre-CAS interview was recorded as Passed, kept on the card (the sheet has no column for that day). Only a
+// student already on the sheet counts: a list just brought in has not "passed today".
+function preCasDays(req, before, after) {
+  try {
+    const passed = (r) => /^pass/i.test(String(r['PRE CAS INTERVIEW'] || '').trim());
+    const was = new Map();
+    ((before && before.sheets) || []).forEach((s) => (s.rows || []).forEach((r) => { if (r && r._id) was.set(r._id, passed(r)); }));
+    const moved = [];
+    ((after && after.sheets) || []).forEach((s) => (s.rows || []).forEach((r) => { if (r && r._id && was.has(r._id) && was.get(r._id) !== passed(r)) moved.push([r._id, passed(r)]); }));
+    if (!moved.length) return;
+    const who = (req && req.user && req.user.name) || '';
+    cards.batch(() => { for (const [id, now] of moved) { if (now) cards.setPreCasPassed(id, cards.today(), who); else if (cards.has(id) && cards.get(id).preCasPassed) cards.setPreCasPassed(id, false, who); } });
+  } catch (e) { console.error('[pre-cas day]', e); }
 }
 
 // Every stage change, however it was made (the sheet, the student card, a task, the follow-up list), is written on the student's
@@ -955,9 +996,11 @@ async function handleDirect(req, res, urlPath) {
     return sendJSON(res, 200, gone.university);
   }
   if (req.method === 'GET') {
-    if (!id) return send(res, 200, JSON.stringify(direct.list().map((u) => shapeDirect(u, level, seesLogins(req.user)))), JSON_HEADERS);
+    const logoOf = logoFinder(facts.list()); // each university's logo, from its page in Universities
+    const shaped = (u) => ({ ...shapeDirect(u, level, seesLogins(req.user)), logo: logoOf(u.name) });
+    if (!id) return send(res, 200, JSON.stringify(direct.list().map(shaped)), JSON_HEADERS);
     const uni = direct.get(id);
-    return uni ? send(res, 200, JSON.stringify(shapeDirect(uni, level, seesLogins(req.user))), JSON_HEADERS) : sendJSON(res, 404, { error: 'No such university.' });
+    return uni ? send(res, 200, JSON.stringify(shaped(uni)), JSON_HEADERS) : sendJSON(res, 404, { error: 'No such university.' });
   }
   if (req.method !== 'POST') return send(res, 405, 'Method not allowed');
   let body;
@@ -1003,6 +1046,8 @@ function servedInsights(user, intake) {
     workbook: current, cards: cardsNow, planning: planNow, sheetId: intake, admin,
     partners: admin ? direct.all() : [], b2b: admin ? b2b.all() : [],
   });
+  const logoOf = logoFinder(facts.list()); // the Dashboard shows each university's logo
+  data.universities.list = data.universities.list.map((g) => ({ ...g, logo: logoOf(g.label) }));
   const json = JSON.stringify(data);
   insightsCache.set(key, { wb: current, cards: cardsNow, plan: planNow, at: Date.now(), json });
   return json;
@@ -1015,8 +1060,8 @@ let portalBookings = null;
 const courseWatch = createCourseWatch({ dir: DATA_DIR, getIndex: () => (portalRef ? portalRef.courseIndex() : []), facts, finder: courseFinder, courseLinks });
 // Each person's own mailbox for emailing students (Follow-up, Your setup for sending); the office mailbox stays Admin's (see user-mail.js).
 const userMail = createUserMail(DATA_DIR);
-// A person's connected phones, for "WhatsApp opens on my phone" (see push.js). ISR_PUSH_LOCAL is for the tests' own push service only.
-const push = createPush(DATA_DIR, { allowLocal: process.env.ISR_PUSH_LOCAL === '1' });
+// A person's connected phones, for "WhatsApp opens on my phone" (see push.js). SR360_PUSH_LOCAL is for the tests' own push service only.
+const push = createPush(DATA_DIR, { allowLocal: process.env.SR360_PUSH_LOCAL === '1' });
 // The page of every course on the university's own website (course-sitemap.js), twice a week, at least 100 courses each time.
 const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks });
 // The Navitas product toolkit (a public Google Sheet), read twice a week into Universities: one page per UK Navitas college (see
@@ -1121,6 +1166,31 @@ try {
 } catch (e) {
   console.error('[startup] data tidy-up failed:', e.message);
 }
+// After a new version's start: what is gone or blank compared with the copy made before it, written in Activity. Looked at
+// again after 15 minutes, once the first background readings of the partner pages have run.
+if (versionCopy && versionCopy.folder) {
+  const copy = `version-backups/${path.basename(versionCopy.folder)}`;
+  const record = (action, changes) => activity.record({ headers: {}, socket: {} }, { id: 'system', label: 'Student Recruit 360 (automatic)' }, action, { app: 'New version', changes });
+  let reported = '';
+  const check = (first) => {
+    try {
+      // Stores that bring their saved files up to date when first read are read now, so the comparison includes that.
+      [() => facts.all(), () => direct.all(), () => b2b.all(), () => agents.all(), () => cards.all(), () => applyThrough.stored()]
+        .forEach((read) => { try { read(); } catch (e) { console.error('[version check]', e.message); } });
+      const lines = versionGuard.compareWithCopy(versionCopy.folder, DATA_DIR, INCENTIVE_DIR);
+      if (lines.length && lines.join('\n') !== reported) {
+        record('Check the data', [`Gone or blank since the copy made before this version (${copy})${first ? '' : ', including anything people removed since'}:`, ...lines]);
+        console.warn('[version check]', lines.join(' | '));
+        reported = lines.join('\n');
+      } else if (first) record('Copy made before the new version', [`Saved in ${copy}. Nothing was missing after the start.`]);
+    } catch (e) {
+      console.error('[version check] failed:', e.message);
+      record('Check the data', [`The data could not be compared with ${copy}. Check the counts by hand.`]);
+    }
+  };
+  check(true);
+  setTimeout(() => check(false), 15 * 60 * 1000).unref();
+}
 
 // The B2B partners a place can be applied through (Apply through's dropdown): every B2B partner card, A to Z, without the names Admin
 // marked as not a B2B partner.
@@ -1131,7 +1201,7 @@ function b2bPartnerNames() {
 }
 
 // Whether a person's own team is the Application Team: the one rule in shared/teams.js (the menu in shared/header.js keeps the same).
-const { ownTeamApplication, ownTeamFollowup, ownTeamMock } = require('../shared/teams');
+const { ownTeamApplication, ownTeamFollowup, ownTeamMock, ownTeamBranch } = require('../shared/teams');
 
 // Start fresh (the owner, 25 Nov 2026): see fresh-start.js. One function for the Admin button and for the one-time run at start-up.
 function startFresh(by) {
@@ -1296,6 +1366,13 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       for (const f of [path.join(DATA_DIR, 'brand-logo.png'), path.join(ROOT, '..', 'shared', 'brand-logo.png')]) { try { logo = fs.readFileSync(f); break; } catch (e) { /* the next one */ } }
       return logo ? send(res, 200, logo, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' }) : send(res, 404, 'Not found');
     }
+    // The same logo drawn as a vector picture (always sharp): used while the consultancy has not uploaded its own logo; once it has, this answers
+    // "not found" and the pages fall back to that logo (brand-logo.png above).
+    if (urlPath === '/brand-logo.svg' && req.method === 'GET') {
+      let svg = null;
+      if (!fs.existsSync(path.join(DATA_DIR, 'brand-logo.png'))) { try { svg = fs.readFileSync(path.join(ROOT, '..', 'shared', 'brand-logo.svg')); } catch (e) { /* none */ } }
+      return svg ? send(res, 200, svg, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' }) : send(res, 404, 'Not found');
+    }
     if (urlPath === '/favicon.png' || urlPath === '/apple-touch-icon.png') return serveStatic(req, res);
     // What a phone needs to keep Student Recruit 360 on its Home Screen (the name, the icon, the first page): nothing private, so before the login
     // (a browser asks for it without the login cookie).
@@ -1326,7 +1403,7 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       if (out.error) return sendJSON(res, 400, { error: out.error });
       activity.record(req, out.user, 'Changed settings', { app: 'My phone', changes: [`Connected their phone (${out.device.name}) for WhatsApp, with the code from the computer`] });
       const site = `https://${String(req.headers.host || 'localhost').replace(/[^\w.:-]/g, '')}`;
-      push.send(out.user.id, { title: 'WhatsApp is on', body: 'From now on, WhatsApp on the computer opens the chat here.', url: '/today', tag: 'isr-test' }, site, 'isr-test').catch(() => {});
+      push.send(out.user.id, { title: 'WhatsApp is on', body: 'From now on, WhatsApp on the computer opens the chat here.', url: '/today', tag: 'sr360-test' }, site, 'sr360-test').catch(() => {});
       // The id and secret go to this phone only, so it can hand over a new push address by itself later (push.js renew).
       return sendJSON(res, 200, { ok: true, name: String(out.user.name || '').split(/\s+/)[0], device: { id: out.device.id, secret: out.secret } });
     }
@@ -1381,6 +1458,10 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       // Dashboard, no Partners pages, no Mock interviews (the guides students read stay with Admin and the Manager), no Follow-up.
       if (ownTeamMock(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk', '/bulk-add',
         '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
+      // A branch works from Today, Dashboard, All Students and Universities (the owner, 26 Nov 2026): no Add many students, no Follow-up
+      // and no Partners pages, by their own file's address either.
+      if (ownTeamBranch(req.user) && ['/bulk', '/bulk-add', '/partners', '/partner-universities', '/b2b-partners', '/agents',
+        '/bulk.html', '/bulk-add.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
       if (urlPath === '/my-portal') return send(res, 302, '', { Location: '/today' }); // a student's own page; the team has the student card
       // Partners: one place for Partner Universities, B2B Partners and Agents (the owner, 17 Nov 2026). It opens the first of the three
       // this account may see; a switch at the top of each moves between them (partners-switch.js).
@@ -1414,7 +1495,7 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
         return serveStatic(req, res);
       }
     }
-    if (urlPath === '/api/demo' && req.method === 'GET') return sendJSON(res, 200, { demo: process.env.ISR_DEMO === '1' });
+    if (urlPath === '/api/demo' && req.method === 'GET') return sendJSON(res, 200, { demo: process.env.SR360_DEMO === '1' });
     // What this account sees of the partner pages (the pages hide what is not theirs to change).
     if (urlPath === '/api/partner-access' && req.method === 'GET') return sendJSON(res, 200, partnerAccess(req.user));
     // Apply through (apply-through.js): the list for Admin and the Application Team; only Admin changes a partner.
@@ -1592,6 +1673,7 @@ server.requestTimeout = 5 * 60 * 1000;
 
 // HOST=127.0.0.1 keeps a copy on the owner's own computer (scripts/start-local.js, scripts/local-live.js) closed to the office
 // network. Unset on the live server, which answers on every address as before.
+require('./one-writer').openDoor(DATA_DIR, server);
 server.listen(PORT, process.env.HOST || undefined, () => {
   console.log(`Student Recruit 360 running at http://localhost:${PORT}`);
 });

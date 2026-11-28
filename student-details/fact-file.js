@@ -11,7 +11,7 @@
   let searchTimer = null;
   let searchSeq = 0; // answers arriving out of order: only the latest search is shown
   // The filters above the cards (the owner, 17 Nov 2026: find the right university in seconds), kept in this browser.
-  const FKEY = 'isrFactFilters';
+  const FKEY = 'sr360FactFilters';
   // Two lists only, Universities and Pathway colleges, never both mixed (the owner, 17 Nov 2026: "remove All"). A choice of "all"
   // kept in a browser from before becomes Universities.
   const KINDS = ['university', 'pathway'];
@@ -33,6 +33,7 @@
   }
   function shown() {
     let out = list.filter((u) => kindOf(u) === filters.kind);
+    if (onlyMine) out = out.filter((u) => mine && mine[u.id]);
     // Always the nearest deadline first (the owner, 20 Nov 2026: no Sort menu).
     if (!query) out = out.slice().sort((a, b) => (a.next ? a.next.days : 1e6) - (b.next ? b.next.days : 1e6) || a.name.localeCompare(b.name));
     return out;
@@ -57,6 +58,29 @@
     if (!box.hidden) box.replaceChildren(el('span', 'ff-soon-dot'), el('span', '', `${soon.length} ${word[soon.length === 1 ? 0 : 1]} applications in the next 14 days.`));
   }
   let all = []; // every university (the list without a search), for the closing-soon line
+  // A branch's own students at each University (the owner, 27 Nov 2026): said on its card, and one press shows only those Universities.
+  let mine = null;
+  let onlyMine = false;
+  function mineWords(m) {
+    if (m.applications) return `${m.applications} applied, ${m.offers} offer${m.offers === 1 ? '' : 's'}`;
+    const n = m.students.filter((x) => x.state === 'chosen').length;
+    return n ? `${n} chose it, not applied yet` : `${m.students.length} on record`;
+  }
+  function mineButton() {
+    if (!mine) return;
+    let b = $('ffMine');
+    if (!b) {
+      b = el('button', 'ff-mine no-print');
+      b.type = 'button';
+      b.id = 'ffMine';
+      b.addEventListener('click', () => { onlyMine = !onlyMine; render(); });
+      $('ffBar').after(b);
+    }
+    const n = list.filter((u) => kindOf(u) === filters.kind && mine[u.id]).length;
+    b.hidden = !loadedOnce || (!n && !onlyMine);
+    b.setAttribute('aria-pressed', String(onlyMine));
+    b.replaceChildren(el('span', '', 'With your students'), el('span', 'ff-n', String(n)));
+  }
 
   const when = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   function el(tag, cls, text) {
@@ -89,7 +113,8 @@
   function card(u) {
     const courses = query && u.courses && u.courses.length ? u.courses : null;
     if (courses) return boardCard(u, courses);
-    // A card: the badge and the name with the city, the intakes, the next deadline when one is open, then how many courses.
+    // A card (the owner, 26 Nov 2026): the picture, the logo, the name with the city and how many courses, then one line for the next
+    // deadline. The intake is written only when it says something the deadline line does not (more than one intake).
     const a = el('a', 'uni-card uc-card has-cover' + (kindOf(u) === 'pathway' ? ' is-pathway' : ''));
     a.href = uniHref(u);
     // A wide picture of the university at the top of its card (the owner, 20 Nov 2026: big, engaging cards); a soft colour where there is none.
@@ -98,22 +123,20 @@
     a.append(cover);
     const head = el('div', 'uc-head');
     const title = el('div', 'uc-title');
-    title.append(el('h2', '', u.name), el('div', 'city', u.city || u.profileCity || 'Details not added yet'));
+    const about = el('div', 'city');
+    about.append(el('span', '', u.city || u.profileCity || 'Details not added yet'), el('span', 'uc-count', u.courseCount ? `${u.courseCount} course${u.courseCount === 1 ? '' : 's'}` : 'Courses not listed yet'));
+    title.append(el('h2', '', u.name), about);
     head.append(mono(u), title);
     a.append(head);
 
-    if (u.intakes.length) {
+    if (u.intakes.length > 1) {
       const chips = el('div', 'chips');
       u.intakes.forEach((n) => chips.append(el('span', 'chip', n)));
       a.append(chips);
     }
     const next = nextLine(u);
-    if (next) a.append(next);
-    else if (u.closed) a.append(el('div', 'uc-deadline', 'Applications closed'));
-    const foot = el('div', 'uc-foot');
-    foot.append(el('span', 'uc-count', u.courseCount ? `${u.courseCount} course${u.courseCount === 1 ? '' : 's'}` : 'Courses not listed yet'));
-    if (!u.next && !u.closed) foot.append(el('span', 'uc-nodate', 'No open deadline'));
-    a.append(foot);
+    a.append(next || el('div', 'uc-next is-none', u.closed ? 'Applications closed' : 'No open deadline'));
+    if (mine && mine[u.id]) { const m = el('div', 'uc-mine'); m.append(el('span', '', 'Your students'), el('b', '', mineWords(mine[u.id]))); a.append(m); }
     if (u.updatedAt && (Date.now() - new Date(u.updatedAt).getTime()) > 90 * 86400000) a.append(el('div', 'updated', 'Last updated ' + when(u.updatedAt) + ', check it'));
     return a;
   }
@@ -169,15 +192,17 @@
   function render() {
     const box = $('cards');
     drawBar();
+    mineButton();
     const rows = shown();
     const filtered = rows.length !== list.length;
     const noun = (n) => (filters.kind === 'pathway' ? (n === 1 ? 'pathway college' : 'pathway colleges') : (n === 1 ? 'university' : 'universities'));
-    $('count').textContent = loadedOnce && list.length ? `${rows.length} ${noun(rows.length)}${query ? (rows.length === 1 ? ' matches' : ' match') : ''}` : '';
+    // The switch already says how many there are, so a count is written only for a search (the owner, 26 Nov 2026).
+    $('count').textContent = loadedOnce && list.length && query ? `${rows.length} ${noun(rows.length)}${rows.length === 1 ? ' matches' : ' match'}` : '';
     if (!rows.length) {
       const empty = el('div', 'ui-empty');
       const why = filtered && list.length;
-      empty.append(el('span', 'ui-empty-icon', query || why ? '🔍' : '🎓'), el('strong', '', why ? `No ${noun(1)} with these filters` : query ? 'No university matches' : 'No universities yet'),
-        el('span', '', why ? `Try ${filters.kind === 'pathway' ? 'Universities' : 'Pathway colleges'} above, choose "Any intake", or press Clear filters.` : query ? 'Try a university name, a city or a course such as "data science".' : 'The universities appear here after the first automatic reading.'));
+      empty.append(el('span', 'ui-empty-icon', query || why ? '🔍' : '🎓'), el('strong', '', onlyMine ? `None of your students is at a ${noun(1)} here` : why ? `No ${noun(1)} with these filters` : query ? 'No university matches' : 'No universities yet'),
+        el('span', '', onlyMine ? 'Press "With your students" again to see them all.' : why ? `Try ${filters.kind === 'pathway' ? 'Universities' : 'Pathway colleges'} above, choose "Any intake", or press Clear filters.` : query ? 'Try a university name, a city or a course such as "data science".' : 'The universities appear here after the first automatic reading.'));
       box.replaceChildren(empty);
       return;
     }
@@ -226,6 +251,15 @@
   // The option finder for a student, above the list (not on an earlier backup, which is only looked at).
   skeletons();
   load();
+  if (!BACKUP && window.TeamRules) {
+    fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then(async (me) => {
+      if (!window.TeamRules.ownTeamBranch(me)) return;
+      const r = await fetch('/api/branch-universities', { cache: 'no-store' });
+      if (!r.ok) return;
+      mine = (await r.json()).universities;
+      if (loadedOnce) render();
+    }).catch(() => {});
+  }
   // Who can go where (finder.js): at the top of Universities, for the team and for a student's own login.
   if (window.Finder && !BACKUP) {
     const box = document.createElement('div');

@@ -1,0 +1,7 @@
+Photos on the sign-in page (shared/login.html), all from Unsplash and free to use under the Unsplash licence (https://unsplash.com/license):
+slide-1  Graduates throwing caps in celebration       https://unsplash.com/photos/hpRGrfOIybc
+slide-2  Graduate tossing cap into sky                https://unsplash.com/photos/IK07skiu2QY
+slide-3  A woman in a graduation cap and gown         https://unsplash.com/photos/m7yOJx0ALME
+slide-4  Woman in academic dress holding flowers      https://unsplash.com/photos/fsltc8BKbRw
+slide-5  People throwing hats on air                  https://unsplash.com/photos/_kd5cxwZOK4
+slide-6  A smiling student with backpack and books    https://unsplash.com/photos/dPQBwZ6d-NU

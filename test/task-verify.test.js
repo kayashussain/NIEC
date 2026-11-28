@@ -14,7 +14,7 @@ const freePort = () => new Promise((resolve) => { const s = net.createServer().l
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('answers are checked and confirmed before they are written, and can be put back', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-verify-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-verify-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   delete env.ANTHROPIC_API_KEY;

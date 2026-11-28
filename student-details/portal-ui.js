@@ -226,12 +226,12 @@
       list.replaceChildren(...items);
       if (!all.length) list.append(el('li', 'tk-empty', 'No updates yet.'));
     };
-    // Read: the dot goes, here and in the menu (shared/header.js listens for "isr-tasks-read").
+    // Read: the dot goes, here and in the menu (shared/header.js listens for "sr360-tasks-read").
     const markRead = () => {
       if (pending <= 0) return;
       pending = 0; fresh = 0; label();
       api(`/api/cards/${encodeURIComponent(rowId)}/tasks/${task.id}`, { seen: true })
-        .then(() => window.dispatchEvent(new Event('isr-tasks-read'))).catch(() => { /* marked next time */ });
+        .then(() => window.dispatchEvent(new Event('sr360-tasks-read'))).catch(() => { /* marked next time */ });
       const row = box.closest('.td-task');
       if (row) { row.classList.remove('has-unread'); const dot = row.querySelector('.td-dot'); if (dot) dot.remove(); }
     };
@@ -273,7 +273,7 @@
           list.hidden = false;
           list.append(entry(comments()[comments().length - 1], false, true));
           label();
-          window.dispatchEvent(new Event('isr-tasks-read'));
+          window.dispatchEvent(new Event('sr360-tasks-read'));
         } catch (e) { if (root.NiecUI) root.NiecUI.toast(e.message, { type: 'error' }); }
         input.disabled = false; send.disabled = !input.value.trim(); input.focus();
       };
@@ -361,12 +361,12 @@
     let answer = null;
     const url = `/api/cards/${encodeURIComponent(o.rowId)}/tasks/${t.id}`;
     const tag = tagOf(t, o.stage);
-    const asks = ['application', 'offer', 'noc', 'mock', 'medical', 'payment', 'visa'].includes(tag);
+    const asks = ['application', 'offer', 'noc', 'mock', 'mock-feedback', 'mock-booking', 'mock-precas', 'medical', 'payment', 'visa'].includes(tag);
     return dialog('Mark as done?', (body, close) => {
       // An application task names its university and course below, so only the student is named here.
       // An application task and an Offer request show only the student's name here (their university and course follow): no long sentence.
       const isOfferReq = /^Offer request: /.test(String(t.text || ''));
-      const taskLine = el('p', 'td-done-task', t.app || isOfferReq ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`);
+      const taskLine = el('p', 'td-done-task', (t.app && tag === 'application') || isOfferReq ? (o.student ? niceName(o.student.name) : '') : `${o.student ? niceName(o.student.name) + ': ' : ''}“${t.text.length > 160 ? t.text.slice(0, 157) + '...' : t.text}”`);
       body.append(taskLine);
       // The Application Team's own look (the owner, 23 Nov 2026): the window carries a class, and a two-step window says which step it is on.
       const dlg = body.closest('dialog');
@@ -425,6 +425,10 @@
         if (F5 && o.student && o.student.name) { taskLine.textContent = niceName(o.student.name); if (dlgHead) dlgHead.append(taskLine); }
         // The university and course the task is about: shown when the task names them; a task typed by hand gets two boxes to fill.
         const courseBlock = (c) => {
+          // An Offer request typed by hand ("Chase the university for the offer letter") names no university: it takes the one the student has applied to and not heard from, so nothing is asked that is already known.
+          if (!(c && c.university) && tag === 'offer') { const a = ((state && state.applications) || []).find((x) => x.applied && !x.offer && !x.refused && !x.withdrawn && !x.skipped); if (a) c = { university: a.university, course: a.course || '' }; }
+          // A Submit-the-application task that names no course takes the university and course already on the student's details (All Students), so they are not asked again (the owner, 25 Nov 2026).
+          if (!(c && c.university) && tag === 'application' && sheet && String(sheet['UNIVERSITY NAME'] || '').trim()) c = { university: String(sheet['UNIVERSITY NAME']).trim(), course: String(sheet['COURSE NAME'] || '').trim() };
           if (c && c.university) {
             const who = el('div', 'p-wide td-course');
             who.append(el('b', '', c.university), c.course ? el('span', 'td-sofar-course', c.course) : '');
@@ -447,7 +451,7 @@
           // Every common reason has its own answer, kept as a code so the reasons can be counted (the owner, 24 Nov 2026: "not submitted is
           // not always not eligible ... we want the best data"); Other asks for the reason in Notes.
           const why = question('Why', [['noteligible', 'Not eligible'], ['nocourse', 'The course is not available'], ['closed', 'Applications are closed'],
-            ['agent', 'Already applied through another agent'], ['otheruni', 'The student chose another university'], ['notgoing', 'The student is not going ahead'], ['noreply', 'The student is not responding'], ['other', 'Other']],
+            ['agent', 'Already applied through another agent'], ['notgoing', 'The student is not going yet'], ['noreply', 'The student is not responding'], ['other', 'Other']],
             (v) => { const l = words && words.wrap.querySelector('.p-label'); if (l) l.textContent = v === 'other' ? 'Notes (say why)' : 'Notes (optional)'; });
           show(why.node.parentNode, false);
           const dayF = field('Day it happened', { kind: 'date', value: today, required: true });
@@ -472,7 +476,21 @@
               : q.value() === 'notsubmitted' && why.value() === 'other' && words.input.value.trim().length < minNote ? 'Write the reason in Notes (a few words).' : !dayF.input.value ? 'Choose the day it happened.' : '';
           };
         } else if (F5 && tag === 'offer') {
-          const target = courseBlock(state && state.offerTask);
+          // Which university the offer letter is chased from (the owner, 25 Nov 2026): with several applications waiting for an answer, the person chooses, and the course, level, intake and language test follow.
+          const offerTarget = () => {
+            if (state && state.offerTask && state.offerTask.university) return courseBlock(state.offerTask);
+            const pending = ((state && state.applications) || []).filter((x) => x.applied && !x.offer && !x.refused && !x.withdrawn && !x.skipped);
+            if (pending.length < 2) return courseBlock(null);
+            const sel = field('Which university is the offer letter from?', { kind: 'select', choices: pending.map((a, i) => [String(i), a.university + (a.course ? ' (' + a.course + ')' : '')]), value: '0', required: true, wide: true });
+            const info = el('p', 'p-muted p-small p-wide td-course-info');
+            const language = String(sheet['LANGUAGE TEST DATE'] || '').trim();
+            const pickOf = () => pending[Number(sel.input.value) || 0];
+            const draw = () => { const a = pickOf(); info.textContent = [a.course && 'Course: ' + a.course, a.level && 'Level: ' + a.level, a.intake && 'Intake: ' + a.intake, language && 'Language test: ' + language].filter(Boolean).join(' · '); };
+            sel.input.addEventListener('change', draw); draw();
+            form.append(sel.wrap, info);
+            return () => { const a = pickOf(); return { university: a.university, course: a.course || '' }; };
+          };
+          const target = offerTarget();
           const q = question('What happened', [['conditional', 'Conditional offer'], ['unconditional', 'Unconditional offer'], ['refused', 'Application rejected'], ['closed', 'Application closed']]);
           const dayF = field('Day it happened', { kind: 'date', value: today, required: true });
           dayF.input.max = today;
@@ -482,7 +500,7 @@
           // Application closed is kept as withdrawn on that university (the application no longer goes on), with the reason in its note.
           read = () => { const c = target(); return c.university && q.value() ? { app: 'record', date: dayF.input.value, unis: [{ university: c.university, course: c.course, what: q.value() === 'closed' ? 'withdrawn' : q.value(), date: dayF.input.value }] } : {}; };
           check = () => (!target().university ? 'Write the university.' : !q.value() ? 'Choose what happened.' : !dayF.input.value ? 'Choose the day it happened.' : '');
-        } else if (t.app || (state && state.courseTask)) {
+        } else if ((t.app && tag === 'application') || (state && state.courseTask)) {
           // Other teams (Admin, the Manager, the student card): one application, one university and course (the owner, 20 Nov 2026), the
           // answer one of five with its day (21 Nov 2026), no notes, then Save.
           const c = t.app || state.courseTask;
@@ -609,6 +627,14 @@
             const why = words.input.value.trim().length >= minNote;
             return noWhat ? `Choose what happened with ${noWhat.university}.` : noName ? 'Name the university on each line.' : noCourse ? `Write the course for ${noCourse.university}.` : f.find((x) => !x.date && !on.input.value) ? `Choose the day for ${f.find((x) => !x.date && !on.input.value).university}.` : needsWhy && !why ? 'Say why in the note below (not submitted, refused or withdrawn).' : '';
           };
+        } else if (F5 && tag === 'noc') {
+          if (t.app && t.app.university) courseBlock(t.app);
+          // The NOC (the owner, 25 Nov 2026): Application submitted or NOC received; no day and no NOC number are asked (the card does not keep them), only an optional note.
+          nowLine(['NOC']);
+          const q = question('What happened', [['AppSubmitted', 'Application submitted'], ['Received', 'NOC received']]);
+          notesOptional = true;
+          read = () => (q.value() ? { noc: q.value() } : {});
+          check = () => (!q.value() ? 'Choose what happened.' : '');
         } else if (tag === 'noc') {
           // Pending or Received; Received asks for the NOC number, the NOC account's login number (the owner, 21 Nov 2026). Then comments.
           nowLine(['NOC', 'NOC NUMBER']);
@@ -619,45 +645,82 @@
           read = () => (q.value() ? { noc: q.value(), ...(q.value() === 'Received' ? { nocNumber: num.input.value.trim() } : {}) } : {});
           check = () => (!q.value() ? 'Choose Pending or Received.' : q.value() === 'Received' && !num.input.value.trim() ? 'Write the NOC number.' : '');
         } else if (tag === 'mock') {
-          nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4', 'PRE CAS INTERVIEW']);
-          const q = question(F5 ? 'What happened' : 'What happened?', [['set', 'Mock set for a day'], ['feedback', 'Feedback of a mock'], ['precas', 'Pre-CAS result'], ['none', 'Nothing to record']], (v) => {
-            show([date.wrap, rem], v === 'set'); show([slot.wrap, fb.wrap], v === 'feedback'); show(res, v === 'precas');
-          });
-          const date = dateField('Mock interview on');
-          const rem = el('label', 'p-check p-wide');
-          const remind = el('input'); remind.type = 'checkbox'; remind.checked = true;
-          rem.append(remind, el('span', '', 'Remind the team to write the feedback on that day'));
-          form.append(rem);
-          const said = /mock interview (\d)/i.exec(String(t.text || ''));
-          const slotStart = said ? said[1] : String(state.nextFeedback || '');
-          // In the Mock Team's look, Which mock is four round choices instead of a list (the approved design, 23 Nov 2026).
-          const slot = oneStep ? (() => {
-            const w = el('div', 'p-field p-wide');
-            const p = picker([['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], slotStart, (k) => `td-prio td-answer ans-mock${k}`, 'Which mock');
-            w.append(el('span', 'p-label', 'Which mock'), p.node);
-            return { wrap: w, input: { get value() { return p.value() || ''; } } };
-          })() : field('Which mock', { kind: 'select', choices: [['1', 'Mock 1'], ['2', 'Mock 2'], ['3', 'Mock 3'], ['4', 'Mock 4']], value: slotStart });
-          const fb = field('Feedback', { kind: 'area', max: 1500, wide: true, placeholder: 'e.g. Confident; work on the finance answers.' });
-          fb.input.rows = 3;
-          form.append(slot.wrap, fb.wrap);
+          // A mock to book (the owner, 25 Nov 2026): the mock and the day it is booked for. The Feedback task for that day is made by itself.
+          nowLine(['MOCK SCHEDULE 1', 'MOCK SCHEDULE 2', 'MOCK SCHEDULE 3', 'MOCK SCHEDULE 4']);
+          const n = state.nextMock;
+          const date = field(n ? `Mock ${n} booked on` : 'Mock booked on', { kind: 'date', value: '', required: true });
+          form.append(date.wrap);
+          notesOptional = true;
+          read = () => (date.input.value ? { mock: 'set', date: date.input.value } : {});
+          check = () => (!date.input.value ? 'Choose the day the mock is booked for.' : '');
+        } else if (tag === 'mock-feedback') {
+          // The mock is already booked (the owner, 26 Nov 2026): it says "Mock 1 booked on 26 Nov 2026" and that day is not changed. The team says whether the student
+          // joined: joined asks for the feedback; did not join asks for the reason in the note. No Mock 1 to 7 choice.
+          const due = state.feedbackDue;
+          let when = null;
+          if (due) {
+            const who = el('div', 'p-wide td-course');
+            who.append(el('b', '', `Mock ${due.n}`), el('span', 'td-sofar-course', `booked on ${day(due.day)}`));
+            form.append(who);
+          } else {
+            when = field('Mock held on', { kind: 'date', value: '', required: true });
+            when.input.max = today;
+            form.append(when.wrap);
+          }
+          const q = question('Did the student join?', [['yes', 'Joined'], ['no', 'Did not join']], (v) => { show(fb.wrap, v === 'yes'); show(why, v === 'no'); words.wrap.hidden = v !== 'no'; const nl = words.wrap.querySelector('.p-label'); if (nl) nl.replaceChildren('Why did the student not join?'); });
+          const fb = field('Feedback', { kind: 'area', max: 1500, wide: true, required: true, placeholder: 'e.g. Confident; work on the finance answers.' });
+          fb.input.rows = 4;
+          form.append(fb.wrap);
+          const why = el('span'); why.hidden = true; // (the note below carries its own label: the owner, 26 Nov 2026, one header only)
+          show([fb.wrap], false);
+          notesOptional = false;
+          read = () => (q.value() === 'yes' && fb.input.value.trim() ? { mock: 'feedback', joined: true, slot: due ? due.n : 0, day: due ? due.day : (when ? when.input.value : ''), feedback: fb.input.value.trim() } : q.value() === 'no' ? { mock: 'feedback', joined: false, slot: due ? due.n : 0, day: due ? due.day : (when ? when.input.value : '') } : {});
+          check = () => (!q.value() ? 'Choose Joined or Did not join.' : !due && !when.input.value ? 'Choose the day the mock was held.' : q.value() === 'yes' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'no' && words.input.value.trim().length < 3 ? 'Write why the student did not join, in the note.' : '');
+          onWhat = () => {};
+        } else if (tag === 'mock-booking') {
+          // The final Pre-CAS interview is given by the university (the owner, 25 Nov 2026), not by our team: the day, and the Pre-CAS result task for that day is made by itself.
+          const date = field('Final Pre-CAS interview booked on', { kind: 'date', value: '', required: true });
+          form.append(date.wrap);
+          notesOptional = true;
+          read = () => (date.input.value ? { mock: 'preBooked', date: date.input.value } : {});
+          check = () => (!date.input.value ? 'Choose the day the final Pre-CAS interview is booked for.' : '');
+        } else if (tag === 'mock-precas') {
+          // The final interview is the university's (the owner, 26 Nov 2026): the day it was booked for comes from the Date booking; the team says whether the student
+          // attended. Joined asks Pass or Fail; did not join asks why, in the note.
+          nowLine(['PRE CAS INTERVIEW']);
+          const booked = state.finalInterview ? [0, day(state.finalInterview)] : /\((\d{1,2} [A-Za-z]+ \d{4})\)/.exec(String(t.text || ''));
+          if (booked) { const who = el('div', 'p-wide td-course'); who.append(el('b', '', 'Final interview'), el('span', 'td-sofar-course', `booked on ${booked[1]}`)); form.append(who); }
+          const q = question('Did the student attend the final interview?', [['yes', 'Joined'], ['no', 'Did not join']], (v) => { show(res, v === 'yes'); show(why, v === 'no'); const nl = words.wrap.querySelector('.p-label'); if (nl) nl.replaceChildren(v === 'no' ? 'Why did the student not join the final interview?' : 'Notes (optional)'); });
           const res = el('div', 'p-field p-wide');
-          const result = picker([['Passed', 'Passed'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS result');
-          res.append(el('span', 'p-label', 'Pre-CAS result'), result.node);
+          const result = picker([['Passed', 'Pass'], ['Fail', 'Fail']], '', (k) => `td-prio td-answer ans-${k}`, 'Pre-CAS interview result');
+          const rl = el('span', 'p-label', 'Pre-CAS interview result'); rl.append(requiredMark());
+          res.append(rl, result.node);
           form.append(res);
-          show([date.wrap, rem, slot.wrap, fb.wrap, res], false);
-          read = () => (q.value() === 'set' ? { mock: 'set', date: date.input.value, remind: remind.checked } : q.value() === 'feedback' ? { mock: 'feedback', slot: Number(slot.input.value), feedback: fb.input.value.trim() } : q.value() === 'precas' ? { mock: 'precas', result: result.value() } : {});
-          check = () => (!q.value() ? 'Choose what happened.' : q.value() === 'set' && !date.input.value ? 'Choose the day of the mock interview.' : q.value() === 'feedback' && !slot.input.value ? 'Choose which mock.' : q.value() === 'feedback' && !fb.input.value.trim() ? 'Write the feedback.' : q.value() === 'precas' && !result.value() ? 'Choose Passed or Fail.' : '');
+          const why = el('span'); why.hidden = true;
+          show([res], false);
+          notesOptional = true;
+          read = () => (q.value() === 'yes' && result.value() ? { mock: 'precas', joined: true, result: result.value() } : q.value() === 'no' ? { mock: 'precas', joined: false } : {});
+          check = () => (!q.value() ? 'Choose Joined or Did not join.' : q.value() === 'yes' && !result.value() ? 'Choose Pass or Fail.' : q.value() === 'no' && words.input.value.trim().length < 3 ? 'Write why the student did not join, in the note.' : '');
         } else if (tag === 'medical') {
           // The Medical Report as All Students has it: Pending, Booked (with the day) or Received (the owner, 18 Nov 2026). On the day of the
           // test Student Recruit 360's own "is the report received?" task keeps its meaning: Pending there is "not received yet".
           nowLine(['MEDICAL REPORT']);
           const isCheck = Boolean(F().isReportCheck && F().isReportCheck(t));
-          const q = question(F5 ? 'What happened' : 'Medical report', F5 ? [['booked', 'Medical booked'], ['received', 'Report received'], ['pending', 'Not yet']] : [['pending', 'Pending'], ['booked', 'Booked'], ['received', 'Received']], (v) => { show(date.wrap, v === 'booked'); });
-          const date = field('Booked for', { kind: 'date', value: '', required: true });
+          // Medical booked (the day it is booked for, which can still be ahead) or Report received (the day the report came, the same day as the test when it is
+          // given at once); the day is always asked, filled with the booked day when there is one (the owner, 25 Nov 2026). No "Not yet".
+          if (t.app && t.app.university) courseBlock(t.app);
+          const bookedDay = (state && state.medical && state.medical.date) || '';
+          const q = question(F5 ? 'What happened' : 'Medical report', F5 ? [['booked', 'Medical booked'], ['received', 'Report received']] : [['pending', 'Pending'], ['booked', 'Booked'], ['received', 'Received']], (v) => {
+            const l = date.wrap.querySelector('.p-label');
+            if (l && l.firstChild) l.firstChild.textContent = v === 'received' ? 'Report received on' : 'Medical booked for';
+            if (v === 'received') { date.input.max = today; if (bookedDay && bookedDay <= today && !date.input.value) date.input.value = bookedDay; } else date.input.removeAttribute('max');
+            show(date.wrap, v === 'booked' || (F5 && v === 'received'));
+          });
+          const date = field('Medical booked for', { kind: 'date', value: '', required: true });
           form.append(date.wrap);
           show(date.wrap, false);
-          read = () => (q.value() === 'booked' ? { medical: 'booked', date: date.input.value } : q.value() === 'received' ? { medical: 'received' } : q.value() === 'pending' ? { medical: isCheck ? 'waiting' : 'pending' } : {});
-          check = () => (!q.value() ? 'Choose Pending, Booked or Received.' : q.value() === 'booked' && !date.input.value ? 'Choose the day the medical is booked for.' : '');
+          read = () => (q.value() === 'booked' ? { medical: 'booked', date: date.input.value } : q.value() === 'received' ? (F5 ? { medical: 'received', date: date.input.value } : { medical: 'received' }) : q.value() === 'pending' ? { medical: isCheck ? 'waiting' : 'pending' } : {});
+          check = () => (!q.value() ? (F5 ? 'Choose what happened.' : 'Choose Pending, Booked or Received.') : q.value() === 'booked' && !date.input.value ? 'Choose the day the medical is booked for.' : F5 && q.value() === 'received' && !date.input.value ? 'Choose the day the report was received.' : '');
         } else if (tag === 'payment') {
           nowLine(['PAYMENT DATE', 'TUITION FEE DEPOSIT(1st Installment)', 'TUITION FEE DEPOSIT(2nd Installment)', 'TUITION FEE DEPOSIT(3rd Installment)']);
           const q = question('Was a payment made?', [['yes', 'Yes, paid'], ['no', 'No']], (v) => show([date.wrap, amount.wrap], v === 'yes'));
@@ -678,6 +741,7 @@
         // Few questions, then Save. The Application Team's window has no Check before saving step (the owner, 24 Nov 2026: "no need");
         // its answers are still checked by the server before the window closes, so a problem shows here and nothing is saved.
         const simple = F5 || Boolean(t.app || (state && (state.courseTask || state.offerTask))) || tag === 'noc' || tag === 'medical';
+        if (/^mock-/.test(tag) || tag === 'mock') notesOptional = true; // the Mock Team's notes are optional: the answer above says what happened
         if (F5 && asks) notesOptional = true;
         if (F5 && !simple && dlgHead && !stepNo) { stepNo = el('span', 'td-done-stepno', 'Step 1 of 2'); dlgHead.insertBefore(stepNo, dlgHead.querySelector('.p-x')); }
         // What was done: needed when the task records nothing else (the owner, 17 Nov 2026), so the next person knows.
@@ -687,6 +751,7 @@
         form.append(words.wrap);
         if ((simple && (!oneStep || asks)) || notesOptional) { const l = words.wrap.querySelector('.p-label'); l.replaceChildren(!F5 && (tag === 'noc' || tag === 'medical') ? 'Comments (optional)' : 'Notes (optional)'); words.input.placeholder = 'Anything the next person should know.'; }
         if (noNotes) words.wrap.hidden = true;
+        if (tag === 'mock-feedback') words.wrap.hidden = true; // the note opens only when the student did not join: it holds the reason
         // (No "when should someone get back" question: the owner removed it from every kind of task, 18 Nov 2026.)
         ask.append(msg);
         if (!noNotes && (asks || F5) && !simple) ask.append(el('p', 'p-muted p-small', 'Nothing is saved until you check it on the next step.'));
@@ -713,7 +778,7 @@
           try { const r = await api(url, { done: true, finish: answers, preview: true }); msg.textContent = ''; msg.className = 'p-msg'; review(r.preview, answers); } catch (e) { fail(e); }
           next.disabled = false;
         });
-        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Not yet'), next);
+        foot.append(h('button', { class: 'btn', type: 'button', onclick: () => close() }, 'Cancel'), next); // Cancel closes it without saving (the owner, 25 Nov 2026)
         ask.append(foot);
       }
 
@@ -790,6 +855,8 @@
   // What to do, said plainly (the owner, 20 Nov 2026: the Offer request and Application tasks were confusing): an Offer request reads
   // "Ask for the offer letter" with the university and course under it; an Application task "Submit the application" with the
   // university, intake, level, location and course as small chips, then the comments of whoever gave it.
+  // `app` on a task means "the university it is about": only an Application task (or an old one with no tag) is an application.
+  const isApplication = (t) => !t.tag || t.tag === 'application';
   function taskText(t) {
     const box = el('div', 'td-task-text');
     // An Offer request carries the application it chases (offerFor, from 21 Nov 2026); an older one is read from its words.
@@ -798,6 +865,16 @@
       box.classList.add('is-structured');
       box.append(el('b', 'td-task-title', 'Ask for the offer letter'));
       const what = el('div', 'td-task-chips'); what.append(el('span', 'is-uni', offer[1])); if (offer[2]) what.append(el('span', '', offer[2]));
+      box.append(what);
+      return box;
+    }
+    // A NOC or Medical task also names a university (`app`), but it is not an application: it keeps its own words, with the university under them.
+    if (t.app && !isApplication(t)) {
+      box.classList.add('is-structured');
+      box.append(el('b', 'td-task-title', String(t.text || '')));
+      const what = el('div', 'td-task-chips');
+      what.append(el('span', 'is-uni', t.app.university));
+      if (t.app.course) what.append(el('span', '', t.app.course));
       box.append(what);
       return box;
     }
@@ -1000,9 +1077,9 @@
     return { node, value: () => value, set: (k) => { if (!touched) set(k); }, touched: () => touched };
   }
   // Only the tags still offered (card-fields.js TASK_TAGS_CHOOSABLE); a task that already has an older tag (Payment ...) keeps it offered.
-  const tagPicker = (initial) => {
+  const tagPicker = (initial, only) => {
     const start = initial === undefined ? 'other' : initial;
-    const offered = F().TASK_TAGS_CHOOSABLE || TAGS();
+    const offered = only || F().TASK_TAGS_CHOOSABLE || TAGS();
     const choices = start && !offered.some(([k]) => k === start) ? [...offered, ...TAGS().filter(([k]) => k === start)] : offered;
     return picker(choices, start, (k) => `td-tag tag-${k}`, 'What the task is about');
   };
@@ -1012,8 +1089,8 @@
   // A small, happy burst of soft coloured dots from where a task was ticked (nothing moves for people who ask for less motion).
   function celebrate(from) {
     if (!from || (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    const r = window.isrPos ? window.isrPos.rect(from) : from.getBoundingClientRect(); // page pixels, whatever the Text size
-    const box = el('div', 'isr-burst');
+    const r = window.sr360Pos ? window.sr360Pos.rect(from) : from.getBoundingClientRect(); // page pixels, whatever the Text size
+    const box = el('div', 'sr360-burst');
     box.style.left = `${r.left + r.width / 2}px`;
     box.style.top = `${r.top + r.height / 2}px`;
     const colours = ['#0071e3', '#34c759', '#ff9f0a', '#af52de', '#ff375f', '#5ac8fa'];

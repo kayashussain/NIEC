@@ -5,12 +5,15 @@
 //                     answers for anyone; the Manager looks. Nobody else.
 //   The booking page  open to anyone with the link: it shows only free times, never a student or another booking. A student's own
 //                     booking opens by the secret address in their email (/booking/<code>), with change and cancel.
-//   Guidelines        Admin and the Mock Team upload and remove; the Manager downloads; nobody else.
+//   Guidelines        Admin and the Mock Team upload and remove; every other team, the Manager and the branches read them on screen
+//                     and download them (the owner, 27 Nov 2026); a student account has no way in.
 
 const fs = require('fs');
 const path = require('path');
 const { sendJSON, send, readJSONBody, readRawBody, clientIp } = require('../shared/server-utils');
 const Teams = require('../shared/teams');
+const { logoFinder } = require('./uni-logos');
+const { docxPreview } = require('./docx-preview');
 const { calendarInvite, RESULTS } = require('./mock-bookings');
 const { MAX_FILE_BYTES } = require('./direct');
 const { isoDate } = require('./dashboard-stats');
@@ -28,8 +31,7 @@ const bookingsAccess = (user) => {
 };
 const guidelinesAccess = (user) => {
   if (!user || Teams.isStudent(user)) return null;
-  if (Teams.isAdmin(user) || (user.departments || []).includes('mock')) return 'edit';
-  return Teams.isManager(user) ? 'view' : null;
+  return Teams.isAdmin(user) || (user.departments || []).includes('mock') ? 'edit' : 'view';
 };
 
 function createMockTeamApi({ bookings, guidelines, portal, cards, facts, accounts, activity, mailer, company, siteUrlOf, configuredSite = () => '', now = () => new Date() }) {
@@ -139,6 +141,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   }
   // The reminders, every few minutes (server.js).
   async function tick() {
+    askAllFeedback();
     for (const { booking, kind } of bookings.dueReminders()) {
       bookings.markSent(booking.id, kind); // marked first: a reminder is never sent twice, even when the mailbox is slow
       // A send that failed (the mailbox was down for a moment) is tried again at the next round, three times at most (an address the mail
@@ -219,7 +222,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       .sort((a, b) => a.name.localeCompare(b.name));
     return {
       access, me: { ...p, setUp: bookings.isSetUp(p), name: user.name }, mailReady: Boolean(office()),
-      upcoming, waiting: access === 'view' ? [] : waiting, ready: ready.sort((a, b) => a.name.localeCompare(b.name)), next: next.sort((a, b) => a.name.localeCompare(b.name)),
+      upcoming, waiting: access === 'view' ? [] : waiting.filter((v) => !v.rowId), /* a matched student's mock is answered in its Feedback task (the owner, 26 Nov 2026) */ ready: ready.sort((a, b) => a.name.localeCompare(b.name)), next: next.sort((a, b) => a.name.localeCompare(b.name)),
       students: access === 'view' ? [] : students,
     };
   }
@@ -241,6 +244,42 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
 
   // Students with a mock booked and not answered yet, whether it is to come or has just ended: they are not 'to schedule'.
   const openRows = () => new Set(bookings.all().bookings.filter((b) => b.rowId && b.status === 'booked' && !b.answer).map((b) => b.rowId));
+
+  // ---- the feedback task of a booked mock (the owner, 25 Nov 2026) ----
+  // A student who books from the booking link gives the Mock Team a Feedback task for that day; a mock cancelled or moved takes it back.
+  const feedbackWords = (b) => `Write the feedback of the mock on ${bookings.niceDay(b.day)}`;
+  function askFeedback(b) {
+    if (!b || !b.rowId || !cards.get(b.rowId)) return;
+    const words = feedbackWords(b);
+    if ((cards.get(b.rowId).tasks || []).some((x) => x.team === 'mock' && x.text === words)) return; // asked once: a task already done is never made again
+    const made = cards.addTask(b.rowId, { team: 'mock', text: words, tag: 'mock-feedback', priority: 'high' }, 'Student Recruit 360 (automatic)');
+    if (!made.error && b.day > cards.today()) cards.scheduleTask(b.rowId, made.task.id, { date: b.day, reason: 'On the day of the mock interview' }, 'Student Recruit 360 (automatic)', cards.today());
+  }
+  // The Feedback task answers the booking of that day (the owner, 26 Nov 2026): joined or not, so Bookings never asks it again.
+  function answerFromTask(rowId, dayIso, { joined, feedback, by }) {
+    const b = bookings.all().bookings.find((x) => x.rowId === rowId && x.status === 'booked' && !x.answer && x.day === dayIso);
+    if (!b) return false;
+    bookings.answer(b.id, { joined: Boolean(joined), feedback, result: '', by, rowId });
+    return true;
+  }
+  // Every booked mock of a matched student has its Feedback task, also one booked before this was made.
+  function askAllFeedback() {
+    // Only mocks of the last 14 days (or the next day) of a student still at Mock Stage: old unanswered bookings never flood the team with tasks.
+    const t = now().getTime();
+    bookings.all().bookings.filter((b) => { if (!(b.rowId && b.status === 'booked' && !b.answer && bookings.startOf(b) <= t + 24 * 3600000 && bookings.startOf(b) >= t - 14 * 24 * 3600000)) return false; const f = portal.rowIndex().get(b.rowId); return Boolean(f) && text(f.row[STATUS]) === 'Mock Stage'; }).forEach((b) => { try { askFeedback(b); } catch (e) { /* tried again at the next round */ } });
+  }
+  // The mock of a student that is booked and not answered yet: the one that ended first (it is the one whose feedback is asked), else the next one to come.
+  function bookingOf(rowId) {
+    const t = now().getTime();
+    const list = bookings.all().bookings.filter((x) => x.rowId === rowId && x.status === 'booked' && !x.answer).sort((a, b) => bookings.startOf(a) - bookings.startOf(b));
+    const b = list.find((x) => bookings.startOf(x) <= t); // only a mock that has taken place: its feedback is what is asked
+    return b ? { day: b.day, mock: Number(b.mock) || 0 } : null;
+  }
+  function dropFeedbackAsk(b) {
+    if (!b || !b.rowId || !cards.get(b.rowId)) return;
+    const words = feedbackWords(b);
+    (cards.get(b.rowId).tasks || []).filter((x) => !x.done && x.team === 'mock' && x.text === words).forEach((x) => cards.removeTask(b.rowId, x.id, 'Student Recruit 360 (automatic)'));
+  }
 
   // ---- the answer after a mock ----
   async function answer(req, b, body) {
@@ -350,6 +389,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const made = bookings.book(owner, { day: body.day, time: body.time, name: body.name, email: body.email, phone: body.phone }, matchStudent, siteOf(owner));
       if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       const b = made.booking;
+      try { askFeedback(b); } catch (e) { /* the booking stands without it */ }
       activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} booked a mock with ${p.shown || 'the Mock Team'} on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}${b.rowId ? '' : ' (not matched to a student yet)'}`] });
       // The page does not wait for a slow mailbox: after 2.5 seconds it answers while the email is still being sent ('pending').
       const sent = await Promise.race([emailStudent(b, 'booked', siteOf(owner)), new Promise((resolve) => { setTimeout(() => resolve('pending'), 2500); })]);
@@ -370,6 +410,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       if (m[2] === '/cancel') {
         const out = bookings.cancel(b.id, `${b.name} (the student)`);
         if (out.error) { release(); sendJSON(res, 400, { error: out.error }); return true; }
+        try { dropFeedbackAsk(b); } catch (e) { /* nothing to take back */ }
         activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} cancelled the mock on ${bookings.niceDay(b.day)} at ${bookings.niceTime(b.time)}`] });
         emailStudent(out.booking, 'cancelled').catch(() => {});
         emailOwner(out.booking, true).catch(() => {});
@@ -386,6 +427,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       const made = bookings.book(b.owner, { day: body.day, time: body.time, name: b.name, email: b.email, phone: b.phone, except: b.id }, () => (b.rowId ? { rowId: b.rowId, mock: b.mock, university: b.university, course: b.course } : null), siteOf(b.owner));
       if (made.error) { release(); sendJSON(res, 400, { error: made.error }); return true; }
       bookings.cancel(b.id, `${b.name} (moved to another time)`);
+      try { dropFeedbackAsk(b); askFeedback(made.booking); } catch (e) { /* the move stands */ }
       activity.record(req, { id: 'student', label: `${b.name} (booking page)` }, 'Booked mock', { app: 'Bookings', changes: [`${b.name} moved the mock from ${bookings.niceDay(b.day)} ${bookings.niceTime(b.time)} to ${bookings.niceDay(made.booking.day)} ${bookings.niceTime(made.booking.time)}`] });
       emailStudent(made.booking, 'booked', siteOf(b.owner)).catch(() => {});
       emailOwner({ ...b, status: 'cancelled' }, true).catch(() => {}); // the old time leaves the person's calendar
@@ -451,15 +493,17 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
     }
     if (urlPath === '/api/guidelines' || urlPath.startsWith('/api/guidelines/')) {
       const access = guidelinesAccess(req.user);
-      if (!access) { sendJSON(res, 403, { error: 'Interview guidelines is for the Mock Team.' }); return true; }
+      if (!access) { sendJSON(res, 403, { error: 'Interview guidelines is for the office teams.' }); return true; }
       if (urlPath === '/api/guidelines' && req.method === 'GET') {
         const files = guidelines.list();
         const count = new Map();
         files.forEach((f) => { const k = f.university.toLowerCase(); count.set(k, (count.get(k) || 0) + 1); });
-        const listed = facts.list('').map((u) => ({ id: u.id, name: u.name, city: u.city || '', count: count.get(String(u.name).toLowerCase()) || 0 }));
+        const universities = facts.list('');
+        const logoOf = logoFinder(universities);
+        const listed = universities.map((u) => ({ id: u.id, name: u.name, city: u.city || '', logo: logoOf(u.name), count: count.get(String(u.name).toLowerCase()) || 0 }));
         const names = new Set(listed.map((u) => u.name.toLowerCase()));
         // A file kept for a University no longer in Universities stays listed under its own name.
-        [...new Set(files.map((f) => f.university))].filter((n) => !names.has(n.toLowerCase())).forEach((n) => listed.push({ id: '', name: n, city: '', count: count.get(n.toLowerCase()) || 0 }));
+        [...new Set(files.map((f) => f.university))].filter((n) => !names.has(n.toLowerCase())).forEach((n) => listed.push({ id: '', name: n, city: '', logo: logoOf(n), count: count.get(n.toLowerCase()) || 0 }));
         listed.sort((a, b) => a.name.localeCompare(b.name));
         sendJSON(res, 200, { canUpload: access === 'edit', kinds: guidelines.KINDS, sources: guidelines.SOURCES, universities: listed,
           files: files.map((f) => ({ id: f.id, university: f.university, kind: f.kind, source: f.source, title: f.title, name: f.name, size: f.size, by: f.by, at: f.at, type: f.ext.slice(1).toUpperCase() })) });
@@ -483,6 +527,23 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
       if (req.method === 'GET' && !m[2]) {
         const f = guidelines.file(m[1]);
         if (!f) { sendJSON(res, 404, { error: 'No such file.' }); return true; }
+        // ?view=1: read on screen (the owner, 27 Nov 2026). A PDF or a picture is shown by the browser itself; a Word document is read
+        // here and sent as plain words (docx-preview.js); an old .doc file cannot be shown, so the page says to download it.
+        if (new URL(req.url, 'http://x').searchParams.get('view') === '1') {
+          const ext = path.extname(f.path).toLowerCase();
+          if (ext === '.docx') {
+            try { sendJSON(res, 200, { kind: 'word', ...docxPreview(fs.readFileSync(f.path)) }); } catch (e) { console.error('[guideline preview]', f.name, e.message); sendJSON(res, 200, { kind: 'none', reason: 'This Word document cannot be shown here. Download it to read it.' }); }
+            return true;
+          }
+          if (ext === '.doc') { sendJSON(res, 200, { kind: 'none', reason: 'This is an old kind of Word file (.doc), which cannot be shown here. Download it to read it, or upload it again saved as .docx or PDF.' }); return true; }
+          send(res, 200, fs.readFileSync(f.path), {
+            'Content-Type': f.type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
+            // The browser's own PDF reader needs no limit on what it loads; it may be framed by this site only.
+            'Content-Security-Policy': ext === '.pdf' ? "frame-ancestors 'self'; base-uri 'none'; form-action 'none'" : "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'self'",
+            'Content-Disposition': `inline; filename="guideline${ext}"; filename*=UTF-8''${encodeURIComponent(f.name)}`,
+          });
+          return true;
+        }
         send(res, 200, fs.readFileSync(f.path), {
           'Content-Type': f.type, 'Cache-Control': 'no-store', 'Content-Security-Policy': "sandbox; default-src 'none'",
           'Content-Disposition': `attachment; filename="guideline${path.extname(f.path)}"; filename*=UTF-8''${encodeURIComponent(f.name)}`,
@@ -507,7 +568,7 @@ function createMockTeamApi({ bookings, guidelines, portal, cards, facts, account
   const forRow = (rowId) => { const all = bookings.all().bookings; const nums = renumber(all); return all.filter((b) => b.rowId === rowId && b.status !== 'cancelled')
     .sort((a, b) => `${a.day} ${a.time}`.localeCompare(`${b.day} ${b.time}`))
     .map((b) => ({ mock: nums.get(b.id) || Number(b.mock) || 0, day: text(b.day), time: text(b.time), minutes: Number(b.minutes) || 0, by: text(bookings.person(b.owner).shown), answer: b.answer ? { joined: Boolean(b.answer.joined), result: text(b.answer.result), by: text(b.answer.by) } : null })); };
-  return { handle, handlePublic, tick, matchStudent, pageFor, unanswered, comingRows, openRows, nextBooked, forRow };
+  return { handle, handlePublic, tick, matchStudent, pageFor, unanswered, comingRows, openRows, nextBooked, forRow, answerFromTask, askAllFeedback, bookingOf };
 }
 
 module.exports = { createMockTeamApi, bookingsAccess, guidelinesAccess };

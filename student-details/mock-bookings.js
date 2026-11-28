@@ -359,7 +359,7 @@ function calendarInvite({ booking, start, end, title, description, location, org
   return [
     // A cancelled mock is sent as a cancel of the same event (a higher sequence), so the calendar takes it out.
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//StudentRecruit360//Mock interviews//EN', booking.status === 'cancelled' ? 'METHOD:CANCEL' : 'METHOD:PUBLISH', 'BEGIN:VEVENT',
-    `UID:${booking.id}@isr`, `SEQUENCE:${booking.status === 'cancelled' ? 1 : 0}`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
+    `UID:${booking.id}@studentrecruit360`, `SEQUENCE:${booking.status === 'cancelled' ? 1 : 0}`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
     fold(`SUMMARY:${esc(title)}`), fold(`DESCRIPTION:${esc(description)}`), fold(`LOCATION:${esc(location)}`),
     ...(organizer ? [fold(`ORGANIZER:mailto:${organizer}`)] : []),
     booking.status === 'cancelled' ? 'STATUS:CANCELLED' : 'STATUS:CONFIRMED',

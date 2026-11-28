@@ -31,6 +31,8 @@
     F.STUDY_LEVELS.forEach((x) => {
       const b = h('button', { type: 'button', role: 'radio', 'aria-checked': String(level.input.value === x), class: level.input.value === x ? 'is-on' : '' }, SHORT[x] || x);
       b.addEventListener('click', () => {
+        // Pressing the chosen level again lets go of it and clears the results (the owner, 25 Nov 2026: the filter could not be cleared without reloading the page).
+        if (level.input.value === x) { clearAll({ keepFields: true }); return; }
         level.input.value = x;
         levelRow.querySelectorAll('button').forEach((y) => { const on = y === b; y.classList.toggle('is-on', on); y.setAttribute('aria-checked', String(on)); });
         run();
@@ -47,7 +49,8 @@
     const subject = field('Subject', { value: prefill.subject || '', placeholder: 'Nursing, business', max: 80 });
     form.append(grade.wrap, gap.wrap, test.wrap, score.wrap, band.wrap, subject.wrap);
     const go = h('button', { class: 'btn btn-primary fd-go', type: 'button' }, 'Find');
-    form.append(go);
+    const clear = h('button', { class: 'btn fd-clear', type: 'button', title: 'Clear the level, the boxes and the results' }, 'Clear');
+    form.append(go, clear);
     const bar = el('div', 'fd-bar');
     if (onSave) bar.append(h('button', { class: 'btn', type: 'button', onclick: async () => { try { await onSave(values()); window.NiecUI.toast('Saved on the student card'); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, 'Save these details on the card'));
     wrap.append(levelRow, form);
@@ -166,6 +169,15 @@
       }
       return c;
     }
+    // Clear: the level, every box and the results go, so the page is as it was when it opened.
+    function clearAll({ keepFields = false } = {}) {
+      level.input.value = '';
+      levelRow.querySelectorAll('button').forEach((y) => { y.classList.remove('is-on'); y.setAttribute('aria-checked', 'false'); });
+      if (!keepFields) { grade.input.value = ''; gap.input.value = ''; test.input.value = ''; score.input.value = ''; band.input.value = ''; subject.input.value = ''; showScore(); }
+      filter = 'all'; last = null;
+      out.replaceChildren();
+    }
+    clear.addEventListener('click', () => clearAll());
     go.addEventListener('click', run);
     [grade.input, gap.input, score.input, band.input, subject.input].forEach((x) => x.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); }));
     if (shortlist) window.ShortlistFor.onChange(() => { if (last) draw(); });

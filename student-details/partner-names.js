@@ -5,6 +5,7 @@
 
 const RENAMES = [
   ['Real Dreams Educational Consultancy', ['Real Dreams', 'Real Dreams Education Consultancy', 'Real Dreams Edu', 'RealDreams']],
+  ['Oxford International Education Group', ['OIEG', 'OIG', 'Oxford International']],
   ['Nissus International Education Foundation', ['Nisus Educational Consultancy', 'Nisus Education Consultancy', 'Nissus Educational Consultancy', 'Nissus Education Consultancy', 'Nisus International Education Foundation', 'Nisus', 'Nissus']],
 ];
 const squash = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9]+/g, '');

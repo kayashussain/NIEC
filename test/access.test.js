@@ -164,6 +164,8 @@ function smtpServer(handler) {
   const server = net.createServer((socket) => {
     let inData = false;
     let buf = '';
+    // The client closes the connection when it has finished; on Windows this pretend server then hears "connection reset", which is not a failure.
+    socket.on('error', () => {});
     socket.write('220 test ESMTP\r\n');
     socket.on('data', (chunk) => {
       buf += chunk.toString();
@@ -225,7 +227,7 @@ test('someone in two teams sees both teams students and may use both teams moves
   assert.deepStrictEqual(ids(Teams.viewFor(both, book())), ['1', '2']);
   assert.deepStrictEqual(ids(Teams.viewFor({ role: 'staff', departments: ['application', 'followup'] }, book())), ['1', '3']);
   assert.deepStrictEqual(Teams.statusChoices(both, 'Application Stage', []), ['Application Stage', 'Mock Stage', 'Defer', 'Withdrawn', 'Hold']);
-  assert.deepStrictEqual(Teams.statusChoices(both, 'Mock Stage', []), ['Mock Stage', 'Payment Stage', 'Application Stage', 'Defer', 'Withdrawn', 'Hold']);
+  assert.deepStrictEqual(Teams.statusChoices(both, 'Mock Stage', []), ['Mock Stage', 'Payment Stage', 'Defer', 'Withdrawn', 'Hold']);
   assert.ok(Teams.canEdit(both, 'STUDENT ID') && Teams.canEdit(both, 'MOCK SCHEDULE 1') && !Teams.canEdit(both, 'GROSS FEE'));
   assert.strictEqual(Teams.viewKey({ role: 'staff', departments: ['mock', 'application'] }), Teams.viewKey(both));
 });
@@ -582,10 +584,34 @@ test('application and mock staff delete one student at a time and can send Mock 
   assert.ok(!Teams.canDelete({ role: 'manager', departments: [] }));
   ['application', 'mock'].forEach((d) => {
     const w = { role: 'staff', departments: [d] };
-    assert.ok(Teams.statusChoices(w, 'Mock Stage', ['x']).includes('Application Stage'), d);
-    assert.ok(Teams.checkMove(w, { [S]: 'Mock Stage' }, 'Application Stage').ok, d);
+    assert.ok(!Teams.statusChoices(w, 'Mock Stage', ['x']).includes('Application Stage'), `${d}: no move back (the owner, 25 Nov 2026)`);
+    assert.ok(!Teams.checkMove(w, { [S]: 'Mock Stage' }, 'Application Stage').ok, d);
   });
   assert.ok(Teams.statusChoices(both, 'Mock Stage', ['x']).includes('Payment Stage'));
+});
+
+test('Chitwan Branch deletes only its own student still at Inquiry with nothing applied for, one at a time; other branches delete nobody', () => {
+  const src = 'STUDENT SOURCE';
+  const mine = (id, extra = {}) => ({ _id: id, 'FIRST NAME': id, [src]: 'Chitwan Branch', [S]: 'Inquiry', ...extra });
+  const wb = { revision: 1, sheets: [{ id: 'sheet-mjzzzzzzaaaaa', name: 'Jan', columns: ['FIRST NAME', src, S], rows: [
+    mine('a'), mine('b'), mine('applied', { 'APPLICATION SUBMISSION DATE': '2026-11-01' }), mine('moved', { [S]: 'Application Stage' }),
+    mine('other', { [src]: 'Pokhara Branch' })] }] };
+  const chitwan = { role: 'staff', departments: ['chitwan'] };
+  const base = Teams.viewFor(chitwan, wb);
+  const without = (...ids) => { const w = JSON.parse(JSON.stringify(base)); w.sheets[0].rows = w.sheets[0].rows.filter((r) => !ids.includes(r._id)); return Teams.teamChanges(chitwan, base, w); };
+  assert.deepStrictEqual(without('a'), { changes: [], adds: [], deletes: [{ sheetId: 'sheet-mjzzzzzzaaaaa', rowId: 'a' }], errors: [] });
+  assert.ok(without('a', 'b').errors.some((e) => /one student at a time/.test(e)));
+  ['applied', 'moved'].forEach((id) => {
+    const out = without(id);
+    assert.deepStrictEqual(out.deletes, [], id);
+    assert.ok(out.errors.some((e) => /still an Inquiry, with nothing applied for/.test(e)), id);
+  });
+  assert.ok(!Teams.canDelete(chitwan, mine('other', { [src]: 'Pokhara Branch' })), 'not another source');
+  ['pokhara', 'palpa', 'butwal'].forEach((d) => {
+    assert.ok(!Teams.canDelete({ role: 'staff', departments: [d] }), d);
+    assert.ok(!Teams.canDelete({ role: 'staff', departments: [d] }, mine('x', { [src]: `${Teams.DEPARTMENTS[d].source}` })), d);
+  });
+  assert.ok(!Teams.canDelete({ role: 'manager', departments: [] }, mine('x')));
 });
 
 test('a student on Hold is counted on the dashboard as not moving forward, not as an active application', () => {

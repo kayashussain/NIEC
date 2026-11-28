@@ -15,7 +15,7 @@
 //                             is their own team (Users, "Their own team"): the Mock Team never sees a portal password, even when
 //                             given the Application Team's students too (the owner, 15 Nov 2026). Where a login was held back the
 //                             page is told only that there is one (`loginHidden`), to say "you do not have access" when asked.
-//   A branch                  Partner Universities the same way (without the commission). No B2B Partners or Agents.
+//   A branch                  none of these pages (the owner, 26 Nov 2026).
 //   Follow-up Team            none of these pages.
 //
 // The server strips what an account may not see before anything is sent, so it is never in the page, not even hidden.
@@ -36,11 +36,10 @@ function partnerAccess(user) {
   if (w.role === 'admin') return { direct: 'full', b2b: 'full', agents: 'full', applyThrough: 'full' };
   const manager = w.role === 'manager';
   const appMock = w.departments.some((d) => d === 'application' || d === 'mock');
-  const branch = w.departments.some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source);
   const team = appMock ? 'team' : null;
   const application = appTeam(user);
   return {
-    direct: manager ? 'commission' : (appMock || branch ? 'team' : null),
+    direct: manager ? 'commission' : team,
     b2b: manager ? 'commission' : application ? 'setup' : team,
     agents: manager ? 'commission' : team,
     // The Mock Team's own people have Universities as the Application Team has it (the owner, 22 Nov 2026): Apply now shows where to

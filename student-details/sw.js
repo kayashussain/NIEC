@@ -5,13 +5,13 @@
 //   - Instant: the small page a tap opens (/wa, its script, its style, the icon) is kept on the phone, so a tap opens WhatsApp at
 //     once instead of waiting for the internet. The kept copy is refreshed quietly in the background.
 //   - Never has to be connected again: phones change their push address from time to time. This worker hands the new address to
-//     Student Recruit 360 by itself (with the phone's own secret, kept in the "isr-device" store on this phone), when the phone says it changed,
+//     Student Recruit 360 by itself (with the phone's own secret, kept in the "sr360-device" store on this phone), when the phone says it changed,
 //     when a notification arrives or is tapped, and whenever Student Recruit 360 is opened on the phone.
 //   - The computer is told "arrived" and "opened", so the person sees that their click worked.
-const SHELL = 'isr-phone-v2';
+const SHELL = 'sr360-phone-v2';
 const FILES = ['/wa', '/wa-page.js', '/phone.css', '/apple-touch-icon.png', '/favicon.png'];
-const STORE = 'isr-device';
-const ME = '/__isr-device';
+const STORE = 'sr360-device';
+const ME = '/__sr360-device';
 
 const b64 = (s) => { const p = '='.repeat((4 - (s.length % 4)) % 4); const raw = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(raw, (c) => c.charCodeAt(0)); };
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
@@ -85,7 +85,7 @@ self.addEventListener('push', (e) => {
   try { m = e.data ? e.data.json() : {}; } catch (err) { m = {}; }
   e.waitUntil((async () => {
     await self.registration.showNotification(m.title || 'Student Recruit 360', {
-      body: m.body || '', tag: m.tag || 'isr', renotify: true, icon: '/apple-touch-icon.png', badge: '/favicon.png', timestamp: m.at || Date.now(), data: { url: m.url || '/today', m: m.m || '' },
+      body: m.body || '', tag: m.tag || 'sr360', renotify: true, icon: '/apple-touch-icon.png', badge: '/favicon.png', timestamp: m.at || Date.now(), data: { url: m.url || '/today', m: m.m || '' },
     });
     await Promise.all([ack(m.m, 'got'), heal()]);
   })());

@@ -2,7 +2,7 @@
 //   1. a team's own tasks behind a switch: Today and Later (a task rescheduled to a later day), and for the Application Team Missing
 //      details; each task is one line, the student's name first, then the task, its kind and its course, late ones first; a press opens
 //      the course, how to reach the student, the updates and Mark as done, Reschedule, Reassign and View student profile. Admin and
-//      the Manager see the Board, a column per team;
+//      the Manager see instead two lists: the tasks assigned to them and the tasks they assigned (the owner, 27 Nov 2026);
 //   2. for the other teams, what needs attention: one short list, a line per kind of work with how many students wait.
 // The numbers, charts and buttons live on the Dashboard and on All Students, not here.
 (function () {
@@ -152,7 +152,8 @@
   function titleOf(x) {
     const c = x.course;
     if (x.tag === 'offer' && c) return `Has an offer come from ${c.university}?`;
-    if (c && (x.app || /^apply\b/i.test(String(x.text || '')))) return `Apply to ${c.university}`;
+    // A NOC or Medical task names a university too, and may start "Apply for the NOC": it keeps its own words.
+    if (c && (!x.tag || x.tag === 'application') && (x.app || /^apply\b/i.test(String(x.text || '')))) return `Apply to ${c.university}`;
     return String(x.text || '').split('\n')[0];
   }
   // The grey line under a closed task: the course, its intake and how many updates.
@@ -206,21 +207,27 @@
     const sections = []; const missing = [];
     const add = (title, list) => { const rows = list.filter(([, v]) => v); if (rows.length) sections.push({ title, rows }); };
     const student = [['WhatsApp', phone], ['Email', email]];
+    // The same two lists on a Medical, NOC or Documents task (the owner, 25 Nov 2026): University (the one the task is for, else the student's own) and Student.
+    const uniRows = () => [['University', (c && c.university) || d.university], ['Course', (c && c.course) || d.course], ['Level', c && c.level], ['Intake', (c && c.intake) || x.intake]];
+    const studentRows = () => [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]];
     if (x.tag === 'application') {
       const lang = String(d.language || '').trim();
       const langOk = Boolean(lang) && lang !== 'Test Date';
-      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], ['Language test', langOk ? languageShown(lang) : '']]);
+      add('University', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], ['Language test', langOk ? languageShown(lang) : '']]);
       add('Student', [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]]);
       // F5: every detail of the two sections that is empty is listed first as missing (University, Course, Level, Intake, Language test, Email, WhatsApp, Passport number, Date of birth, Nationality, Address).
       [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang === 'Test Date' ? 'Language test date' : 'Language test', langOk], ['Email', email], ['WhatsApp number', phone], ['Passport number', d.passport], ['Date of birth', d.dob], ['Nationality', d.nationality], ['Address', d.address]].forEach(([l, v]) => { if (!v) missing.push(l); });
     } else if (x.tag === 'offer') {
-      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Intake', c && c.intake], ['Applied on', longDay(c && c.applied)]]);
+      add('University', [['University', c && c.university], ['Course', c && c.course], ['Intake', c && c.intake], ['Applied on', longDay(c && c.applied)]]);
       add('Student', student);
     } else if (x.tag === 'medical') {
-      add('Medical', [['Medical report', d.medicalReport], ['Medical booking date', longDay(d.medicalDate)]]);
-      add('Student', student);
+      add('University', uniRows());
+      add('Student', studentRows());
+    } else if (x.tag === 'noc' || x.tag === 'documents') {
+      if (x.tag === 'noc') add('University', uniRows());
+      add('Student', studentRows());
     } else {
-      add('Application', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake]]);
+      add('University', [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake]]);
       add('Student', student);
     }
     // The owner, 24 Nov 2026: a missing detail is not a banner on top; it sits in its own list (Application or Student) as a Missing row.
@@ -228,10 +235,14 @@
     if (x.tag === 'application') {
       const lang2 = String(d.language || '').trim();
       full = [
-        { title: 'Application', rows: [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang2 === 'Test Date' ? 'Language test date' : 'Language test', lang2 && lang2 !== 'Test Date' ? languageShown(lang2) : '']] },
+        { title: 'University', rows: [['University', c && c.university], ['Course', c && c.course], ['Level', c && c.level], ['Intake', c && c.intake], [lang2 === 'Test Date' ? 'Language test date' : 'Language test', lang2 && lang2 !== 'Test Date' ? languageShown(lang2) : '']] },
         { title: 'Student', rows: [['Email', email], ['WhatsApp', phone], ['Passport number', d.passport], ['Date of birth', longDay(d.dob) || d.dob], ['Nationality', d.nationality], ['Address', d.address]] },
       ];
     }
+    // A Medical, NOC or Documents task lists each detail, an empty one saying Missing (the owner, 25 Nov 2026): University and Student, or Student alone for Documents.
+    if (x.tag === 'offer') full = [{ title: 'University', rows: [...uniRows(), ['Applied on', longDay(c && c.applied)]] }, { title: 'Student', rows: studentRows() }];
+    else if (x.tag === 'medical' || x.tag === 'noc') full = [{ title: 'University', rows: uniRows() }, { title: 'Student', rows: studentRows() }];
+    else if (x.tag === 'documents') full = [{ title: 'Student', rows: studentRows() }];
     return { sections, missing, full, ready: x.tag === 'application' && !missing.length };
   }
   function copyText(v) {
@@ -304,8 +315,6 @@
     // The first thing that holds the student up, in the same words as Missing details where it has one.
     let hint = '';
     if (noFeedback) hint = `Feedback ${noFeedback.n} not written`;
-    else if (!mocks.some((k) => k.on || k.said) && !booked) hint = 'No mock booked yet';
-    else if (!m.preCas && next && !booked && !mocks.some((k) => k.on && k.on > todayIso)) hint = `Mock ${next.n} not booked`;
     return { m, mocks, done, next, booked, hint };
   }
   function mockDetails(x, mk) {
@@ -334,7 +343,7 @@
     const k = x.contact || {};
     const cols = el('div', 'tdy-cols');
     const app = el('div', 'tdy-sec');
-    app.append(el('div', 'tdy-sech', 'Application'));
+    app.append(el('div', 'tdy-sech', 'University')); // the same names on every team's task: University and Student (the owner, 25 Nov 2026)
     [['University', mk.m.university], ['Course', mk.m.course], ['Intake', x.intake]].forEach(([l, v]) => { if (v) app.append(appLine(l, v)); });
     if (mk.m.university) {
       const g = el('div', 'tdy-dl');
@@ -352,26 +361,13 @@
   }
   // The updates, folded away with the latest one as a preview; open at once when something is new on them.
   function appUpdates(x, thread, n) {
-    const wrap = el('div', 'tdy-updates');
-    if (x.unread) updOpen.add(x.id); // opened because something is new: it stays open when the list is read again, while the person reads
-    const open = updOpen.has(x.id);
-    const last = (x.comments || []).filter((m) => m.text).pop();
-    const fold = h('button', { class: 'tdy-upd', type: 'button', 'aria-expanded': String(open) });
-    const prev = el('span', 'tdy-prev');
-    if (last) prev.append(el('span', 'tdy-prev-by', `${last.by || 'Someone'} · ${dayShort(isoDay(last.at))}:`), ` ${String(last.text).replace(/\s+/g, ' ')}`); else prev.append(el('span', 'tdy-prev-by', 'No updates yet'));
-    prev.hidden = open;
-    fold.append(el('span', 'tdy-cap', `Updates${n ? ` · ${n}` : ''}`), prev, el('span', 'tdy-mini'));
+    // Always open (the owner, 25 Nov 2026): the earlier updates and the box to type and post, with no small "Updates" button to press first.
+    const wrap = el('div', 'tdy-updates is-open');
+    wrap.append(el('div', 'tdy-upd-head', `Updates${n ? ` · ${n}` : ''}`));
     const panel = el('div', 'tdy-upd-body');
-    panel.hidden = !open;
     panel.append(thread);
-    fold.addEventListener('click', () => {
-      const now = panel.hidden;
-      panel.hidden = !now; prev.hidden = now;
-      fold.setAttribute('aria-expanded', String(now));
-      if (now) updOpen.add(x.id); else updOpen.delete(x.id);
-      if (now && thread.markRead) thread.markRead();
-    });
-    wrap.append(fold, panel);
+    wrap.append(panel);
+    if (x.unread && thread.markRead) thread.markRead();
     return wrap;
   }
   // One task. `refresh(true)` reads the tasks again.
@@ -403,7 +399,7 @@
     // The Application Team sees how many details an application task still lacks before it is opened (the owner, 23 Nov 2026).
     const info = x.details ? appInfo(x) : null;
     const mk = x.mock ? mockInfo(x) : null; // the Mock Team's own Today (the owner, 23 Nov 2026)
-    if (info || mk) r.classList.add('tda-row'); // the server sends `details` only to the Application Team's own Today (the Mock Team has a Missing details list too, so that is not the sign)
+    if (info || mk || (todayData && (todayData.branchTeam || todayData.lead))) r.classList.add('tda-row'); // the server sends `details` only to the Application Team's own Today (the Mock Team has a Missing details list too, so that is not the sign)
     if (info && x.tag === 'application' && !x.done && info.missing.length) {
       const side = el('div', 'tdy-side');
       side.append(age, el('span', 'tdy-hint', `${info.missing.length} detail${info.missing.length === 1 ? '' : 's'} missing`));
@@ -447,6 +443,13 @@
       const top = el('div', 'tdy-top');
       top.append(given);
       body.append(top, mockDetails(x, mk), appUpdates(x, thread, n));
+    } else if (todayData && (todayData.branchTeam || todayData.lead)) {
+      // A branch, Admin and the Manager, in the same look (the owner, 26 Nov 2026): who gave it, the course and how to reach the student, the updates.
+      body.classList.add('tdy-body');
+      given.classList.add('tdy-given');
+      const top = el('div', 'tdy-top');
+      top.append(given);
+      body.append(top, factsOf(x), appUpdates(x, thread, n));
     } else {
       body.append(given, factsOf(x));
       // The updates: the conversation on the task, and the box to write one.
@@ -513,7 +516,9 @@
   // gets it (the server says so with `appTeam`); every other team and the Admin board keep their own Today.
   let appSegSlot = null;
   // The Mock Team gets the same screen (the owner, 23 Nov 2026, approved design): the server says so with `mockTeam`.
-  const isAppToday = () => Boolean(todayData && (todayData.appTeam || todayData.mockTeam));
+  // And a branch (the owner, 26 Nov 2026): the same screen, said with branchTeam.
+  const teamLook = (d) => Boolean(d && (d.appTeam || d.mockTeam || d.branchTeam));
+  const isAppToday = () => teamLook(todayData);
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   function appGroup(title, items, refresh, late) {
     const g = el('div', 'tda-group');
@@ -556,7 +561,7 @@
       b.addEventListener('click', () => { taskView = k; tagFilter = 'all'; refresh(); });
       seg.append(b);
     });
-    const F6 = !!(appSegSlot && todayData && (todayData.appTeam || todayData.mockTeam)); // Application Team and, the same layout, the Mock Team (design F6): the tabs go in the filter row, the search box up by the bell
+    const F6 = !!(appSegSlot && teamLook(todayData)); // Application Team and, the same layout, the Mock Team (design F6): the tabs go in the filter row, the search box up by the bell
     if (appSegSlot && !F6) appSegSlot.replaceChildren(seg);
     const view = VIEWS.find((v) => v[0] === taskView);
     // The search box and the kinds, in one row.
@@ -597,7 +602,7 @@
     const pills = F6 ? el('div', 'tda-pills') : bar;
     if (F6) { pills.setAttribute('role', 'tablist'); pills.setAttribute('aria-label', 'Kind of task'); }
     if (F6) bar.append(pills);
-    if (pool.length) {
+    if (pool.length || (todayData && todayData.mockTeam)) {
       const pill = (k, label, n) => {
         const b = h('button', { class: 'tda-pill', type: 'button', role: 'tab', 'aria-selected': String(tagFilter === k) }, label);
         b.append(el('span', 'tda-pill-n', String(n)));
@@ -605,7 +610,7 @@
         pills.append(b);
       };
       pill('all', 'All', pool.length);
-      ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k]) pill(k, label, count[k]); });
+      ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k] || tagFilter === k || (todayData && todayData.mockTeam && /^mock/.test(k))) pill(k, label, count[k] || 0); }); // the Mock Team always sees its four kinds (the owner, 25 Nov 2026)
     }
     // Four numbers at the top (the Application Team's Apple look, the owner, 24 Nov 2026): what is late, what is for today, what waits
     // for a later day and who has details missing. Each opens its tab.
@@ -617,7 +622,7 @@
       tile.addEventListener('click', () => { taskView = view2; tagFilter = 'all'; refresh(); });
       tiles.append(tile);
     });
-    if (todayData && (todayData.appTeam || todayData.mockTeam)) box.append(tiles); // the Application Team and, the same four numbers, the Mock Team (the owner, 24 Nov 2026)
+    if (teamLook(todayData)) box.append(tiles); // the Application Team and, the same four numbers, the Mock Team (the owner, 24 Nov 2026)
     box.append(bar);
     const list = (tagFilter === 'all' ? pool : pool.filter((x) => tagOf(x, x.stage) === tagFilter));
     if (!list.length) {
@@ -755,95 +760,69 @@
   }
   let tasksNow = []; // the tasks as last read (Missing details points at a Medical task)
 
-  // ---- the Board (Admin and the Manager) ----
-  // A column per team, the team's open tasks as small tiles (the student, the task, its tag, how long it has waited, its updates), the
-  // oldest first and the newest last. A press opens the whole task (tick, updates, Edit, Reassign) in a window.
-  // The Board counts waiting days as the teams' own lists do (calendar days), so one task never reads two different numbers.
-  const daysOpen = (x) => waitDays(x);
-  function tile(x, refresh) {
-    const later = x.doOn && todayIso && x.doOn > todayIso;
-    const n = (x.comments || []).filter((c) => c.text).length;
-    const d = daysOpen(x);
-    const b = h('button', { class: `tb-tile${x.unread ? ' is-new' : ''}`, type: 'button', title: 'Open the task' });
-    const top = el('div', 'tb-tile-top');
-    top.append(el('b', 'tb-student', window.Portal.niceName ? window.Portal.niceName(x.student) : x.student), el('span', 'tb-stage', x.stage || ''));
-    const what = el('div', 'tb-text', x.text);
-    const meta = el('div', 'tb-meta');
-    const tg = tagOf(x, x.stage);
-    meta.append(el('span', `tb-tag tag-${tg}`, tagLabel(tg)));
-    if (later) meta.append(el('span', 'tb-age is-later', window.Portal.dayLabel(x.doOn, todayIso)));
-    else meta.append(el('span', `tb-age${d >= 3 ? ' is-slow' : ''}`, d === 0 ? 'Today' : `${d} day${d === 1 ? '' : 's'}`));
-    if (n) { const u = el('span', 'tb-updates'); u.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/></svg>'; u.append(String(n)); meta.append(u); }
-    // The latest word on it, in one grey line ("Asha: submitted on the portal"), so the progress shows without opening it.
-    const last = (x.comments || []).filter((c) => c.text).slice(-1)[0];
-    b.append(top, what);
-    if (last) b.append(el('div', 'tb-last', `${last.by === me ? 'You' : String(last.by || '').split(/\s+/)[0]}: ${last.text}`));
-    b.append(meta);
-    b.addEventListener('click', () => {
-      window.Portal.dialog(window.Portal.niceName ? window.Portal.niceName(x.student) : x.student, (body, close) => {
-        body.classList.add('tb-dialog-body');
-        body.append(taskRow(x, () => close()));
-        const foot = el('div', 'p-dialog-foot');
-        const open = h('a', { class: 'btn', href: '/student?id=' + encodeURIComponent(x.studentId) }, 'Open the student card');
-        foot.append(open, h('button', { class: 'btn btn-primary', type: 'button', onclick: () => close() }, 'Close'));
-        body.append(foot);
-      }).then(() => refresh(true));
-    });
-    return b;
-  }
-  function boardOf(t, refresh) {
-    const list = t.tasks.filter((x) => !x.done && matches(x) && (tagFilter === 'all' || tagOf(x, x.stage) === tagFilter));
-    // The columns: tasks for this person first ("For you"), then every team in the order of the teams list, then any other.
-    const order = ['head', ...allTeams.map((x) => x.id).filter((id) => id !== 'head')];
-    const cols = new Map();
-    list.forEach((x) => { const k = x.forMe && x.team === 'head' ? 'head' : x.team; if (!cols.has(k)) cols.set(k, []); cols.get(k).push(x); });
-    // Admin always has a "For you" column first, also when nothing is given to them yet, so they always know where their own tasks are.
-    if (t.isHead && !cols.has('head') && !searchQ && tagFilter === 'all') cols.set('head', []);
-    const keys = [...cols.keys()].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
-    const wrap = el('div', 'tb-board');
-    if (!keys.length || (keys.length === 1 && !cols.get(keys[0]).length)) { wrap.replaceChildren(); wrap.append(emptyNote(searchQ || tagFilter !== 'all' ? 'No task matches.' : 'Every team is up to date.')); return wrap; }
-    keys.forEach((k) => {
-      const items = cols.get(k);
-      // The oldest first, the newest last (the owner, 17 Nov 2026), whatever is new on it (its blue dot shows that).
-      const open = items.slice().sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
-      const slow = open.filter((x) => daysOpen(x) >= 3).length;
-      const label = k === 'head' ? 'For you' : ((allTeams.find((x) => x.id === k) || {}).label || (items[0] && items[0].teamLabel) || k).replace(/\s*\(.*\)$/, '');
-      const col = el('section', 'tb-col');
-      const head = el('header', 'tb-col-head');
-      const name = el('div', 'tb-col-name');
-      name.append(el('span', 'tb-col-dot'), el('b', '', label), el('span', 'tb-col-n', String(open.length)));
-      head.append(name);
-      const sub = el('div', 'tb-col-sub');
-      sub.append(el('span', '', k === 'head' ? 'Given to you' : peopleOf(k, label)));
-      if (slow) sub.append(el('span', 'tb-col-slow', `${slow} waiting 3+ days`));
-      head.append(sub);
-      col.append(head);
-      const body = el('div', 'tb-col-body');
-      if (!open.length) body.append(el('div', 'tb-col-empty', 'Nothing for you right now.'));
-      open.forEach((x) => body.append(tile(x, refresh)));
-      col.append(body);
-      wrap.append(col);
-    });
-    return wrap;
-  }
-  // The kinds of task in one row of pills (All, Application, NOC ...), with how many open in each.
-  function kindPills(items, refresh) {
-    const count = {};
-    items.forEach((x) => { const k = tagOf(x, x.stage); count[k] = (count[k] || 0) + 1; });
-    const kinds = Object.keys(count);
-    if (kinds.length < 2 && tagFilter === 'all') return null;
-    const bar = el('div', 'td-filter');
-    bar.setAttribute('role', 'tablist');
-    bar.setAttribute('aria-label', 'Show the tasks about');
-    const pill = (k, label, n) => {
-      const b = h('button', { class: `td-filter-pill${k === 'all' ? '' : ' tag-' + k}`, type: 'button', role: 'tab', 'aria-selected': String(tagFilter === k) }, label);
-      if (n) b.append(el('span', 'td-filter-n', String(n)));
-      b.addEventListener('click', () => { tagFilter = k; refresh(); });
-      bar.append(b);
+  // ---- Today for Admin, the Manager and a branch (the owner, 27 Nov 2026): two lists of open tasks, nothing else ----
+  // "Assigned to you": what this person is to do, the late ones first. "Assigned by you": what they gave to others, under the team
+  // that has it, with who that is. A task opens as everywhere on Today (updates, Mark as done, Reschedule, Reassign, Edit, Remove).
+  function leadPanel(t, refresh) {
+    canAssignAll = Boolean(t.canAssign);
+    seesAll = Boolean(t.seesAll);
+    todayIso = t.today || todayIso;
+    allTeams = t.teams || [];
+    handTeams = t.handTeams || [];
+    if (t.me) me = t.me;
+    const later = (x) => Boolean(x.doOn && todayIso && x.doOn > todayIso);
+    const first = (a, b) => (later(a) - later(b)) || (later(a) ? a.doOn.localeCompare(b.doOn) : 0) || taskPriority(b) - taskPriority(a);
+    const open = t.tasks.filter((x) => !x.done).sort(first);
+    const rows = (items, who) => {
+      const l = el('div', 'tdx-list');
+      items.forEach((x) => {
+        const r = rowFor(x, refresh);
+        const words = who(x);
+        const main = r.querySelector('.tdx-main');
+        if (main && words) main.append(el('p', 'dt-who', words));
+        l.append(r);
+      });
+      return l;
     };
-    pill('all', 'All', 0);
-    ((window.CardFields && window.CardFields.TASK_TAGS) || []).forEach(([k, label]) => { if (count[k] || tagFilter === k) pill(k, label, count[k] || 0); });
-    return bar;
+    const column = (key, title, items, none) => {
+      const c = el('section', `dt-col dt-${key}`);
+      c.setAttribute('aria-labelledby', `dt-h-${key}`);
+      const head = el('div', 'dt-head');
+      const h2 = el('h2', '', title);
+      h2.id = `dt-h-${key}`;
+      head.append(h2, el('span', 'dt-n', String(items.length)));
+      const late = items.filter((x) => !later(x) && isLate(x)).length;
+      if (late) head.append(el('span', 'dt-late', `${late} late`));
+      c.append(head);
+      if (!items.length) c.append(el('p', 'dt-none', none));
+      return c;
+    };
+
+    const mine = open.filter((x) => x.forMe);
+    const toMe = column('to', 'Assigned to you', mine, 'No open task is assigned to you.');
+    const from = (x) => `From ${x.by === me ? 'you' : x.by || 'someone'}`;
+    const parts = [['Late, do these first', mine.filter((x) => !later(x) && isLate(x)), ' is-late'], ['Today', mine.filter((x) => !later(x) && !isLate(x)), ''], ['Later', mine.filter(later), '']]
+      .filter(([, items]) => items.length);
+    parts.forEach(([label, items, cls]) => {
+      // A single list of today's tasks needs no heading of its own.
+      if (parts.length > 1 || label !== 'Today') toMe.append(el('h3', `tdx-group${cls}`, `${label} · ${items.length}`));
+      toMe.append(rows(items, from));
+    });
+
+    const given = open.filter((x) => !x.forMe && (x.given || x.by === me));
+    const byMe = column('by', 'Assigned by you', given, 'No open task. A task you assign is listed here until it is done.');
+    const teams = [...new Set([...allTeams.map((x) => x.id), ...given.map((x) => x.team)])];
+    teams.forEach((id) => {
+      const items = given.filter((x) => x.team === id);
+      if (!items.length) return;
+      byMe.append(el('h3', 'tdx-group', `${items[0].teamLabel || id} · ${items.length}`));
+      const people = ((allTeams.find((x) => x.id === id) || {}).members || []).length;
+      byMe.append(rows(items, (x) => (people ? `To ${peopleOf(x.team, x.teamLabel)}` : '')));
+    });
+
+    const box = el('div', 'dt-cols');
+    box.append(toMe, byMe);
+    return box;
   }
 
   function tasksPanel(t, refresh) {
@@ -888,13 +867,6 @@
         sb.append(el('span', 'td-search-n', n ? `${n} open task${n === 1 ? '' : 's'} found` : 'No open task found'));
       }
       box.append(sb);
-    }
-    // The Board, for Admin and the Manager: the kind pills, then a column per team.
-    if (seesAll && t.tasks.length) {
-      const pills = kindPills(t.tasks.filter((x) => !x.done && matches(x)), refresh);
-      if (pills) box.append(pills);
-      box.append(boardOf(t, refresh));
-      return box;
     }
     // Which tasks to see (the owner, 15 Nov 2026): one list at a time, never mixed. The tasks for this person are split in two, Today
     // and Later (rescheduled to a later day); for Admin and the Manager also "You gave" and "Given by others". A task handed on to another
@@ -1001,7 +973,7 @@
         const ids = [...new Set(fresh.map((n) => n.task))];
         try { await api('/api/tasks/seen', { ids: ids.map((x) => x.id) }); } catch (e) { clear.disabled = false; window.NiecUI.toast(e.message || 'Could not mark them as read. Try again.', { type: 'error' }); return; }
         ids.forEach((x) => { x.news = []; x.unread = 0; (x.history || []).forEach((n) => { n.isNew = false; }); });
-        window.dispatchEvent(new Event('isr-tasks-read'));
+        window.dispatchEvent(new Event('sr360-tasks-read'));
         refresh();
       });
       head.append(clear);
@@ -1078,8 +1050,8 @@
   let closeInbox = () => {};
   function goTo(x, refresh) {
     closeInbox();
-    // A done task is no longer on Today: it is on the student's card.
-    if (x.done) { api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {}).then(() => { location.href = '/student?id=' + encodeURIComponent(x.studentId); }); return; }
+    // A done task is no longer on Today: it is on the student's card. So is a task Admin or the Manager neither has nor gave.
+    if (x.done || (todayData && todayData.lead && !(x.forMe || x.given || x.by === me))) { api(`/api/cards/${encodeURIComponent(x.studentId)}/tasks/${x.id}`, { seen: true }).catch(() => {}).then(() => { location.href = '/student?id=' + encodeURIComponent(x.studentId); }); return; }
     taskView = x.forMe ? (!x.done && x.doOn && todayIso && x.doOn > todayIso ? 'upcoming' : 'mine') : (x.given || x.by === me) ? 'gave' : 'others';
     tagFilter = todayData && todayData.missing ? tagOf(x, x.stage) : 'all'; // the Application Team has no "All": the task's own kind
     searchQ = '';
@@ -1176,10 +1148,13 @@
     try { tasks = await api('/api/tasks'); } catch (e) { /* the rest of Today still shows */ }
     document.title = 'Today · Student Recruit 360';
     const page = el('div', 'td-page');
-    const appLook = Boolean(d.appTeam || d.mockTeam); // the Application Team's own Today (approved design F5), and the Mock Team's (23 Nov 2026)
+    const dayLook = Boolean(d.lead); // Admin, the Manager and a branch: the tasks to them and from them (the owner, 27 Nov 2026)
+    const appLook = dayLook || teamLook(d); // the Application Team's own Today (approved design F5), and the Mock Team's (23 Nov 2026)
     let head; let bellHost;
     if (appLook) {
       page.classList.add('tda-page');
+      page.classList.toggle('dw-page', dayLook);
+      page.classList.toggle('br-page', Boolean(d.branchTeam));
       head = el('header', 'tda-top');
       const left = el('div', 'tda-title');
       left.append(el('div', 'tda-date', new Date(d.today + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })), el('h1', '', 'Today'));
@@ -1234,7 +1209,7 @@
     };
     // A task read on this page (its updates opened, an update written, Mark all as read): the bell follows at once, without redrawing
     // the tasks (an update being typed is never lost). The owner, 21 Nov 2026: the bell stayed at 10 after reading.
-    window.addEventListener('isr-tasks-read', async () => { try { tasks = await api('/api/tasks'); } catch (e) { return; } paintBell(); });
+    window.addEventListener('sr360-tasks-read', async () => { try { tasks = await api('/api/tasks'); } catch (e) { return; } paintBell(); });
     todayData = d;
     const refresh = async (reload) => {
       if (reload) {
@@ -1246,18 +1221,18 @@
       tasksNow = tasks.tasks || [];
       paintBell();
       const own = ownTeamCard(tasks);
-      page.classList.toggle('is-board', Boolean(tasks.canAssign));
       top.replaceChildren(...(own ? [own] : []), ...(appLook ? [] : [pulse(tasks)])); // the Application Team's F5 screen has no greeting card
-      slot.replaceChildren(tasksPanel(tasks, refresh));
-      if (window.Motion && firstDraw) window.Motion.reveal(slot, '.tdx-list > *, .tb-col');
+      slot.replaceChildren(dayLook ? leadPanel(tasks, refresh) : tasksPanel(tasks, refresh));
+      if (window.Motion && firstDraw && !dayLook) window.Motion.reveal(slot, '.tdx-list > *');
       firstDraw = false;
     };
     refresh();
     // The day at a glance, then the tasks. Needs attention stays for the other teams; for the Application Team its lists are the
     // Missing details switch (the owner, 21 Nov 2026), so nothing shows twice.
-    page.append(head, top, slot, ...(d.missing ? [] : [attention(d.sections)]));
+    const needs = !d.missing && !dayLook; // a branch's Today is its tasks only; its Dashboard has Needs attention
+    page.append(head, top, slot, ...(needs ? [attention(d.sections)] : []));
     view.replaceChildren(page);
-    if (window.Motion && !d.missing) window.Motion.reveal(page, '.td-attn-row');
+    if (window.Motion && needs) window.Motion.reveal(page, '.td-attn-row');
 
     // A student's name opens their card over Today (card-drawer.js), with ‹ › to go through every student on the page in order, so
     // nobody leaves Today and comes back (the owner, 17 Nov 2026: less work). Closing it brings the tasks up to date. A Ctrl or

@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { acquire, STALE_MS } = require('../student-details/instance-lock');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-lock-'));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-lock-'));
 
 test('a second copy on the same data folder refuses; a stopped or stale one is taken over', () => {
   const dir = tmp();
@@ -34,16 +34,30 @@ test('a second copy on the same data folder refuses; a stopped or stale one is t
   assert.ok(!acquire(dir, { pid: 1007 }).error);
 });
 
-test('only one real server starts on one data folder', { timeout: 60000 }, async () => {
+test('a second real server writes nothing: it passes requests to the first, and stops when the first is gone', { timeout: 90000 }, async (t) => {
   const { spawn } = require('node:child_process');
   const dir = tmp();
-  const run = (port) => spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir }, stdio: ['ignore', 'ignore', 'pipe'] });
+  const run = (port) => spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), HOST: '127.0.0.1', STUDENT_DETAILS_DATA_DIR: dir }, stdio: ['ignore', 'pipe', 'pipe'] });
   const first = run(45871);
   await new Promise((r) => setTimeout(r, 3000));
   const second = run(45872);
-  let err = ''; second.stderr.on('data', (d) => { err += d; });
-  const code = await new Promise((r) => second.on('exit', r));
-  first.kill();
-  assert.strictEqual(code, 1);
-  assert.match(err, /already running/);
+  t.after(() => { first.kill(); second.kill(); });
+  await new Promise((r) => setTimeout(r, 2000));
+  const owner = () => JSON.parse(fs.readFileSync(path.join(dir, 'server.lock'), 'utf8')).pid;
+  assert.strictEqual(owner(), first.pid, 'the lock stays with the first copy');
+  // Many requests at once through the second copy, answered by the first.
+  const answers = await Promise.all(Array.from({ length: 40 }, () => fetch('http://127.0.0.1:45872/healthz').then(async (r) => r.status + ' ' + await r.text())));
+  assert.deepStrictEqual([...new Set(answers)], ['200 {"ok":true}']);
+  // The same answer as from the first copy, with a refusal staying a refusal and a posted body arriving.
+  assert.strictEqual((await fetch('http://127.0.0.1:45872/api/users')).status, 401);
+  const post = (port) => fetch(`http://127.0.0.1:${port}/api/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'nobody', password: 'wrong-password' }) }).then(async (r) => r.status + ' ' + await r.text());
+  assert.strictEqual(await post(45872), await post(45871));
+  assert.strictEqual(owner(), first.pid);
+  // The first copy goes away: the second says so once and stops, so the host can start a fresh one.
+  const left = new Promise((r) => second.on('exit', r));
+  first.kill('SIGKILL');
+  await new Promise((r) => first.on('exit', r));
+  const last = await fetch('http://127.0.0.1:45872/healthz').then((r) => r.status, () => 'closed');
+  assert.ok(last === 503 || last === 'closed', String(last));
+  assert.strictEqual(await left, 1);
 });

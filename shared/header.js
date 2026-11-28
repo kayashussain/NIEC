@@ -4,7 +4,7 @@
 // session.js), and the header fills itself in.
 //
 // Navigation depends on the account: Admin sees every page (Users and Activity in the account menu), the Manager the Dashboard, All Students and
-// Universities, and the teams All Students and Universities.
+// Universities, and the teams All Students and Universities. Every team has Interview guidelines (the owner, 27 Nov 2026).
 // Text size (the owner, 23 Nov 2026): every page is drawn at Medium for everyone; there is no Text size choice in the account menu any more.
 // Only on laptop and desktop screens (theme.css); a phone keeps its own size.
 (function () {
@@ -13,6 +13,29 @@
   // A page shown inside another (the student card opened over All Students) is already drawn at the size of the page around it.
   let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
   document.documentElement.setAttribute('data-size', framed ? 'framed' : size);
+})();
+
+// A quick sideways swipe on a touchpad must not take the person to the page before or after (the owner, 25 Nov 2026). The style sheet switches it off in Chrome and Edge;
+// this covers the browsers that still honour it: a sideways wheel movement outside anything that scrolls sideways is stopped.
+(function () {
+  const sideways = (el) => { for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const c = getComputedStyle(n); if (/(auto|scroll)/.test(c.overflowX) && n.scrollWidth > n.clientWidth + 1) return true; } return false; };
+  window.addEventListener('wheel', (e) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && !e.ctrlKey && !sideways(e.target)) e.preventDefault(); }, { passive: false });
+})();
+
+// Light and dark mode (the owner, 25 Nov 2026): a choice in the account menu, remembered in this browser, applied before the first draw.
+(function () {
+  let t = 'light'; try { t = localStorage.getItem('sr360Theme') === 'dark' ? 'dark' : 'light'; } catch (e) { /* light */ }
+  // The dark look is its own style sheet (dark.css), added while Dark mode is chosen, written into the page while it is still being read so nothing flashes light first.
+  const ensure = (v) => {
+    const link = document.querySelector('link[data-dark]');
+    if (v !== 'dark') { if (link) link.remove(); return; }
+    if (link) return;
+    if (document.readyState === 'loading' && document.currentScript) { document.write('<link rel="stylesheet" href="/dark.css" data-dark="1">'); return; }
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/dark.css'; l.setAttribute('data-dark', '1'); document.head.append(l);
+  };
+  document.documentElement.setAttribute('data-theme', t);
+  ensure(t);
+  window.Sr360Theme = { get: () => document.documentElement.getAttribute('data-theme'), set(v) { document.documentElement.setAttribute('data-theme', v); ensure(v); try { localStorage.setItem('sr360Theme', v); } catch (e) { /* only this visit */ } } };
 })();
 
 // The Apple look (the owner, 24 Nov 2026; Mock Team the same day; Follow-up Team 25 Nov 2026, design F1): one stylesheet, apple.css, that
@@ -30,16 +53,18 @@
         else { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/apple.css'; l.setAttribute('data-apple', '1'); document.head.append(l); }
       }
       document.documentElement.classList.add('app-apple');
+      // 🔴 CSS CHANGED (2026-11-26): a branch's Today has the same touches as the Application Team's and the Mock Team's | from: the plain look | to: kind 'today', for the branch on Today only
+      document.documentElement.classList.toggle('app-only', !kind || mock || kind === 'today'); // the Application Team's touches in apple.css hang on this class; the Mock Team shares them (the owner, 25 Nov 2026: one look, one type scale), its own pages (Bookings, Interview guidelines) have their rules under app-mock
       document.documentElement.classList.toggle('app-mock', mock); // the Mock Team's own touches in apple.css hang on this class, so the Application Team is never changed by them
-      try { localStorage.setItem('niecApple', mock ? 'mock' : kind === 'follow' ? 'follow' : '1'); } catch (e) { /* only the first draw may flash */ }
+      try { localStorage.setItem('niecApple', mock ? 'mock' : kind === 'follow' ? 'follow' : kind === 'all' || kind === 'today' ? 'all' : '1'); } catch (e) { /* only the first draw may flash */ }
     },
     off() {
       const l = link(); if (l) l.remove();
-      document.documentElement.classList.remove('app-apple', 'app-mock');
+      document.documentElement.classList.remove('app-apple', 'app-mock', 'app-only');
       try { localStorage.removeItem('niecApple'); } catch (e) { /* nothing kept */ }
     },
   };
-  try { const kept = localStorage.getItem('niecApple'); if (kept === '1') window.NiecApple.on(); else if (kept === 'mock' || kept === 'follow') window.NiecApple.on(kept); } catch (e) { /* not remembered */ }
+  try { const kept = localStorage.getItem('niecApple'); if (kept === '1') window.NiecApple.on(); else if (kept === 'mock' || kept === 'follow' || kept === 'all') window.NiecApple.on(kept); } catch (e) { /* not remembered */ }
 })();
 
 (function () {
@@ -48,11 +73,11 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   header.innerHTML = `
-    <button type="button" class="niec-toggle" aria-label="Open or close the menu" aria-expanded="true" title="Open or close the menu"><span class="niec-burger-ico" aria-hidden="true"></span></button>
+    <button type="button" class="niec-toggle" aria-label="Fold or unfold the menu" aria-expanded="true" title="Fold menu"><span class="niec-fold-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span><span class="niec-fold-lbl">Fold menu</span></button>
     <a class="niec-brand" href="/today" title="Home" id="niecHome">
-      <img class="niec-logo" src="/brand-logo.png" alt="Home" width="198" height="96" />
+      <img class="niec-logo" draggable="false" src="/brand-logo.svg" alt="Student Recruit 360 home" width="332" height="100" />
       <span class="niec-name" hidden><b>Student Recruit 360</b></span>
-      <span class="niec-mark" aria-hidden="true">SR</span>
+      <span class="niec-mark" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#0070e0" stroke-width="8" stroke-linecap="round" stroke-dasharray="210 41.3" transform="rotate(-40 50 50)"/><path d="M50 29L80 44L50 59L20 44Z" fill="#0070e0"/><path d="M34 54V64C34 70 66 70 66 64V54L50 62Z" fill="#0070e0"/><path d="M80 44V60" stroke="#d9650b" stroke-width="4" stroke-linecap="round"/><circle cx="80" cy="63" r="4" fill="#d9650b"/><circle cx="50" cy="10" r="6" fill="#d9650b"/></svg></span>
     </a>
     <button type="button" class="niec-burger" aria-expanded="false" aria-controls="niecNav"><span class="niec-burger-ico" aria-hidden="true"></span><span class="niec-burger-lbl">Menu</span></button>
     <nav class="niec-nav" id="niecNav" aria-label="Pages"></nav>
@@ -67,7 +92,7 @@
 
   // Only the consultancy's logo at the top of the menu (the owner, 14 Nov 2026); "Student Recruit 360" shows only if there is no logo.
   const logo = header.querySelector('.niec-logo');
-  logo.addEventListener('error', () => { logo.hidden = true; header.querySelector('.niec-name').hidden = false; });
+  logo.addEventListener('error', () => { if (/.svg$/.test(logo.getAttribute('src'))) { logo.setAttribute('src', '/brand-logo.png'); return; } logo.hidden = true; header.querySelector('.niec-name').hidden = false; });
 
 
   // ---- Quick search (Ctrl+K, or the Search button): jump to a page or a student from anywhere, with the keyboard ----
@@ -178,8 +203,8 @@
   function sharedLinks(me) {
     if (me.role === 'student') return { before: [], after: [] };
     const deps = me.departments || [];
-    // Mock interviews (the guides students read): Admin, the Manager and the Mock Team (the owner, 20 Nov 2026).
-    const after = me.role === 'admin' || me.role === 'manager' || deps.includes('mock') ? [['mock', '/mock-guides', 'Mock interviews']] : [];
+    // Interview guidelines, in place of Mock interviews (the owner, 26 Nov 2026), for every team to read (the owner, 27 Nov 2026).
+    const after = [['guidelines', '/interview-guidelines', 'Interview guidelines']];
     if (me.role === 'admin') return { before: [], after };
     const manager = me.role === 'manager';
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
@@ -207,6 +232,14 @@
     const deps = me.departments || [];
     return me.taskTeam ? me.taskTeam === 'followup' && deps.includes('followup') : deps.length === 1 && deps[0] === 'followup';
   };
+  // The same for a branch (the server's ownTeamBranch): Today, Dashboard, All Students, Universities (the owner, 26 Nov 2026) and
+  // Interview guidelines (27 Nov 2026) only.
+  const ownTeamBranch = (me) => {
+    if (!me || me.role === 'admin' || me.role === 'manager') return false;
+    const deps = me.departments || [];
+    const branch = (d) => !['application', 'mock', 'followup'].includes(d);
+    return me.taskTeam ? branch(me.taskTeam) && deps.includes(me.taskTeam) : deps.length > 0 && deps.every(branch);
+  };
   // The same for the Mock Team (the server's ownTeamMock): Today, Bookings, All Students, Universities and Interview guidelines, with no
   // Dashboard, Partners or Mock interviews (the owner, 22 Nov 2026).
   const ownTeamMock = (me) => {
@@ -221,12 +254,15 @@
     const fuOwn = ownTeamFollowup(me);
     const mockOwn = ownTeamMock(me);
     // The Apple look for the Application Team (the owner, 24 Nov 2026) and, the same look, the Mock Team (the owner, 24 Nov 2026).
-    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else if (fuOwn) window.NiecApple.on('follow'); else window.NiecApple.off(); }
+    const branchOwn = ownTeamBranch(me);
+    if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else if (fuOwn) window.NiecApple.on('follow'); else window.NiecApple.on(branchOwn && location.pathname === '/today' ? 'today' : 'all'); }
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
+      // A branch (the owner, 26 Nov 2026): no Add many students and no Follow-up in its menu; Interview guidelines to read (27 Nov 2026).
+      : branchOwn ? [...LINKS.branch.filter(([id]) => !['bulkadd', 'bulk'].includes(id)), ['guidelines', '/interview-guidelines', 'Interview guidelines']]
       : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
         : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
-    const extra = mockOwn ? { before: [], after: [] } : appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after.filter(([id]) => id !== 'mock') } : shared0;
+    const extra = mockOwn || branchOwn ? { before: [], after: [] } :appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after } : shared0;
     const at = own.findIndex(([id]) => id === 'factfile');
     const links = at === -1 ? [...own, ...extra.before, ...extra.after] : [...own.slice(0, at), ...extra.before, ...own.slice(at), ...extra.after];
     paletteLinks = [...links, ...(MENU_LINKS[me.role] || []), ...(ACCOUNT_LINKS[me.role] || [])];
@@ -245,8 +281,9 @@
     bound = true;
     if (firstTime) burger.addEventListener('click', () => { const open = !header.classList.contains('menu-open'); header.classList.toggle('menu-open', open); burger.setAttribute('aria-expanded', String(open)); });
     if (firstTime) document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && header.classList.contains('menu-open')) { header.classList.remove('menu-open'); burger.setAttribute('aria-expanded', 'false'); burger.focus(); } });
-    const setNav = (closed) => { document.documentElement.setAttribute('data-nav', closed ? 'closed' : 'open'); toggle.setAttribute('aria-expanded', String(!closed)); try { localStorage.setItem('niecNav', closed ? 'closed' : 'open'); } catch (e) { /* the menu simply opens as usual next time */ } };
+    const setNav = (closed) => { document.documentElement.setAttribute('data-nav', closed ? 'closed' : 'open'); toggle.setAttribute('aria-expanded', String(!closed)); toggle.title = closed ? 'Unfold menu' : 'Fold menu'; try { localStorage.setItem('niecNav', closed ? 'closed' : 'open'); } catch (e) { /* the menu simply opens as usual next time */ } };
     toggle.setAttribute('aria-expanded', String(document.documentElement.getAttribute('data-nav') !== 'closed'));
+    toggle.title = document.documentElement.getAttribute('data-nav') === 'closed' ? 'Unfold menu' : 'Fold menu';
     if (firstTime) toggle.addEventListener('click', () => setNav(document.documentElement.getAttribute('data-nav') !== 'closed'));
     // On a phone the menu may not fit: its right edge fades until it is scrolled to the end, as a hint to swipe.
     const edge = () => nav.classList.toggle('at-end', nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2);
@@ -270,14 +307,24 @@
         <div class="niec-menu-head"><b>${esc(me.name)}</b><span>${esc(me.username)} · ${esc(me.roleLabel)}</span></div>
         ${(ACCOUNT_LINKS[me.role] || []).map(([id, href, label]) => `<a href="${href}" role="menuitem" class="niec-${id}"${id === page ? ' aria-current="page"' : ''}>${esc(label)}</a>`).join('')}
         ${me.role === 'student' ? '' : '<button type="button" role="menuitem" class="niec-phone">Connect my phone</button>'}
+        <button type="button" role="menuitem" class="niec-theme">Dark mode</button>
         <button type="button" role="menuitem" class="niec-logout">Log out</button>
       </div>`;
     const btn = account.querySelector('.niec-account-btn');
     const menu = account.querySelector('.niec-menu');
     const setOpen = (open) => { menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); };
-    btn.addEventListener('click', (e) => { e.stopPropagation(); setOpen(menu.hidden); });
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // From the folded strip the whole menu opens first, then the account's own menu (the owner, 25 Nov 2026).
+      if (document.documentElement.getAttribute('data-nav') === 'closed') { setNav(false); setTimeout(() => setOpen(true), 260); return; }
+      setOpen(menu.hidden);
+    });
     document.addEventListener('click', (e) => { if (!account.contains(e.target)) setOpen(false); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); } });
+    const themeBtn = account.querySelector('.niec-theme');
+    const drawTheme = () => { themeBtn.textContent = window.Sr360Theme.get() === 'dark' ? 'Light mode' : 'Dark mode'; };
+    drawTheme();
+    themeBtn.addEventListener('click', () => { window.Sr360Theme.set(window.Sr360Theme.get() === 'dark' ? 'light' : 'dark'); drawTheme(); setOpen(false); });
     account.querySelector('.niec-logout').addEventListener('click', () => window.NiecSession.logout());
     // WhatsApp chats on the person's own phone (see student-details/phone-link.js).
     if (account.querySelector('.niec-phone')) account.querySelector('.niec-phone').addEventListener('click', () => { setOpen(false); if (window.PhoneLink) window.PhoneLink.dialog(); });
@@ -301,7 +348,7 @@
   // The menu is drawn at once from what this browser tab remembers from the last page (who is logged in), so moving from page
   // to page never shows an empty menu; the server's answer then confirms it and redraws only if something changed. The memory is
   // per tab (sessionStorage), holds only the name, username and access, and is wiped at the login page and at Log out.
-  const MEMORY = 'isrMe';
+  const MEMORY = 'sr360Me';
   let shown = '';
   try {
     const kept = sessionStorage.getItem(MEMORY);
@@ -321,16 +368,16 @@
     bar.textContent = 'DEMO: these students, intakes and numbers are made up. They are not your real data.';
     document.body.prepend(bar);
   };
-  try { if (sessionStorage.getItem('isrDemo') === '1') demoBar(); } catch (e) { /* checked below */ }
+  try { if (sessionStorage.getItem('sr360Demo') === '1') demoBar(); } catch (e) { /* checked below */ }
   fetch('/api/demo', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
-    try { sessionStorage.setItem('isrDemo', d && d.demo ? '1' : '0'); } catch (e) { /* not kept */ }
+    try { sessionStorage.setItem('sr360Demo', d && d.demo ? '1' : '0'); } catch (e) { /* not kept */ }
     if (d && d.demo) demoBar();
   }).catch(() => { /* no banner */ });
   // A red badge on Today in the menu when something is new on the person's tasks (a comment, a task just given to them), so nobody
   // misses that the team, or whoever gave a task, wrote back (the owner, 14 Nov 2026). Checked on every page, every minute, and at
-  // once when the person reads a task (the comments send "isr-tasks-read").
+  // once when the person reads a task (the comments send "sr360-tasks-read").
   let unread = 0;
-  try { unread = Number(sessionStorage.getItem('isrUnread')) || 0; } catch (e) { /* asked below */ }
+  try { unread = Number(sessionStorage.getItem('sr360Unread')) || 0; } catch (e) { /* asked below */ }
   const showUnread = () => {
     const link = header.querySelector('.niec-nav a[href="/today"]');
     if (!link) return;
@@ -345,12 +392,12 @@
     if (!d) return;
     const was = unread;
     unread = Number(d.count) || 0;
-    try { sessionStorage.setItem('isrUnread', String(unread)); } catch (e) { /* asked again next page */ }
+    try { sessionStorage.setItem('sr360Unread', String(unread)); } catch (e) { /* asked again next page */ }
     showUnread();
     if (unread > was) { const b = header.querySelector('.niec-badge'); if (b) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); } }
   }).catch(() => { /* asked again in a minute */ }));
   showUnread();
-  window.addEventListener('isr-tasks-read', () => setTimeout(askUnread, 300));
+  window.addEventListener('sr360-tasks-read', () => setTimeout(askUnread, 300));
   setInterval(() => { if (!document.hidden) askUnread(); }, 60000);
   fetch('/api/me', { cache: 'no-store' })
     .then((res) => (res.ok ? res.json() : null))

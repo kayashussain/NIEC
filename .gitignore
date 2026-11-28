@@ -80,6 +80,7 @@ live-data/
 **/apply-through.json
 student-details/brand-logo.png
 **/server.lock
+**/primary.sock
 
 # More runtime files the server writes into the data folder (private student names, emails and phones): never in git (review of 25 Nov 2026).
 **/mock-bookings.json
@@ -88,3 +89,8 @@ student-details/brand-logo.png
 **/users.json
 **/sessions.json
 **/session-secret
+
+# Copies of the data made before a new version starts (version-guard.js), and the note of which data folder is in use.
+**/version-backups/
+**/version-stamp.json
+**/.data-folder

@@ -21,7 +21,7 @@ test('a damaged date never stops a page; a direct partner is counted as its univ
 });
 
 test('review fixes on the real server', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-review-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-review-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   delete env.ANTHROPIC_API_KEY;

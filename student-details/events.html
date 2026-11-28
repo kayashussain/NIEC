@@ -146,7 +146,7 @@
   .ev-conv { display: block; margin-top: 6px; color: #333; font-size: 13px; }
 </style>
 <!-- The first picture of the page waits until the menu has been drawn (see the marker at the end), so moving between pages never flashes an empty menu. -->
-<link rel="expect" href="#isr-ready" blocking="render" />
+<link rel="expect" href="#sr360-ready" blocking="render" />
 </head>
 <body class="p-body">
   <header class="niec-header" data-page="events"></header>
@@ -176,7 +176,7 @@
           <span class="p-muted" id="count"></span>
         </div>
       </div>
-      <div class="ev-ledger" id="list"><div class="isr-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>
+      <div class="ev-cards" id="list"><div class="sr360-skel" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>
     </div>
     <section id="eventView" hidden></section>
   </main>
@@ -187,6 +187,6 @@
 <script src="student-file.js"></script>
 <script src="card-drawer.js"></script>
 <script src="events-page.js"></script>
-<span id="isr-ready" hidden></span>
+<span id="sr360-ready" hidden></span>
 </body>
 </html>

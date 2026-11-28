@@ -13,7 +13,7 @@ const { tidyNov20, tidyNames } = require('../student-details/partner-tidy');
 const { createCards } = require('../student-details/cards');
 const { partnerAccess } = require('../student-details/partner-access');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-apply-'));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-apply-'));
 const SEED = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'student-details', 'apply-through-seed.json'), 'utf8'));
 
 test('the starting list keeps a university and its international college apart, and every place is listed (the owner, 21 Nov 2026)', () => {

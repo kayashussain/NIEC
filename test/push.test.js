@@ -53,9 +53,9 @@ test('a connected phone gets the student\'s chat, encrypted and signed; nobody e
   const svc = http.createServer((req, res) => { const chunks = []; req.on('data', (c) => chunks.push(c)); req.on('end', () => { got.push({ headers: req.headers, body: Buffer.concat(chunks), url: req.url }); res.writeHead(answer); res.end(); }); }).listen(pushPort);
   t.after(() => svc.close());
 
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-push-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-push-'));
   const port = await freePort();
-  const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, ISR_PUSH_LOCAL: '1' }, stdio: 'ignore' });
+  const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, SR360_PUSH_LOCAL: '1' }, stdio: 'ignore' });
   t.after(() => server.kill());
   const base = `http://127.0.0.1:${port}`;
   for (let i = 0; i < 60; i += 1) { try { if ((await fetch(base + '/login')).ok) break; } catch (e) { /* not up yet */ } await wait(250); }

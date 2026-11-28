@@ -24,6 +24,7 @@
   // Which partner this university is applied through (Apply through, the owner, 20 Nov 2026): only Admin and the Application Team
   // are told; for everyone else the server answers 403 and nothing is shown.
   let applyVia = null;
+  let mineHere = null; // a branch's own students at this University
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -365,6 +366,32 @@
       body.append(foot);
     });
   }
+  // A branch's own students at this University (the owner, 27 Nov 2026), under the four tiles: who has an offer, who waits, who has chosen it.
+  function mineSection() {
+    const sec = el('section', 'up-section up-mine no-print');
+    sec.append(el('h2', '', 'Your students here'));
+    const sum = [`${mineHere.students.length} student${mineHere.students.length === 1 ? '' : 's'}`, `${mineHere.applications} application${mineHere.applications === 1 ? '' : 's'}`, `${mineHere.offers} offer${mineHere.offers === 1 ? '' : 's'}`];
+    if (mineHere.days !== null) sum.push(`${mineHere.days} day${mineHere.days === 1 ? '' : 's'} to an offer on average`);
+    sec.append(el('p', 'up-mine-sum', sum.join(' · ')));
+    const day = (iso) => `${Number(iso.slice(8, 10))} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(iso.slice(5, 7)) - 1]}`;
+    const WORDS = { offer: 'Offer', waiting: 'Waiting for the offer', chosen: 'Chosen, not applied', refused: 'Refused', withdrawn: 'Withdrawn' };
+    const ul = el('ul', 'up-mine-list');
+    mineHere.students.forEach((s) => {
+      const li = el('li');
+      const who = el('div', 'up-mine-who');
+      const a = el('a', '', s.name);
+      a.href = '/student?id=' + encodeURIComponent(s.id);
+      who.append(a, el('span', '', [s.course, s.stage].filter(Boolean).join(' · ')));
+      const state = el('div', 'up-mine-state');
+      state.append(el('b', `is-${s.state}`, WORDS[s.state]));
+      const when2 = s.offer ? `Received ${day(s.offer)}` : s.applied ? `Sent ${day(s.applied)}` : '';
+      if (when2) state.append(el('span', '', when2));
+      li.append(who, state);
+      ul.append(li);
+    });
+    sec.append(ul);
+    return sec;
+  }
   function renderProfile() {
     const P0 = uni.profile;
     const view = P.present(uni);
@@ -461,6 +488,7 @@
     fact('Apply by', deadlineText, typeof daysText === 'number' ? (daysText === 0 ? 'Today' : daysText === 1 ? '1 day left' : `${daysText} days left`) : null);
     fact('Tuition from', fees.length ? `${pretty(Math.min(...fees))} a year` : '', data.courses.length ? `${data.courses.length} courses` : null);
     doc.append(facts);
+    if (mineHere && mineHere.students.length) doc.append(mineSection());
 
     // video and pictures (the owner, 20 Nov 2026): the pictures fill one large frame edge to edge (no blurred bands) and fade one into
     // the next on their own, with a bar under each that fills while it is shown; a click on a bar goes to it, the mouse over the frame
@@ -899,12 +927,37 @@
       return;
     }
     if (window.Shortlist) await window.Shortlist.ready;
+    if (!BACKUP && window.TeamRules && window.TeamRules.ownTeamBranch(me)) { try { const r = await fetch('/api/branch-universities', { cache: 'no-store' }); if (r.ok) mineHere = (await r.json()).universities[id] || null; } catch (e) { mineHere = null; } }
     if (!BACKUP) { try { const r = await fetch('/api/fact-courses?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) courseData = await r.json(); } catch (e) { courseData = null; } }
     if (!BACKUP && !student()) { try { const r = await fetch('/api/course-watch?university=' + encodeURIComponent(id), { cache: 'no-store' }); if (r.ok) watch = await r.json(); } catch (e) { /* the page works without it */ } }
     if (!BACKUP && !student()) { try { const r = await fetch('/api/apply-through/find?name=' + encodeURIComponent(uni.name || ''), { cache: 'no-store' }); if (r.ok) applyVia = (await r.json()).entry; } catch (e) { applyVia = null; } }
     if (team() && window.ShortlistFor) { await window.ShortlistFor.ready(); window.ShortlistFor.onChange(render); window.ShortlistFor.tray(); }
     render();
   }
+  // A bar of quick jumps under the title (the owner, 25 Nov 2026): the page is long, so each of its sections is one press away. It is made from the page's own headings and stays at the top while scrolling.
+  (function jumpBar() {
+    const main = document.querySelector('main'); if (!main) return;
+    let timer;
+    const short = (t) => String(t || '').replace(/^Courses for .*/, 'Courses').replace(/^Deadlines for .*/, 'Deadlines');
+    const build = () => {
+      const heads = [...main.querySelectorAll('h2')].filter((h) => h.offsetParent !== null && !h.closest('.up-jump'));
+      const old = main.querySelector('.up-jump');
+      if (heads.length < 3) { if (old) old.remove(); return; }
+      const key = heads.map((h) => short(h.textContent)).join('|');
+      if (old && old.dataset.key === key) return;
+      if (old) old.remove();
+      const nav = document.createElement('nav'); nav.className = 'up-jump no-print'; nav.dataset.key = key; nav.setAttribute('aria-label', 'Jump to a section');
+      heads.forEach((h, i) => {
+        h.id = h.id || 'up-sec-' + i; h.style.scrollMarginTop = '72px';
+        const a = document.createElement('a'); a.href = '#' + h.id; a.textContent = short(h.textContent);
+        a.addEventListener('click', (e) => { e.preventDefault(); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+        nav.append(a);
+      });
+      const msg = main.querySelector('.msg') || main.querySelector('.page-head');
+      if (msg) msg.after(nav); else main.prepend(nav);
+    };
+    new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(build, 250); }).observe(main, { childList: true, subtree: true });
+  })();
   if (BACKUP) { const back = document.querySelector('a[href="/fact-file"]'); if (back) back.href = '/fact-file?backup=' + encodeURIComponent(BACKUP); }
   start();
 })();

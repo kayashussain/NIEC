@@ -29,23 +29,44 @@
     return p;
   }
 
+  // The day of a moment, as a heading: Today, Yesterday, else the date.
+  const dayKey = (d) => `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`;
+  function dayHead(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    const before = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const word = dayKey(d) === dayKey(now) ? 'Today' : dayKey(d) === dayKey(before) ? 'Yesterday' : d.toLocaleDateString('en-GB', { weekday: 'long' });
+    return `<h3 class="ac-day"><b>${word}</b><span>${dayKey(d)}</span></h3>`;
+  }
+  const clock = (iso) => new Date(iso).toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const mark = (name) => String(name || '?').replace(/\(.*?\)/g, ' ').split(/\s+/).filter((w) => /^[A-Za-z0-9]/.test(w)).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
+
   function entryHtml(e) {
     const action = String(e.action).split(' ')[0].toLowerCase();
-    return `<div class="activity-entry">
+    return `<div class="activity-entry is-${esc(e.category)}">
+      <span class="ac-mark" aria-hidden="true">${esc(mark(e.account))}</span>
+      <div class="ac-body">
       <div class="activity-head">
         <span class="activity-who">${esc(e.account)}</span>
         <span class="activity-action activity-${esc(action)} cat-${esc(e.category)}">${esc(e.action)}</span>
         ${e.app ? `<span class="activity-app">${esc(e.app)}</span>` : ''}
-        <span class="activity-time">${esc(when(e.time))}</span>
+        <span class="activity-time" title="${esc(when(e.time))}">${esc(clock(e.time))}</span>
       </div>
       <div class="activity-device">${esc(e.device)}${e.ip ? ` &middot; ${esc(e.ip)}` : ''}</div>
       ${e.note ? `<div class="activity-note">${esc(e.note)}</div>` : ''}
       ${Array.isArray(e.changes) && e.changes.length ? `<ul class="activity-changes">${e.changes.slice(0, 6).map((c) => `<li>${esc(c)}</li>`).join('')}</ul>${e.changes.length > 6 ? `<details class="activity-more"><summary>Show ${e.changes.length - 6} more</summary><ul class="activity-changes">${e.changes.slice(6).map((c) => `<li>${esc(c)}</li>`).join('')}</ul></details>` : ''}` : ''}
+      </div>
     </div>`;
   }
 
   function render() {
-    $('list').innerHTML = events.map(entryHtml).join('') || '<p class="muted">Nothing matches these filters.</p>';
+    let day = '';
+    $('list').innerHTML = events.map((e) => {
+      const key = dayKey(new Date(e.time));
+      const head = key === day ? '' : dayHead(e.time);
+      day = key;
+      return head + entryHtml(e);
+    }).join('') || '<p class="muted ac-none">Nothing matches these filters.</p>';
     $('resultCount').textContent = total ? `Showing ${events.length} of ${total}` : '';
     if (events.length < total) {
       $('list').insertAdjacentHTML('beforeend', `<button class="btn activity-more" type="button" id="more">Show more (${total - events.length} older)</button>`);

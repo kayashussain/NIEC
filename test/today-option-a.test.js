@@ -19,7 +19,7 @@ test('the Pre-CAS interview is guessed as a mock, not the visa', () => {
 });
 
 test('Today, Option A: course and contact on each task, no course twice, Offer requests, Missing details', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-option-a-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-option-a-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   delete env.ANTHROPIC_API_KEY;

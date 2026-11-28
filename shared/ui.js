@@ -1,10 +1,10 @@
 // The size the whole page is drawn at (Text size in the account menu, the owner, 21 Nov 2026): the page may be drawn smaller than the
 // browser's own 100% (CSS zoom on <html>). Positions measured on the screen (getBoundingClientRect, mouse positions, the window's size)
-// then come in screen pixels, while a menu placed with style.left/top is placed in page pixels; `isrPos` turns the first into the second.
+// then come in screen pixels, while a menu placed with style.left/top is placed in page pixels; `sr360Pos` turns the first into the second.
 // With no zoom it changes nothing.
 (function (root) {
   const zoom = () => { try { const z = parseFloat(getComputedStyle(document.documentElement).zoom); return z > 0 ? z : 1; } catch (e) { return 1; } };
-  root.isrPos = {
+  root.sr360Pos = {
     zoom,
     rect(el) { const z = zoom(); const r = el.getBoundingClientRect(); return { top: r.top / z, bottom: r.bottom / z, left: r.left / z, right: r.right / z, width: r.width / z, height: r.height / z }; },
     width() { return root.innerWidth / zoom(); },
@@ -144,11 +144,11 @@
     const quick = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (quick || !document.startViewTransition || document.hidden) { change(); return Promise.resolve(); }
     const html = document.documentElement;
-    html.classList.toggle('isr-swap-soft', soft);
+    html.classList.toggle('sr360-swap-soft', soft);
     let t;
     try { t = document.startViewTransition(change); } catch (e) { change(); return Promise.resolve(); }
     t.ready.catch(() => {});
-    return t.finished.catch(() => {}).then(() => { html.classList.remove('isr-swap-soft'); });
+    return t.finished.catch(() => {}).then(() => { html.classList.remove('sr360-swap-soft'); });
   }
 
   root.NiecUI = { toast, confirm: confirmBox, alert: alertBox, swap, isOpen: () => openDialogs > 0 };
@@ -199,7 +199,7 @@
     if (!e.isIntersecting) return;
     e.target.classList.add('is-in');
     io.unobserve(e.target);
-    setTimeout(() => e.target.classList.remove('isr-reveal', 'is-in'), 900);
+    setTimeout(() => e.target.classList.remove('sr360-reveal', 'is-in'), 900);
   }), { rootMargin: '0px 0px -8% 0px' });
   const take = (el) => {
     if (seen.has(el)) return;
@@ -207,7 +207,7 @@
     if (el.closest('dialog, .card-drawer')) return;
     const r = el.getBoundingClientRect();
     if (r.top < window.innerHeight || r.height === 0) return; // on the first screen: shown at once
-    el.classList.add('isr-reveal');
+    el.classList.add('sr360-reveal');
     io.observe(el);
   };
   const scan = (node) => {
@@ -227,7 +227,7 @@
   if (typeof document === 'undefined' || !window.HTMLInputElement) return;
   const fine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
   if (!fine) return;
-  document.documentElement.classList.add('isr-cal-on');
+  document.documentElement.classList.add('sr360-cal-on');
   const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const pad = (n) => String(n).padStart(2, '0');
@@ -260,12 +260,12 @@
   }
   function place() {
     if (!open) return;
-    const r = window.isrPos.rect(open.input); // in page pixels, whatever the Text size
+    const r = window.sr360Pos.rect(open.input); // in page pixels, whatever the Text size
     const p = open.panel;
     const h = p.offsetHeight; const w = p.offsetWidth;
-    const below = r.bottom + 8 + h <= window.isrPos.height() || r.top - 8 - h < 0;
+    const below = r.bottom + 8 + h <= window.sr360Pos.height() || r.top - 8 - h < 0;
     p.style.top = `${Math.max(8, below ? r.bottom + 8 : r.top - 8 - h)}px`;
-    p.style.left = `${Math.max(8, Math.min(r.left, window.isrPos.width() - w - 8))}px`;
+    p.style.left = `${Math.max(8, Math.min(r.left, window.sr360Pos.width() - w - 8))}px`;
     p.classList.toggle('above', !below);
   }
   // The month and the year can be picked at once (the owner, 16 Nov 2026: a date of birth in 1999 took a click for every month): a
@@ -284,23 +284,23 @@
     let cells = '';
     if (view === 'years') {
       const [lo, hi] = yearRange();
-      for (let v = hi; v >= lo; v -= 1) cells += `<button type="button" class="isr-cal-cell${v === thisYear ? ' is-today' : ''}${v === y ? ' is-on' : ''}" data-y="${v}"${v === y ? ' aria-pressed="true"' : ''}>${v}</button>`;
+      for (let v = hi; v >= lo; v -= 1) cells += `<button type="button" class="sr360-cal-cell${v === thisYear ? ' is-today' : ''}${v === y ? ' is-on' : ''}" data-y="${v}"${v === y ? ' aria-pressed="true"' : ''}>${v}</button>`;
     } else {
       MONTHS.forEach((name, i) => {
         const v = `${y}-${pad(i + 1)}`;
         const off = (input.min && v < input.min.slice(0, 7)) || (input.max && v > input.max.slice(0, 7));
-        cells += `<button type="button" class="isr-cal-cell${y === thisYear && i === thisMonth ? ' is-today' : ''}${v === chosen || (!chosen && i === m) ? ' is-on' : ''}" data-m="${i}"${off ? ' disabled' : ''} aria-label="${name} ${y}">${name.slice(0, 3)}</button>`;
+        cells += `<button type="button" class="sr360-cal-cell${y === thisYear && i === thisMonth ? ' is-today' : ''}${v === chosen || (!chosen && i === m) ? ' is-on' : ''}" data-m="${i}"${off ? ' disabled' : ''} aria-label="${name} ${y}">${name.slice(0, 3)}</button>`;
       });
     }
     panel.innerHTML = `
-      <div class="isr-cal-head">
-        <button type="button" class="isr-cal-title is-open" aria-label="Back to the days">${view === 'years' ? 'Choose a year' : `${MONTHS[m]} <span>${y}</span>`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-        ${view === 'months' ? `<button type="button" class="isr-cal-years-link">${y}</button>` : ''}
+      <div class="sr360-cal-head">
+        <button type="button" class="sr360-cal-title is-open" aria-label="Back to the days">${view === 'years' ? 'Choose a year' : `${MONTHS[m]} <span>${y}</span>`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+        ${view === 'months' ? `<button type="button" class="sr360-cal-years-link">${y}</button>` : ''}
       </div>
-      <div class="isr-cal-pick ${view === 'years' ? 'is-years' : 'is-months'}">${cells}</div>`;
+      <div class="sr360-cal-pick ${view === 'years' ? 'is-years' : 'is-months'}">${cells}</div>`;
     if (view === 'years') {
-      const on = panel.querySelector('.isr-cal-cell.is-on');
-      const box = panel.querySelector('.isr-cal-pick');
+      const on = panel.querySelector('.sr360-cal-cell.is-on');
+      const box = panel.querySelector('.sr360-cal-pick');
       if (on && box) box.scrollTop = on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2;
     }
   }
@@ -314,25 +314,25 @@
     const days = new Date(y, m + 1, 0).getDate();
     const today = todayIso();
     const cells = [];
-    for (let i = 0; i < lead; i += 1) cells.push('<span class="isr-cal-gap"></span>');
+    for (let i = 0; i < lead; i += 1) cells.push('<span class="sr360-cal-gap"></span>');
     for (let d = 1; d <= days; d += 1) {
       const v = iso(y, m, d);
       const off = (min && v < min) || (max && v > max);
-      cells.push(`<button type="button" class="isr-cal-day${v === today ? ' is-today' : ''}${v === chosen ? ' is-on' : ''}${v === open.focus ? ' is-focus' : ''}" data-v="${v}"${off ? ' disabled' : ''} aria-label="${d} ${MONTHS[m]} ${y}"${v === chosen ? ' aria-pressed="true"' : ''}>${d}</button>`);
+      cells.push(`<button type="button" class="sr360-cal-day${v === today ? ' is-today' : ''}${v === chosen ? ' is-on' : ''}${v === open.focus ? ' is-focus' : ''}" data-v="${v}"${off ? ' disabled' : ''} aria-label="${d} ${MONTHS[m]} ${y}"${v === chosen ? ' aria-pressed="true"' : ''}>${d}</button>`);
     }
     panel.innerHTML = `
-      <div class="isr-cal-head">
-        <button type="button" class="isr-cal-title" aria-label="Choose the month and year">${MONTHS[m]} <span>${y}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="isr-cal-nav">
-          <button type="button" class="isr-cal-prev" aria-label="Previous month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-          <button type="button" class="isr-cal-next" aria-label="Next month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      <div class="sr360-cal-head">
+        <button type="button" class="sr360-cal-title" aria-label="Choose the month and year">${MONTHS[m]} <span>${y}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="sr360-cal-nav">
+          <button type="button" class="sr360-cal-prev" aria-label="Previous month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button type="button" class="sr360-cal-next" aria-label="Next month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
         </div>
       </div>
-      <div class="isr-cal-week">${DAYS.map((d) => `<span>${d.slice(0, 1)}</span>`).join('')}</div>
-      <div class="isr-cal-grid" role="grid">${cells.join('')}</div>
-      <div class="isr-cal-foot">
-        <button type="button" class="isr-cal-clear"${input.required ? ' hidden' : ''}>Clear</button>
-        <button type="button" class="isr-cal-today">Today</button>
+      <div class="sr360-cal-week">${DAYS.map((d) => `<span>${d.slice(0, 1)}</span>`).join('')}</div>
+      <div class="sr360-cal-grid" role="grid">${cells.join('')}</div>
+      <div class="sr360-cal-foot">
+        <button type="button" class="sr360-cal-clear"${input.required ? ' hidden' : ''}>Clear</button>
+        <button type="button" class="sr360-cal-today">Today</button>
       </div>`;
   }
   function move(months) {
@@ -371,7 +371,7 @@
     const base = /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? input.value : todayIso();
     const [y, m] = base.split('-').map(Number);
     const panel = document.createElement('div');
-    panel.className = 'isr-cal';
+    panel.className = 'sr360-cal';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Choose a date');
     // Clicks inside keep the date box focused, so a page that waits for the box to lose focus is not disturbed.
@@ -379,14 +379,14 @@
     panel.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b || b.disabled) return;
-      if (b.classList.contains('isr-cal-title')) { open.view = open.view && open.view !== 'days' ? 'days' : 'years'; draw(); place(); }
-      else if (b.classList.contains('isr-cal-years-link')) { open.view = 'years'; draw(); place(); }
+      if (b.classList.contains('sr360-cal-title')) { open.view = open.view && open.view !== 'days' ? 'days' : 'years'; draw(); place(); }
+      else if (b.classList.contains('sr360-cal-years-link')) { open.view = 'years'; draw(); place(); }
       else if (b.dataset.y) { open.y = Number(b.dataset.y); open.view = 'months'; draw(); place(); }
       else if (b.dataset.m) { open.m = Number(b.dataset.m); open.view = 'days'; draw(); place(); }
-      else if (b.classList.contains('isr-cal-prev')) move(-1);
-      else if (b.classList.contains('isr-cal-next')) move(1);
-      else if (b.classList.contains('isr-cal-today')) choose(todayIso());
-      else if (b.classList.contains('isr-cal-clear')) choose('');
+      else if (b.classList.contains('sr360-cal-prev')) move(-1);
+      else if (b.classList.contains('sr360-cal-next')) move(1);
+      else if (b.classList.contains('sr360-cal-today')) choose(todayIso());
+      else if (b.classList.contains('sr360-cal-clear')) choose('');
       else if (b.dataset.v) choose(b.dataset.v);
     });
     // Shown in the top layer (above any pop-up such as Add student), where the browser can; else inside the open pop-up.
@@ -408,6 +408,9 @@
     return native ? native.call(this) : undefined;
   };
   document.addEventListener('click', (e) => {
+    // A click on the empty part of a date box's row (its label spans the whole width) is not a click on the box: the browser would pass it on to the box and open the calendar again (the owner, 26 Nov 2026: a click outside the box kept showing the calendar).
+    const row = e.target && e.target.closest && e.target.closest('label');
+    if (row && !e.target.closest('input, select, textarea, button, a') && row.querySelector('input[type="date"]')) { e.preventDefault(); return; }
     const input = e.target && e.target.closest && e.target.closest('input[type="date"]');
     if (!input) return;
     e.preventDefault(); // not the browser's own calendar
@@ -467,7 +470,7 @@
     if (btn) return btn;
     btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'isr-top';
+    btn.className = 'sr360-top';
     btn.title = 'Back to the top';
     btn.setAttribute('aria-label', 'Back to the top');
     btn.textContent = '\u2191';

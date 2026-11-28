@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { sendJSON, send, readJSONBody, readRawBody: readRaw, localDate } = require('../shared/server-utils');
 const { isoDate } = require('./dashboard-stats');
+const { branchInsights, universityStudents } = require('./branch-insights');
 const { syncChanges, squash } = require('./sheet-sync');
 const Teams = require('../shared/teams');
 const mailer = require('../shared/mailer');
@@ -265,6 +266,8 @@ function createPortalApi({
       partners: [...new Set([...agents.list().filter((p) => p.status !== 'Ended').map((p) => p.name), ...sheetAgents().map((p) => p.name)])],
       intakes: (() => { const wb = getWorkbook(); return wb ? Teams.viewFor(user, wb).sheets.map((s) => ({ id: s.id, name: s.name })) : []; })(),
       stages: Teams.ALL_STATUSES,
+      // The medical booking days of the students this account sees (the Application Team's sheet shows them next to Medical Report).
+      medicalDays: (() => { const wb = getWorkbook(); const out = {}; if (!wb || !Teams.ownTeamApplication(user)) return out; Teams.viewFor(user, wb).sheets.forEach((sh) => sh.rows.forEach((r) => { const c = cards.has(r._id) ? cards.get(r._id) : null; if (c && c.medical && c.medical.date) out[r._id] = c.medical.date; })); return out; })(),
       departments: Teams.addableDepartments(user).map((d) => ({ id: d, label: Teams.DEPARTMENTS[d].label, start: Teams.DEPARTMENTS[d].start, source: Teams.DEPARTMENTS[d].source || '' })),
     };
   }
@@ -638,7 +641,7 @@ function createPortalApi({
   // not always not eligible ... we want the best data"); Other needs the reason written in Notes.
   const WHY_NOT = {
     noteligible: 'Not eligible', nocourse: 'The course is not available', closed: 'Applications are closed',
-    agent: 'Already applied through another agent', otheruni: 'The student chose another university', notgoing: 'The student is not going ahead',
+    agent: 'Already applied through another agent', otheruni: 'The student chose another university', notgoing: 'The student is not going yet',
     noreply: 'The student is not responding', other: 'Other reason',
   };
   const OFFERS = ['conditional', 'unconditional', 'offer'];
@@ -707,7 +710,9 @@ function createPortalApi({
   function courseShown(card, task, tag) {
     const pick = (o) => (o && o.university ? { university: o.university, course: o.course || '', level: o.level || '', intake: o.intake || '', ...(o.applied ? { applied: o.applied } : {}) } : null);
     if (tag === 'offer') {
-      const o = offerOf(task); if (!o) return null;
+      // An Offer request typed by hand ("Chase the university for the offer letter") names no university: it is the one the student applied to and has not heard from (the owner, 25 Nov 2026).
+      const waiting = (card.options || []).find((x) => x.university && x.applied && !x.offer && !x.refused && !x.withdrawn && !x.skipped);
+      const o = offerOf(task) || (waiting ? { university: waiting.university, course: waiting.course || '' } : null); if (!o) return null;
       const opt = pickCourse(card.options, o.university, o.course) || {};
       const kept = task.offerFor || {};
       return pick({ ...o, level: opt.level || '', intake: kept.intake || opt.intake || '', applied: opt.applied || kept.applied || '' });
@@ -740,6 +745,7 @@ function createPortalApi({
     const p = (card && card.profile) || {};
     return {
       passport: text(p.passportNo).slice(0, 20), dob: text(p.dob).slice(0, 10), nationality: text(p.nationality), address: text(p.address).slice(0, 200),
+      university: text(row['UNIVERSITY NAME']).slice(0, 160), course: text(row['COURSE NAME']).slice(0, 240),
       language: text(row['LANGUAGE TEST DATE']).slice(0, 40), medicalReport: text(row['MEDICAL REPORT']).slice(0, 20), medicalDate: text(card && card.medical && card.medical.date).slice(0, 10),
     };
   }
@@ -769,6 +775,21 @@ function createPortalApi({
       assigned: kind === 'offer' || own || task.app || !/^apply\b/i.test(text(task.text)) ? [] : assignedOf(card).sort((a, b) => Number(a.rank || 99) - Number(b.rank || 99)).map((o) => ({ university: o.university, course: o.course })),
       sheet: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, text(row[c])])),
       labels: Object.fromEntries(FINISH_COLUMNS.map((c) => [c, Fields.columnLabel(c)])),
+      // The Mock Team's Mark as done (the owner, 25 Nov 2026): the last mock booked that has no feedback yet is known from All Students, so Feedback asks only for the words.
+      feedbackDue: (() => {
+        for (const n of [4, 3, 2, 1]) { const d = realDay(row[`MOCK SCHEDULE ${n}`]); if (d && !text(row[`FEEDBACK ${n}`])) return { n, day: d }; }
+        // A mock the student booked from the booking link (or set on the card) is found from the student itself: nothing is asked that the system knows (the owner, 26 Nov 2026).
+        try { const mt = mockTeam(); const bk = mt && mt.bookingOf ? mt.bookingOf(row._id) : null; if (bk && bk.day) { const n0 = [1, 2, 3, 4].find((k) => !text(row[`MOCK SCHEDULE ${k}`]) && !text(row[`FEEDBACK ${k}`])) || (4 + ((card.extraMocks || []).length) + 1); return { n: n0, day: bk.day, booked: true }; } } catch (e) { /* the task's own words are tried next */ }
+        // A mock a student booked from the booking link gives a task "Write the feedback of the mock on 26 November 2026": that day is the mock, and it is the next one without a day or feedback.
+        const m = /mock on (?:\w+ )?(\d{1,2}) ([A-Za-z]+) (\d{4})/.exec(text(task.text));
+        const mo = m ? ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(m[2].slice(0, 3).toLowerCase()) : -1;
+        if (mo < 0) return null;
+        const iso = `${m[3]}-${String(mo + 1).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
+        const n = [1, 2, 3, 4].find((k) => !text(row[`MOCK SCHEDULE ${k}`]) && !text(row[`FEEDBACK ${k}`])) || 5;
+        return { n, day: iso, booked: true };
+      })(),
+      finalInterview: (card.finalInterview && card.finalInterview.day) || '',
+      nextMock: [1, 2, 3, 4].find((n) => !text(row[`MOCK SCHEDULE ${n}`])) || 0,
       medical: card.medical, nextFeedback: [1, 2, 3, 4].find((n) => text(row[`MOCK SCHEDULE ${n}`]) && !text(row[`FEEDBACK ${n}`])) || 0,
       // A task for one course, and an Offer request, have simple windows with no follow-up question: the Offer request is made by itself.
       courseTask: own ? { id: own.id, university: own.university, course: own.course, partner: own.partner || '', answered: !assignedOf(card).some((a) => a.id === own.id) } : null,
@@ -948,13 +969,22 @@ function createPortalApi({
           plan.note = `${list.map(one).join('; ')}. ${sentence(note)}`.replace(/^./, (c) => c.toUpperCase()).trim();
         }
       }
+    } else if (kind === 'noc' && f.noc === 'AppSubmitted') {
+      // The NOC application submitted (the owner, 25 Nov 2026): its day is asked and written in the note; the NOC column says Pending (applied for, waiting), and a NOC already received never goes back.
+      const d = f.date ? day(f.date) : '';
+      if (f.date && !d) return { error: 'Choose the day the NOC application was submitted.' };
+      if (d && d > today) return { error: 'A NOC application cannot be submitted on a day still to come.' };
+      const was = text(row.NOC);
+      if (was === 'Submitted' || was === 'Received') plan.kept.push(`NOC already says ${was}: it never goes back to Pending.`);
+      else plan.columns.NOC = 'Pending';
+      plan.note = `NOC application submitted${d ? ` on ${niceDay(d)}` : ''}. ${sentence(note)}`.trim();
     } else if (kind === 'noc' && f.noc) {
       // The NOC is Pending or Received (the owner, 18 Nov 2026); no day. An older "Submitted" counts as Received.
       const status = ['Received', 'Submitted'].includes(f.noc) ? 'Received' : f.noc === 'Pending' ? 'Pending' : '';
       if (!status) return { error: 'Choose Pending or Received for the NOC.' };
       const number = text(f.nocNumber).slice(0, 60);
       // Received asks for the NOC number, the NOC account's login number (the owner, 21 Nov 2026), unless All Students already has it.
-      if (status === 'Received' && !number && !text(row['NOC NUMBER'])) return { error: 'Write the NOC number.' };
+      // (No NOC number is asked when the NOC is received: the owner, 25 Nov 2026.)
       // A NOC already Received never goes back to Pending.
       const was = text(row.NOC);
       const gotIt = status === 'Received' || was === 'Submitted' || was === 'Received';
@@ -963,7 +993,7 @@ function createPortalApi({
       const oldNo = text(row['NOC NUMBER']);
       if (number) plan.columns['NOC NUMBER'] = number;
       plan.note = `NOC ${gotIt ? 'received' : 'pending'}${number ? `, NOC number ${number}` : ''}${number && oldNo && oldNo !== number ? ` (was ${oldNo})` : ''}. ${sentence(note)}`.trim();
-    } else if (kind === 'mock' && (f.mock || f.scheduled) && f.mock !== 'none') {
+    } else if (Fields.isMockTag(kind) && (f.mock || f.scheduled) && f.mock !== 'none') {
       // Mock interview (the owner, 15 Nov 2026): a mock set for a day, the feedback of a mock held, or the Pre-CAS result.
       const what = f.mock || 'set';
       const slots = [1, 2, 3, 4];
@@ -976,23 +1006,45 @@ function createPortalApi({
         if (n && !same) plan.columns[`MOCK SCHEDULE ${n}`] = d;
         if (!n) plan.warnings.push('All four mock dates on All Students are already used: this one is kept in the note only.');
         plan.note = `Mock interview${n ? ` ${n}` : ''} set for ${niceDay(d)}. ${sentence(note)}`.trim();
-        if (f.remind !== false && n) plan.remind = { day: d, text: `Write the feedback of mock interview ${n} (${niceDay(d)})`, tag: 'mock' };
+        if (f.remind !== false && n) plan.remind = { day: d, text: `Write the feedback of mock interview ${n} (${niceDay(d)})`, tag: 'mock-feedback' };
       } else if (what === 'feedback') {
+        // The feedback of a mock (the owner, 26 Nov 2026): the mock and its day are known (a booking, or a mock set on All Students); the team says whether the student
+        // joined. Joined: the feedback. Did not join: the reason, in the note. Mock 5, 6 and 7 are kept on the student's card.
+        const joined = f.joined !== false;
         const words = text(f.feedback).slice(0, 1500);
-        if (!words) return { error: 'Write the feedback.' };
-        const n = Number(f.slot) || slots.find((k) => text(row[`MOCK SCHEDULE ${k}`]) && !text(row[`FEEDBACK ${k}`])) || slots.find((k) => !text(row[`FEEDBACK ${k}`]));
-        if (!slots.includes(n)) return { error: 'All four feedback columns are already used.' };
-        const held = realDay(row[`MOCK SCHEDULE ${n}`]);
-        if (held && held > today) return { error: `Mock interview ${n} is set for ${niceDay(held)}: its feedback can be written on that day or after.` };
+        if (joined && !words) return { error: 'Write the feedback.' };
+        if (!joined && text(note).length < 3) return { error: 'Write why the student did not join, in the note.' };
+        const asked = Number(f.slot) || 0;
+        const n = asked || [4, 3, 2, 1].find((k) => text(row[`MOCK SCHEDULE ${k}`]) && !text(row[`FEEDBACK ${k}`])) || [1, 2, 3, 4].find((k) => !text(row[`MOCK SCHEDULE ${k}`]) && !text(row[`FEEDBACK ${k}`])) || (4 + ((card.extraMocks || []).length) + 1);
+        if (n > 7) return { error: 'Seven mocks are already recorded for this student.' };
+        const when = day(f.day) || realDay(row[`MOCK SCHEDULE ${n}`]) || (f.day === undefined ? today : null);
+        if (!when) return { error: 'Choose the day of the mock.' };
+        if (when > today) return { error: `Mock ${n} is on ${niceDay(when)}: its feedback can be written on that day or after.` };
+        plan.answerBooking = { day: when, joined, feedback: words };
+        if (!joined) { plan.note = `Mock ${n} on ${niceDay(when)}: the student did not join. ${sentence(note)}`.trim(); return plan; }
+        if (n >= 5) { plan.extraMock = { n, day: when, feedback: words }; plan.warnings.push(`All Students has columns for four mocks: Mock ${n} is kept on the student card.`); plan.note = `Feedback of mock interview ${n}: ${sentence(words)} ${sentence(note)}`.trim(); return plan; }
         const before = text(row[`FEEDBACK ${n}`]);
         // A feedback already there is kept, the new words after it.
         plan.columns[`FEEDBACK ${n}`] = before ? `${before} | ${words}`.slice(0, 2000) : words;
-        if (!text(row[`MOCK SCHEDULE ${n}`])) plan.columns[`MOCK SCHEDULE ${n}`] = today;
+        if (!text(row[`MOCK SCHEDULE ${n}`])) plan.columns[`MOCK SCHEDULE ${n}`] = when;
         plan.note = `Feedback of mock interview ${n}: ${sentence(words)} ${sentence(note)}`.trim();
+      } else if (what === 'preBooked') {
+        // The Pre-CAS (or final) interview booked: the day is recorded in the note; All Students has no column for it. On that day the team is asked for the result.
+        const d = day(f.date);
+        if (!d) return { error: 'Choose the day the Pre-CAS interview is booked for.' };
+        plan.finalInterview = { day: d };
+        plan.note = `Pre-CAS interview booked for ${niceDay(d)}. ${sentence(note)}`.trim();
+        if (f.remind !== false) plan.remind = { day: d, text: `Record the Pre-CAS interview result (${niceDay(d)})`, tag: 'mock-precas' };
       } else if (what === 'precas') {
         if (strict && stageAt >= 0 && stageAt < 2) return { error: `The Pre-CAS result is recorded from Mock Stage on: this student is at ${stageNow}.` };
+        // The final interview (the owner, 26 Nov 2026): the student joined (then Pass or Fail) or did not (then the reason, in the note).
+        if (f.joined === false) {
+          if (text(note).length < 3) return { error: 'Write why the student did not join the final interview, in the note.' };
+          plan.note = `Final Pre-CAS interview: the student did not join. ${sentence(note)}`.trim();
+          return plan;
+        }
         const result = f.result === 'Passed' ? 'Passed' : f.result === 'Fail' ? 'Fail' : '';
-        if (!result) return { error: 'Choose Passed or Fail.' };
+        if (!result) return { error: 'Choose Pass or Fail.' };
         plan.columns['PRE CAS INTERVIEW'] = result;
         plan.note = `Pre-CAS interview: ${result}. ${sentence(note)}`.trim();
       } else return { error: 'Choose what happened.' };
@@ -1016,9 +1068,12 @@ function createPortalApi({
         plan.remind = { day: d, text: `Medical test of ${niceDay(d)}${place ? ` at ${place}` : ''}: is the report received?`, tag: 'medical' };
         plan.note = `Medical test booked for ${niceDay(d)}${place ? ` at ${place}` : ''}. ${sentence(note)}`.trim();
       } else if (f.medical === 'received') {
+        const rd = f.date ? day(f.date) : '';
+        if (f.date && !rd) return { error: 'Choose the day the medical report was received.' };
+        if (rd && rd > today) return { error: 'A report cannot be received on a day still to come.' };
         plan.columns['MEDICAL REPORT'] = 'Received';
         plan.medical = null;
-        plan.note = `Medical report received${place ? ` (${place})` : ''}. ${sentence(note)}`.trim();
+        plan.note = `Medical report received${rd ? ` on ${niceDay(rd)}` : ''}${place ? ` (${place})` : ''}. ${sentence(note)}`.trim();
       } else if (f.medical === 'pending') {
         // Pending: not booked yet (the Medical Report column as All Students shows it); a report already Received stays.
         if (text(row['MEDICAL REPORT']) === 'Received') plan.kept.push('Medical Report already says Received: it never goes back to Pending.');
@@ -1138,6 +1193,9 @@ function createPortalApi({
     writeColumnsFor(req, rowId, plan.columns);
     if (plan.note) { const n = cards.addNote(rowId, { kind: 'note', text: plan.note }, by(req)); if (n.card) wrote.note = (n.card.notes[n.card.notes.length - 1] || {}).id || ''; }
     if (plan.medical !== undefined) cards.setMedical(rowId, plan.medical, by(req));
+    if (plan.extraMock) cards.addExtraMock(rowId, plan.extraMock, by(req));
+    if (plan.finalInterview) cards.setFinalInterview(rowId, plan.finalInterview, by(req));
+    if (plan.answerBooking) { try { const mt = mockTeam(); if (mt && mt.answerFromTask) mt.answerFromTask(rowId, plan.answerBooking.day, { ...plan.answerBooking, by: by(req) }); } catch (e) { /* the card is written; Bookings follows at the next answer */ } }
     // Every university is kept in the student's University options with the day it was applied to, gave an offer, refused or withdrew.
     plan.options.forEach((o) => {
       const opts = cards.get(rowId).options || [];
@@ -1158,9 +1216,9 @@ function createPortalApi({
     // Never a second open task with the same words for the same team (a task finished twice, or two people finishing together).
     const twin = plan.remind && (cards.get(rowId).tasks || []).some((x) => !x.done && x.id !== task.id && x.team === task.team && courseKey(x.text) === courseKey(plan.remind.text));
     if (plan.remind && !twin) {
-      const team = task.team === HEAD ? (plan.remind.tag === 'mock' ? 'mock' : task.team) : task.team;
+      const team = task.team === HEAD ? (String(plan.remind.tag).startsWith('mock') ? 'mock' : task.team) : task.team;
       const made = cards.addTask(rowId, { team, text: plan.remind.text, tag: plan.remind.tag, priority: 'high' }, by(req));
-      if (!made.error) { wrote.remind = made.task.id; if (plan.remind.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: plan.remind.day, reason: plan.remind.tag === 'medical' ? 'On the day of the medical test' : 'On the day of the mock interview' }, by(req), cards.today()); }
+      if (!made.error) { wrote.remind = made.task.id; if (plan.remind.day > cards.today()) cards.scheduleTask(rowId, made.task.id, { date: plan.remind.day, reason: plan.remind.tag === 'medical' ? 'On the day of the medical test' : plan.remind.tag === 'mock-precas' ? 'On the day of the Pre-CAS interview' : 'On the day of the mock interview' }, by(req), cards.today()); }
     }
     // One "Offer request" task for each application submitted now, never a second open one for the same university and course.
     wrote.offerRequests = [];
@@ -1426,7 +1484,9 @@ function createPortalApi({
     // passport or medical details are missing or do not add up, one plain line each, all of them (never cut short). A line leaves by itself
     // once the detail is right.
     // The Mock Team has its own Missing details too (the owner, 22 Nov 2026): feedback not written, a booked mock not answered, no mock yet.
-    const missing = kind === 'application' || kind === 'mock' ? new Map() : null;
+    // And a branch (the owner, 26 Nov 2026): its own students still in progress, with the same lines as the Application Team's.
+    const branchLook = Teams.ownTeamBranch(user);
+    const missing = kind === 'application' || kind === 'mock' || branchLook ? new Map() : null;
     const missOne = (row, sheet, line, extra = {}) => {
       const m = missing.get(row._id) || { id: row._id, name: nameOf(row), stage: text(row[STATUS]), intake: sheet.name, lines: [] };
       if (!m.lines.some((x) => x.text === line)) m.lines.push({ text: line, ...extra });
@@ -1486,6 +1546,7 @@ function createPortalApi({
       const visa = stage === 'Visa Issued' || text(row['VISA RECEIVED DATE']);
       if (visa) { totals.visas += 1; continue; }
       totals.active += 1;
+      if (branchLook) missingOf(row, sheet, card, stage, wrong);
       if (text(row['APPLICATION SUBMISSION DATE'])) totals.applied += 1;
       const created = dateOf(row['APPLICATION SUBMISSION DATE']);
       if (stage === 'Inquiry') totals.inquiries += 1;
@@ -1548,7 +1609,7 @@ function createPortalApi({
           const d = dateOf(row[`MOCK SCHEDULE ${n}`]);
           if (d && d <= today && !text(row[`FEEDBACK ${n}`])) missOne(row, sheet, `Feedback ${n} is missing (Mock ${n} was on ${niceDay(d)}).`, { action: { label: 'Write feedback', href: `/student?id=${id}` } });
         }
-        if (![1, 2, 3, 4].some((n) => text(row[`MOCK SCHEDULE ${n}`])) && !coming.has(row._id)) missOne(row, sheet, 'Mock Schedule 1 is missing: no mock held or booked yet.', { action: { label: 'Booking link', href: '/bookings' } });
+        // (A student with no mock booked yet is not listed here: the owner, 26 Nov 2026. Only a booked mock with no feedback is missing.)
       }
       if (mt) {
         const rows = rowIndex();
@@ -1567,6 +1628,7 @@ function createPortalApi({
       today, name: user.name, totals, kind, title: space.title, tagline: space.tagline,
       mockTeam: Teams.ownTeamMock(user), // the Mock Team's Today in the same look (the owner, 23 Nov 2026, approved design)
       appTeam: Teams.ownTeamApplication(user), // the Missing details tab is drawn in the Application Team's own look for that team only (the owner, 23 Nov 2026)
+      branchTeam: branchLook, // a branch's Today in the same look, with Needs attention under it (the owner, 26 Nov 2026)
       tiles: space.tiles.map((k) => ({ key: k, label: TILE_LABEL[k], value: value[k] })),
       missing: missing ? [...missing.values()].sort((a, b) => b.lines.length - a.lines.length || a.name.localeCompare(b.name)) : null,
       // How many different students wait in these lists: a student in two lists (no passport details and not applied yet) counts once.
@@ -1634,6 +1696,9 @@ function createPortalApi({
       stages: Teams.ALL_STATUSES.filter((st) => plans.some((p) => p.stages.includes(st))),
     };
   };
+  // A branch's own students, each with their applications, for its figures (branch-insights.js).
+  const withApplications = (students, all) => students.map(({ row }) => { const card = all[row._id] || {}; return { id: row._id, name: nameOf(row), row, card, apps: applicationsOf(row, card) }; });
+
   function myDashboard(user) {
     const kind = homeKind(user);
     const plan = kind === 'team' ? teamsPlan(user) : (MY_DASH[kind] || MY_DASH.team);
@@ -1701,7 +1766,10 @@ function createPortalApi({
       });
     }
     const intake = intakeSheet;
+    // A branch's Dashboard goes deeper (the owner, 27 Nov 2026): every figure of its own students (branch-insights.js).
+    const branch = kind === 'branch' ? branchInsights(withApplications(students, all), today) : null;
     return {
+      ...(branch ? { branch } : {}),
       kind, title: plan.title, lead: plan.lead, name: user.name, today, intake: intake ? intake.name : '',
       kpis: plan.kpis.map((k) => ({ key: k, label: MY_KPI[k][0], note: MY_KPI[k][1], value: v[k] || 0 })),
       week: plan.week.map(([key, label]) => ({ key, label, now: weekNow[key] || 0, before: weekBefore[key] || 0 })),
@@ -1978,7 +2046,7 @@ function createPortalApi({
             // No follow-up question is asked when a task is done (the owner, 18 Nov 2026: it is removed from every kind of task). A next day is
             // made only when one is given on purpose: the Offer request that is not answered yet ("ask the university again on ...").
             const wantsStep = f.waiting === true || (f.next !== undefined && f.next !== '' && f.next !== 'none');
-            if (wantsStep && !(plan0 && plan0.remind) && f.mock !== 'set' && f.medical !== 'booked') {
+            if (wantsStep && !(plan0 && plan0.remind) && f.mock !== 'set' && f.mock !== 'preBooked' && f.medical !== 'booked') {
               step = nextStepOf(f, task);
               if (step && step.error) { sendJSON(res, 400, { error: step.error }); return true; }
               if (f.waiting === true && !step) { sendJSON(res, 400, { error: 'Choose the day to check for the offer letter again.' }); return true; }
@@ -3558,7 +3626,7 @@ function createPortalApi({
       if (body.test === true) {
         // A test, from the Connect my phone window.
         if (!push.devices(req.user.id).length) { sendJSON(res, 409, { error: 'Connect your phone first.' }); return true; }
-        reply(await push.send(req.user.id, { title: 'Student Recruit 360 is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'isr-test' }, site, 'isr-test'));
+        reply(await push.send(req.user.id, { title: 'Student Recruit 360 is connected', body: 'WhatsApp chats you open on the computer will come here.', url: '/today', tag: 'sr360-test' }, site, 'sr360-test'));
         return true;
       }
       // A student's chat, sent to the person's own phone: only a student this account may see, only that student's number.
@@ -3602,12 +3670,29 @@ function createPortalApi({
       sendJSON(res, 200, { ok: true, ...userMail.info(req.user.id) });
       return true;
     }
+    // A branch's own students at each University (the owner, 27 Nov 2026): the Universities pages show them to that branch only.
+    if (urlPath === '/api/branch-universities' && req.method === 'GET') {
+      if (!Teams.ownTeamBranch(req.user)) { sendJSON(res, 403, { error: 'This is for a branch.' }); return true; }
+      sendJSON(res, 200, { universities: universityStudents(withApplications(visibleStudents(req.user), cards.all()), facts ? facts.all() : []) });
+      return true;
+    }
     if (urlPath === '/api/my-dashboard' && req.method === 'GET') {
       if (Teams.isAdmin(req.user) || (Teams.isManager(req.user) && Teams.isReadOnly(req.user))) { sendJSON(res, 403, { error: 'Admin and the Manager have the full Dashboard.' }); return true; }
       sendJSON(res, 200, myDashboard(req.user));
       return true;
     }
-    if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user) }); return true; }
+    // The Mock Team's four numbers (the owner, 26 Nov 2026): in the mock interviews, passed and failed the Pre-CAS interview, and the pass ratio. Counted over the whole
+    // current intake, so a student who passed and went on to Payment Stage is still counted.
+    if (urlPath === '/api/mock-numbers' && req.method === 'GET') {
+      const sheet = currentIntake();
+      const live = (sheet ? sheet.rows : []).filter((r) => text(r['FIRST NAME']) || text(r['LAST NAME']));
+      const inMock = live.filter((r) => text(r[STATUS]) === 'Mock Stage').length;
+      const passed = live.filter((r) => /^pass/i.test(text(r['PRE CAS INTERVIEW']))).length;
+      const failed = live.filter((r) => /^fail/i.test(text(r['PRE CAS INTERVIEW']))).length;
+      sendJSON(res, 200, { inMock, passed, failed, ratio: passed + failed ? Math.round((passed / (passed + failed)) * 1000) / 10 : null });
+      return true;
+    }
+    if (urlPath === '/api/today' && req.method === 'GET') { sendJSON(res, 200, { ...todayFor(req.user), readOnly: Teams.isReadOnly(req.user), ...(Teams.isAdmin(req.user) || Teams.isManager(req.user) || Teams.ownTeamBranch(req.user) ? { lead: true } : {}) }); return true; }
     if (urlPath === '/api/activities' && req.method === 'GET') {
       if (!managers(req, res, 'Events and marketing')) return true;
       const { list, unlinkedSocial, unlinkedByIntake } = activities(req.user);
@@ -3629,7 +3714,8 @@ function createPortalApi({
       const cur = currentIntake();
       (wb ? wb.sheets : []).forEach((sh) => sh.rows.forEach((row) => {
         if (!isStudent(row)) return;
-        const keys = new Set([squash(row['UNIVERSITY NAME']), squash(partnerNamed(row['UNIVERSITY PARTNER']))].filter(Boolean));
+        // Another spelling of a partner on the sheet ("OIEG") counts for the university under its full name.
+        const keys = new Set([squash(row['UNIVERSITY NAME']), squash(partnerNamed(row['UNIVERSITY PARTNER'])), squash(require('./partner-names').partnerName(partnerNamed(row['UNIVERSITY PARTNER'])))].filter(Boolean));
         const hit = unis.find((u) => keys.has(u.key));
         if (!hit) return;
         const e = out[hit.id];
@@ -3644,9 +3730,14 @@ function createPortalApi({
     }
     if (urlPath === '/api/partner-choices' && req.method === 'GET') {
       const names = (store) => (store && store.list ? store.list().filter((x) => x.status !== 'Ended').map((x) => x.name).sort((x, y) => x.localeCompare(y)) : []);
-      const partners = [...new Set([...names(b2b), ...sheetPartners().map((p) => p.name)])].sort((x, y) => x.localeCompare(y));
+      const partners = [...new Set([...b2bCards().filter((x) => x.status !== 'Ended').map((x) => x.name), ...sheetPartners().map((p) => p.name)])].sort((x, y) => x.localeCompare(y)); // the B2B partners of the Partners page, in full
       const agentNames = [...new Set([...names(agents), ...sheetAgents().map((p) => p.name)])].sort((x, y) => x.localeCompare(y));
-      sendJSON(res, 200, { universities: names(direct), partners, offices: OFFICES, agents: agentNames });
+      // The University partner of an application (the owner, 25 Nov 2026): every B2B partner the Partners page lists, an ended one too (it is marked), so none is missing when an application is added.
+      const cards = b2bCards();
+      const throughNames = (() => { try { return [...new Set(((applyThrough && applyThrough.all && applyThrough.all()) || []).flatMap((e) => e.options || []))].map((x) => require('./partner-names').partnerName(x)); } catch (e) { return []; } })();
+      const everyPartner = [...new Set([...cards.map((x) => x.name), ...sheetPartners().map((p) => p.name), ...throughNames])].sort((x, y) => x.localeCompare(y));
+      const endedPartners = cards.filter((x) => x.status === 'Ended').map((x) => x.name);
+      sendJSON(res, 200, { universities: names(direct), partners, allPartners: everyPartner, endedPartners, offices: OFFICES, agents: agentNames });
       return true;
     }
     // Tasks: a team member gets the tasks of their teams (and a branch the tasks it gave); Admin and the Manager get every task.
@@ -3778,16 +3869,20 @@ function createPortalApi({
     if (urlPath === '/api/students/search' && req.method === 'GET') { sendJSON(res, 200, { students: searchStudents(req.user, (query().get('q') || '').slice(0, 100)) }); return true; }
     if (urlPath === '/api/students/new' && req.method === 'POST') return handleNewStudent(req, res);
     if (urlPath === '/api/students/merge' && req.method === 'POST') return handleMerge(req, res);
+    // A branch neither follows up many students at once nor adds many (the owner, 26 Nov 2026): it adds them one at a time.
+    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email', '/api/students/bulk'].includes(urlPath) && Teams.ownTeamBranch(req.user)) { sendJSON(res, 403, { error: 'This is not open to a branch.' }); return true; }
+    if (urlPath === '/api/students/bulk' && Teams.ownTeamMock(req.user)) { sendJSON(res, 403, { error: 'This is not open to the Mock Team.' }); return true; }
     if (urlPath === '/api/students/bulk' && req.method === 'POST') return handleBulkStudents(req, res);
     if (urlPath === '/api/students/check' && req.method === 'POST') {
       // The answer says whether somebody is a student already, so one account may ask only so often (it cannot be used to list students).
+      // The rows are read first: counting them before they were read made every check fail (review, 27 Nov 2026).
+      const body = await bodyOf(req, res, 256 * 1024);
+      if (!body) return true;
       const who = text(req.user.id || req.user.name); const since = Date.now() - 3600000;
       const asked = (checkAsks.get(who) || []).filter((x) => x.at > since);
       const adding = Math.min(200, Array.isArray(body.rows) ? body.rows.length : 0);
       if (asked.reduce((n, x) => n + x.n, 0) + adding > 5000) { sendJSON(res, 429, { error: 'Too many checks in an hour. Wait a little and try again.' }); return true; }
       asked.push({ at: Date.now(), n: adding }); checkAsks.set(who, asked);
-      const body = await bodyOf(req, res, 256 * 1024);
-      if (!body) return true;
       const list = (Array.isArray(body.rows) ? body.rows : []).slice(0, 200).map((r) => { const d = r && typeof r === 'object' ? existingStudent(r.email, r.phone) : null; return d ? { exists: true, name: Teams.isAdmin(req.user) ? [d['FIRST NAME'], d['LAST NAME']].filter(Boolean).join(' ') : ' ' } : { exists: false }; });
       sendJSON(res, 200, { results: list });
       return true;
@@ -3804,8 +3899,9 @@ function createPortalApi({
       return true;
     }
     if (urlPath.startsWith('/api/cards/')) return handleCard(req, res, urlPath);
-    // Follow-up messages to many students at once are for Admin and the branches, not the Follow-up Team (the owner, 21 Nov 2026).
-    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && (Teams.ownTeamFollowup(req.user) || Teams.ownTeamApplication(req.user))) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
+    // Follow-up messages to many students at once are for Admin, not the Follow-up Team (the owner, 21 Nov 2026).
+    // The Mock Team too: it has no Follow-up page (the owner, 22 Nov 2026), so its address is closed as well (review, 27 Nov 2026).
+    if (['/api/bulk/students', '/api/bulk/preview', '/api/bulk/send-email'].includes(urlPath) && (Teams.ownTeamFollowup(req.user) || Teams.ownTeamApplication(req.user) || Teams.ownTeamMock(req.user))) { sendJSON(res, 403, { error: 'Follow-up messages to many students are sent by Admin.' }); return true; }
     if (urlPath === '/api/bulk/students' || urlPath === '/api/bulk/preview' || urlPath === '/api/bulk/send-email') return handleBulk(req, res, urlPath);
     if (urlPath === '/api/courses' && req.method === 'GET') {
       const q = query();

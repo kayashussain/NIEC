@@ -62,26 +62,44 @@
   function draw() {
     const all = data.partners;
     const sheet = data.onSheet || []; // named in the University Partner column, not set up yet
-    const active = all.filter((p) => p.status === 'Active');
-    const visas = all.reduce((n, p) => n + stats(p.name).visas, 0) + sheet.reduce((n, x) => n + stats(x.name).visas, 0);
-    const band = [[`Active ${WORD.one}s`, number(active.length + sheet.length), sheet.length ? `${number(sheet.length)} named on the sheet, not set up yet` : ''], ['Visas', number(visas), 'Every intake on the sheet']];
-    if (KIND === 'b2b') band.splice(2, 0, ['Ready to apply', `${number(active.filter((p) => p.applyPortal || p.applyEmail).length)} of ${number(active.length + sheet.length)}`, 'With a portal or an email']);
-    $('kpis').replaceChildren(...band.map(([label, v, sub, warn]) => { const d = el('div', warn ? 'warn' : ''); d.append(el('span', '', label), el('b', '', v), el('small', '', sub || '')); return d; }));
     const shown = all; // no search box (the owner, 17 Nov 2026)
     const shownSheet = sheet;
     const total = all.length + sheet.length;
-    $('count').textContent = total ? `${total} in the list` : '';
-    // Names marked "Not a partner" stay out of the list (the owner, 15 Nov 2026); a small "N hidden" beside the count brings one back.
+    // Names marked "Not a partner" stay out of the list (the owner, 15 Nov 2026); a small "N hidden" above the list brings one back.
     const hidden = (data.notPartners || []);
-    const hiddenBtn = $('hiddenBtn') || (() => { const b = btn('bp-hidden-btn', '', showHidden); b.id = 'hiddenBtn'; $('count').after(b); return b; })();
+    const hiddenBtn = $('hiddenBtn') || (() => { const b = btn('bp-hidden-btn', '', showHidden); b.id = 'hiddenBtn'; document.querySelector('.bp-tools').append(b); return b; })();
     hiddenBtn.textContent = `${hidden.length} hidden`;
     hiddenBtn.hidden = !hidden.length || viewer();
+    // Admin adds a partner or an agent with the button beside the title (the owner, 26 Nov 2026).
+    addButton(data.access === 'full');
     if (!total) { $('list').replaceChildren(el('div', 'bp-empty', `No ${WORD.one}s yet.`)); return; }
-    // Nothing is added by hand any more, not one name and not all at once (the owner, 20 Nov 2026).
     const lead = [];
     const items = [...shown.map((p) => ({ p })), ...shownSheet.map((x) => ({ x }))];
     const ordered = items.sort(busiest);
     $('list').replaceChildren(...lead, ...ordered.map((it) => (it.p ? card(it.p) : sheetCard(it.x))));
+  }
+  // "Add partner" / "Add agent" (Admin only): the name first, then the new card opens so the rest can be filled in.
+  function addButton(show) {
+    let b = $('addBtn');
+    if (!b) { b = btn('btn btn-primary bp-add', KIND === 'agents' ? '+ Add agent' : '+ Add partner', addOne); b.id = 'addBtn'; document.querySelector('#listView .p-head').append(b); }
+    b.hidden = !show;
+  }
+  function addOne() {
+    window.Portal.dialog(KIND === 'agents' ? 'Add an agent' : 'Add a partner', (body, close) => {
+      const name = field(KIND === 'agents' ? 'Agent name' : 'Partner name', { max: 120, required: true, wide: true, placeholder: KIND === 'agents' ? 'The business that sends you students' : 'The business you apply through' });
+      const msg = el('div', 'p-msg');
+      const foot = el('div', 'p-dialog-foot');
+      const ok = btn('btn btn-primary', 'Add', async () => {
+        const value = name.input.value.trim().replace(/\s+/g, ' ');
+        if (!value) { msg.textContent = 'Write the name.'; msg.className = 'p-msg error'; name.input.focus(); return; }
+        ok.disabled = true;
+        try { const made = await api(API, { name: value }); close(); say(`${value} added`); justSaved = made && made.id; await load(); if (made && made.id) open(made.id); } catch (e) { msg.textContent = e.message; msg.className = 'p-msg error'; ok.disabled = false; }
+      });
+      name.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } });
+      foot.append(btn('btn', 'Cancel', () => close()), ok);
+      const form = el('div', 'p-form'); form.append(name.wrap);
+      body.append(form, msg, foot);
+    });
   }
   // The names marked "Not a partner", each with Show again.
   function showHidden() {
@@ -103,8 +121,10 @@
     const st = stats(x.name);
     const c = el('article', 'bp-card bp-card-new');
     const head = el('div', 'bp-card-head');
-    const who = el('div');
-    who.append(el('div', 'bp-name', x.name), el('div', 'bp-sub', `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(x.students)} student${x.students === 1 ? '' : 's'} on the sheet`));
+    const who = el('div', 'bp-who');
+    const words = el('div');
+    words.append(el('div', 'bp-name', x.name), el('div', 'bp-sub', `${number(st.visas)} visa${st.visas === 1 ? '' : 's'} from ${number(x.students)} student${x.students === 1 ? '' : 's'} on the sheet`));
+    who.append(avatar(x.name), words);
     head.append(who, el('span', 'bp-status amber', 'Not set up'));
     const foot = el('div', 'bp-foot');
     const notWord = KIND === 'agents' ? 'Not an agent' : 'Not a partner';
@@ -112,6 +132,14 @@
       if (!(await window.NiecUI.confirm(`${x.name} is not ${KIND === 'agents' ? 'an agent' : 'a B2B partner'}? It is hidden from the list. You can show it again.`, { confirmText: notWord }))) return;
       await api(`${API}/not-partner`, { name: x.name }); say(`${x.name} hidden`); load();
     }));
+    // Admin sets a name from the sheet up in one press, and its card opens to be filled in (the owner, 26 Nov 2026).
+    if (data.access === 'full') {
+      const add = btn('btn btn-primary', KIND === 'agents' ? 'Add as agent' : 'Add as partner', async () => {
+        add.disabled = true;
+        try { const made = await api(API, { name: x.name }); say(`${x.name} added`); justSaved = made && made.id; await load(); if (made && made.id) open(made.id); } catch (e) { say(e.message, true); add.disabled = false; }
+      });
+      foot.append(add);
+    }
     c.append(head, foot);
     return c;
   }

@@ -357,8 +357,8 @@
     go.addEventListener('click', () => { const t = boxes.filter((b) => b.checked).map((b) => Number(b.value)); menu.remove(); if (t.length) done(t); });
     menu.append(go);
     document.body.append(menu);
-    const r = window.isrPos.rect(anchor);
-    menu.style.left = `${Math.max(8, Math.min(r.right - 240, window.isrPos.width() - 248))}px`;
+    const r = window.sr360Pos.rect(anchor);
+    menu.style.left = `${Math.max(8, Math.min(r.right - 240, window.sr360Pos.width() - 248))}px`;
     menu.style.top = `${r.bottom + 6}px`;
     const away = (e) => { if (!menu.contains(e.target) && e.target !== anchor) { menu.remove(); document.removeEventListener('mousedown', away); } };
     setTimeout(() => document.addEventListener('mousedown', away), 0);
@@ -385,7 +385,7 @@
         el('p', 'mt-hint mt-teams-note', 'To join as the interviewer, sign in to the Teams app with the Microsoft account that made this meeting. Any other account waits in the lobby.')),
       step(2, Boolean(me.slug && me.email), 'Your link, your name and your email',
         h('div', { class: 'mt-three' },
-          h('div', {}, lab('mtSlug', 'Booking link'), h('div', { class: 'mt-prefix' }, el('span', '', `${location.host}/book/`), slug)),
+          h('div', {}, lab('mtSlug', 'Booking link'), h('div', { class: 'mt-prefix' }, el('span', '', `${location.origin}/book/`.replace(/^https?:\/\//, '')), slug)),
           h('div', {}, lab('mtShown', 'Name students see'), shown),
           h('div', {}, lab('mtEmail', 'Email for your calendar invites'), email))),
       step(3, Boolean(me.weekly && Object.keys(me.weekly).length), 'How long, and your slots',

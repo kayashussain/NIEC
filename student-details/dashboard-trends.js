@@ -1,12 +1,12 @@
 // The Dashboard's deeper cards (the owner, 14 Nov 2026), drawn from /api/trends:
-//   1. "Business growth by intake": two plain bar charts (students, visas in each intake) and a table of every intake with how much
-//      each figure grew on the intake before and the visa rate.
+//   1. "Business growth by intake": a table of every intake with how much each figure grew on the intake before and the visa rate
+//      (nothing is compared for an intake still in progress).
 //   2. "Ups and downs over time": a chart like a stock market's, one line for each of inquiries, applications, offers, payments, CAS
 //      and visas, by day, week or month, on the day each one happened (a lead list's own inquiry days, never the upload day). A line is
 //      shown or hidden by tapping its name; each line's peak is marked; a crosshair reads every line on the day under the mouse; every
 //      event and campaign is marked where it ran, so a rise can be read: the ads, an event, or by itself, and did the applications
 //      follow. Inquiries can be narrowed to one source. A few plain sentences say what it shows.
-//   3. "Where students live in Nepal": Nepal, district by district (from the address in the passport), with a red dot sized by students,
+//   3. "Where students live in Nepal" (folded until opened): Nepal, district by district (from the address in the passport), with a red dot sized by students,
 //      the top districts, the students from outside Nepal by nationality, and their age when they applied.
 // Every name and label comes from records, so it is only ever put in with textContent.
 (function (root) {
@@ -26,7 +26,7 @@
     t.replaceChildren(el('div', 'tip-title', title));
     rows.forEach(([k, v, c]) => { const r = el('div', 'tip-row'); if (c) { const key = el('span', 'tip-key'); key.style.setProperty('--c', c); r.append(key); } r.append(el('span', 'tip-name', k), el('span', 'tip-val', String(v))); t.append(r); });
     t.hidden = false;
-    const P = window.isrPos; // page pixels, whatever the Text size
+    const P = window.sr360Pos; // page pixels, whatever the Text size
     t.style.left = Math.max(8, Math.min(P.point(e.clientX) + 16, P.width() - t.offsetWidth - 8)) + 'px';
     t.style.top = Math.max(8, Math.min(P.point(e.clientY) + 16, P.height() - t.offsetHeight - 8)) + 'px';
   }
@@ -55,41 +55,16 @@
   }).join('');
 
   // ---- 1. business growth by intake ----
-  // Kept simple to read at a glance (the owner, 14 Nov 2026: easy for the CEO and the chairman): two plain bar charts side by side,
-  // students in each intake and visas in each intake, one colour each, every number printed on its bar, then the table.
-  function bars(list, key, title, colour) {
-    const box = el('div', 'tr-simple');
-    box.append(el('h3', '', title));
-    const W = 480; const H = 230; const TOP = 30; const BOT = 190;
-    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'tr-svg', role: 'img', 'aria-label': title });
-    const max = Math.max(1, ...list.map((v) => v[key]));
-    const cw = W / Math.max(1, list.length);
-    const bw = Math.min(64, cw * .62);
-    s.append(svg('line', { x1: 0, x2: W, y1: BOT, y2: BOT, class: 'tr-grid' }));
-    list.forEach((v, i) => {
-      const x = cw * i + cw / 2;
-      const h = ((BOT - TOP) * v[key]) / max;
-      const g = svg('g', { class: 'tr-col' }); g.style.setProperty('--d', `${i * 80}ms`);
-      g.append(svg('rect', { x: x - bw / 2, y: BOT - h, width: bw, height: Math.max(h, 1), rx: 6, fill: colour, class: 'tr-bar' }));
-      const n = svg('text', { x, y: BOT - h - 8, class: 'tr-num', 'text-anchor': 'middle' }); n.textContent = fmt(v[key]); g.append(n);
-      s.append(g);
-      const t = svg('text', { x, y: H - 16, class: 'tr-axis strong', 'text-anchor': 'middle' }); t.textContent = v.name.length > 16 ? v.name.replace(/\s*intake\s*/i, ' ').trim() : v.name; s.append(t);
-    });
-    box.append(s);
-    return box;
-  }
+  // One table (the owner, 27 Nov 2026: the two bar charts repeated its figures). An intake whose teaching has not started
+  // shows no rise or fall: its payments and visas are still to come, so against a finished intake it would look like a fall.
   const rate = (v) => (v.students ? Math.round((v.visas / v.students) * 100) : 0);
-  function growth(data) {
+  function growth(data, running = new Set()) {
     const card = el('section', 'ov-card tr-card tr-growth');
     const list = data.intakes || [];
-    card.append(head('Business growth by intake', 'Students and visas, intake by intake.'));
+    card.append(head('Business growth by intake', 'Each intake, and its change on the one before.'));
     if (list.length < 2) { card.append(el('p', 'p-muted', 'The growth shows once there are two intakes or more.')); }
-    const pair = el('div', 'tr-pair');
-    /* 🔴 CSS CHANGED (2026-11-21): the bars per intake | from: blue and bright green | to: blue for students, near-black for visas */
-    /* 🔴 CSS CHANGED (2026-11-21): the Visas bars | from: black | to: the Student Recruit 360 green (#1e8e4a), as Visas everywhere on the Dashboard */
-    pair.append(bars(list, 'students', 'Students in each intake', '#0071e3'), bars(list, 'visas', 'Visas in each intake', '#1e8e4a'));
-    // One plain sentence on the latest closed intake against the one before.
-    const done = list.length > 2 ? list.slice(0, -1) : list;
+    // One plain sentence on the latest finished intake against the one before.
+    const done = list.filter((v) => !running.has(v.id));
     if (done.length > 1) {
       const a = done[done.length - 1]; const b = done[done.length - 2];
       const pc = (x, y) => (y ? Math.round(((x - y) / y) * 100) : 0);
@@ -97,18 +72,16 @@
       const words = el('div', 'tr-story'); card.append(words);
       words.append(el('p', 'tr-lead', `${a.name}: ${fmt(a.students)} students (${said(pc(a.students, b.students))} on ${b.name}) and ${fmt(a.visas)} visas (${said(pc(a.visas, b.visas))}).`));
     }
-    card.append(pair);
-    // The table: each figure, and its change on the intake before.
     const table = el('table', 'tr-table');
     const thead = el('tr');
     ['Intake', 'Students', 'Applied', 'Offers', 'Paid', 'Visas', 'Visa rate'].forEach((x) => thead.append(el('th', '', x)));
     table.append(thead);
     list.forEach((v, i) => {
-      const prev = list[i - 1];
-      const tr = el('tr');
+      const live = running.has(v.id);
+      const prev = live ? null : list[i - 1];
+      const tr = el('tr', live ? 'tr-running' : '');
       const name = el('td', 'tr-name', v.name);
-      // The newest intake is still running: its payments and visas are still to come, so a fall there is not yet a fall.
-      if (i === list.length - 1 && list.length > 1) name.append(el('span', 'tr-live', 'In progress'));
+      if (live) name.append(el('span', 'tr-live', 'In progress'));
       tr.append(name);
       ['students', 'applied', 'offers', 'paid', 'visas'].forEach((k) => {
         const td = el('td');
@@ -116,13 +89,14 @@
         if (prev && prev[k]) { const c = Math.round(((v[k] - prev[k]) / prev[k]) * 100); const ch = el('span', `tr-chg ${c > 0 ? 'up' : c < 0 ? 'down' : ''}`, `${c > 0 ? '▲' : c < 0 ? '▼' : ''} ${Math.abs(c)}%`); td.append(ch); }
         tr.append(td);
       });
-      tr.append(el('td', '', v.students ? `${rate(v)}%` : '-'));
+      // The visa rate of a running intake is not final either.
+      tr.append(el('td', '', live ? 'Not final' : v.students ? `${rate(v)}%` : '-'));
       table.append(tr);
     });
     // On a phone the table slides sideways inside the card, so no column is cut off.
     const scroller = el('div', 'tr-table-wrap'); scroller.append(table);
     card.append(scroller);
-    card.append(el('p', 'ov-foot', `Visa rate = visas ÷ students.${list.length > 1 ? ` ${list[list.length - 1].name} is still in progress.` : ''}`));
+    card.append(el('p', 'ov-foot', 'Visa rate = visas ÷ students. An intake in progress is compared at the same point in the five figures at the top.'));
     return card;
   }
 
@@ -290,10 +264,15 @@
   }
 
   // ---- 3. where students are from ----
-  function map(data) {
+  function map(data, open = false, onToggle = () => {}) {
     const M = root.NepalMap;
-    const card = el('section', 'ov-card tr-card');
-    card.append(head('Where students live in Nepal', `${data.intake ? data.intake.name : ''}, from passport addresses.`));
+    const card = el('details', 'ov-card tr-card tr-fold');
+    card.open = open;
+    const placed = Object.values((data.places && data.places.home) || {}).reduce((n, c) => n + c, 0);
+    const summary = el('summary', 'tr-fold-head');
+    summary.append(head('Where students live in Nepal', `${data.intake ? data.intake.name : ''}: ${placed} with a district from the passport address${data.places.none ? `, ${data.places.none} without` : ''}.`, el('span', 'tr-fold-btn')));
+    card.append(summary);
+    card.addEventListener('toggle', () => onToggle(card.open));
     const body = el('div', 'tr-map-body');
     const mapBox = el('div', 'tr-map');
     const side = el('div', 'tr-map-side');
@@ -339,9 +318,7 @@
       Object.entries(data.ages).forEach(([k, c]) => { const li = el('li'); const bar = el('i'); bar.style.width = `${c ? Math.max(4, (c / am) * 100) : 0}%`; li.append(el('span', '', k), el('b', '', String(c)), bar); ol.append(li); });
       side.append(ol);
     }
-    const foot = el('p', 'ov-foot');
-    if (data.places.none) foot.textContent = `${data.places.none} without a passport address.`;
-    card.append(body, foot);
+    card.append(body);
     return card;
   }
 

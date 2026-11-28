@@ -11,7 +11,7 @@ const { spawn } = require('node:child_process');
 const { createMockGuides, youtubeId } = require('../student-details/mock-guides');
 const { createMockApi, guideAccess } = require('../student-details/mock-api');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'isr-mock-'));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-mock-'));
 
 test('the first drafts: the core guide and the Partner Universities only, none published', () => {
   const guides = createMockGuides(tmp(), { universities: () => ['University of West London', 'Bangor University', 'Made Up University'] });

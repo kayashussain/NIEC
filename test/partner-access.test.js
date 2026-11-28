@@ -11,7 +11,7 @@ const { spawn } = require('node:child_process');
 const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-test('partners: the Manager sees the commission, the teams and branches do not, the Follow-up Team not at all; branches give tasks', { timeout: 120000 }, async (t) => {
+test('partners: the Manager sees the commission, the teams do not, branches and the Follow-up Team not at all; branches give tasks', { timeout: 120000 }, async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-access-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
@@ -48,7 +48,7 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
 
   const SECRET = /15%|Paid in March|Bonus 2%|secret-pass|nieclogin|Rate 10%|example\.org\/commission|"p1"|"u1"/;
   const NO_LOGIN_SECRET = /15%|Paid in March|Bonus 2%|Rate 10%|example\.org\/commission/; // what even the Application Team never gets
-  for (const [who, p] of [['asha', asha], ['bikram', bikram], ['chitwan', chitwan]]) {
+  for (const [who, p] of [['asha', asha], ['bikram', bikram]]) {
     const list = await p('GET', '/api/direct');
     assert.strictEqual(list.status, 200, `${who} opens Partner Universities`);
     const one = await p('GET', `/api/direct/${uni.id}`);
@@ -59,8 +59,8 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
     assert.strictEqual(one.json.applyPortal, 'https://apply.example.org/', `${who} sees where to submit`);
     assert.strictEqual(one.json.contacts[0].name, 'Ann Example', `${who} sees the contacts`);
     assert.strictEqual((await p('POST', `/api/direct/${uni.id}`, { name: 'Changed' })).status, 403, `${who} cannot change it`);
-    // The Application Team no longer opens the Partners pages (the owner, 21 Nov 2026), nor the Mock Team (the owner, 22 Nov 2026); a branch still does.
-    assert.strictEqual((await p('GET', '/partner-universities')).status, who === 'chitwan' ? 200 : 302);
+    // The Application Team no longer opens the Partners pages (the owner, 21 Nov 2026), nor the Mock Team (the owner, 22 Nov 2026).
+    assert.strictEqual((await p('GET', '/partner-universities')).status, 302);
     assert.strictEqual((await p('GET', '/message-templates')).status, 302, 'Message templates is gone: it leads to Follow-up');
   }
   // A university, a Partner University or its short form (OIG, OIEG) is never listed on B2B Partners, not even as hidden (the owner, 20 Nov 2026).
@@ -102,10 +102,16 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   assert.strictEqual((await chitwan('GET', '/api/b2b')).status, 403, 'a branch has no B2B Partners');
   assert.strictEqual((await chitwan('GET', '/api/agents')).status, 403, 'a branch has no Agents');
   assert.strictEqual((await chitwan('GET', '/b2b-partners')).status, 302);
+  // A branch has no Partners at all, and neither Add many students nor Follow-up (the owner, 26 Nov 2026).
+  assert.strictEqual((await chitwan('GET', '/api/direct')).status, 403, 'a branch has no Partner Universities');
+  assert.strictEqual((await chitwan('GET', `/api/direct/${uni.id}`)).status, 403);
+  for (const page of ['/partner-universities', '/bulk', '/bulk-add']) assert.strictEqual((await chitwan('GET', page)).location, '/today', `a branch is sent from ${page} to Today`);
+  assert.strictEqual((await chitwan('GET', '/api/bulk/students')).status, 403, 'no messages to many students');
+  assert.strictEqual((await chitwan('POST', '/api/students/bulk', { rows: [] })).status, 403, 'no adding many students');
   assert.strictEqual((await sunita('GET', '/api/direct')).status, 403, 'the Follow-up Team has no Partner Universities');
   assert.strictEqual((await sunita('GET', '/partner-universities')).status, 302);
   // Partners: one menu entry; it opens the first of the three lists the account may see (the owner, 17 Nov 2026).
-  assert.strictEqual((await chitwan('GET', '/partners')).location, '/partner-universities', 'a branch lands on Partner Universities');
+  assert.strictEqual((await chitwan('GET', '/partners')).location, '/today', 'a branch has no Partners (the owner, 26 Nov 2026)');
   assert.strictEqual((await asha('GET', '/partners')).location, '/today', 'the Application Team has no Partners (the owner, 21 Nov 2026)');
   assert.strictEqual((await bikram('GET', '/partners')).location, '/today', 'the Mock Team has no Partners (the owner, 22 Nov 2026)');
   assert.ok(!String((await sunita('GET', '/partners')).location).startsWith('/partner'), 'the Follow-up Team is sent home');
@@ -137,6 +143,23 @@ test('partners: the Manager sees the commission, the teams and branches do not, 
   assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}`, { done: true, finish: { note: 'Done and checked.', next: 'none' } })).status, 200); // a tracking task closed with words only needs a next day
   assert.strictEqual((await asha('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 403);
   assert.strictEqual((await chitwan('POST', `/api/cards/${id}/tasks/${taskId}/delete`, {})).status, 200, 'the branch removes the task it gave');
+
+  // A branch, like every team, reads the Interview guidelines and changes none (the owner, 27 Nov 2026).
+  assert.strictEqual((await chitwan('GET', '/interview-guidelines')).status, 200);
+  const guides = await chitwan('GET', '/api/guidelines');
+  assert.deepStrictEqual([guides.status, guides.json.canUpload], [200, false]);
+  assert.strictEqual((await chitwan('POST', '/api/guidelines?university=Example', {})).status, 403, 'a branch uploads nothing');
+  assert.strictEqual((await chitwan('POST', '/api/guidelines/000000000000/delete', {})).status, 403, 'and removes nothing');
+  const read = await sunita('GET', '/api/guidelines');
+  assert.deepStrictEqual([read.status, read.json.canUpload], [200, false], 'the Follow-up Team reads them too');
+  // Its Today is two task lists only (assigned to it, assigned by it): no counts of the day, as Admin's.
+  const mine = (await chitwan('GET', '/api/today')).json;
+  assert.deepStrictEqual([mine.lead, mine.branchTeam, mine.done, mine.branchDay], [true, true, undefined, undefined]);
+  assert.strictEqual((await asha('GET', '/api/today')).json.lead, undefined, 'a team keeps its own Today');
+  // Its own students on the Universities pages are told to a branch only.
+  const here = await chitwan('GET', '/api/branch-universities');
+  assert.deepStrictEqual([here.status, typeof here.json.universities], [200, 'object']);
+  assert.strictEqual((await asha('GET', '/api/branch-universities')).status, 403);
 });
 
 // The Mock Team never sees a portal login (the owner, 15 Nov 2026: a Mock Team person also given the Application Team's students saw

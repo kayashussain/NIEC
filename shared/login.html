@@ -7,52 +7,118 @@
 <title>Log in · Student Recruit 360</title>
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="icon" type="image/png" href="/favicon.png" />
+<script>try { if (localStorage.getItem('sr360Theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) { /* light */ }</script>
 <style>
-/* 🔴 CSS CHANGED (2026-11-21): the colours of this file, option H "Strong contrast" chosen by the owner from the colour preview | from: near-black text (#1d1d1f, #111), grey words (#6e6e73 and other light greys), white and near-white boxes and panels (#fff, #fbfbfd, #f8f9fb), a light grey page (#f5f5f7, #eef0f3), pale hairlines (#e3e3e8, #d4d6db, #c9ccd2) | to: black text (#000), dark grey words (#333), no pure white (boxes #f7f7f7, panels #f3f3f3), a light grey page (#e6e6e6), firmer lines (#b8b8b8, #9a9a9a, #6f6f6f), links a deeper blue (#0050aa); the blue buttons stay #0071e3 */
-  /* 🔴 CSS CHANGED (2026-11-14): the login page rebuilt in the design language of Apple's sign-in page (the earlier styles of this page are replaced, not kept beside it) | from: two halves (a picture side with "Welcome back", three points and the logo with "UK" beside it; a sign-in box with a black button) | to: one calm centred column on Apple's light grey (#f5f5f7): the NIEC logo alone at the top (no "UK"), a large "Sign in" title, a short line under it, an off-white rounded panel with tall rounded fields (blue ring while typing) and a blue pill button (#0071e3), a quiet note at the foot; the system font (SF Pro on Apple devices, Inter elsewhere) */
+/* 🔴 CSS CHANGED (2026-11-25): THE APPROVED SIGN-IN PAGE (final). Two halves of the screen: the left shows six photos of students that change by themselves every 3 seconds (the logo on top), the right a sign-in card in the middle of its half; light and dark mode; the colours, corners and shadow are the app's own; everything is sized in rem from one root size that follows the screen width, so the page keeps its proportions at any size or browser zoom; under 1024px wide the photos become a banner above the card. The earlier steps of this page are in CSS-CHANGES.md. */
+/* 🔴 CSS CHANGED (2026-11-25): the sign-in page redesigned as a professional two-panel page (the earlier notes of this file, 2026-11-21 colours and 2026-11-14 Apple-style sign-in, are replaced by this block) | from: one small centred card with the logo above it | to: on a laptop or desktop, a left brand panel (logo, the line "All your students, in one place.", three short points) beside a right sign-in panel with a clear "Sign in" form; on a tablet or phone (under 1024px wide) the brand panel becomes a slim logo bar above the form; sizes follow the device width (rem units and a fluid root size that is 16px up to 1920px wide and grows to about 19px at 2560px), with no zoom code; same approved colours (page #e6e6e6, panel #ececec, card #f3f3f3 with a 1px #9a9a9a border, no shadow, blue #0071e3), same fonts, same steps and same behaviour */
+/* 🔴 CSS CHANGED (2026-11-25): the sign-in page uses the same colours, corners and shadow as the app, and has a Dark mode / Light mode button | from: page #e6e6e6, card #f3f3f3 with a #9a9a9a line, text #000, grey #333, field line #6f6f6f, link #0050aa, 12px corners | to: page #f5f5f7, white card with a #e5e5ea line and a soft shadow, text #1d1d1f, grey #636366, field line #d2d2d7, link #0066cc, 20px corners (the app's own values), blue #0071e3 unchanged, a Dark mode button at the top right */
+  /* 🔴 CSS CHANGED (2026-11-25): sign-in page type made slimmer and smaller, like apple.com | from: bold 700 headings, semi-bold 600 labels and points, medium 500 text, larger sizes | to: 600 headings, 400 body text and points, 500 labels and button, sizes about one step smaller, slightly tighter headline spacing; fonts, colours and layout unchanged */
   @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/fonts/inter-latin.woff2") format("woff2"); }
-  :root { --ink: #000; --dim: #333; --line: #9a9a9a; --bg: #e6e6e6; --panel: #f3f3f3; --blue: #0071e3; --blue-hover: #0077ed; --link: #0050aa; --danger: #b42318; --note-bg: #eef4fc; }
+  :root { --ink: #1d1d1f; --dim: #636366; --line: #e5e5ea; --bg: #f5f5f7; --side: #f5f5f7; --panel: #fff; --blue: #0071e3; --blue-hover: #0077ed; --link: #0066cc; --danger: #b42318; --note-bg: #eef4fc; }
   * { box-sizing: border-box; }
+  html { font-size: clamp(14px, 0.97vw, 40px); color-scheme: light; text-rendering: optimizeLegibility; }
   html, body { margin: 0; min-height: 100%; }
-  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; background: var(--bg); color: var(--ink);
-    font: 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
-  .top { display: flex; justify-content: center; margin-bottom: 28px; }
-  .top img { display: block; height: 64px; width: auto; }
-  .top img[hidden] { display: none; }
-  .top b { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
-  .top b[hidden] { display: none; }
-  main.card { width: 100%; max-width: 440px; padding: 40px 40px 30px; border-radius: 22px; background: var(--panel); box-shadow: 0 2px 12px rgba(0, 0, 0, .05); animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; }
-  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  body { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); background: var(--bg); color: var(--ink);
+    font: 1rem/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
+
+  /* The brand panel */
+  .brand { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.25rem; padding: 2.5rem clamp(2rem, 4vw, 4rem); background: var(--side); border-right: 1px solid #e5e5ea; overflow: hidden; }
+  .brand::before { content: ""; position: absolute; right: -8.75rem; top: -8.75rem; width: 26.25rem; height: 26.25rem; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 168, 236, .16), rgba(0, 168, 236, 0)); pointer-events: none; }
+  .brand::after { content: ""; position: absolute; left: -10rem; bottom: -10rem; width: 28.75rem; height: 28.75rem; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 113, 227, .10), rgba(0, 113, 227, 0)); pointer-events: none; }
+  .brand > * { position: relative; z-index: 1; }
+  .top { display: flex; align-items: center; }
+  .top img { display: block; height: 4rem; width: auto; max-width: 100%; }
+  .slides { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #d9dde3; }
+  .slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .9s ease; }
+  .slide.is-on { opacity: 1; }
+  .dots { position: absolute; left: 50%; bottom: 1.5rem; z-index: 2; display: flex; gap: 0.5rem; transform: translateX(-50%); padding: 0.5rem 0.75rem; border-radius: 61.25rem; background: rgba(0, 0, 0, .28); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .dots i { width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: rgba(255, 255, 255, .5); transition: background .3s, transform .3s; }
+  .dots i.is-on { background: #fff; transform: scale(1.25); }
+  .brand .top { position: absolute; top: 1.75rem; left: 1.75rem; z-index: 2; padding: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 0.5rem rgba(255, 255, 255, .85)) drop-shadow(0 0 1.25rem rgba(255, 255, 255, .6)); }
+  .brand .shade { position: absolute; inset: 0; z-index: 1; background: radial-gradient(ellipse 22rem 9rem at 3rem 3rem, rgba(255, 255, 255, .88), rgba(255, 255, 255, 0)); pointer-events: none; }
+  .top img[hidden], .top b[hidden] { display: none; }
+  .top b { font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; }
+
+  /* The sign-in panel */
+  .side { display: flex; align-items: center; justify-content: center; padding: 2.5rem clamp(1.25rem, 4vw, 4rem); }
+  main.card { width: 100%; max-width: 23rem; padding: 2rem 2rem 1.5rem; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .05); animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(0.625rem); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { main.card { animation: none; } }
-  h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.022em; line-height: 1.1; text-align: center; }
-  .sub { margin: 8px 0 26px; color: var(--dim); font-size: 17px; text-align: center; }
-  form { display: flex; flex-direction: column; gap: 6px; }
+  h1 { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -.03em; line-height: 1.15; }
+  .sub { margin: 0.375rem 0 1.25rem; color: var(--dim); font-size: 0.9375rem; font-weight: 400; }
+  form { display: flex; flex-direction: column; gap: 0.375rem; }
   form[hidden] { display: none; }
-  label { margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--dim); }
-  input { font: inherit; height: 52px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #f7f7f7; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
-  input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0, 113, 227, .2); }
-  .note { margin: 0 0 6px; padding: 12px 14px; border-radius: 12px; background: var(--note-bg); font-size: 15px; }
-  .note ol { margin: 4px 0 0; padding-left: 18px; }
-  .hint { margin: 2px 0 0; color: var(--dim); font-size: 14px; }
-  .error { margin: 12px 0 0; color: var(--danger); font-size: 15px; text-align: center; }
+  label { margin-top: 0.625rem; font-size: 0.8125rem; font-weight: 500; color: var(--ink); }
+  input { font: inherit; font-size: 0.9375rem; font-weight: 400; height: 2.75rem; padding: 0 0.875rem; border: 1px solid #d2d2d7; border-radius: 0.75rem; background: #fff; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+  input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 0.25rem rgba(0, 113, 227, .2); }
+  .note { margin: 0 0 0.375rem; padding: 0.75rem 0.875rem; border-radius: 0.625rem; background: var(--note-bg); font-size: 0.9375rem; }
+  .hint { margin: 0.125rem 0 0; color: var(--dim); font-size: 0.875rem; }
+  .error { margin: 0.875rem 0 0; padding: 0.625rem 0.875rem; border-radius: 0.625rem; background: #fbeceb; border: 1px solid #e4b4af; color: var(--danger); font-size: 0.875rem; font-weight: 500; }
   .error[hidden] { display: none; }
-  button { margin-top: 22px; height: 50px; padding: 0 22px; border: 0; border-radius: 980px; background: var(--blue); color: #fff; font: inherit; font-weight: 500; cursor: pointer; transition: background .15s; }
+  button { margin-top: 1.25rem; height: 2.75rem; padding: 0 1.375rem; border: 0; border-radius: 61.25rem; background: var(--blue); color: #fff; font: inherit; font-size: 0.9375rem; font-weight: 500; cursor: pointer; transition: background .15s; }
   button:hover:not(:disabled) { background: var(--blue-hover); }
-  button:focus-visible, .pw-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  button:focus-visible, .pw-toggle:focus-visible { outline: 0.125rem solid var(--blue); outline-offset: 0.125rem; }
   button:disabled { opacity: .55; cursor: default; }
   .pw { position: relative; display: flex; }
-  .pw input { flex: 1; min-width: 0; padding-right: 70px; }
-  .pw-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); margin: 0; height: auto; padding: 6px 10px; border-radius: 8px; background: none; color: var(--link); font-size: 14px; font-weight: 500; }
+  .pw input { flex: 1; min-width: 0; padding-right: 4.375rem; }
+  .pw-toggle { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); margin: 0; height: auto; padding: 0.375rem 0.625rem; border-radius: 0.5rem; background: none; color: var(--link); font-size: 0.8125rem; font-weight: 500; }
   .pw-toggle:hover:not(:disabled) { background: rgba(0, 102, 204, .08); }
-  .caps { margin: 4px 0 0; color: #a15c00; font-size: 14px; font-weight: 500; }
+  .caps { margin: 0.25rem 0 0; color: #a15c00; font-size: 0.8125rem; font-weight: 500; }
   .caps[hidden] { display: none; }
-  .link { margin-top: 12px; height: auto; padding: 0; background: none; color: var(--link); font-weight: 400; font-size: 15px; }
+  .link { margin-top: 0.75rem; height: auto; padding: 0; background: none; color: var(--link); font-weight: 400; font-size: 0.875rem; }
   .link:hover:not(:disabled) { background: none; text-decoration: underline; }
-  .footnote { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid #b8b8b8; font-size: 13px; color: #333; text-align: center; }
+  .footnote { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 1.375rem 0 0; padding-top: 1rem; border-top: 1px solid #e5e5ea; font-size: 0.8125rem; font-weight: 400; color: var(--dim); }
+  .footnote svg { flex: 0 0 0.9375rem; width: 0.9375rem; height: 0.9375rem; }
+
+  /* Responsive by device width (no zoom code): laptop and desktop (64rem and wider) show the two panels; tablets and phones show a slim logo bar above the form */
+  @media (max-width: 1023px) {
+    body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; min-height: 100dvh; }
+    .brand { min-height: clamp(9rem, 24vh, 14rem); padding: 0; border-right: 0; border-bottom: 1px solid #e5e5ea; }
+    .brand::before, .brand::after { display: none; }
+    .dots { bottom: 0.5rem; padding: 0.3rem 0.5rem; }
+    .brand .shade { background: radial-gradient(ellipse 12rem 4.5rem at 50% 50%, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0)); }
+    .brand .top { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .top img { height: 3rem; }
+    .side { align-items: flex-start; padding: clamp(1.5rem, 6vh, 3.5rem) 1.25rem 2.5rem; }
+  }
+  @media (max-width: 479px) {
+    .brand { min-height: 8rem; }
+    .top img { height: 2.5rem; }
+    .side { padding: 1.25rem 0.875rem 2rem; }
+    main.card { padding: 1.75rem 1.375rem 1.375rem; }
+    h1 { font-size: 1.5rem; }
+  }
+  @media (min-width: 1024px) { body { min-height: 100dvh; } }
+  /* Light and dark mode, the same as inside the app (apple.css) */
+  html[data-theme="dark"] { color-scheme: dark; --ink: #e8eaed; --dim: #9aa0a6; --line: #3c4043; --bg: #202124; --side: #202124; --panel: #292a2d; --blue: #4285f4; --blue-hover: #669df6; --link: #8ab4f8; --note-bg: #2a3a52; --danger: #f28b82; }
+  html[data-theme="dark"] main.card { box-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px rgba(0, 0, 0, .35); }
+  html[data-theme="dark"] input { background: #303134; border-color: #5f6368; color: #e8eaed; }
+  html[data-theme="dark"] input:focus { border-color: var(--blue); box-shadow: 0 0 0 0.25rem rgba(66, 133, 244, .3); }
+  html[data-theme="dark"] .error { background: #3c2a29; border-color: #6b3a37; }
+  html[data-theme="dark"] .footnote { border-top-color: #3c4043; }
+  html[data-theme="dark"] .brand { border-right-color: #3c4043; }
+  html[data-theme="dark"] .theme-toggle { background: rgba(255, 255, 255, .1); color: #e8eaed; }
+  html[data-theme="dark"] .theme-toggle:hover:not(:disabled) { background: rgba(255, 255, 255, .16); }
+  .theme-toggle { position: fixed; top: 1rem; right: 1.25rem; z-index: 5; margin: 0; height: auto; padding: 0.4rem 0.9rem; border-radius: 61.25rem; background: rgba(0, 0, 0, .06); color: var(--ink); font-size: 0.8125rem; font-weight: 500; }
+  .theme-toggle:hover:not(:disabled) { background: rgba(0, 0, 0, .1); }
 </style>
 </head>
 <body>
-<div class="top"><img id="brandLogo" src="/brand-logo.png" alt="Logo" width="198" height="96" /><b id="brandName" hidden>Student Recruit 360</b></div>
+<aside class="brand">
+  <div class="top"><img id="brandLogo" draggable="false" src="/brand-logo.svg" alt="Student Recruit 360" width="332" height="100" /><b id="brandName" hidden>Student Recruit 360</b></div>
+  <div class="shade" aria-hidden="true"></div>
+  <div class="slides" id="slides" role="group" aria-label="Photos of students at university">
+    <img draggable="false" class="slide is-on" src="/login-slides/slide-1.jpg" alt="Graduates throwing their caps in front of a university building" width="1400" height="933" style="object-position: 55% 50%" decoding="async" fetchpriority="high" />
+    <img draggable="false" class="slide" src="/login-slides/slide-2.jpg" alt="A graduate tossing her cap into the sky" width="1400" height="1490" style="object-position: 50% 55%" decoding="async" loading="eager" />
+    <img draggable="false" class="slide" src="/login-slides/slide-3.jpg" alt="A graduate raising her cap in front of a university building" width="1400" height="2100" style="object-position: 50% 74%" decoding="async" loading="eager" />
+    <img draggable="false" class="slide" src="/login-slides/slide-4.jpg" alt="A graduate with a bouquet of flowers" width="1400" height="2100" style="object-position: 50% 16%" decoding="async" loading="eager" />
+    <img draggable="false" class="slide" src="/login-slides/slide-5.jpg" alt="Graduates throwing their caps at sunset" width="1400" height="933" style="object-position: 55% 55%" decoding="async" loading="eager" />
+    <img draggable="false" class="slide" src="/login-slides/slide-6.jpg" alt="A smiling student with a backpack outside a university building" width="1400" height="2100" style="object-position: 50% 36%" decoding="async" loading="eager" />
+  </div>
+  <div class="dots" id="dots" aria-hidden="true"><i class="is-on"></i><i></i><i></i><i></i><i></i><i></i></div>
+</aside>
+<button type="button" class="theme-toggle" id="themeToggle">Dark mode</button>
+<div class="side">
 <main class="card">
   <h1>Sign in</h1>
   <p class="sub" id="subtitle">Log in to continue</p>
@@ -90,14 +156,32 @@
   </form>
 
   <p class="error" id="error" role="alert" hidden></p>
-  <p class="footnote">🔒 Staff only. Log in with your own username and password.</p>
+  <p class="footnote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Staff only. Sign in with your own account.</span></p>
 </main>
+</div>
 <script>
+(function () {
+  // The photos change every 3 seconds, one after another, then start again. They stay still when the person asks for less motion, and wait while the tab is not shown.
+  const slides = [...document.querySelectorAll('#slides .slide')], dots = [...document.querySelectorAll('#dots i')];
+  if (slides.length < 2 || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  let at = 0, timer = null;
+  const show = (n) => { slides[at].classList.remove('is-on'); if (dots[at]) dots[at].classList.remove('is-on'); at = n; slides[at].classList.add('is-on'); if (dots[at]) dots[at].classList.add('is-on'); };
+  const start = () => { if (!timer) timer = setInterval(() => show((at + 1) % slides.length), 3000); };
+  const stop = () => { clearInterval(timer); timer = null; };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
+  start();
+})();
+(function () {
+  const b = document.getElementById('themeToggle'), root = document.documentElement;
+  const draw = () => { b.textContent = root.getAttribute('data-theme') === 'dark' ? 'Light mode' : 'Dark mode'; };
+  draw();
+  b.addEventListener('click', () => { const v = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', v); try { localStorage.setItem('sr360Theme', v); } catch (e) { /* only this visit */ } draw(); });
+})();
   // Only the consultancy's logo above the box; "Student Recruit 360" if there is no logo. The menu remembered by this tab is forgotten here.
   (function () {
-    try { sessionStorage.removeItem('isrMe'); sessionStorage.removeItem('isrUnread'); } catch (e) { /* nothing kept */ }
+    try { sessionStorage.removeItem('sr360Me'); sessionStorage.removeItem('sr360Unread'); } catch (e) { /* nothing kept */ }
     const logo = document.getElementById('brandLogo');
-    logo.addEventListener('error', () => { logo.hidden = true; document.getElementById('brandName').hidden = false; });
+    logo.addEventListener('error', () => { if (/.svg$/.test(logo.getAttribute('src'))) { logo.setAttribute('src', '/brand-logo.png'); return; } logo.hidden = true; document.getElementById('brandName').hidden = false; });
   })();
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -142,7 +226,7 @@
     if (state.stage === 'done') {
       // Remember who logged in for this tab, so the first page draws its menu at once (header.js reads it).
       fetch('/api/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => {
-        if (me) sessionStorage.setItem('isrMe', JSON.stringify({ name: me.name, username: me.username, role: me.role, roleLabel: me.roleLabel, departments: me.departments || [] }));
+        if (me) sessionStorage.setItem('sr360Me', JSON.stringify({ name: me.name, username: me.username, role: me.role, roleLabel: me.roleLabel, departments: me.departments || [] }));
       }).catch(() => { /* drawn when the page asks */ }).finally(() => location.replace(target));
       return;
     }

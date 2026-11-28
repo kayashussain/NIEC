@@ -10,8 +10,8 @@
 (function (root) {
   const { el, h, api, field, dialog } = root.Portal;
   const F = root.CardFields;
-  const WITH_REMARKS = { 'Social Media': 'What they saw (optional)' };
-  const REMARK_HELP = { 'Social Media': 'For example: the post or video they saw.', Reference: 'Who referred them' };
+  const WITH_REMARKS = {}; // (the owner, 25 Nov 2026: no "What they saw" for Social Media)
+  const REMARK_HELP = { Reference: 'Who referred them' };
 
   function create({ lists, initial = {}, onChange = () => {}, disabled = false, hideBranch = false, required = false }) {
     // Only a branch (or Admin) may tag a student with a branch, so everybody else is not offered it (the server would refuse it).
@@ -37,12 +37,10 @@
       const platforms = options('Social Media');
       const platform = field('Which platform', { kind: 'select', choices: platforms, value: start.platform || (legacy && legacy[0]) || (platforms.includes(start.detail) ? start.detail : (isCampaign ? 'Facebook' : start.detail || '')) });
       let way = start.way || (legacy && legacy[1]) || (isCampaign ? 'Advert' : (start.detail ? 'Organic' : ''));
-      const wayBox = el('div', 'p-field');
-      wayBox.append(el('span', 'p-label', 'How they came'));
+      const wayBox = el('div', 'p-field'); wayBox.hidden = true; // (the owner, 25 Nov 2026: no "How they came"; campaigns are kept on Events and marketing)
       const seg = el('div', 'p-seg');
       const ways = [['Organic', 'Organic'], ['Advert', 'Advert (paid)']].map(([k, t]) => { const b = h('button', { type: 'button', class: k === way ? 'on' : '' }, t); b.addEventListener('click', () => { way = k; ways.forEach((x) => x.classList.toggle('on', x === b)); drawAd(); onChange(); }); return b; });
       seg.append(...ways);
-      wayBox.append(seg);
       const adBox = el('div', 'p-field');
       let campaign = null; let other = null;
       const drawAd = () => {
@@ -59,7 +57,7 @@
         adBox.append(...c.wrap.childNodes, o.wrap);
         if (!campaigns.length) adBox.append(el('span', 'p-hint', 'No campaign yet: type its name under Other.'));
       };
-      drawAd();
+      way = ''; // nothing about an advert is asked
       social = { platform: platform.input, way: () => way, campaign: () => campaign, other: () => other };
       detailBox.replaceChildren(...platform.wrap.childNodes);
       detailBox.after(wayBox);
@@ -76,9 +74,9 @@
       if (g === 'Social Media' && detailBox.parentNode) {
         detailInput = null;
         drawSocial();
-        const r = field(WITH_REMARKS[g], { max: 160, placeholder: REMARK_HELP[g], value: firstDraw ? initial.remarks || '' : '' });
-        remarksInput = r.input;
-        remarkBox.replaceChildren(...r.wrap.childNodes);
+        // No box to write in for Social Media: the platform is chosen from the list only (the owner, 26 Nov 2026). Words an older student already has are kept as they are.
+        remarksInput = { value: firstDraw ? initial.remarks || '' : '' };
+        remarkBox.replaceChildren();
         firstDraw = false;
         onChange();
         return;
@@ -137,9 +135,6 @@
         if (g === 'Branch' && !detail) return 'Choose which branch.';
         if (g === 'Social Media' && social) {
           if (!social.platform.value) return 'Choose the platform.';
-          if (!social.way()) return 'Choose Organic or Advert.';
-          const c = social.campaign();
-          if (social.way() === 'Advert' && (!c || !c.value || (c.value === '__other' && !social.other().value.trim()))) return 'Please choose the campaign, or type its name under Other.';
         }
         return '';
       },
@@ -149,10 +144,12 @@
         if (g === 'Social Media' && social) {
           const way = social.way();
           const c = social.campaign();
-          const ad = way === 'Advert' && c ? (c.value === '__other' ? social.other().value.trim() : c.value) : '';
           const platform = social.platform.value;
+          // A student first saved from an advert keeps that campaign while the platform is not changed.
+          const keepAd = initial.way === 'Advert' && initial.detail && (initial.platform || '') === platform;
+          const ad = keepAd ? initial.detail : '';
           // The detail is the campaign for an advert (so it is counted in its cost), the platform when the student came by itself.
-          return { source: g, group: g, detail: ad || platform, remarks: remarksInput ? remarksInput.value.trim() : '', branch: '', platform, way };
+          return { source: g, group: g, detail: ad || platform, remarks: initial.remarks || '', branch: '', platform, way: keepAd ? 'Advert' : '' };
         }
         const detail = detailInput ? detailInput.value : '';
         return { source: F.storedSource(g, detail), group: g, detail: g === 'Branch' ? '' : detail, remarks: remarksInput ? remarksInput.value.trim() : '', branch: g === 'Branch' ? detail : '' };

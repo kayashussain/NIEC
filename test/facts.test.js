@@ -339,7 +339,7 @@ test('levels in the owner order: Extended Masters and PhD are their own, "Resear
 });
 
 test('the Universities list offers only January, February and March 2027, nearest deadline first', () => {
-  const facts = createFacts(fs.mkdtempSync(path.join(os.tmpdir(), 'isr-q1-')));
+  const facts = createFacts(fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-q1-')));
   const list = facts.list();
   assert.ok(list.every((u) => u.intakes.every((i) => /^(January|February|March) 2027$/.test(i))));
   const days = list.map((u) => (u.next ? u.next.days : 1e6));

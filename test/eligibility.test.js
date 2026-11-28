@@ -54,7 +54,7 @@ test('on the server: the finder answers the team (not a student), and courses ar
   const net = require('node:net');
   const { spawn } = require('node:child_process');
   const freePort = () => new Promise((resolve) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => resolve(p)); }); });
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-elig-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-elig-'));
   const port = await freePort();
   const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env: { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir }, stdio: 'ignore' });
   t.after(() => server.kill());

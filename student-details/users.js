@@ -202,6 +202,46 @@
     return ((u.role === 'manager' ? '<span class="chip chip-manager">Manager</span>' : '') + teams || '<span class="muted">No team</span>') + warn;
   }
 
+  // Which of the filters a person belongs to, and the colour of their round mark (their own team's).
+  const BRANCH_IDS = window.CardFields.BRANCHES.map((n) => n.toLowerCase().replace(/[^a-z0-9]+/g, ''));
+  const GROUPS = [['', 'Everyone'], ['admin', 'Admin'], ['manager', 'Manager'], ['application', 'Application'], ['mock', 'Mock'], ['followup', 'Follow-up'], ['branch', 'Branches']];
+  function groupsOf(u) {
+    if (u.role === 'admin') return ['admin'];
+    const out = (u.departments || []).map((d) => (BRANCH_IDS.includes(d) ? 'branch' : d));
+    if (u.role === 'manager') out.unshift('manager');
+    return [...new Set(out)];
+  }
+  const toneOf = (u) => {
+    if (u.role === 'admin' || u.role === 'student') return u.role;
+    const own = u.taskTeam || (u.departments || [])[0] || '';
+    return u.role === 'manager' ? 'manager' : BRANCH_IDS.includes(own) ? 'branch' : own || 'none';
+  };
+  // The filter pills (only the groups somebody is in) and the search box above the team's list.
+  let shownGroup = '';
+  function narrow() {
+    const q = $('peopleFind').value.trim().toLowerCase();
+    let any = false;
+    $('users').querySelectorAll('tr[data-groups]').forEach((tr) => {
+      const on = (!shownGroup || tr.dataset.groups.split(' ').includes(shownGroup)) && (!q || tr.dataset.find.includes(q));
+      tr.hidden = !on;
+      any = any || on;
+    });
+    $('peopleNone').hidden = any || !$('users').querySelector('tr[data-groups]');
+  }
+  function drawFilter(team) {
+    const counts = GROUPS.map(([k, label]) => [k, label, k ? team.filter((u) => groupsOf(u).includes(k)).length : team.length]).filter((x) => !x[0] || x[2]);
+    if (!counts.some((x) => x[0] === shownGroup)) shownGroup = '';
+    $('peopleFilter').innerHTML = counts.map(([k, label, n]) => `<button type="button" data-g="${k}" aria-pressed="${k === shownGroup}">${label}<span>${n}</span></button>`).join('');
+  }
+  $('peopleFilter').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-g]');
+    if (!b) return;
+    shownGroup = b.dataset.g;
+    $('peopleFilter').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    narrow();
+  });
+  $('peopleFind').addEventListener('input', narrow);
+
   async function loadUsers() {
     let users;
     try {
@@ -230,8 +270,8 @@
             </div>
           </details>
         </div>`;
-      return `<tr class="${u.disabled ? 'is-disabled' : ''}">
-        <td><div class="who"><span class="avatar" aria-hidden="true">${esc(initials(u.name))}</span><div><b>${esc(u.name)}</b><span>${esc(u.username)}${u.email ? ' &middot; ' + esc(u.email) : ''}</span></div></div></td>
+      return `<tr class="${u.disabled ? 'is-disabled' : ''}" data-groups="${groupsOf(u).join(' ') || 'none'}" data-find="${esc([u.name, u.username, u.email].filter(Boolean).join(' ').toLowerCase())}">
+        <td><div class="who"><span class="avatar tone-${toneOf(u)}" aria-hidden="true">${esc(initials(u.name))}</span><div><b>${esc(u.name)}</b><span>${esc(u.username)}${u.email ? ' &middot; ' + esc(u.email) : ''}</span></div></div></td>
         <td data-label="Access"><div class="chips">${accessChips(u)}</div></td>
         <td data-label="Status">${status(u)}</td>
         <td data-label="Last login">${when(u.lastLoginAt)}</td>
@@ -244,6 +284,8 @@
     $('users').innerHTML = users.filter((u) => u.role !== 'student').map(row).join('') || '<tr><td class="muted" colspan="6">No one yet.</td></tr>';
     $('studentsCard').hidden = !students.length;
     $('studentUsers').innerHTML = students.map(row).join('');
+    drawFilter(users.filter((u) => u.role !== 'student'));
+    narrow();
   }
 
   const CONFIRM = {
@@ -293,6 +335,15 @@
   });
 
   // ---- Add ----
+  // The form opens from "+ Add a person" beside the title (the owner, 26 Nov 2026) and closes with Close.
+  function showAdd(on) {
+    $('addCard').hidden = !on;
+    $('addOpen').setAttribute('aria-expanded', String(on));
+    $('addOpen').hidden = on;
+    if (on) { showTab('people'); $('addName').focus(); }
+  }
+  $('addOpen').addEventListener('click', () => showAdd(true));
+  $('addClose').addEventListener('click', () => { showAdd(false); message('addMsg', ''); $('addOpen').focus(); });
   $('addForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     message('addMsg', '');
@@ -354,7 +405,7 @@
     }
     $('devicesCount').textContent = list.length;
     $('sessions').innerHTML = list.map((s) => `<tr>
-      <td><b>${esc(s.user)}</b>${s.current ? ' <span class="muted">(this device)</span>' : ''}</td>
+      <td><div class="who"><span class="avatar" aria-hidden="true">${esc(initials(s.user))}</span><div><b>${esc(s.user)}</b>${s.current ? '<span>This device</span>' : ''}</div></div></td>
       <td data-label="Device">${esc(s.device)}</td>
       <td data-label="IP address">${esc(s.ip)}</td>
       <td data-label="Logged in">${when(s.created)}</td>

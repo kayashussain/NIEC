@@ -15,7 +15,7 @@ const freePort = () => new Promise((resolve) => { const s = net.createServer().l
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('finishing a task writes confirmed answers to the sheet and the notes', { timeout: 120000 }, async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-finish-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-finish-'));
   const port = await freePort();
   const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir };
   delete env.ANTHROPIC_API_KEY;
@@ -67,7 +67,7 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finish(n1, { noc: 'Pending', note: 'Account created' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Pending');
   const n2 = await give('Submit the NOC', 'noc');
-  if (!(await row())['NOC NUMBER']) assert.strictEqual((await finish(n2, { noc: 'Received' })).status, 400, 'Received needs the NOC number');
+  // (No NOC number is asked when the NOC is received: the owner, 25 Nov 2026.)
   assert.strictEqual((await finish(n2, { noc: 'Received', nocNumber: 'NOC-123456' })).status, 200);
   assert.strictEqual((await row()).NOC, 'Received');
   assert.strictEqual((await row())['NOC NUMBER'], 'NOC-123456');
@@ -346,6 +346,32 @@ test('finishing a task writes confirmed answers to the sheet and the notes', { t
   assert.strictEqual((await finishT(mT2, { mock: 'precas', result: 'Maybe' })).status, 400);
   assert.strictEqual((await finishT(mT2, { mock: 'precas', result: 'Passed' })).status, 200);
   assert.strictEqual((await rowT())['PRE CAS INTERVIEW'], 'Passed');
+  // The Mock Team's four kinds (the owner, 25 Nov 2026): the Mock interview writes the day, the Feedback asks only for the words of the last mock booked without feedback,
+  // Date booking records the Pre-CAS day and gives a result task, mocks 5 to 7 are kept in the note.
+  {
+    assert.strictEqual((await finishT(await giveT('Book the second mock', 'mock'), { mock: 'set', date: add(-1), remind: false })).status, 200);
+    const fbTwo = await giveT('Feedback of the second mock', 'mock-feedback');
+    assert.strictEqual((await app('POST', `/api/cards/${tId}/tasks/${fbTwo}`, { finishState: true })).json.state.feedbackDue.n, 2, 'the mock booked without feedback is known');
+    assert.strictEqual((await finishT(fbTwo, { mock: 'feedback', feedback: 'Better on the finance answers' })).status, 200);
+    assert.strictEqual((await rowT())['FEEDBACK 2'], 'Better on the finance answers');
+    const fbSix = await giveT('Feedback of the sixth mock', 'mock-feedback');
+    assert.strictEqual((await finishT(fbSix, { mock: 'feedback', slot: 6, feedback: 'Ready' })).status, 200);
+    assert.strictEqual((await cardT()).extraMocks.find((m) => m.n === 6).feedback, 'Ready', 'Mock 6 is kept on the card');
+    // Did not join: the reason in the note is needed, and nothing is written in the Feedback columns.
+    const noJoin = await giveT('Feedback of a mock the student missed', 'mock-feedback');
+    assert.strictEqual((await finishT(noJoin, { mock: 'feedback', joined: false, slot: 3 })).status, 400, 'the reason is needed');
+    assert.strictEqual((await finishT(noJoin, { mock: 'feedback', joined: false, slot: 3, note: 'The student was ill.' })).status, 200);
+    assert.strictEqual((await rowT())['FEEDBACK 3'] || '', '');
+    // The final interview: did not join needs the reason; joined needs Pass or Fail.
+    const finalT = await giveT('Record the Pre-CAS interview result (30 November 2026)', 'mock-precas');
+    assert.strictEqual((await finishT(finalT, { mock: 'precas', joined: false })).status, 400);
+    assert.strictEqual((await finishT(finalT, { mock: 'precas', joined: false, note: 'The university moved it.' })).status, 200);
+    const book = await giveT('Book the Pre-CAS interview', 'mock-booking');
+    assert.strictEqual((await finishT(book, { mock: 'preBooked' })).status, 400, 'the day is needed');
+    assert.strictEqual((await finishT(book, { mock: 'preBooked', date: add(3), remind: true })).status, 200);
+    assert.ok((await cardT()).tasks.find((x) => /^Record the Pre-CAS interview result/.test(x.text) && x.tag === 'mock-precas'), 'the result task');
+    assert.strictEqual((await cardT()).finalInterview.day, add(3), 'the final interview day is kept on the card, so the result window shows it by itself');
+  }
   // Visa refused: the stage goes to Visa Rejected.
   {
     const wbV = (await admin('GET', '/api/data')).json;

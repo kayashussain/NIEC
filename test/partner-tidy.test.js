@@ -12,7 +12,7 @@ const { createPlanning } = require('../student-details/planning');
 const { tidyPartners } = require('../student-details/partner-tidy');
 
 const setup = (partners, b2bCards = [], notPartners = []) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isr-tidy-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sr360-tidy-'));
   const direct = createDirect(dir);
   const b2b = createB2b(dir);
   const planning = createPlanning(dir);

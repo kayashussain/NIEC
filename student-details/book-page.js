@@ -8,8 +8,8 @@
   const view = document.getElementById('view');
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const slug = ((location.pathname.match(/^\/book\/([A-Za-z0-9-]{3,40})\/?$/) || [])[1] || '').toLowerCase();
-  const token = (location.pathname.match(/^\/booking\/([A-Za-z0-9_-]{20,40})$/) || [])[1] || '';
+  const slug = ((location.pathname.match(/\/book\/([A-Za-z0-9-]{3,40})\/?$/) || [])[1] || '').toLowerCase();
+  const token = (location.pathname.match(/\/booking\/([A-Za-z0-9_-]{20,40})$/) || [])[1] || '';
 
   function h(tag, attrs, ...kids) {
     const e = document.createElement(tag);

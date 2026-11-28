@@ -345,3 +345,55 @@ html:root body.p-student .lg-mock-who { font-size: 16.25px !important; }
 html:root body.p-student .lg-lead { font-size: 17.5px !important; }
 html:root body.p-student .lg-diff-tog { min-height: 38px !important; font-size: 16.25px !important; }
 html:root body.p-student .sc-next-words .sc-eyebrow { font-size: 16.25px !important; }
+/* 🔴 CSS CHANGED (2026-11-25): the student card keeps its two columns at 110% to 150% browser zoom, and the Email in Profile never breaks in the middle | from: the two columns stacked as soon as the card area was under 1000px wide (every laptop at 125% zoom), and the Email broke in the middle of the address ("example.c" and "om" on two lines) | to: two columns down to 800px (the Profile column shrinks between 310px and 450px), and the Email gets its own full-width line under its label, left aligned */
+@container (min-width: 801px) and (max-width: 1000px) {
+  html:root body.p-student .sc-layout { grid-template-columns: clamp(310px, 38cqw, 450px) minmax(0, 1fr) !important; }
+}
+html:root body.p-student dl.lg-dl > dt:has(+ dd a[href^="mailto:"]) { grid-column: 1 / -1 !important; padding-bottom: 0 !important; }
+html:root body.p-student dl.lg-dl > dd:has(a[href^="mailto:"]) { grid-column: 1 / -1 !important; padding-top: 2px !important; text-align: left !important; }
+html:root body.p-student dl.lg-dl > dd a[href^="mailto:"] { font-size: 16px !important; overflow-wrap: anywhere !important; }
+/* 🔴 CSS CHANGED (2026-11-25): the student card on a phone (card area under 640px wide), for every person | from: the stage names broke in the middle of a word (Applicat-ion, intervie-w), the Next step box squeezed its words into a column about 100px wide, each Timeline entry kept a 105px date column so its text was crushed and broke inside words, and the Timeline filter buttons (All, Notes, Tasks) were cut off at the right | to: the stages sit in two columns and never break inside a word, the Next step button goes under the words at full width, each Timeline entry shows its date above the text across the full width, and the filter buttons wrap under the Timeline title; nothing changes above 640px */
+@container (max-width: 640px) {
+  html:root body.p-student .sc-steps { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; padding-left: 0 !important; padding-right: 0 !important; }
+  html:root body.p-student .sc-step-label { overflow-wrap: normal !important; word-break: normal !important; hyphens: none !important; }
+  html:root body.p-student .sc-next { flex-wrap: wrap !important; }
+  html:root body.p-student .sc-next-words { flex: 1 1 0 !important; min-width: 9rem !important; }
+  html:root body.p-student .sc-next-act { flex: 1 1 100% !important; }
+  html:root body.p-student .sc-next-act .btn { width: 100% !important; justify-content: center !important; }
+  html:root body.p-student .lg-head { flex-wrap: wrap !important; gap: 10px !important; }
+  html:root body.p-student .lg-seg { max-width: 100% !important; flex-wrap: wrap !important; }
+  html:root body.p-student table.lg-table tr.lg-stage-body { grid-template-columns: 15px minmax(0, 1fr) 30px !important; grid-template-areas: "dot when more" "dot kind more" "dot what more" "dot by more" !important; column-gap: 12px !important; }
+  html:root body.p-student tr.lg-stage-body > td.is-when { text-align: left !important; white-space: nowrap !important; width: auto !important; max-width: none !important; }
+  html:root body.p-student tr.lg-stage-body > td.is-when b, html:root body.p-student tr.lg-stage-body > td.is-when span { display: inline !important; margin-right: 8px !important; }
+  html:root body.p-student tr.lg-stage-body::after { left: 7px !important; }
+  html:root body.p-student tr.lg-stage-body > td { overflow-wrap: break-word !important; word-break: normal !important; }
+}
+/* 🔴 CSS CHANGED (2026-11-25): the University partner list in the Add an application window | from: a drop-down list that was cut off at the window's edge and could not be scrolled | to: a list inside the window (11rem high, scrolls by itself) with a search box above it, Partner universities and B2B partners under small headings, the chosen one in blue */
+html:root body.p-student .p-pick { display: flex; flex-direction: column; flex: 1 1 100%; width: 100%; box-sizing: border-box; max-height: 11rem; overflow-y: auto; margin-top: 8px; padding: 4px; border: 1px solid #e5e5ea; border-radius: 12px; background: #fff; }
+html:root body.p-student .p-pick-h { display: block; flex: none; text-align: left; padding: 8px 10px 4px; color: #636366; font-size: 12px; font-weight: 600; }
+html:root body.p-student .p-pick-i { display: block; flex: none; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: #1d1d1f; font: inherit; font-size: 14px; font-weight: 400; text-align: left; cursor: pointer; }
+html:root body.p-student .p-pick-i:hover { background: #f5f5f7; }
+html:root body.p-student .p-pick-i.is-on { background: #0071e3; color: #fff; }
+
+/* 🔴 CSS CHANGED (2026-11-25): Application details on the student card list every detail | from: only the filled ones in a list, and under "Not added yet" a button with a plus for each empty one | to: every detail in the list (University, Course, University partner, Receiving partner, Language test, Student ID, NOC, NOC number, Medical report, Medical booking date); an empty one says Missing in orange (#b25000, medium weight), no buttons */
+html:root body.p-student .lg-dl dd.lg-missing { color: #b25000; font-weight: 500; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the Timeline's detail changes, and the University partner list | from: "1 detail saved" with name chips and a Show changes / Hide changes button; (empty) written for an empty value; the partner list always open with group headings | to: each change one plain line that is always shown ("NOC number: 12345", or "NOC number: 111 -> 222", the old value in grey); the partner list opens only while the box is used, each name followed by (Partner university) or (B2B partner) in grey */
+html:root body.p-student .lg-diff { display: grid; gap: 4px; margin-top: 2px; }
+html:root body.p-student .lg-diff-row { display: flex; flex-wrap: wrap; gap: 6px; font-size: 14px; line-height: 20px; }
+html:root body.p-student .lg-diff-l { color: #636366; font-weight: 400; }
+html:root body.p-student .lg-diff-vals { color: #1d1d1f; font-weight: 500; }
+html:root body.p-student .lg-diff-from { color: #636366; font-weight: 400; }
+html:root body.p-student .p-pick[hidden] { display: none; }
+html:root body.p-student .p-pick-s { color: #636366; font-weight: 400; }
+html:root body.p-student .p-pick-i.is-on .p-pick-s { color: rgba(255, 255, 255, .85); }
+
+/* 🔴 CSS CHANGED (2026-11-25): fewer lines on the student card | from: a line above every row of Profile and Application details | to: no row lines; the rows keep their space */
+html:root body.p-student .lg-dl dt, html:root body.p-student .lg-dl dd { border-top: 0; }
+
+/* 🔴 CSS CHANGED (2026-11-25): the ten-second warning when the receiving partner and the student source do not agree (new) | from: nothing | to: a soft orange card at the top of the window with the words, a counter ("10 s") and a thin bar that runs out over ten seconds, then the card closes by itself */
+html:root body.p-student .lg-warn { position: relative; margin: 0 0 12px; padding: 14px 16px 18px; border-radius: 14px; background: #fff4e5; color: #1d1d1f; overflow: hidden; }
+html:root body.p-student .lg-warn-text { margin: 0 44px 0 0; font-size: 14px; line-height: 20px; font-weight: 400; }
+html:root body.p-student .lg-warn-time { position: absolute; top: 12px; right: 16px; color: #b25000; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+html:root body.p-student .lg-warn-bar { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: #d9650b; transform-origin: left; animation: lg-warn-run linear forwards; }
+@keyframes lg-warn-run { from { transform: scaleX(1); } to { transform: scaleX(0); } }
