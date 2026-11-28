@@ -146,7 +146,7 @@ test('the real server adds a new Open student once and matches one it already ha
   await new Promise((r) => portal.listen(0, '127.0.0.1', r)); t.after(() => portal.close());
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-sync-e2e-'));
   const port = await freePort();
-  const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, NIEC_PORTAL_SYNC: 'on', NIEC_PORTAL_USER: 'u@x.com', NIEC_PORTAL_PASS: 'pw', NIEC_PORTAL_URL: `http://127.0.0.1:${portal.address().port}`, NIEC_PORTAL_PUSH: 'dry', NIEC_PORTAL_FIRST_MS: '3000', NIEC_PORTAL_EVERY_MS: '1500' };
+  const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, NIEC_PORTAL_SYNC: 'on', NIEC_PORTAL_USER: 'u@x.com', NIEC_PORTAL_PASS: 'pw', NIEC_PORTAL_URL: `http://127.0.0.1:${portal.address().port}`, NIEC_PORTAL_PUSH: 'dry', NIEC_PORTAL_CLOSE: 'dry', NIEC_PORTAL_FIRST_MS: '3000', NIEC_PORTAL_EVERY_MS: '1500' };
   delete env.ANTHROPIC_API_KEY;
   const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env, stdio: 'ignore' });
   t.after(() => server.kill());
@@ -184,13 +184,29 @@ test('the real server adds a new Open student once and matches one it already ha
   const waiting = JSON.parse(fs.readFileSync(path.join(dir, 'portal-sync.json'), 'utf8')).outbox;
   assert.strictEqual(waiting.length, 1, JSON.stringify(waiting));
   assert.deepStrictEqual([waiting[0].portalId, waiting[0].text, waiting[0].date], ['901', 'Will bring documents.', day]);
+  // The Follow-up Team's own list: a note with a next date, then Withdrawn with a reason. Both wait for the portal (the close only in dry here).
+  const made = (await call('POST', '/api/users', { username: 'ram', name: 'Ram', email: '', departments: ['followup'] })).json;
+  let fcookie = '';
+  const fu = async (method, url, body) => {
+    const res = await fetch(base + url, { method, body: body === undefined ? undefined : JSON.stringify(body), headers: { 'content-type': 'application/json', ...(fcookie ? { cookie: fcookie } : {}) }, redirect: 'manual' });
+    const set = res.headers.get('set-cookie'); if (set) fcookie = set.split(';')[0];
+    let json = null; try { json = JSON.parse(await res.text()); } catch (e) { /* not JSON */ }
+    return { status: res.status, json };
+  };
+  await fu('POST', '/api/login', { username: 'ram', password: made.temporaryPassword });
+  await fu('POST', '/api/login/new-password', { password: 'Team-Strong-2026' });
+  assert.strictEqual((await fu('POST', `/api/followup/${found[0].id}`, { action: 'note', text: 'Called, will bring documents Sunday.', next: day })).status, 200);
+  assert.strictEqual((await fu('POST', `/api/followup/${found[0].id}`, { action: 'withdraw', text: 'Going to Canada instead.', reason: 'Chose another consultancy' })).status, 200);
+  const queued = JSON.parse(fs.readFileSync(path.join(dir, 'portal-sync.json'), 'utf8')).outbox;
+  assert.deepStrictEqual(queued.map((x) => [x.kind || 'pending', x.portalId]), [['pending', '901'], ['pending', '901'], ['close', '901']], JSON.stringify(queued));
+  assert.strictEqual(queued[2].text, 'Withdrawn: Chose another consultancy. Going to Canada instead.');
   const log = JSON.stringify((await call('GET', '/api/activity?q=NIEC&limit=50')).json);
   assert.match(log, /NIEC CTC/);
 });
 
 // ---- push-back: Pending follow-ups (a made-up portal that also takes "Add Next Status") ----
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-function pushSetup({ pushMode = 'on', startStatus = 'Open', portalName = 'Asha Rai', confirm = true, showAs = 'Pending', dropNote = false, ourName = 'Asha Rai', mode = 'off', clock = '2026-11-28T04:39:00Z' } = {}) {
+function pushSetup({ closeMode = 'off', pushMode = 'on', startStatus = 'Open', portalName = 'Asha Rai', confirm = true, showAs = 'Pending', dropNote = false, ourName = 'Asha Rai', mode = 'off', clock = '2026-11-28T04:39:00Z' } = {}) {
   const dir = tmp(); const posts = []; const notes = []; const recorded = []; const order = [];
   const rows = [{ status: startStatus }];
   const fetchFn = async (url, opts = {}) => {
@@ -207,13 +223,14 @@ function pushSetup({ pushMode = 'on', startStatus = 'Open', portalName = 'Asha R
       assert.strictEqual(opts.method, 'POST'); assert.strictEqual(opts.headers['X-Requested-With'], 'XMLHttpRequest'); assert.match(opts.headers.cookie, /sess=b/);
       const f = Object.fromEntries(new URLSearchParams(opts.body)); order.push('post ' + add[1]);
       posts.push({ id: add[1], ...f });
+      if (f.status === '2') { if (confirm && !dropNote) rows.push({ status: showAs === 'Pending' ? 'Closed' : showAs, note: f.note, by: 'kayas', day: '', time: '' }); return res(200, JSON.stringify({ success: confirm })); }
       const [, y, mo, d, hm] = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})$/.exec(f['EnquiryPendingActivity[datetime]']);
       if (confirm && !dropNote) rows.push({ status: showAs, day: `${Number(d)}, ${MON[Number(mo) - 1]}, ${y}`, time: hm, note: f.note, by: 'kayas' });
       return res(200, JSON.stringify({ success: confirm }));
     }
     return res(404);
   };
-  const sync = createPortalSync({ dir, mode, pushMode, now: () => new Date(clock), client: createPortalClient({ base: 'https://portal.test', user: 'u@x.com', pass: 'pw', fetchFn, retryWaitMs: 1 }),
+  const sync = createPortalSync({ dir, mode, pushMode, closeMode, now: () => new Date(clock), client: createPortalClient({ base: 'https://portal.test', user: 'u@x.com', pass: 'pw', fetchFn, retryWaitMs: 1 }),
     importStudent: () => ({ status: 200, json: { id: 'row-x' } }), addNote: (id, input) => notes.push({ id, input }), nameOf: () => ourName, record: (r) => recorded.push(r) });
   // The student came from the portal earlier (enquiry 101 is "row-1").
   fs.writeFileSync(path.join(dir, 'portal-sync.json'), JSON.stringify({ links: { 101: { rowId: 'row-1', how: 'added' } } }));
@@ -351,4 +368,43 @@ test('a student already Pending on the portal and already here is tied to their 
   const r = await sync.tick();
   assert.deepStrictEqual(sync.links(), { 501: { rowId: 'row-gita', at: r.at, how: 'matched-pending' } });
   assert.strictEqual(added.length, 0, 'nobody is added from Pending');
+});
+
+test('close: a student who withdraws is closed on the portal from Open or Pending, with the reason and remarks, then read back', async () => {
+  for (const startStatus of ['Open', 'Pending']) {
+    const t = pushSetup({ closeMode: 'on', startStatus });
+    assert.strictEqual(t.sync.queueClose({ rowId: 'row-1', text: 'Decided to study in Canada instead.', reason: 'Going elsewhere' }), true);
+    const r = await t.sync.tick();
+    assert.strictEqual(r.sent, 1, JSON.stringify(r));
+    assert.deepStrictEqual(t.posts[0], { id: '101', form_mode: 'add', enquiry_activity_id: '', status: '2', note: 'Withdrawn: Going elsewhere. Decided to study in Canada instead.', 'EnquiryPendingActivity[datetime]': '', 'EnquiryPendingActivity[note]': '', 'EnquiryPendingActivity[followup_mode]': '' });
+    assert.match(t.notes[0].input.text, /Closed on the NIEC portal/);
+    await t.sync.tick(); assert.strictEqual(t.posts.length, 1, 'never sent twice');
+  }
+});
+
+test('close: off by default, dry only says what would be done, a Closed or Success student is left alone', async () => {
+  assert.strictEqual(pushSetup({ closeMode: 'off' }).sync.queueClose({ rowId: 'row-1', text: 'x', reason: 'y' }), false);
+  const d = pushSetup({ closeMode: 'dry' });
+  d.sync.queueClose({ rowId: 'row-1', text: 'Not interested.', reason: '' });
+  const r = await d.sync.tick(); assert.strictEqual(r.would, 1); assert.strictEqual(d.posts.length, 0);
+  for (const startStatus of ['Closed', 'Success']) {
+    const t = pushSetup({ closeMode: 'on', startStatus });
+    t.sync.queueClose({ rowId: 'row-1', text: 'Not interested.', reason: '' });
+    const r2 = await t.sync.tick(); assert.strictEqual(t.posts.length, 0); assert.strictEqual(r2.skipped, 1);
+  }
+  const noLink = pushSetup({ closeMode: 'on' });
+  assert.strictEqual(noLink.sync.queueClose({ rowId: 'row-other', text: 'x', reason: '' }), false);
+});
+
+test('close: wrong name, no confirmation, or a read-back that is not Closed stops everything', async () => {
+  const a = pushSetup({ closeMode: 'on', portalName: 'Someone Else' });
+  a.sync.queueClose({ rowId: 'row-1', text: 'x', reason: '' });
+  assert.match((await a.sync.tick()).pushHalted, /does not match/); assert.strictEqual(a.posts.length, 0);
+  const b = pushSetup({ closeMode: 'on', confirm: false });
+  b.sync.queueClose({ rowId: 'row-1', text: 'x', reason: '' });
+  assert.match((await b.sync.tick()).pushHalted, /did not confirm the closing/);
+  const lie = pushSetup({ closeMode: 'on', dropNote: true });
+  lie.sync.queueClose({ rowId: 'row-1', text: 'x', reason: '' });
+  assert.match((await lie.sync.tick()).pushHalted, /does not show it as expected/);
+  await lie.sync.tick(); assert.strictEqual(lie.posts.length, 1, 'not sent again');
 });

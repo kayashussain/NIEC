@@ -10,6 +10,7 @@
 //   NIEC_PORTAL_USER, NIEC_PORTAL_PASS   the portal login
 //   NIEC_PORTAL_SYNC                     off (default), dry (read and log, add nobody) or on
 //   NIEC_PORTAL_URL                      default https://niecportal.ed-net.uk
+//   NIEC_PORTAL_CLOSE                    off (default), dry or on: closing a student on the portal when the student withdraws here (needs PUSH on)
 //   NIEC_PORTAL_PUSH                     off (default), dry (log what would be sent) or on: the push-back of follow-ups (see below)
 //
 // Push-back, part 2 (the owner, 28 Nov 2026): when a note with a next follow-up date is saved for a student who came from the portal, the same
@@ -140,7 +141,16 @@ function createPortalClient({ base = 'https://niecportal.ed-net.uk', user, pass,
     let json = null; try { json = JSON.parse(await res.text()); } catch (e) { /* not JSON */ }
     return { status: res.status, success: Boolean(json && json.success) };
   }
-  return { login, listTab, activities, addPending };
+  // Closed (the student withdraws): the same request with status 2 and a note; the follow-up fields stay empty, as the portal's page leaves
+  // them when Closed is chosen (checked on 28 Nov 2026 by filling the form and stopping the send).
+  async function addClosed({ portalId, note }) {
+    if (!/^\d{1,12}$/.test(String(portalId))) throw new Error('Bad portal id.');
+    const body = new URLSearchParams({ form_mode: 'add', enquiry_activity_id: '', status: '2', note, 'EnquiryPendingActivity[datetime]': '', 'EnquiryPendingActivity[note]': '', 'EnquiryPendingActivity[followup_mode]': '' }).toString();
+    const res = await call(`/agent/activities/add/${portalId}`, { once: true, method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-CSRF-Token': token, 'X-Requested-With': 'XMLHttpRequest' }, body });
+    let json = null; try { json = JSON.parse(await res.text()); } catch (e) { /* not JSON */ }
+    return { status: res.status, success: Boolean(json && json.success) };
+  }
+  return { login, listTab, activities, addPending, addClosed };
 }
 
 // The "Enquiry Process" table of a progress screen, newest row first: status, follow-up day and time, the whole note (kept in the title).
@@ -161,14 +171,14 @@ const letters = (v) => String(v || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,
 // The name on a progress screen ("Student Name" row).
 function studentNameOn(html) { const m = /Student Name<\/span>\s*<\/td>\s*<td[^>]*>\s*<span>([\s\S]*?)<\/span>/i.exec(String(html || '')); return m ? strip(m[1]) : ''; }
 
-function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, findStudent = () => null, addNote, nameOf = () => '', record = () => {}, client, now = () => new Date() }) {
+function createPortalSync({ dir, mode = 'off', pushMode = 'off', closeMode = 'off', importStudent, findStudent = () => null, addNote, nameOf = () => '', record = () => {}, client, now = () => new Date() }) {
   const file = path.join(dir, 'portal-sync.json');
   const load = () => { try { const j = JSON.parse(fs.readFileSync(file, 'utf8')); return j && typeof j === 'object' ? { links: j.links || {}, last: j.last || null, outbox: Array.isArray(j.outbox) ? j.outbox : [], pushHalted: j.pushHalted || '' } : { links: {}, last: null, outbox: [], pushHalted: '' }; } catch (e) { return { links: {}, last: null, outbox: [], pushHalted: '' }; } };
   const save = (s) => writeFileAtomic(file, JSON.stringify(s));
   let running = false;
   let lastLine = '';
 
-  const enabled = () => mode === 'on' || mode === 'dry' || pushMode === 'on' || pushMode === 'dry';
+  const enabled = () => ['on', 'dry'].some((m) => [mode, pushMode, closeMode].includes(m));
   const pullOn = () => mode === 'on' || mode === 'dry';
   const sourceFor = (row) => ({ source: 'Visitor', detail: /online/i.test(row.enquiryMode) ? 'Website form' : 'Walked in' });
 
@@ -190,6 +200,21 @@ function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, 
     return true;
   }
 
+  // A student who withdraws here (Follow-up list, Withdrawn, with the reason and what was said) is closed on the portal, from Open or Pending.
+  // Off unless NIEC_PORTAL_CLOSE is dry or on. The wording is the person's own remarks and the reason, nothing else.
+  function queueClose({ rowId, text, reason }) {
+    if (closeMode === 'off' || pushMode === 'off') return false;
+    const words = [String(reason || '').trim() && `Withdrawn: ${String(reason).trim()}.`, String(text || '').replace(/\s+\n/g, '\n').trim()].filter(Boolean).join(' ').slice(0, 1500);
+    if (!rowId || !words) return false;
+    const state = load();
+    const portalId = Object.keys(state.links).find((id) => state.links[id].rowId === rowId);
+    if (!portalId) return false;
+    state.outbox.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, kind: 'close', rowId, portalId, text: words, at: now().toISOString() });
+    state.outbox = state.outbox.slice(-200);
+    save(state);
+    return true;
+  }
+
   // Sends what waits, one at a time, with the checks described at the top. Returns { sent, skipped, would }.
   async function pushRun(out) {
     const state = load();
@@ -206,22 +231,23 @@ function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, 
       const rowsBefore = parseProgress(before);
       // Only a student who is Open or Pending on the portal right now (the newest row of the progress screen); never Closed or Success.
       if (!rowsBefore.length || !['Open', 'Pending'].includes(rowsBefore[0].status)) { item.skipped = `the portal shows the student as ${(rowsBefore[0] && rowsBefore[0].status) || 'unknown'}`; res.skipped += 1; continue; }
-      if (pushMode === 'dry') { if (!item.dry) { item.dry = true; res.would += 1; } continue; }
+      const closing = item.kind === 'close';
+      if ((closing ? closeMode : pushMode) !== 'on' || pushMode !== 'on') { if (!item.dry) { item.dry = true; res.would += 1; } continue; }
       const mine = nameOf(item.rowId);
       const theirs = studentNameOn(before);
       if (!letters(mine) || letters(mine) !== letters(theirs)) { halt('The name on the portal does not match the student here, nothing was sent'); break; }
       const time = /^\d{2}:\d{2}$/.test(item.time || '') ? item.time : '10:00';
-      const sent = await client.addPending({ portalId: item.portalId, note: item.text, datetime: `${item.date}T${time}`, mode: '1' });
+      const sent = closing ? await client.addClosed({ portalId: item.portalId, note: item.text }) : await client.addPending({ portalId: item.portalId, note: item.text, datetime: `${item.date}T${time}`, mode: '1' });
       item.sent = true; item.sentAt = now().toISOString(); // marked at once: a run that stops now never sends it again
-      if (!(sent.status === 200 && sent.success)) { halt(`The portal did not confirm the follow-up (answer ${sent.status})`); save(state); break; }
-      // Read it back: one more row, newest, Pending, with our day, time and the whole note.
+      if (!(sent.status === 200 && sent.success)) { halt(`The portal did not confirm the ${closing ? 'closing' : 'follow-up'} (answer ${sent.status})`); save(state); break; }
+      // Read it back: one more row, newest, with our status and the whole note (and, for Pending, our day and time).
       const rowsAfter = parseProgress(await client.activities(item.portalId));
       const top = rowsAfter[0] || {};
       const flat = (v) => String(v || '').replace(/\s+/g, ' ').trim();
-      const ok = rowsAfter.length === rowsBefore.length + 1 && top.status === 'Pending' && top.day === dayWords(item.date) && top.time === time && flat(top.note) === flat(item.text);
+      const ok = rowsAfter.length === rowsBefore.length + 1 && top.status === (closing ? 'Closed' : 'Pending') && flat(top.note) === flat(item.text) && (closing || (top.day === dayWords(item.date) && top.time === time));
       if (!ok) { halt(`Sent, but the portal does not show it as expected (${top.status || 'no row'} ${top.day || ''} ${top.time || ''})`); save(state); break; }
       item.verified = true; res.sent += 1;
-      try { addNote(item.rowId, { text: `Follow-up sent to the NIEC portal: Pending, next follow-up ${item.date} ${time}, by phone.`, kind: 'note' }, ROBOT.name); } catch (e) { /* the portal has it */ }
+      try { addNote(item.rowId, { text: closing ? 'Closed on the NIEC portal (the student withdrew).' : `Follow-up sent to the NIEC portal: Pending, next follow-up ${item.date} ${time}, by phone.`, kind: 'note' }, ROBOT.name); } catch (e) { /* the portal has it */ }
     }
     state.outbox = state.outbox.filter((x) => !(x.verified || x.skipped) || Date.parse(x.at) > Date.now() - 14 * 86400000).slice(-200);
     save(state);
@@ -295,7 +321,7 @@ function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, 
     return out;
   }
 
-  return { tick, enabled, queueFollowUp, outbox: () => load().outbox, resume: () => { const s2 = load(); s2.pushHalted = ''; save(s2); }, status: () => ({ mode, ...(load().last || {}) }), links: () => load().links };
+  return { tick, enabled, queueFollowUp, queueClose, outbox: () => load().outbox, resume: () => { const s2 = load(); s2.pushHalted = ''; save(s2); }, status: () => ({ mode, ...(load().last || {}) }), links: () => load().links };
 }
 
 module.exports = { createPortalSync, createPortalClient, parseList, parseProgress, splitName, studentNameOn, ROBOT, TABS };

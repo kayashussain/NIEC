@@ -36,7 +36,7 @@ const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER
 function createPortalApi({
   getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, applyThrough = null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
   insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
-  onFollowNote = () => {}, // the NIEC portal sync (portal-sync.js): told when a note with a next follow-up date is saved
+  onFollowNote = () => {}, onWithdraw = () => {}, // the NIEC portal sync (portal-sync.js): told when a note with a next follow-up date is saved
   mockTeam = () => null, // Bookings (mock-team-api.js), for the Mock Team's Missing details
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
@@ -3058,6 +3058,7 @@ function createPortalApi({
       if (n.error) return { status: 400, json: { error: n.error } };
       if (to === 'Withdrawn') { cards.setProfile(rowId, { lostReason: reason }, who); cards.setFollow(rowId, { via: 'withdrawn', viaBy: who, viaAt: new Date().toISOString(), next: null }, who); } else cards.setFollow(rowId, { next: null }, who);
       try { writeColumnsFor(req, rowId, { [STATUS]: to }); } catch (e) { console.error('[follow-up move]', e); return { status: 500, json: { error: 'save failed' } }; }
+      if (to === 'Withdrawn') { try { onWithdraw({ rowId, text: words, reason }); } catch (e) { /* the move is saved either way */ } }
       return { status: 200, json: { ok: true } };
     }
     return { status: 400, json: { error: 'Unknown action.' } };

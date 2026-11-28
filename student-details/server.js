@@ -1070,6 +1070,7 @@ const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.en
 let portalSyncRef = null; // set below, once the NIEC portal sync exists
 const portal = createPortalApi({
   onFollowNote: (x) => { if (portalSyncRef) portalSyncRef.queueFollowUp(x); },
+  onWithdraw: (x) => { if (portalSyncRef) portalSyncRef.queueClose(x); },
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave, cellValueError, applyThrough,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
   insights: servedInsights, calculated: CALCULATED_COLUMNS,
@@ -1700,8 +1701,9 @@ if (partnerRefresh.enabled()) {
   const { createPortalSync, createPortalClient } = require('./portal-sync');
   const syncMode = ['on', 'dry'].includes(process.env.NIEC_PORTAL_SYNC) && process.env.NIEC_PORTAL_USER && process.env.NIEC_PORTAL_PASS ? process.env.NIEC_PORTAL_SYNC : 'off';
   const pushMode = ['on', 'dry'].includes(process.env.NIEC_PORTAL_PUSH) && process.env.NIEC_PORTAL_USER && process.env.NIEC_PORTAL_PASS ? process.env.NIEC_PORTAL_PUSH : 'off';
+  const closeMode = ['on', 'dry'].includes(process.env.NIEC_PORTAL_CLOSE) ? process.env.NIEC_PORTAL_CLOSE : 'off';
   const portalSync = createPortalSync({
-    dir: DATA_DIR, mode: syncMode, pushMode,
+    dir: DATA_DIR, mode: syncMode, pushMode, closeMode,
     nameOf: (rowId) => { const f = portal.rowIndex().get(rowId); return f ? `${f.row['FIRST NAME'] || ''} ${f.row['LAST NAME'] || ''}` : ''; },
     client: createPortalClient({ base: process.env.NIEC_PORTAL_URL || undefined, user: process.env.NIEC_PORTAL_USER, pass: process.env.NIEC_PORTAL_PASS }),
     importStudent: portal.importStudent, findStudent: portal.findStudent,
