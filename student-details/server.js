@@ -1067,7 +1067,9 @@ const courseSitemaps = createCourseSitemaps({ dir: DATA_DIR, facts, courseLinks 
 // The Navitas product toolkit (a public Google Sheet), read twice a week into Universities: one page per UK Navitas college (see
 // navitas-toolkit.js). NAVITAS_SHEET_ID is the sheet's id (else the one the owner gave); NAVITAS_TOOLKIT=off switches it off.
 const navitas = createNavitasToolkit({ dir: DATA_DIR, facts, sheetId: process.env.NAVITAS_SHEET_ID || undefined, enabled: process.env.NAVITAS_TOOLKIT !== 'off', clean: cleanFact });
+let portalSyncRef = null; // set below, once the NIEC portal sync exists
 const portal = createPortalApi({
+  onFollowNote: (x) => { if (portalSyncRef) portalSyncRef.queueFollowUp(x); },
   getWorkbook: () => current, writeWorkbook, recordChanges, teamSave, cellValueError, applyThrough,
   cards, messages, courseLinks, sourceOptions, courseLinker: courseFinder, courseWatch: () => courseWatch, facts, direct, b2b, agents, planning, accounts, activity, rates: createRates(DATA_DIR),
   insights: servedInsights, calculated: CALCULATED_COLUMNS,
@@ -1697,13 +1699,16 @@ if (partnerRefresh.enabled()) {
 {
   const { createPortalSync, createPortalClient } = require('./portal-sync');
   const syncMode = ['on', 'dry'].includes(process.env.NIEC_PORTAL_SYNC) && process.env.NIEC_PORTAL_USER && process.env.NIEC_PORTAL_PASS ? process.env.NIEC_PORTAL_SYNC : 'off';
+  const pushMode = ['on', 'dry'].includes(process.env.NIEC_PORTAL_PUSH) && process.env.NIEC_PORTAL_USER && process.env.NIEC_PORTAL_PASS ? process.env.NIEC_PORTAL_PUSH : 'off';
   const portalSync = createPortalSync({
-    dir: DATA_DIR, mode: syncMode,
+    dir: DATA_DIR, mode: syncMode, pushMode,
+    nameOf: (rowId) => { const f = portal.rowIndex().get(rowId); return f ? `${f.row['FIRST NAME'] || ''} ${f.row['LAST NAME'] || ''}` : ''; },
     client: createPortalClient({ base: process.env.NIEC_PORTAL_URL || undefined, user: process.env.NIEC_PORTAL_USER, pass: process.env.NIEC_PORTAL_PASS }),
     importStudent: portal.importStudent,
     addNote: (rowId, input, by) => cards.addNote(rowId, input, by),
-    record: (r) => activity.record({ headers: {}, socket: {} }, { id: 'niec-ctc', label: 'NIEC CTC' }, 'NIEC portal sync', { app: 'NIEC portal', changes: [r.error ? `The portal could not be read: ${r.error}` : `${r.mode === 'dry' ? 'Dry run: ' : ''}Open list ${r.seen}: ${r.added} ${r.mode === 'dry' ? 'would be added' : 'added'}, ${r.linked} matched an existing student${r.failed ? `, ${r.failed} left for a person` : ''}`] }),
+    record: (r) => activity.record({ headers: {}, socket: {} }, { id: 'niec-ctc', label: 'NIEC CTC' }, 'NIEC portal sync', { app: 'NIEC portal', changes: [r.pushHalted ? `Sending follow-ups to the portal is STOPPED: ${r.pushHalted}` : r.sent ? `Sent ${r.sent} follow-up${r.sent === 1 ? '' : 's'} to the portal (Pending)` : r.would ? `Dry run: ${r.would} follow-up${r.would === 1 ? '' : 's'} would be sent to the portal` : r.error ? `The portal could not be read: ${r.error}` : `${r.mode === 'dry' ? 'Dry run: ' : ''}Open list ${r.seen}: ${r.added} ${r.mode === 'dry' ? 'would be added' : 'added'}, ${r.linked} matched an existing student${r.failed ? `, ${r.failed} left for a person` : ''}`] }),
   });
+  portalSyncRef = portalSync;
   if (portalSync.enabled()) {
     const everyMs = Math.max(500, Number(process.env.NIEC_PORTAL_EVERY_MS) || 5 * 60 * 1000);
     setTimeout(() => portalSync.tick(), Math.max(200, Number(process.env.NIEC_PORTAL_FIRST_MS) || 60 * 1000)).unref();

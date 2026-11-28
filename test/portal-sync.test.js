@@ -129,13 +129,14 @@ test('the real server adds a new Open student once and matches one it already ha
       if (req.url === '/login') { if (/password=pw/.test(body)) { res.setHeader('set-cookie', 'sess=b; Path=/'); res.writeHead(302, { location: '/agent/dashboard' }); res.end(); } else res.end('bad'); return; }
       if (req.url === '/agent/study-abroad-enquiry-list') { res.end(`'X-CSRF-Token': "tok"`); return; }
       if (req.url === '/agent/study-abroad-enquiry-list-data/open') { listed += 1; res.end(html); return; }
+      if (req.url === '/agent/study-abroad-enquiry-list-data/pending') { res.end(table()); return; }
       res.writeHead(404); res.end();
     });
   });
   await new Promise((r) => portal.listen(0, '127.0.0.1', r)); t.after(() => portal.close());
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'niec-sync-e2e-'));
   const port = await freePort();
-  const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, NIEC_PORTAL_SYNC: 'on', NIEC_PORTAL_USER: 'u@x.com', NIEC_PORTAL_PASS: 'pw', NIEC_PORTAL_URL: `http://127.0.0.1:${portal.address().port}`, NIEC_PORTAL_FIRST_MS: '3000', NIEC_PORTAL_EVERY_MS: '1500' };
+  const env = { ...process.env, PORT: String(port), STUDENT_DETAILS_DATA_DIR: dir, NIEC_PORTAL_SYNC: 'on', NIEC_PORTAL_USER: 'u@x.com', NIEC_PORTAL_PASS: 'pw', NIEC_PORTAL_URL: `http://127.0.0.1:${portal.address().port}`, NIEC_PORTAL_PUSH: 'dry', NIEC_PORTAL_FIRST_MS: '3000', NIEC_PORTAL_EVERY_MS: '1500' };
   delete env.ANTHROPIC_API_KEY;
   const server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..', 'student-details'), env, stdio: 'ignore' });
   t.after(() => server.kill());
@@ -166,6 +167,97 @@ test('the real server adds a new Open student once and matches one it already ha
   const saved = JSON.parse(fs.readFileSync(path.join(dir, 'portal-sync.json'), 'utf8'));
   assert.deepStrictEqual(Object.keys(saved.links).sort(), ['901', '902']);
   assert.strictEqual(saved.links['902'].how, 'matched'); assert.strictEqual(saved.links['902'].rowId, hari.json.id);
+  // A note with a next follow-up date, saved on Sita's card, waits to be sent to the portal; one on Hari's (also a portal student) too; a plain note does not.
+  const day = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  assert.strictEqual((await call('POST', `/api/cards/${found[0].id}/notes`, { text: 'Will bring documents.', next: day })).status, 200);
+  assert.strictEqual((await call('POST', `/api/cards/${found[0].id}/notes`, { text: 'Just a plain note.' })).status, 200);
+  const waiting = JSON.parse(fs.readFileSync(path.join(dir, 'portal-sync.json'), 'utf8')).outbox;
+  assert.strictEqual(waiting.length, 1, JSON.stringify(waiting));
+  assert.deepStrictEqual([waiting[0].portalId, waiting[0].text, waiting[0].date], ['901', 'Will bring documents.', day]);
   const log = JSON.stringify((await call('GET', '/api/activity?q=NIEC&limit=50')).json);
   assert.match(log, /NIEC CTC/);
+});
+
+// ---- push-back: Pending follow-ups (a made-up portal that also takes "Add Next Status") ----
+function pushSetup({ pushMode = 'on', onOpen = [101], onPending = [], portalName = 'Asha Rai', confirm = true, showNote = true, goPending = true, ourName = 'Asha Rai', mode = 'off' } = {}) {
+  const dir = tmp(); const posts = []; const notes = []; const recorded = []; const order = [];
+  let last = '';
+  const fetchFn = async (url, opts = {}) => {
+    const u = new URL(url);
+    const res = (status, body = '', headers = {}) => ({ status, headers: { get: (k) => headers[k.toLowerCase()] || null, getSetCookie: () => (headers.cookie ? [headers.cookie] : []) }, text: async () => body });
+    if (u.pathname === '/login' && !opts.method) return res(200, '<input type="hidden" name="_csrfToken" value="t">');
+    if (u.pathname === '/login') return res(302, '', { location: '/agent/dashboard', cookie: 'sess=b; Path=/' });
+    if (u.pathname === '/agent/study-abroad-enquiry-list') return res(200, `'X-CSRF-Token': "tok"`);
+    if (u.pathname === '/agent/study-abroad-enquiry-list-data/open') return res(200, table(...onOpen.map((i) => row(i, 'Asha Rai', '9800000001', 'a@example.com'))));
+    if (u.pathname === '/agent/study-abroad-enquiry-list-data/pending') return res(200, table(...[...onPending, ...(posts.length && goPending ? [posts[0].id] : [])].map((i) => row(i, 'Asha Rai', '9800000001', 'a@example.com', 'In Person', 'Pending'))));
+    const m = /^\/agent\/getactivities\/(\d+)$/.exec(u.pathname);
+    if (m) { assert.strictEqual(opts.headers['X-Requested-With'], 'XMLHttpRequest'); last = m[1]; order.push('open ' + m[1]); return res(200, `<table><tr><td><span>Student Name</span></td><td><span>${portalName}</span></td></tr></table>${posts.length && showNote ? '<td>' + posts[posts.length - 1].note + '</td>' : ''}`); }
+    if (u.pathname === '/agent/activities/add') {
+      assert.strictEqual(opts.headers['X-CSRF-Token'], 'tok'); assert.match(opts.headers.cookie, /sess=b/);
+      const f = Object.fromEntries(new URLSearchParams(opts.body)); order.push('post ' + last);
+      posts.push({ id: last, ...f }); return res(200, JSON.stringify({ success: confirm }));
+    }
+    return res(404);
+  };
+  const sync = createPortalSync({ dir, mode, pushMode, client: createPortalClient({ base: 'https://portal.test', user: 'u@x.com', pass: 'pw', fetchFn }),
+    importStudent: () => ({ status: 200, json: { id: 'row-x' } }), addNote: (id, input) => notes.push({ id, input }), nameOf: () => ourName, record: (r) => recorded.push(r) });
+  // The student came from the portal earlier (enquiry 101 is "row-1").
+  fs.writeFileSync(path.join(dir, 'portal-sync.json'), JSON.stringify({ links: { 101: { rowId: 'row-1', how: 'added' } } }));
+  return { sync, posts, notes, recorded, order, dir };
+}
+
+test('push: a follow-up is entered as Pending, by phone, with the note and the next day, and checked afterwards', async () => {
+  const t = pushSetup();
+  assert.strictEqual(t.sync.queueFollowUp({ rowId: 'row-1', text: 'Will send documents on Sunday.', date: '2026-11-30' }), true);
+  const r = await t.sync.tick();
+  assert.strictEqual(r.sent, 1, JSON.stringify(r));
+  assert.deepStrictEqual(t.posts[0], { id: '101', form_mode: 'add', enquiry_activity_id: '', status: '4', note: 'Will send documents on Sunday.', 'EnquiryPendingActivity[datetime]': '2026-11-30T10:00:00', 'EnquiryPendingActivity[note]': 'Will send documents on Sunday.', 'EnquiryPendingActivity[followup_mode]': '1' });
+  assert.deepStrictEqual(t.order.slice(0, 3), ['open 101', 'post 101', 'open 101'], 'the screen is opened before and checked after');
+  assert.match(t.notes[0].input.text, /sent to the NIEC portal/);
+  await t.sync.tick(); assert.strictEqual(t.posts.length, 1, 'never sent twice');
+});
+
+test('push: a student who is not from the portal, or a bad date, is not queued', () => {
+  const t = pushSetup();
+  assert.strictEqual(t.sync.queueFollowUp({ rowId: 'row-other', text: 'x', date: '2026-11-30' }), false);
+  assert.strictEqual(t.sync.queueFollowUp({ rowId: 'row-1', text: 'x', date: 'soon' }), false);
+  assert.strictEqual(t.sync.queueFollowUp({ rowId: 'row-1', text: '', date: '2026-11-30' }), false);
+  const off = pushSetup({ pushMode: 'off' });
+  assert.strictEqual(off.sync.queueFollowUp({ rowId: 'row-1', text: 'x', date: '2026-11-30' }), false);
+});
+
+test('push: a different name on the portal sends nothing and stops every push', async () => {
+  const t = pushSetup({ portalName: 'Someone Else' });
+  t.sync.queueFollowUp({ rowId: 'row-1', text: 'Note one', date: '2026-11-30' });
+  const r = await t.sync.tick();
+  assert.strictEqual(t.posts.length, 0); assert.match(r.pushHalted, /does not match/);
+  t.sync.queueFollowUp({ rowId: 'row-1', text: 'Note two', date: '2026-12-01' });
+  await t.sync.tick(); assert.strictEqual(t.posts.length, 0, 'stays stopped');
+  assert.match(t.recorded[0].pushHalted, /does not match/);
+  t.sync.resume(); // after a person has looked
+});
+
+test('push: a student no longer on the Open or Pending list is skipped', async () => {
+  const t = pushSetup({ onOpen: [] });
+  t.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
+  const r = await t.sync.tick();
+  assert.strictEqual(t.posts.length, 0); assert.strictEqual(r.skipped, 1);
+});
+
+test('push: the portal does not confirm, or the check afterwards fails: stopped, and not sent again', async () => {
+  const a = pushSetup({ confirm: false });
+  a.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
+  assert.match((await a.sync.tick()).pushHalted, /did not confirm/);
+  await a.sync.tick(); assert.strictEqual(a.posts.length, 1);
+  const b = pushSetup({ goPending: false });
+  b.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
+  assert.match((await b.sync.tick()).pushHalted, /could not check/);
+  await b.sync.tick(); assert.strictEqual(b.posts.length, 1);
+});
+
+test('push: dry mode sends nothing and says what would be sent', async () => {
+  const t = pushSetup({ pushMode: 'dry' });
+  t.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
+  const r = await t.sync.tick();
+  assert.strictEqual(r.would, 1); assert.strictEqual(t.posts.length, 0);
 });

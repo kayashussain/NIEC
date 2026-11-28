@@ -10,6 +10,14 @@
 //   NIEC_PORTAL_USER, NIEC_PORTAL_PASS   the portal login
 //   NIEC_PORTAL_SYNC                     off (default), dry (read and log, add nobody) or on
 //   NIEC_PORTAL_URL                      default https://niecportal.ed-net.uk
+//   NIEC_PORTAL_PUSH                     off (default), dry (log what would be sent) or on: the push-back of follow-ups (see below)
+//
+// Push-back, part 2 (the owner, 28 Nov 2026): when a note with a next follow-up date is saved for a student who came from the portal, the same
+// follow-up is entered on the portal as "Add Next Status": status Pending, the note, the next follow-up day (10:00) and mode Phone, exactly
+// as it is done by hand. Only Pending for now (Closed and Success are not sent). Safety: the portal's progress screen is opened first and
+// the student's name there must be the same as ours; the student must be on the portal's Open or Pending list; afterwards the portal is read
+// again to check the note and the Pending list. Anything unexpected stops every push (pushHalted) and is written in Activity; nothing is
+// ever sent twice.
 // State is kept in portal-sync.json in the data folder: portal id -> our student, and how the last run went.
 
 const fs = require('fs');
@@ -98,25 +106,97 @@ function createPortalClient({ base = 'https://niecportal.ed-net.uk', user, pass,
     if (res.status !== 200) throw new Error(`The portal answered ${res.status} for the ${tab} list.`);
     return res.text();
   }
-  return { login, listTab };
+  // The student's progress screen, opened the way the portal's own page opens it (the portal ties the next status to this student).
+  async function activities(portalId) {
+    if (!/^\d{1,12}$/.test(String(portalId))) throw new Error('Bad portal id.');
+    const res = await call(`/agent/getactivities/${portalId}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    if (res.status !== 200) throw new Error(`The portal answered ${res.status} for the progress screen.`);
+    return res.text();
+  }
+  // "Add Next Status", Pending: the same fields the portal's own form sends.
+  async function addPending({ note, datetime, mode = '1' }) {
+    const body = new URLSearchParams({ form_mode: 'add', enquiry_activity_id: '', status: '4', note, 'EnquiryPendingActivity[datetime]': datetime, 'EnquiryPendingActivity[note]': note, 'EnquiryPendingActivity[followup_mode]': mode }).toString();
+    const res = await call('/agent/activities/add', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-CSRF-Token': token, 'X-Requested-With': 'XMLHttpRequest' }, body });
+    let json = null; try { json = JSON.parse(await res.text()); } catch (e) { /* not JSON */ }
+    return { status: res.status, success: Boolean(json && json.success) };
+  }
+  return { login, listTab, activities, addPending };
 }
 
-function createPortalSync({ dir, mode = 'off', importStudent, addNote, record = () => {}, client, now = () => new Date() }) {
+const letters = (v) => String(v || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+// The name on a progress screen ("Student Name" row).
+function studentNameOn(html) { const m = /Student Name<\/span>\s*<\/td>\s*<td[^>]*>\s*<span>([\s\S]*?)<\/span>/i.exec(String(html || '')); return m ? strip(m[1]) : ''; }
+
+function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, addNote, nameOf = () => '', record = () => {}, client, now = () => new Date() }) {
   const file = path.join(dir, 'portal-sync.json');
-  const load = () => { try { const j = JSON.parse(fs.readFileSync(file, 'utf8')); return j && typeof j === 'object' ? { links: j.links || {}, last: j.last || null } : { links: {}, last: null }; } catch (e) { return { links: {}, last: null }; } };
+  const load = () => { try { const j = JSON.parse(fs.readFileSync(file, 'utf8')); return j && typeof j === 'object' ? { links: j.links || {}, last: j.last || null, outbox: Array.isArray(j.outbox) ? j.outbox : [], pushHalted: j.pushHalted || '' } : { links: {}, last: null, outbox: [], pushHalted: '' }; } catch (e) { return { links: {}, last: null, outbox: [], pushHalted: '' }; } };
   const save = (s) => writeFileAtomic(file, JSON.stringify(s));
   let running = false;
+  let lastLine = '';
 
-  const enabled = () => mode === 'on' || mode === 'dry';
+  const enabled = () => mode === 'on' || mode === 'dry' || pushMode === 'on' || pushMode === 'dry';
+  const pullOn = () => mode === 'on' || mode === 'dry';
   const sourceFor = (row) => ({ source: 'Visitor', detail: /online/i.test(row.enquiryMode) ? 'Website form' : 'Walked in' });
+
+
+  // A follow-up saved here for a student who came from the portal waits in the outbox (kept on disk) until the next run sends it.
+  function queueFollowUp({ rowId, text, date }) {
+    if (pushMode === 'off') return false;
+    const day = String(date || '');
+    const words = String(text || '').replace(/\s+\n/g, '\n').trim().slice(0, 1500);
+    if (!rowId || !words || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+    const state = load();
+    const portalId = Object.keys(state.links).find((id) => state.links[id].rowId === rowId);
+    if (!portalId) return false; // not a portal student
+    state.outbox.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, rowId, portalId, text: words, date: day, at: now().toISOString() });
+    state.outbox = state.outbox.slice(-200);
+    save(state);
+    return true;
+  }
+
+  // Sends what waits, one at a time, with the checks described at the top. Returns { sent, skipped, would, halted }.
+  async function pushRun(out) {
+    const state = load();
+    const res = { sent: 0, skipped: 0, would: 0 };
+    const todo = state.outbox.filter((x) => !x.sent && !x.skipped);
+    if (!todo.length || pushMode === 'off') return res;
+    if (state.pushHalted) { out.pushHalted = state.pushHalted; return res; }
+    const onLists = new Set();
+    for (const tab of ['open', 'pending']) parseList(await client.listTab(tab), tab).forEach((r) => onLists.add(r.portalId));
+    let batch = 0;
+    for (const item of todo) {
+      if (batch >= 10) break;
+      batch += 1;
+      const halt = (why) => { state.pushHalted = `${why} (student ${item.portalId})`.slice(0, 300); out.pushHalted = state.pushHalted; };
+      if (!onLists.has(item.portalId)) { item.skipped = 'not on the portal Open or Pending list'; res.skipped += 1; continue; }
+      if (pushMode === 'dry') { if (!item.dry) { item.dry = true; res.would += 1; } continue; }
+      const mine = nameOf(item.rowId);
+      const before = await client.activities(item.portalId);
+      const theirs = studentNameOn(before);
+      if (!letters(mine) || letters(mine) !== letters(theirs)) { halt('The name on the portal does not match the student here, nothing was sent'); break; }
+      const sent = await client.addPending({ note: item.text, datetime: `${item.date}T10:00:00`, mode: '1' });
+      item.sent = true; item.sentAt = now().toISOString(); // marked at once: a run that stops now never sends it again
+      if (!(sent.status === 200 && sent.success)) { halt(`The portal did not confirm the follow-up (answer ${sent.status})`); save(state); break; }
+      const after = strip(await client.activities(item.portalId));
+      const inPending = parseList(await client.listTab('pending'), 'pending').some((r) => r.portalId === item.portalId);
+      const noteSeen = after.includes(strip(item.text).slice(0, 40));
+      if (!noteSeen || !inPending) { halt(`Sent, but could not check it on the portal (${noteSeen ? '' : 'note not seen'}${!noteSeen && !inPending ? ', ' : ''}${inPending ? '' : 'not on Pending list'})`); save(state); break; }
+      item.verified = true; res.sent += 1;
+      try { addNote(item.rowId, { text: `Follow-up sent to the NIEC portal: Pending, next follow-up ${item.date}, by phone.`, kind: 'note' }, ROBOT.name); } catch (e) { /* the portal has it */ }
+    }
+    state.outbox = state.outbox.filter((x) => !(x.verified || x.skipped) || Date.parse(x.at) > Date.now() - 14 * 86400000).slice(-200);
+    save(state);
+    return res;
+  }
 
   // One run: sign in, read Open, add the new ones. Returns what happened; never throws (the last run is kept for Admin to see).
   async function tick() {
     if (!enabled() || running) return { skipped: true };
     running = true;
-    const out = { at: now().toISOString(), mode, seen: 0, added: 0, linked: 0, already: 0, failed: 0, error: '' };
+    const out = { at: now().toISOString(), mode, push: pushMode, sent: 0, skipped: 0, seen: 0, added: 0, linked: 0, already: 0, failed: 0, error: '' };
     try {
       await client.login();
+      if (!pullOn()) { const r = await pushRun(out); out.sent = r.sent; out.skipped = r.skipped; out.would = r.would; return finishRun(out); }
       const rows = parseList(await client.listTab('open'), 'open');
       out.seen = rows.length;
       if (!rows.length) { /* an empty Open list is normal */ }
@@ -146,16 +226,26 @@ function createPortalSync({ dir, mode = 'off', importStudent, addNote, record = 
           out.lastProblem = `${row.first} ${row.last}: ${(res.json && res.json.error) || res.status}`.slice(0, 200);
         }
       }
-      if (mode !== 'dry') { state.last = out; save(state); }
+      if (mode !== 'dry') { const keep = load(); keep.links = state.links; keep.last = out; save(keep); }
+      const r = await pushRun(out); out.sent = r.sent; out.skipped = r.skipped; out.would = r.would;
+      if (mode !== 'dry' || pushMode !== 'off') { const keep = load(); keep.last = out; save(keep); }
     } catch (e) {
       out.error = String(e && e.message || e).slice(0, 300);
       try { const s = load(); s.last = out; save(s); } catch (e2) { /* nothing more to do */ }
     } finally { running = false; }
-    try { record({ mode: out.mode, seen: out.seen, added: out.added, linked: out.linked, failed: out.failed, error: out.error }); } catch (e) { /* the run itself is done */ }
+    return finishRun(out);
+  }
+  function finishRun(out) {
+    running = false;
+    // Activity hears about a run only when something happened, or the same thing is not simply repeating.
+    const line = JSON.stringify([out.added, out.linked, out.failed, out.sent, out.would, out.error, out.pushHalted || '']);
+    const quiet = !out.added && !out.linked && !out.failed && !out.sent && !out.would && !out.error && !out.pushHalted;
+    if (!quiet && line !== lastLine) { try { record(out); } catch (e) { /* the run itself is done */ } }
+    lastLine = quiet ? '' : line;
     return out;
   }
 
-  return { tick, enabled, status: () => ({ mode, ...(load().last || {}) }), links: () => load().links };
+  return { tick, enabled, queueFollowUp, outbox: () => load().outbox, resume: () => { const s2 = load(); s2.pushHalted = ''; save(s2); }, status: () => ({ mode, ...(load().last || {}) }), links: () => load().links };
 }
 
-module.exports = { createPortalSync, createPortalClient, parseList, splitName, ROBOT, TABS };
+module.exports = { createPortalSync, createPortalClient, parseList, splitName, studentNameOn, ROBOT, TABS };

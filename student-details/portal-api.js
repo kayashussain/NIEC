@@ -36,6 +36,7 @@ const NEW_STUDENT_COLUMNS = ['FIRST NAME', 'LAST NAME', 'EMAIL', 'CONTACT NUMBER
 function createPortalApi({
   getWorkbook, writeWorkbook, recordChanges, teamSave, cellValueError = () => null, applyThrough = null, cards, messages, courseLinks, sourceOptions, courseLinker = null, courseWatch = () => null, facts, direct, b2b, agents, planning, accounts, activity, rates = null,
   insights = null, calculated = [], userMail = null, push = null, courseSitemaps = null, officeMailSettings = () => ({}), safetyCopy = () => null,
+  onFollowNote = () => {}, // the NIEC portal sync (portal-sync.js): told when a note with a next follow-up date is saved
   mockTeam = () => null, // Bookings (mock-team-api.js), for the Mock Team's Missing details
 }) {
   // ---- where to send a student's application: the portal link and email saved on Partner Universities ----
@@ -2122,6 +2123,7 @@ function createPortalApi({
       // The stage lines and "no answer" lines are written by Student Recruit 360 itself (server.js, followAction): a person's note is always a note.
       out = cards.addNote(rowId, { text: body.text, kind: ['stage', 'try'].includes(text(body.kind)) ? 'note' : body.kind }, by(req));
       if (!out.error && next) cards.setFollow(rowId, { next: { date: next, by: by(req), at: out.note.at } }, by(req));
+      if (!out.error && next) { try { onFollowNote({ rowId, text: out.note.text, date: next }); } catch (e) { /* the note is saved either way */ } }
       if (!out.error) note(req, [`${who}: added a note${next ? `, next follow-up ${niceDay(next)}` : ''}`]);
     } else if (part === 'sheet') {
       const changes = {};
@@ -3042,6 +3044,7 @@ function createPortalApi({
       if (n.error) return { status: 400, json: { error: n.error } };
       cards.setFollow(rowId, { next: { date, by: who, at: n.note.at } }, who);
       note(req, [`${name}: follow-up note, next follow-up ${niceDay(date)}`], 'Edited student card', 'Follow-up');
+      try { onFollowNote({ rowId, text: words, date }); } catch (e) { /* the note is saved either way */ }
       return { status: 200, json: { ok: true } };
     }
     if (action === 'defer' || action === 'withdraw') {
