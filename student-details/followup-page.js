@@ -20,10 +20,10 @@
   const drafts = new Map(); // task id -> an update half written, kept while the list is drawn again
 
   const VIEWS = [
-    ['wait', 'To follow up', (s) => ['new', 'due', 'tried'].includes(s.state)],
-    ['ok', 'Followed up', (s) => s.state === 'ok'],
+    ['wait', 'Follow-up Pending', (s) => ['new', 'due', 'tried'].includes(s.state)],
+    ['ok', 'Followed Up', (s) => s.state === 'ok'],
     ['defer', 'Deferred', (s) => s.state === 'defer'],
-    ['sent', 'With Application Team', (s) => s.state === 'sent'],
+    ['sent', 'In Application', (s) => s.state === 'sent'],
     ['applying', 'Applying', (s) => s.state === 'applying'],
     ['out', 'Stopped', (s) => s.state === 'out'],
     ['all', 'All', () => true],
@@ -44,7 +44,7 @@
   async function load() {
     try { data = await api('/api/followup'); } catch (e) { $('list').replaceChildren(el('div', 'fu-empty', e.message)); return; }
     const waiting = data.students.filter((x) => ['new', 'due', 'tried'].includes(x.state)).length;
-    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}${waiting} ${waiting === 1 ? 'student' : 'students'} to follow up`;
+    $('lead').textContent = `${data.intake ? `${/intake/i.test(data.intake) ? data.intake : `${data.intake} intake`} · ` : ''}${waiting} ${waiting === 1 ? 'student' : 'students'} pending follow-up`;
     draw();
     loadTasks();
   }
@@ -122,7 +122,7 @@
       return b;
     }));
     const tagsBox = $('tags');
-    tagsBox.replaceChildren(el('span', '', 'Show only'), ...(data.tags || []).map((t) => {
+    tagsBox.replaceChildren(el('span', '', 'Interest'), ...(data.tags || []).map((t) => {
       const b = h('button', { type: 'button', class: 'fu-chip' + (tag === t.key ? ' on' : ''), 'aria-pressed': String(tag === t.key) });
       b.append(t.key, el('i', '', String(list.filter((s) => s.tag === t.key).length)));
       b.addEventListener('click', () => { tag = tag === t.key ? '' : t.key; close(); draw(); });
@@ -137,7 +137,7 @@
       .sort((a, b) => (kind === 'stop' ? String((b.stopped || {}).at || '').localeCompare(String((a.stopped || {}).at || '')) : 0) || ORDER[a.state] - ORDER[b.state] || String((a.next && a.next.date) || (a.last && a.last.at) || '').localeCompare(String((b.next && b.next.date) || (b.last && b.last.at) || '')) || a.no - b.no);
     const box = $('list');
     const COLS = {
-      live: ['No.', 'Student', 'Stage', 'Last contact and what was said', 'Next follow-up', 'Tag', ''],
+      live: ['No.', 'Student', 'Stage', 'Last Contact', 'Next Follow-up', 'Interest Level', ''],
       moved: ['No.', 'Student', 'University and course', 'Progress', 'Latest from the other teams', ''],
       stop: ['No.', 'Student', 'Stage', 'Why they stopped', 'Stopped by', ''],
       all: ['No.', 'Student', 'Stage', 'Where they are', 'List'],
@@ -145,7 +145,7 @@
     const head = el('div', `fu-row head ${kind}`);
     COLS[kind].forEach((t) => head.append(el('div', '', t)));
     if (!shown.length) {
-      box.replaceChildren(head, el('div', 'fu-empty', q || useTag ? 'No student matches.' : view === 'wait' ? 'Nobody to follow up right now.' : view === 'out' ? 'Nobody is stopped.' : 'Nobody here right now.'));
+      box.replaceChildren(head, el('div', 'fu-empty', q || useTag ? 'No student matches.' : view === 'wait' ? 'No follow-ups pending.' : view === 'out' ? 'No stopped students.' : 'No students in this view.'));
       return;
     }
     const make = { live: liveRow, moved: movedRow, stop: stopRow, all: allRow }[kind];
@@ -179,18 +179,18 @@
     const last = el('div', 'fu-last');
     const tries = s.tries ? `${s.tries} ${s.tries === 1 ? 'try' : 'tries'}` : '';
     let pill;
-    if (s.state === 'ok') pill = ['ok', `Followed up · ${cap(ago(s.last.at))} · ${s.last.by}`];
-    else if (s.state === 'new') pill = ['wait', s.from ? 'Back from last intake, not called yet' : tries ? `Never reached · ${tries}` : 'Never contacted'];
-    else if (s.state === 'tried') pill = ['wait', `No answer today · ${tries}`];
-    else if (s.state === 'due') pill = ['wait', tries ? `No answer · ${tries}` : s.next ? `Due ${s.next.date >= data.today ? 'today' : `since ${short(s.next.date)}`}` : 'No date set'];
+    if (s.state === 'ok') pill = ['ok', `Followed Up · ${cap(ago(s.last.at))} · ${s.last.by}`];
+    else if (s.state === 'new') pill = ['wait', s.from ? 'Returned from last intake, not yet contacted' : tries ? `Not reached · ${tries}` : 'Not yet contacted'];
+    else if (s.state === 'tried') pill = ['wait', `No Answer Today · ${tries}`];
+    else if (s.state === 'due') pill = ['wait', tries ? `No Answer · ${tries}` : s.next ? `Due ${s.next.date >= data.today ? 'today' : `since ${short(s.next.date)}`}` : 'No date set'];
     else pill = ['view', 'Waits for the next intake'];
     const p = el('span', `fu-pill ${pill[0]}`, pill[1]); p.title = pill[1];
     last.append(p);
     if (s.words) { const w = el('div', 'fu-words', s.words); w.title = s.words; last.append(w); }
     const next = el('div', 'fu-next');
-    if (s.state === 'defer') next.append(el('span', '', 'Next intake'));
+    if (s.state === 'defer') next.append(el('span', '', 'Next Intake'));
     else if (s.next) next.append(el('b', s.next.date <= data.today || s.state === 'due' ? 'due' : '', short(s.next.date)));
-    else next.append(el('span', '', 'Not set'));
+    else next.append(el('span', '', 'Not Set'));
     const tg = el('div');
     if (s.canTag) {
       const g = el('div', 'fu-tgv'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', `Tag of ${s.name}`);
@@ -210,10 +210,10 @@
     if (s.canNote) {
       act.append(noteButton(s));
       if (['new', 'due', 'ok'].includes(s.state)) {
-        const na = h('button', { class: 'btn', type: 'button', title: 'Writes "Called, no answer" on the card. The student stays orange and comes back tomorrow.' }, 'No answer');
+        const na = h('button', { class: 'btn', type: 'button', title: 'Writes "Called, no answer" on the card. The student stays orange and comes back tomorrow.' }, 'No Answer');
         na.addEventListener('click', async () => {
           na.disabled = true; na.textContent = 'Saving...';
-          try { await api(`/api/followup/${encodeURIComponent(s.id)}`, { action: 'try' }); say(`${s.name}: no answer written on the card`); close(); await load(); } catch (e) { say(e.message, true); na.disabled = false; na.textContent = 'No answer'; }
+          try { await api(`/api/followup/${encodeURIComponent(s.id)}`, { action: 'try' }); say(`${s.name}: no answer written on the card`); close(); await load(); } catch (e) { say(e.message, true); na.disabled = false; na.textContent = 'No Answer'; }
         });
         act.append(na);
       }
@@ -273,7 +273,7 @@
   const focusStrip = () => { if (open) setTimeout(() => { const t = document.querySelector('.fu-strip textarea'); if (t) t.focus(); }, 0); };
   function noteButton(s) {
     const on = open === s.id && !returning;
-    const nb = h('button', { class: 'btn' + (on ? ' on' : ''), type: 'button', 'aria-expanded': String(on) }, 'Note');
+    const nb = h('button', { class: 'btn' + (on ? ' on' : ''), type: 'button', 'aria-expanded': String(on) }, 'Add Note');
     nb.addEventListener('click', () => { if (on) close(); else { close(); open = s.id; } draw(); focusStrip(); });
     return nb;
   }
