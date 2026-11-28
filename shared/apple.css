@@ -1413,7 +1413,8 @@ html:root body main.ff-page #cards a.uc-card .city { display: flex; flex-wrap: w
 html:root body main.ff-page #cards a.uc-card .uc-count { color: #1d1d1f; font-weight: 600; white-space: nowrap; }
 html:root body main.ff-page #cards a.uc-card .chips { margin: 0; padding: 0 18px 12px; }
 html:root body main.ff-page #cards a.uc-card .uc-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; margin: auto 0 0; padding: 10px 18px; border-top: 1px solid rgba(0, 0, 0, .07); }
-html:root body main.ff-page #cards a.uc-card .uc-next.is-none { color: #8e8e93; font-size: 13.5px; }
+/* 🔴 CSS CHANGED (2026-11-28): "No deadline" line on a university card in Universities | from: light grey #8e8e93, 3.3 to 1 | to: #6e6e73, 5 to 1 | why: too faint to read; the accessibility check failed */
+html:root body main.ff-page #cards a.uc-card .uc-next.is-none { color: #6e6e73; font-size: 13.5px; }
 html:root body main.ff-page #cards a.uc-card .uc-next-text { font-size: 13px; }
 html:root body main.ff-page #cards a.uc-card .uc-next-intake { display: none; }
 html:root body main.ff-page #cards a.uc-card .uc-days { flex: none; padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
@@ -1535,11 +1536,12 @@ html:root body main.ac-page .tile:nth-child(4)::before { background: #c7c7cc; }
 html:root body main.ac-page .tile.alert::before { background: #d70015; }
 html:root body main.ac-page .tile-label { order: -1; color: #636366; font-size: 13px; }
 html:root body main.ac-page .tile-value { font-size: 32px; }
-html:root body main.ac-page .tile-sub { color: #8e8e93; font-size: 12.5px; }
+/* 🔴 CSS CHANGED (2026-11-28): the small line under a figure on Activity ("3 in the last 7 days") | from: light grey #8e8e93, 3.3 to 1 on white | to: #6e6e73, 5 to 1 (also the day heading's date and the device name on Activity) | why: too faint to read for many people; the accessibility check failed */
+html:root body main.ac-page .tile-sub { color: #6e6e73; font-size: 12.5px; }
 html:root body main.ac-page #list { margin-top: 2px; }
 html:root body main.ac-page .ac-day { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 4px; padding: 8px 14px; border-radius: 10px; background: #f5f5f7; font-size: 14px; }
 html:root body main.ac-page .ac-day:first-child { margin-top: 4px; }
-html:root body main.ac-page .ac-day span { color: #8e8e93; font-size: 13px; font-weight: 500; }
+html:root body main.ac-page .ac-day span { color: #6e6e73; font-size: 13px; font-weight: 500; }
 html:root body main.ac-page .activity-entry { display: flex; align-items: flex-start; gap: 14px; padding: 13px 4px 13px 14px; border-bottom: 1px solid rgba(0, 0, 0, .06); }
 html:root body main.ac-page .ac-mark { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #eef0f3; color: #48484a; font-size: 12.5px; font-weight: 700; }
 html:root body main.ac-page .is-logins .ac-mark { background: #e8f1fc; color: #0058b8; }
@@ -1554,7 +1556,7 @@ html:root body main.ac-page .is-changes .activity-action { background: #f5f0fd; 
 html:root body main.ac-page .is-security .activity-action { background: #fdecef; color: #a8213f; }
 html:root body main.ac-page .is-accounts .activity-action { background: #fdf0e4; color: #8a4200; }
 html:root body main.ac-page .activity-time { color: #636366; font-size: 13px; font-variant-numeric: tabular-nums; }
-html:root body main.ac-page .activity-device { color: #8e8e93; font-size: 12.5px; }
+html:root body main.ac-page .activity-device { color: #6e6e73; font-size: 12.5px; }
 html:root body main.ac-page .activity-changes { margin-top: 8px; padding: 10px 14px 10px 30px; border-radius: 10px; background: #fafafc; color: #3a3a3c; }
 html:root body main.ac-page .ac-none { padding: 24px 0; text-align: center; }
 @media (max-width: 900px) { html:root body main.ac-page .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
