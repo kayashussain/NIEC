@@ -1110,6 +1110,41 @@ html:root body #page .ig-upload { flex: 1; min-height: 0; overflow-y: auto; padd
 html:root body #page .ig-upload > * { max-width: 640px; margin-left: auto; margin-right: auto; }
 html:root body #page .ig-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 html:root body #page .ig-fields .ig-wide { grid-column: 1 / -1; }
+/* 🔴 CSS CHANGED (2026-11-28): Interview guidelines, Upload guideline opens in a window (the owner approved it) | from: the form replaced the right card | to: a window over the page: the University, the kind as four buttons, a title and a file area, Cancel and Upload */
+html:root body dialog.p-dialog:has(.ig-win) { width: min(600px, calc(100vw / var(--sr360-z, 1) - 48px)); }
+html:root body dialog.p-dialog .ig-win { display: flex; flex-direction: column; gap: 20px; }
+html:root body dialog.p-dialog .ig-win-who { display: flex; align-items: center; gap: 12px; }
+html:root body dialog.p-dialog .ig-win-who p { margin: 0; color: #636366; font-size: 14px; line-height: 20px; }
+html:root body dialog.p-dialog .ig-win .ig-mark { flex: 0 0 auto; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; font-size: 14px; font-weight: 600; overflow: hidden; }
+html:root body dialog.p-dialog .ig-win .ig-mark.has-logo { background: #fff; box-shadow: inset 0 0 0 1px #e5e5ea; }
+html:root body dialog.p-dialog .ig-win .ig-mark img { max-width: 80%; max-height: 80%; object-fit: contain; }
+html:root body dialog.p-dialog .ig-win .ig-tone-0 { background: #e8f1fc; color: #0058b8; }
+html:root body dialog.p-dialog .ig-win .ig-tone-1 { background: #e7f5ec; color: #146c2e; }
+html:root body dialog.p-dialog .ig-win .ig-tone-2 { background: #f2ecfb; color: #6a35b5; }
+html:root body dialog.p-dialog .ig-win .ig-tone-3 { background: #fdf0e4; color: #9a4a00; }
+html:root body dialog.p-dialog .ig-win .ig-tone-4 { background: #fdecef; color: #a8213f; }
+html:root body dialog.p-dialog .ig-win .ig-tone-5 { background: #e6f5f6; color: #0b6670; }
+html:root body dialog.p-dialog .ig-win .ig-label { display: block; margin-bottom: 8px; color: #3a3a3c; font-size: 13px; font-weight: 600; }
+html:root body dialog.p-dialog .ig-win .ig-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
+html:root body dialog.p-dialog .ig-win .ig-kind { min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px #d2d2d7; color: #1d1d1f; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+html:root body dialog.p-dialog .ig-win .ig-kind:hover { background: #fafafc; }
+html:root body dialog.p-dialog .ig-win .ig-kind[aria-pressed="true"] { background: #0071e3; box-shadow: none; color: #fff; font-weight: 600; }
+html:root body dialog.p-dialog .ig-win #mtTitle { width: 100%; min-height: 46px; border-radius: 12px; }
+html:root body dialog.p-dialog .ig-drop { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 16px; border: 1.5px dashed #c7c7cc; border-radius: 16px; background: #fafafc; text-align: center; }
+html:root body dialog.p-dialog .ig-drop-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: #e8f1fc; color: #0058b8; }
+html:root body dialog.p-dialog .ig-drop-ico .ig-ico, html:root body dialog.p-dialog .ig-drop-ico svg { width: 22px; height: 22px; }
+html:root body dialog.p-dialog .ig-ico { display: inline-grid; place-items: center; }
+html:root body dialog.p-dialog .ig-ico svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html:root body dialog.p-dialog .ig-pick { margin-top: 6px; min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #e8f1fc; color: #0058b8; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+html:root body dialog.p-dialog .ig-pick:hover { background: #dbe9fb; }
+html:root body dialog.p-dialog .ig-drop-name { max-width: 100%; overflow: hidden; color: #1d1d1f; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+html:root body dialog.p-dialog .ig-hint { margin: 0; color: #636366; font-size: 13px; }
+html:root body dialog.p-dialog .ig-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+html:root body dialog.p-dialog .ig-win-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 0; padding: 0; }
+html:root body dialog.p-dialog .ig-win > * { flex-shrink: 0; }
+html:root body dialog.p-dialog .p-dialog-body.ig-win { padding-bottom: 14px; }
+html:root body dialog.p-dialog .ig-win .p-msg:empty { display: none; }
+html:root body dialog.p-dialog .ig-win .p-msg.error:not(:empty) { margin: 0; }
 html:root body #page .ig-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
 html:root body #page .ig-kind { min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px #d2d2d7; color: #1d1d1f; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
 html:root body #page .ig-kind:hover { background: #fafafc; }

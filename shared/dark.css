@@ -5623,6 +5623,71 @@ html[data-theme="dark"]:root body #page .ig-empty p {
 html[data-theme="dark"]:root body #page .ig-upload {
   background: #202124;
 }
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win-who p {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-mark.has-logo {
+  background: #292a2d;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-tone-0 {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-tone-1 {
+  background: #1c432a;
+  color: #81c995;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-tone-2 {
+  background: #2a1943;
+  color: #c58af9;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-tone-3 {
+  background: #442e1a;
+  color: #fcad70;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-tone-4 {
+  background: #431921;
+  color: #f28b82;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-tone-5 {
+  background: #1a4245;
+  color: #78d9ec;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-label {
+  color: #9aa0a6;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-kind {
+  background: #292a2d;
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-kind:hover {
+  background: #2c2d30;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-win .ig-kind[aria-pressed="true"] {
+  background: #007bf7;
+  color: #ffffff;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-drop {
+  border-color: #5f6368;
+  background: #2c2d30;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-drop-ico {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-pick {
+  background: #1a2d44;
+  color: #8ab4f8;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-pick:hover {
+  background: #1b2e46;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-drop-name {
+  color: #e8eaed;
+}
+html[data-theme="dark"]:root body dialog.p-dialog .ig-hint {
+  color: #9aa0a6;
+}
 html[data-theme="dark"]:root body #page .ig-kind {
   background: #292a2d;
   color: #e8eaed;

@@ -11,6 +11,7 @@
 // the open University's files sit side by side above the file, which fills the rest of its card.
 (function () {
   const { el, h, api } = window.Portal;
+  const Portal = window.Portal;
   const $ = (id) => document.getElementById(id);
   // The owner, 28 Nov 2026: on a laptop the page looked bold and wide next to the approved design, which is drawn 1756 px wide (a 1440 px
   // screen at the portal's usual 82%). Here the page is drawn at the size that keeps that same picture on a narrower screen (never above
@@ -30,7 +31,6 @@
   let q = '';
   let only = 'all'; // all | has (the two tabs above the list)
   let openFile = ''; // the file shown in the reader
-  let uploading = false; // the upload form is open in the right card
   const words = new Map(); // what a Word document says, once read
   // A phone or a tablet shows no more than the first page of a PDF inside a page, so there it opens on its own.
   const framesPdf = () => navigator.pdfViewerEnabled !== false && !window.matchMedia('(max-width: 760px)').matches && !(navigator.maxTouchPoints > 1 && /Mac|iPad|iPhone/.test(navigator.userAgent));
@@ -91,11 +91,13 @@
     old.replaceWith(uniCard());
   }
 
-  function toggleUpload() {
-    uploading = !uploading;
-    redrawMain();
-    const to = uploading ? document.querySelector('.ig-kind[aria-pressed="true"]') : document.querySelector('.ig-upload-btn');
-    if (to) to.focus();
+  // Upload a guideline opens in a window over the page (the owner approved it, 28 Nov 2026), so the University and its files stay in view.
+  function openUpload() {
+    const name = chosen;
+    Portal.dialog('Upload a guideline', (body, close) => uploadWindow(body, close, name)).then(() => {
+      const back = document.querySelector('.ig-upload-btn');
+      if (back && back.isConnected) back.focus({ preventScroll: true });
+    });
   }
 
   function listCard() {
@@ -148,16 +150,14 @@
     const ordered = [...data.kinds.flatMap((kind) => files.filter((f) => f.kind === kind)), ...files.filter((f) => !data.kinds.includes(f.kind))];
     const file = ordered.find((f) => f.id === openFile) || ordered[0];
     if (file) openFile = file.id;
-    const adding = uploading && data.canUpload;
-    const line = adding ? 'Every team can read it once it is added.' : file ? `${plural(files.length, 'guideline')} | ${meta(file)}` : 'No guideline yet';
+    const line = file ? `${plural(files.length, 'guideline')} | ${meta(file)}` : 'No guideline yet';
     const head = el('div', 'ig-head');
-    head.append(mark(chosen, ' is-big'), h('div', { class: 'ig-head-words' }, el('h2', '', adding ? `Upload to ${chosen}` : chosen), el('p', '', line)));
-    if (data.canUpload || (file && !adding)) head.append(actions(file, adding));
+    head.append(mark(chosen, ' is-big'), h('div', { class: 'ig-head-words' }, el('h2', '', chosen), el('p', '', line)));
+    if (data.canUpload || file) head.append(actions(file));
     card.append(head);
-    if (adding) { card.append(uploadForm()); return card; }
     if (!file) {
       let add = null;
-      if (data.canUpload) add = h('button', { type: 'button', class: 'btn btn-primary ig-first', onclick: toggleUpload }, 'Add the first guideline');
+      if (data.canUpload) add = h('button', { type: 'button', class: 'btn btn-primary ig-first', onclick: openUpload }, 'Add the first guideline');
       card.append(empty('doc', 'No guidelines yet', data.canUpload ? 'Add the interview guide or questions for this University, so every team can read them.' : 'Nothing has been added for this University.', add));
       return card;
     }
@@ -168,15 +168,15 @@
   }
 
   // Upload a guideline sits first, beside Download and the full screen button (the owner, 28 Nov 2026), for Admin, the Mock Team and a
-  // branch; while the form is open it reads Cancel upload and the file's own buttons step aside.
-  function actions(f, adding) {
+  // branch.
+  function actions(f) {
     const box = el('div', 'ig-acts');
     if (data.canUpload) {
-      const up = h('button', { type: 'button', class: 'ig-download ig-upload-btn', onclick: toggleUpload });
-      up.append(...(adding ? [] : [icon('upload')]), el('span', '', adding ? 'Cancel upload' : 'Upload guideline'));
+      const up = h('button', { type: 'button', class: 'ig-download ig-upload-btn', onclick: openUpload });
+      up.append(icon('upload'), el('span', '', 'Upload guideline'));
       box.append(up);
     }
-    if (!f || adding) return box;
+    if (!f) return box;
     const type = String(f.type).toUpperCase();
     box.append(h('a', { class: 'ig-download', href: `/api/guidelines/${f.id}`, download: f.name }, icon('download'), el('span', '', 'Download')));
     // A Word document is read on the page only: opened on its own the browser would just download it.
@@ -284,42 +284,54 @@
     return tab;
   }
 
-  function uploadForm() {
-    const box = el('div', 'ig-upload');
-    // The kind is one of four buttons (the owner, 28 Nov 2026); where it came from is no longer asked.
+  // The upload window: the University, the kind (four buttons), a title and the file. Where it came from is no longer asked.
+  function uploadWindow(body, close, university) {
+    body.classList.add('ig-win');
     let kindNow = data.kinds[0];
-    const kind = h('div', { class: 'ig-kinds', role: 'group', 'aria-label': 'Kind of guideline', id: 'mtKind' });
+    const kind = h('div', { class: 'ig-kinds', role: 'group', 'aria-label': 'Kind of guideline' });
     const paintKinds = () => kind.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === kindNow)));
-    data.kinds.forEach((k) => { const b = h('button', { type: 'button', class: 'ig-kind', 'data-kind': k, onclick: () => { kindNow = k; paintKinds(); } }, k); kind.append(b); });
+    data.kinds.forEach((k) => { kind.append(h('button', { type: 'button', class: 'ig-kind', 'data-kind': k, onclick: () => { kindNow = k; paintKinds(); } }, k)); });
     paintKinds();
     const title = h('input', { class: 'p-input', id: 'mtTitle', maxlength: '160', placeholder: 'For example: Credibility interview guide, Jan 2027' });
-    const file = h('input', { type: 'file', id: 'mtFile', accept: '.pdf,.doc,.docx,.png,.jpg,.jpeg' });
+    const file = h('input', { type: 'file', id: 'mtFile', class: 'ig-file-input', accept: '.pdf,.doc,.docx,.png,.jpg,.jpeg', tabindex: '-1', 'aria-hidden': 'true' });
+    const chosenName = el('span', 'ig-drop-name', 'No file chosen');
+    const pick = h('button', { type: 'button', class: 'ig-download ig-pick', onclick: () => file.click() }, 'Choose a file');
     const go = h('button', { type: 'button', class: 'btn btn-primary' }, 'Upload');
+    const cancel = h('button', { type: 'button', class: 'btn', onclick: () => close() }, 'Cancel');
     const err = el('p', 'p-msg error');
     go.disabled = true; // Upload waits until a file is chosen
-    file.addEventListener('change', () => { go.disabled = !(file.files && file.files.length); });
+    file.addEventListener('change', () => {
+      const f = file.files && file.files[0];
+      go.disabled = !f;
+      chosenName.textContent = f ? f.name : 'No file chosen';
+      pick.firstChild.textContent = f ? 'Choose another file' : 'Choose a file';
+    });
     const lab = (id, words) => h('label', { class: 'ig-label', for: id }, words);
-    box.append(h('div', { class: 'ig-fields' }, h('div', { class: 'ig-wide' }, el('div', 'ig-label', 'Kind of guideline'), kind), h('div', { class: 'ig-wide' }, lab('mtTitle', 'Title'), title)),
-      h('div', { class: 'ig-upload-bar' }, file, go), el('p', 'ig-hint', 'A PDF, a Word document or a picture, up to 10 MB.'), err);
+    body.append(
+      h('div', { class: 'ig-win-who' }, mark(university), el('p', '', `${university}. Every team can read it once it is added.`)),
+      h('div', { class: 'ig-win-row' }, el('div', 'ig-label', 'Kind of guideline'), kind),
+      h('div', { class: 'ig-win-row' }, lab('mtTitle', 'Title'), title),
+      h('div', { class: 'ig-drop' }, h('span', { class: 'ig-drop-ico' }, icon('upload')), pick, chosenName, file, el('p', 'ig-hint', 'A PDF, a Word document or a picture, up to 10 MB')),
+      err,
+      h('div', { class: 'ig-win-foot' }, cancel, go));
     go.addEventListener('click', async () => {
       err.textContent = '';
       const f = file.files && file.files[0];
-      if (!f) { err.textContent = 'Choose the file first.'; file.focus(); return; }
+      if (!f) { err.textContent = 'Choose the file first.'; return; }
       if (f.size > 10 * 1024 * 1024) { err.textContent = 'That file is too large (the limit is 10 MB).'; return; }
-      const u = data.universities.find((x) => x.name === chosen) || {};
-      const params = new URLSearchParams({ university: chosen, universityId: u.id || '', kind: kindNow, title: title.value, name: f.name });
+      const u = data.universities.find((x) => x.name === university) || {};
+      const params = new URLSearchParams({ university, universityId: u.id || '', kind: kindNow, title: title.value, name: f.name });
       go.disabled = true; go.textContent = 'Uploading…';
       try {
         const res = await fetch(`/api/guidelines?${params}`, { method: 'POST', body: f });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'The file could not be uploaded.');
         toast('Uploaded.');
-        uploading = false;
         openFile = (json.file && json.file.id) || openFile; // the new file is on screen
+        close(true);
         await load();
       } catch (e) { err.textContent = e.message; go.disabled = false; go.textContent = 'Upload'; }
     });
-    return box;
   }
 
   async function load() {

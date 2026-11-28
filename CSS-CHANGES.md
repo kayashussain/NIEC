@@ -1,5 +1,6 @@
 # CSS change log
 
+- 2026-11-28 | shared/apple.css, shared/dark.css (rebuilt from apple.css), interview-guidelines-page.js | Interview guidelines: Upload guideline opens in a window | from: the upload form replaced the right card | to: a window over the page (the University, the kind as four buttons, a title, a file area, Cancel and Upload) | why: the University and its files stay in view; the owner approved it
 - 2026-11-28 | shared/apple.css, shared/dark.css (rebuilt from apple.css), interview-guidelines-page.js | Interview guidelines: the upload form and the space under the cards | from: a dropdown for the kind, a "Where it came from" choice, 18px under the cards | to: four buttons for the kind, no "Where it came from", 56px under the cards | why: the approved design
 Newest at the top. Started again on 25 Nov 2026 (the owner: start fresh). Earlier entries are in git history.
 - 2026-11-28 | shared/apple.css, shared/dark.css (rebuilt from apple.css) | Interview guidelines, the approved design on the global values (the owner approved the branch design) | from: title 26px, cards 22px with their own shadow | to: title 34px/600, cards 20px with --apple-card, as every other page | why: one front end for every team
