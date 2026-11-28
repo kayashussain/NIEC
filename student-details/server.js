@@ -9,7 +9,7 @@ const {
 const { createAccounts } = require('../shared/accounts');
 const { makePatch, applyPatch } = require('../shared/patch');
 const {
-  isAdmin, isManager, isStudent, isReadOnly, kindOf, teamOf, viewKey, viewFor, teamChanges, canEdit, canColor, canDelete, checkMove, newestSheet, STATUS,
+  isAdmin, isManager, isStudent, isReadOnly, kindOf, teamOf, viewKey, viewFor, inView, seesRow, teamChanges, canEdit, canColor, canDelete, checkMove, newestSheet, STATUS,
 } = require('../shared/teams');
 const { buildDashboard } = require('./dashboard-stats');
 const { createFacts, viewFacts, clean: cleanFact } = require('./facts');
@@ -228,8 +228,9 @@ const mockGuidelines = createMockGuidelines(DATA_DIR);
 const applyThrough = createApplyThrough(DATA_DIR, { wanted: () => b2b.all().some((p) => /^(real dreams( educational consultancy)?|adventus|apply ?board)$/i.test(String(p.name).trim())) });
 // Daily backups (6 p.m., kept 30 days) and Admin's restore (see backups.js). `current` is the students, held in memory below.
 const backups = createBackups(DATA_DIR, () => ({
-  students: current, facts: facts.all(), partners: direct.all(),
-  cards: cards.all(), b2b: b2b.all(), agents: agents.all(), planning: planning.all(), templates: messages.stored(), sourceOptions: sourceOptions.stored(),
+  // The partners' portal passwords go into the copy sealed, as they are kept in their files (secret-box.js; the owner, 28 Nov 2026).
+  students: current, facts: facts.all(), partners: direct.sealedAll(),
+  cards: cards.all(), b2b: b2b.sealedAll(), agents: agents.sealedAll(), planning: planning.all(), templates: messages.stored(), sourceOptions: sourceOptions.stored(),
   // The Mock Team's bookings and the list of interview guidelines (the files themselves stay in guideline-files/, as agreement files do).
   mockBookings: mockBookings.all(), mockGuidelines: mockGuidelines.all(),
   // The Mock interview guides (drafts, published copies, each student's reading progress) and Admin's Apply through choices.
@@ -655,10 +656,13 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
     return { status: 403, body: { error: 'You can add up to 50 students in one save.' } };
   }
   const conflict = () => ({ status: 409, body: { error: 'conflict', revision: current.revision } });
-  // Teams work in the current intake only, as it is now: a page still holding an earlier intake (a newer one was
-  // started meanwhile) is sent the fresh view instead of changing the earlier one.
+  // Teams work on the intakes in their view as it is now (shared/teams.js viewFor: the newest intake, and an earlier one while the
+  // Application or Mock Team still has students at its stage there; a branch on every intake). New students go on the newest only.
   const intake = newestSheet(current.sheets.filter((s) => !s.hidden));
   const inIntake = (sheetId) => Boolean(intake) && sheetId === intake.id;
+  const inViewNow = (sheetId, row) => inView(req.user, current, sheetId, row);
+  // Why a student is not in the view now: the intake closed for this team, or the student moved to a stage the team does not have.
+  const outWhy = (sheetId, row) => (!inIntake(sheetId) && (!intake || seesRow(req.user, row)) ? 'a newer intake was started meanwhile' : 'the student moved to another stage meanwhile');
   // Every cell sent is checked, also the ones the Application Team's sheet save then leaves out, so a damaged value is still refused.
   const cellError = cellValueError(worked.changes.map((c) => ({ col: c.col, value: c.value }))
     .concat(adds.flatMap((a) => Object.keys(a.row).map((col) => ({ col, value: a.row[col] })))), intake, req.user);
@@ -688,7 +692,6 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
   // meanwhile), so an old page can never change what the rules no longer allow.
   const rowsNow = new Map();
   current.sheets.forEach((s) => s.rows.forEach((r) => rowsNow.set(`${s.id}\u0000${r._id}`, r)));
-  const seesNow = (row) => viewFor(req.user, { sheets: [{ rows: [row] }] }).sheets[0].rows.length > 0;
   // What could not be saved, one line per cell (the owner, 28 Nov 2026: no typed work lost). A cell the rules no longer allow, or one
   // someone else changed meanwhile, is left out and named; every other change of the same save is kept. Before, one such cell
   // refused the whole save, and the person lost every edit when the page was reloaded.
@@ -716,8 +719,7 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
     const key = `${c.sheetId}\u0000${c.rowId}`;
     const row = rowsNow.get(key);
     if (!row) { skip(null, c.col, 'the student was removed from the sheet meanwhile'); continue; }
-    if (!inIntake(c.sheetId)) { skip(row, c.col, 'a newer intake was started meanwhile'); continue; }
-    if (!seesNow(row)) { skip(row, c.col, 'the student moved to another stage meanwhile'); continue; }
+    if (!inViewNow(c.sheetId, row)) { skip(row, c.col, outWhy(c.sheetId, row)); continue; }
     // The row colour has its own rule (canColor); every other cell except the stage follows the normal edit rule.
     if (c.col === '_color' ? !canColor(req.user, row) : c.col !== STATUS && !canEdit(req.user, c.col, row)) { skip(row, c.col, 'your account can no longer change it'); continue; }
     if (c.col === STATUS) { statusChanges.push(c); continue; } // checked below, with the student's other details as they will be saved
@@ -741,7 +743,7 @@ function teamSave(req, parsed, { checked = false, fromSheet = false } = {}) {
     const key = `${d.sheetId}\u0000${d.rowId}`;
     const row = rowsNow.get(key);
     if (!row) continue; // already gone
-    if (!inIntake(d.sheetId) || !seesNow(row) || !canDelete(req.user, row)) { skip(row, 'Delete', 'the student can no longer be deleted from your account (it was kept)'); continue; }
+    if (!inViewNow(d.sheetId, row) || !canDelete(req.user, row)) { skip(row, 'Delete', 'the student can no longer be deleted from your account (it was kept)'); continue; }
     removed.add(key);
   }
   // The student card's own saves (setColumns, adding a student) are one change each: all of it or none, as before.
@@ -1147,6 +1149,7 @@ const portal = createPortalApi({
   userMail, push, courseSitemaps, officeMailSettings: () => require('../shared/mailer').loadConfig(DATA_DIR),
   safetyCopy: () => backups.create('manual'),
   mockTeam: () => portalBookings,
+  offsiteOn: () => offsite.enabled(),
 });// Mock interview guides and the student's own portal (the owner, 20 Nov 2026; mock-guides.js, mock-api.js). The first drafts are
 // written once, for the universities among Partner Universities.
 const mockGuides = createMockGuides(DATA_DIR, { universities: () => direct.all().map((u) => u.name) });
@@ -1301,6 +1304,12 @@ async function handleRestore(req, res, urlPath) {
     });
   }
   if (urlPath === '/api/restore/offsite' && req.method === 'GET') return sendJSON(res, 200, offsite.status()); // never the keys, only whether it works
+  // Admin's Test button for the off-site backup (OFFSITE-BACKUP.md): a small file to the bucket, then every copy not sent yet.
+  if (urlPath === '/api/restore/offsite-test' && req.method === 'POST') {
+    const out = await offsite.check();
+    activity.record(req, req.user, out.ok ? 'Backup made' : 'Backup problem', { app: 'Off-site backup', changes: [out.ok ? `Tested the off-site backup: it works (${out.sent} cop${out.sent === 1 ? 'y' : 'ies'} sent now)` : `Tested the off-site backup: ${out.error}`] });
+    return sendJSON(res, 200, { ...out, status: offsite.status() });
+  }
   if (urlPath === '/api/restore/compare' && req.method === 'GET') {
     const id = new URL(req.url, 'http://x').searchParams.get('id') || '';
     if (!BACKUP_ID.test(id)) return sendJSON(res, 400, { error: 'Choose a backup to compare.' });
@@ -1325,7 +1334,7 @@ async function handleRestore(req, res, urlPath) {
     }
     const items = snap[part === 'facts' ? 'facts' : 'partners'];
     if (!Array.isArray(items)) return sendJSON(res, 404, { error: 'That backup does not hold this part.' });
-    const view = part === 'facts' ? viewFacts(items) : viewDirect(items);
+    const view = part === 'facts' ? viewFacts(items) : viewDirect(direct.openAll(items));
     if (!itemId) return send(res, 200, JSON.stringify(view.list(new URL(req.url, 'http://x').searchParams.get('q') || '')), noStore);
     const one = view.get(itemId);
     return one ? send(res, 200, JSON.stringify(one), noStore) : sendJSON(res, 404, { error: 'No such university in that backup.' });

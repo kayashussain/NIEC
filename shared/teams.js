@@ -327,10 +327,23 @@
     return list.reduce((best, sheet) => (!best || createdAt(sheet) >= createdAt(best) ? sheet : best), null);
   }
 
+  // An earlier intake stays open to the Application Team and the Mock Team while it still has students at their stage (the owner,
+  // 28 Nov 2026): with January students still at Application Stage and an April-May sheet started, the Application Team sees both
+  // sheets, the January one with only its Application Stage students; once the last of them has moved on to Mock Stage, only the
+  // April-May sheet is left. The Follow-up Team works on the newest intake only. A branch sees its own students on every intake.
+  const CARRY_DEPARTMENTS = ['application', 'mock'];
+  function seesRowOnEarlier(x, row) {
+    const team = teamOf(x);
+    if (!team || team.manager) return true;
+    if (ownedByBranch(team, row)) return true;
+    const stage = String((row && row[STATUS]) || '').trim();
+    return team.departments.some((d) => CARRY_DEPARTMENTS.includes(d) && DEPARTMENTS[d].statuses.includes(stage));
+  }
+
   // The part of a workbook an account gets. Admin: everything. Manager: every sheet (the earlier intakes
-  // too, hidden or not), all students, view only. Staff: only the current intake, which is the newest
-  // visible sheet, and only their departments' students in it. When a newer intake is started, the
-  // earlier one drops out of their view by itself.
+  // too, hidden or not), all students, view only. Staff: the current intake (the newest visible sheet) with
+  // their departments' students in it, and each earlier visible intake that still has students they work
+  // on (seesRowOnEarlier), with only those students. Sheets keep the workbook's order.
   function viewFor(x, workbook) {
     const team = teamOf(x);
     if (!team) return workbook;
@@ -339,9 +352,22 @@
     return {
       ...workbook,
       sheets: workbook.sheets
-        .filter((s) => s === current)
-        .map((s) => ({ ...s, rows: s.rows.filter((r) => seesRow(x, r)) })),
+        .filter((s) => !s.hidden)
+        .map((s) => (s === current
+          ? { ...s, rows: s.rows.filter((r) => seesRow(x, r)) }
+          : { ...s, rows: s.rows.filter((r) => seesRowOnEarlier(x, r)) }))
+        .filter((s) => s.id === (current && current.id) || s.rows.length > 0),
     };
+  }
+
+  // Whether this student, on this sheet, is in the part of the workbook the account gets (viewFor), without building the view.
+  function inView(x, workbook, sheetId, row) {
+    const team = teamOf(x);
+    if (!team || team.manager) return true;
+    const sheet = ((workbook && workbook.sheets) || []).find((s) => s.id === sheetId);
+    if (!sheet || sheet.hidden || !row) return false;
+    const current = newestSheet(workbook.sheets.filter((s) => !s.hidden));
+    return sheet === current ? seesRow(x, row) : seesRowOnEarlier(x, row);
   }
 
   // The cell changes someone made between their view of the base version and their edited copy,
@@ -463,6 +489,6 @@
   return {
     DEPARTMENTS, MOVES, STATUS, ALL_STATUSES, NEW_STUDENT_COLUMNS, ROW_COLORS, ownTeamApplication, ownTeamFollowup, ownTeamMock, ownTeamBranch,
     who, kindOf, canDelete, deleteRefusal, canColor, isAdmin, isManager, isStudent, isReadOnly, teamOf, viewKey, seesRow, canEdit, addableDepartments, newStudentStatus,
-    statusChoices, checkMove, newestSheet, viewFor, teamChanges,
+    statusChoices, checkMove, newestSheet, viewFor, inView, teamChanges,
   };
 });

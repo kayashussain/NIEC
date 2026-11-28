@@ -120,12 +120,24 @@ function createOffsite(dir, settings, { record = () => {}, now = () => new Date(
     return sync();
   }
 
+  // Admin's test (Activity, Restore data): one small encrypted file is written to the bucket, then every copy not sent yet is sent.
+  // { ok, sent, error } in words a person reads; nothing about the keys.
+  async function check() {
+    if (!settings) return { ok: false, error: 'The off-site backup is not switched on: the settings are not on the server yet.' };
+    try {
+      await put(settings, `${settings.prefix}/sr360-check.enc`, encrypt(Buffer.from(`Student Recruit 360 off-site check ${now().toISOString()}`), settings.passphrase), { now: now() });
+    } catch (e) { return { ok: false, error: `The bucket did not take the test file: ${String(e.message || e).slice(0, 200)}` }; }
+    const out = await sync();
+    const st = status();
+    return st.lastError && st.waiting ? { ok: false, sent: out.sent, error: `The test file was written, but a backup was not: ${st.lastError}` } : { ok: true, sent: out.sent, waiting: st.waiting };
+  }
+
   function status() {
     const st = readState(); let waiting = 0;
     try { waiting = fs.readdirSync(folder).filter((f) => /^niec-.+\.json\.gz$/.test(f) && st.sent[f] !== fs.statSync(path.join(folder, f)).size).length; } catch (e) { waiting = 0; }
     return { enabled: Boolean(settings), lastOk: st.lastOk, lastError: st.lastError, lastErrorAt: st.lastErrorAt, waiting, bucket: settings ? settings.bucket : '' };
   }
-  return { sync, tick, status, enabled: () => Boolean(settings) };
+  return { sync, tick, check, status, enabled: () => Boolean(settings) };
 }
 
 module.exports = { createOffsite, settingsFrom, encrypt, decrypt, put };

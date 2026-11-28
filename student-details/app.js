@@ -805,7 +805,11 @@
     colWidthsFor = null; // measure the columns again on the new data
     revision = json.revision || 0;
     synced = Patch.snapshot({ sheets });
-    activeSheetId = newestSheet(shownSheets()).id; // a reload always opens the latest intake
+    // A reload opens the latest intake; for the Application and Mock Teams an earlier intake that still has their students comes first
+    // (the owner, 28 Nov 2026: January stays in front until its last Application Stage student has moved on, then April-May takes its place).
+    const latest = newestSheet(shownSheets());
+    const carried = ['application', 'mock', 'team'].includes(Teams.kindOf(me)) ? shownSheets().find((s) => s !== latest && s.rows.length > 0) : null;
+    activeSheetId = (carried || latest).id;
     statusEl.textContent = 'All changes saved';
     statusEl.className = 'save-status';
     syncActiveSheet();
@@ -2707,6 +2711,8 @@
     const made = await window.NewStudent.open({ me, activeSheetId, sheetName: here ? here.name : '', defaultStage });
     if (!made || !made.id) return;
     searchEl.value = '';
+    // A team's new student always goes into the newest intake (an earlier intake tab is only for the students still at its stage there).
+    if (isTeam()) { const newest = newestSheet(shownSheets()); if (newest && newest.id !== activeSheetId) switchSheet(newest.id); }
     reloadWanted = true;
     // The refresh is skipped while a save or edit is busy: try again a few times until the new row is on the sheet.
     for (let i = 0; i < 20 && !rows.some((r) => r._id === made.id); i++) { await checkForRemoteChanges(); if (!rows.some((r) => r._id === made.id)) await new Promise((r) => setTimeout(r, 300)); }

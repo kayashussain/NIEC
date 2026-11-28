@@ -131,18 +131,32 @@ test('team saves from an old page are checked against the students as they are n
     assert.ok(dup.json.duplicate);
   }
 
-  // A newer intake is started; the staff page still holding the earlier one can't change it.
+  // A newer intake is started. The earlier one still has a student at Application Stage, so the Application Team keeps working on it
+  // (the owner, 28 Nov 2026); once that student has moved on to Mock Stage, a page still holding the earlier intake changes nothing.
   wb = (await admin('GET', '/api/data')).json;
   wb.sheets.push({ ...wb.sheets[0], id: 'sheet-' + Date.now().toString(36) + 'zzzzz', name: 'Next intake', rows: [] });
   assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
+  const both2 = (await staff('GET', '/api/data')).json;
+  assert.deepStrictEqual(both2.sheets.map((sh) => sh.name), [wb.sheets[0].name, 'Next intake'], 'the earlier intake and the new one');
+  const still = JSON.parse(JSON.stringify(view));
+  still.sheets[0].rows[0]._color = 'green'; // a row colour: the one thing the Application Team's sheet save still changes
+  const kept = await staff('POST', '/api/data', { sheets: still.sheets, activeSheetId: still.activeSheetId, baseRevision: view.revision });
+  assert.strictEqual(kept.status, 200, JSON.stringify(kept.json));
+  assert.ok(!kept.json.notSaved, JSON.stringify(kept.json));
+  assert.strictEqual((await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2')._color, 'green', 'saved on the earlier intake');
+  wb = (await admin('GET', '/api/data')).json;
+  Object.assign(wb.sheets[0].rows.find((x) => x._id === 'r2'), { [S]: 'Mock Stage', 'UNIVERSITY NAME': '', 'COURSE NAME': 'BSc From Asha' });
+  assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
+  assert.deepStrictEqual((await staff('GET', '/api/data')).json.sheets.map((sh) => sh.name), ['Next intake'], 'no Application Stage student left: the earlier intake drops away');
   const late = JSON.parse(JSON.stringify(view));
   late.sheets[0].rows[0]['UNIVERSITY NAME'] = 'Too late';
-  late.sheets[0].rows[0]._color = 'red'; // a row colour: the one thing the Application Team's sheet save still changes
+  late.sheets[0].rows[0]._color = 'red';
   const tooLate = await staff('POST', '/api/data', { sheets: late.sheets, activeSheetId: late.activeSheetId, baseRevision: view.revision });
   assert.strictEqual(tooLate.status, 200, JSON.stringify(tooLate.json));
-  assert.ok(tooLate.json.notSaved.length >= 1 && tooLate.json.notSaved.every((x) => /newer intake/.test(x.why)), JSON.stringify(tooLate.json));
+  assert.ok(tooLate.json.notSaved.length >= 1 && tooLate.json.notSaved.every((x) => /moved to another stage/.test(x.why)), JSON.stringify(tooLate.json));
   now = (await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2');
   assert.strictEqual(now['UNIVERSITY NAME'], '');
+  assert.strictEqual(now._color, 'green');
 
   // Presence: staff aren't told who is looking at a student outside their view; Admin sees everyone.
   wb = (await admin('GET', '/api/data')).json;
