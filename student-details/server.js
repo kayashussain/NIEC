@@ -1704,7 +1704,7 @@ if (partnerRefresh.enabled()) {
     dir: DATA_DIR, mode: syncMode, pushMode,
     nameOf: (rowId) => { const f = portal.rowIndex().get(rowId); return f ? `${f.row['FIRST NAME'] || ''} ${f.row['LAST NAME'] || ''}` : ''; },
     client: createPortalClient({ base: process.env.NIEC_PORTAL_URL || undefined, user: process.env.NIEC_PORTAL_USER, pass: process.env.NIEC_PORTAL_PASS }),
-    importStudent: portal.importStudent,
+    importStudent: portal.importStudent, findStudent: portal.findStudent,
     addNote: (rowId, input, by) => cards.addNote(rowId, input, by),
     record: (r) => activity.record({ headers: {}, socket: {} }, { id: 'niec-ctc', label: 'NIEC CTC' }, 'NIEC portal sync', { app: 'NIEC portal', changes: [r.pushHalted ? `Sending follow-ups to the portal is STOPPED: ${r.pushHalted}` : r.sent ? `Sent ${r.sent} follow-up${r.sent === 1 ? '' : 's'} to the portal (Pending)` : r.would ? `Dry run: ${r.would} follow-up${r.would === 1 ? '' : 's'} would be sent to the portal` : r.error ? `The portal could not be read: ${r.error}` : `${r.mode === 'dry' ? 'Dry run: ' : ''}Open list ${r.seen}: ${r.added} ${r.mode === 'dry' ? 'would be added' : 'added'}, ${r.linked} matched an existing student${r.failed ? `, ${r.failed} left for a person` : ''}`] }),
   });

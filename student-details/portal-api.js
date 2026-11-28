@@ -4112,7 +4112,13 @@ function createPortalApi({
 
   // For the NIEC portal sync (portal-sync.js): the same rules as the Add student form, for a given account.
   const importStudent = (user, body) => addStudent({ user, headers: {}, socket: {} }, body);
-  return { handle, importStudent, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns, writeHeldMock, advisorChange, advisorRemoveTask, advisorDeleteStudent };
+  // The student already here with this email or phone, or null; never a lookalike on a shared phone (a clearly different first name).
+  const findStudent = (email, phone, name) => {
+    const dup = existingStudent(text(email).toLowerCase(), text(phone));
+    if (!dup || otherPerson(name, nameOf(dup))) return null;
+    return { id: dup._id };
+  };
+  return { handle, importStudent, findStudent, rowIndex, applicationsOf, canSee, canChange, visibleStudents, courseIndex, brief, followUp, note, writeCardColumns, writeHeldMock, advisorChange, advisorRemoveTask, advisorDeleteStudent };
 }
 
 module.exports = { createPortalApi, NEW_STUDENT_COLUMNS };

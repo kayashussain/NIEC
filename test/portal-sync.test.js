@@ -48,6 +48,7 @@ function fakePortal({ openHtml, acceptLogin = true }) {
     if (u.pathname === '/login' && !opts.method) return res(200, '<input type="hidden" name="_csrfToken" value="tok1">', { cookie: 'sess=a; Path=/' });
     if (u.pathname === '/login') return acceptLogin && /password=pw/.test(opts.body) ? res(302, '', { location: '/agent/dashboard', cookie: 'sess=b; Path=/' }) : res(200, 'bad');
     if (u.pathname === '/agent/study-abroad-enquiry-list') return res(200, `<script>headers : {\n 'X-CSRF-Token': "list-token"\n}</script>`);
+    if (u.pathname === '/agent/study-abroad-enquiry-list-data/pending') return res(200, table());
     if (u.pathname === '/agent/study-abroad-enquiry-list-data/open') {
       assert.strictEqual(opts.headers['X-CSRF-Token'], 'list-token'); assert.strictEqual(opts.headers['X-Requested-With'], 'XMLHttpRequest'); assert.match(opts.headers.cookie, /sess=b/);
       return res(200, openHtml);
@@ -332,4 +333,22 @@ test('Activity hears about a run only when something happened', async () => {
   const t = pushSetup({ pushMode: 'dry', mode: 'on' });
   await t.sync.tick(); await t.sync.tick();
   assert.strictEqual(t.recorded.length, 0, 'two quiet runs write nothing');
+});
+
+test('a student already Pending on the portal and already here is tied to their card, never added from Pending', async () => {
+  const dir = tmp(); const added = [];
+  const fetchFn = async (url, opts = {}) => {
+    const u = new URL(url); const res = (status, body = '', headers = {}) => ({ status, headers: { get: (k) => headers[k.toLowerCase()] || null, getSetCookie: () => [] }, text: async () => body });
+    if (u.pathname === '/login' && !opts.method) return res(200, '<input name="_csrfToken" value="t">');
+    if (u.pathname === '/login') return res(302, '', { location: '/x' });
+    if (u.pathname === '/agent/study-abroad-enquiry-list') return res(200, `'X-CSRF-Token': "tok"`);
+    if (u.pathname.endsWith('/open')) return res(200, table());
+    if (u.pathname.endsWith('/pending')) return res(200, table(row(501, 'Gita Known', '9800000501', 'g@example.com', 'In Person', 'Pending'), row(502, 'Unknown Person', '9800000502', 'u@example.com', 'In Person', 'Pending'), row(503, 'Brother Shared', '9800000503', '', 'In Person', 'Pending')));
+    return res(404);
+  };
+  const sync = createPortalSync({ dir, mode: 'on', client: createPortalClient({ base: 'https://p.test', user: 'u', pass: 'p', fetchFn }), importStudent: (u, b) => { added.push(b); return { status: 200, json: { id: 'x' } }; },
+    findStudent: (email, phone, name) => (/Gita/.test(name) ? { id: 'row-gita' } : null), addNote: () => {}, nameOf: () => '', record: () => {} });
+  const r = await sync.tick();
+  assert.deepStrictEqual(sync.links(), { 501: { rowId: 'row-gita', at: r.at, how: 'matched-pending' } });
+  assert.strictEqual(added.length, 0, 'nobody is added from Pending');
 });

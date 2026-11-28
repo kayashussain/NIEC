@@ -161,7 +161,7 @@ const letters = (v) => String(v || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,
 // The name on a progress screen ("Student Name" row).
 function studentNameOn(html) { const m = /Student Name<\/span>\s*<\/td>\s*<td[^>]*>\s*<span>([\s\S]*?)<\/span>/i.exec(String(html || '')); return m ? strip(m[1]) : ''; }
 
-function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, addNote, nameOf = () => '', record = () => {}, client, now = () => new Date() }) {
+function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, findStudent = () => null, addNote, nameOf = () => '', record = () => {}, client, now = () => new Date() }) {
   const file = path.join(dir, 'portal-sync.json');
   const load = () => { try { const j = JSON.parse(fs.readFileSync(file, 'utf8')); return j && typeof j === 'object' ? { links: j.links || {}, last: j.last || null, outbox: Array.isArray(j.outbox) ? j.outbox : [], pushHalted: j.pushHalted || '' } : { links: {}, last: null, outbox: [], pushHalted: '' }; } catch (e) { return { links: {}, last: null, outbox: [], pushHalted: '' }; } };
   const save = (s) => writeFileAtomic(file, JSON.stringify(s));
@@ -265,7 +265,18 @@ function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, 
           out.lastProblem = `${row.first} ${row.last}: ${(res.json && res.json.error) || res.status}`.slice(0, 200);
         }
       }
-      if (mode !== 'dry') { const keep = load(); keep.links = state.links; keep.last = out; save(keep); }
+      if (mode !== 'dry') {
+        // Students already on the portal's Pending list who are already here are tied to their cards too (never added from Pending), so
+        // a follow-up saved for them reaches the portal. A lookalike on a shared phone is not tied.
+        try {
+          for (const row of parseList(await client.listTab('pending'), 'pending')) {
+            if (state.links[row.portalId]) continue;
+            const found = findStudent(row.email, row.phone, `${row.first} ${row.last}`);
+            if (found && found.id) { state.links[row.portalId] = { rowId: found.id, at: out.at, how: 'matched-pending' }; out.linked += 1; }
+          }
+        } catch (e) { out.error = String(e && e.message || e).slice(0, 300); }
+        const keep = load(); keep.links = state.links; keep.last = out; save(keep);
+      }
       const r = await pushRun(out); out.sent = r.sent; out.skipped = r.skipped; out.would = r.would;
       if (mode !== 'dry' || pushMode !== 'off') { const keep = load(); keep.last = out; save(keep); }
     } catch (e) {
