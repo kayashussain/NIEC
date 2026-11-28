@@ -1,6 +1,6 @@
 // All Students for the Follow-up Team (design A2, 21 Nov 2026; design F1, 25 Nov 2026): "Tasks for you" (tasks other teams gave or handed
 // to the Follow-up Team), then one list of the current intake's inquiries and deferred students, the students who moved on (view only,
-// with their progress and the latest news), and the Stopped ones (Hold and Withdrawn by any team), who can be brought back. Each row says where the student stands (Never contacted,
+// with their progress and the latest news), and the Stopped ones (Hold and Withdrawn by any team), whom only Admin brings back (the owner, 28 Nov 2026). Each row says where the student stands (Never contacted,
 // Follow-up due, Followed up ...), what was said last, the next follow-up date and the tag (INT, DM, COLD), with Note and No answer.
 // Note opens one line under the row: what the student said and the next follow-up date (both needed), then Save note, Defer,
 // Withdrawn (which asks why) or Cancel. The rules are the server's (portal-api.js, followList and followAction).
@@ -241,7 +241,7 @@
     return r;
   }
 
-  // A stopped student (Hold or Withdrawn, by any team): why, by whom, a note, and Bring back.
+  // A stopped student (Hold or Withdrawn, by any team): why, by whom, a note, and Bring back for Admin only (canReturn).
   function stopRow(s) {
     const st = s.stopped || { by: '', team: '', at: '', why: s.words };
     const item = el('div', 'fu-item');

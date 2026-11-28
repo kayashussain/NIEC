@@ -1,6 +1,8 @@
 # CSS change log
 
 Newest at the top. Started again on 25 Nov 2026 (the owner: start fresh). Earlier entries are in git history.
+- 2026-11-28 | shared/apple.css, shared/dark.css | "No deadline" line on a university card in Universities | from: light grey #8e8e93, 3.3 to 1 | to: #6e6e73, 5 to 1 | why: too faint to read; the accessibility check failed
+- 2026-11-28 | shared/apple.css | The small line under a figure on Activity ("3 in the last 7 days") | from: light grey #8e8e93, 3.3 to 1 on white | to: #6e6e73, 5 to 1 (also the day heading's date and the device name on Activity) | why: too faint to read for many people; the accessibility check failed
 - 2026-11-28 | student-details/followup.html | Follow-up Team All Students in the same look as Today | from: white panels with 18px corners and a shadow, grey switch and search, the tag as three small INT / DM / COLD buttons side by side, no avatar | to: panels #f3f3f3 with a 1px #9a9a9a line and 10px corners, a 38px initials avatar, the tag as three round choices under each other (Interested, Decision Making, Cold), a magnifier in the search, stage as plain text | why: one global look across every team (the owner, 28 Nov 2026)
 - 2026-11-27 | app.js, shared/apple.css | Branch view, All Students, Show numbers | from: Total students, Inquiry and Visa Rejected cards too, CAS Stage only when used | to: Application Stage, Mock Stage, Payment Stage, CAS Stage, CAS Issued, Visa Lodge, Visa Issued, then Defer, Hold, Withdrawn and Conversion rate | why: the owner named the cards a branch sees.
 - 2026-11-27 | shared/apple.css, shared/dark.css | Waiting label on Today on a phone | from: stretched across the row like a bar | to: only as wide as its words | why: it looked like a progress bar

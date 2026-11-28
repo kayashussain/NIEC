@@ -73,11 +73,12 @@ function settingsFrom(env = process.env) {
 }
 
 // `settings`: from settingsFrom (null = switched off). `record(text)`: where a failure is written (Activity).
-function createOffsite(dir, settings, { record = () => {}, now = () => new Date() } = {}) {
+function createOffsite(dir, settings, { record = () => {}, now = () => new Date(), lookMs = 60 * 1000, retryMs = 5 * 60 * 1000 } = {}) {
   const folder = path.join(dir, 'daily-backups');
   const stateFile = path.join(dir, 'offsite-state.json');
   const readState = () => { try { const d = JSON.parse(fs.readFileSync(stateFile, 'utf8')); return d && typeof d === 'object' ? { sent: d.sent || {}, lastOk: d.lastOk || '', lastError: d.lastError || '', lastErrorAt: d.lastErrorAt || '' } : { sent: {}, lastOk: '', lastError: '', lastErrorAt: '' }; } catch (e) { return { sent: {}, lastOk: '', lastError: '', lastErrorAt: '' }; } };
   let running = false; let failing = false;
+  let lookedAt = 0; let failedAt = 0;
 
   // Sends every copy not sent yet, oldest first. Never throws: a failure is remembered and tried again at the next check.
   async function sync() {
@@ -99,6 +100,7 @@ function createOffsite(dir, settings, { record = () => {}, now = () => new Date(
         } catch (e) {
           state.lastError = String(e.message || e).slice(0, 300); state.lastErrorAt = now().toISOString();
           try { writeFileAtomic(stateFile, JSON.stringify(state)); } catch (e2) { /* the next check tries again */ }
+          failedAt = now().getTime();
           if (!failing) { failing = true; record(`The off-site backup of ${name} failed: ${state.lastError}. It is tried again every few minutes.`); } // said once, not every try
           break;
         }
@@ -107,12 +109,35 @@ function createOffsite(dir, settings, { record = () => {}, now = () => new Date(
     return { sent };
   }
 
+  // The check made at every request of the portal (server.js dailyBackup): it looks at most once a minute, and after a failure waits
+  // five minutes before trying again, as the Activity line says (review, 28 Nov 2026: a failing bucket was tried at every page load).
+  // "Back up now" and the first check after a start call sync() directly.
+  function tick() {
+    if (!settings || running) return Promise.resolve({ sent: 0 });
+    const t = now().getTime();
+    if (t - lookedAt < lookMs || (failedAt && t - failedAt < retryMs)) return Promise.resolve({ sent: 0 });
+    lookedAt = t;
+    return sync();
+  }
+
+  // Admin's test (Activity, Restore data): one small encrypted file is written to the bucket, then every copy not sent yet is sent.
+  // { ok, sent, error } in words a person reads; nothing about the keys.
+  async function check() {
+    if (!settings) return { ok: false, error: 'The off-site backup is not switched on: the settings are not on the server yet.' };
+    try {
+      await put(settings, `${settings.prefix}/sr360-check.enc`, encrypt(Buffer.from(`Student Recruit 360 off-site check ${now().toISOString()}`), settings.passphrase), { now: now() });
+    } catch (e) { return { ok: false, error: `The bucket did not take the test file: ${String(e.message || e).slice(0, 200)}` }; }
+    const out = await sync();
+    const st = status();
+    return st.lastError && st.waiting ? { ok: false, sent: out.sent, error: `The test file was written, but a backup was not: ${st.lastError}` } : { ok: true, sent: out.sent, waiting: st.waiting };
+  }
+
   function status() {
     const st = readState(); let waiting = 0;
     try { waiting = fs.readdirSync(folder).filter((f) => /^niec-.+\.json\.gz$/.test(f) && st.sent[f] !== fs.statSync(path.join(folder, f)).size).length; } catch (e) { waiting = 0; }
     return { enabled: Boolean(settings), lastOk: st.lastOk, lastError: st.lastError, lastErrorAt: st.lastErrorAt, waiting, bucket: settings ? settings.bucket : '' };
   }
-  return { sync, status, enabled: () => Boolean(settings) };
+  return { sync, tick, check, status, enabled: () => Boolean(settings) };
 }
 
 module.exports = { createOffsite, settingsFrom, encrypt, decrypt, put };

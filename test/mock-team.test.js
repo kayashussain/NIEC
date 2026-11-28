@@ -193,8 +193,9 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   const mock = await person('bikram', 'staff', ['mock']);
   const app = await person('asha', 'staff', ['application']);
 
-  // Pages: the Mock Team has Bookings and Interview guidelines, and no Dashboard, Partners or Mock interviews.
-  for (const p of ['/dashboard', '/my-dashboard', '/partners', '/mock-guides', '/bulk']) assert.strictEqual((await mock('GET', p)).location, '/today', p);
+  // Pages: the Mock Team has Bookings, Interview guidelines and Mock interview guides (the owner, 28 Nov 2026), and no Dashboard or Partners.
+  for (const p of ['/dashboard', '/my-dashboard', '/partners', '/bulk']) assert.strictEqual((await mock('GET', p)).location, '/today', p);
+  assert.strictEqual((await mock('GET', '/mock-guides')).status, 200, 'the Mock Team opens Mock interview guides');
   assert.strictEqual((await mock('GET', '/bookings')).status, 200);
   assert.strictEqual((await mock('GET', '/interview-guidelines')).status, 200);
   assert.strictEqual((await app('GET', '/api/bookings')).status, 403, 'the Application Team has no Bookings');

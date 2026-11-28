@@ -5,7 +5,8 @@
 //   feedback (the sheet's Mock Schedule and Feedback columns), and the mock interview guide of each university, read phase by phase.
 //   A student reads published guides only, and only for the universities they applied to (plus the guide every student reads).
 //
-//   The guides (/mock-guides) are written by the Mock Team, the Manager and Admin; only Admin publishes one to students.
+//   The guides (/mock-guides) are written by the Mock Team, the branches, the Manager and Admin; only Admin publishes one to students
+//   (the owner, 28 Nov 2026: Mock interview guides in the menu of Admin, the Mock Team and the branches).
 //
 // Nothing here sends an email: emails to students stay off until the owner says to start (the owner, 20 Nov 2026).
 
@@ -16,11 +17,13 @@ const { PHASES } = require('./mock-guides');
 const text = (v) => String(v ?? '').trim();
 const ISO = /^\d{4}-\d{2}-\d{2}/;
 
-// Who works on the guides: Admin, the Manager and the Mock Team. Only Admin publishes.
+// Who works on the guides: Admin, the Manager, the Mock Team and the branches. Only Admin publishes, so a draft reaches no student
+// before Admin has read it.
 const guideAccess = (user) => {
   if (!user || Teams.isStudent(user)) return null;
   if (user.role === 'admin') return 'publish';
-  if (user.role === 'manager' || (user.departments || []).includes('mock')) return 'edit';
+  const deps = user.departments || [];
+  if (user.role === 'manager' || deps.includes('mock') || deps.some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source)) return 'edit';
   return null;
 };
 
@@ -131,7 +134,7 @@ function createMockApi({ guides, portal, cards, facts, direct, activity, isoDate
     // ---- The guides, for the team ----
     if (urlPath === '/api/mock-guides' || urlPath.startsWith('/api/mock-guides/')) {
       const level = guideAccess(user);
-      if (!level) { sendJSON(res, 403, { error: 'The mock interview guides are for Admin, the Manager and the Mock Team.' }); return true; }
+      if (!level) { sendJSON(res, 403, { error: 'The mock interview guides are for Admin, the Manager, the Mock Team and the branches.' }); return true; }
       const record = (what) => activity.record(req, user, 'Edited mock interview guide', { app: 'Mock interviews', changes: [what] });
       if (urlPath === '/api/mock-guides' && req.method === 'GET') {
         const have = guides.list();

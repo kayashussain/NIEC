@@ -391,7 +391,7 @@ test('clearing the activity empties the record, and failed logins by unknown nam
   assert.strictEqual(log.query({}).total, 1);
 });
 
-test('teams only see the newest intake, and an older one drops away when a newer sheet is made', () => {
+test('teams see the newest intake, and an older one only while the Application or Mock Team still has students at its stage there', () => {
   const rows = (id) => [{ _id: id, [S]: 'Application Stage' }];
   const book2 = () => ({ sheets: [
     { id: 'sheet-1', name: 'Sep Intake 2026', hidden: true, columns: [], rows: rows('old') },
@@ -401,9 +401,24 @@ test('teams only see the newest intake, and an older one drops away when a newer
   assert.deepStrictEqual(ids(Teams.viewFor(staff, book2())), ['jan']);
   const later = book2();
   later.sheets.push({ id: 'sheet-mk000000bbbbb', name: 'May Intake 2027', columns: [], rows: rows('may') });
+  // January still has a student at Application Stage: the Application Team keeps it, beside May (the owner, 28 Nov 2026). A hidden
+  // intake stays hidden.
+  assert.deepStrictEqual(ids(Teams.viewFor(staff, later)), ['jan', 'may']);
+  assert.deepStrictEqual(Teams.viewFor(staff, later).sheets.map((s) => s.name), ['Jan Intake 2027', 'May Intake 2027']);
+  // ... only that stage's students: one at Mock Stage on January is the Mock Team's, not the Application Team's.
+  later.sheets[1].rows.push({ _id: 'janMock', [S]: 'Mock Stage' });
+  assert.deepStrictEqual(ids(Teams.viewFor(staff, later)), ['jan', 'may']);
+  assert.deepStrictEqual(ids(Teams.viewFor({ role: 'staff', departments: ['mock'] }, later)), ['janMock'], 'the Mock Team keeps its January student');
+  // The Follow-up Team works on the newest intake only.
+  later.sheets[1].rows.push({ _id: 'janInq', [S]: 'Inquiry' });
+  assert.deepStrictEqual(Teams.viewFor({ role: 'staff', departments: ['followup'] }, later).sheets.map((s) => s.name), ['May Intake 2027']);
+  // Once the last January student has moved on to Mock Stage, January drops away for the Application Team.
+  later.sheets[1].rows[0][S] = 'Mock Stage';
   assert.deepStrictEqual(ids(Teams.viewFor(staff, later)), ['may']);
-  assert.deepStrictEqual(ids(Teams.viewFor({ role: 'manager' }, later)), ['old', 'jan', 'may']);
-  assert.deepStrictEqual(ids(Teams.viewFor({ role: 'admin' }, later)), ['old', 'jan', 'may']);
+  assert.deepStrictEqual(Teams.viewFor(staff, later).sheets.map((s) => s.name), ['May Intake 2027']);
+  assert.ok(!Teams.inView(staff, later, later.sheets[1].id, later.sheets[1].rows[0]) && Teams.inView({ role: 'staff', departments: ['mock'] }, later, later.sheets[1].id, later.sheets[1].rows[0]));
+  assert.deepStrictEqual(ids(Teams.viewFor({ role: 'manager' }, later)), ['old', 'jan', 'janMock', 'janInq', 'may']);
+  assert.deepStrictEqual(ids(Teams.viewFor({ role: 'admin' }, later)), ['old', 'jan', 'janMock', 'janInq', 'may']);
 });
 
 test('the 3rd installment is taken off the remaining tuition fee, and old sheets get the column', () => {
@@ -486,7 +501,8 @@ test('a branch person sees and changes everything about their own branch student
     ] },
   ] });
   const ch = { role: 'staff', departments: ['chitwan'] };
-  assert.deepStrictEqual(ids(Teams.viewFor(ch, wb())), ['c1', 'c2']); // the current intake, their branch, every stage
+  // Every intake, their branch, every stage (the owner, 28 Nov 2026: a branch has no limit on its own students).
+  assert.deepStrictEqual(ids(Teams.viewFor(ch, wb())), ['o', 'c1', 'c2']);
   assert.strictEqual(Teams.teamOf(ch).readOnly, false);
   assert.ok(Teams.canEdit(ch, 'GROSS FEE', { [src]: 'Chitwan Branch' }) && Teams.canEdit(ch, 'MOCK SCHEDULE 1', { [src]: 'Chitwan Branch' }));
   assert.ok(!Teams.canEdit(ch, src, { [src]: 'Chitwan Branch' }), 'the source is what makes the student theirs');
@@ -494,7 +510,7 @@ test('a branch person sees and changes everything about their own branch student
 
   const base = Teams.viewFor(ch, wb());
   const copy = () => JSON.parse(JSON.stringify(base));
-  const edit = (id, col, value) => { const m = copy(); m.sheets[0].rows.find((r) => r._id === id)[col] = value; return Teams.teamChanges(ch, base, m); };
+  const edit = (id, col, value) => { const m = copy(); m.sheets.flatMap((sh) => sh.rows).find((r) => r._id === id)[col] = value; return Teams.teamChanges(ch, base, m); };
   assert.deepStrictEqual(edit('c1', 'GROSS FEE', '2000').errors, []);
   assert.deepStrictEqual(edit('c2', S, 'Payment Stage').errors, []);                 // any stage move
   // ... but never past what proves a step: from Mock Stage straight to Visa Issued with no CAS or visa day is refused.

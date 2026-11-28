@@ -6051,7 +6051,7 @@ html[data-theme="dark"]:root body main.ff-page #cards a.uc-card .uc-next {
   border-top-color: rgba(255, 255, 255, 0.112);
 }
 html[data-theme="dark"]:root body main.ff-page #cards a.uc-card .uc-next.is-none {
-  color: #80868b;
+  color: #9aa0a6;
 }
 html[data-theme="dark"]:root body #page .ig-mark.has-logo {
   border-color: #3c4043;
@@ -6202,13 +6202,13 @@ html[data-theme="dark"]:root body main.ac-page .tile-label {
   color: #9aa0a6;
 }
 html[data-theme="dark"]:root body main.ac-page .tile-sub {
-  color: #80868b;
+  color: #9aa0a6;
 }
 html[data-theme="dark"]:root body main.ac-page .ac-day {
   background: #202124;
 }
 html[data-theme="dark"]:root body main.ac-page .ac-day span {
-  color: #80868b;
+  color: #9aa0a6;
 }
 html[data-theme="dark"]:root body main.ac-page .activity-entry {
   border-bottom-color: rgba(255, 255, 255, 0.096);
@@ -6253,7 +6253,7 @@ html[data-theme="dark"]:root body main.ac-page .activity-time {
   color: #9aa0a6;
 }
 html[data-theme="dark"]:root body main.ac-page .activity-device {
-  color: #80868b;
+  color: #9aa0a6;
 }
 html[data-theme="dark"]:root body main.ac-page .activity-changes {
   background: #2c2d30;

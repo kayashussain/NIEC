@@ -1144,6 +1144,16 @@
 
   api('/api/today').then(async (d) => {
     me = d.name || '';
+    // Admin only, once a day: every backup is on this server only until the off-site copy is switched on (OFFSITE-BACKUP.md).
+    if (d.offsiteOff && window.NiecUI) {
+      let shownToday = false;
+      try { shownToday = localStorage.getItem('sr360OffsiteNote') === d.today; } catch (e) { /* shown every time */ }
+      // Counted as shown only once it is on the screen (leaving Today at once must not use up the day's reminder).
+      if (!shownToday) setTimeout(() => {
+        window.NiecUI.toast('The off-site backup is not switched on: every backup is on this server only.', { type: 'error', duration: 12000, action: { label: 'Open', onClick: () => { location.href = '/activity#restore'; } } });
+        try { localStorage.setItem('sr360OffsiteNote', d.today); } catch (e) { /* shown again next time */ }
+      }, 600);
+    }
     let tasks = { tasks: [], canAssign: false };
     try { tasks = await api('/api/tasks'); } catch (e) { /* the rest of Today still shows */ }
     document.title = 'Today · Student Recruit 360';

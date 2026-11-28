@@ -235,8 +235,8 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
   assert.strictEqual((await ownApp('GET', '/mock-guides')).status, 302, 'own team Application: no Mock interviews');
   assert.strictEqual((await ownApp('GET', '/partners')).status, 302, 'own team Application: no Partners');
   const ownMock = await both('rita', 'mock');
-  // Own team Mock: no Mock interviews and no Partners either (the owner, 22 Nov 2026); Bookings and Interview guidelines instead.
-  assert.strictEqual((await ownMock('GET', '/mock-guides')).status, 302, 'own team Mock: no Mock interviews');
+  // Own team Mock: no Partners (the owner, 22 Nov 2026); Bookings, Interview guidelines and Mock interview guides (the owner, 28 Nov 2026).
+  assert.strictEqual((await ownMock('GET', '/mock-guides')).status, 200, 'own team Mock: Mock interview guides');
   assert.strictEqual((await ownMock('GET', '/partners')).status, 302, 'own team Mock: no Partners');
   assert.strictEqual((await ownMock('GET', '/bookings')).status, 200, 'own team Mock: Bookings');
   assert.strictEqual((await admin('GET', '/api/apply-through')).json.canChange, true);

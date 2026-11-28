@@ -1,6 +1,7 @@
 // The Follow-up Team's page, design F1 (the owner, 25 Nov 2026), on the real server. All students and people are made up.
 //   - a student another team puts on Hold or Withdraws is listed as Stopped, with why and by whom, and the card opens view only
-//   - Bring back needs what changed (and for Inquiry a next follow-up date); only Inquiry or Defer; it is written on the card
+//   - Bring back is Admin's only (the owner, 28 Nov 2026); it needs what changed (and for Inquiry a next follow-up date); only Inquiry
+//     or Defer; it is written on the card
 //   - a student who moved on shows the university, the step reached and the latest news
 //   - a task another team gives to the Follow-up Team reaches the team's task list, wherever the student is
 const test = require('node:test');
@@ -58,7 +59,7 @@ test('design F1: stopped students, Bring back, progress and tasks reach the Foll
   assert.ok(mine.some((x) => x.text === 'Call the family about the deposit' && x.studentId === movedOn), 'the task is in the Follow-up list');
   assert.strictEqual((await fu('GET', `/api/cards/${movedOn}`)).status, 200, 'and the card opens');
 
-  // The Application Team puts a student on Hold: the Follow-up Team sees it as Stopped, with by whom, and may bring it back.
+  // The Application Team puts a student on Hold: the Follow-up Team sees it as Stopped, with by whom; only Admin brings it back.
   assert.strictEqual(await of(held), undefined, 'an Application Stage student it never had is not listed');
   const data = (await app('GET', '/api/data')).json;
   const sheet = data.sheets[0];
@@ -67,17 +68,22 @@ test('design F1: stopped students, Bring back, progress and tasks reach the Foll
   let s = await of(held);
   assert.ok(s, 'the held student is listed');
   assert.strictEqual(s.state, 'out');
-  assert.strictEqual(s.canReturn, true);
+  assert.strictEqual(s.canReturn, false, 'the Follow-up Team does not bring a student back');
+  assert.strictEqual((await admin('GET', '/api/followup')).json.students.find((x) => x.id === held).canReturn, true, 'Admin does');
   assert.strictEqual(s.stopped.by, 'Asha');
   assert.match(s.stopped.team, /Application/);
   assert.strictEqual((await fu('GET', `/api/cards/${held}`)).status, 200, 'the card opens, view only');
 
-  // Bring back: what changed and, for Inquiry, a date after today; never straight to another stage.
-  assert.strictEqual((await post(held, { action: 'return', text: '', to: 'Inquiry', next: day(3) })).json.field, 'text');
-  assert.strictEqual((await post(held, { action: 'return', text: 'New passport', to: 'Application Stage', next: day(3) })).json.field, 'to');
-  assert.strictEqual((await post(held, { action: 'return', text: 'New passport', to: 'Inquiry', next: day(0) })).json.field, 'next');
-  assert.strictEqual((await post(held, { action: 'return', text: 'New passport', to: 'Inquiry', next: day(3) }, app)).status, 403, 'only the Follow-up Team');
-  assert.strictEqual((await post(held, { action: 'return', text: 'New passport has arrived', to: 'Inquiry', next: day(3) })).status, 200);
+  // Bring back (Admin): what changed and, for Inquiry, a date after today; never straight to another stage.
+  const refusedFu = await post(held, { action: 'return', text: 'New passport', to: 'Inquiry', next: day(3) });
+  assert.strictEqual(refusedFu.status, 403, 'not the Follow-up Team');
+  assert.match(refusedFu.json.error, /Only Admin/);
+  assert.strictEqual((await post(held, { action: 'return', text: '', to: 'Inquiry', next: day(3) }, admin)).json.field, 'text');
+  assert.strictEqual((await post(held, { action: 'return', text: 'New passport', to: 'Application Stage', next: day(3) }, admin)).json.field, 'to');
+  assert.strictEqual((await post(held, { action: 'return', text: 'New passport', to: 'Inquiry', next: day(0) }, admin)).json.field, 'next');
+  assert.strictEqual((await post(held, { action: 'return', text: 'New passport', to: 'Inquiry', next: day(3) }, app)).status, 403, 'not the Application Team');
+  assert.strictEqual((await rowOf(held))['APPLICATION STATUS'], 'Hold', 'nothing moved');
+  assert.strictEqual((await post(held, { action: 'return', text: 'New passport has arrived', to: 'Inquiry', next: day(3) }, admin)).status, 200);
   assert.strictEqual((await rowOf(held))['APPLICATION STATUS'], 'Inquiry');
   // The team that stopped the student is told with one task of kind Other, and can open the card.
   const told = (await app('GET', '/api/tasks')).json.tasks.filter((x) => x.forMe && !x.done && x.studentId === held);
@@ -92,7 +98,7 @@ test('design F1: stopped students, Bring back, progress and tasks reach the Foll
   const notes = (await admin('GET', `/api/cards/${held}`)).json.card.notes;
   assert.ok(notes.some((n) => n.text === 'Brought back from Hold to Inquiry: New passport has arrived'), 'written on the card');
   assert.ok(notes.some((n) => n.kind === 'stage' && /Back from Hold to Inquiry/.test(n.text)), 'and on the timeline');
-  assert.strictEqual((await post(held, { action: 'return', text: 'again', to: 'Defer' })).status, 403, 'a student not stopped cannot be brought back');
+  assert.strictEqual((await post(held, { action: 'return', text: 'again', to: 'Defer' }, admin)).status, 403, 'a student not stopped cannot be brought back');
 
   // A student who had applied before the Hold keeps the old application day on the sheet, and is still listed after Bring back.
   const applied = await add('Prakash', 'Application Stage');
@@ -100,14 +106,14 @@ test('design F1: stopped students, Bring back, progress and tasks reach the Foll
   const withDay = { ...now.sheets[0], rows: now.sheets[0].rows.map((r) => (r._id === applied ? { ...r, 'APPLICATION SUBMISSION DATE': day(-10), 'APPLICATION STATUS': 'Hold' } : r)) };
   assert.strictEqual((await admin('POST', '/api/data', { sheets: [withDay, ...now.sheets.slice(1)], activeSheetId: now.activeSheetId, baseRevision: now.revision })).status, 200);
   assert.strictEqual((await of(applied)).state, 'out');
-  assert.strictEqual((await post(applied, { action: 'return', text: 'Ready again', to: 'Inquiry', next: day(2) })).status, 200);
+  assert.strictEqual((await post(applied, { action: 'return', text: 'Ready again', to: 'Inquiry', next: day(2) }, admin)).status, 200);
   assert.strictEqual((await of(applied)).state, 'ok', 'still in the list, followed up, with the next date');
 
   // Withdrawn by the Follow-up Team keeps its reason, and Bring back to Defer clears it.
   assert.strictEqual((await post(held, { action: 'withdraw', text: 'Joined another office', reason: 'Chose another consultancy' })).status, 200);
   s = await of(held);
   assert.match(s.stopped.why, /Chose another consultancy/);
-  assert.strictEqual((await post(held, { action: 'return', text: 'Came back to us', to: 'Defer' })).status, 200);
+  assert.strictEqual((await post(held, { action: 'return', text: 'Came back to us', to: 'Defer' }, admin)).status, 200);
   assert.strictEqual((await rowOf(held))['APPLICATION STATUS'], 'Defer');
   assert.strictEqual((await admin('GET', `/api/cards/${held}`)).json.card.profile.lostReason || '', '');
   assert.strictEqual((await app('GET', '/api/tasks')).json.tasks.filter((x) => x.forMe && !x.done && x.studentId === held).length, 1, 'the Follow-up Team\'s own stop tells nobody');

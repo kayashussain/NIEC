@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-BRANCH="${1:-master}"   # the one and only branch (CLAUDE.md Rule 2)
+BRANCH="${1:-master}"   # the one and only branch the live code comes from
 PORT="${PORT:-8080}"
 DATA_ROOT="${DATA_ROOT:-$HOME/niec-data}"   # data lives OUTSIDE the repo so updates never touch it
 

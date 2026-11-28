@@ -384,6 +384,10 @@ function createHistory(limit = 30, maxBytes = 48 * 1024 * 1024) {
       const text = versions.get(revision);
       return text ? JSON.parse(text) : null;
     },
+    // The newest `n` versions kept, oldest first, as [revision, JSON text] (kept on disk when the server stops, see server.js).
+    newest(n = limit) {
+      return [...versions.entries()].sort((x, y) => x[0] - y[0]).slice(-n);
+    },
   };
 }
 

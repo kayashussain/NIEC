@@ -78,6 +78,42 @@ test('every backup is sent encrypted once; a failure is said once and the next c
   assert.strictEqual(said.length, 1, 'a later failure is said again');
 });
 
+test('the check made at every request looks once a minute, and waits five minutes after a failure', async (t) => {
+  const bucket = await fakeBucket(); t.after(() => bucket.close());
+  const dir = tmp(); fs.mkdirSync(path.join(dir, 'daily-backups'));
+  fs.writeFileSync(path.join(dir, 'daily-backups', 'niec-daily-2026-11-22.json.gz'), zlib.gzipSync('{}'));
+  let clock = Date.parse('2026-11-28T10:00:00Z');
+  const o = createOffsite(dir, { endpoint: bucket.endpoint, bucket: 'sr360', region: 'r', accessKey: 'AK', secretKey: 'SK', passphrase: 'pass', prefix: 'p' }, { now: () => new Date(clock) });
+  bucket.setFail(true);
+  await o.tick();
+  const tries = bucket.seen.length;
+  assert.ok(tries >= 1, 'the first check tries');
+  bucket.setFail(false);
+  clock += 2 * 60 * 1000; await o.tick();
+  assert.strictEqual(bucket.seen.length, tries, 'two minutes after a failure: not tried again');
+  clock += 4 * 60 * 1000; assert.strictEqual((await o.tick()).sent, 1, 'after five minutes it is tried and sent');
+  const sent = bucket.seen.length;
+  clock += 10 * 1000; await o.tick();
+  assert.strictEqual(bucket.seen.length, sent, 'within a minute nothing is looked at again');
+});
+
+test('Admin\'s test writes a small encrypted file, sends what is waiting, and says plainly when it fails', async (t) => {
+  const bucket = await fakeBucket(); t.after(() => bucket.close());
+  const dir = tmp(); fs.mkdirSync(path.join(dir, 'daily-backups'));
+  fs.writeFileSync(path.join(dir, 'daily-backups', 'niec-daily-2026-11-27.json.gz'), zlib.gzipSync('{}'));
+  assert.deepStrictEqual(await createOffsite(dir, null).check(), { ok: false, error: 'The off-site backup is not switched on: the settings are not on the server yet.' });
+  const o = createOffsite(dir, { endpoint: bucket.endpoint, bucket: 'sr360', region: 'r', accessKey: 'AK', secretKey: 'SK', passphrase: 'pass', prefix: 'p' });
+  bucket.setFail(true);
+  const bad = await o.check();
+  assert.strictEqual(bad.ok, false);
+  assert.match(bad.error, /did not take the test file/);
+  bucket.setFail(false);
+  const good = await o.check();
+  assert.deepStrictEqual({ ok: good.ok, sent: good.sent }, { ok: true, sent: 1 });
+  assert.ok(bucket.store.has('/sr360/p/sr360-check.enc'), 'the test file is in the bucket');
+  assert.match(decrypt(bucket.store.get('/sr360/p/sr360-check.enc'), 'pass').toString(), /^Student Recruit 360 off-site check /);
+});
+
 test('the status never holds a key or the passphrase', () => {
   const o = createOffsite(tmp(), { endpoint: 'http://x', bucket: 'sr360', region: 'r', accessKey: 'AKSECRET', secretKey: 'SKSECRET', passphrase: 'PPSECRET', prefix: 'p' });
   assert.ok(!/SECRET/.test(JSON.stringify(o.status())));

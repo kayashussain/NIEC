@@ -94,3 +94,5 @@ student-details/brand-logo.png
 **/version-backups/
 **/version-stamp.json
 **/.data-folder
+# The recent revisions kept when the server stops (server.js), so a page a few saves behind still saves after a restart.
+**/recent-revisions.json.gz

@@ -59,11 +59,14 @@ test('team saves from an old page are checked against the students as they are n
   wb.sheets[0].rows[0][S] = 'Visa Stage';
   assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
 
-  // The Manager's old page sends the student back to Mock Stage and renames the university: refused.
+  // The Manager's old page sends the student back to Mock Stage and renames the university: neither is saved, and both are named
+  // (the owner, 28 Nov 2026: what cannot be saved is said cell by cell; the rest of a save is kept).
   const edited = JSON.parse(JSON.stringify(old));
   Object.assign(edited.sheets[0].rows[0], { [S]: 'Mock Stage', 'UNIVERSITY NAME': 'Hacked' });
   const r = await manager('POST', '/api/data', { sheets: edited.sheets, activeSheetId: edited.activeSheetId, baseRevision: old.revision });
-  assert.strictEqual(r.status, 409);
+  assert.strictEqual(r.status, 200, JSON.stringify(r.json));
+  assert.ok(r.json.reload);
+  assert.deepStrictEqual(r.json.notSaved.map((x) => x.col).sort(), [S, 'UNIVERSITY NAME']);
   let now = (await admin('GET', '/api/data')).json.sheets[0].rows[0];
   assert.strictEqual(now[S], 'Visa Stage');
   assert.strictEqual(now['UNIVERSITY NAME'], 'Test University', 'the old page did not rename it');
@@ -90,8 +93,9 @@ test('team saves from an old page are checked against the students as they are n
     const late = JSON.parse(JSON.stringify(staffCopy));
     late.sheets[0].rows.find((x) => x._id === 'r2').REMARKS = 'From Asha';
     const refused = await staff('POST', '/api/data', { sheets: late.sheets, activeSheetId: late.activeSheetId, baseRevision: staffCopy.revision });
-    assert.strictEqual(refused.status, 409, JSON.stringify(refused.json));
-    assert.strictEqual(refused.json.clash[0].col, 'REMARKS');
+    assert.strictEqual(refused.status, 200, JSON.stringify(refused.json));
+    assert.strictEqual(refused.json.notSaved[0].col, 'REMARKS');
+    assert.match(refused.json.notSaved[0].why, /someone else changed it/);
     assert.strictEqual((await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2').REMARKS, 'From Admin', 'the first save stays');
     // The same person typing the same detail again on an older copy (two tabs, or a page that has not caught up) is not a clash.
     const tab1 = (await admin('GET', '/api/data')).json;
@@ -104,6 +108,15 @@ test('team saves from an old page are checked against the students as they are n
     const old = JSON.parse(JSON.stringify(staffCopy));
     old.sheets[0].rows.find((x) => x._id === 'r2')['COURSE NAME'] = 'BSc From Asha';
     assert.strictEqual((await staff('POST', '/api/data', { sheets: old.sheets, activeSheetId: old.activeSheetId, baseRevision: staffCopy.revision })).status, 200);
+    // One save with a detail someone else changed and one nobody touched: the clash is named, the other detail is saved.
+    const both = JSON.parse(JSON.stringify(staffCopy));
+    Object.assign(both.sheets[0].rows.find((x) => x._id === 'r2'), { REMARKS: 'Asha again', 'RECEIVING PARTNER': 'Head Office' });
+    const mixed = await staff('POST', '/api/data', { sheets: both.sheets, activeSheetId: both.activeSheetId, baseRevision: staffCopy.revision });
+    assert.strictEqual(mixed.status, 200, JSON.stringify(mixed.json));
+    assert.deepStrictEqual(mixed.json.notSaved.map((x) => x.col), ['REMARKS']);
+    const r2 = (await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2');
+    assert.strictEqual(r2.REMARKS, 'Second try', 'the other person\'s detail stays');
+    assert.strictEqual(r2['RECEIVING PARTNER'], 'Head Office', 'the detail nobody else touched is saved');
   }
   // The sheet's own save is never a way round the duplicate check: a second row with an email already on the sheet is refused.
   {
@@ -118,16 +131,32 @@ test('team saves from an old page are checked against the students as they are n
     assert.ok(dup.json.duplicate);
   }
 
-  // A newer intake is started; the staff page still holding the earlier one can't change it.
+  // A newer intake is started. The earlier one still has a student at Application Stage, so the Application Team keeps working on it
+  // (the owner, 28 Nov 2026); once that student has moved on to Mock Stage, a page still holding the earlier intake changes nothing.
   wb = (await admin('GET', '/api/data')).json;
   wb.sheets.push({ ...wb.sheets[0], id: 'sheet-' + Date.now().toString(36) + 'zzzzz', name: 'Next intake', rows: [] });
   assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
+  const both2 = (await staff('GET', '/api/data')).json;
+  assert.deepStrictEqual(both2.sheets.map((sh) => sh.name), [wb.sheets[0].name, 'Next intake'], 'the earlier intake and the new one');
+  const still = JSON.parse(JSON.stringify(view));
+  still.sheets[0].rows[0]._color = 'green'; // a row colour: the one thing the Application Team's sheet save still changes
+  const kept = await staff('POST', '/api/data', { sheets: still.sheets, activeSheetId: still.activeSheetId, baseRevision: view.revision });
+  assert.strictEqual(kept.status, 200, JSON.stringify(kept.json));
+  assert.ok(!kept.json.notSaved, JSON.stringify(kept.json));
+  assert.strictEqual((await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2')._color, 'green', 'saved on the earlier intake');
+  wb = (await admin('GET', '/api/data')).json;
+  Object.assign(wb.sheets[0].rows.find((x) => x._id === 'r2'), { [S]: 'Mock Stage', 'UNIVERSITY NAME': '', 'COURSE NAME': 'BSc From Asha' });
+  assert.strictEqual((await admin('POST', '/api/data', { sheets: wb.sheets, activeSheetId: wb.activeSheetId, baseRevision: wb.revision })).status, 200);
+  assert.deepStrictEqual((await staff('GET', '/api/data')).json.sheets.map((sh) => sh.name), ['Next intake'], 'no Application Stage student left: the earlier intake drops away');
   const late = JSON.parse(JSON.stringify(view));
   late.sheets[0].rows[0]['UNIVERSITY NAME'] = 'Too late';
-  late.sheets[0].rows[0]._color = 'red'; // a row colour: the one thing the Application Team's sheet save still changes
-  assert.strictEqual((await staff('POST', '/api/data', { sheets: late.sheets, activeSheetId: late.activeSheetId, baseRevision: view.revision })).status, 409);
+  late.sheets[0].rows[0]._color = 'red';
+  const tooLate = await staff('POST', '/api/data', { sheets: late.sheets, activeSheetId: late.activeSheetId, baseRevision: view.revision });
+  assert.strictEqual(tooLate.status, 200, JSON.stringify(tooLate.json));
+  assert.ok(tooLate.json.notSaved.length >= 1 && tooLate.json.notSaved.every((x) => /moved to another stage/.test(x.why)), JSON.stringify(tooLate.json));
   now = (await admin('GET', '/api/data')).json.sheets[0].rows.find((x) => x._id === 'r2');
   assert.strictEqual(now['UNIVERSITY NAME'], '');
+  assert.strictEqual(now._color, 'green');
 
   // Presence: staff aren't told who is looking at a student outside their view; Admin sees everyone.
   wb = (await admin('GET', '/api/data')).json;
