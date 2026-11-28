@@ -8870,4 +8870,20 @@ html[data-theme="dark"] .fu-empty {
 html[data-theme="dark"] body .fu-page .fu-row.live .fu-next::before {
   color: #9aa0a6;
 }
+/* 🔴 CSS CHANGED (2026-11-28): dark colours for the Follow-up list's new look (panel line, avatar, stage words, stacked tag choices, switch, search) | from: the light values of followup.html showing in the dark theme | to: the dark palette used on the rest of this page */
+html[data-theme="dark"] body .fu-page .fu-panel { border-color: #3c4043; }
+html[data-theme="dark"] body .fu-page .fu-seg { background: #3c4043; }
+html[data-theme="dark"] body .fu-page .fu-seg button.on { background: #565656; color: #ffffff; }
+html[data-theme="dark"]:root body .fu-page input.fu-search:not(:focus) { background-color: #3c4043 !important; border-color: #5f6368 !important; }
+html[data-theme="dark"] body .fu-page .fu-row { border-top-color: #3c4043; }
+html[data-theme="dark"] body .fu-page .fu-row.head { color: #9aa0a6; }
+html[data-theme="dark"] body .fu-page .fu-av { background: #1f3a4a; color: #e8eaed; }
+html[data-theme="dark"] body .fu-page .fu-stage { background: transparent; color: #9aa0a6; }
+html[data-theme="dark"] body .fu-page .fu-stage.app { color: #8ab4f8; }
+html[data-theme="dark"] body .fu-page .fu-stage.hold { color: #fcad70; }
+html[data-theme="dark"] body .fu-page .fu-stage.gone { color: #f28b82; }
+html[data-theme="dark"] body .fu-page .fu-opt { color: #e8eaed; }
+html[data-theme="dark"] body .fu-page .fu-opt::before { border-color: #9aa0a6; background: #292a2d; }
+html[data-theme="dark"] body .fu-page .fu-opt.on::before { border-color: #007bf7; background: radial-gradient(#007bf7 0 3.5px, #292a2d 4.5px); }
+html[data-theme="dark"] body .fu-page .fu-strip { background: #2c2d30; }
 }
