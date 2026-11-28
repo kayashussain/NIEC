@@ -68,8 +68,8 @@ test('a branch: Today, All Students and the Dashboard', { timeout: 180000, skip:
   // Today: the teams' screen, switching between the two directions.
   const today = await open(branch, '/today');
   await today.waitForSelector('.tda-tile');
-  assert.deepStrictEqual(await trimmed(today.locator('.tda-tile .tda-tile-k')), ['Late', 'Assigned to you', 'Assigned by you', 'Later']);
-  assert.deepStrictEqual(await trimmed(today.locator('.tda-view')), ['Assigned to you 1', 'Assigned by you 1', 'Later 0']);
+  assert.deepStrictEqual(await trimmed(today.locator('.tda-tile .tda-tile-k')), ['Assigned to you', 'Assigned by you']);
+  assert.deepStrictEqual(await trimmed(today.locator('.tda-view')), ['Assigned to you 1', 'Assigned by you 1']);
   await today.locator('.tdx-head', { hasText: 'Confirm the interview time' }).click();
   const detail = today.locator('.tdx.is-open');
   await detail.locator('.tdy-body').waitFor();

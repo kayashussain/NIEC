@@ -202,7 +202,7 @@
   const languageShown = (v) => { const t = String(v || '').trim(); return /^\d{4}-\d{2}-\d{2}$/.test(t) ? `Test date, ${longDay(t)}` : t; };
   // What an opened task shows (sections of label and value, only the details that exist) and what is still missing before it can be submitted.
   function appInfo(x) {
-    const c = x.course; const k = x.contact || {}; const d = x.details || {};
+    const c = x.course || (todayData && todayData.branchTeam ? x.studies : null); const k = x.contact || {}; const d = x.details || {}; // a branch: a task with no course of its own shows the student's
     const email = k.emailText || ''; const phone = k.phone || '';
     const sections = []; const missing = [];
     const add = (title, list) => { const rows = list.filter(([, v]) => v); if (rows.length) sections.push({ title, rows }); };
@@ -444,14 +444,17 @@
       // The Application Team (the owner, 23 Nov 2026): who gave it and whether it is ready, the details, the folded updates.
       body.classList.add('tdy-body');
       given.classList.add('tdy-given');
+      // A branch (the owner, 28 Nov 2026) sees the same details for its own student, said as it gave or received the task.
+      if (todayData && todayData.branchTeam && !x.forMe && x.tag !== 'offer') given.textContent = `Given by ${x.by === me ? 'you' : x.by || 'someone'} to the ${x.teamLabel}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`;
       const top = el('div', 'tdy-top');
       top.append(given);
-      if (info.ready) top.append(el('span', 'tdy-ready', 'Ready to submit'));
+      if (info.ready && !(todayData && todayData.branchTeam)) top.append(el('span', 'tdy-ready', 'Ready to submit'));
       body.append(top, appDetails(x, info), appUpdates(x, thread, n));
     } else if (mk) {
       // The Mock Team, in the same look: who gave it, the mocks so far, Application and Student, the folded updates.
       body.classList.add('tdy-body');
       given.classList.add('tdy-given');
+      if (todayData && todayData.branchTeam && !x.forMe && x.tag !== 'offer') given.textContent = `Given by ${x.by === me ? 'you' : x.by || 'someone'} to the ${x.teamLabel}${x.at ? ` on ${dayShort(isoDay(x.at))}` : ''}`;
       const top = el('div', 'tdy-top');
       top.append(given);
       body.append(top, mockDetails(x, mk), appUpdates(x, thread, n));
@@ -571,8 +574,9 @@
     const branch = Boolean(todayData && todayData.branchTeam);
     const gave = branch ? t.tasks.filter((x) => !x.done && !x.forMe && (x.given || x.by === me)) : [];
     const bothWays = [...open, ...gave];
+    // Branch (the owner, 28 Nov 2026): only the two views, no Late and no Later; a task planned for a later day stays in its list.
     const VIEWS = branch
-      ? [['mine', 'Assigned to you', open.filter((x) => !later(x))], ['gave', 'Assigned by you', gave.filter((x) => !later(x))], ['upcoming', 'Later', bothWays.filter(later)]]
+      ? [['mine', 'Assigned to you', open], ['gave', 'Assigned by you', gave]]
       : [['mine', 'Today', open.filter((x) => !later(x))], ['upcoming', 'Later', open.filter(later)], ['missing', 'Missing details', missingAll]];
     if (!VIEWS.some((v) => v[0] === taskView)) taskView = 'mine';
     // The three tabs, at the right of the title.
@@ -641,9 +645,9 @@
     // Four numbers at the top (the Application Team's Apple look, the owner, 24 Nov 2026): what is late, what is for today, what waits
     // for a later day and who has details missing. Each opens its tab.
     const nLate = open.filter((x) => !later(x) && isLate(x)).length;
-    const tiles = el('div', 'tda-tiles');
+    const tiles = el('div', `tda-tiles${branch ? ' is-two' : ''}`);
     const four = branch
-      ? [['Late', nLate, 'Yours, waiting 3 days or more', 'mine', nLate ? 'is-late' : ''], ['Assigned to you', VIEWS[0][2].length, 'For you to do', 'mine', ''], ['Assigned by you', VIEWS[1][2].length, 'With our teams', 'gave', ''], ['Later', VIEWS[2][2].length, 'Planned for a later day', 'upcoming', '']]
+      ? [['Assigned to you', VIEWS[0][2].length, nLate ? `For you to do, ${nLate} late` : 'For you to do', 'mine', nLate ? 'is-late' : ''], ['Assigned by you', VIEWS[1][2].length, 'With our teams', 'gave', '']]
       : [['Late', nLate, 'Waiting 3 days or more', 'mine', nLate ? 'is-late' : ''], ['Today', VIEWS[0][2].length, 'Tasks for today', 'mine', ''], ['Later', VIEWS[1][2].length, 'Planned for a later day', 'upcoming', ''], ['Missing details', missingAll.length, 'Students to complete', 'missing', missingAll.length ? 'is-miss' : '']];
     four.forEach(([label, n, line, view2, cls]) => {
       const tile = h('button', { class: `tda-tile ${cls}`.trim(), type: 'button', 'aria-label': `${label}: ${n}. ${line}` });
