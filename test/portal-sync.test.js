@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
-const { createPortalSync, createPortalClient, parseList, splitName } = require('../student-details/portal-sync');
+const { createPortalSync, createPortalClient, parseList, parseProgress, studentNameOn, splitName } = require('../student-details/portal-sync');
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'niec-sync-'));
 const row = (id, name, phone, email, mode = 'In Person', status = 'Open') => `
@@ -15,6 +15,14 @@ const row = (id, name, phone, email, mode = 'In Person', status = 'Open') => `
 <td class="table-assigned-date table-action"><a href="#">x</a></td><td class="table-note">UK/repe...</td>
 <td class="table-status">${status}</td><td>0</td>
 <td class="table-action"><a href="/agent/getactivities/${id}" class="progress_action">P</a></td></tr>`;
+// A progress screen as the portal writes it (the table copied from a real one, names and notes made up). Newest row first.
+const progress = (name, rows) => `<table><tr><td width="200px"><span>Student Name</span></td>
+<td><span>${name}</span></td></tr></table><p>Enquiry Process</p>
+<table id="table-entry"><thead><tr><th>S. No.</th><th>Status</th><th>Follow Up</th><th>Note</th><th>Created By</th><th>Actions</th></tr></thead><tbody>
+${rows.map((r, i) => `<tr><td><span>${rows.length - i}</span></td><td><span>${r.status}</span></td>
+<td> <span> ${r.day || '27, Nov, 2026'} | ${r.time || '11:09'} | <i class="fa fa-sticky-note"></i> </span> </td>
+<td> <span title="${(r.note || '').replace(/"/g, '&quot;')}">${(r.note || '').slice(0, 17)}${(r.note || '').length > 17 ? '...' : ''}</span> </td>
+<td> <span>${r.by || 'frontdesk'}</span> </td><td> </td></tr>`).join('')}</tbody></table>`;
 const table = (...rows) => `<table id="table-entry"><thead><tr><th>S.No.</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
 
 test('parseList reads name, phone, email, mode and the portal id', () => {
@@ -129,7 +137,8 @@ test('the real server adds a new Open student once and matches one it already ha
       if (req.url === '/login') { if (/password=pw/.test(body)) { res.setHeader('set-cookie', 'sess=b; Path=/'); res.writeHead(302, { location: '/agent/dashboard' }); res.end(); } else res.end('bad'); return; }
       if (req.url === '/agent/study-abroad-enquiry-list') { res.end(`'X-CSRF-Token': "tok"`); return; }
       if (req.url === '/agent/study-abroad-enquiry-list-data/open') { listed += 1; res.end(html); return; }
-      if (req.url === '/agent/study-abroad-enquiry-list-data/pending') { res.end(table()); return; }
+      if (req.url.startsWith('/agent/study-abroad-enquiry-list-data/pending')) { res.end(table()); return; }
+      if (/^\/agent\/getactivities\/(901|902)$/.test(req.url)) { res.end(progress(req.url.endsWith('901') ? 'Sita Newcomer' : 'Hari Existing', [{ status: 'Open' }])); return; }
       res.writeHead(404); res.end();
     });
   });
@@ -179,42 +188,101 @@ test('the real server adds a new Open student once and matches one it already ha
 });
 
 // ---- push-back: Pending follow-ups (a made-up portal that also takes "Add Next Status") ----
-function pushSetup({ pushMode = 'on', onOpen = [101], onPending = [], portalName = 'Asha Rai', confirm = true, showNote = true, goPending = true, ourName = 'Asha Rai', mode = 'off' } = {}) {
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function pushSetup({ pushMode = 'on', startStatus = 'Open', portalName = 'Asha Rai', confirm = true, showAs = 'Pending', dropNote = false, ourName = 'Asha Rai', mode = 'off', clock = '2026-11-28T04:39:00Z' } = {}) {
   const dir = tmp(); const posts = []; const notes = []; const recorded = []; const order = [];
-  let last = '';
+  const rows = [{ status: startStatus }];
   const fetchFn = async (url, opts = {}) => {
     const u = new URL(url);
     const res = (status, body = '', headers = {}) => ({ status, headers: { get: (k) => headers[k.toLowerCase()] || null, getSetCookie: () => (headers.cookie ? [headers.cookie] : []) }, text: async () => body });
     if (u.pathname === '/login' && !opts.method) return res(200, '<input type="hidden" name="_csrfToken" value="t">');
     if (u.pathname === '/login') return res(302, '', { location: '/agent/dashboard', cookie: 'sess=b; Path=/' });
     if (u.pathname === '/agent/study-abroad-enquiry-list') return res(200, `'X-CSRF-Token': "tok"`);
-    if (u.pathname === '/agent/study-abroad-enquiry-list-data/open') return res(200, table(...onOpen.map((i) => row(i, 'Asha Rai', '9800000001', 'a@example.com'))));
-    if (u.pathname === '/agent/study-abroad-enquiry-list-data/pending') return res(200, table(...[...onPending, ...(posts.length && goPending ? [posts[0].id] : [])].map((i) => row(i, 'Asha Rai', '9800000001', 'a@example.com', 'In Person', 'Pending'))));
+    if (u.pathname.startsWith('/agent/study-abroad-enquiry-list-data/')) return res(200, table());
     const m = /^\/agent\/getactivities\/(\d+)$/.exec(u.pathname);
-    if (m) { assert.strictEqual(opts.headers['X-Requested-With'], 'XMLHttpRequest'); last = m[1]; order.push('open ' + m[1]); return res(200, `<table><tr><td><span>Student Name</span></td><td><span>${portalName}</span></td></tr></table>${posts.length && showNote ? '<td>' + posts[posts.length - 1].note + '</td>' : ''}`); }
-    if (u.pathname === '/agent/activities/add') {
-      assert.strictEqual(opts.headers['X-CSRF-Token'], 'tok'); assert.match(opts.headers.cookie, /sess=b/);
-      const f = Object.fromEntries(new URLSearchParams(opts.body)); order.push('post ' + last);
-      posts.push({ id: last, ...f }); return res(200, JSON.stringify({ success: confirm }));
+    if (m) { assert.strictEqual(opts.headers['X-Requested-With'], 'XMLHttpRequest'); order.push('open ' + m[1]); return res(200, progress(portalName, [...rows].reverse())); }
+    const add = /^\/agent\/activities\/add\/(\d+)$/.exec(u.pathname);
+    if (add) {
+      assert.strictEqual(opts.method, 'POST'); assert.strictEqual(opts.headers['X-Requested-With'], 'XMLHttpRequest'); assert.match(opts.headers.cookie, /sess=b/);
+      const f = Object.fromEntries(new URLSearchParams(opts.body)); order.push('post ' + add[1]);
+      posts.push({ id: add[1], ...f });
+      const [, y, mo, d, hm] = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})$/.exec(f['EnquiryPendingActivity[datetime]']);
+      if (confirm && !dropNote) rows.push({ status: showAs, day: `${Number(d)}, ${MON[Number(mo) - 1]}, ${y}`, time: hm, note: f.note, by: 'kayas' });
+      return res(200, JSON.stringify({ success: confirm }));
     }
     return res(404);
   };
-  const sync = createPortalSync({ dir, mode, pushMode, client: createPortalClient({ base: 'https://portal.test', user: 'u@x.com', pass: 'pw', fetchFn }),
+  const sync = createPortalSync({ dir, mode, pushMode, now: () => new Date(clock), client: createPortalClient({ base: 'https://portal.test', user: 'u@x.com', pass: 'pw', fetchFn, retryWaitMs: 1 }),
     importStudent: () => ({ status: 200, json: { id: 'row-x' } }), addNote: (id, input) => notes.push({ id, input }), nameOf: () => ourName, record: (r) => recorded.push(r) });
   // The student came from the portal earlier (enquiry 101 is "row-1").
   fs.writeFileSync(path.join(dir, 'portal-sync.json'), JSON.stringify({ links: { 101: { rowId: 'row-1', how: 'added' } } }));
   return { sync, posts, notes, recorded, order, dir };
 }
 
-test('push: a follow-up is entered as Pending, by phone, with the note and the next day, and checked afterwards', async () => {
-  const t = pushSetup();
+test('parseProgress reads the real table: newest first, status, day, time and the whole note', () => {
+  const rows = parseProgress(progress('Maya Test', [{ status: 'Pending', day: '27, Nov, 2026', time: '9:05', note: 'Will apply for March April Intake only. Will attend our class.', by: 'sapana' }, { status: 'Open' }]));
+  assert.strictEqual(rows.length, 2);
+  assert.deepStrictEqual(rows[0], { status: 'Pending', day: '27 Nov 2026', time: '09:05', note: 'Will apply for March April Intake only. Will attend our class.', by: 'sapana' });
+  assert.strictEqual(rows[1].status, 'Open'); assert.strictEqual(rows[1].note, '');
+  assert.deepStrictEqual(parseProgress('<p>nothing</p>'), []);
+  assert.strictEqual(studentNameOn(progress('Maya Test', [])), 'Maya Test');
+});
+
+test('lists are read page after page (the portal shows 20 at a time)', async () => {
+  const seen = [];
+  // The links show only a window of page numbers (here just 2), so it is the "next" arrow that says there is more.
+  const nxt = (n) => `<a href="/agent/study-abroad-enquiry-list-data/pending?page=${n}">${n}</a><a rel="next" href="/agent/study-abroad-enquiry-list-data/pending?page=${n}">&raquo;</a>`;
+  const pagesHtml = { 1: table(row(1, 'A One', '9800000001', 'a1@example.com')) + nxt(2), 2: table(row(2, 'A Two', '9800000002', 'a2@example.com')) + nxt(3), 3: table(row(3, 'A Three', '9800000003', 'a3@example.com')) };
+  const fetchFn = async (url, opts = {}) => {
+    const u = new URL(url); const res = (status, body = '', headers = {}) => ({ status, headers: { get: (k) => headers[k.toLowerCase()] || null, getSetCookie: () => [] }, text: async () => body });
+    if (u.pathname === '/login' && !opts.method) return res(200, '<input name="_csrfToken" value="t">');
+    if (u.pathname === '/login') return res(302, '', { location: '/x' });
+    if (u.pathname === '/agent/study-abroad-enquiry-list') return res(200, `'X-CSRF-Token': "tok"`);
+    const page = Number(u.searchParams.get('page') || 1); seen.push(page); return res(200, pagesHtml[page]);
+  };
+  const c = createPortalClient({ base: 'https://p.test', user: 'u', pass: 'p', fetchFn });
+  await c.login();
+  assert.deepStrictEqual(parseList(await c.listTab('pending'), 'pending').map((r) => r.portalId), ['1', '2', '3']);
+  assert.deepStrictEqual(seen, [1, 2, 3]);
+});
+
+test('a read that fails the first time is tried again, a write never is', async () => {
+  let n = 0; let writes = 0;
+  const fetchFn = async (url, opts = {}) => {
+    const u = new URL(url); const res = (status, body = '') => ({ status, headers: { get: () => null, getSetCookie: () => [] }, text: async () => body });
+    if (u.pathname === '/login' && !opts.method) { n += 1; if (n < 3) throw new Error('fetch failed'); return res(200, '<input name="_csrfToken" value="t">'); }
+    if (u.pathname === '/login') return res(302, '', { location: '/x' });
+    if (u.pathname === '/agent/study-abroad-enquiry-list') return res(200, `'X-CSRF-Token': "tok"`);
+    if (u.pathname.startsWith('/agent/activities/add/')) { writes += 1; throw new Error('dropped'); }
+    return res(404);
+  };
+  const c = createPortalClient({ base: 'https://p.test', user: 'u', pass: 'p', fetchFn, retryWaitMs: 1 });
+  await c.login(); assert.strictEqual(n, 3);
+  await assert.rejects(c.addPending({ portalId: '5', note: 'x', datetime: '2026-12-01T10:00' }), /dropped/);
+  assert.strictEqual(writes, 1, 'the write was tried once');
+});
+
+test('push: Pending, by phone, to the student\'s own address, with the note, the day and the office time, then read back', async () => {
+  const t = pushSetup(); // 04:39 UTC is 10:24 in Kathmandu
   assert.strictEqual(t.sync.queueFollowUp({ rowId: 'row-1', text: 'Will send documents on Sunday.', date: '2026-11-30' }), true);
   const r = await t.sync.tick();
   assert.strictEqual(r.sent, 1, JSON.stringify(r));
-  assert.deepStrictEqual(t.posts[0], { id: '101', form_mode: 'add', enquiry_activity_id: '', status: '4', note: 'Will send documents on Sunday.', 'EnquiryPendingActivity[datetime]': '2026-11-30T10:00:00', 'EnquiryPendingActivity[note]': 'Will send documents on Sunday.', 'EnquiryPendingActivity[followup_mode]': '1' });
-  assert.deepStrictEqual(t.order.slice(0, 3), ['open 101', 'post 101', 'open 101'], 'the screen is opened before and checked after');
-  assert.match(t.notes[0].input.text, /sent to the NIEC portal/);
+  assert.deepStrictEqual(t.posts[0], { id: '101', form_mode: 'add', enquiry_activity_id: '', status: '4', note: 'Will send documents on Sunday.', 'EnquiryPendingActivity[datetime]': '2026-11-30T10:24', 'EnquiryPendingActivity[note]': 'Will send documents on Sunday.', 'EnquiryPendingActivity[followup_mode]': '1' });
+  assert.deepStrictEqual(t.order.slice(0, 3), ['open 101', 'post 101', 'open 101'], 'the screen is opened before and read back after');
+  assert.match(t.notes[0].input.text, /sent to the NIEC portal.*2026-11-30 10:24/);
   await t.sync.tick(); assert.strictEqual(t.posts.length, 1, 'never sent twice');
+});
+
+test('push: a student already Pending can have another follow-up; a Closed or Success one gets nothing', async () => {
+  const p = pushSetup({ startStatus: 'Pending' });
+  p.sync.queueFollowUp({ rowId: 'row-1', text: 'Second call.', date: '2026-12-02' });
+  assert.strictEqual((await p.sync.tick()).sent, 1);
+  for (const status of ['Closed', 'Success']) {
+    const t = pushSetup({ startStatus: status });
+    t.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
+    const r = await t.sync.tick();
+    assert.strictEqual(t.posts.length, 0); assert.strictEqual(r.skipped, 1); assert.ok(!r.pushHalted);
+  }
 });
 
 test('push: a student who is not from the portal, or a bad date, is not queued', () => {
@@ -235,29 +303,33 @@ test('push: a different name on the portal sends nothing and stops every push', 
   await t.sync.tick(); assert.strictEqual(t.posts.length, 0, 'stays stopped');
   assert.match(t.recorded[0].pushHalted, /does not match/);
   t.sync.resume(); // after a person has looked
+  await t.sync.tick(); assert.strictEqual(t.posts.length, 0, 'the name still does not match');
 });
 
-test('push: a student no longer on the Open or Pending list is skipped', async () => {
-  const t = pushSetup({ onOpen: [] });
-  t.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
-  const r = await t.sync.tick();
-  assert.strictEqual(t.posts.length, 0); assert.strictEqual(r.skipped, 1);
-});
-
-test('push: the portal does not confirm, or the check afterwards fails: stopped, and not sent again', async () => {
+test('push: the portal does not confirm, or the read-back is not what was sent: stopped, and not sent again', async () => {
   const a = pushSetup({ confirm: false });
   a.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
   assert.match((await a.sync.tick()).pushHalted, /did not confirm/);
   await a.sync.tick(); assert.strictEqual(a.posts.length, 1);
-  const b = pushSetup({ goPending: false });
+  const b = pushSetup({ dropNote: true });
   b.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
-  assert.match((await b.sync.tick()).pushHalted, /could not check/);
+  assert.match((await b.sync.tick()).pushHalted, /does not show it as expected/);
   await b.sync.tick(); assert.strictEqual(b.posts.length, 1);
+  const c = pushSetup({ showAs: 'Closed' });
+  c.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
+  assert.match((await c.sync.tick()).pushHalted, /does not show it as expected/);
 });
 
-test('push: dry mode sends nothing and says what would be sent', async () => {
+test('push: dry mode sends nothing and says what would be sent, once', async () => {
   const t = pushSetup({ pushMode: 'dry' });
   t.sync.queueFollowUp({ rowId: 'row-1', text: 'Note', date: '2026-11-30' });
   const r = await t.sync.tick();
   assert.strictEqual(r.would, 1); assert.strictEqual(t.posts.length, 0);
+  assert.strictEqual((await t.sync.tick()).would, 0, 'the same one is not announced every run');
+});
+
+test('Activity hears about a run only when something happened', async () => {
+  const t = pushSetup({ pushMode: 'dry', mode: 'on' });
+  await t.sync.tick(); await t.sync.tick();
+  assert.strictEqual(t.recorded.length, 0, 'two quiet runs write nothing');
 });

@@ -13,10 +13,10 @@
 //   NIEC_PORTAL_PUSH                     off (default), dry (log what would be sent) or on: the push-back of follow-ups (see below)
 //
 // Push-back, part 2 (the owner, 28 Nov 2026): when a note with a next follow-up date is saved for a student who came from the portal, the same
-// follow-up is entered on the portal as "Add Next Status": status Pending, the note, the next follow-up day (10:00) and mode Phone, exactly
+// follow-up is entered on the portal as "Add Next Status": status Pending, the note, the next follow-up day (with the time of day it was saved) and mode Phone, exactly
 // as it is done by hand. Only Pending for now (Closed and Success are not sent). Safety: the portal's progress screen is opened first and
-// the student's name there must be the same as ours; the student must be on the portal's Open or Pending list; afterwards the portal is read
-// again to check the note and the Pending list. Anything unexpected stops every push (pushHalted) and is written in Activity; nothing is
+// the student's name there must be the same as ours; the student must be Open or Pending on the portal; afterwards the progress screen is read
+// again: one more row, newest, Pending, with our day, time and the whole note. Anything unexpected stops every push (pushHalted) and is written in Activity; nothing is
 // ever sent twice.
 // State is kept in portal-sync.json in the data folder: portal id -> our student, and how the last run went.
 
@@ -73,17 +73,24 @@ function parseList(html, tab) {
 }
 
 // The portal, over plain HTTPS. `fetchFn` is replaceable so the tests never touch the network.
-function createPortalClient({ base = 'https://niecportal.ed-net.uk', user, pass, fetchFn = globalThis.fetch }) {
+function createPortalClient({ base = 'https://niecportal.ed-net.uk', user, pass, fetchFn = globalThis.fetch, retryWaitMs = 1500 }) {
   const jar = new Map();
   const remember = (res) => {
     const list = typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : (res.headers.get('set-cookie') ? [res.headers.get('set-cookie')] : []);
     list.forEach((c) => { const [pair] = c.split(';'); const i = pair.indexOf('='); if (i > 0) jar.set(pair.slice(0, i).trim(), pair.slice(i + 1).trim()); });
   };
   const cookie = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
-  const call = async (url, opts = {}) => {
-    const res = await fetchFn(url.startsWith('http') ? url : base + url, { redirect: 'manual', ...opts, headers: { 'user-agent': 'StudentRecruit360-sync', cookie: cookie(), ...(opts.headers || {}) } });
-    remember(res);
-    return res;
+  // The portal is slow and sometimes drops the first connection: a read is tried up to 3 times. A write (`once`) is never repeated.
+  const call = async (url, { once = false, ...opts } = {}) => {
+    let lastErr;
+    for (let i = 0; i < (once ? 1 : 3); i += 1) {
+      try {
+        const res = await fetchFn(url.startsWith('http') ? url : base + url, { redirect: 'manual', ...opts, headers: { 'user-agent': 'StudentRecruit360-sync', cookie: cookie(), ...(opts.headers || {}) } });
+        remember(res);
+        return res;
+      } catch (e) { lastErr = e; if (i < 2 && !once) await new Promise((r) => setTimeout(r, retryWaitMs)); }
+    }
+    throw lastErr;
   };
   let token = '';
   async function login() {
@@ -100,11 +107,22 @@ function createPortalClient({ base = 'https://niecportal.ed-net.uk', user, pass,
     token = t[1];
     return list;
   }
+  // One tab, every page (the portal shows 20 at a time: "?page=2" after the address, with the same request).
   async function listTab(tab) {
     if (!TABS.includes(tab)) throw new Error('Unknown tab.');
-    const res = await call(`/agent/study-abroad-enquiry-list-data/${tab}`, { method: 'POST', headers: { 'X-CSRF-Token': token, 'X-Requested-With': 'XMLHttpRequest' } });
-    if (res.status !== 200) throw new Error(`The portal answered ${res.status} for the ${tab} list.`);
-    return res.text();
+    const get = async (n) => {
+      const res = await call(`/agent/study-abroad-enquiry-list-data/${tab}${n > 1 ? `?page=${n}` : ''}`, { method: 'POST', headers: { 'X-CSRF-Token': token, 'X-Requested-With': 'XMLHttpRequest' } });
+      if (res.status !== 200) throw new Error(`The portal answered ${res.status} for the ${tab} list.`);
+      return res.text();
+    };
+    // The page links show only a window of page numbers, so the "next" arrow is followed until there is none.
+    let all = ''; let n = 1; let html = await get(1);
+    for (;;) {
+      all += html;
+      if (!/rel="next"/.test(html) || n >= 60) break;
+      n += 1; html = await get(n);
+    }
+    return all;
   }
   // The student's progress screen, opened the way the portal's own page opens it (the portal ties the next status to this student).
   async function activities(portalId) {
@@ -113,16 +131,32 @@ function createPortalClient({ base = 'https://niecportal.ed-net.uk', user, pass,
     if (res.status !== 200) throw new Error(`The portal answered ${res.status} for the progress screen.`);
     return res.text();
   }
-  // "Add Next Status", Pending: the same fields the portal's own form sends.
-  async function addPending({ note, datetime, mode = '1' }) {
+  // "Add Next Status", Pending: the same request the portal's own page sends (checked on 28 Nov 2026 by filling the form and stopping
+  // the send): POST /agent/activities/add/<enquiry id>, with the time as the browser writes it (2026-12-01T10:00).
+  async function addPending({ portalId, note, datetime, mode = '1' }) {
+    if (!/^\d{1,12}$/.test(String(portalId))) throw new Error('Bad portal id.');
     const body = new URLSearchParams({ form_mode: 'add', enquiry_activity_id: '', status: '4', note, 'EnquiryPendingActivity[datetime]': datetime, 'EnquiryPendingActivity[note]': note, 'EnquiryPendingActivity[followup_mode]': mode }).toString();
-    const res = await call('/agent/activities/add', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-CSRF-Token': token, 'X-Requested-With': 'XMLHttpRequest' }, body });
+    const res = await call(`/agent/activities/add/${portalId}`, { once: true, method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-CSRF-Token': token, 'X-Requested-With': 'XMLHttpRequest' }, body });
     let json = null; try { json = JSON.parse(await res.text()); } catch (e) { /* not JSON */ }
     return { status: res.status, success: Boolean(json && json.success) };
   }
   return { login, listTab, activities, addPending };
 }
 
+// The "Enquiry Process" table of a progress screen, newest row first: status, follow-up day and time, the whole note (kept in the title).
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function parseProgress(html) {
+  const tbl = (String(html || '').match(/Enquiry Process[\s\S]*?<\/table>/) || [''])[0];
+  const body = /<tbody>([\s\S]*?)<\/tbody>/.exec(tbl);
+  const rows = body ? body[1].match(/<tr[\s\S]*?<\/tr>/g) || [] : [];
+  return rows.map((tr) => {
+    const tds = tr.match(/<td[\s\S]*?<\/td>/g) || [];
+    const when = /([0-9]{1,2}),\s*([A-Za-z]{3}),\s*([0-9]{4})\s*\|?\s*([0-9]{1,2}:[0-9]{2})?/.exec(strip(tds[2] || ''));
+    const title = /<span[^>]*\btitle="([^"]*)"/.exec(tds[3] || '');
+    return { status: strip(tds[1] || ''), day: when ? `${Number(when[1])} ${when[2]} ${when[3]}` : '', time: when && when[4] ? when[4].padStart(5, '0') : '', note: title ? decode(title[1]).replace(/\s+/g, ' ').trim() : '', by: strip(tds[4] || '') };
+  }).filter((r) => r.status);
+}
+const dayWords = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}` : ''; };
 const letters = (v) => String(v || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 // The name on a progress screen ("Student Name" row).
 function studentNameOn(html) { const m = /Student Name<\/span>\s*<\/td>\s*<td[^>]*>\s*<span>([\s\S]*?)<\/span>/i.exec(String(html || '')); return m ? strip(m[1]) : ''; }
@@ -148,41 +182,46 @@ function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, 
     const state = load();
     const portalId = Object.keys(state.links).find((id) => state.links[id].rowId === rowId);
     if (!portalId) return false; // not a portal student
-    state.outbox.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, rowId, portalId, text: words, date: day, at: now().toISOString() });
+    const kathmandu = new Date(now().getTime() + (5 * 60 + 45) * 60000); // office time
+    const time = `${String(kathmandu.getUTCHours()).padStart(2, '0')}:${String(kathmandu.getUTCMinutes()).padStart(2, '0')}`;
+    state.outbox.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, rowId, portalId, text: words, date: day, time, at: now().toISOString() });
     state.outbox = state.outbox.slice(-200);
     save(state);
     return true;
   }
 
-  // Sends what waits, one at a time, with the checks described at the top. Returns { sent, skipped, would, halted }.
+  // Sends what waits, one at a time, with the checks described at the top. Returns { sent, skipped, would }.
   async function pushRun(out) {
     const state = load();
     const res = { sent: 0, skipped: 0, would: 0 };
     const todo = state.outbox.filter((x) => !x.sent && !x.skipped);
     if (!todo.length || pushMode === 'off') return res;
     if (state.pushHalted) { out.pushHalted = state.pushHalted; return res; }
-    const onLists = new Set();
-    for (const tab of ['open', 'pending']) parseList(await client.listTab(tab), tab).forEach((r) => onLists.add(r.portalId));
     let batch = 0;
     for (const item of todo) {
       if (batch >= 10) break;
       batch += 1;
       const halt = (why) => { state.pushHalted = `${why} (student ${item.portalId})`.slice(0, 300); out.pushHalted = state.pushHalted; };
-      if (!onLists.has(item.portalId)) { item.skipped = 'not on the portal Open or Pending list'; res.skipped += 1; continue; }
+      const before = await client.activities(item.portalId);
+      const rowsBefore = parseProgress(before);
+      // Only a student who is Open or Pending on the portal right now (the newest row of the progress screen); never Closed or Success.
+      if (!rowsBefore.length || !['Open', 'Pending'].includes(rowsBefore[0].status)) { item.skipped = `the portal shows the student as ${(rowsBefore[0] && rowsBefore[0].status) || 'unknown'}`; res.skipped += 1; continue; }
       if (pushMode === 'dry') { if (!item.dry) { item.dry = true; res.would += 1; } continue; }
       const mine = nameOf(item.rowId);
-      const before = await client.activities(item.portalId);
       const theirs = studentNameOn(before);
       if (!letters(mine) || letters(mine) !== letters(theirs)) { halt('The name on the portal does not match the student here, nothing was sent'); break; }
-      const sent = await client.addPending({ note: item.text, datetime: `${item.date}T10:00:00`, mode: '1' });
+      const time = /^\d{2}:\d{2}$/.test(item.time || '') ? item.time : '10:00';
+      const sent = await client.addPending({ portalId: item.portalId, note: item.text, datetime: `${item.date}T${time}`, mode: '1' });
       item.sent = true; item.sentAt = now().toISOString(); // marked at once: a run that stops now never sends it again
       if (!(sent.status === 200 && sent.success)) { halt(`The portal did not confirm the follow-up (answer ${sent.status})`); save(state); break; }
-      const after = strip(await client.activities(item.portalId));
-      const inPending = parseList(await client.listTab('pending'), 'pending').some((r) => r.portalId === item.portalId);
-      const noteSeen = after.includes(strip(item.text).slice(0, 40));
-      if (!noteSeen || !inPending) { halt(`Sent, but could not check it on the portal (${noteSeen ? '' : 'note not seen'}${!noteSeen && !inPending ? ', ' : ''}${inPending ? '' : 'not on Pending list'})`); save(state); break; }
+      // Read it back: one more row, newest, Pending, with our day, time and the whole note.
+      const rowsAfter = parseProgress(await client.activities(item.portalId));
+      const top = rowsAfter[0] || {};
+      const flat = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+      const ok = rowsAfter.length === rowsBefore.length + 1 && top.status === 'Pending' && top.day === dayWords(item.date) && top.time === time && flat(top.note) === flat(item.text);
+      if (!ok) { halt(`Sent, but the portal does not show it as expected (${top.status || 'no row'} ${top.day || ''} ${top.time || ''})`); save(state); break; }
       item.verified = true; res.sent += 1;
-      try { addNote(item.rowId, { text: `Follow-up sent to the NIEC portal: Pending, next follow-up ${item.date}, by phone.`, kind: 'note' }, ROBOT.name); } catch (e) { /* the portal has it */ }
+      try { addNote(item.rowId, { text: `Follow-up sent to the NIEC portal: Pending, next follow-up ${item.date} ${time}, by phone.`, kind: 'note' }, ROBOT.name); } catch (e) { /* the portal has it */ }
     }
     state.outbox = state.outbox.filter((x) => !(x.verified || x.skipped) || Date.parse(x.at) > Date.now() - 14 * 86400000).slice(-200);
     save(state);
@@ -248,4 +287,4 @@ function createPortalSync({ dir, mode = 'off', pushMode = 'off', importStudent, 
   return { tick, enabled, queueFollowUp, outbox: () => load().outbox, resume: () => { const s2 = load(); s2.pushHalted = ''; save(s2); }, status: () => ({ mode, ...(load().last || {}) }), links: () => load().links };
 }
 
-module.exports = { createPortalSync, createPortalClient, parseList, splitName, studentNameOn, ROBOT, TABS };
+module.exports = { createPortalSync, createPortalClient, parseList, parseProgress, splitName, studentNameOn, ROBOT, TABS };
