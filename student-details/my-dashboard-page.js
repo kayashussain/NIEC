@@ -188,18 +188,19 @@
   // from the global tokens (shared/apple.css), so light and dark follow the rest of the portal.
   const P = (v) => (v === null || v === undefined ? '-' : `${v}%`);
   const when = (iso) => (iso ? dayMonth(iso) : '-');
-  const ratePill = (v) => el('span', `bd-pill ${v === null ? '' : v >= 60 ? 'is-good' : v < 40 ? 'is-low' : ''}`.trim(), P(v));
+  const ratePill = (v) => (v === null || v === undefined ? el('span', 'bd-none', '-') : el('span', `bd-pill ${v >= 60 ? 'is-good' : v < 40 ? 'is-low' : ''}`.trim(), P(v)));
   const change = (c, running) => {
     if (c === null || c === undefined) return el('span', 'bd-chg', '-');
     return el('span', `bd-chg ${c >= 0 ? 'is-up' : 'is-down'}`, `${c >= 0 ? '+' : ''}${c}%${running ? ' so far' : ''}`);
   };
   const cell = (...kids) => { const td = el('td'); td.append(...kids.filter((k) => k !== null && k !== undefined && k !== '').map((k) => (typeof k === 'string' ? document.createTextNode(k) : k))); return td; };
-  function tableOf(heads, rows, cls = '') {
+  function tableOf(heads, rows, cls = '', groups = null) {
     const wrap = el('div', 'bd-scroll');
     const t = el('table', `bd-table ${cls}`.trim());
     const hr = el('tr');
     heads.forEach((x) => hr.append(el('th', '', x)));
     const thead = el('thead');
+    if (groups) { const gr = el('tr', 'bd-groups'); groups.forEach(([label, span]) => { const th = el('th', '', label); th.colSpan = span; gr.append(th); }); thead.append(gr); }
     thead.append(hr);
     t.append(thead);
     const body = el('tbody');
@@ -373,32 +374,39 @@
   // One line for each university the branch applied to, ending with the intake's own total.
   function universitiesCard(it) {
     const m = it.m;
-    const c = card(`Universities · ${it.name}`, 'One line for each university the branch applied to. A student who applies to three universities is three applications, one at each, however many courses they chose there.', 'bd-card');
+    const c = card(`Universities · ${it.name}`, 'One line for each university the branch applied to. A student who applies to three universities is three applications, one at each, however many courses they chose there. Offer rate: offers divided by applications. Pass rate: passed divided by final interviews. Visa rate: received divided by visas decided.', 'bd-card');
     const rows = it.universities.map((u) => ({ cells: [cell(el('b', '', u.name)), cell(String(u.applications)), cell(String(u.offers)), cell(ratePill(u.offerRate)), cell(String(u.fin)), cell(String(u.passed)), cell(ratePill(u.passRate)), cell(String(u.lodged)), cell(String(u.visas)), cell(ratePill(u.visaRate))] }));
     if (!rows.length) { c.append(el('p', 'md-quiet', 'No application has been made yet.')); return c; }
-    rows.push({ cls: 'is-total', cells: [cell(el('b', '', 'All universities')), cell(String(m.applications)), cell(String(m.offers)), cell(P(m.offerRate)), cell(String(m.fin)), cell(String(m.passed)), cell(P(m.passRate)), cell(String(m.lodged)), cell(String(m.visas)), cell(P(m.visaRate))] });
-    c.append(tableOf(['University', 'Applications submitted', 'Offers received', 'Offer rate', 'Final interviews', 'Interviews passed', 'Pass rate', 'Applied for visa', 'Visas received', 'Visa rate'], rows, 'bd-unis'));
+    rows.push({ cls: 'is-total', cells: [cell(el('b', '', 'All universities')), cell(String(m.applications)), cell(String(m.offers)), cell(ratePill(m.offerRate)), cell(String(m.fin)), cell(String(m.passed)), cell(ratePill(m.passRate)), cell(String(m.lodged)), cell(String(m.visas)), cell(ratePill(m.visaRate))] });
+    c.append(tableOf(['University', 'Applications submitted', 'Offers received', 'Offer rate', 'Final interviews', 'Interviews passed', 'Pass rate', 'Applied for visa', 'Visas received', 'Visa rate'], rows, 'bd-unis', [['', 1], ['Application', 3], ['Interview', 3], ['Visa', 3]]));
     return c;
   }
 
-  // The only place intakes are compared: the tab's own intake against the ones before it.
+  // The only place intakes are compared: one panel for each intake, with the change since the intake before it. A running intake's
+  // changes are grey: it is part-way through, so a drop against a finished intake is not a verdict.
+  const GROWTH_LABELS = ['Students', 'Applications', 'Offers', 'Final interviews', 'Interviews passed', 'Applied for visa', 'Visas'];
   function growthCard(it) {
-    const c = card('Intake performance and growth', 'Each intake\'s numbers, with the growth since the intake before it. This tab compares the intakes up to its own. Student growth leaves out students who deferred in, because they were recruited in an earlier intake.', 'bd-card');
-    const heads = ['Intake', 'Students', 'Applications submitted', 'Offers received', 'Final interviews', 'Interviews passed', 'Applied for visa', 'Visas received', 'Conversion'];
-    const rows = it.growth.map((r) => {
+    const c = card('Intake performance and growth', 'Each intake with the change since the intake before it. This tab compares the intakes up to its own. Student growth leaves out students who deferred in, because they were recruited in an earlier intake. A running intake is still part-way through, so its changes are grey.', 'bd-card');
+    const grid = el('div', 'bd-int');
+    it.growth.forEach((r) => {
       const running = r.tag === 'Still running';
-      const first = el('span', 'bd-intake');
-      first.append(el('b', '', r.name));
-      const sub = [r.deferredIn ? `${r.deferredIn} deferred in` : '', r.deferredOut ? `${r.deferredOut} deferred out` : ''].filter(Boolean).join(' · ');
-      if (sub) first.append(el('small', '', sub));
-      if (r.tag) first.append(el('span', `bd-pill ${r.tag === 'Strongest' ? 'is-good' : r.tag === 'Weakest' ? 'is-low' : ''}`.trim(), r.tag));
-      const nums = r.cells.map((x) => { const box = el('span', 'bd-num'); box.append(el('b', '', num(x.value)), change(x.change, running && x.key !== 'students')); return cell(box); });
-      const conv = el('span', 'bd-num');
-      const pts = r.conversion.points;
-      conv.append(el('b', '', P(r.conversion.value)), pts === null ? el('span', 'bd-chg', '-') : el('span', `bd-chg ${pts >= 0 ? 'is-up' : 'is-down'}`, `${pts >= 0 ? '+' : ''}${pts} pts${running ? ' so far' : ''}`));
-      return { cells: [cell(first), ...nums, cell(conv)] };
+      const panel = el('div', 'bd-ic');
+      const head = el('div', 'bd-ic-head');
+      head.append(el('span', '', r.name));
+      if (r.tag) head.append(el('span', `bd-pill ${r.tag === 'Strongest' ? 'is-good' : r.tag === 'Weakest' ? 'is-low' : ''}`.trim(), running ? 'Running' : r.tag));
+      const sub = [r.deferredIn ? `${r.deferredIn} deferred in` : '', r.deferredOut ? `${r.deferredOut} deferred out` : ''].filter(Boolean);
+      panel.append(head, el('b', 'bd-ic-big', P(r.conversion.value)), el('span', 'bd-ic-cap', ['converted to a visa', ...sub].join(' · ')));
+      r.cells.forEach((x, i) => {
+        const row = el('div', 'bd-ic-row');
+        const chg = x.change === null || x.change === undefined ? h('span', { class: 'bd-dl is-none', 'aria-hidden': 'true' }, '0%') : el('span', `bd-dl${running ? ' is-run' : x.change >= 0 ? '' : ' is-down'}`, `${x.change >= 0 ? '+' : '-'}${Math.abs(x.change)}%`);
+        const val = el('b', '', num(x.value));
+        val.append(chg);
+        row.append(el('span', '', GROWTH_LABELS[i] || x.key), val);
+        panel.append(row);
+      });
+      grid.append(panel);
     });
-    c.append(tableOf(heads, rows, 'bd-growth'));
+    c.append(grid);
     return c;
   }
 
@@ -429,9 +437,9 @@
     const list = appTab === 'offer' ? offers : it.applications;
     if (!list.length) { c.append(el('p', 'md-quiet', appTab === 'offer' ? 'No offer yet.' : 'No application yet.')); return c; }
     const ids = [...new Set(list.map((a) => a.id))];
-    const table = tableOf(['Student', 'University', 'Intake', 'Submitted', 'Answer', 'Days'], [], 'bd-apps');
-    const answer = (a) => (a.offer ? `Offer ${dayMonth(a.offer)}` : a.refused ? `Refused ${dayMonth(a.refused)}` : 'No answer yet');
-    limited(table, list.map((a) => trOf([nameCell(a, ids), cell(a.university), cell(it.label), cell(when(a.applied)), cell(answer(a)),
+    const table = tableOf(['Student', 'University', 'Applied on', 'University answer', 'Answered on', 'Days to answer'], [], 'bd-apps');
+    const answer = (a) => el('span', `bd-pill ${a.offer ? 'is-good' : a.refused ? 'is-low' : ''}`.trim(), a.offer ? 'Offer received' : a.refused ? 'Refused' : 'No answer yet');
+    limited(table, list.map((a) => trOf([nameCell(a, ids), cell(a.university), cell(when(a.applied)), cell(answer(a)), cell(when(a.offer || a.refused)),
       cell(a.days === null ? '-' : a.waiting ? el('span', `bd-pill${a.days > 30 ? ' is-low' : ''}`, `${count(a.days, 'day')} waiting`) : count(a.days, 'day'))])));
     c.append(table);
     return c;
@@ -446,10 +454,10 @@
     const sorted = [...people].sort((a, b) => last(b).localeCompare(last(a)) || plain(a, b));
     const ids = sorted.map((p) => p.id);
     const step = (day, reached) => (day ? dayMonth(day) : reached ? 'Done' : '-');
-    const table = tableOf(['Student', 'University', 'Applied', 'Offer', 'Mock', 'Final interview', 'Deposit', 'CAS', 'Visa applied', 'Visa'], [], 'bd-steps');
+    const table = tableOf(['Student', 'University', 'Applied', 'Offer received', 'Last mock interview', 'Final interview result', 'Deposit paid', 'CAS received', 'Visa applied', 'Visa received'], [], 'bd-steps');
     limited(table, sorted.map((p) => trOf([nameCell(p, ids),
       cell(p.university || '-', p.more ? el('small', 'bd-more-uni', `+${p.more} more applied`) : null),
-      cell(step(p.applied, p.r.applied)), cell(step(p.offered, p.r.offered)), cell(p.mocks ? `${p.mocks} · ${when(p.lastMock)}` : p.r.mocked ? 'Done' : '-'),
+      cell(step(p.applied, p.r.applied)), cell(step(p.offered, p.r.offered)), cell(p.lastMock ? when(p.lastMock) : p.r.mocked ? 'Done' : '-', p.mocks > 1 ? el('small', 'bd-more-uni', `${p.mocks} held`) : null),
       cell(p.result || (p.r.fin ? 'Done' : '-')), cell(step(p.paid, p.r.paid)), cell(step(p.cas, p.r.cas)), cell(step(p.lodged, p.r.lodged)), cell(p.r.visaNo ? 'Refused' : step(p.visa, p.r.visa))])), 15);
     c.append(table);
     return c;
