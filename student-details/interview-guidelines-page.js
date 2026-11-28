@@ -82,7 +82,6 @@
     const list = view.querySelector('.ig-list');
     if (list) list.scrollTop = top;
     if (keepFocus) { const on = view.querySelector('.ig-uni.is-on'); if (on) on.focus({ preventScroll: true }); }
-    uploadButton();
   }
 
   // Only the right card, so the list and what is typed in its search stay as they are.
@@ -90,7 +89,6 @@
     const old = document.querySelector('.ig-main');
     if (!old) { draw(); return; }
     old.replaceWith(uniCard());
-    uploadButton();
   }
 
   function toggleUpload() {
@@ -98,16 +96,6 @@
     redrawMain();
     const to = uploading ? $('mtKind') : document.querySelector('.ig-upload-btn');
     if (to) to.focus();
-  }
-
-  // Upload a guideline, beside the page's title, for Admin and the Mock Team, once a University is open.
-  function uploadButton() {
-    const head = document.querySelector('#page .p-head');
-    let b = head.querySelector('.ig-upload-btn');
-    if (!data.canUpload || !chosen) { if (b) b.remove(); return; }
-    if (!b) { b = h('button', { type: 'button', class: 'btn ig-upload-btn', onclick: toggleUpload }); head.append(b); }
-    b.classList.toggle('btn-primary', !uploading); // one main blue button on the screen: the one inside the form
-    b.replaceChildren(...(uploading ? [] : [icon('upload')]), el('span', '', uploading ? 'Cancel upload' : 'Upload a guideline'));
   }
 
   function listCard() {
@@ -164,7 +152,7 @@
     const line = adding ? 'Every team can read it once it is added.' : file ? `${plural(files.length, 'guideline')} | ${meta(file)}` : 'No guideline yet';
     const head = el('div', 'ig-head');
     head.append(mark(chosen, ' is-big'), h('div', { class: 'ig-head-words' }, el('h2', '', adding ? `Upload to ${chosen}` : chosen), el('p', '', line)));
-    if (file && !adding) head.append(actions(file));
+    if (data.canUpload || (file && !adding)) head.append(actions(file, adding));
     card.append(head);
     if (adding) { card.append(uploadForm()); return card; }
     if (!file) {
@@ -179,8 +167,16 @@
     return card;
   }
 
-  function actions(f) {
+  // Upload a guideline sits first, beside Download and the full screen button (the owner, 28 Nov 2026), for Admin, the Mock Team and a
+  // branch; while the form is open it reads Cancel upload and the file's own buttons step aside.
+  function actions(f, adding) {
     const box = el('div', 'ig-acts');
+    if (data.canUpload) {
+      const up = h('button', { type: 'button', class: 'ig-download ig-upload-btn', onclick: toggleUpload });
+      up.append(...(adding ? [] : [icon('upload')]), el('span', '', adding ? 'Cancel upload' : 'Upload guideline'));
+      box.append(up);
+    }
+    if (!f || adding) return box;
     const type = String(f.type).toUpperCase();
     box.append(h('a', { class: 'ig-download', href: `/api/guidelines/${f.id}`, download: f.name }, icon('download'), el('span', '', 'Download')));
     // A Word document is read on the page only: opened on its own the browser would just download it.

@@ -1081,7 +1081,7 @@ html:root body #page .ig-head { flex: 0 0 auto; display: flex; flex-wrap: wrap; 
 html:root body #page .ig-head-words { flex: 1; min-width: 200px; }
 html:root body #page .ig-head h2 { margin: 0; font-size: 21px; line-height: 26px; font-weight: 600; letter-spacing: -.02em; }
 html:root body #page .ig-head p { margin: 2px 0 0; color: #636366; font-size: 13.5px; line-height: 19px; }
-html:root body #page.ig-page .ig-upload-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; }
+html:root body #page.ig-page .ig-upload-btn { border: 0; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 html:root body #page .ig-acts { display: flex; align-items: center; gap: 8px; }
 html:root body #page .ig-download { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 18px; border-radius: 999px; background: #e8f1fc; color: #0058b8; font-size: 14px; font-weight: 600; text-decoration: none; }
 html:root body #page .ig-download:hover { background: #dbe9fb; color: #0058b8; }
