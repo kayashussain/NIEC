@@ -824,7 +824,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
   });
 
   await t.test('every page opens for Admin without script errors', async () => {
-    for (const url of ['/dashboard', '/users', '/activity', '/mock-guides', '/fact-file']) {
+    for (const url of ['/dashboard', '/users', '/activity', '/fact-file']) {
       const page = await open(admin, url);
       await page.waitForLoadState('networkidle');
       assert.deepStrictEqual(page.errors, [], url);

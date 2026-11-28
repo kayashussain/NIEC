@@ -218,7 +218,7 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
 
   // The Application Team works from Today, All Students and Universities (the owner, 21 Nov 2026): Dashboard, Partners, Apply through
   // and Mock interviews send it back to Today; Apply now on a university still finds the partner.
-  for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk']) {
+  for (const page of ['/my-dashboard', '/dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/bulk']) {
     assert.strictEqual((await app('GET', page)).status, 302, page);
   }
   assert.strictEqual((await app('GET', '/today')).status, 200);
@@ -232,11 +232,9 @@ test('Today, Option A: course and contact on each task, no course twice, Offer r
     return p;
   };
   const ownApp = await both('sanu', 'application');
-  assert.strictEqual((await ownApp('GET', '/mock-guides')).status, 302, 'own team Application: no Mock interviews');
   assert.strictEqual((await ownApp('GET', '/partners')).status, 302, 'own team Application: no Partners');
   const ownMock = await both('rita', 'mock');
-  // Own team Mock: no Partners (the owner, 22 Nov 2026); Bookings, Interview guidelines and Mock interview guides (the owner, 28 Nov 2026).
-  assert.strictEqual((await ownMock('GET', '/mock-guides')).status, 200, 'own team Mock: Mock interview guides');
+  // Own team Mock: no Partners (the owner, 22 Nov 2026); Bookings and Interview guidelines.
   assert.strictEqual((await ownMock('GET', '/partners')).status, 302, 'own team Mock: no Partners');
   assert.strictEqual((await ownMock('GET', '/bookings')).status, 200, 'own team Mock: Bookings');
   assert.strictEqual((await admin('GET', '/api/apply-through')).json.canChange, true);

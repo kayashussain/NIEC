@@ -193,9 +193,9 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   const mock = await person('bikram', 'staff', ['mock']);
   const app = await person('asha', 'staff', ['application']);
 
-  // Pages: the Mock Team has Bookings, Interview guidelines and Mock interview guides (the owner, 28 Nov 2026), and no Dashboard or Partners.
+  // Pages: the Mock Team has Bookings and Interview guidelines, and no Dashboard or Partners. Mock interview guides were taken out (28 Nov 2026).
   for (const p of ['/dashboard', '/my-dashboard', '/partners', '/bulk']) assert.strictEqual((await mock('GET', p)).location, '/today', p);
-  assert.strictEqual((await mock('GET', '/mock-guides')).status, 200, 'the Mock Team opens Mock interview guides');
+  assert.notStrictEqual((await mock('GET', '/mock-guides')).status, 200, 'no Mock interview guides page any more');
   assert.strictEqual((await mock('GET', '/bookings')).status, 200);
   assert.strictEqual((await mock('GET', '/interview-guidelines')).status, 200);
   assert.strictEqual((await app('GET', '/api/bookings')).status, 403, 'the Application Team has no Bookings');
@@ -328,8 +328,8 @@ test('the Mock Team on the server: its pages, the booking page, the answer, the 
   const snap = JSON.parse(require('node:zlib').gunzipSync(fs.readFileSync(path.join(dir, 'daily-backups', gz))).toString('utf8'));
   assert.strictEqual(snap.mockBookings.bookings.filter((b) => b.status === 'booked').length, 2);
   assert.strictEqual(snap.mockGuidelines.files.length, 1);
-  // ... and the Mock interview guides with every student's progress, and the Apply through list.
-  assert.ok(!snap.mockGuides || snap.mockGuides.guides, 'the guides, if saved, are in the backup');
+  // ... and no Mock interview guides (taken out, 28 Nov 2026).
+  assert.ok(!('mockGuides' in snap), 'the backup holds no guides');
 
   // A burst of parallel bookings from one address cannot get past the hourly limit (the place is held before the body is read, so
   // sending them all at once does not help), and the ones that were turned away are told so.

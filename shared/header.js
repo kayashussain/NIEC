@@ -160,9 +160,8 @@
     activity: svg('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
     incentive: svg('<path d="M12 3v18M16.5 7.5C15.8 6.4 14.2 6 12.5 6 10.3 6 8.5 7 8.5 8.8c0 4 8 2 8 6.2 0 1.8-1.9 3-4.2 3-2 0-3.7-.6-4.5-1.8"/>'),
     events: svg('<path d="M4 14V8l12-4v14L4 14z"/><path d="M16 8a3 3 0 0 1 0 6M7 14v4a2 2 0 0 0 4 0v-3"/>'),
-    // The student's portal (a graduation cap) and the mock interview guides (a speech bubble).
+    // The student's portal (a graduation cap).
     portal: svg('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/>'),
-    mock: svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
     // Bookings (a calendar) and Interview guidelines (a document), the Mock Team's own pages (the owner, 22 Nov 2026).
     bookings: svg('<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
     guidelines: svg('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'),
@@ -177,7 +176,6 @@
     student: [['portal', '/my-portal', 'My portal']],
     branch: [['today', '/today', 'Today'], ['dashboard', '/my-dashboard', 'Dashboard'], ['sheet', '/students', 'All Students'], ['bulkadd', '/bulk-add', 'Add many students'], ['bulk', '/bulk', 'Follow-up'], ['factfile', '/fact-file', 'Universities']],
   };
-  const GUIDES_LINK = ['mock', '/mock-guides', 'Mock interview guides'];
   // The menu of an account: Admin and Manager have their own; a team gets the pages its work needs (a branch adds students, the Follow-up Team follows up).
   const kindOf = (me) => {
     if (me.role === 'student') return 'student';
@@ -206,9 +204,8 @@
     const deps = me.departments || [];
     // Interview guidelines, in place of Mock interviews (the owner, 26 Nov 2026), for every team to read (the owner, 27 Nov 2026).
     const after = [['guidelines', '/interview-guidelines', 'Interview guidelines']];
-    // Mock interview guides (the guides students read on their portal; only Admin publishes): in the menu of Admin, the Mock Team
-    // and the branches (the owner, 28 Nov 2026).
-    if (me.role === 'admin') return { before: [], after: [...after, GUIDES_LINK] };
+    // Mock interview guides were taken out of the portal (the owner, 28 Nov 2026).
+    if (me.role === 'admin') return { before: [], after };
     const manager = me.role === 'manager';
     const appMock = deps.some((d) => d === 'application' || d === 'mock');
     const branch = deps.some((d) => !['application', 'mock', 'followup'].includes(d));
@@ -261,8 +258,8 @@
     if (window.NiecApple) { if (appOwn) window.NiecApple.on(); else if (mockOwn) window.NiecApple.on('mock'); else if (fuOwn) window.NiecApple.on('follow'); else window.NiecApple.on(branchOwn && location.pathname === '/today' ? 'today' : 'all'); }
     const own = fuOwn ? [['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities']]
       // A branch (the owner, 26 Nov 2026): no Add many students and no Follow-up in its menu; Interview guidelines to read (27 Nov 2026).
-      : branchOwn ? [...LINKS.branch.filter(([id]) => !['bulkadd', 'bulk'].includes(id)), ['guidelines', '/interview-guidelines', 'Interview guidelines'], GUIDES_LINK]
-      : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines'], GUIDES_LINK]
+      : branchOwn ? [...LINKS.branch.filter(([id]) => !['bulkadd', 'bulk'].includes(id)), ['guidelines', '/interview-guidelines', 'Interview guidelines']]
+      : mockOwn ? [['today', '/today', 'Today'], ['bookings', '/bookings', 'Bookings'], ['sheet', '/students', 'All Students'], ['factfile', '/fact-file', 'Universities'], ['guidelines', '/interview-guidelines', 'Interview guidelines']]
         : (LINKS[kindOf(me)] || []).filter(([id]) => !(appOwn && id === 'dashboard'));
     const shared0 = sharedLinks(me);
     const extra = mockOwn || branchOwn ? { before: [], after: [] } :appOwn ? { before: shared0.before.filter(([id]) => id !== 'partners'), after: shared0.after } : shared0;

@@ -45,7 +45,7 @@ test('review fixes on the real server', { timeout: 120000 }, async (t) => {
   const rowOf = async (rid) => (await admin('GET', '/api/data')).json.sheets.flatMap((sh) => sh.rows).find((r) => r._id === rid);
 
   // A page closed to the Application Team stays closed by its file's own address too, and so do the bulk messages.
-  for (const page of ['/bulk.html', '/my-dashboard.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/dashboard.html']) {
+  for (const page of ['/bulk.html', '/my-dashboard.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/dashboard.html']) {
     assert.strictEqual((await app('GET', page)).status, 302, page);
   }
   assert.strictEqual((await app('GET', '/api/bulk/students')).status, 403);

@@ -3635,7 +3635,6 @@ html body .ui-empty { margin: 48px auto; max-width: 420px; text-align: center; }
 .mp-app-facts dt { color: var(--text-dim); }
 .mp-app-facts dd { margin: 0; color: var(--ink); font-weight: 500; }
 .mp-app-reason { font-size: .95rem; color: var(--text-dim); margin: 0; }
-.mp-app-guide { margin-top: auto; align-self: flex-start; }
 .mp-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .mp-tile { background: var(--panel); border-radius: 22px; padding: 24px; box-shadow: 0 2px 14px rgba(0, 0, 0, .05); }
 .mp-tile h3 { font-size: 1.25rem; margin: 0 0 8px; color: var(--ink); }
@@ -3652,105 +3651,17 @@ html body .ui-empty { margin: 48px auto; max-width: 420px; text-align: center; }
 .mp-precas { margin: 12px 0 0; font-weight: 600; border-radius: 12px; padding: 10px 14px; }
 .mp-precas.is-yes { background: var(--green-bg); color: var(--green-fg); }
 .mp-precas.is-no { background: var(--amber-bg); color: var(--amber-fg); }
-.mp-switch { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--soft); border-radius: 999px; padding: 4px; margin-bottom: 16px; }
-.mp-seg { border: 0; background: transparent; border-radius: 999px; padding: 9px 18px; font: inherit; font-size: 1rem; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: background .25s, color .25s, box-shadow .25s; }
-.mp-seg[aria-selected="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
 @media (max-width: 760px) {
   .mp-progress { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 18px; }
   .mp-step:nth-child(4)::before { display: none; }
   .mp-tiles { grid-template-columns: 1fr; }
 }
 
-/* The guide as a journey (guide-view.js), in the portal and in the team's preview. */
-.gv { display: flex; flex-direction: column; gap: 16px; }
-.gv-bar { height: 6px; border-radius: 6px; background: var(--soft); overflow: hidden; }
-.gv-bar-fill { display: block; height: 100%; width: 0; background: var(--primary); border-radius: 6px; transition: width .7s cubic-bezier(.2, .8, .2, 1); }
-.gv-rail { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.gv-step { width: 100%; height: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 16px; padding: 12px 14px; background: var(--panel); box-shadow: 0 1px 3px rgba(0, 0, 0, .06); font: inherit; color: var(--ink); cursor: pointer; transition: transform .25s, box-shadow .25s, background .25s; }
-.gv-step:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, .08); }
-.gv-step-n { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .95rem; background: var(--soft); color: var(--text-dim); }
-.gv-step-t { font-size: .95rem; font-weight: 600; line-height: 1.25; }
-.gv-step.is-done .gv-step-n { background: var(--green-bg); color: var(--green-fg); }
-.gv-step.is-current { box-shadow: 0 0 0 2px var(--primary), 0 8px 20px rgba(0, 113, 227, .12); }
-.gv-step.is-current .gv-step-n { background: var(--primary); color: var(--on-primary); }
-.gv-step.is-locked { opacity: .5; cursor: not-allowed; }
-.gv-phase { background: var(--panel); border-radius: 24px; padding: 32px 36px; box-shadow: 0 2px 18px rgba(0, 0, 0, .06); animation: mp-rise .45s cubic-bezier(.2, .8, .2, 1) both; }
-.gv-kicker { margin: 0; font-size: .95rem; font-weight: 600; color: var(--blue-text); }
-.gv-title { font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -.015em; margin: 4px 0 18px; color: var(--ink); }
-.gv-prose { font-size: 1.1rem; line-height: 1.6; color: var(--ink); max-width: 72ch; }
-.gv-prose h3 { font-size: 1.25rem; margin: 26px 0 8px; color: var(--ink); }
-.gv-prose h3:first-child { margin-top: 0; }
-.gv-prose p { margin: 0 0 12px; }
-.gv-prose ul, .gv-prose ol { margin: 0 0 14px; padding-left: 1.4em; }
-.gv-prose li { margin: 6px 0; }
-.gv-own { margin: 24px 0 8px; padding: 20px 22px; border-radius: 18px; background: var(--blue-bg); border-left: 4px solid var(--primary); }
-.gv-own-label { margin: 0 0 10px; font-weight: 700; color: var(--blue-fg); font-size: 1.05rem; }
-.gv-note { color: var(--text-dim); font-size: 1.05rem; background: var(--bg); border-radius: 14px; padding: 14px 16px; }
-.gv-videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 22px 0 6px; }
-.gv-video { margin: 0; }
-.gv-video-poster, .gv-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 16px; background: #1d1d1f center / cover no-repeat; cursor: pointer; position: relative; overflow: hidden; }
-.gv-video-poster::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, .35)); }
-.gv-play { position: absolute; z-index: 1; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(251, 251, 253, .92); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
-.gv-play::after { content: ""; position: absolute; left: 26px; top: 20px; border-style: solid; border-width: 12px 0 12px 19px; border-color: transparent transparent transparent var(--ink); }
-.gv-video-poster:hover .gv-play { transform: scale(1.1); }
-.gv-video figcaption { font-size: .95rem; color: var(--text-dim); margin-top: 8px; }
-.gv-questions { margin-top: 22px; }
-.gv-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-.gv-chip { border: 0; border-radius: 999px; padding: 8px 16px; background: var(--soft); font: inherit; font-size: .95rem; font-weight: 600; color: var(--ink); cursor: pointer; transition: background .2s, color .2s; }
-.gv-chip[aria-selected="true"] { background: var(--ink); color: var(--panel); }
-.gv-qcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
-.gv-q { background: var(--bg); border-radius: 18px; padding: 16px 18px; transition: background .25s, box-shadow .25s; animation: mp-rise .4s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(min(var(--i, 0), 12) * 35ms); }
-.gv-q[open] { background: var(--panel); box-shadow: 0 0 0 2px var(--primary); }
-.gv-q.is-own { background: var(--blue-bg); }
-.gv-q summary { list-style: none; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
-.gv-q summary::-webkit-details-marker { display: none; }
-.gv-q-group { font-size: .82rem; font-weight: 700; color: var(--blue-text); text-transform: uppercase; letter-spacing: .04em; }
-.gv-q-text { font-size: 1.1rem; font-weight: 600; color: var(--ink); line-height: 1.35; }
-.gv-q-hint { font-size: .88rem; color: var(--text-dim); }
-.gv-q[open] .gv-q-hint { display: none; }
-.gv-q-tip { margin-top: 10px; font-size: 1.02rem; line-height: 1.55; color: var(--ink); white-space: pre-wrap; animation: mp-rise .3s ease both; }
-.gv-links { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.gv-links h3 { flex-basis: 100%; font-size: 1.05rem; margin: 0 0 2px; color: var(--ink); }
-.gv-link { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 8px 16px; background: var(--soft); color: var(--link); font-weight: 600; text-decoration: none; transition: background .2s; }
-.gv-link::after { content: "↗"; font-size: .9em; }
-.gv-link:hover { background: var(--blue-bg); }
-.gv-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
-.gv-foot .gv-next { margin-left: auto; }
-.gv-empty { color: var(--text-dim); }
-@media (max-width: 900px) { .gv-rail { grid-template-columns: repeat(5, minmax(150px, 1fr)); overflow-x: auto; padding-bottom: 4px; } .gv-phase { padding: 24px 20px; } }
-
-/* Mock interviews, the team's page. */
-.mg-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
-.mg-card { text-align: left; border: 0; font: inherit; cursor: pointer; background: var(--panel); border-radius: 22px; padding: 22px; box-shadow: 0 2px 14px rgba(0, 0, 0, .05); display: flex; flex-direction: column; gap: 8px; transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s; animation: mp-rise .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
-.mg-card:hover { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(0, 0, 0, .09); }
-.mg-name { font-size: 1.3rem; margin: 0; color: var(--ink); }
-.mg-summary { margin: 0; color: var(--text-dim); font-size: 1rem; line-height: 1.45; }
-.mg-meta { margin: auto 0 0; font-size: .9rem; color: var(--text-dim); }
-.mg-status { align-self: flex-start; font-size: .85rem; font-weight: 600; border-radius: 999px; padding: 4px 12px; }
-.mg-status.is-empty { background: var(--gray-bg); color: var(--gray-fg); }
-.mg-status.is-draft { background: var(--amber-bg); color: var(--amber-fg); }
-.mg-status.is-live { background: var(--green-bg); color: var(--green-fg); }
-.mg-status.is-changed { background: var(--blue-bg); color: var(--blue-fg); }
-.mg-ed-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 18px; }
-.mg-ed-head h2 { margin: 0; font-size: 1.8rem; letter-spacing: -.01em; color: var(--ink); }
-.mg-form { display: flex; flex-direction: column; gap: 16px; }
-.mg-field { display: flex; flex-direction: column; gap: 6px; background: var(--panel); border-radius: 18px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, .05); }
-.mg-label { font-weight: 600; color: var(--ink); }
-.mg-phase { background: var(--panel); border-radius: 18px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, .05); display: flex; flex-direction: column; gap: 8px; }
-.mg-phase h3 { margin: 0 0 4px; font-size: 1.2rem; color: var(--ink); }
-.mg-phase h4 { margin: 8px 0 0; font-size: .95rem; color: var(--text-dim); }
-.mg-body { font-size: 1rem; line-height: 1.5; min-height: 8em; }
-.mg-rows { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-.mg-rows > div { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-.mg-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(200px, 2fr) auto; gap: 8px; align-items: start; }
-.mg-row:has(textarea) { grid-template-columns: minmax(110px, .7fr) minmax(200px, 1.6fr) minmax(220px, 2fr) auto; }
-.mg-bar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; padding: 14px 18px; border-radius: 18px; background: rgba(251, 251, 253, .9); backdrop-filter: saturate(180%) blur(16px); -webkit-backdrop-filter: saturate(180%) blur(16px); box-shadow: 0 -2px 18px rgba(0, 0, 0, .06); }
-.mg-note { margin-left: 6px; }
-@media (max-width: 760px) { .mg-row, .mg-row:has(textarea) { grid-template-columns: 1fr; } }
+/* 🔴 CSS CHANGED (2026-11-28): the Mock interview guides were taken out of the portal | from: the guide reader (.gv-*), the team's guides page (.mg-*) and the portal's guide switch (.mp-switch, .mp-seg, .mp-app-guide) | to: removed with the feature */
 
 @keyframes mp-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes mp-pulse { 0%, 100% { box-shadow: 0 0 0 3px var(--primary), 0 0 0 0 rgba(0, 113, 227, .35); } 50% { box-shadow: 0 0 0 3px var(--primary), 0 0 0 10px rgba(0, 113, 227, 0); } }
-@media (prefers-reduced-motion: reduce) { .mp-hero, .mp-step, .mp-app, .gv-phase, .gv-q, .gv-q-tip, .mg-card { animation: none; } .mp-step.is-now .mp-dot { animation: none; } .gv-bar-fill { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .mp-hero, .mp-step, .mp-app { animation: none; } .mp-step.is-now .mp-dot { animation: none; } }
 
 /* 🔴 CSS CHANGED (2026-11-20): second review pass of the Universities pages | from: a 30px cover pause button, a flat blue cover where a page has no picture, "Not given" in the Apply by tile as bold as a date, long scholarship text making course cards uneven, the Shortlist row floating at different heights, the place under a university's name hard to read on bright pictures, a double margin around course cards on a phone | to: a 44px tap area round the cover pause button (the visible circle stays small); a cover with no picture as a soft blue light with a gentle highlight, a little lower; "Not given" in calm grey; scholarship and fee text at most two lines on a course card (the whole text on hover); the Shortlist row always at the foot of its card; a soft shadow under the place and chips on the cover; course cards using the full phone width */
 html body .up-dots .up-hero-play { width: 44px; height: 44px; margin: -7px -3px -7px -7px; background: radial-gradient(circle, rgba(29, 29, 31, .42) 0 15px, transparent 15.5px); }
@@ -3863,8 +3774,6 @@ body:has(#sheet) .save-status::before, body:has(#sheet) #status::before { backgr
 /* Follow-up choices */
 .fw-choice { background: #f3f3f3; }
 .fw-choice-ico { filter: grayscale(1); box-shadow: none; }
-/* Mock interviews */
-.mg-status { font-size: 14px; font-weight: 600; }
 /* 🔴 CSS CHANGED (2026-11-21): the last colours of the calm pass | from: on the Dashboard chart, orange dashed lines and orange names for events; on partner cards, a green Visas bar; on Activity, a red "Clear activity" at rest | to: grey dashed lines with grey names; a near-black Visas bar like the other bars' calm; "Clear activity" grey until the mouse is on it (then red, as it asks before clearing) */
 .tr-mark-line { stroke: #a1a1a6; }
 .tr-mark-label { fill: #6e6e73; }
@@ -4006,13 +3915,13 @@ html body .niec-header { background: #ececec; border-right-color: #b8b8b8; }
    Apply through), Events and marketing, Follow-up, Mock interviews, Add many students, Users, Activity, Admin and Incentive. ---- */
 /* 🔴 CSS CHANGED (2026-11-21): one card style on every page | from: two looks side by side: Today, Dashboard, All Students and Universities with firm 10px cards and a grey border, while Partners, Events, Follow-up, Mock interviews, Add many students, Users, Activity, Admin and Incentive had round 18 to 22px cards with no border and a soft shadow; the lines inside Today's team columns and the Universities cards still pale (#dcdee3) | to: every card and panel the same: 10px corners, a firm 1px grey border (#9a9a9a), the panel grey #f3f3f3, no shadow; tiles inside a card 8px corners, a lighter border (#b8b8b8) on #e2e2e2; Follow-up's bar at the foot solid #f3f3f3 instead of see-through near-white */
 :root { --lg-soft: #b8b8b8; --uv-soft: #b8b8b8; }
-html:root body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .mg-card, .p-card, .p-table-wrap, .card, .tile, .box) {
+html:root body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .p-card, .p-table-wrap, .card, .tile, .box) {
   border: 1px solid #9a9a9a !important; border-radius: 10px !important; background: #f3f3f3 !important; box-shadow: none !important;
 }
 html:root body #summary .tile { border: 1px solid #9a9a9a !important; border-radius: 10px !important; background: #f3f3f3 !important; box-shadow: none !important; }
 html:root body .bp-band { border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
 html body :is(.bp-funnel, .bp-band .bp-funnel) { border: 1px solid #b8b8b8 !important; border-radius: 8px !important; background: #e2e2e2 !important; box-shadow: none !important; }
-html:root body :is(.fw-choice, .mg-card, .bp-card):hover { border-color: #6f6f6f !important; transform: none !important; }
+html:root body :is(.fw-choice, .bp-card):hover { border-color: #6f6f6f !important; transform: none !important; }
 html:root body .fw-choice:is([aria-pressed="true"], [aria-checked="true"], .on, .is-on) { border-color: #0071e3 !important; box-shadow: 0 0 0 2px #0071e3 inset !important; }
 
 /* 🔴 CSS CHANGED (2026-11-21): a Dashboard in colour (the owner: "the dashboard can be much more colourful than black and white") | from: chart colours blue, grey and black (Applied black, Offers grey, Paid and CAS pale grey), a small 34px colour mark on each number tile | to: the Student Recruit 360 chart colours (CLAUDE.md): Students and Applied blue #0071e3, Offers purple #6e47d1, Paid orange #d9650b, Visas green #1e8e4a, Inquiries teal #0b8a95; each number tile has its colour as a 4px band across its top and in its little chart; the numbers stay black for reading */

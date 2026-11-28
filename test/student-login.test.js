@@ -54,7 +54,7 @@ test('a student login opens their own portal only', { timeout: 120000 }, async (
   for (const [method, url] of [['GET', '/api/data'], ['GET', '/api/revision'], ['GET', `/api/cards/${sita}`], ['GET', `/api/cards/${other}`], ['GET', '/api/students/search?q=hari'], ['GET', '/api/tasks'], ['GET', '/api/today'],
     ['GET', '/api/dashboard'], ['GET', '/api/users'], ['GET', '/api/b2b'], ['GET', '/api/direct'], ['GET', '/api/events'], ['GET', '/api/backup/students.json'], ['GET', '/api/bulk/students'], ['GET', '/api/courses?q=nursing'],
     ['POST', '/api/data'], ['POST', '/api/students/new'], ['POST', `/api/cards/${sita}/notes`], ['POST', '/api/facts'], ['POST', '/api/push/whatsapp'], ['GET', '/api/my-mail'], ['GET', '/api/course-watch'],
-    ['GET', '/api/facts'], ['GET', '/api/fact-courses?university=x'], ['GET', '/api/shortlist'], ['POST', '/api/shortlist'], ['POST', '/api/eligibility'], ['GET', '/api/mock-guides']]) {
+    ['GET', '/api/facts'], ['GET', '/api/fact-courses?university=x'], ['GET', '/api/shortlist'], ['POST', '/api/shortlist'], ['POST', '/api/eligibility']]) {
     const r = await stu(method, url, method === 'POST' ? {} : undefined);
     assert.ok([403, 401].includes(r.status), `${method} ${url} is refused (got ${r.status})`);
     assert.ok(!/Hari|9800000102|hari@example/.test(r.text), `${url} says nothing about another student`);

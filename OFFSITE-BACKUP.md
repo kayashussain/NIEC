@@ -10,7 +10,7 @@ This file holds no keys or passwords. Never write them in git, in this file or i
 
 - Every daily (6 p.m.), manual ("Back up now") and "before restore" backup: students, student cards and tasks, Universities,
   Partner Universities, B2B partners, agents, Dashboard records and events, message settings, Mock bookings, interview guidelines
-  list, mock interview guides, Apply through, and the Incentive figures.
+  list, Apply through, and the Incentive figures.
 - Each file is encrypted on the server with your passphrase before it is sent. The storage company sees only scrambled data.
 
 **Not in it:** user accounts and their passwords, uploaded files (agreements, interview guideline files, signatures) and the key file

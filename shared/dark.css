@@ -3394,18 +3394,6 @@ html[data-theme="dark"] .up-level-note {
 html[data-theme="dark"] .mp-tile-book {
   background: linear-gradient(160deg, #192b42 0%, var(--panel) 60%);
 }
-html[data-theme="dark"] .gv-video-poster, html[data-theme="dark"] .gv-video iframe {
-  background: #565656 center / cover no-repeat;
-}
-html[data-theme="dark"] .gv-video-poster::after {
-  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.35));
-}
-html[data-theme="dark"] .gv-play {
-  background: rgba(37, 37, 37, 0.92);
-}
-html[data-theme="dark"] .mg-bar {
-  background: rgba(37, 37, 37, 0.9);
-}
 html[data-theme="dark"] body .up-dots .up-hero-play {
   background: radial-gradient(circle, rgba(86, 86, 86, 0.42) 0 15px, transparent 15.5px);
 }
@@ -3706,7 +3694,7 @@ html[data-theme="dark"] body .niec-header {
   --lg-soft: #444444;
   --uv-soft: #444444;
 }
-html[data-theme="dark"]:root body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .mg-card, .p-card, .p-table-wrap, .card, .tile, .box) {
+html[data-theme="dark"]:root body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .p-card, .p-table-wrap, .card, .tile, .box) {
   border-color: #6b6e72 !important;
   background: #292a2d !important;
 }
@@ -3718,7 +3706,7 @@ html[data-theme="dark"] body :is(.bp-funnel, .bp-band .bp-funnel) {
   border-color: #5f6368 !important;
   background: #3c4043 !important;
 }
-html[data-theme="dark"]:root body :is(.fw-choice, .mg-card, .bp-card):hover {
+html[data-theme="dark"]:root body :is(.fw-choice, .bp-card):hover {
   border-color: #80868b !important;
 }
 html[data-theme="dark"]:root body .fw-choice:is([aria-pressed="true"], [aria-checked="true"], .on, .is-on) {
@@ -5840,7 +5828,7 @@ html[data-theme="dark"]:root:not(.app-only) body :is(.ov-card, .p-card, .card, .
 html[data-theme="dark"]:root:not(.app-only) body :is(.ov-card, .p-card, .card, .ev-ledger) table :is(th, td) {
   border-color: #282828;
 }
-html[data-theme="dark"]:root:not(.app-only) body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .mg-card, .p-card, .p-table-wrap, .card, .tile, .box, .ov-card, .ov-kpi, .td-tasks, .td-pulse, .td-attn), html[data-theme="dark"]:root:not(.app-only) body #summary .tile {
+html[data-theme="dark"]:root:not(.app-only) body :is(.bp-card, .bp-band > div, .ev-band, .ev-ledger, .fw-screen, .fw-choice, .fw-foot, .p-card, .p-table-wrap, .card, .tile, .box, .ov-card, .ov-kpi, .td-tasks, .td-pulse, .td-attn), html[data-theme="dark"]:root:not(.app-only) body #summary .tile {
   background: #292a2d !important;
 }
 html[data-theme="dark"]:root:not(.app-only) body :is(.bp-funnel, .bp-band .bp-funnel) {

@@ -1,33 +1,18 @@
-// The student's own portal and the mock interview guides (the owner, 20 Nov 2026).
+// The student's own portal (the owner, 20 Nov 2026).
 //
 //   A student's login opens only their own portal (/my-portal): hello by name, every university applied to with its decision and
 //   deadline, a progress line (Applied, Offer, Mock interview, Payment, CAS, Visa), the mock interviews held so far with the team's
-//   feedback (the sheet's Mock Schedule and Feedback columns), and the mock interview guide of each university, read phase by phase.
-//   A student reads published guides only, and only for the universities they applied to (plus the guide every student reads).
-//
-//   The guides (/mock-guides) are written by the Mock Team, the branches, the Manager and Admin; only Admin publishes one to students
-//   (the owner, 28 Nov 2026: Mock interview guides in the menu of Admin, the Mock Team and the branches).
+//   feedback (the sheet's Mock Schedule and Feedback columns). The mock interview guides were taken out (the owner, 28 Nov 2026).
 //
 // Nothing here sends an email: emails to students stay off until the owner says to start (the owner, 20 Nov 2026).
 
-const { sendJSON, readJSONBody } = require('../shared/server-utils');
+const { sendJSON } = require('../shared/server-utils');
 const Teams = require('../shared/teams');
-const { PHASES } = require('./mock-guides');
 
 const text = (v) => String(v ?? '').trim();
 const ISO = /^\d{4}-\d{2}-\d{2}/;
 
-// Who works on the guides: Admin, the Manager, the Mock Team and the branches. Only Admin publishes, so a draft reaches no student
-// before Admin has read it.
-const guideAccess = (user) => {
-  if (!user || Teams.isStudent(user)) return null;
-  if (user.role === 'admin') return 'publish';
-  const deps = user.departments || [];
-  if (user.role === 'manager' || deps.includes('mock') || deps.some((d) => Teams.DEPARTMENTS[d] && Teams.DEPARTMENTS[d].source)) return 'edit';
-  return null;
-};
-
-function createMockApi({ guides, portal, cards, facts, direct, activity, isoDate }) {
+function createMockApi({ portal, cards, facts, isoDate }) {
   const dateOf = (v) => { const d = isoDate ? isoDate(v) : ''; return d && ISO.test(d) ? d.slice(0, 10) : ''; };
 
   // The progress line: each step is done when the sheet has its date (or result).
@@ -69,18 +54,14 @@ function createMockApi({ guides, portal, cards, facts, direct, activity, isoDate
     // A deadline matters only before the CAS: a student who has it is past every application deadline.
     const pastDeadlines = progress.some((s) => s.key === 'cas' && s.state === 'done');
     const applications = apps.map((a) => {
-      const guide = guides.forName(a.university);
-      const view = guide ? guides.view(guide.key, 'published') : null;
       const decision = a.withdrawn ? 'Withdrawn' : a.refused ? 'Refused' : a.offer ? (a.offerType ? `${a.offerType} offer` : 'Offer') : 'Waiting for the decision';
       return {
         university: a.university, course: a.course, applied: a.applied, offer: a.offer, refused: a.refused, withdrawn: a.withdrawn, reason: a.refused || a.withdrawn ? a.reason || '' : '',
         decision, main: Boolean(main) && a.university.toLowerCase() === main,
         deadline: a.refused || a.withdrawn || pastDeadlines ? null : deadlineOf(a.university),
-        guide: guide && view && view.ownGuide ? guide.key : '',
       };
     });
     const mocks = [1, 2, 3, 4].map((n) => ({ n, date: text(row[`MOCK SCHEDULE ${n}`]), feedback: text(row[`FEEDBACK ${n}`]) })).filter((m) => m.date || m.feedback);
-    const core = guides.view(null, 'published');
     return {
       linked: true,
       firstName: text(row['FIRST NAME']) || text(user.name).split(/\s+/)[0] || '',
@@ -89,13 +70,7 @@ function createMockApi({ guides, portal, cards, facts, direct, activity, isoDate
       applications,
       mocks,
       preCas: text(row['PRE CAS INTERVIEW']),
-      coreGuide: Boolean(core),
-      phases: PHASES,
     };
-  }
-
-  async function body(req, res, max = 256 * 1024) {
-    try { return await readJSONBody(req, max); } catch (e) { sendJSON(res, 400, { error: 'That could not be read.' }); return null; }
   }
 
   async function handle(req, res, urlPath) {
@@ -105,86 +80,14 @@ function createMockApi({ guides, portal, cards, facts, direct, activity, isoDate
       if (!Teams.isStudent(user)) { sendJSON(res, 403, { error: 'This is for a student\'s own login.' }); return true; }
       const me = studentView(user);
       if (urlPath === '/api/my-portal' && req.method === 'GET') { sendJSON(res, 200, me); return true; }
-      if (!me.linked) { sendJSON(res, 400, { error: 'Your login is not linked to your file yet. Please ask the office.' }); return true; }
-      const rowId = text(user.studentRow);
-      // The guide for one of the student's universities, or "core" (published only).
-      const g = urlPath.match(/^\/api\/my-portal\/guide\/([a-z0-9]{1,120})$/);
-      if (g && req.method === 'GET') {
-        const key = g[1];
-        if (key !== 'core' && !me.applications.some((a) => a.guide === key)) { sendJSON(res, 404, { error: 'No guide for that university yet.' }); return true; }
-        const view = guides.view(key === 'core' ? null : key, 'published');
-        if (!view) { sendJSON(res, 404, { error: 'Your guide is being prepared. Please check again soon.' }); return true; }
-        sendJSON(res, 200, { ...view, read: guides.readOf(rowId, view.key) });
-        return true;
-      }
-      if (urlPath === '/api/my-portal/read' && req.method === 'POST') {
-        const b = await body(req, res, 4096);
-        if (!b) return true;
-        const key = text(b.guide);
-        if (key !== 'core' && !me.applications.some((a) => a.guide === key)) { sendJSON(res, 404, { error: 'No such guide.' }); return true; }
-        const out = guides.markRead(rowId, key, text(b.phase));
-        if (out.error) { sendJSON(res, 400, out); return true; }
-        sendJSON(res, 200, out);
-        return true;
-      }
       sendJSON(res, 404, { error: 'Not found' });
       return true;
     }
 
-    // ---- The guides, for the team ----
-    if (urlPath === '/api/mock-guides' || urlPath.startsWith('/api/mock-guides/')) {
-      const level = guideAccess(user);
-      if (!level) { sendJSON(res, 403, { error: 'The mock interview guides are for Admin, the Manager, the Mock Team and the branches.' }); return true; }
-      const record = (what) => activity.record(req, user, 'Edited mock interview guide', { app: 'Mock interviews', changes: [what] });
-      if (urlPath === '/api/mock-guides' && req.method === 'GET') {
-        const have = guides.list();
-        // The Partner Universities with no guide yet, to start one (OIEG and Navitas are groups of colleges, not one university).
-        const free = (direct ? direct.all() : []).map((u) => u.name).filter((n) => !/^(navitas|oxford international)/i.test(n) && !guides.forName(n)).sort((a, b) => a.localeCompare(b));
-        sendJSON(res, 200, { canPublish: level === 'publish', phases: PHASES, guides: have, universities: free });
-        return true;
-      }
-      if (urlPath === '/api/mock-guides' && req.method === 'POST') {
-        const b = await body(req, res, 4096);
-        if (!b) return true;
-        const out = guides.create(b.name, user.label || user.name);
-        if (out.error) { sendJSON(res, 400, out); return true; }
-        record(`Started a mock interview guide for ${out.guide.name}`);
-        sendJSON(res, 200, out.guide);
-        return true;
-      }
-      const m = urlPath.match(/^\/api\/mock-guides\/([a-z0-9]{1,120})(?:\/(publish|unpublish|preview))?$/);
-      if (!m) { sendJSON(res, 404, { error: 'Not found' }); return true; }
-      const [, key, action] = m;
-      const g = guides.get(key);
-      if (!g) { sendJSON(res, 404, { error: 'No such guide.' }); return true; }
-      if (!action && req.method === 'GET') { sendJSON(res, 200, g); return true; }
-      // The guide as a student would read it: the draft (what the team is writing) or the published copy.
-      if (action === 'preview' && req.method === 'GET') {
-        const which = new URL(req.url, 'http://x').searchParams.get('which') === 'published' ? 'published' : 'draft';
-        sendJSON(res, 200, guides.view(key === 'core' ? null : key, which) || { phases: [], questions: [] });
-        return true;
-      }
-      if (req.method !== 'POST') { sendJSON(res, 405, { error: 'Method not allowed' }); return true; }
-      if (!action) {
-        const b = await body(req, res);
-        if (!b) return true;
-        const out = guides.saveDraft(key, b, user.label || user.name);
-        if (out.error) { sendJSON(res, 400, out); return true; }
-        record(`Saved the draft of the ${g.name} guide`);
-        sendJSON(res, 200, out.guide);
-        return true;
-      }
-      if (level !== 'publish') { sendJSON(res, 403, { error: 'Only Admin publishes a guide to students.' }); return true; }
-      const out = action === 'publish' ? guides.publish(key, user.label || user.name) : guides.unpublish(key, user.label || user.name);
-      if (out.error) { sendJSON(res, 400, out); return true; }
-      record(action === 'publish' ? `Published the ${g.name} guide to students` : `Took the ${g.name} guide back from students`);
-      sendJSON(res, 200, out.guide);
-      return true;
-    }
     return false;
   }
 
   return { handle, studentView };
 }
 
-module.exports = { createMockApi, guideAccess };
+module.exports = { createMockApi };

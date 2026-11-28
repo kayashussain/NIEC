@@ -28,7 +28,7 @@ const WATCHED = [
   ['data.json', 'Students'], ['cards.json', 'Student cards and tasks'], ['users.json', 'Accounts'],
   ['fact-file.json', 'Universities'], ['direct-universities.json', 'Partner Universities'], ['b2b-partners.json', 'B2B partners'],
   ['agents.json', 'Agents'], ['planning.json', 'Dashboard records and events'], ['mock-bookings.json', 'Mock bookings'],
-  ['mock-guidelines.json', 'Interview guidelines'], ['mock-guides.json', 'Mock guides'], ['apply-through.json', 'Apply through'],
+  ['mock-guidelines.json', 'Interview guidelines'], ['apply-through.json', 'Apply through'],
   ['message-templates.json', 'Message templates'], ['source-options.json', 'Source choices'], ['course-links.json', 'Course links'],
   ['counselor-incentive/commissions.json', 'Incentive commissions'], ['counselor-incentive/advances.json', 'Incentive advances'],
 ];

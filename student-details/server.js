@@ -36,8 +36,7 @@ const { createSourceOptions } = require('./source-options');
 const CardFields = require('./card-fields');
 const { createB2b } = require('./b2b');
 const { createApplyThrough } = require('./apply-through');
-const { createMockGuides } = require('./mock-guides');
-const { createMockApi, guideAccess } = require('./mock-api');
+const { createMockApi } = require('./mock-api');
 const { createMockBookings } = require('./mock-bookings');
 const { createMockGuidelines } = require('./mock-guidelines');
 const { createMockTeamApi, bookingsAccess, guidelinesAccess } = require('./mock-team-api');
@@ -166,9 +165,6 @@ const STATIC_FILES = {
   '/apply-through-page.js': 'text/javascript; charset=utf-8',
   '/my-portal.html': 'text/html; charset=utf-8',
   '/my-portal-page.js': 'text/javascript; charset=utf-8',
-  '/mock-guides.html': 'text/html; charset=utf-8',
-  '/mock-guides-page.js': 'text/javascript; charset=utf-8',
-  '/guide-view.js': 'text/javascript; charset=utf-8',
   '/dashboard-insights.js': 'text/javascript; charset=utf-8',
   '/fact-finder.js': 'text/javascript; charset=utf-8',
   '/fact-present.js': 'text/javascript; charset=utf-8',
@@ -237,8 +233,8 @@ const backups = createBackups(DATA_DIR, () => ({
   cards: cards.all(), b2b: b2b.sealedAll(), agents: agents.sealedAll(), planning: planning.all(), templates: messages.stored(), sourceOptions: sourceOptions.stored(),
   // The Mock Team's bookings and the list of interview guidelines (the files themselves stay in guideline-files/, as agreement files do).
   mockBookings: mockBookings.all(), mockGuidelines: mockGuidelines.all(),
-  // The Mock interview guides (drafts, published copies, each student's reading progress) and Admin's Apply through choices.
-  mockGuides: mockGuides.all(), applyThrough: applyThrough.stored(),
+  // Admin's Apply through choices.
+  applyThrough: applyThrough.stored(),
   // The Incentive page's own figures are kept in the same daily copy, so a lost or damaged file can be found again. They stay in the
   // file on the server only: no page shows this part of a backup, so nothing gets past the Incentive password.
   incentives: { commissions: readIncentiveFile('commissions.json', null), advances: readIncentiveFile('advances.json', null) },
@@ -309,7 +305,7 @@ const advisorWrite = createAdvisorWrite({
 // login. The Claude connector above does not go through any of this: it reads the same data folder with its own secret address.
 const incentiveLock = createIncentiveLock();
 const PAGE_PATHS = new Set(['/', '/students', '/dashboard', '/users', '/activity', '/partner-universities', '/fact-file', '/admin',
-  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/apply-through', '/events', '/mock-guides', '/my-portal', '/bookings', '/interview-guidelines']);
+  '/student', '/bulk', '/bulk-add', '/today', '/my-dashboard', '/wa', '/b2b-partners', '/agents', '/partners', '/apply-through', '/events', '/my-portal', '/bookings', '/interview-guidelines']);
 const incentive = createIncentive({ dataDir: INCENTIVE_DIR, studentDataFile: DATA_FILE, getWorkbook: () => current, activity });
 
 async function handleIncentive(req, res, urlPath) {
@@ -1154,10 +1150,10 @@ const portal = createPortalApi({
   safetyCopy: () => backups.create('manual'),
   mockTeam: () => portalBookings,
   offsiteOn: () => offsite.enabled(),
-});// Mock interview guides and the student's own portal (the owner, 20 Nov 2026; mock-guides.js, mock-api.js). The first drafts are
-// written once, for the universities among Partner Universities.
-const mockGuides = createMockGuides(DATA_DIR, { universities: () => direct.all().map((u) => u.name) });
-const mockApi = createMockApi({ guides: mockGuides, portal, cards, facts, direct, activity, isoDate: require('./dashboard-stats').isoDate });
+});
+// The student's own portal (the owner, 20 Nov 2026; mock-api.js). The Mock interview guides were taken out (the owner, 28 Nov 2026):
+// an older backup that still holds them restores everything else.
+const mockApi = createMockApi({ portal, cards, facts, isoDate: require('./dashboard-stats').isoDate });
 // Bookings and Interview guidelines (mock-team-api.js). The emails go from the consultancy's own mailbox (Users, email settings).
 const mockTeam = createMockTeamApi({
   bookings: mockBookings, guidelines: mockGuidelines, portal, cards, facts, accounts, activity, mailer: require('../shared/mailer'),
@@ -1404,9 +1400,8 @@ async function handleRestore(req, res, urlPath) {
     if (snap.sourceOptions) sourceOptions.restoreAll(snap.sourceOptions);
     if (snap.mockBookings) mockBookings.restoreAll(snap.mockBookings);
     if (snap.mockGuidelines) mockGuidelines.restoreAll(snap.mockGuidelines);
-    if (snap.mockGuides) mockGuides.restoreAll(snap.mockGuides);
     if (Array.isArray(snap.applyThrough)) applyThrough.restoreAll(snap.applyThrough);
-    done.push('the B2B partners, the Dashboard records, the email settings and the consultancy name, the Mock Team\'s bookings and guidelines list, the Mock interview guides and the Apply through choices');
+    done.push('the B2B partners, the Dashboard records, the email settings and the consultancy name, the Mock Team\'s bookings and guidelines list and the Apply through choices');
   }
   activity.record(req, req.user, 'Restored data', { app: 'Student Details', changes: [`Restored ${done.join(', ')} from the backup ${id}. The data as it was before is saved as ${safety}`] });
   return sendJSON(res, 200, { ok: true, restored: done, safety });
@@ -1530,7 +1525,7 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
     if (req.method === 'GET') {
       const page = {
         '/students': 'index.html', '/dashboard': 'dashboard.html', '/users': 'users.html', '/activity': 'activity.html', '/partner-universities': 'direct.html',
-        '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/mock-guides': 'mock-guides.html', '/events': 'events.html', '/bookings': 'bookings.html', '/interview-guidelines': 'interview-guidelines.html',
+        '/student': 'student.html', '/wa': 'wa.html', '/bulk': 'bulk.html', '/bulk-add': 'bulk-add.html', '/today': 'today.html', '/my-dashboard': 'my-dashboard.html', '/b2b-partners': 'b2b.html', '/agents': 'agents.html', '/apply-through': 'apply-through.html', '/events': 'events.html', '/bookings': 'bookings.html', '/interview-guidelines': 'interview-guidelines.html',
       }[urlPath];
       // The Follow-up Team works from All Students (its follow-up list) and Universities only (the owner, 21 Nov 2026): no Today, no
       // Dashboard, no Follow-up page (messages to many students stay with Admin and the branches).
@@ -1543,10 +1538,10 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
       // no Mock interviews for anyone whose own team is Application (Apply now on a university still shows the partner and its portal).
       // Nor Follow-up (the owner, 22 Nov 2026): following students up is not the Application Team's work.
       // Also by the file's own address ("/bulk.html"), so a page closed to the team cannot be opened by typing it (review, 22 Nov 2026).
-      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/mock-guides', '/bulk', '/bulk-add',
-        '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/mock-guides.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
-      // The Mock Team works from Today, Bookings, All Students, Universities, Interview guidelines and Mock interview guides (the owner,
-      // 22 and 28 Nov 2026): no Dashboard, no Partners pages, no Follow-up.
+      if (ownTeamApplication(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/bulk', '/bulk-add',
+        '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
+      // The Mock Team works from Today, Bookings, All Students, Universities and Interview guidelines (the owner, 22 Nov 2026): no
+      // Dashboard, no Partners pages, no Follow-up.
       if (ownTeamMock(req.user) && ['/dashboard', '/my-dashboard', '/partners', '/partner-universities', '/b2b-partners', '/agents', '/apply-through', '/bulk', '/bulk-add',
         '/dashboard.html', '/my-dashboard.html', '/partners.html', '/direct.html', '/b2b.html', '/agents.html', '/apply-through.html', '/bulk.html', '/bulk-add.html'].includes(urlPath)) return send(res, 302, '', { Location: home });
       // A branch works from Today, Dashboard, All Students and Universities (the owner, 26 Nov 2026): no Add many students, no Follow-up
@@ -1579,7 +1574,7 @@ const server = http.createServer(require('./base-path').wrap(async (req, res) =>
         // Every account opens the sheet and a student card (each shows only the students the account sees); the Dashboard is for
         // Admin and the Manager; the partner pages as partner-access.js says; the rest is Admin's.
         const access = partnerAccess(req.user);
-        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/apply-through': access.applyThrough, '/mock-guides': guideAccess(req.user), '/bookings': bookingsAccess(req.user), '/interview-guidelines': guidelinesAccess(req.user) }[urlPath];
+        const shared = { '/partner-universities': access.direct, '/b2b-partners': access.b2b, '/agents': access.agents, '/apply-through': access.applyThrough, '/bookings': bookingsAccess(req.user), '/interview-guidelines': guidelinesAccess(req.user) }[urlPath];
         const allowed = Boolean(shared) || ['/students', '/student', '/wa', '/today', '/my-dashboard'].includes(urlPath) || (['/bulk', '/bulk-add'].includes(urlPath) && !isReadOnly(req.user)) || (['/dashboard', '/events'].includes(urlPath) ? (isAdmin(req.user) || isManager(req.user)) : isAdmin(req.user));
         if (!allowed) return send(res, 302, '', { Location: home + (String(home).includes('?') ? '&' : '?') + 'notice=admin' });
         req.url = '/' + page;
