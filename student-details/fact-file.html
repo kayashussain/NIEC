@@ -18,29 +18,46 @@
 </head>
 <body>
   <header class="niec-header" data-page="factfile"></header>
-  <main class="page ff-page">
+  <!-- Universities (the owner approved the design on 28 Nov 2026): What, Where and How far; All filters and three quick lists; the
+       chosen filters under them; every university as a card, with a UK map when a place is given. -->
+  <main class="page ff-page us-page">
     <div class="page-head">
       <div>
         <h1>Universities</h1>
         <p>Deadlines, entry requirements, fees and courses.</p>
       </div>
-      <div class="toolbar">
-        <input class="search" id="search" type="search" placeholder="Search a university or a course   ( / )" aria-label="Search universities and courses" autocomplete="off" />
-      </div>
     </div>
+    <section class="us-search no-print" id="usSearch" aria-label="Search">
+      <div class="us-fields">
+        <label class="us-field us-what">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.8-3.8"></path></svg>
+          <span class="us-field-words"><span class="us-field-label">What</span><input id="search" type="search" placeholder="Course, subject or university" aria-label="Search universities and courses" autocomplete="off" /></span>
+          <button type="button" class="us-clear" id="searchClear" aria-label="Clear the search" hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"></path></svg></button>
+        </label>
+        <label class="us-field us-where">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>
+          <span class="us-field-words"><span class="us-field-label">Where</span><input id="usPlace" list="usTowns" placeholder="Town or postcode" aria-label="Where: a town or postcode" autocomplete="off" /></span>
+        </label>
+        <label class="us-field us-far">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle><circle cx="12" cy="12" r="1"></circle></svg>
+          <span class="us-field-words"><span class="us-field-label">How far</span><select id="usRadius" aria-label="How far the student can travel"><option value="">Any distance</option><option value="10">Within 10 miles</option><option value="25">Within 25 miles</option><option value="50">Within 50 miles</option><option value="100">Within 100 miles</option></select></span>
+        </label>
+        <button type="button" class="us-go" id="usGo">Search</button>
+      </div>
+      <datalist id="usTowns"></datalist>
+      <p class="us-bad" id="usBad" hidden>We could not find that town or postcode. Try a town such as Coventry, or a postcode such as CV1.</p>
+      <div class="us-quick" id="usQuick"></div>
+      <div class="us-chips" id="usChips" hidden></div>
+    </section>
     <div class="msg" id="msg" role="status"></div>
-    <div class="ff-row no-print">
-    <div class="ff-bar no-print" id="ffBar" hidden>
-      <div class="p-seg ff-kind" role="group" aria-label="Universities or pathway colleges" id="ffKind">
-        <button type="button" data-k="university" class="on" aria-pressed="true">Universities</button>
-        <button type="button" data-k="pathway" aria-pressed="false">Pathway colleges</button>
-      </div>
-    </div>
-    <div class="ff-soon no-print" id="ffSoon" hidden></div>
-    </div>
+    <div class="us-bar no-print" id="usBar" hidden></div>
     <div class="count" id="count" aria-live="polite"></div>
-    <div class="cards" id="cards"></div>
+    <div class="us-results" id="usResults">
+      <aside class="us-mapcard" id="usMapCard" aria-label="Map" hidden></aside>
+      <div class="cards" id="cards"></div>
+    </div>
   </main>
+  <div class="us-modal-wrap" id="usModal" hidden></div>
 <script src="session.js"></script>
 <script src="ui.js"></script>
 <script src="header.js"></script>
@@ -52,6 +69,7 @@
 <script src="fact-present.js"></script>
 <script src="finder.js"></script>
 <script src="fact-finder.js"></script>
+<script src="uk-places.js"></script>
 <script src="fact-file.js"></script>
 <span id="sr360-ready" hidden></span>
 </body>

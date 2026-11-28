@@ -118,6 +118,7 @@ const STATIC_FILES = {
   '/fact-file.html': 'text/html; charset=utf-8',
   '/fact-university.html': 'text/html; charset=utf-8',
   '/fact-file.js': 'text/javascript; charset=utf-8',
+  '/uk-places.js': 'text/javascript; charset=utf-8', // the towns, postcode areas and map outline of the Universities search (28 Nov 2026)
   '/fact-university.js': 'text/javascript; charset=utf-8',
   '/fact-file.css': 'text/css; charset=utf-8',
   '/direct.html': 'text/html; charset=utf-8',

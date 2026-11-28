@@ -300,7 +300,7 @@ test('screens: log in, edit, delete, search, team rules, Universities', { timeou
     await page.waitForSelector('.uni-card.is-board .ub-courses li');
     assert.ok((await page.locator('.uni-card.is-board').count()) > 5, 'many universities teach it');
     assert.ok((await page.locator('.ub-courses .sl-pick').count()) > 5, 'each course can be shortlisted from the search');
-    assert.match(await page.textContent('#count'), /universities match/);
+    assert.match(await page.textContent('#usBar .us-total'), /^\d+ places?$/, 'how many match, above the cards (the search design of 28 Nov 2026)');
     await page.locator('.uni-card.is-board .ub-name').first().click();
     await page.waitForSelector('.doc');
     await admin.grantPermissions(['clipboard-read', 'clipboard-write']);

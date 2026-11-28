@@ -263,10 +263,38 @@ function glance(u) {
       const n = FactPresent.nextApplyBy(u.profile.deadlines);
       next = n ? { intake: u.profile.intake || 'January 2027', when: n.when, days: n.days } : null;
     }
-    value = { next, courseCount: view.courses.length };
+    value = { next, courseCount: view.courses.length, ...searchFacts(u.profile && !u.profile.own ? u.profile.courses.map((c) => ({ name: c.name, level: c.level })) : view.courses.map((c) => ({ name: c.course, level: c.group }))) };
   } catch (e) { /* the card shows without it */ }
   glanceMemo.set(u, { day, value });
   return value;
+}
+// What the Universities search filters on (the owner, 28 Nov 2026: Qualification, Subject and Study mode, like UCAS), worked out from
+// the course names and their level headings, so nothing has to be typed in by hand: the levels taught, the subject groups, and the
+// study modes a course name states (a placement year, part-time, online). Full-time is every course that does not say otherwise.
+const LEVEL_RULES = [['Pre-Masters', /pre[- ]?master/i], ['Research or PhD', /\b(phd|mphil|mres|doctor|research)\b/i], ['Foundation', /foundation/i],
+  ['Year One', /year one|\biy1\b|\biyo\b|international year 1|stage one|integrated year/i], ['Top-up', /top[- ]?up/i],
+  ['Postgraduate', /postgrad|master|\bpg\b|\bmba\b|\bmsc\b|\bma\b|\bllm\b|\bmres\b|\bpgdip\b|\bpgce\b/i], ['Undergraduate', /undergrad|bachelor|\bug\b|\bbsc\b|\bba\b|\bbeng\b|\bllb\b|\bbn\b|\bmeng\b|\bmsci\b/i]];
+const SUBJECT_RULES = [['Nursing', /nurs|midwif/i], ['Health', /health|social care|biomedical|physio|paramedic|occupational therap|public health/i],
+  ['Business', /business|management|marketing|\bmba\b|economics|enterprise|hospitality|tourism|human resource|logistics|supply chain/i], ['Accounting and finance', /account|banking|financ/i],
+  ['Computing', /comput|software|cyber|information technology|\bit\b|games|network/i], ['Data science and AI', /\bdata\b|analytics|artificial intelligence|machine learning/i],
+  ['Engineering', /engineer|mechanical|electrical|civil|robot|aerospace|construction|automotive/i], ['Law', /\blaw\b|\bllb\b|\bllm\b|legal|criminolog/i],
+  ['Psychology', /psycholog|counsel/i], ['Art, design and media', /design|\bart\b|\barts\b|fashion|film|media|music|photograph|architecture|animation|journalism/i],
+  ['Education', /education|teaching|tesol|\bpgce\b/i], ['Pharmacy', /pharm/i], ['Science', /biolog|chemi|physics|biotech|biomedical|environment|life science|natural science|forensic|zoolog|geolog|mathemat/i]];
+// A course name that says Top-up or Pre-Masters wins over its heading ("BSc Nursing Studies (Top Up)" under Undergraduate is a top-up).
+const levelOfCourse = (c) => { const name = String(c.name || ''); if (/top[- ]?up/i.test(name)) return 'Top-up'; if (/pre[- ]?master/i.test(name)) return 'Pre-Masters'; const hit = LEVEL_RULES.find(([, re]) => re.test(c.level || '')) || LEVEL_RULES.find(([, re]) => re.test(name)); return hit ? hit[0] : ''; };
+function searchFacts(courses) {
+  const levels = new Set(); const subjects = new Set(); const modes = new Set();
+  courses.forEach((c) => {
+    const name = String(c.name || '');
+    const level = levelOfCourse(c);
+    if (level) levels.add(level);
+    SUBJECT_RULES.forEach(([s, re]) => { if (re.test(name)) subjects.add(s); });
+    if (/placement|sandwich|industr(y|ial) (year|experience)|work experience/i.test(name)) modes.add('With a placement year');
+    if (/part[- ]time/i.test(name)) modes.add('Part-time');
+    if (/\bonline\b|distance learning/i.test(name)) modes.add('Online or distance');
+    if (!/part[- ]time|\bonline\b|distance learning/i.test(name)) modes.add('Full-time');
+  });
+  return { levels: [...levels], subjects: [...subjects], modes: [...modes] };
 }
 const Q1_2027 = /\b(jan(uary)?|feb(ruary)?|mar(ch)?)\s*2027\b/i;
 // The intakes a card offers: January, February and March 2027 only (the owner, 20 Nov 2026), from a partner's courses or the page's own.
