@@ -330,7 +330,20 @@
   }
   // Lines once each, whatever their spacing or capitals ("IELTS: 6.0 overall" given twice by the partner is shown once).
   const uniq = (lines) => { const seen = new Set(); return lines.map((l) => String(l).trim()).filter((l) => { const k = l.toLowerCase().replace(/[^a-z0-9]+/g, ''); if (!k || seen.has(k)) return false; seen.add(k); return true; }); };
-  const money = (t) => (String(t || '').match(/£\s?[\d,]{3,}/g) || []).map((x) => Number(x.replace(/[^\d]/g, ''))).filter((n) => n >= 500 && n < 100000);
+  // The amounts of a fee or scholarship text. An amount named as something else is left out (the owner, 28 Nov 2026: West London
+  // showed "Tuition from £3,500", its placement fee): "+ £3,500 placement", "Remaining 6 months: £5,550", "£500 deposit", "£250 per month".
+  const OTHER_FEE = /placement|deposit|remaining|instal/i;
+  const money = (t) => {
+    const s = String(t || '');
+    const out = [];
+    s.replace(/£\s?\d[\d,]*\d/g, (m, i) => {
+      const before = s.slice(Math.max(0, i - 40), i).split(/[\n()/;]/).pop();
+      const after = s.slice(i + m.length, i + m.length + 24).split(/[\n,;)+/]/)[0];
+      if (!OTHER_FEE.test(before) && !OTHER_FEE.test(after) && !/\b(per|a|each)\s+month|monthly/i.test(after)) out.push(Number(m.replace(/[^\d]/g, '')));
+      return m;
+    });
+    return out.filter((n) => n >= 500 && n < 100000);
+  };
   const pretty = (n) => `£${n.toLocaleString('en-GB')}`;
   // The Apply window (Admin and the Application Team): where and how to apply, with the login to copy.
   function applyWindow() {
