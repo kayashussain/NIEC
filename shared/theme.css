@@ -3213,7 +3213,8 @@ html body .up-level-head h3 { margin: 0; color: #000; font-size: 21px; font-weig
 .up-reqs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
 .up-req { min-width: 0; }
 .up-req-k { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: #000; font-size: 15px; font-weight: 650; }
-.up-req-k::before { content: ""; width: 26px; height: 26px; border-radius: 8px; background: #eef4fd center / 16px no-repeat; }
+/* 🔴 CSS CHANGED (2026-11-27): the two icons over the entry requirements | from: one background line | to: colour and picture placing apart | why: in dark mode the icons were wiped out, leaving blank squares */
+.up-req-k::before { content: ""; width: 26px; height: 26px; border-radius: 8px; background-color: #eef4fd; background-position: center; background-size: 16px; background-repeat: no-repeat; }
 .up-ic-cap::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230071e3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 9l10-5 10 5-10 5z'/%3E%3Cpath d='M6 11v5c3 2 9 2 12 0v-5'/%3E%3C/svg%3E"); }
 .up-ic-lang::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230071e3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v11H9l-5 4z'/%3E%3C/svg%3E"); }
 .up-req ul { margin: 0; padding: 0; list-style: none; }

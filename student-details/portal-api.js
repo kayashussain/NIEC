@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { sendJSON, send, readJSONBody, readRawBody: readRaw, localDate } = require('../shared/server-utils');
 const { isoDate } = require('./dashboard-stats');
-const { branchInsights, journeyOf, universityStudents } = require('./branch-insights');
+const { branchInsights, universityStudents } = require('./branch-insights');
 const { syncChanges, squash } = require('./sheet-sync');
 const Teams = require('../shared/teams');
 const mailer = require('../shared/mailer');
@@ -1698,6 +1698,30 @@ function createPortalApi({
   };
   // A branch's own students, each with their applications, for its figures (branch-insights.js).
   const withApplications = (students, all) => students.map(({ row }) => { const card = all[row._id] || {}; return { id: row._id, name: nameOf(row), row, card, apps: applicationsOf(row, card) }; });
+  // A student who was deferred into this intake: where from and on which day, from the card (the stage note the move wrote and
+  // card.follow.from). Without both there is nothing to tell the two intakes apart by, so the student is then one student of this intake.
+  const movedOf = (card) => {
+    const from = card && card.follow && card.follow.from;
+    if (!from) return null;
+    const note = [...(card.notes || [])].reverse().find((n) => n && n.kind === 'stage' && /deferred from/i.test(n.text || '') && n.at);
+    const day = note ? localDate(new Date(note.at)) : '';
+    return day ? { from, day } : null;
+  };
+  // A branch's Dashboard (the owner, 28 Nov 2026): its own students in every intake it can still see, the oldest intake first. Only the
+  // students are the branch's own (the same rule as its sheet), so the earlier intakes add numbers, never anyone else's students.
+  function branchDashboard(user, all, today) {
+    const wb = getWorkbook();
+    if (!wb) return null;
+    const createdAt = (sheet) => { const m = /^sheet-([0-9a-z]{8})/.exec(sheet.id); return m ? parseInt(m[1], 36) : 0; }; // as Teams.newestSheet
+    const sheets = wb.sheets.filter((sh) => !sh.hidden).map((sh, i) => ({ sh, i })).sort((a, b) => createdAt(a.sh) - createdAt(b.sh) || a.i - b.i).map((x) => x.sh);
+    const list = [];
+    sheets.forEach((sheet) => sheet.rows.forEach((row) => {
+      if (!row || !row._id || !isStudent(row) || !Teams.seesRow(user, row)) return;
+      const card = all[row._id] || {};
+      list.push({ id: row._id, name: nameOf(row), row, card, apps: applicationsOf(row, card), intake: text(sheet.name), moved: movedOf(card) });
+    }));
+    return branchInsights(list, today, [...new Set(sheets.map((sh) => text(sh.name)))]);
+  }
 
   function myDashboard(user) {
     const kind = homeKind(user);
@@ -1767,7 +1791,7 @@ function createPortalApi({
     }
     const intake = intakeSheet;
     // A branch's Dashboard goes deeper (the owner, 27 Nov 2026): every figure of its own students (branch-insights.js).
-    const branch = kind === 'branch' ? branchInsights(withApplications(students, all), today) : null;
+    const branch = kind === 'branch' ? branchDashboard(user, all, today) : null;
     return {
       ...(branch ? { branch } : {}),
       kind, title: plan.title, lead: plan.lead, name: user.name, today, intake: intake ? intake.name : '',
@@ -3759,7 +3783,7 @@ function createPortalApi({
       const mockLook = Teams.ownTeamMock(req.user); // the Mock Team's own Today (the owner, 23 Nov 2026)
       const mt = mockLook ? mockTeam() : null;
       const booked = mt && mt.nextBooked ? mt.nextBooked() : new Map();
-      // A branch's Today also says how far each of its own students has come (the owner, 27 Nov 2026).
+      // A branch's opened task shows its own student's University and course, as the Application Team's does (the owner, 28 Nov 2026).
       const ownStudents = Teams.ownTeamBranch(req.user) ? new Set(visibleStudents(req.user).map((s) => s.row._id)) : null;
       const out = [];
       for (const { sheet, row } of rowIndex().values()) {
@@ -3774,7 +3798,7 @@ function createPortalApi({
           // only if it is handed back. It stays on the student card.
           if (!everyone && !mine && !gaveIt(req.user, t)) return;
           const tag = Fields.taskTag(t, text(row[STATUS]));
-          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row), ...(Teams.ownTeamApplication(req.user) ? { details: detailsOf(row, c) } : {}), ...(mockLook ? { mock: mockOf(row, booked) } : {}), ...(ownStudents && ownStudents.has(row._id) ? { journey: journeyOf({ row, card: c, apps: applicationsOf(row, c) }, cards.today()) } : {}) });
+          out.push({ ...t, tag, priority: Fields.taskPriorityOf(t), forMe: mine, given: !mine && gaveIt(req.user, t), had, mayHand: mayHand(req.user, t), unread: unreadOf(req.user, t, seen), news: newsOf(req.user, t, seen), history: historyOf(req.user, t, seen), teamLabel: teamLabel(t.team), routeLabels: (t.route || []).map(teamLabel), studentId: row._id, student: nameOf(row) || 'Student', stage: text(row[STATUS]), intake: sheet.name, course: courseShown(c, t, tag), contact: contactOf(row), ...(Teams.ownTeamApplication(req.user) ? { details: detailsOf(row, c) } : {}), ...(mockLook ? { mock: mockOf(row, booked) } : {}), ...(ownStudents && ownStudents.has(row._id) ? { studies: { university: text(row['UNIVERSITY NAME']), course: text(row['COURSE NAME']) } } : {}) });
         });
       }
       // Open first, then the one with the newest word (a comment, or the task itself) first.

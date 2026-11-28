@@ -6,31 +6,14 @@
 // filled in from the card, with Add), on Universities for the team (with Shortlist, for the student chosen: fact-finder.js) and on a
 // student's own login (with I am interested).
 //
-//   window.Finder.mount(box, { prefill, onAdd(result, course), addLabel, onSave(values), shortlist, multi })
-//
-// `multi` (a branch's Universities, the owner, 27 Nov 2026): several levels at once (Foundation and Year One together), every filter
-// in use as a chip under the form, removed one by one or all with "Clear all filters". A University that answers for more than one
-// level has a switch on its card, one button for each level with that level's answer.
+//   window.Finder.mount(box, { prefill, onAdd(result, course), addLabel, onSave(values), shortlist })
 (function () {
   const { el, h, api, field } = window.Portal;
   const F = window.CardFields;
   const STATUS = { yes: ['Eligible', 'is-yes'], check: ['To check', 'is-check'], no: ['Not eligible', 'is-no'] };
 
-  const RANK = { yes: 0, check: 1, no: 2 };
-  // The answers of several levels as one list: each University once, shown with its best answer, the others behind the switch on its card.
-  function merge(answers) {
-    const by = new Map();
-    answers.forEach(({ level, d }) => d.results.forEach((r) => { if (!by.has(r.id)) by.set(r.id, []); by.get(r.id).push({ ...r, level }); }));
-    const days = (r) => (r.intake && typeof r.intake.days === 'number' ? r.intake.days : 1e6);
-    const results = [...by.values()].map((list) => ({ ...list.slice().sort((a, b) => RANK[a.status] - RANK[b.status])[0], levels: list }));
-    results.sort((a, b) => RANK[a.status] - RANK[b.status] || days(a) - days(b) || a.name.localeCompare(b.name));
-    const counts = { yes: 0, check: 0, no: 0 };
-    results.forEach((r) => { counts[r.status] += 1; });
-    return { results, counts };
-  }
-
-  function mount(box, { prefill = {}, onAdd = null, addLabel = 'Add', onSave = null, title = 'Find universities for a student', intro = '', shortlist = false, multi = false } = {}) {
-    const wrap = el('section', `p-card fd-card${multi ? ' fd-multi' : ''}`);
+  function mount(box, { prefill = {}, onAdd = null, addLabel = 'Add', onSave = null, title = 'Find universities for a student', intro = '', shortlist = false } = {}) {
+    const wrap = el('section', 'p-card fd-card');
     const head = el('div', 'fd-head');
     const words = el('div');
     // One title and no explanation (the owner, 20 Nov 2026: short, one-word labels).
@@ -42,21 +25,12 @@
     // The level as one row of pills to tap (the owner, 20 Nov 2026: a finder that is quick and clear), the rest in one row under it.
     const level = { input: { value: F.STUDY_LEVELS.includes(prefill.level) ? prefill.level : '', focus: () => levelRow.querySelector('button').focus() } };
     const levelRow = el('div', 'fd-levels');
-    levelRow.setAttribute('role', multi ? 'group' : 'radiogroup');
-    levelRow.setAttribute('aria-label', multi ? 'Levels (choose one or more)' : 'Level');
+    levelRow.setAttribute('role', 'radiogroup');
+    levelRow.setAttribute('aria-label', 'Level');
     const SHORT = { 'International Year 1': 'Year One', 'Top-up (final year)': 'Top-up', 'Masters by Research or PhD': 'Research or PhD' };
-    // The levels chosen in `multi`, always in the order of the pills.
-    const chosen = new Set(level.input.value ? [level.input.value] : []);
-    const picked = () => F.STUDY_LEVELS.filter((x) => chosen.has(x));
-    const paintLevels = () => {
-      level.input.value = picked()[0] || '';
-      levelRow.querySelectorAll('button').forEach((y) => { const on = chosen.has(y.dataset.level); y.classList.toggle('is-on', on); y.setAttribute('aria-pressed', String(on)); });
-    };
     F.STUDY_LEVELS.forEach((x) => {
-      const on = level.input.value === x;
-      const b = h('button', multi ? { type: 'button', 'aria-pressed': String(on), 'data-level': x, class: on ? 'is-on' : '' } : { type: 'button', role: 'radio', 'aria-checked': String(on), class: on ? 'is-on' : '' }, SHORT[x] || x);
+      const b = h('button', { type: 'button', role: 'radio', 'aria-checked': String(level.input.value === x), class: level.input.value === x ? 'is-on' : '' }, SHORT[x] || x);
       b.addEventListener('click', () => {
-        if (multi) { if (chosen.has(x)) chosen.delete(x); else chosen.add(x); paintLevels(); afterChange(); return; }
         // Pressing the chosen level again lets go of it and clears the results (the owner, 25 Nov 2026: the filter could not be cleared without reloading the page).
         if (level.input.value === x) { clearAll({ keepFields: true }); return; }
         level.input.value = x;
@@ -80,12 +54,6 @@
     const bar = el('div', 'fd-bar');
     if (onSave) bar.append(h('button', { class: 'btn', type: 'button', onclick: async () => { try { await onSave(values()); window.NiecUI.toast('Saved on the student card'); } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); } } }, 'Save these details on the card'));
     wrap.append(levelRow, form);
-    // The filters in use, each one removable, and all of them at once.
-    const active = el('div', 'fd-active');
-    active.hidden = true;
-    active.setAttribute('role', 'group');
-    active.setAttribute('aria-label', 'Filters in use');
-    if (multi) { clear.hidden = true; wrap.append(active); }
     if (bar.children.length) wrap.append(bar);
     const out = el('div', 'fd-out');
     wrap.append(out);
@@ -97,51 +65,12 @@
 
     let filter = 'all';
     let last = null;
-    let asking = 0; // answers arriving out of order: only the latest filters are shown
-    function drawActive() {
-      if (!multi) return;
-      const v = values();
-      const items = picked().map((x) => [SHORT[x] || x, () => { chosen.delete(x); paintLevels(); }]);
-      if (v.grade) items.push([`Grade ${v.grade}`, () => { grade.input.value = ''; }]);
-      if (v.gap) items.push([`Gap ${v.gap} ${v.gap === '1' ? 'year' : 'years'}`, () => { gap.input.value = ''; }]);
-      if (v.test) items.push([[v.test, score.wrap.hidden ? '' : v.score, !band.wrap.hidden && v.band ? `lowest band ${v.band}` : ''].filter(Boolean).join(' '), () => { test.input.value = ''; score.input.value = ''; band.input.value = ''; showScore(); }]);
-      if (v.subject) items.push([`Subject: ${v.subject}`, () => { subject.input.value = ''; }]);
-      active.hidden = !items.length;
-      const chips = items.map(([label, drop], i) => {
-        const b = h('button', { type: 'button', class: 'fd-chip', 'aria-label': `Remove the filter ${label}`, title: 'Remove this filter' }, el('span', '', label), el('i', '', '\u00d7'));
-        b.addEventListener('click', () => {
-          drop();
-          afterChange();
-          const next = active.querySelectorAll('.fd-chip')[i] || active.querySelector('.fd-chip') || levelRow.querySelector('button');
-          next.focus();
-        });
-        return b;
-      });
-      const all = h('button', { type: 'button', class: 'fd-clear-all' }, 'Clear all filters');
-      all.addEventListener('click', () => { clearAll(); levelRow.querySelector('button').focus(); });
-      active.replaceChildren(el('span', 'fd-active-k', 'Filters'), ...chips, all);
-    }
-    // A filter was added or taken away: the results follow at once.
-    function afterChange() {
-      drawActive();
-      if (picked().length) { run(); return; }
-      asking += 1; last = null; filter = 'all'; out.classList.remove('is-busy'); go.disabled = false; out.replaceChildren();
-    }
     async function run() {
       const v = values();
-      drawActive();
-      if (!v.level) { out.replaceChildren(el('p', 'fd-hint', multi ? 'Choose one level or more.' : 'Choose a level.')); level.input.focus(); return; }
-      asking += 1;
-      const mine = asking;
+      if (!v.level) { out.replaceChildren(el('p', 'fd-hint', 'Choose a level.')); level.input.focus(); return; }
       go.disabled = true;
       out.classList.add('is-busy');
-      try {
-        const answer = multi ? merge(await Promise.all(picked().map(async (x) => ({ level: x, d: await api('/api/eligibility', { ...v, level: x }) })))) : await api('/api/eligibility', v);
-        if (mine !== asking) return;
-        last = answer;
-        if (filter !== 'all' && !last.counts[filter]) filter = 'all';
-        draw();
-      } catch (e) { if (mine !== asking) return; out.replaceChildren(el('div', 'p-notice bad', e.message)); }
+      try { last = await api('/api/eligibility', v); draw(); } catch (e) { out.replaceChildren(el('div', 'p-notice bad', e.message)); }
       out.classList.remove('is-busy');
       go.disabled = false;
     }
@@ -169,7 +98,6 @@
     const initials = (name) => (String(name).match(/\b[A-Z]/g) || ['U']).slice(0, 3).join('');
     function card(r) {
       const c = el('article', `fd-uni ${STATUS[r.status][1]}`);
-      const atLevel = r.level || values().level; // the level this card answers for
       // The picture with the logo and the answer on it, then the name, the place and the deadline.
       const cv = el('div', 'fd-cover' + (r.cover ? '' : ' is-blank'));
       if (r.cover) { const im = imgOf(r.cover); im.addEventListener('error', () => { im.remove(); cv.classList.add('is-blank'); }); cv.append(im); }
@@ -194,25 +122,6 @@
         top.append(dl);
       }
       c.append(top);
-      if (multi && r.levels) {
-        const tabs = el('div', 'fd-card-levels');
-        tabs.setAttribute('role', 'group');
-        tabs.setAttribute('aria-label', `${r.name}: the answer for each level`);
-        r.levels.forEach((x) => {
-          const b = h('button', { type: 'button', class: `${STATUS[x.status][1]}${x.level === atLevel ? ' is-on' : ''}`, 'aria-pressed': String(x.level === atLevel) }, el('b', '', SHORT[x.level] || x.level), el('span', '', STATUS[x.status][0]));
-          b.addEventListener('click', () => {
-            if (x.level === atLevel) return;
-            const next = card({ ...x, levels: r.levels });
-            next.style.cssText = c.style.cssText;
-            next.classList.add('is-swapped');
-            c.replaceWith(next);
-            const on = next.querySelector('.fd-card-levels button[aria-pressed="true"]');
-            if (on) on.focus({ preventScroll: true });
-          });
-          tabs.append(b);
-        });
-        c.append(tabs);
-      }
       const why = el('ul', 'fd-why');
       r.reasons.forEach((x) => why.append(el('li', x.ok === true ? 'is-ok' : x.ok === false ? 'is-bad' : 'is-ask', x.text)));
       if (r.reasons.length) c.append(why);
@@ -247,12 +156,12 @@
             add.addEventListener('click', async () => { add.disabled = true; try { await onAdd(r, co); add.textContent = 'Added ✓'; } catch (e) { window.NiecUI.toast(e.message, { type: 'error' }); add.disabled = false; } });
             li.append(add);
           } else if (window.Shortlist && window.Shortlist.isStudent() && window.Shortlist.isLinked()) li.append(window.Shortlist.button({ id: r.id, name: r.name }, co.full || co.name, co.intake || ''));
-          else if (shortlist) li.append(window.ShortlistFor.button({ universityId: r.id, university: r.name, course: co.full || co.name, intake: co.intake || (r.intake && r.intake.name) || '', level: atLevel, link: co.link || '', fee: (co.fee || r.fee || '').split('\n')[0], scholarship: (co.scholarship || r.scholarship || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0] }));
+          else if (shortlist) li.append(window.ShortlistFor.button({ universityId: r.id, university: r.name, course: co.full || co.name, intake: co.intake || (r.intake && r.intake.name) || '', level: values().level, link: co.link || '', fee: (co.fee || r.fee || '').split('\n')[0], scholarship: (co.scholarship || r.scholarship || '').split('\n')[0], deposit: (r.deposit || '').split('\n')[0] }));
           list.append(li);
         });
         box.append(list);
         if (r.total > 3) {
-          const more = h('a', { class: 'fd-see-all', href: `/fact-file?u=${encodeURIComponent(r.id)}&level=${encodeURIComponent(atLevel)}${values().subject ? `&q=${encodeURIComponent(values().subject)}` : ''}#courses` }, `See all ${r.total} courses`);
+          const more = h('a', { class: 'fd-see-all', href: `/fact-file?u=${encodeURIComponent(r.id)}&level=${encodeURIComponent(values().level)}${values().subject ? `&q=${encodeURIComponent(values().subject)}` : ''}#courses` }, `See all ${r.total} courses`);
           if (onAdd) { more.target = '_blank'; more.rel = 'noopener'; }
           box.append(more);
         }
@@ -262,16 +171,12 @@
     }
     // Clear: the level, every box and the results go, so the page is as it was when it opened.
     function clearAll({ keepFields = false } = {}) {
-      chosen.clear();
       level.input.value = '';
-      levelRow.querySelectorAll('button').forEach((y) => { y.classList.remove('is-on'); y.setAttribute(multi ? 'aria-pressed' : 'aria-checked', 'false'); });
+      levelRow.querySelectorAll('button').forEach((y) => { y.classList.remove('is-on'); y.setAttribute('aria-checked', 'false'); });
       if (!keepFields) { grade.input.value = ''; gap.input.value = ''; test.input.value = ''; score.input.value = ''; band.input.value = ''; subject.input.value = ''; showScore(); }
-      asking += 1; filter = 'all'; last = null;
-      out.classList.remove('is-busy'); go.disabled = false;
+      filter = 'all'; last = null;
       out.replaceChildren();
-      drawActive();
     }
-    if (multi) [grade.input, gap.input, test.input, score.input, band.input, subject.input].forEach((x) => x.addEventListener('change', drawActive));
     clear.addEventListener('click', () => clearAll());
     go.addEventListener('click', run);
     [grade.input, gap.input, score.input, band.input, subject.input].forEach((x) => x.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); }));

@@ -254,7 +254,6 @@
   if (!BACKUP && window.TeamRules) {
     fetch('/api/me', { cache: 'no-store' }).then((r) => r.json()).then(async (me) => {
       if (!window.TeamRules.ownTeamBranch(me)) return;
-      document.querySelector('main').classList.add('is-branch'); // wider logo tiles (apple.css)
       const r = await fetch('/api/branch-universities', { cache: 'no-store' });
       if (!r.ok) return;
       mine = (await r.json()).universities;
@@ -291,8 +290,7 @@
       }
       window.Finder.mount(box, student
         ? { title: 'Find the universities you can go to', intro: 'Enter your level, your grade, your study gap and your English test. Press "I am interested" on the courses you like.' }
-        : { title: 'Find universities for a student', prefill, shortlist: Boolean(window.ShortlistFor) && !(window.TeamRules && window.TeamRules.isReadOnly(me)),
-          multi: Boolean(window.TeamRules && window.TeamRules.ownTeamBranch(me)) }); // a branch chooses several levels at once
+        : { title: 'Find universities for a student', prefill, shortlist: Boolean(window.ShortlistFor) && !(window.TeamRules && window.TeamRules.isReadOnly(me)) });
       const shortlist = document.getElementById('shortlist');
       if (shortlist) box.before(shortlist); // a student's welcome and shortlist first
     }).catch(() => {});
