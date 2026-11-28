@@ -28,8 +28,7 @@ Keep it that way.
 
 ## What the server does by itself
 
-Added 27 November 2026 (`student-details/version-guard.js`), **not yet on the live server** (remove these words after
-the first upload that carries it). The copy and the check work from that first start; the right-folder check works from the
+Added 27 November 2026 (`student-details/version-guard.js`). The copy and the check work from that first start; the right-folder check works from the
 start after it. It does not protect changes typed during a restart, so **still do every step below.**
 
 - **Copy first.** When new code starts, every data file is copied to `version-backups/` in the data folder before
@@ -112,4 +111,4 @@ folder as it is now. Putting a whole file back loses everything entered in it si
 
 | Date | Commit uploaded | Counts before | Counts after | Anything missing (what, whose, when entered) |
 |---|---|---|---|---|
-| | | | | |
+| 28 Nov 2026, about 9:04 PM | `4956962` (replaced `ab11341`) | Noted on the server (`counts-before.txt`); not written here, this project is public | The same as before | Nothing, by the counts and the automatic check at the start |
